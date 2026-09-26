@@ -119,8 +119,6 @@ Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
 ## Misje wprowadzające (`src/tutorial/`)
 
 * `missions.js` – kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
-  Blok ćwiczeń bez pociągu (`lesson-*`: przebieg A→D1, STOP, Pz, OPS, zwrotnice) jest tylko w misji na monitorze –
-  na pulpicie kostkowym przebieg bez pociągu wymagałby obsługi blokady z sąsiadem.
   Jedna lista `missionSteps(view)` obsługuje monitor (`'monitor'`) i pulpit kostkowy (`'pulpit'`) – różnią się teksty
   i wskazywane miejsca (`anchor`: `{ ref }`, `{ block }`, `{ cmd }`, `{ el }`, `{ tab }`).
 * `progress.js` – `MissionProgress`: kolejność kroków, warunki na stanie symulacji i zdarzeniach szyny

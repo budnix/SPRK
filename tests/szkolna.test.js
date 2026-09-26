@@ -26,9 +26,8 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
     const steps = missionSteps(view);
     assert.ok(steps.length > 30, `${view}: za mało kroków`);
     assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
-    // ćwiczenia bez pociągu (przebieg A→D1, STOP, Pz, OPS, zwrotnice) tylko na monitorze – na pulpicie kostkowym
-    // przebieg bez pociągu wymagałby obsługi blokady z sąsiadem
-    assert.equal(steps.some((s) => s.id.startsWith('lesson-')), view === 'monitor', `${view}: kroki ćwiczeń`);
+    // bez ćwiczeń przebiegów bez pociągu (przebieg bez pociągu wymagałby obsługi blokady z sąsiadem)
+    assert.ok(!steps.some((s) => s.id.startsWith('lesson-')), `${view}: kroki ćwiczeń`);
     for (const s of steps) {
       assert.ok(s.title && s.text, `${view}/${s.id}: brak tytułu lub tekstu`);
       assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
@@ -80,17 +79,6 @@ function studentScript(sim) {
     'cross-poz': () => { poz('W'); poz('E'); },
     'cross-routes': () => { if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); },
     'cross-out': () => { ko('W'); ko('E'); out(6103, 'D2', 'kE', 'E', 'D2-E'); out(6104, 'C1', 'kW', 'W', 'C1-W'); },
-    'lesson-route': () => route('A', 'D1', 'A-D1'),
-    'lesson-stop': () => { if (sim.ilk.signals.get('A').aspect !== 'S1') sim.pull(G('A')); },
-    'lesson-pz': () => { if (sim.ilk.active.has('A-D1')) { press({ kind: 'group', id: 'Pz', role: 'route-release' }); press(G('A')); } },
-    'lesson-cancel': () => one('cancel', () => { press(G('B')); sim.pull(G('B')); }),
-    'lesson-zw': () => { const p = sim.ilk.points.get('Zw3'); if (p.position === '+' && !p.moving && !sim.ilk.armed) { press({ kind: 'group', id: 'Zw', role: 'group-point' }); press({ kind: 'point', id: 'Zw3' }); } },
-    'lesson-zz': () => {
-      const p = sim.ilk.points.get('Zw3'); if (sim.ilk.armed || p.moving) return;
-      if (!once.has('lock')) { once.add('lock'); press({ kind: 'group', id: 'Zz', role: 'point-lock' }); press({ kind: 'point', id: 'Zw3' }); return; }
-      if (p.individualLock) { press({ kind: 'group', id: 'Zz', role: 'point-lock' }); press({ kind: 'point', id: 'Zw3' }); return; }
-      if (p.position === '-') { press({ kind: 'group', id: 'Zw', role: 'group-point' }); press({ kind: 'point', id: 'Zw3' }); }
-    },
     'in-90201': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); ko('W'); },
     'shunt-mode': () => { const tr = e(90201).train; if (tr && tr.v === 0 && tr.mode !== 'shunt') sim.traffic.toShunting(90201); },
     'shunt-route': () => { if (!act('D2-kT3m') && !sim.ilk.armed) { press(Wt('D2')); press({ kind: 'end', id: 'kT3' }); } },
