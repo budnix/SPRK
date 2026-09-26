@@ -116,13 +116,13 @@ export default {
    * (misja 2 uczy pulpitu kostkowego na tej samej stacji).
    */
   scenarios: [
-    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', endTime: '09:10',
-      description: 'Krok po kroku: pozwolenie (Poz), przebieg wjazdowy i wyjazdowy, Ko i Wbl, przelot, krzyżowanie, STOP i zwolnienie przebiegu, zwrotnice, manewry składem kończącym bieg, sygnał zastępczy przy usterce semafora, zapowiadanie telefoniczne przy usterce blokady. Dymki wyjaśniają każdy skrót.',
-      faults: [{ type: 'signal-fail', target: 'A', at: '08:33', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:44', duration: 22 }] },
-    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', endTime: '09:10',
-      description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E: obsługa dwuprzyciskowa, wyciąganie przycisków, przyciski grupowe Zw, Zz, Pz, Sz i pole blokady Eap.',
-      faults: [{ type: 'signal-fail', target: 'A', at: '08:33', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:44', duration: 22 }] },
-    { id: 'zmiana', name: 'Zmiana bez samouczka (07:00–09:10)', description: 'Ten sam rozkład bez podpowiedzi. Poziom zakłóceń do wyboru.', endTime: '09:10' },
+    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', endTime: '08:50',
+      description: 'Krok po kroku: pozwolenie (Poz), przebieg wjazdowy i wyjazdowy, Ko i Wbl, przelot, krzyżowanie, manewry składem kończącym bieg, sygnał zastępczy przy usterce semafora, zapowiadanie telefoniczne przy usterce blokady. Dymki wyjaśniają każdy skrót.',
+      faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
+    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', endTime: '08:50',
+      description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E: obsługa dwuprzyciskowa, wyciąganie przycisków, przyciski grupowe Zw, Zz, Pz, Sz i kostki blokady Eap przy końcach toru.',
+      faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
+    { id: 'zmiana', name: 'Zmiana bez samouczka (07:00–08:50)', description: 'Ten sam rozkład bez podpowiedzi. Poziom zakłóceń do wyboru.', endTime: '08:50' },
   ],
 
   timetable: [
@@ -131,14 +131,14 @@ export default {
     { nr: 42101, kind: 'tow', name: 'Towarowy', from: 'W', to: 'E', arr: '07:29', track: '1', stop: false, length: 380, vmax: 70 },
     { nr: 6103, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:40', dep: '07:43', track: '2', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6104, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:41', dep: '07:44', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
-    { nr: 90201, kind: 'tow', name: 'Zdawczy', from: 'W', to: null, arr: '08:02', track: '2', stop: true, terminates: true, length: 180, vmax: 60, dwell: 30 },
-    { nr: 90202, kind: 'tow', name: 'Zdawczy', unit: 90201, from: null, to: 'W', dep: '08:30', track: '2', stop: false, length: 180, vmax: 60 },
-    { nr: 6105, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '08:40', dep: '08:42', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
-    { nr: 6106, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '08:51', dep: '08:53', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
+    { nr: 90201, kind: 'tow', name: 'Zdawczy', from: 'W', to: null, arr: '07:52', track: '2', stop: true, terminates: true, length: 180, vmax: 60, dwell: 30 },
+    { nr: 90202, kind: 'tow', name: 'Zdawczy', unit: 90201, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 60 },
+    { nr: 6105, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '08:22', dep: '08:24', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
+    { nr: 6106, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '08:33', dep: '08:35', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
   ],
 
   tasks: [
-    { id: 'odstaw-90201', unit: 90201, type: 'move', toTrack: '3', deadline: '08:16', text: 'Skład zdawczego 90201 odstawić manewrami na tor 3.' },
-    { id: 'podstaw-90202', unit: 90201, type: 'move', toTrack: '2', afterTask: 'odstaw-90201', deadline: '08:28', text: 'Skład podstawić z powrotem na tor 2 jako pociąg 90202 do Lipna (odjazd 08:30).' },
+    { id: 'odstaw-90201', unit: 90201, type: 'move', toTrack: '3', deadline: '08:04', text: 'Skład zdawczego 90201 odstawić manewrami na tor 3.' },
+    { id: 'podstaw-90202', unit: 90201, type: 'move', toTrack: '2', afterTask: 'odstaw-90201', deadline: '08:10', text: 'Skład podstawić z powrotem na tor 2 jako pociąg 90202 do Lipna (odjazd 08:12).' },
   ],
 };

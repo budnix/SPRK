@@ -119,7 +119,7 @@ export function missionSteps(view) {
     (sim) => atNeighbour(sim, 6103) && atNeighbour(sim, 6104) && !sim.blocks.get('W').occupied && !sim.blocks.get('E').occupied);
 
   /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
-  info('shunt-intro', 'Pociąg zdawczy', `O 08:02 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:30 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });
+  info('shunt-intro', 'Pociąg zdawczy', `O 07:52 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });
   act('in-90201', 'Przyjęcie zdawczego', `<b>Poz</b> dla ${LIPa}, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
     { wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
@@ -133,28 +133,28 @@ export function missionSteps(view) {
     (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); });
   act('shunt-back', 'Powrót na tor 2 – w dwóch etapach', `${P.shuntRoute('Tm1', m ? 'tarczę Tm2' : 'tarczy Tm2')} – ${A('przebieg manewrowy')} z tarczy <b>Tm1</b> na tor 2. Skład (180 m) jest dłuższy niż miejsce przed <b>Tm2</b>, więc od razu nastaw też drugi etap: ${P.shuntRoute('Tm2', m ? 'semafor C2' : 'semafora C2')}. Skład przejedzie do C2 i stanie czołem na zachód – gotowy do odjazdu.`, cmd('shunt', sig('Tm1', 'white')),
     (sim, ctx) => (ctx.seen.has('route:Tm1-Tm2:set') && active(sim, 'Tm2-C2')) || !!sim.traffic.tasks.find((t) => t.id === 'podstaw-90202')?.done);
-  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce Stan – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan, kolejność dowolna). Od 08:15 skład będzie w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
+  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce Stan – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan, kolejność dowolna). Od 07:57 skład będzie w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
     (sim) => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = entry(sim, 90202)?.train || entry(sim, 90201)?.train; return !!t?.done && !!tr && tr.mode === 'train'; });
-  act('out-90202', 'Wyprawienie 90202', `<b>Wbl</b> do ${LIPa}, przebieg <b>C2 → szlak do ${LIPa}</b>. Pociąg odjedzie o 08:30.`, blockW,
+  act('out-90202', 'Wyprawienie 90202', `<b>Wbl</b> do ${LIPa}, przebieg <b>C2 → szlak do ${LIPa}</b>. Pociąg odjedzie o 08:12.`, blockW,
     (sim) => atNeighbour(sim, 90202) && !sim.blocks.get('W').occupied);
 
   /* ---------------- usterka semafora A → Sz ---------------- */
-  info('fault-intro', 'Usterka semafora', `O 08:33 semafor <b>A</b> ulegnie usterce (obwód świateł): przebieg wjazdowy da się nastawić i utwierdzić jak zwykle, ale semafor <b>nie wyświetli sygnału zezwalającego</b> i zostanie na „Stój”. O 08:40 od ${LIPa} przyjedzie <b>6105</b> na tor 1 i zatrzyma się przed A.<p>W takiej sytuacji dyżurny podaje ${A('Sz', 'sygnał zastępczy Sz')}: białe migające światło, na które maszynista mija semafor z prędkością do 20 km/h. Warunek: droga przebiegu utwierdzona i sprawdzona. Każde użycie Sz jest liczone.</p>`, sig('A'));
+  info('fault-intro', 'Usterka semafora', `O 08:15 semafor <b>A</b> ulegnie usterce (obwód świateł): przebieg wjazdowy da się nastawić i utwierdzić jak zwykle, ale semafor <b>nie wyświetli sygnału zezwalającego</b> i zostanie na „Stój”. O 08:22 od ${LIPa} przyjedzie <b>6105</b> na tor 1 i zatrzyma się przed A.<p>W takiej sytuacji dyżurny podaje ${A('Sz', 'sygnał zastępczy Sz')}: białe migające światło, na które maszynista mija semafor z prędkością do 20 km/h. Warunek: droga przebiegu utwierdzona i sprawdzona. Każde użycie Sz jest liczone.</p>`, sig('A'));
   act('in-6105-route', 'Przebieg mimo usterki', `<b>Poz</b> dla ${LIPa} i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
     (sim) => (active(sim, 'A-D1') && sim.ilk.signals.get('A').failed) || arrived(sim, 6105));
   act('sz-6105', 'Sygnał zastępczy', `Gdy pociąg stanie przed A (albo od razu, gdy droga jest utwierdzona): ${P.sz('A')}. Semafor pokaże <b>białe migające</b> światło (${A('Sz')}) – maszynista może jechać z prędkością do 20 km/h. Licznik Sz wzrośnie o 1 – każde użycie jest rejestrowane.`, cmd('sz', { ref: { kind: 'group', id: 'Sz', role: 'substitute' } }),
     (sim, ctx) => ctx.seen.has('sz:A') || arrived(sim, 6105));
-  act('out-6105', 'Reszta jak zwykle', `Po przyjeździe 6105: <b>Ko</b> (${LIP}), <b>Wbl</b> (${DEB}), przebieg <b>D1 → szlak do ${DEBa}</b>. Odjazd 08:42.`, blockE,
+  act('out-6105', 'Reszta jak zwykle', `Po przyjeździe 6105: <b>Ko</b> (${LIP}), <b>Wbl</b> (${DEB}), przebieg <b>D1 → szlak do ${DEBa}</b>. Odjazd 08:24.`, blockE,
     (sim) => atNeighbour(sim, 6105) && !sim.blocks.get('E').occupied);
 
   /* ---------------- usterka blokady do Lipna → zapowiadanie telefoniczne ---------------- */
-  info('phone-intro', 'Blokada bez łączności', `O 08:44 blokada do ${LIPa} traci łączność. Pociąg <b>6106</b> z ${DEBa} (08:51, tor 1) ma jechać dalej do ${LIPa} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
+  info('phone-intro', 'Blokada bez łączności', `O 08:26 blokada do ${LIPa} traci łączność. Pociąg <b>6106</b> z ${DEBa} (08:33, tor 1) ma jechać dalej do ${LIPa} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
   act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie: <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
     (sim) => arrived(sim, 6106) && blockFree(sim.blocks.get('E')));
   act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … wolna?”</b>, numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Droga … wolna” – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
     (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),
     { wrong: (sim) => (sim.blocks.get('W').neighbourReply?.phoneFor ? 'Pytanie nadane – czekaj na odpowiedź Lipna.' : null) });
-  act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak do ${LIPa}</b>. Odjazd 08:53.`, cmd('train', sig('C1')),
+  act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak do ${LIPa}</b>. Odjazd 08:35.`, cmd('train', sig('C1')),
     (sim) => active(sim, 'C1-W') || atNeighbour(sim, 6106) || sim.blocks.get('W').occupied);
   act('phone-departed', 'Zawiadomienie o odjeździe', `Gdy 6106 wyjedzie na szlak, nadaj do ${LIPa}: <b>„Pociąg nr … odjechał o …”</b> (numer 6106). Brak zawiadomienia jest punktowany ujemnie.`, { tab: 'lacznosc' },
     (sim) => { const b = sim.blocks.get('W'); return String(b.phone.departedTrain) === '6106' && b.phone.departedReported; });
