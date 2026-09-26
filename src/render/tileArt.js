@@ -76,6 +76,8 @@ export function button(cx, cy, r, color, ref, label, labelPos = 'right') {
     else if (labelPos === 'left') g.appendChild(text(cx - r - 3, cy + 0.5, label, { class: 'btn-label', 'text-anchor': 'end' }));
     else g.appendChild(text(cx, cy + r + 6, label, { class: 'btn-label' }));
   }
+  // Niewidoczne, większe pole trafienia (palec na iPadzie)
+  g.appendChild(el('circle', { class: 'btn-hit', cx, cy, r: Math.max(r + 5, 10) }));
   return g;
 }
 

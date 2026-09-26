@@ -19,6 +19,33 @@ const side = new SidePanel(document.getElementById('side'), sim);
 const help = new Help(document.getElementById('help'), sim);
 document.getElementById('btn-help').addEventListener('click', () => help.toggle());
 
+/* ---- pasek stanu: uzbrojenie i ostatni komunikat ---- */
+const statusEl = document.getElementById('status');
+let statusTimer = null;
+function setStatus(msg, level = 'info', ms = 6000) {
+  statusEl.textContent = msg;
+  statusEl.className = `status lv-${level}`;
+  clearTimeout(statusTimer);
+  if (ms) statusTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status'; }, ms);
+}
+const ARM_HINT = {
+  point: (a) => `Zwrotnica ${a.id} uzbrojona – naciśnij Zw (przestawienie) lub Zz (zamknięcie)`,
+  derailer: (a) => `Wykolejnica ${a.id} uzbrojona – naciśnij Zw`,
+  signal: (a) => `${a.color === 'white' ? 'Manewrowy' : 'Pociągowy'} początek przebiegu ${a.id} – naciśnij przycisk końca przebiegu`,
+  group: (a) => ({
+    'group-point': 'Zw – naciśnij przycisk zwrotnicy lub wykolejnicy',
+    'point-lock': 'Zz – naciśnij przycisk zwrotnicy (zamknięcie/otwarcie)',
+    'route-release': 'Pz – naciśnij przycisk sygnałowy przebiegu do zwolnienia',
+    'emergency-release': 'dPz – naciśnij przycisk sygnałowy (zwolnienie doraźne, licznik!)',
+    'substitute': 'Sz – naciśnij zielony przycisk semafora (sygnał zastępczy, licznik!)',
+  })[a.role] || `${a.id} uzbrojony`,
+};
+sim.bus.on('armed', (a) => {
+  if (!a) { if (statusEl.classList.contains('lv-armed')) setStatus('', 'info', 0); return; }
+  setStatus(ARM_HINT[a.kind]?.(a) || '', 'armed', 0);
+});
+sim.bus.on('log', (e) => { if (e.level !== 'info') setStatus(e.msg, e.level); });
+
 /* ---- zegar / prędkość ---- */
 const clockEl = document.getElementById('clock');
 const speedEl = document.getElementById('speed');
