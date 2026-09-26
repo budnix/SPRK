@@ -298,15 +298,15 @@ export function blankArt() {
  */
 export function blockArrowArt(g, kind, toWest) {
   const pointLeft = kind === 'out' ? toWest : !toWest;
-  const x0 = 2, x1 = CELL - 2;
-  // strzałka: korpus o połowie wysokości `h`, grot o połowie wysokości `H` i długości `tip`
-  const arrow = (h, H, tip) => pointLeft
-    ? `M${x0},${C} L${x0 + tip},${C - H} L${x0 + tip},${C - h} H${x1} V${C + h} H${x0 + tip} L${x0 + tip},${C + H} Z`
-    : `M${x1},${C} L${x1 - tip},${C - H} L${x1 - tip},${C - h} H${x0} V${C + h} H${x1 - tip} L${x1 - tip},${C + H} Z`;
-  // szary kanał w kształcie strzałki (obrys i wypełnienie jak kanał zwykłego toru), w nim lampka-strzałka
-  g.appendChild(el('path', { class: 'arrow-channel-edge', d: arrow(CHANNEL_W / 2 + 0.7, 9.2, 9) }));
-  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(CHANNEL_W / 2, 8.5, 9) }));
-  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(BAR_W / 2, 5.5, 8.2) });
+  // strzałka od grotu (`a`, przy krańcu pulpitu) do otwartego końca (`b`, łączy się z kanałem sąsiedniej kostki):
+  // korpus o połowie wysokości `h`, grot o połowie wysokości `H` i długości `tip`
+  const arrow = (a, b, h, H, tip) => pointLeft
+    ? `M${a},${C} L${a + tip},${C - H} L${a + tip},${C - h} H${b} V${C + h} H${a + tip} L${a + tip},${C + H} Z`
+    : `M${CELL - a},${C} L${CELL - a - tip},${C - H} L${CELL - a - tip},${C - h} H${CELL - b} V${C + h} H${CELL - a - tip} L${CELL - a - tip},${C + H} Z`;
+  // strzałka w kanale toru: obrys i wypełnienie jak kanał, ale węższa od kanału, żeby obwódka była widoczna także
+  // wzdłuż korpusu; w niej lampka-strzałka o tym samym kształcie, równo odsunięta od obwódki
+  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(2, 0, CHANNEL_W / 2 - 1, 8.5, 9) }));
+  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(4.6, 3.4, BAR_W / 2 - 0.4, 5.6, 8) });
   g.appendChild(lampEl);
   g.appendChild(text(C, 7, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;
