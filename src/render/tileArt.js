@@ -292,22 +292,22 @@ export function blankArt() {
 
 /** Skrzynka wskaźnika kierunku blokady: obrys w kształcie strzałki, w środku dwie okrągłe lampki (biała, czerwona). */
 /**
- * Strzałka blokady liniowej na kostce toru szlakowego – jak na pulpitach typu E: pasek świetlny w kanale toru ma kształt
- * strzałki (biały – pozwolenie / kierunek, czerwony – tor szlakowy zajęty), nad kanałem opis „wjazd” / „wyjazd”.
- * Dokłada się do gotowej kostki toru (`g`); zwraca lampkę-strzałkę. `toWest` – szlak leży na zachód.
+ * Strzałka blokady liniowej na kostce toru szlakowego – jak na pulpitach typu E: kanał toru w kształcie strzałki, w nim
+ * zamiast paska świetlnego krótka lampka-strzałka (biała – pozwolenie / kierunek, czerwona – tor szlakowy zajęty),
+ * nad kanałem opis „wjazd” / „wyjazd”. Dokłada się do gotowej kostki toru (`g`), usuwając jej pasek i śrubki;
+ * zwraca lampkę-strzałkę. `toWest` – szlak leży na zachód.
  */
 export function blockArrowArt(g, kind, toWest) {
   const pointLeft = kind === 'out' ? toWest : !toWest;
-  // strzałka od grotu (`a`, przy krańcu pulpitu) do otwartego końca (`b`, łączy się z kanałem sąsiedniej kostki):
-  // korpus o połowie wysokości `h`, grot o połowie wysokości `H` i długości `tip`
-  const arrow = (a, b, h, H, tip) => pointLeft
+  // zwykły prosty kanał toru zostaje; zamiast paska świetlnego jest w nim czarna strzałka o grubości paska,
+  // z grotem mieszczącym się w kanale (bez własnego kanału i obwódki)
+  for (const e of g.querySelectorAll('.bar, .screw')) e.remove();
+  // obrys lampki (.lamp, 0,6) dolicza się do grubości – korpus ma dokładnie grubość paska toru
+  const h = BAR_W / 2 - 0.3, H = CHANNEL_W / 2 - 0.9, tip = 7, a = 5, b = CELL - 5;
+  const d = pointLeft
     ? `M${a},${C} L${a + tip},${C - H} L${a + tip},${C - h} H${b} V${C + h} H${a + tip} L${a + tip},${C + H} Z`
-    : `M${CELL - a},${C} L${CELL - a - tip},${C - H} L${CELL - a - tip},${C - h} H${CELL - b} V${C + h} H${CELL - a - tip} L${CELL - a - tip},${C + H} Z`;
-  // kanał w kształcie strzałki: korpus tej szerokości co kanał toru (obwódka korpusu pokrywa się z obwódką kanału –
-  // jeden kształt, bez „drugiej strzałki”), grot wystaje poza kanał i ma obwódkę dookoła, także na barkach;
-  // w środku lampka-strzałka: korpus tej szerokości co pasek świetlny toru, grot równo odsunięty od obwódki
-  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(3, 0, CHANNEL_W / 2 + 0.2, 8.2, 8.5) }));
-  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(5.4, 3.4, BAR_W / 2, 5.8, 7.6) });
+    : `M${b},${C} L${b - tip},${C - H} L${b - tip},${C - h} H${a} V${C + h} H${b - tip} L${b - tip},${C + H} Z`;
+  const lampEl = el('path', { class: 'lamp arrow-lamp', d });
   g.appendChild(lampEl);
   g.appendChild(text(C, 7, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;

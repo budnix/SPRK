@@ -119,7 +119,10 @@ export class DeskRenderer {
           // na kostkach ze strzałką blokady nazwa sąsiedniego posterunku idzie na trzecią kostkę od krańca
           const t = arrow ? { ...tile, text: undefined, endButtonBelow: true } : nameAt.has(key) ? { ...tile, text: nameAt.get(key) } : tile;
           out = art.trackArt(t, ctx);
-          if (arrow) blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+          if (arrow) {
+            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+            out.refs.slits = out.refs.slits.filter((e) => e.isConnected); // kostka kierunkowa bez paska odcinka
+          }
           break;
         }
         case 'buffer': out = art.bufferArt(tile, ctx); break;
