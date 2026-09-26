@@ -166,6 +166,7 @@ export class Topology {
         points: [...firstPoints],
         sections: [start.section],
         startSignal: sig,
+        heading: sig.dir,
       }, results, new Set([start._key]));
     }
     return results;
@@ -199,6 +200,9 @@ export class Topology {
       : def.exits(n, inPort, { position: n.type === 'point' ? (inPort === n.straight ? '+' : '-') : '+' });
 
     for (const op of exits) {
+      // Przebieg nie zmienia kierunku jazdy (brak „zawracania” przez drabinę rozjazdów)
+      const h = heading(op);
+      if (h && acc.heading && h !== acc.heading) continue;
       const points = [...acc.points];
       if (n.type === 'point') {
         const rp = def.requiredPosition(n, inPort, op);

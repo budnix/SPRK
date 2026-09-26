@@ -163,6 +163,15 @@ export class Train {
         tile = t; inPort = e.dir; outPort = t._def.exits(t, inPort, null)[0];
         seg = { tile, inPort, outPort, len: t._len, virtual: null };
       } else {
+        // Miejsce zatrzymania przy peronie: 12 m przed semaforem końcowym toru peronowego
+        // (lub 15 m przed końcem odcinka peronowego bez semafora)
+        if (this.#shouldStopAt(tile)) {
+          const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
+          const nbT = this.topo.neighbour(tile, outPort);
+          const sectionEnds = !nbT || nbT.tile.section !== tile.section;
+          if (sigHere) constraints.push({ dist: dist - 12, speed: 0, reason: 'peron', kind: 'platform', tile });
+          else if (sectionEnds) constraints.push({ dist: dist - 15, speed: 0, reason: 'peron', kind: 'platform', tile });
+        }
         // Sygnalizator przy wyjeździe z kostki `tile` portem `outPort`
         for (const s of this.topo.signalsAt(tile, outPort)) {
           const sig = this.ilk.signals.get(s.id);
@@ -197,11 +206,6 @@ export class Train {
         }
         const lim = this.#tileLimit(tile, inPort, outPort);
         if (lim < Infinity) constraints.push({ dist, speed: lim, reason: `zwrotnica ${tile.id}`, kind: 'limit' });
-        // Peron – miejsce zatrzymania
-        if (this.#shouldStopAt(tile)) {
-          const stopDist = dist + this.#platformStopOffset(tile);
-          if (stopDist > 0) constraints.push({ dist: stopDist, speed: 0, reason: 'peron', kind: 'platform', tile });
-        }
         if (!outPort) { constraints.push({ dist: dist + tile._len, speed: 0, reason: 'koniec toru', kind: 'end' }); return constraints; }
       }
       dist += tile._len;
@@ -224,30 +228,6 @@ export class Train {
       // Zatrzymanie na innym torze niż planowany, jeżeli ma peron – dopuszczalne
     }
     return true;
-  }
-
-  /** Odległość od początku kostki peronowej do miejsca zatrzymania (koniec odcinka − margines). */
-  #platformStopOffset(tile) {
-    const sec = this.ilk.sections.get(tile.section);
-    const total = sec.tiles.reduce((a, t) => a + t._len, 0);
-    // pociąg staje tak, by czoło było ~15 m przed końcem odcinka lub cały pociąg zmieścił się
-    const margin = Math.max(15, total - Math.max(this.length + 20, total * 0.7));
-    // pozycja czoła na odcinku: od wjazdu na odcinek
-    const idx = this.#tileIndexInSection(tile);
-    let before = 0;
-    for (let i = 0; i < idx; i++) before += sec._ordered[i]._len;
-    return Math.max(0, total - margin - before);
-  }
-
-  #tileIndexInSection(tile) {
-    const sec = this.ilk.sections.get(tile.section);
-    if (!sec._ordered || sec._orderedDir !== this.direction) {
-      // Uporządkuj kostki odcinka wzdłuż kierunku jazdy (po x)
-      const dirE = ['E', 'NE', 'SE'].includes(this.direction);
-      sec._ordered = [...sec.tiles].sort((a, b) => dirE ? a.x - b.x : b.x - a.x);
-      sec._orderedDir = this.direction;
-    }
-    return sec._ordered.indexOf(tile);
   }
 
   /** Krok symulacji. */
