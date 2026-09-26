@@ -26,6 +26,12 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
     const steps = missionSteps(view);
     assert.ok(steps.length > 30, `${view}: za mało kroków`);
     assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
+    // każdy krok z Poz uprzedza, że pozwolenie daje się dopiero na żądanie sąsiada (lampka / napis „żąd.”) –
+    // krok może zacząć się kilka minut przed zgłoszeniem pociągu
+    for (const id of ['poz-6101', 'poz-6102', 'passing-42101', 'cross-poz', 'in-90201', 'in-6105-route', 'in-6106']) {
+      const st = steps.find((s) => s.id === id);
+      assert.ok(st && /żąd\./.test(st.text + (st.tip || '')), `${view}: krok ${id} nie wspomina o żądaniu pozwolenia`);
+    }
     // bez ćwiczeń przebiegów bez pociągu (przebieg bez pociągu wymagałby obsługi blokady z sąsiadem)
     assert.ok(!steps.some((s) => s.id.startsWith('lesson-')), `${view}: kroki ćwiczeń`);
     for (const s of steps) {

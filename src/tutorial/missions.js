@@ -36,6 +36,7 @@ function phrases(view) {
     trainRouteMenu: (s, e) => m
       ? `kliknij semafor <b>${s}</b> – otworzy się menu elementu – wybierz „Nastawienie przebiegu pociągowego od ${s} …”, a potem kliknij semafor <b>${e}</b>`
       : `naciśnij zielony przycisk semafora <b>${s}</b>, potem zielony przycisk semafora <b>${e}</b>`,
+    req: (name) => `gdy ${name} zgłosi pociąg – zamiga ${m ? 'napis' : 'lampka'} „żąd.”`,
     exitEnd: (name) => m ? `<b>strzałkę szlaku do ${name}</b> na krańcu toru` : `<b>zielony przycisk końca przebiegu</b> na kostce wyjazdu na szlak do ${name}`,
     shuntRoute: (s, e) => m
       ? `<b>PRZEBIEG MANEWROWY</b> → semafor <b>${s}</b> (ma Ms2) → <b>${e}</b>`
@@ -91,7 +92,7 @@ export function missionSteps(view) {
     (sim) => atNeighbour(sim, 6101) && !sim.blocks.get('E').occupied);
 
   /* ---------------- pociąg 2: 6102 z Dębna, tor 1, dalej do Lipna (menu elementu) ---------------- */
-  act('poz-6102', 'Pociąg z drugiej strony', `Teraz ${DEB} żąda pozwolenia dla pociągu <b>6102</b> (tor 1, przyjazd 07:17). ${P.blockPress('E', DEBa, 'Poz')}.`, blockE,
+  act('poz-6102', 'Pociąg z drugiej strony', `Zaraz ${DEB} zażąda pozwolenia dla pociągu <b>6102</b> (tor 1, przyjazd 07:17) – zamiga ${m ? 'napis' : 'lampka'} „żąd.”. Wtedy: ${P.blockPress('E', DEBa, 'Poz')}.`, blockE,
     (sim) => sim.blocks.get('E').direction === 'in' || arrived(sim, 6102));
   act('route-6102', m ? 'Przebieg z menu elementu' : 'Przebieg wjazdowy od B', `Wjazd od ${DEBa} prowadzi semafor <b>B</b>, tor 1 kończy semafor <b>C1</b>. ${m ? 'Tym razem użyj menu elementu: ' : ''}${P.trainRouteMenu('B', 'C1')}.`, sig('B'),
     (sim) => active(sim, 'B-C1') || arrived(sim, 6102),
@@ -102,7 +103,7 @@ export function missionSteps(view) {
     (sim) => atNeighbour(sim, 6102) && !sim.blocks.get('W').occupied);
 
   /* ---------------- pociąg 3: 42101 przelot ---------------- */
-  act('passing-42101', 'Przelot towarowego', `Pociąg towarowy <b>42101</b> jedzie z ${LIPa} do ${DEBa} <b>bez zatrzymania</b> (${A('przelot')}, 07:29). Przygotuj całą drogę zawczasu: <b>Poz</b> dla ${LIPa}, <b>Wbl</b> do ${DEBa}, przebieg <b>A → D1</b> i przebieg <b>D1 → szlak do ${DEBa}</b>.<p>Gdy oba przebiegi są nastawione, semafor A pokaże sygnał zezwalający bez ograniczeń (S2), a nie „następny semafor Stój” (S5) – pociąg nie będzie zwalniał.</p>`, blockW,
+  act('passing-42101', 'Przelot towarowego', `Pociąg towarowy <b>42101</b> jedzie z ${LIPa} do ${DEBa} <b>bez zatrzymania</b> (${A('przelot')}, 07:29). Przygotuj całą drogę zawczasu: <b>Poz</b> dla ${LIPa} (${P.req(LIP)}), <b>Wbl</b> do ${DEBa}, przebieg <b>A → D1</b> i przebieg <b>D1 → szlak do ${DEBa}</b>.<p>Gdy oba przebiegi są nastawione, semafor A pokaże sygnał zezwalający bez ograniczeń (S2), a nie „następny semafor Stój” (S5) – pociąg nie będzie zwalniał.</p>`, blockW,
     (sim, ctx) => (active(sim, 'A-D1') && active(sim, 'D1-E')) || atNeighbour(sim, 42101) || ctx.seen.has('step:passing-42101'),
     { tip: 'Kolejność: Poz (Lipno) → A → D1, potem Wbl (Dębno) → D1 → szlak do Dębna.' });
   act('after-42101', 'Ko po przelocie', `Gdy 42101 minie stację w całości: ${P.blockPress('W', LIPa, 'Ko')}. Poczekaj, aż dojedzie do ${DEBa}.`, blockW,
@@ -110,7 +111,7 @@ export function missionSteps(view) {
 
   /* ---------------- krzyżowanie: 6103 (tor 2) i 6104 (tor 1) ---------------- */
   info('crossing-intro', 'Krzyżowanie', `Zaraz przyjadą dwa pociągi naprzeciw siebie: <b>6103</b> z ${LIPa} (07:40, tor <b>2</b>) i <b>6104</b> z ${DEBa} (07:41, tor <b>1</b>). To ${A('krzyżowanie')} – każdy musi stanąć na innym torze, bo dalej pojadą tym samym torem szlakowym.<p>Zwrotnica 1 dla 6103 ustawi się na tor zwrotny (prędkość 40 km/h). Obsłuż oba pozwolenia i oba przebiegi – drugi dopiero, gdy pierwszy pociąg minie zwrotnicę 1.</p>`, { el: '#desk' });
-  act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB}.`, blockW,
+  act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB} – każdemu, gdy zgłosi swój pociąg (miga ${m ? 'napis' : 'lampka'} „żąd.”).`, blockW,
     (sim) => (sim.blocks.get('W').direction === 'in' || arrived(sim, 6103)) && (sim.blocks.get('E').direction === 'in' || arrived(sim, 6104)));
   act('cross-routes', 'Dwa przebiegi', `Nastaw <b>A → D2</b> (6103 na tor 2). Przebieg <b>B → C1</b> (6104 na tor 1) urządzenia odrzucą, dopóki zwrotnica 1 jest utwierdzona w przebiegu na tor 2: ${A('droga ochronna')} za semaforem C1 leży właśnie na zwrotnicy 1. Nastaw go, gdy 6103 minie zwrotnicę i odcinek Iz1 się zwolni – 6104 chwilę poczeka przed semaforem B, to normalne przy krzyżowaniu.`, sig('A'),
     (sim, ctx) => (ctx.seen.has('route:A-D2:set') || arrived(sim, 6103)) && (ctx.seen.has('route:B-C1:set') || arrived(sim, 6104)),
@@ -120,9 +121,10 @@ export function missionSteps(view) {
 
   /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
   info('shunt-intro', 'Pociąg zdawczy', `O 07:52 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });
-  act('in-90201', 'Przyjęcie zdawczego', `<b>Poz</b> dla ${LIPa}, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
+  act('in-90201', 'Przyjęcie zdawczego', `Gdy ${LIP} zgłosi zdawczy (zamiga ${m ? 'napis' : 'lampka'} „żąd.”): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
-    { wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
+    { tip: `${LIP} zażąda pozwolenia dopiero, gdy 6104 tam dojedzie i szlak się zwolni – kilka minut po jego odjeździe. Do tego czasu Poz nie zadziała.`,
+      wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
   act('shunt-mode', 'Jazda manewrowa', `Skład stoi na torze 2 i zakończył bieg. Przełącz go w ${A('jazda manewrowa', 'jazdę manewrową')}: zakładka <b>Stan</b> → Manewry → przycisk <b>„jazda manewrowa”</b> przy pociągu 90201.`, { tab: 'stan' },
     (sim) => entry(sim, 90201)?.train?.mode === 'shunt');
   act('shunt-route', 'Przebieg manewrowy na tor 3', `Nastaw ${A('przebieg manewrowy')} z semafora <b>D2</b> (ma ${A('Ms2')}) na koniec toru 3: ${P.shuntRoute('D2', m ? 'koniec toru 3 (kT3, kółko przy koźle)' : 'końca toru 3 (kT3 przy koźle)')}. Zwrotnica 3 ustawi się na tor 3, ${A('wykolejnica')} Wk1 zdejmie się sama, odcinki ${m ? 'zżółkną' : 'zaświecą'}, a D2 pokaże Ms2. Skład ruszy sam.`, cmd('shunt', sig('D2', 'white')),
@@ -140,7 +142,7 @@ export function missionSteps(view) {
 
   /* ---------------- usterka semafora A → Sz ---------------- */
   info('fault-intro', 'Usterka semafora', `O 08:15 semafor <b>A</b> ulegnie usterce (obwód świateł): przebieg wjazdowy da się nastawić i utwierdzić jak zwykle, ale semafor <b>nie wyświetli sygnału zezwalającego</b> i zostanie na „Stój”. O 08:22 od ${LIPa} przyjedzie <b>6105</b> na tor 1 i zatrzyma się przed A.<p>W takiej sytuacji dyżurny podaje ${A('Sz', 'sygnał zastępczy Sz')}: białe migające światło, na które maszynista mija semafor z prędkością do 20 km/h. Warunek: droga przebiegu utwierdzona i sprawdzona. Każde użycie Sz jest liczone.</p>`, sig('A'));
-  act('in-6105-route', 'Przebieg mimo usterki', `<b>Poz</b> dla ${LIPa} i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
+  act('in-6105-route', 'Przebieg mimo usterki', `Gdy ${LIP} zgłosi 6105 (zamiga ${m ? 'napis' : 'lampka'} „żąd.”): <b>Poz</b> i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
     (sim) => (active(sim, 'A-D1') && sim.ilk.signals.get('A').failed) || arrived(sim, 6105));
   act('sz-6105', 'Sygnał zastępczy', `Gdy pociąg stanie przed A (albo od razu, gdy droga jest utwierdzona): ${P.sz('A')}. Semafor pokaże <b>białe migające</b> światło (${A('Sz')}) – maszynista może jechać z prędkością do 20 km/h. Licznik Sz wzrośnie o 1 – każde użycie jest rejestrowane.`, cmd('sz', { ref: { kind: 'group', id: 'Sz', role: 'substitute' } }),
     (sim, ctx) => ctx.seen.has('sz:A') || arrived(sim, 6105));
@@ -149,7 +151,7 @@ export function missionSteps(view) {
 
   /* ---------------- usterka blokady do Lipna → zapowiadanie telefoniczne ---------------- */
   info('phone-intro', 'Blokada bez łączności', `O 08:26 blokada do ${LIPa} traci łączność. Pociąg <b>6106</b> z ${DEBa} (08:33, tor 1) ma jechać dalej do ${LIPa} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
-  act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie: <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
+  act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie – gdy ${DEB} zgłosi 6106 (zamiga ${m ? 'napis' : 'lampka'} „żąd.”): <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
     (sim) => arrived(sim, 6106) && blockFree(sim.blocks.get('E')));
   act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … wolna?”</b>, numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Droga … wolna” – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
     (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),
