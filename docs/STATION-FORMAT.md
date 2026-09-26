@@ -50,12 +50,14 @@ Dodatki na kostce torowej:
 ## Odcinki izolowane (`sections`)
 
 ```js
-T1: { length: 520, kind: 'station', track: '1', platform: true }
+T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
 ```
 
 * `length` – długość w metrach (rozkładana na kostki proporcjonalnie do geometrii),
 * `kind` – `approach` (zbliżania), `point` (zwrotnicowy), `station`, `siding`, `plain`,
-* `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się).
+* `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
+  (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą (wyspowy między dwoma torami
+  peronowymi, inaczej boczny).
 
 ## Szlaki (`exits`)
 

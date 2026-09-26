@@ -162,11 +162,25 @@ export class ScreenRenderer {
       const left = sig.filter((t) => t.x < mid).map((t) => t.x), right = sig.filter((t) => t.x >= mid).map((t) => t.x);
       return [left.length ? Math.max(x0, Math.max(...left) + 1) : x0, right.length ? Math.min(x1, Math.min(...right) - 1) : x1];
     };
-    const rect = (x0, x1, yRow, cls, hCells = 0.42) => {
+    /** Nazwa peronu z pola `platform` odcinka: napis („Peron II”), liczba (2 → „Peron II”) lub true („Peron”). */
+    const nameOf = (...spans) => {
+      const vals = spans.map((sp) => this.station.sections[sp.sid].platform);
+      const v = vals.find((x) => typeof x === 'string') ?? vals.find((x) => typeof x === 'number');
+      return typeof v === 'string' ? v : typeof v === 'number' ? `Peron ${['I','II','III','IV','V','VI','VII','VIII'][v - 1] || v}` : 'Peron';
+    };
+    const rect = (x0, x1, yRow, cls, hCells = 0.42, label = 'Peron') => {
       if (x1 - x0 < 2) return;
       const h = CELL * this.ry * hCells;
-      const r = el('rect', { class: `platform ${cls}`, x: (x0 - this.x0) * CELL + 3, y: (yRow * CELL + C) * this.ry - h / 2, width: (x1 - x0 + 1) * CELL - 6, height: h, rx: 2 });
+      const y = (yRow * CELL + C) * this.ry;
+      const r = el('rect', { class: `platform ${cls}`, x: (x0 - this.x0) * CELL + 3, y: y - h / 2, width: (x1 - x0 + 1) * CELL - 6, height: h, rx: 2 });
       this.layerTracks.appendChild(r);
+      // napis peronu: na środku, a gdy tam leży opis toru (kostka label w rzędach peronu) – bliżej końca prostokątu
+      const rows = [Math.floor(yRow), Math.ceil(yRow)];
+      const labels = this.station.tiles.filter((t) => t.type === 'label' && rows.includes(t.y) && t.x + (t.span || 1) - 1 >= x0 && t.x <= x1);
+      const clash = (cx) => labels.some((t) => t.x - 2 <= cx + 2 && t.x + (t.span || 1) + 1 >= cx - 2);
+      const mid = (x0 + x1) / 2;
+      const cx = [mid, x0 + 2.5, x1 - 2.5].find((c) => !clash(c)) ?? mid;
+      this.layerTracks.appendChild(text((cx + 0.5 - this.x0) * CELL, y + 2.2, label, { class: 'scr-text platform-label' }));
     };
     spans.sort((a, b) => a.y - b.y);
     for (const a of spans) {
@@ -180,13 +194,13 @@ export class ScreenRenderer {
         if (free) {
           let [c0, c1] = [X0, X1];
           for (let y = a.y + 1; y < b.y; y++) { const [q0, q1] = clip(y, X0, X1); c0 = Math.max(c0, q0); c1 = Math.min(c1, q1); }
-          rect(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? 0.42 : 1.1);
+          rect(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? 0.42 : 1.1, nameOf(a, b));
           a.done = b.done = true;
           continue;
         }
       }
       const side = !rowBusy(a.y - 1, a.x0, a.x1) ? a.y - 1 : !rowBusy(a.y + 1, a.x0, a.x1) ? a.y + 1 : null;
-      if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); rect(c0, c1, side, 'side'); }
+      if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); rect(c0, c1, side, 'side', 0.42, nameOf(a)); }
       a.done = true;
     }
   }

@@ -86,6 +86,7 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   });
   expect(inside).toBe(true);
   expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
+  await expect(page.locator('text.platform-label').first()).toHaveText(/Peron II|Peron I/); // nazwa peronu na prostokącie
   const before = await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'));
   expect(before).toContain('scale(1.4)');
   await page.click('#btn-menu');

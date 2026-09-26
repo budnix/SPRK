@@ -1,9 +1,9 @@
 /**
  * Sopot – stacja na liniach 202 (Gdańsk – Stargard) i 250 (SKM), wg planu schematycznego stacji (VI 2023).
  *
- * Pulpit 112×16. Rzędy: 2 – tor 6 (odstawczy, kozły 6b/6a), 4 – linia 202 t.1 → tor 2a → tor 2 (peron 2),
- * 6 – tor 4 (odstawczy, kozły 4b/4a), 8 – linia 202 t.2 → tor 1a → tor 1 (peron 2), 10 – linia 250 t.502 → tor 502a
- * (peron 1 SKM), 12 – linia 250 t.501 → tor 501a, 14 – tor 13 (bocznica z wykolejnicą Wk7).
+ * Pulpit 112×16. Rzędy: 2 – tor 6 (odstawczy, kozły 6b/6a), 4 – linia 202 t.1 → tor 2a → tor 2 (peron II),
+ * 6 – tor 4 (odstawczy, kozły 4b/4a), 8 – linia 202 t.2 → tor 1a → tor 1 (peron II), 10 – linia 250 t.502 → tor 502a
+ * (peron I SKM), 12 – linia 250 t.501 → tor 501a, 14 – tor 13 (bocznica z wykolejnicą Wk7).
  *
  * Stacja jest długa: przejazd toru 202 to trzy przebiegi (A → H, H → O, O → szlak; z drugiej strony S → L, L → C,
  * C → szlak). Semafory M/L (na wjeździe z torów 2/1 do grupy 2a/1a) i L502/L501 wg planu.
@@ -77,7 +77,7 @@ tiles.push(SIG(27, 1, 'F', 'semafor', { x: 27, y: 2 }, 'W', { shunting: true }),
 tiles.push(SIG(55, 1, 'G', 'semafor', { x: 54, y: 2 }, 'E', { shunting: true }), SIG(55, 3, 'H', 'semafor', { x: 54, y: 4 }, 'E', { shunting: true }),
   SIG(55, 5, 'J', 'semafor', { x: 54, y: 6 }, 'E', { shunting: true }), SIG(55, 7, 'K', 'semafor', { x: 54, y: 8 }, 'E', { shunting: true }));
 
-// ---- głowica środkowa (32–35), semafory M/L, tory 2/1 przy peronie 2 ----
+// ---- głowica środkowa (32–35), semafory M/L, tory 2/1 przy peronie II ----
 sec('E6a', { length: 40, kind: 'plain' }); tiles.push(...H(55, 56, 2, 'E6a'));
 sec('Iz34', { length: 80, kind: 'point' }); tiles.push(P(57, 2, 'Zw34', '34', 'W', 'E', 'SE', 'Iz34'), T(58, 3, ['NW', 'SE'], 'Iz34'), P(59, 4, 'Zw35', '35', 'E', 'W', 'NW', 'Iz34'));
 sec('T6a', { length: 60, kind: 'siding', track: '6a' }); tiles.push(...H(58, 59, 2, 'T6a'), BUF(60, 2, 'W', 'T6a', 'kT6a'));
@@ -89,9 +89,9 @@ sec('T4a', { length: 60, kind: 'siding', track: '4a' }); tiles.push(...H(58, 59,
 sec('E1a', { length: 80, kind: 'plain' }); tiles.push(...H(55, 58, 8, 'E1a'));
 sec('E1b', { length: 60, kind: 'plain' }); tiles.push(...H(60, 62, 8, 'E1b'));
 tiles.push(SIG(63, 3, 'M', 'semafor', { x: 63, y: 4 }, 'W', { shunting: true }), SIG(63, 9, 'L', 'semafor', { x: 63, y: 8 }, 'W', { shunting: true }));
-sec('T2', { length: 600, kind: 'station', track: '2', platform: true }); tiles.push(...H(63, 84, 4, 'T2'));
-sec('T1', { length: 578, kind: 'station', track: '1', platform: true }); tiles.push(...H(63, 84, 8, 'T1'));
-tiles.push({ x: 70, y: 5, type: 'label', text: 'tor 2 · Peron 2', span: 4, size: 8 }, { x: 70, y: 7, type: 'label', text: 'tor 1 · Peron 2', span: 4, size: 8 });
+sec('T2', { length: 600, kind: 'station', track: '2', platform: 'Peron II' }); tiles.push(...H(63, 84, 4, 'T2'));
+sec('T1', { length: 578, kind: 'station', track: '1', platform: 'Peron II' }); tiles.push(...H(63, 84, 8, 'T1'));
+tiles.push({ x: 70, y: 5, type: 'label', text: 'tor 2 · Peron II', span: 4, size: 8 }, { x: 70, y: 7, type: 'label', text: 'tor 1 · Peron II', span: 4, size: 8 });
 tiles.push(SIG(85, 3, 'O', 'semafor', { x: 84, y: 4 }, 'E', { shunting: true }), SIG(85, 7, 'P', 'semafor', { x: 84, y: 8 }, 'E', { shunting: true }));
 
 // ---- wschód: głowica 202 (41–45), semafory wjazdowe R, S ----
@@ -109,7 +109,7 @@ tiles.push(SIG(99, 9, 'Tm11', 'tm', { x: 99, y: 8 }, 'W'));
 approach(101, 111, 4, 'ZbR', 'OR1', 'Orłowo 202 t.1', false); approach(101, 111, 8, 'ZbS', 'OR2', 'Orłowo 202 t.2', false);
 tiles.push(SIG(101, 3, 'R', 'semafor', { x: 101, y: 4 }, 'W', { entry: true }), SIG(101, 9, 'S', 'semafor', { x: 101, y: 8 }, 'W', { entry: true }));
 
-// ---- SKM: tory 502/501 → 502a/501a (peron 1), tor 13, głowica 51–54 ----
+// ---- SKM: tory 502/501 → 502a/501a (peron I), tor 13, głowica 51–54 ----
 sec('S502a', { length: 300, kind: 'plain' }); tiles.push(...H(28, 45, 10, 'S502a'));
 sec('S501a', { length: 330, kind: 'plain' }); tiles.push(...H(28, 47, 12, 'S501a'));
 sec('Iz36', { length: 80, kind: 'point' }); tiles.push(P(46, 10, 'Zw36', '36', 'W', 'E', 'SE', 'Iz36'), T(47, 11, ['NW', 'SE'], 'Iz36'), P(48, 12, 'Zw37', '37', 'E', 'W', 'NW', 'Iz36'));
@@ -125,9 +125,9 @@ sec('T13', { length: 320, kind: 'siding', track: '13' }); tiles.push(...H(44, 56
 tiles.push(SIG(56, 15, 'Tm13', 'tm', { x: 56, y: 14 }, 'E'), { x: 48, y: 15, type: 'label', text: 'tor 13', span: 2, size: 7 });
 sec('S501d', { length: 40, kind: 'plain' }); tiles.push(...H(61, 62, 12, 'S501d'));
 tiles.push(SIG(63, 11, 'L502', 'semafor', { x: 63, y: 10 }, 'W', { shunting: true }), SIG(63, 13, 'L501', 'semafor', { x: 63, y: 12 }, 'W', { shunting: true }));
-sec('T502a', { length: 220, kind: 'station', track: '502', platform: true }); tiles.push(...H(63, 84, 10, 'T502a'));
-sec('T501a', { length: 220, kind: 'station', track: '501', platform: true }); tiles.push(...H(63, 84, 12, 'T501a'));
-tiles.push({ x: 70, y: 11, type: 'label', text: 'tor 502a · Peron 1 (SKM)', span: 5, size: 8 }, { x: 70, y: 13, type: 'label', text: 'tor 501a · Peron 1 (SKM)', span: 5, size: 8 });
+sec('T502a', { length: 220, kind: 'station', track: '502', platform: 'Peron I (SKM)' }); tiles.push(...H(63, 84, 10, 'T502a'));
+sec('T501a', { length: 220, kind: 'station', track: '501', platform: 'Peron I (SKM)' }); tiles.push(...H(63, 84, 12, 'T501a'));
+tiles.push({ x: 70, y: 11, type: 'label', text: 'tor 502a · Peron I (SKM)', span: 5, size: 8 }, { x: 70, y: 13, type: 'label', text: 'tor 501a · Peron I (SKM)', span: 5, size: 8 });
 tiles.push(SIG(85, 11, 'R502', 'semafor', { x: 84, y: 10 }, 'E', { shunting: true }), SIG(85, 13, 'R501', 'semafor', { x: 84, y: 12 }, 'E', { shunting: true }));
 sec('S502e', { length: 80, kind: 'plain' }); tiles.push(...H(85, 90, 10, 'S502e'));
 sec('S501e', { length: 60, kind: 'plain' }); tiles.push(...H(85, 88, 12, 'S501e'));
@@ -156,7 +156,7 @@ export default {
   name: 'Sopot',
   srk: 'komputerowe',
   srkInfo: 'Komputerowe (Ebilock 950 / EbiScreen). Od modernizacji E65 (2011–2015) tory linii 202 są obiektem zdalnego sterowania LCS Gdynia (dawna nastawnia „Sp” zlikwidowana, „Sp1” rezerwowa); tory SKM 501/502 – obiekt zdalnego sterowania „Sp-SKM” nastawni G-SKM (Gdańsk Główny, PKP SKM). W symulatorze oba obszary obsługuje jedno stanowisko na miejscu.',
-  description: 'Stacja na liniach 202 Gdańsk – Stargard i 250 SKM. Grupa zachodnia (tory 6, 2a, 4, 1a), peron 2 (tory 2/1), peron 1 SKM (502a/501a), tor 13 z wykolejnicą Wk7. Przejazd pociągu to trzy przebiegi. Numeracja rozjazdów i semaforów z planu stacji (2023).',
+  description: 'Stacja na liniach 202 Gdańsk – Stargard i 250 SKM. Grupa zachodnia (tory 6, 2a, 4, 1a), peron II (tory 2/1), peron I SKM (502a/501a), tor 13 z wykolejnicą Wk7. Przejazd pociągu to trzy przebiegi. Numeracja rozjazdów i semaforów z planu stacji (2023).',
   startTime: '05:55',
   desk: { cols: 112, rows: 16 },
 
@@ -200,7 +200,7 @@ export default {
   ],
 
   scenarios: [
-    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min, regionalne i IC/TLK z postojem przy peronie 2, odstawianie składów na tor 13 i tor 4 i powrót jako nowe pociągi.', endTime: '08:15' },
+    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min, regionalne i IC/TLK z postojem przy peronie II, odstawianie składów na tor 13 i tor 4 i powrót jako nowe pociągi.', endTime: '08:15' },
     { id: 'usterka-gd', name: 'Usterka blokady od Gdańska', description: 'Blokada toru 2 linii 202 od Gdańska Oliwy bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'GD2', at: '06:40', duration: 40 }], disruptions: 'none' },
     { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
   ],

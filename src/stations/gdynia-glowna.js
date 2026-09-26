@@ -2,8 +2,8 @@
  * Stacja Gdynia Główna – okręg pasażerski (wg planu schematycznego stacji, stan X 2024).
  *
  * Odwzorowanie na pulpicie kostkowym (schemat, nie mapa):
- *  - tory peronowe 1–10 (perony 5: tory 10/9, 4: tory 7/6, 3: tory 5/4, 2: tory 2/1; tory 8 i 3 bez peronu),
- *    tory SKM 501/502 (peron 1 SKM),
+ *  - tory peronowe 1–10 (perony V: tory 10/9, 4: tory 7/6, 3: tory 5/4, 2: tory 2/1; tory 8 i 3 bez peronu),
+ *    tory SKM 501/502 (peron I SKM),
  *  - głowica zachodnia (od Gdańska): linie 202 tor 1/2 (semafory wjazdowe A1, A2), 201 (B1, tor 10),
  *    250 SKM 501/502 (A501, A502); rozjazdy 3, 4, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27,
  *  - głowica wschodnia (do Chyloni / Portu): linia 202 (semafory wjazdowe A, B), 250 SKM (L501, L502),
@@ -22,9 +22,9 @@ const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id
 
 const TRACKS = [
   // [nr, y, dł. użyteczna, peron, x początku toru peronowego (za głowicą zachodnią)]
-  ['10', 2, 501, 'Peron 5', 14], ['9', 4, 531, 'Peron 5', 12], ['8', 6, 527, null, 11], ['7', 8, 497, 'Peron 4', 14],
-  ['6', 10, 430, 'Peron 4', 16], ['5', 12, 409, 'Peron 3', 18], ['4', 14, 430, 'Peron 3', 20], ['3', 16, 371, null, 22],
-  ['2', 18, 294, 'Peron 2', 24], ['1', 20, 292, 'Peron 2', 26], ['502', 22, 300, 'Peron 1 SKM', 24], ['501', 24, 300, 'Peron 1 SKM', 19],
+  ['10', 2, 501, 'Peron V', 14], ['9', 4, 531, 'Peron V', 12], ['8', 6, 527, null, 11], ['7', 8, 497, 'Peron IV', 14],
+  ['6', 10, 430, 'Peron IV', 16], ['5', 12, 409, 'Peron III', 18], ['4', 14, 430, 'Peron III', 20], ['3', 16, 371, null, 22],
+  ['2', 18, 294, 'Peron II', 24], ['1', 20, 292, 'Peron II', 26], ['502', 22, 300, 'Peron I SKM', 24], ['501', 24, 300, 'Peron I SKM', 19],
 ];
 // koniec toru peronowego (x) i początek odcinka wschodniego – wg głowicy wschodniej
 const EAST_END = { 10: 85, 9: 87, 8: 89, 7: 87, 6: 85, 5: 83, 4: 81, 3: 79, 2: 77, 1: 75, 502: 74, 501: 83 };
@@ -45,7 +45,7 @@ tiles.push({ x: 51, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitu
 // ---------------- tory peronowe ----------------
 for (const [nr, y, len, peron, x0] of TRACKS) {
   const sid = `T${nr}`;
-  sections[sid] = { length: len, kind: 'station', track: nr, platform: !!peron };
+  sections[sid] = { length: len, kind: 'station', track: nr, platform: peron || false };
   tiles.push(...H(x0, 69, y, sid));
   // odcinek wschodni za semaforem K (do głowicy wschodniej)
   const esid = `E${nr}`;

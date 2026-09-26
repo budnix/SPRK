@@ -250,3 +250,18 @@ test('szyna zdarzeń: wypisanie się zwrotką z on() i przez off(), nasłuch „
   bus.emit('y');
   assert.deepEqual(got, [1, 'x:1', 'x:2', 'y:undefined']);
 });
+
+test('perony: każdy odcinek peronowy ma nazwę peronu (napis), pociągi osobowe traktują ją jak peron', async () => {
+  const { STATIONS } = await import('../src/stations/index.js');
+  for (const st of STATIONS) {
+    for (const [id, sec] of Object.entries(st.sections)) {
+      if (!sec.platform) continue;
+      assert.equal(typeof sec.platform, 'string', `${st.id}/${id}: peron bez nazwy`);
+      assert.match(sec.platform, /^Peron [IVX]+/, `${st.id}/${id}: nazwa peronu „${sec.platform}”`);
+    }
+  }
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const szkolna = (await import('../src/stations/szkolna.js')).default;
+  const sim = new Simulation(szkolna, { scenario: 'zmiana' });
+  assert.ok(sim.ilk.sections.get('T1').platform, 'nazwa peronu jest wartością prawdziwą dla modelu');
+});

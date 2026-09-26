@@ -2,7 +2,7 @@
  * Stacja Gdynia Orłowo (wg planu schematycznego, stan IV 2024) – uproszczona.
  *
  * Linie: 202 Sopot – Gdynia Główna (tory 1/2) i 250 SKM (tory 501/502), obie w obu kierunkach.
- * Tory: 6 (Baza EZ, 394 m), 4 (715 m), 2 i 1 (peron 2), 3 (791 m), 502 i 501 (peron 1 SKM),
+ * Tory: 6 (Baza EZ, 394 m), 4 (715 m), 2 i 1 (peron II), 3 (791 m), 502 i 501 (peron I SKM),
  * bocznica 18 (328 m) z wykolejnicą Wk11.
  * Semafory: A, B (wjazd od Sopotu), C, D, E, F (wyjazd na Sopot z torów 3, 1, 2, 4), G (tor 6, na Gdynię),
  * H, J, K (wyjazd na Gdynię z 2, 1, 3), L, M (wjazd od Gdyni), C501, D502 (SKM na Sopot), T501, T502 (SKM na Gdynię),
@@ -31,14 +31,14 @@ tiles.push({ x: 36, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitu
 // ---- tory stacyjne ----
 sec('T6', { length: 394, kind: 'station', track: '6' });   tiles.push(...H(15, 49, 2, 'T6'));
 sec('T4', { length: 715, kind: 'station', track: '4' });   tiles.push(...H(13, 49, 4, 'T4'));
-sec('T2', { length: 747, kind: 'station', track: '2', platform: true }); tiles.push(...H(11, 49, 6, 'T2'));
-sec('T1', { length: 734, kind: 'station', track: '1', platform: true }); tiles.push(...H(12, 49, 8, 'T1'));
+sec('T2', { length: 747, kind: 'station', track: '2', platform: 'Peron II' }); tiles.push(...H(11, 49, 6, 'T2'));
+sec('T1', { length: 734, kind: 'station', track: '1', platform: 'Peron II' }); tiles.push(...H(12, 49, 8, 'T1'));
 sec('T3', { length: 791, kind: 'station', track: '3' });   tiles.push(...H(14, 49, 10, 'T3'));
-sec('T502', { length: 300, kind: 'station', track: '502', platform: true }); tiles.push(...H(11, 49, 12, 'T502'));
-sec('T501', { length: 300, kind: 'station', track: '501', platform: true }); tiles.push(...H(9, 49, 14, 'T501'));
+sec('T502', { length: 300, kind: 'station', track: '502', platform: 'Peron I (SKM)' }); tiles.push(...H(11, 49, 12, 'T502'));
+sec('T501', { length: 300, kind: 'station', track: '501', platform: 'Peron I (SKM)' }); tiles.push(...H(9, 49, 14, 'T501'));
 tiles.push({ x: 30, y: 3, type: 'label', text: 'tor 6 · Baza EZ Sopot', span: 5, size: 8 }, { x: 30, y: 5, type: 'label', text: 'tor 4', span: 2, size: 8 },
-  { x: 30, y: 7, type: 'label', text: 'tor 2 · Peron 2', span: 4, size: 8 }, { x: 30, y: 9, type: 'label', text: 'tor 1 · Peron 2', span: 4, size: 8 },
-  { x: 30, y: 11, type: 'label', text: 'tor 3', span: 2, size: 8 }, { x: 30, y: 13, type: 'label', text: 'tor 502 · Peron 1', span: 4, size: 8 }, { x: 30, y: 15, type: 'label', text: 'tor 501 · Peron 1', span: 4, size: 8 });
+  { x: 30, y: 7, type: 'label', text: 'tor 2 · Peron II', span: 4, size: 8 }, { x: 30, y: 9, type: 'label', text: 'tor 1 · Peron II', span: 4, size: 8 },
+  { x: 30, y: 11, type: 'label', text: 'tor 3', span: 2, size: 8 }, { x: 30, y: 13, type: 'label', text: 'tor 502 · Peron I', span: 4, size: 8 }, { x: 30, y: 15, type: 'label', text: 'tor 501 · Peron I', span: 4, size: 8 });
 
 // ---- zachód: linia 202 (rzędy 6, 8) ----
 sec('ZbB', { length: 400, kind: 'approach' }); tiles.push({ ...T(0, 6, ['W', 'E'], 'ZbB'), endButton: { id: 'kS2', color: 'green' }, text: 'Sopot t.2' }, ...H(1, 5, 6, 'ZbB'));
@@ -124,7 +124,7 @@ export default {
   name: 'Gdynia Orłowo',
   srk: 'komputerowe',
   srkInfo: 'Komputerowe (Ebilock 950 ze sterownikami STC i licznikami osi, 2014, obszar LCS Gdynia – sterowanie zdalne z Gdyni Głównej); tory SKM 501/502 – obiekt zdalnego sterowania „GOr-SKM” (PKP SKM). W symulatorze stanowisko obsługi na miejscu.',
-  description: 'Stacja na linii dwutorowej 202 Sopot – Gdynia Główna z równoległą linią SKM 250. Perony 1 (SKM) i 2, tory 3 i 4, tor 6 Bazy EZ Sopot, bocznica 18 z wykolejnicą. Numeracja rozjazdów i semaforów z planu stacji (2024).',
+  description: 'Stacja na linii dwutorowej 202 Sopot – Gdynia Główna z równoległą linią SKM 250. Perony I (SKM) i 2, tory 3 i 4, tor 6 Bazy EZ Sopot, bocznica 18 z wykolejnicą. Numeracja rozjazdów i semaforów z planu stacji (2024).',
   startTime: '05:55',
   desk: { cols: 70, rows: 16 },
 
@@ -165,7 +165,7 @@ export default {
   ],
 
   scenarios: [
-    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:10)', description: 'SKM co 15 min, regionalne z postojem przy peronie 2, IC i TLK przelotem, towarowy torem 3, skład EZT z Bazy i do Bazy.', endTime: '08:15' },
+    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:10)', description: 'SKM co 15 min, regionalne z postojem przy peronie II, IC i TLK przelotem, towarowy torem 3, skład EZT z Bazy i do Bazy.', endTime: '08:15' },
     { id: 'usterka-202', name: 'Usterka blokady od Gdyni', description: 'Blokada toru 2 od Gdyni Głównej bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'Z2', at: '06:40', duration: 40 }], disruptions: 'none' },
     { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
   ],

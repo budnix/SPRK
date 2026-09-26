@@ -34,14 +34,14 @@ tiles.push({ x: 2, y: 4, type: 'label', text: 'linia 250 SKM', span: 3, size: 7 
   { x: 100, y: 17, type: 'label', text: 'linia 723 · Gdynia Port', span: 5, size: 7 });
 
 // ---- tory stacyjne (x 45–70) ----
-sec('T502', { length: 300, kind: 'station', track: '502', platform: true }); tiles.push(...H(45, 70, 2, 'T502'));
-sec('T501', { length: 300, kind: 'station', track: '501', platform: true }); tiles.push(...H(45, 70, 8, 'T501'));
-sec('T2', { length: 592, kind: 'station', track: '2', platform: true }); tiles.push(...H(45, 70, 12, 'T2'));
-sec('T1', { length: 565, kind: 'station', track: '1', platform: true }); tiles.push(...H(45, 70, 14, 'T1'));
-sec('T3', { length: 601, kind: 'station', track: '3', platform: true }); tiles.push(...H(45, 70, 16, 'T3'));
-tiles.push({ x: 56, y: 3, type: 'label', text: 'tor 502 · Peron 1', span: 4, size: 8 }, { x: 56, y: 9, type: 'label', text: 'tor 501 · Peron 1', span: 4, size: 8 },
-  { x: 56, y: 11, type: 'label', text: 'tor 2 · Peron 2', span: 4, size: 8 }, { x: 56, y: 15, type: 'label', text: 'tor 1 · Peron 2', span: 4, size: 8 },
-  { x: 56, y: 17, type: 'label', text: 'tor 3 · Peron 3', span: 4, size: 8 });
+sec('T502', { length: 300, kind: 'station', track: '502', platform: 'Peron I (SKM)' }); tiles.push(...H(45, 70, 2, 'T502'));
+sec('T501', { length: 300, kind: 'station', track: '501', platform: 'Peron I (SKM)' }); tiles.push(...H(45, 70, 8, 'T501'));
+sec('T2', { length: 592, kind: 'station', track: '2', platform: 'Peron II' }); tiles.push(...H(45, 70, 12, 'T2'));
+sec('T1', { length: 565, kind: 'station', track: '1', platform: 'Peron II' }); tiles.push(...H(45, 70, 14, 'T1'));
+sec('T3', { length: 601, kind: 'station', track: '3', platform: 'Peron III' }); tiles.push(...H(45, 70, 16, 'T3'));
+tiles.push({ x: 56, y: 3, type: 'label', text: 'tor 502 · Peron I', span: 4, size: 8 }, { x: 56, y: 9, type: 'label', text: 'tor 501 · Peron I', span: 4, size: 8 },
+  { x: 56, y: 11, type: 'label', text: 'tor 2 · Peron II', span: 4, size: 8 }, { x: 56, y: 15, type: 'label', text: 'tor 1 · Peron II', span: 4, size: 8 },
+  { x: 56, y: 17, type: 'label', text: 'tor 3 · Peron III', span: 4, size: 8 });
 // semafory wyjazdowe zachód (E…) i wschód (G/F/M…)
 tiles.push(SIG(44, 1, 'E502', 'semafor', { x: 45, y: 2 }, 'W', { shunting: true }), SIG(44, 9, 'E501', 'semafor', { x: 45, y: 8 }, 'W', { shunting: true }),
   SIG(44, 13, 'E2', 'semafor', { x: 45, y: 12 }, 'W', { shunting: true }), SIG(44, 15, 'E1', 'semafor', { x: 45, y: 14 }, 'W', { shunting: true }),
@@ -186,7 +186,7 @@ export default {
   name: 'Gdynia Chylonia',
   srk: 'komputerowe',
   srkInfo: 'Komputerowe: tory linii 202 zmodernizowane w ramach E65 (2012–2014, obszar LCS Gdynia, Ebilock 950), tory SKM 501/502 – komputery sterujące włączone do systemu zdalnego sterowania i kierowania dyspozytorskiego (ZSiKD) Gdynia Główna SKM (nastawnia „GCh-SKM”). Typ urządzeń dla „Chy” po modernizacji Chylonia–Słupsk (2023–2025) nieustalony.',
-  description: 'Stacja węzłowa na liniach 202 Gdańsk – Stargard i 250 SKM, z odgałęzieniami do Gdyni Postojowej (964) i Gdyni Portu (723). Perony 1 (SKM 502/501), 2 (tory 2/1) i 3, tory odstawcze 21/22, tor 503, bocznica 51. Numeracja rozjazdów i semaforów z planu stacji (2024).',
+  description: 'Stacja węzłowa na liniach 202 Gdańsk – Stargard i 250 SKM, z odgałęzieniami do Gdyni Postojowej (964) i Gdyni Portu (723). Perony I (SKM 502/501), 2 (tory 2/1) i 3, tory odstawcze 21/22, tor 503, bocznica 51. Numeracja rozjazdów i semaforów z planu stacji (2024).',
   startTime: '05:55',
   desk: { cols: 112, rows: 20 },
 

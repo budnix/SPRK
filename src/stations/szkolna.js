@@ -32,8 +32,8 @@ export default {
   sections: {
     ZbA: { length: 320, kind: 'approach' },
     Iz1: { length: 130, kind: 'point' },
-    T1: { length: 520, kind: 'station', track: '1', platform: true },
-    T2: { length: 300, kind: 'station', track: '2', platform: true },
+    T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' },
+    T2: { length: 300, kind: 'station', track: '2', platform: 'Peron I' },
     Iz3: { length: 70, kind: 'point' },
     T2b: { length: 75, kind: 'station', track: '2' },
     Iz4: { length: 140, kind: 'point' },
