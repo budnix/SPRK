@@ -134,7 +134,9 @@ Pociąg tworzony ze składu innego pociągu (np. zdawczy powrotny):
 { nr: 90212, kind: 'tow', name: 'Zdawczy', unit: 90211, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 60 }
 ```
 
-`unit` – numer pociągu, który zakończył bieg na stacji; jego skład staje się pociągiem `nr` 15 min przed `dep`
+`unit` – numer pociągu, który zakończył bieg na stacji; jego skład staje się pociągiem `nr`, gdy stoi w trybie jazdy
+pociągowej (nie w trakcie manewrów), nie wcześniej niż 15 min przed `dep`; do `dep` stoi mimo sygnału zezwalającego.
+Skład w trybie manewrowym jedzie obok semafora tylko na Ms2 i nie wyjeżdża na szlak
 (o ile stoi). Skład trzeba podstawić na właściwy tor manewrami i ustawić czołem do semafora wyjazdowego.
 
 ## Zadania manewrowe (`tasks`)

@@ -190,3 +190,54 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
   assert.equal(t2.done, true, 'po powrocie na tor 2 zadanie 2 zaliczone');
   assert.ok(t2.doneAt > t1.doneAt, 'zadanie 2 po zadaniu 1');
 });
+
+test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowym; przekazanie jako 90202 czeka na tryb pociągowy; odjazd nie przed 08:12', () => {
+  const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  let n = 0;
+  const until = (hhmm, auto) => { const t = Clock.parse(hhmm); while (sim.clock.time < t) { sim.step(0.5); if (auto && n++ % 4 === 0) autoDispatch(sim); } };
+  const run = (sec) => { for (let i = 0; i < sec * 2; i++) sim.step(0.5); };
+  const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
+  const G = (id) => ({ kind: 'signal', id, color: 'green' }), Wt = (id) => ({ kind: 'signal', id, color: 'white' });
+  until('07:47', true);
+  const W = sim.blocks.get('W');
+  until('07:49', false);
+  if (W.request === 'theirs') sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+  sim.press(G('A')); sim.press(G('D2'));
+  until('07:55', false);
+  assert.equal(e(90201).status, 'zakończył bieg');
+  // manewry na tor 3 – o 07:57 (15 min przed odjazdem 90202) skład stoi na torze 3 w trybie manewrowym
+  assert.equal(sim.traffic.toShunting(90201), true);
+  sim.press(Wt('D2')); sim.press({ kind: 'end', id: 'kT3' });
+  until('07:59', false);
+  const tr = e(90201).train;
+  assert.ok(tr && tr.v === 0 && tr.mode === 'shunt', `skład stoi na torze 3 w trybie manewrowym (${tr?.mode}, v=${tr?.v})`);
+  assert.equal(sim.traffic.tasks.find((t) => t.id === 'odstaw-90201').done, true);
+  assert.ok(!e(90202).train, 'przekazanie jako 90202 nie wymusza trybu pociągowego w trakcie manewrów');
+  // powrót na tor 2
+  assert.equal(sim.traffic.reverseTrain(90201), true);
+  sim.press(Wt('Tm1')); sim.press(Wt('Tm2')); run(8); sim.press(Wt('Tm2')); sim.press(Wt('C2'));
+  until('08:04', false);
+  assert.equal(sim.traffic.tasks.find((t) => t.id === 'podstaw-90202').done, true, 'skład podstawiony na tor 2');
+  assert.ok(tr.v === 0 && tr.mode === 'shunt');
+  // w trybie manewrowym: pozwolenie i przebieg pociągowy C2 → szlak, a skład stoi (manewr nie wyjeżdża na szlak)
+  if (W.koPending) sim.press({ kind: 'block', exit: 'W', btn: 'Ko' });
+  run(2);
+  sim.press({ kind: 'block', exit: 'W', btn: 'Wbl' });
+  for (let i = 0; i < 120 && !(W.direction === 'out' && W.permission); i++) sim.step(0.5);
+  assert.ok(W.direction === 'out' && W.permission, 'pozwolenie na wyjazd do Lipna');
+  sim.press(G('C2')); sim.press({ kind: 'end', id: 'kW' });
+  run(120);
+  assert.equal(sim.ilk.signals.get('C2').route, 'C2-W', 'przebieg wyjazdowy nastawiony');
+  assert.ok(tr.v === 0 && !tr.onLine('W'), `skład manewrowy nie ruszył na szlak (v=${tr.v})`);
+  assert.equal(e(90201).status, 'zakończył bieg');
+  // tryb pociągowy → przekazanie jako 90202, odjazd dopiero o 08:12 mimo sygnału zezwalającego
+  assert.equal(sim.traffic.toTrainMode(90201), true);
+  run(2);
+  assert.ok(e(90202).train === tr, 'skład przekazany jako 90202');
+  assert.equal(e(90201).status, 'przekazany jako 90202');
+  until('08:11:30', false);
+  assert.ok(tr.v === 0 && !tr.onLine('W'), 'przed 08:12 pociąg 90202 stoi');
+  until('08:15', false);
+  assert.ok(tr.onLine('W') || e(90202).status === 'na następnym posterunku', `90202 wyjechał po 08:12 (${e(90202).status})`);
+  assert.ok(e(90202).actualDep >= Clock.parse('08:12'), 'odjazd nie przed 08:12');
+});

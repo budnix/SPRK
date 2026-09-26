@@ -162,6 +162,8 @@ export class AutoOperator {
         else if (!usable.some(isSet)) sim.traffic.reverseTrain(e.nr);
         continue;
       }
+      // skład po manewrach (bez zadań) wraca w tryb jazdy pociągowej – dopiero wtedy przejmie go pociąg powrotny
+      if (!task && !e.to && tr.mode === 'shunt' && tr.v === 0 && sim.traffic.timetable().some((x) => String(x.unit) === String(e.nr))) { sim.traffic.toTrainMode(e.nr); continue; }
       // ---- wyjazd ----
       // Wyjazd: przebieg nastawiany dopiero na ~2 min przed planowym odjazdem (nie blokować głowicy stojącym składem)
       if (e.to && tr.entered && !e.exitRouteSet && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {

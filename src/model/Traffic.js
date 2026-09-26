@@ -347,7 +347,8 @@ export class Traffic {
       if (time < e.depTime - 15 * 60) continue;
       const u = this.entries.find((x) => String(x.nr) === String(e.unit));
       const tr = u?.train;
-      if (!tr || tr.finished || !tr.entered || tr.v > 0) continue;
+      // przekazanie dopiero, gdy skład stoi w trybie jazdy pociągowej – nie w trakcie manewrów (nie wymuszamy trybu)
+      if (!tr || tr.finished || !tr.entered || tr.v > 0 || tr.mode !== 'train') continue;
       e.attached = true; e.train = tr;
       u.status = `przekazany jako ${e.nr}`; u.train = null;
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
@@ -409,7 +410,8 @@ export class Traffic {
   /** Stojący pociąg zakończony – przełącz w tryb manewrowy (jazda za Ms2). */
   toShunting(nr) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
-    if (!e?.train || e.train.v > 0) return false;
+    if (!e?.train) return false;
+    if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'shunt';
     e.train.def.stop = false;
     e.train.state = 'moving';
@@ -420,7 +422,8 @@ export class Traffic {
   /** Skład manewrowy z powrotem w tryb jazdy pociągowej (po podstawieniu na tor). */
   toTrainMode(nr) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
-    if (!e?.train || e.train.v > 0) return false;
+    if (!e?.train) return false;
+    if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'train';
     e.train.vmax = (e.vmax ?? 60) / 3.6;
     e.train.state = 'stopped';

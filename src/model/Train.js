@@ -180,7 +180,10 @@ export class Train {
           const sig = this.ilk.signals.get(s.id);
           const relevant = this.mode === 'train' ? sig.kind === 'semafor' : true;
           if (!relevant) continue;
-          if (!Interlocking.isProceed(sig.aspect)) {
+          // skład manewrowy jedzie obok semafora tylko na sygnał manewrowy Ms2 – sygnał pociągowy (przebieg na szlak)
+          // go nie dotyczy, więc nie wyjedzie ze stacji jako manewr
+          const proceed = this.mode === 'shunt' && sig.kind === 'semafor' ? sig.aspect === 'Ms2' : Interlocking.isProceed(sig.aspect);
+          if (!proceed) {
             if (this.hasOrderFor(sig.id)) {
               // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 20 km/h
               constraints.push({ dist, speed: 20 * KMH, reason: `rozkaz pisemny ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id });
@@ -195,6 +198,7 @@ export class Train {
         }
         const exit = this.topo.exitAt(tile, outPort);
         if (exit) {
+          if (this.mode === 'shunt') { constraints.push({ dist, speed: 0, reason: 'granica stacji – manewry', kind: 'signal', signal: exit.id }); return constraints; }
           constraints.push({ dist, speed: Math.min(this.lineSpeed, this.vmax), reason: 'szlak', kind: 'limit' });
           return constraints;
         }
@@ -258,6 +262,8 @@ export class Train {
       if (c.speed === 0 && (!stopC || c.dist < stopC.dist)) stopC = c;
     }
     if (this.v < allowed) this.v = Math.min(allowed, this.v + this.accel * dt);
+    // pociąg utworzony ze składu (holdUntil) rusza bez postoju handlowego – odjazd rejestruje się przy pierwszym ruchu
+    if (this.holdUntil && this.mode === 'train' && !this.departedAt && this.v > 0) { this.departedAt = time; this.onEvent('depart', this); }
     else this.v = Math.max(allowed, this.v - this.brake * dt);
     if (this.v < 0.05 && allowed < 0.1) this.v = 0;
 
