@@ -29,8 +29,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .speed { display: flex; gap: 4px; }
 #main { flex: 1 1 auto; display: flex; min-height: 0; }
 #desk-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
-#desk-scroll { flex: 1 1 auto; overflow: auto; padding: 4px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; }
-#desk { position: relative; margin: 0 auto; }
+#desk-scroll { flex: 1 1 auto; overflow: auto; padding: 4px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; display: flex; }
+#desk { position: relative; margin: auto; flex: 0 0 auto; }
 #desk-tools { display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid #000; }
 .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
 .status { font-size: 13px; margin-left: 10px; min-height: 1em; flex: 1 1 auto; }

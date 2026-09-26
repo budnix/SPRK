@@ -131,7 +131,11 @@ scroll.addEventListener('wheel', (e) => {
 }, { passive: false });
 document.getElementById('zoom-fit').addEventListener('click', fit);
 window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', () => setTimeout(fit, 300));
+window.addEventListener('load', fit);
 requestAnimationFrame(fit);
+setTimeout(fit, 250);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 
 /* ---- pętla ---- */
 let last = performance.now();
