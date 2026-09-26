@@ -382,7 +382,8 @@ export class Traffic {
         if (e.train.state === 'dwell' && e.depTime != null && time > e.depTime + 60) {
           e.delay = Math.round((time - e.depTime) / 60);
         }
-        if (!ended && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
+        const waitingForDep = e.depTime != null && time < e.depTime + 240; // skład czeka na planowy odjazd – to nie przetrzymanie
+        if (!ended && !waitingForDep && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
           e.holdScored = true;
           this.bus.emit('score', { time, code: 'held', points: -5, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
         }

@@ -105,10 +105,13 @@ export class AutoOperator {
         if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) continue; want = c.track; e._cmdAccept = c; }
         const app = approachOf(e.from);
         const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
-        const pick = cands.find((r) => routeTrack(r) === String(want)) || cands.find((r) => ilk.sections.get(r.sections.at(-1))?.platform) || cands[0];
-        if (pick && ilk.setRoute(pick.id).ok) {
+        // kolejność prób: tor planowy, potem inne tory peronowe, na końcu pozostałe (np. tor planowy zamknięty)
+        const rank = (r) => (routeTrack(r) === String(want) ? 0 : ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 2);
+        for (const pick of [...cands].sort((a, b) => rank(a) - rank(b))) {
+          if (!ilk.setRoute(pick.id).ok) continue;
           e.entryRouteSet = true;
-          if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${want} przygotowana, semafor ${pick.start} otwarty.`);
+          if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
+          break;
         }
         continue;
       }
@@ -134,7 +137,8 @@ export class AutoOperator {
         continue;
       }
       // ---- wyjazd ----
-      if (e.to && tr.entered && !e.exitRouteSet && (tr.hasStopped || !e.stop) && this.#exitInDistrict(e.to)) {
+      // Wyjazd: przebieg nastawiany dopiero na ~2 min przed planowym odjazdem (nie blokować głowicy stojącym składem)
+      if (e.to && tr.entered && !e.exitRouteSet && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {
         let exitId = e.to;
         let cmd = null;
         if (this.role === 'executive') { cmd = this.#command(e, 'dispatch'); if (!cmd) continue; exitId = cmd.exit || e.to; }
@@ -143,6 +147,15 @@ export class AutoOperator {
         const b = sim.blocks.get(exitId);
         if (!b) continue;
         let cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && String(ilk.sections.get(r.approach)?.track) === String(cur));
+        // Wyjazd dwustopniowy: brak przebiegu wprost na szlak – najpierw do semafora pośredniego (np. G502 → A502 → szlak),
+        // potem od niego na szlak.
+        let staged = false;
+        if (e._viaSignal) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === e._viaSignal);
+        else if (!cands.length) {
+          const toExit = new Set(routes.filter((r) => r.kind === 'train' && r.exit === exitId).map((r) => r.start));
+          cands = routes.filter((r) => r.kind === 'train' && r.end.type === 'signal' && toExit.has(r.end.id) && String(ilk.sections.get(r.approach)?.track) === String(cur));
+          staged = cands.length > 0;
+        }
         if (!cands.length) continue;
         if (e.unit && tr.v === 0) {
           const ahead = tr.nextSignal();
@@ -152,6 +165,10 @@ export class AutoOperator {
         }
         if (b.fault) { if (!b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
+        if (staged) {
+          for (const r of cands) if (ilk.setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
+          continue;
+        }
         if (b.gate().ok) {
           for (const r of cands) if (ilk.setRoute(r.id).ok) {
             e.exitRouteSet = true;
