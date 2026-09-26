@@ -284,26 +284,29 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .scr-bg { fill: #000000; }
 .scr-banner { fill: #ffb84d; font-size: 8px; }
 /* odcinki: seg = grupa (linia zewnętrzna + wewnętrzna); klasa stanu na grupie */
-.seg .trk { fill: none; stroke-width: 3.6; stroke-linecap: butt; stroke-linejoin: round; stroke: #8a949e; }
-.seg .trk-inner { fill: none; stroke-width: 2.2; stroke: #000; stroke-linecap: butt; display: none; }
+.seg .trk { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linecap: butt; stroke-linejoin: round; stroke: #8a949e; }
+.seg .trk-inner { fill: none; stroke-width: calc(2.2px * var(--sym, 1)); stroke: #000; stroke-linecap: butt; display: none; }
 .seg.free .trk { stroke: #8a949e; }
 .seg.rt-train .trk { stroke: #21d04a; }
 .seg.rt-shunt .trk { stroke: #ffd21f; }
-.seg.occ .trk { stroke: #ff2419; stroke-width: 4.4; }
+.seg.occ .trk { stroke: #ff2419; stroke-width: calc(4.4px * var(--sym, 1)); }
 .seg.timed .trk { stroke: #c04cff; }
-.seg.closed .trk { stroke: #8a949e; stroke-width: 6; }
+.seg.closed .trk { stroke: #8a949e; stroke-width: calc(6px * var(--sym, 1)); }
 .seg.closed .trk-inner { display: block; }
 .seg.locked .trk { stroke: #ff7ad9; }
 .seg.dim .trk { stroke: #2b3339; }
 .seg.nodata .trk { stroke: #ffffff; }
-.z-field { fill: none; stroke-width: 3.6; stroke-linejoin: round; stroke: #8a949e; }
+.z-field { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linejoin: round; stroke: #8a949e; }
 .z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
 .z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
 .buffer-bar { stroke: #b5bec7; stroke-width: 2.5; fill: none; }
 .scr-text { fill: #b6c0ca; font-size: 7px; }
+.block .scr-text { font-size: calc(7px * var(--symb, 1)); }
 .scr-text.small { font-size: 5.6px; fill: #8c98a4; }
+.block .scr-text.small { font-size: calc(5.6px * var(--symb, 1)); }
+.block .scr-text.counter { font-size: calc(6.5px * var(--symb, 1)); }
 .scr-text.counter { font-size: 6.5px; fill: #e4b04a; }
-.scr-label { fill: #55606b; font-size: 8px; }
+.scr-label { fill: #55606b; font-size: calc(8px * var(--sym, 1)); }
 .scr-label.title { fill: #ffd21f; font-weight: 700; letter-spacing: 1px; }
 .pt-label { fill: #9fe3b4; font-size: 7px; }         /* seledynowe numery rozjazdów */
 .pt-label.locked { fill: #ff7ad9; }                  /* różowy – zamknięcie indywidualne */
@@ -359,3 +362,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .scr-confirm { position: fixed; z-index: 61; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: #3a2a00; color: #ffe2b0; border: 1px solid #ffb84d; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
 .scr-confirm .tb.warn { background: #ffb84d; color: #1c1300; border-color: #ffb84d; font-weight: 600; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
+
+.menu label.range { display: flex; align-items: center; gap: 8px; }
+.menu label.range input[type=range] { flex: 1 1 auto; }
+.menu label.range output { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }

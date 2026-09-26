@@ -11,7 +11,13 @@ import { getStation } from './stations/index.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
-const settings = new Settings((key) => { if (key === 'srk') location.reload(); else if (key === 'screens') planAll(); else requestAnimationFrame(fit); });
+const settings = new Settings((key, value) => {
+  if (key === 'srk' || key === 'rowScale') location.reload();
+  else if (key === 'screens') planAll();
+  else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
+  else requestAnimationFrame(fit);
+});
+const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
 });
@@ -45,7 +51,7 @@ if (station.districts) {
     wrap.className = 'desk-district hidden'; wrap.dataset.district = id;
     deskRoot.appendChild(wrap);
     const mine = sim.playerControls(id);
-    const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id, cmdHost: document.getElementById('cmd-host') });
+    const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id, cmdHost: document.getElementById('cmd-host'), ...viewOpts() });
     desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, x0: d.cols[0], x1: d.cols[1], el: wrap, screens: [], screen: -1 });
     const b = document.createElement('button');
     b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
@@ -55,7 +61,7 @@ if (station.districts) {
   }
   showDesk(sim.playerDistrict === 'both' ? desks[0].id : sim.playerDistrict);
 } else {
-  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers, { cmdHost: document.getElementById('cmd-host') }), cols: station.desk.cols, x0: 0, x1: station.desk.cols - 1, el: deskRoot, screens: [], screen: -1 });
+  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers, { cmdHost: document.getElementById('cmd-host'), ...viewOpts() }), cols: station.desk.cols, x0: 0, x1: station.desk.cols - 1, el: deskRoot, screens: [], screen: -1 });
 }
 activeDesk = desks[0];
 function showDesk(id) {
@@ -184,7 +190,7 @@ let zoom = 1;
 function deskSize() {
   const s = currentScreen();
   const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
-  return viewSize(sim.srk, cols, station.desk.rows);
+  return viewSize(sim.srk, cols, station.desk.rows, viewOpts());
 }
 function fit() {
   const { w: dw, h: dh } = deskSize();

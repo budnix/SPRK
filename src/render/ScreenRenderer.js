@@ -38,6 +38,9 @@ export class ScreenRenderer {
     this.readonly = !!opts.readonly;
     this.title = opts.title || null;
     this.cols = this.x1 - this.x0 + 1; this.rows = this.station.desk.rows;
+    this.ry = Number(opts.rowScale) || 1;      // ściśnięcie rzędów (0,7 = symbole bliżej toru)
+    this.S = Number(opts.symScale) || 1;       // skala symboli i napisów (1–1,5)
+    this.symbols = [];                          // grupy symboli do przeskalowania na żywo
     this.sectionEls = new Map();  // sectionId -> [segment group]
     this.pointRefs = new Map();
     this.derailerRefs = new Map();
@@ -49,8 +52,10 @@ export class ScreenRenderer {
     this.pending = null;          // trwający przebieg: { id, color }
     this.mode = null;             // wybrane polecenie z paska: 'train'|'shunt'|'pz'|'dpz'|'zw'|'zz'|'sz'|'stop'
 
-    const W = this.cols * CELL + 2 * PAD, H = this.rows * CELL + 2 * PAD;
+    const W = this.cols * CELL + 2 * PAD, H = this.rows * CELL * this.ry + 2 * PAD;
     this.svg = el('svg', { class: `screen${this.readonly ? ' readonly' : ''}`, viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'xMidYMid meet' });
+    this.svg.style.setProperty('--sym', String(this.S));
+    this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
     this.svg.appendChild(el('defs', {}, [
       el('filter', { id: 'glow', x: '-50%', y: '-50%', width: '200%', height: '200%' }, [
         el('feGaussianBlur', { stdDeviation: 1.2, result: 'b' }),
@@ -83,14 +88,28 @@ export class ScreenRenderer {
 
   /** Widoczny wycinek kolumn (ekran monitora) – zmiana viewBox, bez przebudowy grafiki. */
   setView(x0, x1) {
-    const H = this.rows * CELL + 2 * PAD;
+    const H = this.rows * CELL * this.ry + 2 * PAD;
     this.svg.setAttribute('viewBox', `${(x0 - this.x0) * CELL} 0 ${(x1 - x0 + 1) * CELL + 2 * PAD} ${H}`);
   }
   resetView() { this.setView(this.x0, this.x1); }
 
+  /** Skala symboli i napisów na żywo (ustawienie „wielkość symboli”). */
+  setSymbolScale(S) {
+    this.S = Number(S) || 1;
+    this.svg.style.setProperty('--sym', String(this.S));
+    this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
+    for (const { g, cx, cy } of this.symbols) g.setAttribute('transform', `translate(${cx},${cy}) scale(${this.S})`);
+  }
+
   /* ---------------- geometria ---------------- */
-  #pt(tile, port) { const [px, py] = PORT_XY[port]; return [(tile.x - this.x0) * CELL + px, tile.y * CELL + py]; }
-  #ctr(tile) { return [(tile.x - this.x0) * CELL + C, tile.y * CELL + C]; }
+  #pt(tile, port) { const [px, py] = PORT_XY[port]; return [(tile.x - this.x0) * CELL + px, (tile.y * CELL + py) * this.ry]; }
+  #ctr(tile) { return [(tile.x - this.x0) * CELL + C, (tile.y * CELL + C) * this.ry]; }
+  /** Grupa symbolu we współrzędnych lokalnych (0,0 = środek), skalowana ustawieniem. */
+  #sym(cx, cy, cls, children = []) {
+    const g = el('g', { class: cls, transform: `translate(${cx},${cy}) scale(${this.S})` }, children);
+    this.symbols.push({ g, cx, cy });
+    return g;
+  }
   #leg(tile, port, t0 = 0, t1 = 1) {
     const [cx, cy] = this.#ctr(tile); const [px, py] = this.#pt(tile, port);
     return `M${cx + (px - cx) * t0},${cy + (py - cy) * t0} L${cx + (px - cx) * t1},${cy + (py - cy) * t1}`;
@@ -123,11 +142,11 @@ export class ScreenRenderer {
           const s = this.#segment(`${this.#leg(tile, a)} ${this.#leg(tile, b)}`);
           this.layerTracks.appendChild(s); addSec(tile.section, s);
           if (tile.derailer) {
-            const g = el('g', { class: 'scr-el derailer' }, [
-              this.#frame(cx, cy, 18, 18),
-              el('path', { class: 'wk-mark', d: `M${cx - 5},${cy + 6} L${cx},${cy - 4} L${cx + 5},${cy + 6} Z` }),
-              text(cx, cy + 14, tile.derailer, { class: 'scr-text small' }),
-              this.#hit({ kind: 'derailer', id: tile.derailer }, cx, cy),
+            const g = this.#sym(cx, cy, 'scr-el derailer', [
+              this.#frame(0, 0, 18, 18),
+              el('path', { class: 'wk-mark', d: 'M-5,6 L0,-4 L5,6 Z' }),
+              text(0, 14, tile.derailer, { class: 'scr-text small' }),
+              this.#hit({ kind: 'derailer', id: tile.derailer }, 0, 0),
             ]);
             this.layerMarks.appendChild(g);
             this.derailerRefs.set(tile.derailer, { mark: g.querySelector('.wk-mark'), g });
@@ -140,7 +159,7 @@ export class ScreenRenderer {
           const s = this.#segment(this.#leg(tile, tile.port, 0, 1));
           const [px, py] = this.#pt(tile, tile.port);
           const nx = -(py - cy), ny = px - cx;
-          const bar = el('path', { class: 'buffer-bar', d: `M${cx + nx * 0.35},${cy + ny * 0.35} L${cx - nx * 0.35},${cy - ny * 0.35}` });
+          const bar = el('path', { class: 'buffer-bar', d: `M${cx + nx * 0.35},${cy + ny * 0.35 / this.ry} L${cx - nx * 0.35},${cy - ny * 0.35 / this.ry}` });
           this.layerTracks.append(s, bar); addSec(tile.section, s);
           if (tile.endButton) this.#exitMark(tile);
           break;
@@ -154,11 +173,11 @@ export class ScreenRenderer {
           this.layerTracks.append(diverge, straight, toe, zField);
           const [dx, dy] = PORT_XY[tile.diverge];
           const below = dy > C;
-          const lbl = text(cx, cy + (below ? -9 : 12), tile.label || tile.id, { class: 'scr-text pt-label' });
+          const lbl = text(0, below ? -9 : 12, tile.label || tile.id, { class: 'scr-text pt-label' });
           // „+” przy ramieniu zasadniczym
-          const [sx, sy] = this.#pt(tile, tile.straight);
-          const plus = text(cx + (sx - cx) * 0.62 + (below ? 0 : 0), cy + (sy - cy) * 0.62 + (below ? -7 : 8), '+', { class: 'scr-text pt-plus' });
-          const g = el('g', { class: 'scr-el point' }, [this.#frame(cx, cy, 24, 24), lbl, plus, this.#hit({ kind: 'point', id: tile.id }, cx, cy, 10)]);
+          const [sx, sy] = PORT_XY[tile.straight];
+          const plus = text((sx - C) * 0.62, (sy - C) * 0.62 * this.ry + (below ? -7 : 8), '+', { class: 'scr-text pt-plus' });
+          const g = this.#sym(cx, cy, 'scr-el point', [this.#frame(0, 0, 24, 24), lbl, plus, this.#hit({ kind: 'point', id: tile.id }, 0, 0, 10)]);
           this.layerMarks.appendChild(g);
           this.pointRefs.set(tile.id, { toe, straight, diverge, zField, lbl, plus, g, tile });
           this.hitEls.set(refKey({ kind: 'point', id: tile.id }), g);
@@ -180,7 +199,7 @@ export class ScreenRenderer {
             text(C, 15, tile.label, { class: 'scr-text small' }),
             text(C, 25, '00000', { class: 'scr-text counter' }),
           ]);
-          g.setAttribute('transform', `translate(${(tile.x - this.x0) * CELL},${tile.y * CELL})`);
+          g.setAttribute('transform', `translate(${(tile.x - this.x0) * CELL},${tile.y * CELL * this.ry})`);
           this.layerMarks.appendChild(g);
           this.counterRefs.set(tile.id, g.querySelector('.counter'));
           break;
@@ -201,16 +220,17 @@ export class ScreenRenderer {
     const [cx, cy] = this.#ctr(tile);
     const ex = this.#exitAt(tile);
     const ref = { kind: 'end', id: tile.endButton.id };
-    const g = el('g', { class: 'scr-el end' }, [this.#frame(cx, cy, 22, 22)]);
+    const kids = [this.#frame(0, 0, 22, 22)];
     if (ex) {
       const dir = ex[1].dir === 'E' ? 1 : -1;
-      const x = cx + dir * 4;
-      g.append(el('path', { class: 'exit-arrow', d: `M${x - dir * 8},${cy - 7} L${x + dir * 6},${cy} L${x - dir * 8},${cy + 7} Z` }),
-        text(cx, cy + 15, tile.text || ex[0], { class: 'scr-text small' }));
+      const x = dir * 4;
+      kids.push(el('path', { class: 'exit-arrow', d: `M${x - dir * 8},-7 L${x + dir * 6},0 L${x - dir * 8},7 Z` }),
+        text(0, 15, tile.text || ex[0], { class: 'scr-text small' }));
     } else {
-      g.append(el('circle', { class: 'end-mark', cx, cy, r: 3 }));
+      kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
     }
-    g.appendChild(this.#hit(ref, cx, cy, 10));
+    kids.push(this.#hit(ref, 0, 0, 10));
+    const g = this.#sym(cx, cy, 'scr-el end', kids);
     this.layerMarks.appendChild(g);
     this.hitEls.set(refKey(ref), g);
   }
@@ -221,20 +241,20 @@ export class ScreenRenderer {
     const at = this.topo.trackAt(tile.at.x, tile.at.y);
     const above = at ? tile.y < at.y : true;
     const dir = tile.dir === 'E' ? 1 : -1;
-    const g = el('g', { class: `scr-el signal ${tile.kind}` }, [this.#frame(cx, cy, 30, 20)]);
-    const baseY = above ? cy + 12 : cy - 12;
-    // maszt: kreska od toru do symbolu i podstawa
-    g.appendChild(el('path', { class: 'sig-mast', d: `M${cx - dir * 11},${baseY} L${cx - dir * 11},${cy}` }));
-    const chevron = (x) => `M${x - dir * 5},${cy - 5} L${x + dir * 2},${cy} L${x - dir * 5},${cy + 5} Z`;
+    // maszt: kreska w stronę toru i podstawa; symbol w lokalnych współrzędnych (0,0 = środek symbolu)
+    const baseY = (above ? 12 : -12) * this.ry;
+    const chevron = (x) => `M${x - dir * 5},-5 L${x + dir * 2},0 L${x - dir * 5},5 Z`;
     const body = el('g', { class: 'sig-body' });
-    if (tile.kind === 'tm') body.appendChild(el('path', { d: chevron(cx - dir * 2) }));
-    else body.append(el('path', { d: chevron(cx - dir * 6) }), el('path', { d: chevron(cx + dir * 2) }));
-    g.appendChild(body);
-    // mały trójkąt końca przebiegu (Ie-104.1: stan utwierdzenia końca / zwalnianie czasowe)
-    const endTri = el('path', { class: 'sig-end', d: `M${cx + dir * 9},${cy - 3} L${cx + dir * 13},${cy} L${cx + dir * 9},${cy + 3} Z` });
-    g.appendChild(endTri);
-    g.appendChild(text(cx, above ? cy - 10 : cy + 14, tile.id, { class: 'scr-text sig-label' }));
-    g.appendChild(this.#hit({ kind: 'signal', id: tile.id }, cx, cy, 11));
+    if (tile.kind === 'tm') body.appendChild(el('path', { d: chevron(-dir * 2) }));
+    else body.append(el('path', { d: chevron(-dir * 6) }), el('path', { d: chevron(dir * 2) }));
+    const endTri = el('path', { class: 'sig-end', d: `M${dir * 9},-3 L${dir * 13},0 L${dir * 9},3 Z` });
+    const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, [
+      this.#frame(0, 0, 30, 20),
+      el('path', { class: 'sig-mast', d: `M${-dir * 11},${baseY} L${-dir * 11},0` }),
+      body, endTri,
+      text(0, above ? -10 : 14, tile.id, { class: 'scr-text sig-label' }),
+      this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 11),
+    ]);
     this.layerSignals.appendChild(g);
     this.signalRefs.set(tile.id, { body, endTri, g, tile });
     this.hitEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
@@ -244,8 +264,8 @@ export class ScreenRenderer {
   /** Pole blokady liniowej: nazwa szlaku, wskaźniki wyjazd/wjazd/żądanie/Ko, liczniki dPo/dKo. */
   #blockPanel(tile) {
     const ex = this.station.exits[tile.exit];
-    const ox = (tile.x - this.x0) * CELL, oy = tile.y * CELL;
-    const W = 4 * CELL - 6, H = 2 * CELL - 6;
+    const ox = (tile.x - this.x0) * CELL, oy = tile.y * CELL * this.ry;
+    const W = 4 * CELL - 6, H = Math.min(2 * CELL - 6, 2 * CELL * this.ry - 4);
     const lamp = (x, y) => el('rect', { class: 'scr-lamp', x, y, width: 8, height: 8, rx: 1 });
     const refs = { outW: lamp(10, 24), outR: lamp(20, 24), inW: lamp(10, 40), inR: lamp(20, 40), req: lamp(92, 24), ko: lamp(92, 40) };
     const g = el('g', { class: 'scr-el block', transform: `translate(${ox + 3},${oy + 3})` }, [
@@ -571,13 +591,14 @@ export class ScreenRenderer {
       seen.add(tr.nr);
       let lbl = this.trainLabels.get(tr.nr);
       if (!lbl) {
-        lbl = el('g', { class: 'scr-train' }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), text(0, 0, String(tr.nr), { class: 'scr-train-nr' })]);
+        lbl = el('g', { class: 'scr-train' }, [el('g', { class: 'scr-train-in', transform: `scale(${this.S})` }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), text(0, 0, String(tr.nr), { class: 'scr-train-nr' })])]);
         this.layerTrains.appendChild(lbl);
         this.trainLabels.set(tr.nr, lbl);
       }
       const visible = headTile.x >= this.x0 && headTile.x <= this.x1;
       lbl.style.display = visible ? '' : 'none';
-      lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${headTile.y * CELL + C - 13})`);
+      lbl.querySelector('.scr-train-in').setAttribute('transform', `scale(${this.S})`);
+      lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry - 13 * this.S})`);
       lbl.querySelector('.scr-train-nr').textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
     }
     for (const [nr, lbl] of this.trainLabels) if (!seen.has(nr)) { lbl.remove(); this.trainLabels.delete(nr); }
