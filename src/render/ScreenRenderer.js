@@ -131,7 +131,58 @@ export class ScreenRenderer {
   }
 
   /* ---------------- budowa obrazu ---------------- */
+  /** Perony (Ie-104: grupa G2 – infrastruktura niesterowana): szare prostokąty wzdłuż torów peronowych.
+   *  Dwa tory peronowe dwa rzędy od siebie = peron wyspowy między nimi; pojedynczy tor – peron po wolnej stronie. */
+  #platforms() {
+    const spans = [];
+    for (const [sid, sec] of Object.entries(this.station.sections || {})) {
+      if (!sec.platform) continue;
+      const tiles = this.station.tiles.filter((t) => t.section === sid && t.type === 'track' && t.x >= this.x0 && t.x <= this.x1);
+      if (!tiles.length) continue;
+      const ys = [...new Set(tiles.map((t) => t.y))];
+      if (ys.length !== 1) continue;
+      spans.push({ sid, y: ys[0], x0: Math.min(...tiles.map((t) => t.x)), x1: Math.max(...tiles.map((t) => t.x)), done: false });
+    }
+    const TRACKY = new Set(['track', 'point', 'buffer', 'crossing', 'block', 'button']);
+    const rowBusy = (y, x0, x1) => this.station.tiles.some((t) => t.y === y && t.x >= x0 && t.x <= x1 && TRACKY.has(t.type));
+    /** Zakres kolumn peronu po odcięciu semaforów stojących w tym rzędzie (symbole na końcach toru). */
+    const clip = (y, x0, x1) => {
+      const mid = (x0 + x1) / 2;
+      const sig = this.station.tiles.filter((t) => t.type === 'signal' && t.y === y && t.x >= x0 && t.x <= x1);
+      const left = sig.filter((t) => t.x < mid).map((t) => t.x), right = sig.filter((t) => t.x >= mid).map((t) => t.x);
+      return [left.length ? Math.max(x0, Math.max(...left) + 1) : x0, right.length ? Math.min(x1, Math.min(...right) - 1) : x1];
+    };
+    const rect = (x0, x1, yRow, cls, hCells = 0.42) => {
+      if (x1 - x0 < 2) return;
+      const h = CELL * this.ry * hCells;
+      const r = el('rect', { class: `platform ${cls}`, x: (x0 - this.x0) * CELL + 3, y: (yRow * CELL + C) * this.ry - h / 2, width: (x1 - x0 + 1) * CELL - 6, height: h, rx: 2 });
+      this.layerTracks.appendChild(r);
+    };
+    spans.sort((a, b) => a.y - b.y);
+    for (const a of spans) {
+      if (a.done) continue;
+      // peron wyspowy: drugi tor peronowy 2 lub 4 rzędy niżej, rzędy pomiędzy bez torów
+      const b = spans.find((o) => !o.done && o !== a && (o.y === a.y + 2 || o.y === a.y + 4) && o.x0 <= a.x1 && o.x1 >= a.x0);
+      if (b) {
+        const X0 = Math.max(a.x0, b.x0), X1 = Math.min(a.x1, b.x1);
+        let free = true;
+        for (let y = a.y + 1; y < b.y; y++) if (rowBusy(y, X0, X1)) free = false;
+        if (free) {
+          let [c0, c1] = [X0, X1];
+          for (let y = a.y + 1; y < b.y; y++) { const [q0, q1] = clip(y, X0, X1); c0 = Math.max(c0, q0); c1 = Math.min(c1, q1); }
+          rect(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? 0.42 : 1.1);
+          a.done = b.done = true;
+          continue;
+        }
+      }
+      const side = !rowBusy(a.y - 1, a.x0, a.x1) ? a.y - 1 : !rowBusy(a.y + 1, a.x0, a.x1) ? a.y + 1 : null;
+      if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); rect(c0, c1, side, 'side'); }
+      a.done = true;
+    }
+  }
+
   #build() {
+    this.#platforms();
     const addSec = (sid, e) => { if (!this.sectionEls.has(sid)) this.sectionEls.set(sid, []); this.sectionEls.get(sid).push(e); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;

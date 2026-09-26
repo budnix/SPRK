@@ -306,6 +306,8 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .z-field { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linejoin: round; stroke: #8a949e; }
 .z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
 .z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
+.platform { fill: #1f262d; stroke: #4a5563; stroke-width: 1; }
+.platform.side { fill: #1a2026; }
 .buffer-bar { stroke: #b5bec7; stroke-width: 2.5; fill: none; }
 .scr-text { fill: #b6c0ca; font-size: 7px; }
 .block .scr-text { font-size: calc(7px * var(--symb, 1)); }

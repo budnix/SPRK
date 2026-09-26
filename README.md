@@ -14,6 +14,7 @@ Live version: https://budnix.github.io/SPRK/
 npm install
 npm run dev        # http://localhost:5173  (Vite; add --host to reach it from an iPad on the LAN)
 npm test           # logic tests (node --test)
+npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2e/__screenshots__
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
@@ -93,5 +94,6 @@ descriptions of type E equipment, not the dependency tables of specific signal b
 
 ## CI / deploy
 
-Workflow `.github/workflows/ci.yml`: every push and pull request runs `npm test`; after the tests pass on
+Workflow `.github/workflows/ci.yml`: every push and pull request runs `npm test` and the Playwright e2e suite
+(in the `mcr.microsoft.com/playwright` container, so screenshot baselines match its fonts); after both pass on
 `main`, the app is built and published to GitHub Pages (`https://budnix.github.io/SPRK/`).

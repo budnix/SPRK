@@ -28,9 +28,36 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  e2e:
+    name: Testy e2e (Playwright)
+    runs-on: ubuntu-latest
+    # obraz z gotowym Chromium i czcionkami DejaVu – wzorce zrzutów ekranu są z niego zależne
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e
+        env:
+          CI: 1
+          HOME: /root
+      - name: Wyniki (ślady, zrzuty) przy błędzie
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-wyniki
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
   build:
     name: Build
-    needs: test
+    needs: [test, e2e]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:

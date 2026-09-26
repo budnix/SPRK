@@ -6,7 +6,10 @@
   bez „Generated with Claude Code”, bez linków do sesji, bez nazw modeli. Treść commita to tylko opis zmiany.
 - Komunikaty commitów po polsku, w trybie oznajmującym, pierwsza linia do ~70 znaków.
 - Pracuj bezpośrednio na `main`, chyba że użytkownik poprosi o gałąź.
-- Przed pushem: `npm test` musi przechodzić.
+- Przed pushem: `npm test` musi przechodzić; przy zmianach w UI także `npm run test:e2e`
+  (Playwright; lokalnie: `SPRK_CHROMIUM=/ścieżka/do/chromium` gdy przeglądarka nie jest pobrana).
+  Wzorce zrzutów ekranu leżą w `tests/e2e/__screenshots__`; po zamierzonej zmianie wyglądu odśwież je
+  `npm run test:e2e:update` i uzasadnij w commicie.
 
 ## Testy – ochrona przed regresją
 

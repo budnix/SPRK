@@ -1,0 +1,107 @@
+import { test, expect } from '@playwright/test';
+import { openShift, tap, simState, advance } from './helpers.js';
+
+/* Stanowisko komputerowe (monitor, Ie-104) – Sopot */
+
+test('pasek poleceń: PRZEBIEG POCIĄGOWY → semafor początkowy → końcowy; niebieska ramka selekcji; H czerwony jako koniec', async ({ page }) => {
+  await openShift(page, 'sopot');
+  await page.click('.scr-cmdbar button[data-cmd=train]');
+  await expect(page.locator('.scr-cmdinfo')).toContainText('wskaż semafor początkowy');
+  await tap(page, 'A');
+  await expect(page.locator('#status')).toContainText('wskaż koniec przebiegu');
+  await expect(page.locator(`.scr-el.signal.selected`)).toHaveCount(1);
+  await tap(page, 'H');
+  await advance(page, 10);
+  const st = await simState(page);
+  expect(st.active).toContain('A-H');
+  expect(st.signals.A).not.toBe('S1');
+  await expect(page.locator('.seg.rt-train')).not.toHaveCount(0);
+  const hBody = page.locator('.scr-el.signal', { has: page.locator('text=H') }).first().locator('.sig-body');
+  await expect(hBody).toHaveClass(/st-locked/);
+});
+
+test('menu elementu: przebieg manewrowy na tor 13 (żółty), STOP gasi, polecenie specjalne Sz z potwierdzeniem i licznikiem, OPS odwołuje', async ({ page }) => {
+  await openShift(page, 'sopot');
+  await tap(page, 'L501');
+  await expect(page.locator('.scr-menu')).toBeVisible();
+  await page.click('.scr-menu button:has-text("Przebieg manewrowy")');
+  await tap(page, 'kT13');
+  await advance(page, 8);
+  let st = await simState(page);
+  expect(st.active).toContain('L501-kT13m');
+  expect(st.signals.L501).toBe('Ms2');
+  await expect(page.locator('.seg.rt-shunt')).not.toHaveCount(0);
+  // STOP z paska
+  await page.click('.scr-cmdbar button[data-cmd=stop]');
+  await tap(page, 'L501');
+  st = await simState(page);
+  expect(st.signals.L501).not.toBe('Ms2');
+  // Sz: inicjalizacja, odwołanie OPS, potem WYKONAJ
+  await page.click('.scr-cmdbar button[data-cmd=sz]');
+  await tap(page, 'B');
+  await expect(page.locator('.scr-confirm')).toBeVisible();
+  await page.click('.scr-confirm button:has-text("OPS")');
+  await expect(page.locator('.scr-confirm')).toBeHidden();
+  expect((await simState(page)).counters.Sz).toBe(0);
+  await page.click('.scr-cmdbar button[data-cmd=sz]');
+  await tap(page, 'B');
+  await page.click('.scr-confirm button:has-text("WYKONAJ")');
+  st = await simState(page);
+  expect(st.signals.B).toBe('Sz');
+  expect(st.counters.Sz).toBe(1);
+});
+
+test('ekrany: podział wg szerokości, strzałki, przebieg zaczęty na ekranie 1 i zakończony na innym', async ({ page }) => {
+  await openShift(page, 'gdynia-chylonia', { settings: { screens: 'auto', sideCollapsed: true } });
+  const tabs = page.locator('#screen-tabs button');
+  await expect(tabs).toHaveCount(4); // całość + 3 ekrany
+  await expect(tabs.nth(1)).toHaveClass(/active/);
+  await expect(tabs.nth(1)).toContainText('zachód');
+  await expect(tabs.nth(3)).toContainText('wschód');
+  const vb1 = await page.getAttribute('#desk svg', 'viewBox');
+  await page.keyboard.press('ArrowRight');
+  await expect(tabs.nth(2)).toHaveClass(/active/);
+  expect(await page.getAttribute('#desk svg', 'viewBox')).not.toBe(vb1);
+  await page.keyboard.press('ArrowLeft');
+  await page.click('.scr-cmdbar button[data-cmd=train]');
+  await tap(page, 'C');
+  await page.keyboard.press('ArrowRight');
+  await tap(page, 'M2');
+  await advance(page, 10);
+  expect((await simState(page)).active).toContain('C-M2');
+  // wyłączenie podziału w ustawieniach
+  await page.click('#btn-menu');
+  await page.check('input[name=screens][value=off]');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#screen-group')).toBeHidden();
+});
+
+test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w obrazie, perony narysowane', async ({ page }) => {
+  await openShift(page, 'sopot', { settings: { symScale: '1.4', rowScale: '0.7', sideCollapsed: true } });
+  const inside = await page.evaluate(() => {
+    const svg = document.querySelector('#desk svg');
+    const vb = svg.viewBox.baseVal;
+    const texts = [...svg.querySelectorAll('.scr-el.end text')];
+    return texts.every((t) => { const b = t.getBBox(); const m = t.getCTM(); const x0 = m.a * b.x + m.e, x1 = m.a * (b.x + b.width) + m.e; return x0 >= vb.x && x1 <= vb.x + vb.width; });
+  });
+  expect(inside).toBe(true);
+  expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
+  const before = await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'));
+  expect(before).toContain('scale(1.4)');
+  await page.click('#btn-menu');
+  await page.evaluate(() => { const i = document.getElementById('symScale'); i.value = '1'; i.dispatchEvent(new Event('input', { bubbles: true })); });
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1)');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).symScale)).toBe('1');
+});
+
+test('okręgi na monitorze: zakładki GO/GO2, okręg automatu tylko do podglądu, instrukcja opisuje zobrazowanie Ie-104', async ({ page }) => {
+  await openShift(page, 'gdynia-glowna', { params: { okreg: 'GO' } });
+  await expect(page.locator('#desk-tabs button')).toHaveCount(2);
+  await page.click('#desk-tabs button:has-text("GO2")');
+  await expect(page.locator('.desk-district[data-district=GO2] svg.screen.readonly')).toBeVisible();
+  await expect(page.locator('.desk-district[data-district=GO2] .scr-banner')).toContainText('druga nastawnia');
+  await page.click('#btn-help');
+  await expect(page.locator('#help')).toContainText('Ie-104');
+  await expect(page.locator('#help')).toContainText('Ebilock');
+});

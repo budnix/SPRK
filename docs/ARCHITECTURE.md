@@ -77,6 +77,17 @@ jednym ekranie kończy się na drugim. Przełączanie: zakładki w listwie, strz
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
 * Blokada Eap: Wbl (żądanie), Poz (pozwolenie), Ko (potwierdzenie przyjazdu), dPo/dKo (doraźne, liczniki).
 
+## Testy
+
+* `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`).
+* `tests/e2e/` – Playwright: `desk.spec.js` (pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada, ustawienia,
+  struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
+  skala symboli, perony, okręgi), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
+  próg 2 % pikseli). Pomocniki w `helpers.js`: `openShift` (ustawienia w localStorage, zegar zatrzymany),
+  `btn`/`tap` (przyciski wg `data-ref`), `simState`, `advance` (krok symulacji bez czekania).
+* Wzorce zrzutów powstają w kontenerze Playwright (czcionki DejaVu) – lokalnie odświeżaj je
+  `npm run test:e2e:update` tylko z tymi samymi czcionkami, inaczej porównanie w CI padnie.
+
 ## Plan rozwoju
 
 1. Edytor stacji (przeglądarkowy, eksport JSON) – rejestr kostek i walidator są gotowe.
