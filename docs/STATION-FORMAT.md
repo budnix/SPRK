@@ -60,11 +60,17 @@ T1: { length: 520, kind: 'station', track: '1', platform: true }
 ## Szlaki (`exits`)
 
 ```js
-W: { name: 'Lipowa', tile: { x: 0, y: 4 }, dir: 'W', lineLength: 4200, lineSpeed: 100 }
+W:  { name: 'Lipowa', tile: { x: 0, y: 4 }, dir: 'W', lineLength: 4200, lineSpeed: 100 }
+K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W', direction: 'out', lineLength: 6100 }
 ```
 
 `tile` + `dir` – kostka torowa i port, przez który tor opuszcza pulpit. `lineLength` – długość toru szlakowego
-(wirtualnego, poza pulpitem) w metrach. Każdy szlak ma własną blokadę liniową Eap i posterunek sąsiedni sterowany przez AI.
+(wirtualnego, poza pulpitem) w metrach. Każdy szlak ma własną blokadę liniową i posterunek sąsiedni sterowany przez AI.
+
+* bez `direction` – szlak jednotorowy z blokadą Eap dwukierunkową (Wbl, Poz, Ko, dPo, dKo),
+* `direction: 'out'` / `'in'` – tor szlakowy linii dwutorowej z ruchem jednokierunkowym (tylko Po/Ko;
+  na torze wjazdowym sąsiad wyprawia bez pozwolenia, na torze wyjazdowym nie ma pozwolenia),
+* `label` – napis na polu blokady (gdy dwa tory prowadzą do tego samego posterunku).
 
 ## Przebiegi (`routes`)
 
@@ -93,3 +99,38 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
 by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).
+
+Pociąg tworzony ze składu innego pociągu (np. zdawczy powrotny):
+
+```js
+{ nr: 90212, kind: 'tow', name: 'Zdawczy', unit: 90211, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 60 }
+```
+
+`unit` – numer pociągu, który zakończył bieg na stacji; jego skład staje się pociągiem `nr` 15 min przed `dep`
+(o ile stoi). Skład trzeba podstawić na właściwy tor manewrami i ustawić czołem do semafora wyjazdowego.
+
+## Zadania manewrowe (`tasks`)
+
+```js
+{ id: 'odstaw-90211', unit: 90211, type: 'move', toTrack: '3', deadline: '07:52', after: '07:40', text: '…' }
+```
+
+Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po `after`, jeśli podane).
+Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt.
+Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
+
+## Scenariusze (`scenarios`)
+
+```js
+{ id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: '…',
+  trains: [5314, 5315, 90211],          // podzbiór rozkładu (domyślnie cały)
+  startTime: '07:10', endTime: '08:30',  // koniec zmiany – raport
+  faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }],
+  closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
+  disruptions: 'none' }                  // wymuszony poziom zakłóceń (inaczej wybór gracza)
+```
+
+Typy usterek: `signal-fail` (semafor bez sygnału zezwalającego), `point-control` (brak kontroli po przestawieniu),
+`false-occupancy` (zajętość bez pociągu), `block-fail` (blokada bez łączności – zapowiadanie telefoniczne).
+`duration` w minutach. Poziomy zakłóceń (`none`/`low`/`high`) dodają losowe opóźnienia, usterki i pociągi nadzwyczajne;
+ziarno losowe (`seed`) daje powtarzalną zmianę.

@@ -291,7 +291,7 @@ export function blockArt(tile, exitDef) {
   ]);
   const refs = {};
   const toWest = exitDef.dir === 'W';
-  g.appendChild(text(4, 9, `[${exitDef.name}]`, { class: 'tile-text small', 'text-anchor': 'start' }));
+  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${exitDef.direction === 'in' ? ' – wjazd' : exitDef.direction === 'out' ? ' – wyjazd' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
   // strzałki kierunku
   const ax = 8, ay = 24;
   g.appendChild(el('rect', { class: 'arrow-box', x: ax, y: ay - 7, width: 30, height: 14, rx: 1 }));
@@ -306,7 +306,9 @@ export function blockArt(tile, exitDef) {
   // przyciski
   refs.btns = {};
   const by = 58;
-  [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]].forEach(([id, color, x]) => {
+  const fixed = exitDef.direction;
+  const btnDefs = fixed === 'in' ? [['Ko', 'red', 40]] : fixed === 'out' ? [] : [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]];
+  btnDefs.forEach(([id, color, x]) => {
     const b = button(x, by, 5.5, color, { kind: 'block', exit: tile.exit, btn: id }, id, 'below');
     refs.btns[id] = b; g.appendChild(b);
   });

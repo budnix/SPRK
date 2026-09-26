@@ -37,8 +37,16 @@ Station selection: `?stacja=<id>` (default `stare-pustkowie`).
 * **Side panel**: clock and time factor (1–30×), timetable with live status and delays, event log with
   messages from neighbouring stations, block / route / counter state, switching a train to shunting mode,
   built-in manual (?).
-* **Test station Stare Pustkowie**: single-track line, two main tracks with platforms, a loading siding
-  with a derailer, 3 points, 6 main signals, 2 shunting signals, a timetable of 10 trains (with crossings).
+* **Disruptions**: inbound delays, equipment faults (dark signal, point without detection, false track
+  occupancy, line block without communication), extra trains; seeded so a shift can be replayed.
+* **Communication**: telephone train reporting per Ir-1 formulas when the block fails, radio calls from drivers,
+  written orders „S” for passing a signal at Stop.
+* **Shift report**: scoring of every procedural decision (punctual dispatch, holding trains, dPz, dPo/dKo,
+  Sz, orders, wrong formulas, run-throughs) with a grade at the end of the shift.
+* **Shunting tasks**: terminating trains must be stabled on a siding and brought back as a new train.
+* **Stations and scenarios**: Stare Pustkowie (single-track line, crossings, siding) and Wola Pustkowska
+  (double-track line with one-way blocks, a branch line with Eap, junction work); each with scenarios such as
+  a closed track, a point failure, a block failure or a peak with heavy disruptions.
 
 ## Operating the desk (short version)
 

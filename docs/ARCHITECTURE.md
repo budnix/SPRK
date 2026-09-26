@@ -5,8 +5,10 @@ src/
   core/        EventBus (zdarzenia), Clock (czas symulacji)
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól)
   model/       Topology (graf toru z kostek), Interlocking (zależności typu E),
-               Block (blokada Eap + AI sąsiada), Train (ruch pociągu), Traffic (rozkład, ruch),
-               Simulation (spięcie), validate (walidacja definicji stacji)
+               Block (blokada Eap / jednokierunkowa + AI sąsiada + zapowiadanie telefoniczne),
+               Train (ruch pociągu, manewry, rozkazy), Traffic (rozkład, ruch, zadania manewrowe),
+               Faults (usterki), Comms (łączność), Score (ocena), Simulation (spięcie, scenariusze),
+               validate (walidacja definicji stacji)
   render/      DeskRenderer (SVG pulpitu, obsługa dotyku/myszy), tileArt (grafika kostek), svg (helpery)
   ui/          SidePanel (rozkład, dziennik, stan), Help (instrukcja)
   stations/    definicje stacji + rejestr
@@ -45,6 +47,6 @@ docs/          format stacji, architektura, źródła
 ## Plan rozwoju
 
 1. Edytor stacji (przeglądarkowy, eksport JSON) – rejestr kostek i walidator są gotowe.
-2. Dziennik ruchu R-146 wypełniany przez gracza, telefonogramy.
+2. Dziennik ruchu R-146 wypełniany przez gracza (opcja trudności).
 3. Tryb sieciowy: kilka posterunków na jednej linii (serwer trzyma `Simulation`, klienci wysyłają `press/pull`).
 4. Więcej kostek: rozjazd krzyżowy, tarcze ostrzegawcze, przejazdy, wskaźniki W.
