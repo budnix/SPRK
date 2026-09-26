@@ -363,15 +363,39 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .scr-cmdbar button.active { background: #1f3f7a; border-color: #3f8cff; color: #fff; }
 .scr-cmdbar button.special { color: #ffb84d; }
 .scr-cmdinfo { color: var(--muted); font-size: 12px; margin-right: auto; order: -1; }
-.scr-menu { position: fixed; z-index: 60; min-width: 250px; max-width: 320px; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; font-size: 13px; }
+.scr-menu { position: fixed; z-index: 80; min-width: 250px; max-width: 320px; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; font-size: 13px; }
 .scr-menu h5 { margin: 0; padding: 6px 10px; background: #1b242c; color: #8fb0c9; font-size: 12px; font-weight: 600; }
 .scr-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid #1b242c; color: inherit; padding: 8px 10px; font: inherit; cursor: pointer; }
 .scr-menu button:hover { background: #243040; }
 .scr-menu button.special { color: #ffb84d; }
-.scr-confirm { position: fixed; z-index: 61; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: #3a2a00; color: #ffe2b0; border: 1px solid #ffb84d; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+.scr-confirm { position: fixed; z-index: 81; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: #3a2a00; color: #ffe2b0; border: 1px solid #ffb84d; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
 .scr-confirm .tb.warn { background: #ffb84d; color: #1c1300; border-color: #ffb84d; font-weight: 600; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
 
 .menu label.range { display: flex; align-items: center; gap: 8px; }
 .menu label.range input[type=range] { flex: 1 1 auto; }
 .menu label.range output { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* samouczek (misje wprowadzające) */
+.tut-box { position: fixed; z-index: 70; background: var(--panel); color: var(--text); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 30px var(--shadow); font-size: 13px; line-height: 1.45; max-height: 60vh; display: flex; flex-direction: column; }
+.tut-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border2); background: var(--panel2); border-radius: 10px 10px 0 0; }
+.tut-step { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.tut-title { font-weight: 700; flex: 1 1 auto; }
+.tut-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; }
+.tut-body { padding: 8px 12px; overflow: auto; }
+.tut-body p { margin: 6px 0 0; }
+.tut-body abbr[data-term] { text-decoration: underline dotted; text-underline-offset: 2px; cursor: help; color: var(--accent); }
+.tut-hint { color: var(--muted); font-size: 12px; }
+.tut-feedback { margin: 0 12px 6px; padding: 6px 8px; border-radius: 6px; background: #5a3a00; color: #ffe2b0; font-size: 12px; }
+.tut-actions { display: flex; gap: 6px; justify-content: flex-end; padding: 6px 10px 10px; }
+.tut-actions .tb.primary, .tb.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.tut-box.waiting .tut-head::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); animation: blink 1.2s steps(1) infinite; }
+.tut-gloss { position: fixed; z-index: 71; background: var(--panel); color: var(--text); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 8px 24px var(--shadow); }
+.tut-gloss p { margin: 4px 0 0; }
+.tut-hl { outline: 3px solid #35c2ff; outline-offset: 2px; border-radius: 4px; animation: tutpulse 1s ease-in-out infinite; }
+svg .tut-hl { outline: none; filter: drop-shadow(0 0 4px #35c2ff) drop-shadow(0 0 8px #35c2ff); }
+@keyframes tutpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+.start-tutorial { background: var(--panel2); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; font-size: 13px; }
+.start-tutorial button { margin-top: 6px; }
+dl.gloss dt { font-weight: 600; margin-top: 6px; }
+dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }

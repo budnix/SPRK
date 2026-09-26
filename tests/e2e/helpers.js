@@ -52,3 +52,10 @@ export async function advance(page, seconds) {
     c.paused = paused; c.speed = speed;
   }, seconds);
 }
+
+/** Naciśnięcie przycisku pulpitu kostkowego zdarzeniami wskaźnika (bez testu trafienia – dymek samouczka może leżeć obok). */
+export async function pressBtn(page, ref) {
+  const b = btn(page, ref);
+  await b.dispatchEvent('pointerdown', { bubbles: true, button: 0 });
+  await b.dispatchEvent('pointerup', { bubbles: true, button: 0 });
+}

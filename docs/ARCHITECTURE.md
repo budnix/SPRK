@@ -77,12 +77,24 @@ jednym ekranie kończy się na drugim. Przełączanie: zakładki w listwie, strz
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
 * Blokada Eap: Wbl (żądanie), Poz (pozwolenie), Ko (potwierdzenie przyjazdu), dPo/dKo (doraźne, liczniki).
 
+## Misje wprowadzające (`src/tutorial/`)
+
+* `missions.js` – kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
+  Jedna lista `missionSteps(view)` obsługuje monitor (`'monitor'`) i pulpit kostkowy (`'pulpit'`) – różnią się teksty
+  i wskazywane miejsca (`anchor`: `{ ref }`, `{ block }`, `{ cmd }`, `{ el }`, `{ tab }`).
+* `progress.js` – `MissionProgress`: kolejność kroków, warunki na stanie symulacji i zdarzeniach szyny
+  (`ctx.seen`: `route:A-D1:set`, `lock:Zw3`, `sz:A`, `cancel:B` …), wstrzymanie zegara na krokach informacyjnych,
+  komunikaty `wrong` (np. przebieg na zły tor). Testowany w Node skryptem „ucznia” (`tests/szkolna.test.js`).
+* `Tutorial.js` – UI: dymek przypięty do elementu (`renderer.elementFor(ref)`, `cmdButton(id)`), podświetlenie `.tut-hl`,
+  słownik skrótów (`src/data/glossary.js`) po kliknięciu `<abbr data-term>`, „Dalej” / „Pomiń krok” / „Pokaż gdzie”.
+* Stacja treningowa `src/stations/szkolna.js`; scenariusz z polem `tutorial` uruchamia misję (main.js).
+
 ## Testy
 
-* `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`).
+* `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`).
 * `tests/e2e/` – Playwright: `desk.spec.js` (pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada, ustawienia,
   struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
-  skala symboli, perony, okręgi), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
+  skala symboli, perony, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, słownik, obie misje), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
   próg 2 % pikseli). Pomocniki w `helpers.js`: `openShift` (ustawienia w localStorage, zegar zatrzymany),
   `btn`/`tap` (przyciski wg `data-ref`), `simState`, `advance` (krok symulacji bez czekania).
 * Wzorce zrzutów powstają w kontenerze Playwright (czcionki DejaVu) – lokalnie odświeżaj je

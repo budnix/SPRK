@@ -1,4 +1,5 @@
 import { viewHelp } from '../srk/views.js';
+import { GLOSSARY } from '../data/glossary.js';
 
 /** Okno pomocy – instrukcja obsługi stanowiska (część zależna od systemu srk) i zasad ruchu. */
 export class Help {
@@ -55,6 +56,8 @@ export class Help {
         <li>Pociągi osobowe zatrzymują się przy peronie i odjeżdżają nie wcześniej niż o czasie rozkładowym – gdy semafor wyjazdowy pokaże sygnał zezwalający.</li>
         <li>Pociąg, który zakończył bieg, można przełączyć w jazdę manewrową (zakładka <i>Stan</i>) – porusza się wtedy za sygnałem Ms2.</li>
       </ul>
+      <h3>Słownik skrótów</h3>
+      <dl class="gloss">${Object.values(GLOSSARY).map((g) => `<dt>${g.name}</dt><dd>${g.text}</dd>`).join('')}</dl>
       <p class="muted">Symulator jest uproszczeniem rzeczywistości; zasady wzorowano na Ie-1, Ir-1 i instrukcjach obsługi urządzeń przekaźnikowych typu E.</p>
     </div>`;
     root.querySelector('.close').addEventListener('click', () => this.hide());

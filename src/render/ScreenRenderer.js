@@ -1,6 +1,7 @@
 import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './DeskRenderer.js';
+import { tip } from '../data/glossary.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -85,6 +86,15 @@ export class ScreenRenderer {
     this.#bind();
     this.refreshAll();
   }
+
+  /** Element graficzny odpowiadający przyciskowi/elementowi (do podświetlania w samouczku). */
+  elementFor(ref) {
+    if (ref.kind === 'blockpanel') return this.hitEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' })) || null;
+    return this.hitEls.get(refKey(ref)) || (ref.kind === 'signal' ? this.hitEls.get(refKey({ ...ref, color: 'green' })) || this.hitEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
+  }
+
+  /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
+  cmdButton(id) { return this.cmdButtons?.get(id) || null; }
 
   /** Widoczny wycinek kolumn (ekran monitora) – zmiana viewBox, bez przebudowy grafiki. */
   setView(x0, x1) {
@@ -352,6 +362,7 @@ export class ScreenRenderer {
     for (const [id, label, special] of CMDS) {
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = label; b.dataset.cmd = id;
+      b.title = tip({ train: 'przebieg pociągowy', shunt: 'przebieg manewrowy', pz: 'Pz', dpz: 'dPz', zw: 'Zw', zz: 'Zz', sz: 'Sz', stop: 'STOP', ops: 'OPS' }[id]);
       if (special) b.classList.add('special');
       b.addEventListener('click', () => this.#setMode(id === 'ops' ? null : id, id === 'ops'));
       bar.appendChild(b); this.cmdButtons.set(id, b);

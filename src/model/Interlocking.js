@@ -178,7 +178,7 @@ export class Interlocking {
 
   pull(ref) {
     this.bus.emit('button', { ref, action: 'pull' });
-    this.armed = null;
+    if (this.armed) { this.armed = null; this.bus.emit('armed', null); } // wyciągnięcie odwołuje uzbrojenie
     if (ref.kind === 'signal') return this.cancelSignal(ref.id);
     return { ok: false };
   }

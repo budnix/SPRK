@@ -22,9 +22,9 @@ export class Simulation {
     const v = validateStation(station);
     if (v.errors.length) throw new Error(`Definicja stacji niepoprawna:\n${v.errors.join('\n')}`);
     this.station = station;
-    // System sterowania ruchem (strategia): ze stacji lub nadpisany w opcjach (ustawienia gracza)
-    this.srk = getSrk(opts.srk || station.srk);
     this.scenario = Simulation.resolveScenario(station, opts.scenario);
+    // System sterowania ruchem (strategia): wymuszony przez scenariusz (samouczek), z ustawień gracza lub ze stacji
+    this.srk = getSrk(this.scenario.srk || opts.srk || station.srk);
     this.bus = new EventBus();
     this.seed = opts.seed ?? Math.floor(Math.random() * 1e9);
     this.rng = new Random(this.seed);

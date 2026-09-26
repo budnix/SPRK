@@ -8,6 +8,8 @@ import { StartScreen } from './ui/StartScreen.js';
 import { Report } from './ui/Report.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
+import { Tutorial } from './tutorial/Tutorial.js';
+import { getMission } from './tutorial/missions.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
@@ -283,5 +285,22 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
+/* ---- samouczek (misje wprowadzające): scenariusz z polem `tutorial` ---- */
+let tutorial = null;
+const mission = sim.scenario.tutorial ? getMission(sim.scenario.tutorial) : null;
+if (mission && params.get('scenariusz')) {
+  const anchorEl = (a) => {
+    const r = activeDesk?.renderer;
+    if (a.el) return document.querySelector(a.el);
+    if (a.tab) { side.collapse(false); return document.querySelector(`#side .tabs button[data-tab="${a.tab}"]`); }
+    if (a.cmd) return r?.cmdButton?.(a.cmd) || null;
+    if (a.block) return r?.elementFor?.({ kind: 'blockpanel', exit: a.block }) || null;
+    if (a.ref) return r?.elementFor?.(a.ref) || null;
+    return null;
+  };
+  tutorial = new Tutorial(sim, { steps: mission.steps(), anchorEl, showTab: (id) => { side.collapse(false); side.showTab(id); }, onFinish: () => setStatus('Samouczek zakończony', 'info') });
+  tutorial.start();
+}
+
 // Dla debugowania w konsoli
-window.sim = sim; window.desk = desk; window.side = side;
+window.sim = sim; window.desk = desk; window.side = side; window.tutorial = tutorial;

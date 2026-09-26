@@ -1,0 +1,167 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Simulation } from '../src/model/Simulation.js';
+import szkolna from '../src/stations/szkolna.js';
+import { validateStation } from '../src/model/validate.js';
+import { Clock } from '../src/core/Clock.js';
+import { autoDispatch } from './helpers.js';
+import { MissionProgress } from '../src/tutorial/progress.js';
+import { missionSteps, MISSIONS } from '../src/tutorial/missions.js';
+import { GLOSSARY } from '../src/data/glossary.js';
+
+test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scenariusze wskazują misje', () => {
+  assert.deepEqual(validateStation(szkolna).errors, []);
+  const sim = new Simulation(szkolna, { disruptions: 'none' });
+  assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, 'urwane porty toru');
+  const ids = new Set(sim.ilk.routeList().map((r) => r.id));
+  for (const id of ['A-D1', 'A-D2', 'B-C1', 'B-C2', 'D1-E', 'D2-E', 'C1-W', 'C2-W', 'D2-kT3m', 'Tm1-Tm2', 'Tm2-C2']) assert.ok(ids.has(id), `brak przebiegu ${id}`);
+  for (const sc of szkolna.scenarios.filter((s) => s.tutorial)) assert.ok(MISSIONS[sc.tutorial], `scenariusz ${sc.id}: nieznana misja ${sc.tutorial}`);
+  // misja 1 – monitor, misja 2 – pulpit kostkowy (scenariusz wymusza stanowisko)
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).srk.view, 'screen');
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-2', srk: 'komputerowe' }).srk.view, 'desk', 'scenariusz misji 2 wygrywa z ustawieniem gracza');
+});
+
+test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty ze słownika', () => {
+  for (const view of ['monitor', 'pulpit']) {
+    const steps = missionSteps(view);
+    assert.ok(steps.length > 30, `${view}: za mało kroków`);
+    assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
+    for (const s of steps) {
+      assert.ok(s.title && s.text, `${view}/${s.id}: brak tytułu lub tekstu`);
+      assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
+      for (const [, term] of s.text.matchAll(/data-term="([^"]+)"/g)) assert.ok(GLOSSARY[term], `${view}/${s.id}: brak w słowniku: ${term}`);
+      if (s.anchor?.cmd) assert.equal(view, 'monitor', `${view}/${s.id}: kotwica paska poleceń tylko na monitorze`);
+    }
+    // teksty misji 2 nie odsyłają do paska poleceń monitora
+    if (view === 'pulpit') for (const s of steps) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ/.test(s.text), `${s.id}: tekst z monitora na pulpicie`);
+  }
+});
+
+/** Skrypt „ucznia”: dla każdego kroku – co zrobić na modelu (jak kliknięcia na stanowisku). */
+function studentScript(sim) {
+  const press = (ref) => sim.press(ref);
+  const G = (id) => ({ kind: 'signal', id, color: 'green' });
+  const Wt = (id) => ({ kind: 'signal', id, color: 'white' });
+  const blk = (exit, btn) => ({ kind: 'block', exit, btn });
+  const B = (exit) => sim.blocks.get(exit);
+  const act = (id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
+  const e = (nr) => sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
+  const poz = (exit) => { if (B(exit).request === 'theirs') press(blk(exit, 'Poz')); };
+  const ko = (exit) => { if (B(exit).koPending) press(blk(exit, 'Ko')); };
+  const route = (a, b, id) => { if (!act(id) && !sim.ilk.armed) { press(G(a)); press(b.kind ? b : G(b)); } };
+  const wbl = (exit) => { const b = B(exit); if (!b.direction && !b.request && !b.occupied && !b.koPending) press(blk(exit, 'Wbl')); };
+  const out = (nr, sigId, endId, exit, id) => {
+    const en = e(nr); const b = B(exit);
+    if (!en?.train || en.actualArr == null || en.status === 'u sąsiada') return;
+    if (b.direction === 'out' && b.permission) route(sigId, { kind: 'end', id: endId }, id); else wbl(exit);
+  };
+  const stoppedBefore = (nr, sig) => e(nr)?.train?.stoppedAt?.signal === sig && e(nr).train.v === 0;
+  const once = new Set();
+  const one = (k, f) => { if (!once.has(k)) { once.add(k); f(); } };
+  return {
+    'poz-6101': () => poz('W'),
+    'route-6101': () => route('A', 'D1', 'A-D1'),
+    'ko-6101': () => ko('W'),
+    'wbl-6101': () => wbl('E'),
+    'out-6101': () => out(6101, 'D1', 'kE', 'E', 'D1-E'),
+    'poz-6102': () => poz('E'),
+    'route-6102': () => route('B', 'C1', 'B-C1'),
+    'ko-6102': () => { ko('E'); if (!B('E').koPending && e(6102).actualArr != null) wbl('W'); },
+    'out-6102': () => out(6102, 'C1', 'kW', 'W', 'C1-W'),
+    'passing-42101': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); if (sim.ilk.active.has('A-D1')) { wbl('E'); if (B('E').permission) route('D1', { kind: 'end', id: 'kE' }, 'D1-E'); } },
+    'after-42101': () => ko('W'),
+    'cross-poz': () => { poz('W'); poz('E'); },
+    'cross-routes': () => { if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); },
+    'cross-out': () => { ko('W'); ko('E'); out(6103, 'D2', 'kE', 'E', 'D2-E'); out(6104, 'C1', 'kW', 'W', 'C1-W'); },
+    'lesson-route': () => route('A', 'D1', 'A-D1'),
+    'lesson-stop': () => { if (sim.ilk.signals.get('A').aspect !== 'S1') sim.pull(G('A')); },
+    'lesson-pz': () => { if (sim.ilk.active.has('A-D1')) { press({ kind: 'group', id: 'Pz', role: 'route-release' }); press(G('A')); } },
+    'lesson-cancel': () => one('cancel', () => { press(G('B')); sim.pull(G('B')); }),
+    'lesson-zw': () => { const p = sim.ilk.points.get('Zw3'); if (p.position === '+' && !p.moving && !sim.ilk.armed) { press({ kind: 'group', id: 'Zw', role: 'group-point' }); press({ kind: 'point', id: 'Zw3' }); } },
+    'lesson-zz': () => {
+      const p = sim.ilk.points.get('Zw3'); if (sim.ilk.armed || p.moving) return;
+      if (!once.has('lock')) { once.add('lock'); press({ kind: 'group', id: 'Zz', role: 'point-lock' }); press({ kind: 'point', id: 'Zw3' }); return; }
+      if (p.individualLock) { press({ kind: 'group', id: 'Zz', role: 'point-lock' }); press({ kind: 'point', id: 'Zw3' }); return; }
+      if (p.position === '-') { press({ kind: 'group', id: 'Zw', role: 'group-point' }); press({ kind: 'point', id: 'Zw3' }); }
+    },
+    'in-90201': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); ko('W'); },
+    'shunt-mode': () => { const tr = e(90201).train; if (tr && tr.v === 0 && tr.mode !== 'shunt') sim.traffic.toShunting(90201); },
+    'shunt-route': () => { if (!act('D2-kT3m') && !sim.ilk.armed) { press(Wt('D2')); press({ kind: 'end', id: 'kT3' }); } },
+    'shunt-reverse': () => { const tr = e(90201).train; if (tr && tr.v === 0 && !['W', 'NW', 'SW'].includes(tr.direction)) sim.traffic.reverseTrain(90201); },
+    'shunt-back': () => { if (sim.ilk.armed) return; if (!act('Tm1-Tm2') && !once.has('tm1')) { once.add('tm1'); press(Wt('Tm1')); press(Wt('Tm2')); } else if (!act('Tm2-C2')) { press(Wt('Tm2')); press(Wt('C2')); } },
+    'shunt-task2': () => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = e(90201).train || e(90202).train; if (t?.done && tr && tr.mode === 'shunt' && tr.v === 0) sim.traffic.toTrainMode(tr.nr); },
+    'out-90202': () => { if (!e(90202).train) return; const b = B('W'); if (b.direction === 'out' && b.permission) route('C2', { kind: 'end', id: 'kW' }, 'C2-W'); else wbl('W'); },
+    'in-6105-route': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); },
+    'sz-6105': () => { if (stoppedBefore(6105, 'A') && !sim.ilk.armed && sim.ilk.signals.get('A').aspect !== 'Sz') { press({ kind: 'group', id: 'Sz', role: 'substitute' }); press(G('A')); } },
+    'out-6105': () => { ko('W'); out(6105, 'D1', 'kE', 'E', 'D1-E'); },
+    'in-6106': () => { poz('E'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); ko('E'); },
+    'phone-ask': () => one('ask', () => sim.comms.send('ask-free', { exit: 'W', nr: '6106' })),
+    'phone-route': () => { if (String(B('W').phone.permissionFor) === '6106') route('C1', { kind: 'end', id: 'kW' }, 'C1-W'); },
+    'phone-departed': () => { const b = B('W'); if (String(b.phone.departedTrain) === '6106' && !b.phone.departedReported) sim.comms.send('departed', { exit: 'W', nr: '6106' }); },
+    'phone-dpo': () => { const b = B('W'); if (String(b.phone.arrivalConfirmed) === '6106' && b.poBlocked) press(blk('W', 'dPo')); },
+  };
+}
+
+for (const [scenario, mission] of [['nauka-1', 'monitor'], ['nauka-2', 'pulpit']]) {
+  test(`Szkolna: misja „${mission}” (${scenario}) – uczeń wykonujący polecenia dymków przechodzi wszystkie kroki po kolei`, () => {
+    const sim = new Simulation(szkolna, { scenario, seed: 7 });
+    const steps = missionSteps(mission);
+    const order = [];
+    const progress = new MissionProgress(sim, steps, { onStep: (s) => order.push(s.id) });
+    const script = studentScript(sim);
+    progress.start();
+    assert.equal(sim.clock.paused, true, 'krok informacyjny zatrzymuje zegar');
+    const end = Clock.parse('09:10');
+    let n = 0, lastIdx = -1, since = sim.clock.time;
+    while (!progress.finished && sim.clock.time < end) {
+      if (progress.step?.info) { progress.next(); continue; }
+      sim.step(0.5);
+      if (n++ % 2 === 0) script[progress.step.id]?.();
+      if (progress.index !== lastIdx) { lastIdx = progress.index; since = sim.clock.time; }
+      assert.ok(sim.clock.time - since < 25 * 60, `krok ${progress.step?.id} nie kończy się (od ${Clock.format(since)})`);
+    }
+    assert.ok(progress.finished, `misja nieukończona – utknęła na kroku ${progress.step?.id} o ${Clock.format(sim.clock.time)}`);
+    assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
+    assert.equal(sim.clock.paused, false, 'po ostatnim „Dalej” zegar biegnie');
+    for (const e of sim.traffic.timetable()) {
+      assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+      if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
+    }
+    assert.equal(sim.ilk.counters.Sz, 1);
+    assert.equal(sim.blocks.get('W').counters.dPo, 1);
+    assert.ok(sim.traffic.tasks.every((t) => t.done), 'zadania manewrowe wykonane');
+  });
+}
+
+test('Szkolna: krok z warunkiem spełnionym wcześniej jest przeskakiwany, „wrong” daje komunikat, Dalej wznawia zegar', () => {
+  const sim = new Simulation(szkolna, { scenario: 'nauka-1' });
+  const steps = missionSteps('monitor');
+  const fb = [];
+  const progress = new MissionProgress(sim, steps, { onFeedback: (m) => fb.push(m) });
+  progress.start();
+  progress.next(); progress.next(); progress.next(); // intro, layout, block-intro
+  assert.equal(progress.step.id, 'poz-6101');
+  assert.equal(sim.clock.paused, false);
+  // uczeń wyprzedza samouczek: Poz i przebieg na tor 2 (zły tor)
+  for (let i = 0; i < 20 && sim.blocks.get('W').request !== 'theirs'; i++) sim.step(0.5);
+  sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+  sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });
+  for (let i = 0; i < 20; i++) sim.step(0.5);
+  assert.equal(progress.step.id, 'route-6101');
+  assert.match(fb.at(-1) || '', /tor 2/);
+  // poprawka: Pz + A, potem A → D1 → krok zaliczony, komunikat znika
+  sim.press({ kind: 'group', id: 'Pz', role: 'route-release' }); sim.press({ kind: 'signal', id: 'A', color: 'green' });
+  for (let i = 0; i < 4; i++) sim.step(0.5);
+  sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D1', color: 'green' });
+  for (let i = 0; i < 20; i++) sim.step(0.5);
+  assert.equal(progress.step.id, 'watch-6101');
+  assert.equal(fb.at(-1), null);
+});
+
+test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez kolizji', () => {
+  const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  const end = Clock.parse('09:10');
+  let n = 0;
+  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  for (const e of sim.traffic.timetable()) assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+});

@@ -85,6 +85,20 @@ droga ochronna (odcinek za semaforem końcowym) i prędkość (40/60 przez tor z
 
 Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: sufiks `m` (`D2-kT3m`).
 
+## Scenariusze (`scenarios`)
+
+```js
+{ id: 'nauka-1', name: 'Misja 1…', description: '…', trains: [5311, 5310], startTime: '07:10', endTime: '09:10',
+  faults: [{ type: 'signal-fail', target: 'A', at: '08:33', duration: 10 }], closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
+  disruptions: 'none', timetable: [ … ], tasks: [ … ], tutorial: 'monitor', srk: 'komputerowe' }
+```
+
+* `trains` – podzbiór rozkładu stacji (numery), `timetable` – własny rozkład scenariusza,
+* `faults` – usterki zadane (`signal-fail`, `point-control`, `false-occupancy`, `block-fail`), `closedSections` – zamknięcia torów,
+* `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz,
+* `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`); gra pokazuje dymki krok po kroku,
+* `srk` – wymuszone stanowisko obsługi (`E` / `komputerowe`) niezależnie od stacji i ustawień gracza (misja 2 uczy pulpitu kostkowego).
+
 ## Rozkład jazdy (`timetable`)
 
 ```js

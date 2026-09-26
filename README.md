@@ -18,7 +18,14 @@ npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
-Station selection: `?stacja=<id>` (default `stare-pustkowie`).
+Station selection: `?stacja=<id>` (default `szkolna`, the training station).
+
+**New to railway signalling?** The start screen offers two guided missions on the fictional training station
+*Szkolna*: mission 1 on the computer workstation, mission 2 on the type E tile desk. Each step is a popup pinned
+to the element to use (block panel, signal, command button, side-panel tab); every abbreviation (Poz, Wbl, Ko, Pz,
+Sz, Zz…) is clickable and explained. The linear timetable walks through permission requests, entry and exit routes,
+a non-stop freight, a crossing, STOP / route release, points, shunting a terminating unit, a substitute signal after a
+signal fault and telephone train announcements after a block fault. Direct link: `?stacja=szkolna&scenariusz=nauka-1`.
 
 ## What is in version 0.1
 

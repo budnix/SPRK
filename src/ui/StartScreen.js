@@ -9,6 +9,8 @@ export class StartScreen {
     const stationId = current.station || STATIONS[0].id;
     root.innerHTML = `<div class="modal-box start">
       <h2>SPRK – nowa zmiana</h2>
+      <div class="start-tutorial"><b>Pierwszy raz?</b> Misje wprowadzające prowadzą krok po kroku i wyjaśniają każdy skrót (Poz, Wbl, Ko, Pz, Sz…).
+        <button type="button" id="st-tutorial" class="tb primary">Samouczek: misja 1</button> <button type="button" id="st-tutorial2" class="tb">misja 2 (pulpit typu E)</button></div>
       <label>Stacja
         <select id="st-station">${STATIONS.map((s) => `<option value="${s.id}">${s.name}</option>`).join('')}</select>
       </label>
@@ -58,6 +60,9 @@ export class StartScreen {
     stSel.addEventListener('change', fill);
     fill();
     lvSel.value = current.level || 'low';
+    const go = (station, scenario) => { const p = new URLSearchParams(); p.set('stacja', station); p.set('scenariusz', scenario); p.set('zaklocenia', 'none'); location.search = p.toString(); };
+    root.querySelector('#st-tutorial').addEventListener('click', () => go('szkolna', 'nauka-1'));
+    root.querySelector('#st-tutorial2').addEventListener('click', () => go('szkolna', 'nauka-2'));
     root.querySelector('#st-go').addEventListener('click', () => {
       const p = new URLSearchParams();
       p.set('stacja', stSel.value); p.set('scenariusz', scSel.value); p.set('zaklocenia', lvSel.value);

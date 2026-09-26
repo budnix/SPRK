@@ -1,0 +1,195 @@
+/**
+ * Misje wprowadzające (samouczek) – definicje kroków, bez DOM.
+ *
+ * Krok: { id, title, text (HTML; skróty jako <abbr data-term="Poz">Poz</abbr>), anchor, info?, done?, wrong?, tip? }
+ *  - `info`  – krok informacyjny: zegar stoi, gracz klika „Dalej”;
+ *  - `done(sim, ctx)` – warunek zaliczenia kroku (stan symulacji + ctx.seen ze zdarzeń szyny);
+ *  - `wrong(sim, ctx)` – komunikat, gdy gracz zrobił coś innego (opcjonalnie);
+ *  - `anchor` – gdzie wskazać dymkiem: { ref } (element pulpitu/monitora), { block:'W' }, { cmd:'train' } (pasek poleceń),
+ *               { el:'#css' } (element strony), { tab:'stan' } (zakładka panelu bocznego).
+ *
+ * Ta sama lista kroków obsługuje dwa stanowiska (`view`: 'monitor' | 'pulpit') – różnią się tylko teksty
+ * i miejsca wskazywane.
+ */
+
+const A = (term, label = term) => `<abbr data-term="${term}">${label}</abbr>`;
+const sig = (id, color = 'green') => ({ ref: { kind: 'signal', id, color } });
+
+function entry(sim, nr) { return sim.traffic.timetable().find((e) => String(e.nr) === String(nr)); }
+function atNeighbour(sim, nr) { return entry(sim, nr)?.status === 'u sąsiada'; }
+function arrived(sim, nr) { const e = entry(sim, nr); return !!e && e.actualArr != null; }
+function blockFree(b) { return !b.koPending && !b.occupied && b.direction == null && !b.poBlocked; }
+function active(sim, id) { return sim.ilk.active.has(id); }
+
+/** Teksty zależne od stanowiska. */
+function phrases(view) {
+  const m = view === 'monitor';
+  return {
+    view: m ? 'monitor' : 'pulpit',
+    blockPress: (exit, name, btn) => m
+      ? `kliknij pole blokady <b>${name}</b> i wybierz <b>${btn}</b>`
+      : `naciśnij przycisk <b>${btn}</b> na polu blokady <b>${name}</b> (lewy górny / prawy górny róg pulpitu)`,
+    trainRoute: (s, e, what) => m
+      ? `na pasku poleceń wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>${s}</b>, a potem ${what || `semafor <b>${e}</b>`}`
+      : `naciśnij <b>zielony przycisk</b> semafora <b>${s}</b>, a w ciągu 6 s ${what || `zielony przycisk semafora <b>${e}</b>`}`,
+    trainRouteMenu: (s, e) => m
+      ? `kliknij semafor <b>${s}</b> – otworzy się menu elementu – wybierz „Przebieg pociągowy od ${s} …”, a potem kliknij semafor <b>${e}</b>`
+      : `naciśnij zielony przycisk semafora <b>${s}</b>, potem zielony przycisk semafora <b>${e}</b>`,
+    exitEnd: (name) => m ? `<b>strzałkę szlaku ${name}</b> na krańcu toru` : `<b>zielony przycisk końca przebiegu</b> na kostce wyjazdu na szlak ${name}`,
+    shuntRoute: (s, e) => m
+      ? `<b>PRZEBIEG MANEWROWY</b> → semafor <b>${s}</b> (ma Ms2) → <b>${e}</b>`
+      : `naciśnij <b>biały przycisk</b> semafora <b>${s}</b>, potem <b>biały przycisk</b> ${e}`,
+    stop: (s) => m ? `wybierz <b>STOP</b> i kliknij semafor <b>${s}</b>` : `<b>wyciągnij</b> zielony przycisk semafora <b>${s}</b> (przytrzymaj pół sekundy albo kliknij prawym przyciskiem)`,
+    pz: (s) => m ? `wybierz <b>ZWOLNIJ PRZEBIEG</b> i kliknij semafor <b>${s}</b>` : `naciśnij przycisk grupowy <b>Pz</b>, a potem zielony przycisk semafora <b>${s}</b>`,
+    zw: (p) => m ? `wybierz <b>ZWROTNICA</b> i kliknij zwrotnicę <b>${p}</b>` : `naciśnij przycisk grupowy <b>Zw</b>, a potem czarny przycisk zwrotnicy <b>${p}</b>`,
+    zz: (p) => m ? `wybierz <b>Zz</b>, kliknij zwrotnicę <b>${p}</b> i potwierdź <b>WYKONAJ</b>` : `naciśnij przycisk grupowy <b>Zz</b>, a potem przycisk zwrotnicy <b>${p}</b>`,
+    sz: (s) => m ? `wybierz <b>Sz</b>, kliknij semafor <b>${s}</b> i potwierdź <b>WYKONAJ</b>` : `naciśnij przycisk grupowy <b>Sz</b>, a potem zielony przycisk semafora <b>${s}</b>`,
+    dpo: (name) => m ? `kliknij pole blokady <b>${name}</b> → <b>dPo</b> → <b>WYKONAJ</b>` : `naciśnij <b>dPo</b> na polu blokady <b>${name}</b>`,
+    cancel: () => m ? `Wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>B</b> … i rozmyśl się: naciśnij <b>OPS</b> (albo Esc). Polecenie zostaje odwołane, nic się nie nastawia.`
+      : `Naciśnij zielony przycisk semafora <b>B</b> … i nic więcej. Uzbrojony przycisk (podświetlony) gaśnie sam po 6 s – przebieg nie powstaje. Wyciągnięcie przycisku też odwołuje uzbrojenie.`,
+    colours: m
+      ? `Odcinki toru: <b>szary</b> – wolny, <b>zielony</b> – utwierdzony w przebiegu pociągowym, <b>żółty</b> – w przebiegu manewrowym, <b>czerwony</b> – zajęty przez tabor, <b>fioletowy</b> – zwalnianie czasowe. Semafor: podwójny grot; zielony – sygnał zezwalający, czerwony – początek/koniec utwierdzonego przebiegu. Zwrotnica: pole „Z” z kreską pokazującą położenie iglic, „+” przy torze zasadniczym.`
+      : `Lampki na kostkach: <b>białe</b> – odcinek utwierdzony w przebiegu, <b>czerwone</b> – zajęty przez tabor, <b>żółte</b> przy zwrotnicy – jej położenie. Semafor to powtarzacz z przyciskiem zielonym (przebieg pociągowy) i białym (manewrowy). Przyciski grupowe u góry: Zw, Zz, Pz, dPz, Sz działają razem z drugim przyciskiem (obsługa dwuprzyciskowa).`,
+    intro: m
+      ? `Przed Tobą <b>stanowisko komputerowe</b> – monitor z planem stacji (zobrazowanie wg ${A('Ie104', 'Ie-104')}, jak na stanowiskach EbiScreen / ISKRA). Polecenia wydajesz z <b>paska poleceń</b> nad planem (rodzaj polecenia, potem element) albo z <b>menu elementu</b> po kliknięciu semafora, zwrotnicy lub pola blokady.`
+      : `Przed Tobą <b>pulpit kostkowy</b> urządzeń przekaźnikowych typu E. Wszystko robi się przyciskami na kostkach: <b>naciśnięcie</b> = kliknięcie, <b>wyciągnięcie</b> = przytrzymanie pół sekundy lub prawy przycisk myszy. Większość operacji jest <b>dwuprzyciskowa</b>: pierwszy przycisk „uzbraja” (podświetla się), drugi wykonuje – masz na to 6 s.`,
+  };
+}
+
+/**
+ * Kroki misji dla stacji Szkolna. `view`: 'monitor' (misja 1) lub 'pulpit' (misja 2).
+ */
+export function missionSteps(view) {
+  const P = phrases(view);
+  const m = view === 'monitor';
+  const cmd = (id, ref) => (m ? { cmd: id } : ref);
+  const LIP = 'Lipno', DEB = 'Dębno';
+  const blockW = { block: 'W' }, blockE = { block: 'E' };
+  const steps = [];
+  const info = (id, title, text, anchor = null) => steps.push({ id, title, text, anchor, info: true });
+  const act = (id, title, text, anchor, done, extra = {}) => steps.push({ id, title, text, anchor, done, ...extra });
+
+  /* ---------------- wprowadzenie ---------------- */
+  info('intro', 'Witaj na stacji Szkolna', `${P.intro}<p>Jesteś <b>dyżurnym ruchu</b>: przyjmujesz i wyprawiasz pociągi tak, by jechały bezpiecznie i punktualnie. Linia jest <b>jednotorowa</b> – w obie strony jeździ się tym samym ${A('tor szlakowy', 'torem szlakowym')}, dlatego z sąsiadami (${LIP} na zachodzie, ${DEB} na wschodzie) uzgadnia się każdy pociąg przez ${A('Eap', 'blokadę liniową Eap')}.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz. Skróty z kropkowanym podkreśleniem mają wyjaśnienie – kliknij je.</p>`);
+  info('layout', 'Plan stacji', `Tor <b>1</b> i <b>2</b> mają perony (szare prostokąty), tor <b>3</b> to bocznica z kozłem oporowym i ${A('wykolejnica', 'wykolejnicą')} Wk1. ${A('semafor', 'Semafory')} wjazdowe: <b>A</b> (od ${LIP}) i <b>B</b> (od ${DEB}); wyjazdowe: <b>C1, C2</b> (na zachód) i <b>D1, D2</b> (na wschód). <b>Tm1, Tm2</b> to ${A('Tm', 'tarcze manewrowe')}.<p>${P.colours}</p>`, { el: '#desk' });
+  info('block-intro', 'Blokada liniowa', `Pola w górnych rogach to ${A('Eap', 'blokada liniowa Eap')} do ${LIP} i do ${DEB}. Lampki: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas, <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić.<p>Przyciski: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – pozwolenie dla sąsiada, ${A('Ko')} – potwierdzenie przyjazdu; ${A('dPo')} i ${A('dKo')} – doraźne zwolnienia (tylko przy usterce, liczniki).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
+
+  /* ---------------- pociąg 1: 6101 z Lipna, tor 1, dalej do Dębna ---------------- */
+  act('poz-6101', 'Pozwolenie dla Lipna', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga pole „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIP, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
+    (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: 'Żądanie pojawia się chwilę po starcie zegara. Jeśli go nie widać – odczekaj kilka sekund.' });
+  act('route-6101', 'Przebieg wjazdowy na tor 1', `Pociąg jest w drodze. Nastaw ${A('przebieg pociągowy')} od semafora wjazdowego <b>A</b> na tor 1, czyli do semafora wyjazdowego <b>D1</b>: ${P.trainRoute('A', 'D1')}.<p>Zwrotnica 1 ustawi się sama, odcinki zostaną ${A('utwierdzenie', 'utwierdzone')} i semafor A poda sygnał zezwalający.</p>`, cmd('train', sig('A')),
+    (sim) => active(sim, 'A-D1') || arrived(sim, 6101),
+    { wrong: (sim) => (active(sim, 'A-D2') ? 'To przebieg na tor 2. Pociąg 6101 ma tor 1 – zwolnij przebieg (ZWOLNIJ PRZEBIEG / Pz + A) i nastaw A → D1.' : null) });
+  act('watch-6101', 'Pociąg wjeżdża', `Obserwuj: zajęte odcinki są <b>czerwone</b>, a za pociągiem przebieg rozwiązuje się odcinkowo. Pociąg zatrzyma się przy peronie toru 1 (przyjazd planowy 07:06). Możesz przyspieszyć czas przyciskami <b>2×</b>, <b>5×</b> w nagłówku.`, { el: '#speed' },
+    (sim) => arrived(sim, 6101));
+  act('ko-6101', 'Potwierdzenie przyjazdu (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIP} miga pole <b>Ko</b>. Potwierdź sąsiadowi przyjazd: ${P.blockPress('W', LIP, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIP} jest znów wolny dla następnych pociągów.</p>`, blockW,
+    (sim) => blockFree(sim.blocks.get('W')));
+  act('wbl-6101', 'Żądanie pozwolenia (Wbl)', `6101 odjeżdża o 07:08 do ${DEB}. Zanim nastawisz przebieg wyjazdowy, musisz mieć <b>pozwolenie</b> od ${DEB}: ${P.blockPress('E', DEB, 'Wbl')}. Sąsiad odpowie po kilkunastu sekundach – pole <b>wyjazd</b> zaświeci.<p>To jest ${A('Wbl')} – lustrzane odbicie Poz, które dawałeś przed chwilą.</p>`, blockE,
+    (sim) => { const b = sim.blocks.get('E'); return (b.direction === 'out' && b.permission) || atNeighbour(sim, 6101); },
+    { wrong: (sim) => (sim.blocks.get('E').request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Dębna.' : null) });
+  act('out-6101', 'Przebieg wyjazdowy na szlak', `Masz pozwolenie. Nastaw ${A('przebieg pociągowy')} wyjazdowy: ${P.trainRoute('D1', null, P.exitEnd(DEB))}.<p>Przebieg wyjazdowy kończy się na szlaku, nie na semaforze – dlatego wskazujesz kraniec toru.</p>`, cmd('train', sig('D1')),
+    (sim) => active(sim, 'D1-E') || atNeighbour(sim, 6101));
+  act('depart-6101', 'Odjazd i blok początkowy', `Semafor D1 pokazuje sygnał zezwalający; pociąg odjedzie o 07:08. Po wyjeździe na szlak ${A('Po', 'blok początkowy')} zablokuje się (pole „wyjazd” czerwone), aż ${DEB} potwierdzi przyjazd. Poczekaj, aż 6101 dojedzie do sąsiada – szlak zwolni się sam.`, blockE,
+    (sim) => atNeighbour(sim, 6101) && !sim.blocks.get('E').occupied);
+
+  /* ---------------- pociąg 2: 6102 z Dębna, tor 1, dalej do Lipna (menu elementu) ---------------- */
+  act('poz-6102', 'Pociąg z drugiej strony', `Teraz ${DEB} żąda pozwolenia dla pociągu <b>6102</b> (tor 1, przyjazd 07:17). ${P.blockPress('E', DEB, 'Poz')}.`, blockE,
+    (sim) => sim.blocks.get('E').direction === 'in' || arrived(sim, 6102));
+  act('route-6102', m ? 'Przebieg z menu elementu' : 'Przebieg wjazdowy od B', `Wjazd od ${DEB} prowadzi semafor <b>B</b>, tor 1 kończy semafor <b>C1</b>. ${m ? 'Tym razem użyj menu elementu: ' : ''}${P.trainRouteMenu('B', 'C1')}.`, sig('B'),
+    (sim) => active(sim, 'B-C1') || arrived(sim, 6102),
+    { wrong: (sim) => (active(sim, 'B-C2') ? 'To tor 2. Zwolnij przebieg B i nastaw B → C1.' : null) });
+  act('ko-6102', 'Ko i Wbl w drugą stronę', `Po przyjeździe 6102: potwierdź przyjazd (${P.blockPress('E', DEB, 'Ko')}), a potem zażądaj pozwolenia od ${LIP} (${P.blockPress('W', LIP, 'Wbl')}) – odjazd 07:19.`, blockE,
+    (sim) => { const w = sim.blocks.get('W'); return blockFree(sim.blocks.get('E')) && w.direction === 'out' && w.permission; });
+  act('out-6102', 'Wyjazd do Lipna', `${P.trainRoute('C1', null, P.exitEnd(LIP))}. Poczekaj na odjazd i dojazd do ${LIP}.`, cmd('train', sig('C1')),
+    (sim) => atNeighbour(sim, 6102) && !sim.blocks.get('W').occupied);
+
+  /* ---------------- pociąg 3: 42101 przelot ---------------- */
+  act('passing-42101', 'Przelot towarowego', `Pociąg towarowy <b>42101</b> jedzie z ${LIP} do ${DEB} <b>bez zatrzymania</b> (${A('przelot')}, 07:29). Przygotuj całą drogę zawczasu: <b>Poz</b> dla ${LIP}, <b>Wbl</b> do ${DEB}, przebieg <b>A → D1</b> i przebieg <b>D1 → szlak ${DEB}</b>.<p>Gdy oba przebiegi są nastawione, semafor A pokaże sygnał zezwalający bez ograniczeń (S2), a nie „następny semafor Stój” (S5) – pociąg nie będzie zwalniał.</p>`, blockW,
+    (sim, ctx) => (active(sim, 'A-D1') && active(sim, 'D1-E')) || atNeighbour(sim, 42101) || ctx.seen.has('step:passing-42101'),
+    { tip: 'Kolejność: Poz (Lipno) → A → D1, potem Wbl (Dębno) → D1 → szlak Dębno.' });
+  act('after-42101', 'Ko po przelocie', `Gdy 42101 minie stację w całości: ${P.blockPress('W', LIP, 'Ko')}. Poczekaj, aż dojedzie do ${DEB}.`, blockW,
+    (sim) => atNeighbour(sim, 42101) && blockFree(sim.blocks.get('W')) && !sim.blocks.get('E').occupied);
+
+  /* ---------------- krzyżowanie: 6103 (tor 2) i 6104 (tor 1) ---------------- */
+  info('crossing-intro', 'Krzyżowanie', `Zaraz przyjadą dwa pociągi naprzeciw siebie: <b>6103</b> z ${LIP} (07:40, tor <b>2</b>) i <b>6104</b> z ${DEB} (07:41, tor <b>1</b>). To ${A('krzyżowanie')} – każdy musi stanąć na innym torze, bo dalej pojadą tym samym torem szlakowym.<p>Zwrotnica 1 dla 6103 ustawi się na tor zwrotny (prędkość 40 km/h). Obsłuż oba pozwolenia i oba przebiegi.</p>`, { el: '#desk' });
+  act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB}.`, blockW,
+    (sim) => (sim.blocks.get('W').direction === 'in' || arrived(sim, 6103)) && (sim.blocks.get('E').direction === 'in' || arrived(sim, 6104)));
+  act('cross-routes', 'Dwa przebiegi', `Nastaw <b>A → D2</b> (6103 na tor 2) i <b>B → C1</b> (6104 na tor 1). Oba mogą być utwierdzone jednocześnie – ${A('ochrona boczna')} jest zapewniona przez urządzenia.`, sig('A'),
+    (sim, ctx) => (ctx.seen.has('route:A-D2:set') || arrived(sim, 6103)) && (ctx.seen.has('route:B-C1:set') || arrived(sim, 6104)),
+    { wrong: (sim) => (active(sim, 'A-D1') ? '6103 ma jechać na tor 2 (A → D2) – tor 1 potrzebny dla 6104.' : null) });
+  act('cross-out', 'Wyprawienie obu pociągów', `Po przyjeździe obu: <b>Ko</b> na obu blokadach, <b>Wbl</b> w obu kierunkach, przebiegi <b>D2 → szlak ${DEB}</b> (odjazd 07:43) i <b>C1 → szlak ${LIP}</b> (07:44). Pamiętaj: Wbl da się dopiero, gdy szlak jest wolny i blokada nie ma kierunku – najpierw Ko.`, blockE,
+    (sim) => atNeighbour(sim, 6103) && atNeighbour(sim, 6104) && !sim.blocks.get('W').occupied && !sim.blocks.get('E').occupied);
+
+  /* ---------------- ćwiczenia bez pociągu: STOP, Pz, OPS, zwrotnice ---------------- */
+  info('lesson-intro', 'Przerwa w ruchu – ćwiczenia', `Do 08:02 nie ma pociągów. Poćwicz operacje, które przydają się przy pomyłkach i usterkach: wygaszenie sygnału, zwolnienie przebiegu, odwołanie polecenia, przestawianie i zamykanie zwrotnic.`, { el: '#desk' });
+  act('lesson-route', 'Przebieg bez pociągu', `Nastaw ${A('przebieg pociągowy')} <b>A → D1</b> (nic nie jedzie – to tylko ćwiczenie). Semafor A świeci zielono.`, cmd('train', sig('A')),
+    (sim) => active(sim, 'A-D1'));
+  act('lesson-stop', 'STOP – wygaszenie sygnału', `${P.stop('A')}. Semafor wraca na ${A('S1', '„Stój”')}, ale ${A('przebieg')} <b>pozostaje utwierdzony</b> (odcinki dalej ${m ? 'zielone' : 'białe'}). Tak zatrzymuje się pociąg w razie zagrożenia bez rozwiązywania drogi.`, cmd('stop', sig('A')),
+    (sim) => active(sim, 'A-D1') && sim.ilk.signals.get('A').aspect === 'S1');
+  act('lesson-pz', 'Zwolnienie przebiegu (Pz)', `${P.pz('A')}. Odcinki wracają do stanu podstawowego, zwrotnica 1 jest znów wolna.<p>${A('Pz')} działa natychmiast, gdy ${A('odcinek zbliżania')} jest wolny. Gdyby pociąg już jechał do semafora, zwolnienie byłoby opóźnione o 90 s (${m ? 'fiolet' : 'lampka'} – zwalnianie czasowe). ${A('dPz')} pomija to zabezpieczenie i jest liczone – nie używaj go bez potrzeby.</p>`, cmd('pz', { ref: { kind: 'group', id: 'Pz', role: 'route-release' } }),
+    (sim, ctx) => !active(sim, 'A-D1') && ctx.seen.has('step:lesson-stop'));
+  act('lesson-cancel', m ? 'OPS – odwołanie polecenia' : 'Uzbrojenie gaśnie samo', P.cancel(), cmd('train', sig('B')),
+    (sim, ctx) => ctx.seen.has('cancel:B') && !active(sim, 'B-C1') && !active(sim, 'B-C2'),
+    { wrong: (sim) => (active(sim, 'B-C1') || active(sim, 'B-C2') ? 'Nastawił się przebieg od B – zwolnij go (Pz) i spróbuj jeszcze raz: tylko semafor B, potem odwołanie.' : null) });
+  act('lesson-zw', 'Przestawienie zwrotnicy', `${P.zw('3')}. Zwrotnica przestawia się ok. 4 s (${m ? 'kreska w polu „Z” zmienia kierunek' : 'żółta lampka gaśnie i zapala się po drugiej stronie'}). Zwrotnica 3 kieruje z toru 2 na tor 3.<p>${A('Zw')} nie zadziała na zwrotnicy utwierdzonej w przebiegu, zajętej albo zamkniętej.</p>`, cmd('zw', { ref: { kind: 'group', id: 'Zw', role: 'group-point' } }),
+    (sim, ctx) => ctx.seen.has('minus:Zw3'));
+  act('lesson-zz', 'Zamknięcie indywidualne (Zz)', `${P.zz('3')} – zwrotnica jest zamknięta (${m ? 'różowy numer' : 'biała lampka przy przycisku'}); nie przestawi jej ani Zw, ani przebieg. Potem <b>otwórz</b> ją tak samo i przestaw z powrotem na <b>+</b> (tor zasadniczy).<p>${A('Zz')} stosuje się np. przy robotach na zwrotnicy albo przed wydaniem ${A('rozkaz pisemny', 'rozkazu pisemnego')}.</p>`, cmd('zz', { ref: { kind: 'group', id: 'Zz', role: 'point-lock' } }),
+    (sim, ctx) => { const p = sim.ilk.points.get('Zw3'); return ctx.seen.has('lock:Zw3') && !p.individualLock && p.position === '+' && !p.moving; });
+
+  /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
+  info('shunt-intro', 'Pociąg zdawczy', `O 08:02 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIP} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:30 wyprawić z powrotem do ${LIP} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });
+  act('in-90201', 'Przyjęcie zdawczego', `<b>Poz</b> dla ${LIP}, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
+    (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
+    { wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
+  act('shunt-mode', 'Jazda manewrowa', `Skład stoi na torze 2 i zakończył bieg. Przełącz go w ${A('jazda manewrowa', 'jazdę manewrową')}: zakładka <b>Stan</b> → Manewry → przycisk <b>„jazda manewrowa”</b> przy pociągu 90201.`, { tab: 'stan' },
+    (sim) => entry(sim, 90201)?.train?.mode === 'shunt');
+  act('shunt-route', 'Przebieg manewrowy na tor 3', `Nastaw ${A('przebieg manewrowy')} z semafora <b>D2</b> (ma ${A('Ms2')}) na koniec toru 3: ${P.shuntRoute('D2', m ? 'koniec toru 3 (kT3, kółko przy koźle)' : 'końca toru 3 (kT3 przy koźle)')}. Zwrotnica 3 ustawi się na tor 3, ${A('wykolejnica')} Wk1 zdejmie się sama, odcinki ${m ? 'zżółkną' : 'zaświecą'}, a D2 pokaże Ms2. Skład ruszy sam.`, cmd('shunt', sig('D2', 'white')),
+    (sim) => active(sim, 'D2-kT3m') || sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
+  act('shunt-task1', 'Skład na torze 3', `Poczekaj, aż cały skład stanie na torze 3 – zadanie w zakładce Stan zostanie odhaczone.`, { tab: 'stan' },
+    (sim) => !!sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
+  act('shunt-reverse', 'Zmiana czoła', `Skład ma wrócić na tor 2 w drugą stronę: zakładka <b>Stan</b> → <b>„zmiana czoła”</b> przy 90201 (${A('zmiana czoła')}).`, { tab: 'stan' },
+    (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); });
+  act('shunt-back', 'Powrót na tor 2 – w dwóch etapach', `${P.shuntRoute('Tm1', m ? 'tarczę Tm2' : 'tarczy Tm2')} – ${A('przebieg manewrowy')} z tarczy <b>Tm1</b> na tor 2. Skład (180 m) jest dłuższy niż miejsce przed <b>Tm2</b>, więc od razu nastaw też drugi etap: ${P.shuntRoute('Tm2', m ? 'semafor C2' : 'semafora C2')}. Skład przejedzie do C2 i stanie czołem na zachód – gotowy do odjazdu.`, cmd('shunt', sig('Tm1', 'white')),
+    (sim, ctx) => (ctx.seen.has('route:Tm1-Tm2:set') && active(sim, 'Tm2-C2')) || !!sim.traffic.tasks.find((t) => t.id === 'podstaw-90202')?.done);
+  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 (zadanie 2 odhaczone), potem przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan). Od 08:15 skład będzie w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
+    (sim) => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = entry(sim, 90202)?.train || entry(sim, 90201)?.train; return !!t?.done && !!tr && tr.mode === 'train'; });
+  act('out-90202', 'Wyprawienie 90202', `<b>Wbl</b> do ${LIP}, przebieg <b>C2 → szlak ${LIP}</b>. Pociąg odjedzie o 08:30.`, blockW,
+    (sim) => atNeighbour(sim, 90202) && !sim.blocks.get('W').occupied);
+
+  /* ---------------- usterka semafora A → Sz ---------------- */
+  info('fault-intro', 'Usterka semafora', `O 08:33 semafor <b>A</b> przestanie podawać sygnał zezwalający (usterka obwodu). O 08:40 od ${LIP} przyjedzie <b>6105</b> na tor 1. Przebieg da się nastawić i utwierdzić, ale semafor zostanie na „Stój” – pociąg stanie przed nim. Wtedy używa się ${A('Sz', 'sygnału zastępczego Sz')}.`, sig('A'));
+  act('in-6105-route', 'Przebieg mimo usterki', `<b>Poz</b> dla ${LIP} i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
+    (sim) => (active(sim, 'A-D1') && sim.ilk.signals.get('A').failed) || arrived(sim, 6105));
+  act('sz-6105', 'Sygnał zastępczy', `Gdy pociąg stanie przed A (albo od razu, gdy droga jest utwierdzona): ${P.sz('A')}. Semafor pokaże <b>białe migające</b> światło (${A('Sz')}) – maszynista może jechać z prędkością do 20 km/h. Licznik Sz wzrośnie o 1 – każde użycie jest rejestrowane.`, cmd('sz', { ref: { kind: 'group', id: 'Sz', role: 'substitute' } }),
+    (sim, ctx) => ctx.seen.has('sz:A') || arrived(sim, 6105));
+  act('out-6105', 'Reszta jak zwykle', `Po przyjeździe 6105: <b>Ko</b> (${LIP}), <b>Wbl</b> (${DEB}), przebieg <b>D1 → szlak ${DEB}</b>. Odjazd 08:42.`, blockE,
+    (sim) => atNeighbour(sim, 6105) && !sim.blocks.get('E').occupied);
+
+  /* ---------------- usterka blokady do Lipna → zapowiadanie telefoniczne ---------------- */
+  info('phone-intro', 'Blokada bez łączności', `O 08:44 blokada do ${LIP} traci łączność. Pociąg <b>6106</b> z ${DEB} (08:51, tor 1) ma jechać dalej do ${LIP} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
+  act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEB} działa normalnie: <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
+    (sim) => arrived(sim, 6106) && blockFree(sim.blocks.get('E')));
+  act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … wolna?”</b>, numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Droga … wolna” – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
+    (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),
+    { wrong: (sim) => (sim.blocks.get('W').neighbourReply?.phoneFor ? 'Pytanie nadane – czekaj na odpowiedź Lipna.' : null) });
+  act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak ${LIP}</b>. Odjazd 08:53.`, cmd('train', sig('C1')),
+    (sim) => active(sim, 'C1-W') || atNeighbour(sim, 6106) || sim.blocks.get('W').occupied);
+  act('phone-departed', 'Zawiadomienie o odjeździe', `Gdy 6106 wyjedzie na szlak, nadaj do ${LIP}: <b>„Pociąg nr … odjechał o …”</b> (numer 6106). Brak zawiadomienia jest punktowany ujemnie.`, { tab: 'lacznosc' },
+    (sim) => { const b = sim.blocks.get('W'); return String(b.phone.departedTrain) === '6106' && b.phone.departedReported; });
+  act('phone-dpo', 'Doraźne zwolnienie bloku (dPo)', `Blok początkowy do ${LIP} pozostaje zablokowany, bo blokada nie odbierze potwierdzenia. Gdy ${LIP} zawiadomi telefonicznie <b>„Pociąg nr 6106 przybył o …”</b> (zakładka Łączność), zwolnij blok doraźnie: ${P.dpo(LIP)}. Uzasadnione usterką ${A('dPo')} nie kosztuje punktów.`, blockW,
+    (sim) => sim.blocks.get('W').counters.dPo >= 1 && !sim.blocks.get('W').poBlocked,
+    { wrong: (sim) => { const b = sim.blocks.get('W'); return b.poBlocked && String(b.phone.arrivalConfirmed) !== '6106' ? 'Poczekaj na telefoniczne potwierdzenie przyjazdu 6106 – dPo przed nim to −15 pkt.' : null; } });
+
+  info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, STOP i Pz, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Raport zmiany: menu ☰ → <b>Raport zmiany</b>.<p>${m ? 'Misja 2 pokazuje tę samą stację na <b>pulpicie kostkowym</b> urządzeń typu E (menu ☰ → Nowa zmiana → Szkolna → Misja 2).' : 'Teraz spróbuj prawdziwych stacji: Stare Pustkowie (typ E) albo Sopot i Gdynia (stanowiska komputerowe) – menu ☰ → Nowa zmiana.'}</p>`, { el: '#btn-menu' });
+  return steps;
+}
+
+/** Rejestr misji: id z pola `tutorial` scenariusza → definicja. */
+export const MISSIONS = {
+  monitor: { id: 'monitor', name: 'Misja 1 – stanowisko komputerowe', view: 'monitor', steps: () => missionSteps('monitor') },
+  pulpit: { id: 'pulpit', name: 'Misja 2 – pulpit kostkowy', view: 'pulpit', steps: () => missionSteps('pulpit') },
+};
+
+export function getMission(id) {
+  return MISSIONS[id] || null;
+}

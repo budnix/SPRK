@@ -140,6 +140,12 @@ export class DeskRenderer {
     }
   }
 
+  /** Przycisk pulpitu odpowiadający ref (do podświetlania w samouczku). */
+  elementFor(ref) {
+    if (ref.kind === 'blockpanel') return this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' }))?.closest('.tile') || this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' })) || null;
+    return this.buttonEls.get(refKey(ref)) || (ref.kind === 'signal' && !ref.color ? this.buttonEls.get(refKey({ ...ref, color: 'green' })) || this.buttonEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
+  }
+
   /** Rama pulpitu: numeracja kolumn (od lewej) i rzędów (od dołu), śruby. */
   #buildFrame() {
     const cols = this.cols, rows = this.rows;
