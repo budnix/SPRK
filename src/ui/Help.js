@@ -32,6 +32,7 @@ export class Help {
         <li><b>Wyprawienie pociągu</b>: <b>Wbl</b> – żądanie pozwolenia. Sąsiad odpowiada (lampka „wyjazd”). Potem nastaw przebieg wyjazdowy. Po wyjeździe blok początkowy Po i zajętość szlaku świecą na czerwono aż sąsiad potwierdzi przyjazd.</li>
         <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca lampka „żąd.”, komunikat). Naciśnij <b>Poz</b>. Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (miga „Ko”) naciśnij <b>Ko</b>.</li>
         <li><b>dPo</b>, <b>dKo</b> – doraźne zwolnienie bloków (liczniki).</li>
+        <li><b>Blokada samoczynna (SBL)</b> na liniach dwutorowych (Sopot, Gdynia): bez pozwoleń i bez Ko – odstęp zwalnia się sam. Tor ma kierunek zasadniczy; jazda po torze „pod prąd” wymaga zmiany kierunku <b>Zk</b> (na pulpicie kostkowym: przycisk Wbl) przy wolnym odstępie. Przy usterce – zapowiadanie telefoniczne jak w Eap.</li>
       </ul>
       <h3>Rozkazy pisemne</h3>
       <ul>

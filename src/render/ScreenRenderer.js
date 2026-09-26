@@ -252,7 +252,7 @@ export class ScreenRenderer {
           break;
         }
         case 'signal': this.#signal(tile); break;
-        case 'block': this.#blockPanel(tile); break;
+        case 'block': break; // pole blokady Eap to element pulpitu kostkowego; na monitorze stan blokady jest przy wyjeździe na szlak
         case 'button': {
           if (!tile.counter) break;
           const g = el('g', { class: 'scr-counter' }, [
@@ -276,25 +276,42 @@ export class ScreenRenderer {
     }
   }
 
-  /** Wyjazd na szlak (sąsiedni posterunek na krańcu) / koniec toru – element końca przebiegu. */
+  /**
+   * Wyjazd na szlak (sąsiedni posterunek na krańcu) / koniec toru – element końca przebiegu.
+   * Na wyjeździe rysowany jest też stan blokady liniowej, jak na stanowiskach komputerowych (Ie-104): strzałka
+   * szlaku (czerwona – odstęp zajęty), strzałka kierunku blokady nad torem (wyjazd / wjazd) i napis stanu
+   * („żąd.” – sąsiad żąda pozwolenia, „Wbl” – czekamy na pozwolenie, „Ko” – potwierdzić przyjazd, „tel.” – bez
+   * łączności). Polecenia blokady są w menu tego elementu; liczniki dPo/dKo – w zakładce Stan.
+   */
   #exitMark(tile) {
     const [cx, cy] = this.#ctr(tile);
     const ex = this.#exitAt(tile);
     const ref = { kind: 'end', id: tile.endButton.id };
     const kids = [this.#frame(0, 0, 22, 22)];
+    const refs = {};
     if (ex) {
       const dir = ex[1].dir === 'E' ? 1 : -1;
       const x = dir * 4;
+      refs.exitArrow = el('path', { class: 'exit-arrow', d: `M${x - dir * 8},-7 L${x + dir * 6},0 L${x - dir * 8},7 Z` });
+      // strzałki kierunku blokady nad torem: „wyjazd” (w stronę sąsiada) i „wjazd” (do nas)
+      refs.dirOut = el('path', { class: 'blk-dir off', d: `M${-dir * 8},-13 L${-dir * 8},-9 L${dir * 1},-9 L${dir * 1},-7 L${dir * 6},-11 L${dir * 1},-15 L${dir * 1},-13 Z` });
+      refs.dirIn = el('path', { class: 'blk-dir off', d: `M${dir * 6},-13 L${dir * 6},-9 L${-dir * 3},-9 L${-dir * 3},-7 L${-dir * 8},-11 L${-dir * 3},-15 L${-dir * 3},-13 Z` });
+      refs.status = text(-dir * 12, -8, '', { class: 'blk-status', 'text-anchor': dir > 0 ? 'end' : 'start' });
       // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
-      kids.push(el('path', { class: 'exit-arrow', d: `M${x - dir * 8},-7 L${x + dir * 6},0 L${x - dir * 8},7 Z` }),
+      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status,
         text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
     } else {
       kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
     }
     kids.push(this.#hit(ref, 0, 0, 10));
-    const g = this.#sym(cx, cy, 'scr-el end', kids);
+    const g = this.#sym(cx, cy, `scr-el end${ex ? ' exit' : ''}`, kids);
     this.layerMarks.appendChild(g);
     this.hitEls.set(refKey(ref), g);
+    if (ex) {
+      refs.g = g;
+      this.blockRefs.set(ex[0], refs);
+      for (const btn of ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo', 'Zk']) this.hitEls.set(refKey({ kind: 'block', exit: ex[0], btn }), g);
+    }
   }
 
   /**
@@ -325,33 +342,6 @@ export class ScreenRenderer {
     this.signalRefs.set(tile.id, { body, endTri, g, tile });
     this.hitEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
     this.hitEls.set(refKey({ kind: 'signal', id: tile.id, color: 'white' }), g);
-  }
-
-  /** Pole blokady liniowej: nazwa szlaku, wskaźniki wyjazd/wjazd/żądanie/Ko, liczniki dPo/dKo. */
-  #blockPanel(tile) {
-    const ex = this.station.exits[tile.exit];
-    const ox = (tile.x - this.x0) * CELL, oy = tile.y * CELL * this.ry;
-    const W = 4 * CELL - 6, H = Math.min(2 * CELL - 6, 2 * CELL * this.ry - 4);
-    const lamp = (x, y) => el('rect', { class: 'scr-lamp', x, y, width: 8, height: 8, rx: 1 });
-    const refs = { outW: lamp(10, 24), outR: lamp(20, 24), inW: lamp(10, 40), inR: lamp(20, 40), req: lamp(92, 24), ko: lamp(92, 40) };
-    const g = el('g', { class: 'scr-el block', transform: `translate(${ox + 3},${oy + 3})` }, [
-      el('rect', { class: 'block-box', x: 0, y: 0, width: W, height: H, rx: 3 }),
-      el('rect', { class: 'sel-frame', x: -1, y: -1, width: W + 2, height: H + 2, rx: 3 }),
-      text(W / 2, 10, ex?.label || tile.exit, { class: 'scr-text block-title' }),
-      refs.outW, refs.outR, text(52, 31, 'wyjazd', { class: 'scr-text small' }),
-      refs.inW, refs.inR, text(52, 47, 'wjazd', { class: 'scr-text small' }),
-      text(118, 31, 'żąd.', { class: 'scr-text small' }), text(118, 47, 'Ko', { class: 'scr-text small' }),
-      text(W - 8, 31, '00000', { class: 'scr-text counter cnt-po', 'text-anchor': 'end', 'font-size': 6 }),
-      text(W - 8, 47, '00000', { class: 'scr-text counter cnt-ko', 'text-anchor': 'end', 'font-size': 6 }),
-      text(W - 8, 60, 'dPo / dKo', { class: 'scr-text small', 'text-anchor': 'end' }),
-    ]);
-    const hit = el('rect', { class: 'hit', x: 0, y: 0, width: W, height: H });
-    hit.dataset.ref = JSON.stringify({ kind: 'blockpanel', exit: tile.exit });
-    g.appendChild(hit);
-    refs.cntPo = g.querySelector('.cnt-po'); refs.cntKo = g.querySelector('.cnt-ko');
-    this.layerMarks.appendChild(g);
-    this.blockRefs.set(tile.exit, refs);
-    for (const btn of ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo']) this.hitEls.set(refKey({ kind: 'block', exit: tile.exit, btn }), g);
   }
 
   /** Pasek poleceń (układ EbiScreen): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
@@ -482,20 +472,29 @@ export class ScreenRenderer {
         { label: d?.individualLock ? 'Otwórz zamknięcie (Zz)' : 'Zamknij indywidualnie (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'derailer', id: ref.id }) },
       ] };
     }
-    if (ref.kind === 'blockpanel') {
-      const b = this.sim.blocks.get(ref.exit);
-      const press = (btn) => () => H.onPress({ kind: 'block', exit: ref.exit, btn });
-      const items = [];
-      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie (Wbl)', run: press('Wbl') }, { label: 'Pozwolenie dla sąsiada (Poz)', run: press('Poz') });
-      items.push({ label: 'Potwierdzenie przyjazdu (Ko)', run: press('Ko') });
-      items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
-      items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });
-      return { title: `Blokada – ${b?.label || ref.exit}`, items };
-    }
+    if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);
     if (ref.kind === 'end') {
-      return { title: 'Koniec toru / szlak', items: [{ label: 'Wskaż najpierw sygnalizator początku przebiegu', run: () => ({ ok: false }) }] };
+      const t = this.topo.endButtons.get(ref.id);
+      const ex = t ? this.#exitAt(t) : null;
+      if (ex) return this.#blockMenu(ex[0]);
+      return { title: 'Koniec toru', items: [{ label: 'Wskaż najpierw sygnalizator początku przebiegu', run: () => ({ ok: false }) }] };
     }
     return null;
+  }
+
+  /** Polecenia blokady liniowej szlaku: Eap (Wbl, Poz, Ko), samoczynna (Zk), doraźne dPo / dKo. */
+  #blockMenu(exit) {
+    const b = this.sim.blocks.get(exit);
+    const press = (btn) => () => this.handlers.onPress({ kind: 'block', exit, btn });
+    const items = [];
+    if (b?.auto) items.push({ label: `Zmiana kierunku blokady samoczynnej (Zk) – teraz ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
+    else {
+      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie (Wbl)', run: press('Wbl') }, { label: 'Pozwolenie dla sąsiada (Poz)', run: press('Poz') });
+      items.push({ label: 'Potwierdzenie przyjazdu (Ko)', run: press('Ko') });
+    }
+    items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
+    items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });
+    return { title: `Szlak ${b?.def?.label || b?.neighbour || exit} – blokada ${b?.auto ? 'samoczynna' : 'Eap'}`, items };
   }
 
   #openMenu(ref, ev) {
@@ -627,14 +626,15 @@ export class ScreenRenderer {
     const b = this.sim.blocks.get(exitId);
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
-    setLamp(r.outW, b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied ? 'white' : (b.request === 'ours' ? 'white blink' : 'off'));
-    setLamp(r.outR, b.poBlocked ? 'red' : 'off');
-    setLamp(r.inW, b.direction === 'in' && !b.occupied && !b.koPending ? 'white' : 'off');
-    setLamp(r.inR, b.direction === 'in' && b.occupied ? 'red' : 'off');
-    setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
-    setLamp(r.ko, b.koPending ? 'white blink' : 'off');
-    r.cntPo.textContent = String(b.counters.dPo).padStart(5, '0');
-    r.cntKo.textContent = String(b.counters.dKo).padStart(5, '0');
+    r.g.classList.toggle('blk-occ', !!(b.occupied || b.poBlocked));
+    r.g.classList.toggle('blk-fault', !!b.fault);
+    const out = b.direction === 'out' && (b.auto || b.permission || b.fixed === 'out' || !!b.phone?.permissionFor);
+    const inn = b.direction === 'in';
+    r.dirOut.setAttribute('class', `blk-dir${out ? '' : ' off'}`);
+    r.dirIn.setAttribute('class', `blk-dir${inn ? '' : ' off'}`);
+    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? ['Wbl', true] : b.koPending ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
+    r.status.textContent = st[0];
+    r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
   }
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */
@@ -677,11 +677,3 @@ function setSeg(e, cls) {
   e.setAttribute('class', `seg ${cls}`);
 }
 
-function setLamp(e, state) {
-  if (!e) return;
-  e.classList.remove('on', 'lamp-red', 'lamp-white', 'lamp-yellow', 'lamp-green', 'lamp-orange', 'lamp-blue', 'blink');
-  if (!state || state === 'off') return;
-  const [color, blink] = state.split(' ');
-  e.classList.add('on', `lamp-${color}`);
-  if (blink) e.classList.add('blink');
-}

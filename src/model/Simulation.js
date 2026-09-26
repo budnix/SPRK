@@ -40,6 +40,8 @@ export class Simulation {
       blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
       ...this.srk.model,
     });
+    // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
+    this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
     const timetable = this.scenario.timetable
       ? this.scenario.timetable
       : (this.scenario.trains ? station.timetable.filter((t) => this.scenario.trains.includes(t.nr)) : station.timetable);

@@ -38,8 +38,9 @@ test('gracz jako dyżurny GO: GO2 wykonuje polecenia, bez polecenia pociąg od G
   let n = 0;
   while (sim.clock.time < Clock.parse('06:16')) { sim.step(0.5); if (n++ % 4 === 0) go.tick(); }
   const e = sim.traffic.timetable()[0];
-  assert.ok(!e.train, 'GO2 dało pozwolenie bez polecenia dyżurnego');
-  assert.equal(sim.blocks.get('G1').request, 'theirs');
+  // linia 202: blokada samoczynna – sąsiad wyprawia bez pozwolenia, ale GO2 bez polecenia nie nastawia wjazdu
+  assert.ok(e.train && e.train.v === 0 && e.train.stoppedAt?.kind === 'signal', 'GO2 przyjęło pociąg bez polecenia dyżurnego');
+  assert.equal(sim.ilk.active.size, 0, 'przebieg wjazdowy bez polecenia');
   // polecenie: przyjąć na tor 6
   sim.issueCommand({ kind: 'accept', nr: 55100, track: '6', from: 'GO', to: 'GO2' });
   while (sim.clock.time < Clock.parse('06:30')) { sim.step(0.5); if (n++ % 4 === 0) go.tick(); }

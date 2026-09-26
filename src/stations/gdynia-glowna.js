@@ -226,14 +226,14 @@ export default {
 
   exits: {
     K: { name: 'Gdynia Wielki Kack', label: 'Wlk. Kack – 201', tile: { x: 0, y: 2 }, dir: 'W', lineLength: 5200, lineSpeed: 80 },
-    G1: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', lineLength: 3600, lineSpeed: 120 },
-    G2: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.2', tile: { x: 0, y: 8 }, dir: 'W', lineLength: 3600, lineSpeed: 120 },
-    S2: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.502', tile: { x: 0, y: 22 }, dir: 'W', lineLength: 3400, lineSpeed: 100 },
-    S1: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.501', tile: { x: 0, y: 24 }, dir: 'W', lineLength: 3400, lineSpeed: 100 },
-    C1: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.1', tile: { x: 99, y: 6 }, dir: 'E', lineLength: 4300, lineSpeed: 120 },
-    C2: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.2', tile: { x: 99, y: 8 }, dir: 'E', lineLength: 4300, lineSpeed: 120 },
-    R2: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.502', tile: { x: 99, y: 22 }, dir: 'E', lineLength: 4100, lineSpeed: 100 },
-    R1: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.501', tile: { x: 99, y: 24 }, dir: 'E', lineLength: 4100, lineSpeed: 100 },
+    G1: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
+    G2: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.2', tile: { x: 0, y: 8 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
+    S2: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.502', tile: { x: 0, y: 22 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3400, lineSpeed: 100 },
+    S1: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.501', tile: { x: 0, y: 24 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3400, lineSpeed: 100 },
+    C1: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.1', tile: { x: 99, y: 6 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
+    C2: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.2', tile: { x: 99, y: 8 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
+    R2: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.502', tile: { x: 99, y: 22 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 4100, lineSpeed: 100 },
+    R1: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.501', tile: { x: 99, y: 24 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 4100, lineSpeed: 100 },
     P: { name: 'Gdynia Port', label: 'Gdynia Port – 201', tile: { x: 99, y: 20 }, dir: 'E', lineLength: 3000, lineSpeed: 60 },
   },
 

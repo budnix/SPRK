@@ -35,7 +35,7 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
     // teksty misji 2 nie odsyłają do paska poleceń monitora; misja 1 nie mówi o przyciskach blokady, których na monitorze nie ma
     if (view === 'pulpit') for (const s of steps) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ/.test(s.text), `${s.id}: tekst z monitora na pulpicie`);
     const blockIntro = steps.find((s) => s.id === 'block-intro');
-    if (view === 'monitor') { assert.match(blockIntro.text, /kliknij pole blokady/); assert.doesNotMatch(blockIntro.text, /Przyciski/); }
+    if (view === 'monitor') { assert.match(blockIntro.text, /kliknij strzałkę szlaku/); assert.doesNotMatch(blockIntro.text, /Przyciski|Pola w górnych rogach/); }
     else assert.match(blockIntro.text, /Przyciski/);
   }
 });

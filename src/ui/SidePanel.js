@@ -364,7 +364,7 @@ export class SidePanel {
   renderState() {
     const bl = [...this.sim.blocks.values()].map((b) => {
       const dir = b.direction === 'out' ? 'wyjazd' : b.direction === 'in' ? 'wjazd' : '–';
-      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>: kierunek ${dir}${b.permission ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
+      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? ' (samoczynna)' : ''}: kierunek ${dir}${b.permission && !b.auto ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
@@ -374,7 +374,8 @@ export class SidePanel {
       .concat(this.sim.ilk.pending.map((p) => `<li>${p.route.id} – nastawianie…</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || '<li class="muted">brak</li>';
     const c = this.sim.ilk.counters;
-    this.root.querySelector('#counters').innerHTML = `dPz: ${c.dPz} · Sz: ${c.Sz} · rozprucia: ${c.rozprucie}`;
+    const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);
+    this.root.querySelector('#counters').innerHTML = `dPz: ${c.dPz} · Sz: ${c.Sz} · rozprucia: ${c.rozprucie}` + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : '<div class="muted">dPo / dKo: 0</div>');
     const tasks = this.sim.traffic.tasks || [];
     this.root.querySelector('#tasks').innerHTML = tasks.length
       ? tasks.map((t) => `<div class="task ${t.done ? 'done' : t.failed ? 'failed' : ''}">${t.done ? '✔' : t.failed ? '✘' : '☐'} ${escapeHtml(t.text)} <span class="muted">do ${t.deadline}</span></div>`).join('')

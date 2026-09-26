@@ -190,6 +190,7 @@ export class AutoOperator {
           cands = facing;
         }
         if (b.fault) { if (!b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
+        else if (b.auto) { if (b.direction !== 'out' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
         if (staged) {
           for (const r of cands) if (ilk.setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }

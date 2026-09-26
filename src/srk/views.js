@@ -47,7 +47,7 @@ const VIEWS = {
       Numery pociągów w czerwonych kasetkach. Niebieska ramka – element wybrany do polecenia, czerwona migająca – alarm.</p>
       <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ PRZEBIEG, ZWROTNICA, STOP …), potem wskaż element(y):
       przebieg = sygnalizator początkowy, potem końcowy lub szlak. To samo daje menu po kliknięciu elementu. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane,
-      potwierdzane „WYKONAJ” i rejestrowane w licznikach; <b>OPS</b>, Esc lub prawy przycisk odwołuje polecenie. Blokada liniowa: kliknij pole szlaku (Wbl, Poz, Ko, dPo, dKo).</p>`,
+      potwierdzane „WYKONAJ” i rejestrowane w licznikach; <b>OPS</b>, Esc lub prawy przycisk odwołuje polecenie. Blokada liniowa: stan przy wyjeździe na szlak – strzałka szlaku (czerwona: odstęp zajęty), strzałka kierunku nad torem, napis „żąd.” / „Wbl” / „Ko”; kliknij strzałkę szlaku, a menu da polecenia (Eap: Wbl, Poz, Ko; samoczynna: Zk; dPo, dKo). Liczniki dPo/dKo – zakładka Stan.</p>`,
   },
 };
 

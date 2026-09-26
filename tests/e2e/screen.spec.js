@@ -127,3 +127,30 @@ test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawęd
     if (p.kind === 'tm') expect(p.body, `${id}: Ms1 = stan podstawowy`).toContain('st-base');
   }
 });
+
+test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd.” i strzałka kierunku; samoczynna (Sopot) – menu Zk bez pozwoleń, liczniki w zakładce Stan', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await expect(page.locator('#desk .scr-el.block')).toHaveCount(0); // brak skrzynki Eap na monitorze
+  const exitW = page.locator(`.hit[data-ref*='"id":"kW"']`);
+  await advance(page, 3);
+  expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+  await expect(page.locator('.scr-el.exit').first().locator('.blk-status')).toHaveText('żąd.');
+  await exitW.dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 60, clientY: 200 });
+  await expect(page.locator('.scr-menu h5')).toContainText('Eap');
+  await expect(page.locator('.scr-menu button:has-text("(Zk)")')).toHaveCount(0);
+  await page.click('.scr-menu button:has-text("(Poz)")');
+  expect(await page.evaluate(() => window.sim.blocks.get('W').direction)).toBe('in');
+  await expect(page.locator('.scr-el.exit').first().locator('.blk-status')).toHaveText('');
+  const dirs = await page.evaluate(() => [...document.querySelector(`.hit[data-ref*='"id":"kW"']`).closest('.scr-el').querySelectorAll('.blk-dir')].map((e) => e.getAttribute('class')));
+  expect(dirs[0]).toContain('off'); // strzałka „wyjazd” zgaszona
+  expect(dirs[1]).not.toContain('off'); // strzałka „wjazd” świeci po Poz
+  // Sopot: linia 202 z blokadą samoczynną
+  await openShift(page, 'sopot', { params: { scenariusz: 'zmiana' } });
+  await page.locator(`.hit[data-ref*='"id":"kOR1"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 300, clientY: 300 });
+  await expect(page.locator('.scr-menu h5')).toContainText('samoczynna');
+  await expect(page.locator('.scr-menu button:has-text("(Poz)")')).toHaveCount(0);
+  await expect(page.locator('.scr-menu button:has-text("(Zk)")')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await page.click('#side .tabs button[data-tab=stan]');
+  await expect(page.locator('#counters')).toContainText('dPo');
+});

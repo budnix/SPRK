@@ -336,7 +336,14 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .sig-end { fill: none; stroke: #6d7884; stroke-width: 0.8; }
 .sig-end.on { fill: #ff2419; stroke: #ff2419; }
 .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy sygnalizatorów */
+/* blokada liniowa na wyjeździe: strzałka szlaku (czerwona – odstęp zajęty), strzałki kierunku nad torem, napis stanu */
 .exit-arrow { fill: #2d3a46; stroke: #8c98a4; stroke-width: 1; }
+.blk-occ .exit-arrow { fill: #ff2419; stroke: #ff2419; }
+.blk-fault .exit-arrow { stroke-dasharray: 2 1.5; stroke: #ffd21f; }
+.blk-dir { fill: #e8eef2; stroke: none; }
+.blk-dir.off { display: none; }
+.blk-status { fill: #ffd21f; font-size: 6.5px; }
+.blk-status.blink { animation: blink 0.8s steps(1) infinite; }
 .end-mark { fill: #000; stroke: #b5bec7; stroke-width: 1.2; }
 .block-box { fill: #0c1218; stroke: #2f3d4a; stroke-width: 1; }
 .block-title { font-size: 6.5px; fill: #ffd21f; }

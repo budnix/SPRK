@@ -50,6 +50,8 @@ export function validateStation(st) {
     if (t.type === 'block' && !(st.exits || {})[t.exit]) errors.push(`Pole blokady (${t.x},${t.y}): nieznany wyjazd '${t.exit}'`);
   }
   for (const [id, e] of Object.entries(st.exits || {})) {
+    if (e.block && !['eap', 'sbl'].includes(e.block)) errors.push(`Wyjazd ${id}: nieznany rodzaj blokady '${e.block}' (eap | sbl)`);
+    if (e.block === 'sbl' && !e.direction) errors.push(`Wyjazd ${id}: blokada samoczynna (sbl) wymaga stałego kierunku (direction: 'in' | 'out')`);
     const t = occupied.get(`${e.tile?.x},${e.tile?.y}`);
     if (!t || getTileDef(t.type).category !== 'track') errors.push(`Wyjazd ${id}: kostka nie jest torowa`);
     if (!isDir(e.dir)) errors.push(`Wyjazd ${id}: zły kierunek`);

@@ -35,7 +35,7 @@ test('misja 1: kroki informacyjne zatrzymują zegar, dymek wskazuje blokadę, Po
   await advance(page, 3);
   expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
   // Poz z menu elementu (pole blokady)
-  await page.locator(`.hit[data-ref*='"blockpanel"'][data-ref*='"W"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 60, clientY: 200 });
+  await page.locator(`.hit[data-ref*='"id":"kW"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 60, clientY: 200 });
   await page.click('.scr-menu button:has-text("(Poz)")');
   await expect(box.locator('.tut-title')).toContainText('Przebieg wjazdowy');
   await expect(page.locator('.scr-cmdbar button[data-cmd=train]')).toHaveClass(/tut-hl/);

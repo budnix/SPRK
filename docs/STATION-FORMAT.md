@@ -70,6 +70,11 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
 * bez `direction` – szlak jednotorowy z blokadą Eap dwukierunkową (Wbl, Poz, Ko, dPo, dKo),
 * `direction: 'out'` / `'in'` – tor szlakowy linii dwutorowej z ruchem jednokierunkowym (tylko Po/Ko;
   na torze wjazdowym sąsiad wyprawia bez pozwolenia, na torze wyjazdowym nie ma pozwolenia),
+* `block: 'sbl'` (wymaga `direction` = kierunek zasadniczy) – blokada samoczynna linii dwutorowej: bez pozwoleń
+  i bez Ko, odstęp zwalnia się sam; blokada dwukierunkowa – jazda „pod prąd” po zmianie kierunku (`Zk`,
+  na pulpicie kostkowym przycisk Wbl) przy wolnym odstępie; sąsiad zmienia kierunek sam, gdy odstęp jest wolny
+  i nie mamy nastawionego wyjazdu. Przy usterce – zapowiadanie telefoniczne i dPo/dKo jak w Eap.
+  Kostka `block` (pole Eap) jest rysowana tylko na pulpicie kostkowym; monitor pokazuje stan blokady przy wyjeździe,
 * `label` – napis na polu blokady (gdy dwa tory prowadzą do tego samego posterunku).
 
 ## Przebiegi (`routes`)
