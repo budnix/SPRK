@@ -30,6 +30,7 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
       assert.ok(s.title && s.text, `${view}/${s.id}: brak tytułu lub tekstu`);
       assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
       for (const [, term] of s.text.matchAll(/data-term="([^"]+)"/g)) assert.ok(GLOSSARY[term], `${view}/${s.id}: brak w słowniku: ${term}`);
+      assert.doesNotMatch(`${s.title} ${s.text} ${s.tip || ''}`, /\b(od|do|z|dla|szlak) (Lipno|Dębno)\b/, `${view}/${s.id}: nieodmieniona nazwa sąsiada`);
       if (s.anchor?.cmd) assert.equal(view, 'monitor', `${view}/${s.id}: kotwica paska poleceń tylko na monitorze`);
     }
     // teksty misji 2 nie odsyłają do paska poleceń monitora; misja 1 nie mówi o przyciskach blokady, których na monitorze nie ma
