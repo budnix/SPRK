@@ -159,8 +159,21 @@ export class Traffic {
   /** Zbiór odcinków zajętych przez pociągi (bez usterek). */
   currentOccupancy() {
     const occ = new Set();
-    for (const tr of this.trains) for (const s of tr.occupiedSections()) occ.add(s);
+    this._occBy = new Map();
+    for (const tr of this.trains) {
+      for (const s of tr.occupiedSections()) {
+        occ.add(s);
+        if (!this._occBy.has(s)) this._occBy.set(s, new Set());
+        this._occBy.get(s).add(tr.nr);
+      }
+    }
     return occ;
+  }
+
+  /** Czy odcinek zajmuje inny tabor niż pociąg `nr` (stan z ostatniego kroku). */
+  occupiedByOther(sectionId, nr) {
+    const s = this._occBy?.get(sectionId);
+    return !!s && (s.size > 1 || !s.has(nr));
   }
 
   /** Dodanie pociągu do rozkładu w trakcie zmiany (pociąg nadzwyczajny). */
@@ -206,6 +219,7 @@ export class Traffic {
       lineSpeed: this.station.exits[e.to]?.lineSpeed ?? 100,
       onExit: (exitId, tr) => this.#onExit(e, exitId, tr),
       onEvent: (ev, tr) => this.#onTrainEvent(e, ev, tr),
+      blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
     });
     return train;
   }

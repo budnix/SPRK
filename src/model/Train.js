@@ -17,6 +17,7 @@ export class Train {
     this.topo = topo;
     this.ilk = ilk;
     this.length = def.length ?? 100;
+    this.blockedBy = opts.blockedBy || (() => false); // odcinek zajęty przez inny tabor (jazda na tor zajęty – stop przed taborem)
     this.vmax = (def.vmax ?? 100) * KMH;
     this.accel = def.kind === 'tow' ? 0.15 : 0.35;
     this.brake = def.kind === 'tow' ? 0.35 : 0.6;
@@ -202,6 +203,7 @@ export class Train {
         const st = this.topo.step(nb.tile, nb.inPort, positions);
         tile = nb.tile; inPort = nb.inPort; outPort = st.outPort;
         if (tile.type === 'buffer') { constraints.push({ dist: dist + tile._len * 0.5, speed: 0, reason: 'kozioł', kind: 'end' }); return constraints; }
+        if (tile.section && this.blockedBy(tile.section)) { constraints.push({ dist: Math.max(0, dist - 10), speed: 0, reason: 'tabor na torze', kind: 'end' }); return constraints; }
         if (tile.type === 'point') {
           const p = this.ilk.points.get(tile.id);
           if (p.moving || !p.control) { constraints.push({ dist, speed: 0, reason: `zwrotnica ${tile.id} bez kontroli`, kind: 'end' }); return constraints; }

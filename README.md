@@ -52,7 +52,9 @@ Station selection: `?stacja=<id>` (default `stare-pustkowie`).
   platform tracks 1/2 and SKM 501/502, tracks 3, 4 and 6 of the Sopot EMU depot, siding 18 with a derailer,
   a two-step shunting move of a terminating unit from track 4 to track 6) and **Gdynia Chylonia** (junction of
   lines 202 and 250 with branches to the Gdynia Postojowa depot and Gdynia Port, SKM stabling tracks 21/22 behind a
-  diamond crossing, slip point 38, two-stage departures through intermediate exit signals); each with scenarios such as
+  diamond crossing, slip point 38, two-stage departures through intermediate exit signals) and **Sopot** (a long
+  station where one passage takes three routes: home signal → yard tracks 2a/1a → platform tracks 2/1 → line;
+  SKM platform 1, stabling tracks 4/6/13, units stabled and brought back as new trains); each with scenarios such as
   a closed track, a point failure, a block failure or a peak with heavy disruptions.
 
 ## Operating the desk (short version)

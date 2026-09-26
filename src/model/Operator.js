@@ -99,17 +99,43 @@ export class AutoOperator {
       }
       if (!tr || tr.finished) continue;
 
+      // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
+      if (e._entryPath?.length) {
+        if (ilk.setRoute(e._entryPath[0]).ok) e._entryPath.shift();
+        continue;
+      }
       // ---- wjazd ----
       if (e.from && !e.entryRouteSet && this.#exitInDistrict(e.from)) {
         let want = this.trackFor ? this.trackFor(e) : e.track;
         if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) continue; want = c.track; e._cmdAccept = c; }
         const app = approachOf(e.from);
         const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
+        // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
+        // na których tor peronowy leży za semaforem pośrednim (np. Sopot: A → H → O).
+        const pathTo = (track) => {
+          const queue = cands.map((r) => [r]);
+          const seen = new Set();
+          while (queue.length) {
+            const path = queue.shift();
+            const last = path[path.length - 1];
+            if (routeTrack(last) === String(track) && ilk.sections.get(last.sections.at(-1))?.kind === 'station') return path;
+            if (path.length >= 3 || last.end.type !== 'signal' || seen.has(last.end.id)) continue;
+            seen.add(last.end.id);
+            for (const r of routes) if (r.kind === 'train' && r.start === last.end.id && !r.exit) queue.push([...path, r]);
+          }
+          return null;
+        };
+        const path = pathTo(want);
         // kolejność prób: tor planowy, potem inne tory peronowe, na końcu pozostałe (np. tor planowy zamknięty)
         const rank = (r) => (routeTrack(r) === String(want) ? 0 : ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 2);
-        for (const pick of [...cands].sort((a, b) => rank(a) - rank(b))) {
-          if (!ilk.setRoute(pick.id).ok) continue;
+        const order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
+        let closed = false;
+        for (const pick of order) {
+          const res = ilk.setRoute(pick.id);
+          // inny tor tylko przy torze zamkniętym; chwilowo zajęty/utwierdzony tor planowy – czekać
+          if (!res.ok) { if (/zamknięty/.test(res.reason || '')) closed = true; if (closed) continue; break; }
           e.entryRouteSet = true;
+          if (path && pick === path[0] && path.length > 1) e._entryPath = path.slice(1).map((r) => r.id);
           if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
           break;
         }
@@ -129,7 +155,7 @@ export class AutoOperator {
         // kierunku) tor docelowy jest osiągalny (manewr „za rozjazdy i z powrotem”).
         const opposite = (sigId) => { const s = topo.signals.get(sigId); return [...topo.signals.values()].find((o) => o.kind === 'tm' && o.at.x === s.at.x && o.at.y === s.at.y && o.dir !== s.dir); };
         const leadsTo = (x) => { if (x.end.type !== 'signal') return false; const o = opposite(x.end.id); return !!o && routes.some((y) => y.kind === 'shunt' && y.start === o.id && routeTrack(y) === String(task.toTrack)); };
-        const free = usable.filter((x) => !isSet(x));
+        const free = usable.filter((x) => !isSet(x) && !x.sections.some((sid) => ilk.sections.get(sid).occupied && !occ.has(sid)));
         const r = free.find((x) => routeTrack(x) === String(task.toTrack))
           || free.filter(leadsTo).sort((a, b) => a.sections.length - b.sections.length)[0];
         if (r) ilk.setRoute(r.id);
