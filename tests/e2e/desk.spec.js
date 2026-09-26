@@ -22,9 +22,12 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   await page.reload({ waitUntil: 'networkidle' });
   await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);
   // wybór posterunku: parametry pod kartą
-  await expect(page.locator('#st-params')).toBeHidden();
+  await expect(page.locator('#st-briefing')).toBeHidden();
+  expect(await page.locator('.st-card .st-thumb svg path').count()).toBeGreaterThan(0); // miniatury planów
   await page.click('.st-card[data-id=sopot]');
-  await expect(page.locator('.st-card[data-id=sopot] #st-params')).toBeVisible();
+  await expect(page.locator('#st-briefing')).toBeVisible();
+  await expect(page.locator('.st-card[data-id=sopot]')).toHaveClass(/active/);
+  await expect(page.locator('#st-briefing .st-bname')).toHaveText('Sopot');
   await expect(page.locator('#st-station-desc')).toContainText('Ebilock');
   await page.selectOption('#st-level', 'none');
   await page.click('#st-go');

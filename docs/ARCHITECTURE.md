@@ -90,7 +90,8 @@ daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `b
 Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków z `location`, `traffic`,
 `difficulty` (gwiazdki) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
 zapamiętany w localStorage). Kliknięcie karty rozwija pod nią parametry zmiany (okręg, scenariusz, zakłócenia, ziarno).
-Funkcje sortowania i listy misji są bez DOM – testowane w Node.
+Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
+Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
 
 ## Misje wprowadzające (`src/tutorial/`)
 

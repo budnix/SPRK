@@ -51,3 +51,17 @@ test('monitor: opis „tor N · …” – numer toru i peron rysowane osobno, z
   assert.equal(f('SZKOLNA'), 'SZKOLNA');
   assert.equal(f('Wk1'), 'Wk1');
 });
+
+test('miniatura planu stacji: SVG z torami, peronami i strzałkami szlaków każdej stacji', async () => {
+  const { stationThumbnail } = await import('../src/render/thumbnail.js');
+  const { STATIONS } = await import('../src/stations/index.js');
+  for (const st of STATIONS) {
+    const svg = stationThumbnail(st, { w: 320, h: 100 });
+    assert.match(svg, /^<svg /, st.id);
+    assert.ok(/<path d="M[\d.]+,[\d.]+L/.test(svg), `${st.id}: brak torów`);
+    assert.ok((svg.match(/<rect /g) || []).length >= 2, `${st.id}: brak peronu`);
+    assert.equal((svg.match(/fill="#3a4653"/g) || []).length, Object.keys(st.exits).length, `${st.id}: strzałki szlaków`);
+    // wszystkie współrzędne w obrysie
+    for (const [, x, y] of svg.matchAll(/[ML](-?[\d.]+),(-?[\d.]+)/g)) { assert.ok(+x >= 0 && +x <= 320 && +y >= 0 && +y <= 100, `${st.id}: punkt poza obrazem ${x},${y}`); }
+  }
+});

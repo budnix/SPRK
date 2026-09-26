@@ -1,6 +1,7 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
 import { getSrk } from '../srk/registry.js';
+import { stationThumbnail } from '../render/thumbnail.js';
 
 const SORT_KEY = 'sprk.startSort';
 
@@ -42,42 +43,55 @@ export class StartScreen {
     try { sort = localStorage.getItem(SORT_KEY) || 'name'; } catch { /* prywatny tryb */ }
     this.sort = sort === 'difficulty' ? 'difficulty' : 'name';
     const missions = missionList(STATIONS);
-    root.innerHTML = `<div class="modal-box start">
-      <h2>SPRK – nowa zmiana</h2>
+    root.innerHTML = `<div class="start-screen">
+      <header class="st-hero">
+        <div class="st-logo">SPRK</div>
+        <div class="st-tagline">Symulator Prowadzenia Ruchu Kolejowego</div>
+        <div class="st-sub">Wybierz misję albo posterunek. Nastawnia czeka.</div>
+        ${current.scenario ? '<button type="button" class="tb st-close" id="st-close">‹ Wróć do zmiany</button>' : ''}
+      </header>
       <section class="st-missions">
-        <h3>Misje wprowadzające</h3>
-        <p class="muted">Samouczek krok po kroku: liniowy rozkład, dymki przy elementach, każdy skrót (Poz, Wbl, Ko, Pz, Sz…) do kliknięcia. Zacznij tu, jeśli nie prowadziłeś ruchu.</p>
+        <h3><span class="st-kicker">Szkolenie</span>Misje wprowadzające</h3>
         <div class="st-mission-list">${missions.map((m, i) => `<button type="button" class="st-mission" data-station="${m.station.id}" data-scenario="${m.scenario.id}">
-            <span class="st-no">${i + 1}</span><span class="st-mtitle">${esc(m.scenario.name)}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span></button>`).join('')}</div>
+            <div class="st-mthumb">${stationThumbnail(m.station, { w: 320, h: 110 })}<span class="st-no">${i + 1}</span></div>
+            <div class="st-mbody"><span class="st-mtitle">${esc(m.scenario.name.replace(/\s*\(samouczek\)/, ''))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span>
+            <span class="st-mgo">Rozpocznij ›</span></div></button>`).join('')}</div>
       </section>
       <section class="st-stations">
-        <div class="st-head"><h3>Posterunki</h3>
+        <div class="st-head"><h3><span class="st-kicker">Służba</span>Posterunki</h3>
           <div class="seg st-sort" aria-label="Kolejność posterunków"><button type="button" class="tb" data-sort="name">alfabetycznie</button><button type="button" class="tb" data-sort="difficulty">wg trudności</button></div></div>
-        <div id="st-list" class="st-list"></div>
+        <div class="st-grid"><div id="st-list" class="st-list"></div>
+        <aside id="st-briefing" class="st-briefing hidden">
+          <div class="st-bthumb"></div>
+          <div class="st-btitle"><span class="st-bname"></span><span class="st-bstars"></span></div>
+          <div class="st-bmeta"></div>
+          <div id="st-params" class="st-params">
+            <p class="muted" id="st-station-desc"></p>
+            <label id="st-district-wrap" class="hidden">Okręg nastawczy (stanowisko) <select id="st-district"></select></label>
+            <p class="muted" id="st-district-desc"></p>
+            <label>Scenariusz <select id="st-scenario"></select></label>
+            <p class="muted" id="st-scenario-desc"></p>
+            <label>Zakłócenia (opóźnienia, usterki)
+              <select id="st-level">${Object.entries(DISRUPTION_LEVELS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
+            </label>
+            <label>Ziarno losowe (puste = losowe) <input id="st-seed" inputmode="numeric" placeholder="np. 42"></label>
+            <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">Rozpocznij zmianę</button></div>
+          </div>
+        </aside></div>
       </section>
-      <div id="st-params" class="st-params hidden">
-        <p class="muted" id="st-station-desc"></p>
-        <label id="st-district-wrap" class="hidden">Okręg nastawczy (stanowisko) <select id="st-district"></select></label>
-        <p class="muted" id="st-district-desc"></p>
-        <label>Scenariusz <select id="st-scenario"></select></label>
-        <p class="muted" id="st-scenario-desc"></p>
-        <label>Zakłócenia (opóźnienia, usterki)
-          <select id="st-level">${Object.entries(DISRUPTION_LEVELS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
-        </label>
-        <label>Ziarno losowe (puste = losowe) <input id="st-seed" inputmode="numeric" placeholder="np. 42"></label>
-        <div class="order-actions"><button type="button" id="st-go" class="tb primary">Rozpocznij zmianę</button></div>
-      </div>
     </div>`;
     this.params = root.querySelector('#st-params');
+    this.briefing = root.querySelector('#st-briefing');
     this.list = root.querySelector('#st-list');
     root.querySelector('#st-level').value = current.level || 'low';
+    root.querySelector('#st-close')?.addEventListener('click', () => this.hide());
     root.querySelector('.st-mission-list').addEventListener('click', (ev) => {
       const b = ev.target.closest('.st-mission'); if (!b) return;
       this.#go(b.dataset.station, b.dataset.scenario, 'none');
     });
     for (const b of root.querySelectorAll('.st-sort button')) b.addEventListener('click', () => this.setSort(b.dataset.sort));
     this.list.addEventListener('click', (ev) => {
-      const card = ev.target.closest('.st-card'); if (!card || ev.target.closest('#st-params')) return;
+      const card = ev.target.closest('.st-card'); if (!card) return;
       this.select(card.dataset.id);
     });
     root.querySelector('#st-go').addEventListener('click', () => {
@@ -102,21 +116,33 @@ export class StartScreen {
   renderList() {
     for (const b of this.root.querySelectorAll('.st-sort button')) b.classList.toggle('active', b.dataset.sort === this.sort);
     this.list.innerHTML = sortStations(STATIONS, this.sort).map((s) => `<div class="st-card" data-id="${s.id}" role="button" tabindex="0">
-        <div class="st-row"><span class="st-name">${esc(s.name)}</span><span class="st-srk">${srkBadge(s.srk)}</span><span class="st-stars" title="trudność ${s.difficulty || '?'}/5">${stars(s.difficulty)}</span></div>
-        <div class="st-loc">${esc(s.location || '')}</div>
-        <div class="st-traffic">${esc(s.traffic || '')}</div>
+        <div class="st-thumb">${stationThumbnail(s, { w: 320, h: 100 })}</div>
+        <div class="st-body">
+          <div class="st-row"><span class="st-name">${esc(s.name)}</span><span class="st-stars" title="trudność ${s.difficulty || '?'}/5">${stars(s.difficulty)}</span></div>
+          <div class="st-loc">${esc(s.location || '')}</div>
+          <div class="st-chips"><span class="st-srk">${srkBadge(s.srk)}</span>${s.districts ? '<span class="st-srk">dwa okręgi</span>' : ''}<span class="st-srk">${(s.scenarios || []).filter((x) => !x.tutorial).length} scen.</span></div>
+          <div class="st-traffic">${esc(s.traffic || '')}</div>
+        </div>
       </div>`).join('');
   }
 
-  /** Zaznacza posterunek i rozwija pod nim parametry zmiany. */
+  /** Zaznacza posterunek i pokazuje odprawę (briefing) z parametrami zmiany. */
   select(id, scroll = true) {
     const st = STATIONS.find((s) => s.id === id); if (!st) return;
     this.selected = id;
     const root = this.root;
     for (const c of this.list.querySelectorAll('.st-card')) c.classList.toggle('active', c.dataset.id === id);
     const card = this.list.querySelector(`.st-card[data-id="${id}"]`);
-    card.appendChild(this.params);
-    this.params.classList.remove('hidden');
+    const b = this.briefing;
+    b.classList.remove('hidden');
+    b.querySelector('.st-bthumb').innerHTML = stationThumbnail(st, { w: 480, h: 150 });
+    b.querySelector('.st-bname').textContent = st.name;
+    b.querySelector('.st-bstars').innerHTML = `${stars(st.difficulty)} <small>trudność ${st.difficulty || '?'}/5</small>`;
+    b.querySelector('.st-bmeta').innerHTML = `<div>${esc(st.location || '')}</div><div>${esc(st.traffic || '')}</div>`;
+    // na wąskim ekranie odprawa jest pod listą – przewiń do niej; na szerokim stoi obok
+    const narrow = window.innerWidth < 900;
+    if (narrow) card.after(b);
+    else root.querySelector('.st-grid').appendChild(b);
     root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${st.srkInfo || getSrk(st.srk).name}`;
     const dw = root.querySelector('#st-district-wrap'), dSel = root.querySelector('#st-district');
     if (st.districts) {
@@ -143,7 +169,7 @@ export class StartScreen {
       if (sc?.disruptions) lvSel.value = sc.disruptions;
     };
     scSel.onchange = upd; upd();
-    if (scroll) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (scroll) (narrow ? b : card).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   #go(station, scenario, level) {
