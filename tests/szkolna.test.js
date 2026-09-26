@@ -241,3 +241,29 @@ test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowy
   assert.ok(tr.onLine('W') || e(90202).status === 'na następnym posterunku', `90202 wyjechał po 08:12 (${e(90202).status})`);
   assert.ok(e(90202).actualDep >= Clock.parse('08:12'), 'odjazd nie przed 08:12');
 });
+
+test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – kończy ją samouczek (endShift); bez misji kończy się sama', () => {
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-2' }).autoEnd, false);
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).autoEnd, false);
+  assert.equal(new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' }).autoEnd, true);
+  // rozkład bez usterek scenariusza misji (automat nie obsługuje zapowiadania telefonicznego), ale z wyłączonym
+  // automatycznym końcem – jak w misji
+  const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  sim.autoEnd = false;
+  let reports = 0; sim.bus.on('shift-end', () => reports++);
+  let n = 0;
+  const end = Clock.parse('08:49');
+  while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  const done = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
+  assert.ok(sim.traffic.timetable().every(done), 'wszystkie pociągi obsłużone');
+  assert.equal(sim.ended, false, 'zmiana trwa, dopóki samouczek nie zakończy misji');
+  sim.endShift(); sim.endShift();
+  assert.equal(sim.ended, true);
+  assert.equal(reports, 1, 'raport raz');
+  // z automatycznym końcem (zmiana bez misji albo przerwany samouczek) zmiana kończy się sama po ostatnim pociągu
+  const sim2 = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  n = 0;
+  while (sim2.clock.time < end && !sim2.ended) { sim2.step(0.5); if (n++ % 4 === 0) autoDispatch(sim2); }
+  assert.equal(sim2.ended, true);
+  assert.ok(sim2.clock.time < end, 'koniec przed 08:49 – po ostatnim pociągu, nie po czasie');
+});

@@ -54,6 +54,8 @@ export class Simulation {
     for (const b of this.blocks.values()) b.time = this.clock.time;
     this.traffic.start(this.clock.time);
     this.ended = false;
+    // w misji (samouczek) zmiana nie kończy się sama po ostatnim pociągu – kończy ją ostatni krok samouczka (endShift)
+    this.autoEnd = !this.scenario.tutorial;
     this.accum = 0;
     // Okręgi nastawcze: gracz obsługuje jeden okręg, pozostałe prowadzi automat
     this.districts = station.districts || null;
@@ -217,11 +219,15 @@ export class Simulation {
     const isDone = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
     const allDone = tt.length && tt.every(isDone);
     const timeUp = this.endTime && this.clock.time >= this.endTime;
-    if (allDone || timeUp) {
-      this.ended = true;
-      this.#finalScore();
-      this.bus.emit('shift-end', this.score.report(this.traffic));
-    }
+    if ((allDone && this.autoEnd) || timeUp) this.endShift();
+  }
+
+  /** Koniec zmiany: ocena końcowa i raport (zdarzenie `shift-end`); wołane też przez samouczek po ostatnim kroku. */
+  endShift() {
+    if (this.ended) return;
+    this.ended = true;
+    this.#finalScore();
+    this.bus.emit('shift-end', this.score.report(this.traffic));
   }
 
   #finalScore() {

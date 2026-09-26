@@ -144,3 +144,11 @@ test('ekran startowy otwarty z menu w trakcie misji leży nad dymkami samouczka'
   await page.click('#st-close');
   await expect(page.locator('#start')).toBeHidden();
 });
+
+test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); zamknięcie samouczka przywraca automatyczny koniec', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-2' } });
+  expect(await page.evaluate(() => window.sim.autoEnd)).toBe(false);
+  await page.click('.tut-close');
+  expect(await page.evaluate(() => window.sim.autoEnd)).toBe(true);
+  await expect(page.locator('.tut-box')).toBeHidden();
+});

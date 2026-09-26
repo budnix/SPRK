@@ -164,7 +164,7 @@ export function missionSteps(view) {
     (sim) => sim.blocks.get('W').counters.dPo >= 1 && !sim.blocks.get('W').poBlocked,
     { wrong: (sim) => { const b = sim.blocks.get('W'); return b.poBlocked && String(b.phone.arrivalConfirmed) !== '6106' ? 'Poczekaj na telefoniczne potwierdzenie przyjazdu 6106 – dPo przed nim to −15 pkt.' : null; } });
 
-  info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, STOP i Pz, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Raport zmiany: menu ☰ → <b>Raport zmiany</b>.<p>${m ? 'Misja 2 pokazuje tę samą stację na <b>pulpicie kostkowym</b> urządzeń typu E (menu ☰ → Nowa zmiana → Szkolna → Misja 2).' : 'Teraz spróbuj prawdziwych stacji: Stare Pustkowie (typ E) albo Sopot i Gdynia (stanowiska komputerowe) – menu ☰ → Nowa zmiana.'}</p>`, { el: '#btn-menu' });
+  info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, STOP i Pz, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b> (później: menu ☰ → Raport zmiany).<p>${m ? 'Misja 2 pokazuje tę samą stację na <b>pulpicie kostkowym</b> urządzeń typu E (menu ☰ → Nowa zmiana → Szkolna → Misja 2).' : 'Teraz spróbuj prawdziwych stacji: Stare Pustkowie (typ E) albo Sopot i Gdynia (stanowiska komputerowe) – menu ☰ → Nowa zmiana.'}</p>`, { el: '#btn-menu' });
   return steps;
 }
 

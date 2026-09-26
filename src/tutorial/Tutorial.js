@@ -57,6 +57,7 @@ export class Tutorial {
     this.glossary.classList.add('hidden');
     if (this.progress.pausedByUs) { this.sim.clock.paused = false; this.progress.pausedByUs = false; }
     this.progress.finished = true;
+    this.sim.autoEnd = true; // samouczek przerwany – zmiana kończy się sama po ostatnim pociągu
     this.opts.onFinish?.();
   }
 
@@ -168,5 +169,7 @@ export class Tutorial {
     this.#unhighlight();
     this.box.classList.add('hidden');
     this.opts.onFinish?.();
+    // misja ukończona („Dalej” na ostatnim kroku) – dopiero teraz koniec zmiany i raport
+    this.sim.endShift?.();
   }
 }
