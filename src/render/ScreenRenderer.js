@@ -224,8 +224,9 @@ export class ScreenRenderer {
     if (ex) {
       const dir = ex[1].dir === 'E' ? 1 : -1;
       const x = dir * 4;
+      // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
       kids.push(el('path', { class: 'exit-arrow', d: `M${x - dir * 8},-7 L${x + dir * 6},0 L${x - dir * 8},7 Z` }),
-        text(0, 15, tile.text || ex[0], { class: 'scr-text small' }));
+        text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
     } else {
       kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
     }
