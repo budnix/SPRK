@@ -686,7 +686,8 @@ export class Interlocking {
       if (!act.trainEntered && secs.length && this.sections.get(secs[0]).occupied) {
         act.trainEntered = true;
         act.timedRelease = null;
-        if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął ${sig.id} – sygnał Stój`); }
+        const prevAspect = sig.aspect;
+        if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
         if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
       }
       if (act.timedRelease && act.timedRelease <= time) {

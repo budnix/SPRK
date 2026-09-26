@@ -193,7 +193,7 @@ export class Traffic {
         this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} odjazd` });
         break;
       case 'order-used':
-        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor na rozkaz pisemny` });
+        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (20 km/h)` });
         break;
       case 'stop':
         if (tr.stoppedAt?.kind === 'signal') {
