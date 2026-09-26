@@ -1,4 +1,6 @@
 import { el, text, CELL } from './svg.js';
+
+const FRAME = 22;
 import * as art from './tileArt.js';
 import { getTileDef } from '../tiles/registry.js';
 import { VEC, OPPOSITE } from '../tiles/directions.js';
@@ -30,8 +32,9 @@ export class DeskRenderer {
     this.trainLabels = new Map();
 
     const { cols, rows } = this.station.desk;
+    this.FRAME = FRAME;
     this.svg = el('svg', {
-      class: 'desk', viewBox: `0 0 ${cols * CELL} ${rows * CELL}`,
+      class: 'desk', viewBox: `0 0 ${cols * CELL + 2 * FRAME} ${rows * CELL + 2 * FRAME}`,
       preserveAspectRatio: 'xMidYMid meet',
     });
     this.svg.appendChild(el('defs', {}, [
@@ -40,13 +43,17 @@ export class DeskRenderer {
         el('feMerge', {}, [el('feMergeNode', { in: 'b' }), el('feMergeNode', { in: 'SourceGraphic' })]),
       ]),
     ]));
-    this.svg.appendChild(el('rect', { class: 'desk-bg', x: 0, y: 0, width: cols * CELL, height: rows * CELL }));
+    this.svg.appendChild(el('rect', { class: 'desk-bg', x: 0, y: 0, width: cols * CELL + 2 * FRAME, height: rows * CELL + 2 * FRAME, rx: 4 }));
+    this.svg.appendChild(el('rect', { class: 'desk-face-bg', x: FRAME, y: FRAME, width: cols * CELL, height: rows * CELL }));
+    this.inner = el('g', { transform: `translate(${FRAME},${FRAME})` });
     this.layerTiles = el('g', { class: 'layer-tiles' });
     this.layerGrid = el('g', { class: 'layer-grid' });
     this.layerTrains = el('g', { class: 'layer-trains' });
-    this.svg.append(this.layerTiles, this.layerGrid, this.layerTrains);
+    this.inner.append(this.layerTiles, this.layerGrid, this.layerTrains);
+    this.svg.appendChild(this.inner);
     container.appendChild(this.svg);
 
+    this.#buildFrame();
     this.#buildTiles();
     this.#buildGrid();
     this.#bindEvents();
@@ -111,6 +118,30 @@ export class DeskRenderer {
       const ref = JSON.parse(b.dataset.ref);
       this.buttonEls.set(refKey(ref), b);
     }
+  }
+
+  /** Rama pulpitu: numeracja kolumn (od lewej) i rzędów (od dołu), śruby. */
+  #buildFrame() {
+    const { cols, rows } = this.station.desk;
+    const W = cols * CELL + 2 * FRAME, H = rows * CELL + 2 * FRAME;
+    const g = el('g', { class: 'frame' });
+    const pad = (n) => String(n).padStart(2, '0');
+    for (let x = 0; x < cols; x++) {
+      const cx = FRAME + x * CELL + CELL / 2;
+      g.appendChild(text(cx, FRAME / 2 + 3, pad(x + 1), { class: 'frame-text' }));
+      g.appendChild(text(cx, H - FRAME / 2 + 3, pad(x + 1), { class: 'frame-text' }));
+      g.appendChild(el('circle', { class: 'frame-screw', cx: FRAME + x * CELL, cy: 5, r: 1.8 }));
+      g.appendChild(el('circle', { class: 'frame-screw', cx: FRAME + x * CELL, cy: H - 5, r: 1.8 }));
+    }
+    for (let y = 0; y < rows; y++) {
+      const cy = FRAME + y * CELL + CELL / 2;
+      const n = pad(rows - y);
+      g.appendChild(text(FRAME / 2, cy + 1, n, { class: 'frame-text' }));
+      g.appendChild(text(W - FRAME / 2, cy + 1, n, { class: 'frame-text' }));
+      g.appendChild(el('circle', { class: 'frame-screw', cx: 5, cy: FRAME + y * CELL, r: 1.8 }));
+      g.appendChild(el('circle', { class: 'frame-screw', cx: W - 5, cy: FRAME + y * CELL, r: 1.8 }));
+    }
+    this.svg.appendChild(g);
   }
 
   #buildGrid() {
@@ -198,13 +229,18 @@ export class DeskRenderer {
     const sec = this.ilk.sections.get(p.section);
     const base = this.#sectionState(sec);
     const state = base === 'off' ? 'yellow' : base;
+    const lit = base !== 'off';
     if (p.moving || !p.control) {
       setLamp(r.toe, p.trailed ? 'red blink' : 'off');
       setLamp(r.straight, 'off'); setLamp(r.diverge, 'off');
+      setLamp(r.posStraight, 'off'); setLamp(r.posDiverge, 'off');
     } else {
-      setLamp(r.toe, state);
-      setLamp(r.straight, p.position === '+' ? state : 'off');
-      setLamp(r.diverge, p.position === '-' ? state : 'off');
+      // pełny leg świeci biało/czerwono (przebieg/zajętość); żółty krótki wskaźnik – położenie
+      setLamp(r.toe, lit ? state : 'off');
+      setLamp(r.straight, lit && p.position === '+' ? state : 'off');
+      setLamp(r.diverge, lit && p.position === '-' ? state : 'off');
+      setLamp(r.posStraight, !lit && p.position === '+' ? 'yellow' : 'off');
+      setLamp(r.posDiverge, !lit && p.position === '-' ? 'yellow' : 'off');
     }
     setLamp(r.lockLamp, p.individualLock ? 'white' : 'off');
   }
@@ -222,7 +258,7 @@ export class DeskRenderer {
     const r = this.signalRefs.get(id);
     if (!s || !r) return;
     const a = s.aspect;
-    if (s.kind === 'tm') { setLamp(r.top, a === 'Ms2' ? 'white' : 'blue'); return; }
+    if (s.kind === 'tm') { setLamp(r.top, a === 'Ms2' ? 'off' : 'blue'); setLamp(r.ms, a === 'Ms2' ? 'white' : 'off'); r.btnWhite?.classList.toggle('active', a === 'Ms2'); return; }
     const map = {
       S1: ['red', 'off'], S2: ['green', 'off'], S3: ['green blink', 'off'], S4: ['orange blink', 'off'], S5: ['orange', 'off'],
       S10: ['orange', 'green'], S11: ['orange', 'green blink'], S12: ['orange', 'orange blink'], S13: ['orange', 'orange'],

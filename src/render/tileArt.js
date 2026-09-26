@@ -12,9 +12,9 @@ import { PORT_XY } from '../tiles/directions.js';
 export const SLIT_W = 7;
 const C = CELL / 2;
 
-export function tileBase(extraClass = '') {
+export function tileBase(extraClass = '', face = '') {
   return el('g', { class: `tile ${extraClass}`.trim() }, [
-    el('rect', { class: 'face', x: 0, y: 0, width: CELL, height: CELL }),
+    el('rect', { class: `face ${face}`.trim(), x: 0, y: 0, width: CELL, height: CELL }),
   ]);
 }
 
@@ -28,6 +28,20 @@ function slitPath(port) {
 export function slit(ports, cls = 'slit') {
   const d = ports.map((p) => slitPath(p)).join(' ');
   return el('path', { class: cls, d, 'stroke-width': SLIT_W, 'stroke-linecap': 'butt', fill: 'none' });
+}
+
+/** Ciemna obwódka szczeliny (rysowana pod szczeliną). */
+export function slitEdge(ports) {
+  const d = ports.map((p) => slitPath(p)).join(' ');
+  return el('path', { class: 'slit-edge', d, 'stroke-width': SLIT_W + 1.6, 'stroke-linecap': 'butt', fill: 'none' });
+}
+
+/** Krótki wskaźnik położenia zwrotnicy (żółty) przy końcu legu. */
+function posBar(port) {
+  const [px, py] = PORT_XY[port];
+  const ax = C + (px - C) * 0.45, ay = C + (py - C) * 0.45;
+  const bx = C + (px - C) * 0.95, by = C + (py - C) * 0.95;
+  return el('path', { class: 'pos', d: `M${ax},${ay} L${bx},${by}`, 'stroke-width': SLIT_W - 2, fill: 'none' });
 }
 
 /** Znacznik izolacji (złącze izolowane) przy porcie. */
@@ -60,7 +74,7 @@ export function counter(x, y, w, h) {
   const g = el('g', { class: 'counter' }, [
     el('rect', { x, y, width: w, height: h, rx: 1.5 }),
   ]);
-  const t = text(x + w / 2, y + h / 2 + 0.5, '000', { class: 'counter-text' });
+  const t = text(x + w / 2, y + h / 2 + 0.5, '00000', { class: 'counter-text' });
   g.appendChild(t);
   return { g, t };
 }
@@ -73,8 +87,9 @@ export function lamp(cx, cy, r, cls = '') {
 /* ------------------------------------------------------------------ */
 
 export function trackArt(tile, ctx) {
-  const g = tileBase('t-track');
+  const g = tileBase('t-track', tile.face);
   const refs = { slits: [] };
+  g.appendChild(slitEdge(tile.ports));
   const s = slit(tile.ports);
   g.appendChild(s);
   refs.slits.push(s);
@@ -104,17 +119,19 @@ export function trackArt(tile, ctx) {
 }
 
 export function bufferArt(tile, ctx) {
-  const g = tileBase('t-buffer');
+  const g = tileBase('t-buffer', tile.face);
   const refs = { slits: [] };
+  g.appendChild(el('path', { class: 'slit-edge', d: slitPath(tile.port), 'stroke-width': SLIT_W + 1.6, fill: 'none' }));
   const s = el('path', { class: 'slit', d: slitPath(tile.port), 'stroke-width': SLIT_W, fill: 'none' });
   g.appendChild(s); refs.slits.push(s);
   if (ctx.isJoint(tile, tile.port)) g.appendChild(joint(tile.port));
-  // kozioł – poprzeczka
+  // kozioł – klamra ⊐ na końcu szczeliny
   const [px, py] = PORT_XY[tile.port];
   const dx = px - C, dy = py - C, len = Math.hypot(dx, dy);
-  const nx = -dy / len, ny = dx / len;
-  g.appendChild(el('path', { class: 'buffer-bar', d: `M${C + nx * 8},${C + ny * 8} L${C - nx * 8},${C - ny * 8}`, 'stroke-width': 3 }));
-  g.appendChild(el('path', { class: 'buffer-bar', d: `M${C - dx * 0.25 + nx * 5},${C - dy * 0.25 + ny * 5} L${C - dx * 0.25 - nx * 5},${C - dy * 0.25 - ny * 5}`, 'stroke-width': 2 }));
+  const ux = dx / len, uy = dy / len, nx = -dy / len, ny = dx / len;
+  const ex = C - ux * 2, ey = C - uy * 2;
+  g.appendChild(el('path', { class: 'buffer-bar', 'stroke-width': 1.6,
+    d: `M${ex + ux * 6 + nx * 7},${ey + uy * 6 + ny * 7} L${ex + nx * 7},${ey + ny * 7} L${ex - nx * 7},${ey - ny * 7} L${ex + ux * 6 - nx * 7},${ey + uy * 6 - ny * 7}` }));
   if (tile.endButton) {
     refs.endBtn = button(tile.port.includes('W') ? C + 10 : C - 10, 9, 5.5, tile.endButton.color || 'white', { kind: 'end', id: tile.endButton.id }, null);
     g.appendChild(refs.endBtn);
@@ -123,18 +140,29 @@ export function bufferArt(tile, ctx) {
 }
 
 export function pointArt(tile, ctx) {
-  const g = tileBase('t-point');
+  const g = tileBase(`t-point${tile.face === 'plain' ? ' plain' : ''}`);
   const mk = (port) => el('path', { class: 'slit', d: slitPath(port), 'stroke-width': SLIT_W, fill: 'none' });
+  g.appendChild(slitEdge([tile.toe, tile.straight, tile.diverge]));
   const refs = { toe: mk(tile.toe), straight: mk(tile.straight), diverge: mk(tile.diverge) };
   g.append(refs.diverge, refs.straight, refs.toe);
+  refs.posStraight = posBar(tile.straight); refs.posDiverge = posBar(tile.diverge);
+  g.append(refs.posStraight, refs.posDiverge);
   for (const p of [tile.toe, tile.straight, tile.diverge]) if (ctx.isJoint(tile, p)) g.appendChild(joint(p));
+  // znak „+” przy torze zasadniczym (po stronie przeciwnej do toru zwrotnego)
+  {
+    const [sx, sy] = PORT_XY[tile.straight];
+    const [dxp, dyp] = PORT_XY[tile.diverge];
+    const side = dyp > C ? -1 : 1; // tor zwrotny w dół -> plus nad torem
+    g.appendChild(text(C + (sx - C) * 0.8, C + side * 9 + 0.5, '+', { class: 'tile-text plus' }));
+  }
   // przycisk zwrotnicowy w wolnej ćwiartce
   const quad = freeQuadrant([tile.toe, tile.straight, tile.diverge], tile.diverge);
-  refs.btn = button(quad[0], quad[1], 5.5, 'black', { kind: 'point', id: tile.id }, null);
+  const bx = quad[0] < C ? 8 : 32, by = quad[1] < C ? 9 : 31;
+  refs.btn = button(bx, by, 5, 'black', { kind: 'point', id: tile.id }, null);
   g.appendChild(refs.btn);
-  const lq = oppositeQuadrant(quad, [tile.toe, tile.straight, tile.diverge]);
-  g.appendChild(text(lq[0], lq[1], tile.label ?? tile.id, { class: 'tile-text point-label' }));
-  refs.lockLamp = lamp(quad[0] + (quad[0] < C ? 9 : -9), quad[1], 2.2, 'lamp-white');
+  const dirIn = quad[0] < C ? 1 : -1;
+  g.appendChild(text(bx + dirIn * 9, by + 0.5, tile.label ?? tile.id, { class: 'tile-text point-label', 'text-anchor': dirIn > 0 ? 'start' : 'end' }));
+  refs.lockLamp = lamp(bx + dirIn * 18, by, 2.2, 'lamp-white');
   g.appendChild(refs.lockLamp);
   return { g, refs };
 }
@@ -174,53 +202,52 @@ export function crossingArt(tile, ctx) {
  * Powtarzacz sygnalizatora. Jeśli kostka leży nad torem – maszt w dół, pod torem – w górę.
  */
 export function signalArt(tile) {
-  const g = tileBase('t-signal');
-  const above = tile.y < tile.at.y;
+  const g = tileBase('t-signal', tile.face);
   const east = tile.dir === 'E';
   const refs = {};
-  // maszt
-  const mastX = 11;
-  const headY = above ? 12 : 28;
-  g.appendChild(el('path', { class: 'mast', d: above ? `M${mastX},${CELL} L${mastX},${headY}` : `M${mastX},0 L${mastX},${headY}`, 'stroke-width': 2 }));
-  if (tile.kind === 'semafor') {
-    // głowica z dwiema lampami (górna/dolna) – obrazy dwuświatłowe wg Ie-1
-    g.appendChild(el('rect', { class: 'sig-head', x: mastX - 6, y: headY - 11, width: 12, height: 22, rx: 5 }));
-    refs.top = lamp(mastX, headY - 5, 3.6, 'lamp-red on');
-    refs.bottom = lamp(mastX, headY + 5, 3.6, '');
-    g.append(refs.top, refs.bottom);
-  } else {
-    // tarcza manewrowa – kwadrat z przekątną
-    g.appendChild(el('rect', { class: 'sig-head tm', x: mastX - 6, y: headY - 6, width: 12, height: 12, rx: 2 }));
-    g.appendChild(el('path', { class: 'tm-bar', d: `M${mastX - 5},${headY + 5} L${mastX + 5},${headY - 5}`, 'stroke-width': 1.2 }));
-    refs.top = lamp(mastX, headY, 3.2, 'lamp-blue on');
-  }
-  // strzałka kierunku
-  const ay = above ? headY + 16 : headY - 16;
-  g.appendChild(el('path', { class: 'dir-arrow', d: east ? `M${mastX - 4},${ay - 3} L${mastX + 3},${ay} L${mastX - 4},${ay + 3} Z` : `M${mastX + 4},${ay - 3} L${mastX - 3},${ay} L${mastX + 4},${ay + 3} Z` }));
-  // opis
-  g.appendChild(text(mastX + 17, above ? 36 : 5, tile.id, { class: 'tile-text sig-label' }));
-  // przyciski
   const hasShunt = tile.kind === 'tm' || tile.shunting;
-  const bx = 30;
+  // Powtarzacz: ciemne pudełko z lampkami; obok przycisk i etykieta (etykieta może wystawać poza kostkę)
+  const y1 = 12, y2 = 28;
   if (tile.kind === 'semafor') {
-    refs.btnGreen = button(bx, hasShunt ? 11 : 15, 5.5, 'green', { kind: 'signal', id: tile.id, color: 'green' }, null);
+    g.appendChild(el('rect', { class: 'sig-head', x: 2, y: y1 - 5.5, width: 19, height: 11, rx: 3 }));
+    refs.top = lamp(7.5, y1, 3, 'lamp-red on');
+    refs.bottom = lamp(15.5, y1, 3, '');
+    g.append(refs.top, refs.bottom);
+    refs.btnGreen = button(28, y1, 4.5, 'green', { kind: 'signal', id: tile.id, color: 'green' }, null);
     g.appendChild(refs.btnGreen);
-    if (hasShunt) { refs.btnWhite = button(bx, 26, 5.5, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null); g.appendChild(refs.btnWhite); }
+    g.appendChild(text(34, y1 + 0.5, tile.id, { class: 'tile-text sig-label', 'text-anchor': 'start' }));
+    if (hasShunt) {
+      refs.btnWhite = button(28, y2, 4.5, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null);
+      g.appendChild(refs.btnWhite);
+      const t = text(34, y2 + 0.5, '', { class: 'tile-text sig-label', 'text-anchor': 'start' });
+      t.appendChild(el('tspan', { text: tile.id }));
+      t.appendChild(el('tspan', { text: 'm', 'baseline-shift': 'super', style: 'font-size:5px' }));
+      g.appendChild(t);
+    }
   } else {
-    refs.btnWhite = button(bx, 15, 5.5, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null);
+    g.appendChild(el('rect', { class: 'sig-head tm', x: 2, y: y1 - 5.5, width: 19, height: 11, rx: 3 }));
+    refs.top = lamp(7.5, y1, 3, 'lamp-blue on');
+    refs.ms = lamp(15.5, y1, 3, '');
+    g.append(refs.top, refs.ms);
+    refs.btnWhite = button(28, y1, 4.5, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null);
     g.appendChild(refs.btnWhite);
+    g.appendChild(text(34, y1 + 0.5, tile.id, { class: 'tile-text sig-label', 'text-anchor': 'start' }));
   }
+  // strzałka kierunku ważności
+  const ay = hasShunt && tile.kind === 'semafor' ? y2 : y2 - 4;
+  const ax = 11;
+  g.appendChild(el('path', { class: 'dir-arrow', d: east ? `M${ax - 4},${ay - 3} L${ax + 3},${ay} L${ax - 4},${ay + 3} Z` : `M${ax + 4},${ay - 3} L${ax - 3},${ay} L${ax + 4},${ay + 3} Z` }));
   return { g, refs };
 }
 
 export function buttonTileArt(tile) {
-  const g = tileBase('t-button');
+  const g = tileBase('t-button', tile.face);
   const refs = {};
-  g.appendChild(text(C, 7, tile.label, { class: 'tile-text btn-title' }));
-  refs.btn = button(C, tile.counter ? 19 : 22, 8, tile.color || 'grey', { kind: 'group', id: tile.id, role: tile.role }, null);
+  refs.btn = button(C, tile.counter ? 11 : 16, 7, tile.color || 'grey', { kind: 'group', id: tile.id, role: tile.role }, null);
   g.appendChild(refs.btn);
+  g.appendChild(text(C, tile.counter ? 24 : 31, tile.label, { class: 'tile-text btn-title' }));
   if (tile.counter) {
-    const c = counter(9, 30, 22, 8);
+    const c = counter(6, 28, 28, 9);
     g.appendChild(c.g); refs.counter = c.t;
   }
   return { g, refs };
@@ -229,7 +256,7 @@ export function buttonTileArt(tile) {
 export function labelArt(tile) {
   const span = tile.span || 1;
   const g = el('g', { class: 'tile t-label' }, [
-    el('rect', { class: 'face', x: 0, y: 0, width: CELL * span, height: CELL }),
+    el('rect', { class: `face ${tile.face || ''}`.trim(), x: 0, y: 0, width: CELL * span, height: CELL }),
   ]);
   g.appendChild(text((CELL * span) / 2, C, tile.text, { class: 'tile-text label', style: `font-size:${tile.size || 10}px` }));
   return { g, refs: {} };
@@ -252,10 +279,10 @@ export function blockArt(tile, exitDef) {
   // Lampki: żądanie, kierunek wjazd/wyjazd, zajętość, Po, Ko
   const ly = 30;
   const items = [
-    ['req', 'żąd.', 'lamp-white blink-src'],
-    ['in', 'wjazd', 'lamp-white'],
-    ['out', 'wyjazd', 'lamp-white'],
-    ['occ', 'zaj.', 'lamp-red'],
+    ['req', 'żąd.', 'lamp-white'],
+    ['in', toWest ? '◀ wj.' : 'wj. ▶', 'lamp-white'],
+    ['out', toWest ? '◀ wyj.' : 'wyj. ▶', 'lamp-white'],
+    ['occ', 'szlak', 'lamp-red'],
     ['po', 'Po', 'lamp-red'],
     ['ko', 'Ko', 'lamp-yellow'],
   ];
@@ -277,7 +304,7 @@ export function blockArt(tile, exitDef) {
     refs.btns[id] = b;
     g.appendChild(b);
   });
-  const c1 = counter(102, 48, 18, 7); const c2 = counter(133, 48, 18, 7);
+  const c1 = counter(100, 46, 22, 8); const c2 = counter(131, 46, 22, 8);
   g.append(c1.g, c2.g);
   refs.cntPo = c1.t; refs.cntKo = c2.t;
   return { g, refs };

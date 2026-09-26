@@ -3,9 +3,9 @@
 Symulator wzoruje się na urządzeniach przekaźnikowych typu E z pulpitem kostkowym (pulpit nastawczy
 przyciskowy zintegrowany z planem świetlnym) oraz na symulatorze ISDR (symulator.isdr.pl).
 
-Uwaga: w środowisku, w którym powstała pierwsza wersja, strony isdr.pl, transportszynowy.pl, wiki TD2
-i biblioteki PDF były zablokowane sieciowo. Grafika kostek została zaprojektowana na podstawie opisów
-i ogólnej wiedzy o pulpitach typu E; warto ją porównać ze zrzutami ISDR i skorygować (`src/render/tileArt.js`, `src/styles.css`).
+Grafika kostek (jasnoszare lico, siatka, ciemna rama z numeracją, szare szczeliny, żółte wskaźniki położenia,
+zielone kostki zwrotnicowe, ciemne powtarzacze z lampkami, czarne liczniki) odwzorowuje zrzuty ekranu pulpitów ISDR
+dostarczone przez autora projektu. Style: `src/styles.css`, grafika: `src/render/tileArt.js`.
 
 Materiały:
 

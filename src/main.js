@@ -50,13 +50,13 @@ let zoom = 1;
 function fit() {
   const { cols, rows } = station.desk;
   const w = scroll.clientWidth - 8, h = scroll.clientHeight - 8;
-  zoom = Math.max(0.3, Math.min(w / (cols * 40), h / (rows * 40)));
+  zoom = Math.max(0.3, Math.min(w / (cols * 40 + 44), h / (rows * 40 + 44)));
   applyZoom();
 }
 function applyZoom() {
   const { cols, rows } = station.desk;
-  deskEl.style.width = `${cols * 40 * zoom}px`;
-  deskEl.style.height = `${rows * 40 * zoom}px`;
+  deskEl.style.width = `${(cols * 40 + 44) * zoom}px`;
+  deskEl.style.height = `${(rows * 40 + 44) * zoom}px`;
 }
 document.getElementById('zoom-in').addEventListener('click', () => { zoom = Math.min(3, zoom * 1.2); applyZoom(); });
 document.getElementById('zoom-out').addEventListener('click', () => { zoom = Math.max(0.3, zoom / 1.2); applyZoom(); });
