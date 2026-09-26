@@ -284,6 +284,20 @@ export function blankArt() {
  * Rząd 1: nazwa posterunku, strzałki kierunku (◀ wjazd / ▶ wyjazd), lampki-paski: żądanie, szlak, Po, Ko.
  * Rząd 2: przyciski Wbl, Poz, Ko (czerwone) oraz dPo, dKo z licznikami.
  */
+/** Skrzynka wskaźnika kierunku blokady: obrys w kształcie strzałki, w środku dwie okrągłe lampki (biała, czerwona). */
+function arrowBox(x, y, w, h, pointLeft) {
+  const tip = 7;
+  const d = pointLeft
+    ? `M${x + tip},${y} H${x + w} V${y + h} H${x + tip} L${x},${y + h / 2} Z`
+    : `M${x},${y} H${x + w - tip} L${x + w},${y + h / 2} L${x + w - tip},${y + h} H${x} Z`;
+  const g = el('g', { class: 'arrow-box-g' }, [el('path', { class: 'arrow-box', d })]);
+  const cx1 = pointLeft ? x + tip + 8 : x + 8, cx2 = pointLeft ? x + w - 8 : x + w - tip - 8;
+  const white = lamp(cx1, y + h / 2, 3.6, 'lamp-white');
+  const red = lamp(cx2, y + h / 2, 3.6, 'lamp-red');
+  g.append(white, red);
+  return { g, white, red };
+}
+
 export function blockArt(tile, exitDef) {
   const W = CELL * 4, Hh = CELL * 2;
   const g = el('g', { class: 'tile t-block' }, [
@@ -291,22 +305,26 @@ export function blockArt(tile, exitDef) {
   ]);
   const refs = {};
   const toWest = exitDef.dir === 'W';
-  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${exitDef.direction === 'in' ? ' – wjazd' : exitDef.direction === 'out' ? ' – wyjazd' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
-  // strzałki kierunku
-  const ax = 8, ay = 24;
-  g.appendChild(el('rect', { class: 'arrow-box', x: ax, y: ay - 7, width: 30, height: 14, rx: 1 }));
-  refs.in = el('path', { class: 'lamp arrow', d: toWest ? `M${ax + 4},${ay} L${ax + 12},${ay - 5} L${ax + 12},${ay + 5} Z` : `M${ax + 12},${ay} L${ax + 4},${ay - 5} L${ax + 4},${ay + 5} Z` });
-  refs.out = el('path', { class: 'lamp arrow', d: toWest ? `M${ax + 18},${ay - 5} L${ax + 26},${ay} L${ax + 18},${ay + 5} Z` : `M${ax + 26},${ay - 5} L${ax + 18},${ay} L${ax + 26},${ay + 5} Z` });
-  g.append(refs.in, refs.out);
-  const bars = [['req', 'żąd.'], ['occ', 'szlak'], ['po', 'Po'], ['ko', 'Ko']];
-  bars.forEach(([key, label], i) => {
-    const lb = lampBar(44 + i * 29, 20, 26, label);
-    g.appendChild(lb.g); refs[key] = lb.lamp;
-  });
+  const fixed = exitDef.direction;
+  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${fixed === 'in' ? ' – wjazd' : fixed === 'out' ? ' – wyjazd' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
+  // Wskaźniki kierunku: strzałka „wyjazd” (w stronę szlaku) i „wjazd” (w stronę stacji)
+  const bx = 6, bw = 44, bh = 15;
+  if (fixed !== 'in') {
+    const out = arrowBox(bx, 13, bw, bh, toWest);
+    g.appendChild(out.g); refs.outW = out.white; refs.outR = out.red;
+    g.appendChild(text(bx + bw + 4, 21, 'wyjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
+  }
+  if (fixed !== 'out') {
+    const inn = arrowBox(bx, 31, bw, bh, !toWest);
+    g.appendChild(inn.g); refs.inW = inn.white; refs.inR = inn.red;
+    g.appendChild(text(bx + bw + 4, 39, 'wjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
+  }
+  // Lampki okrągłe: żądanie pozwolenia, Ko do obsłużenia
+  if (!fixed) { refs.req = lamp(96, 20, 3.6, 'lamp-white'); g.appendChild(refs.req); g.appendChild(text(103, 21, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
+  if (fixed !== 'out') { refs.ko = lamp(96, 38, 3.6, 'lamp-white'); g.appendChild(refs.ko); g.appendChild(text(103, 39, 'Ko', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
   // przyciski
   refs.btns = {};
   const by = 58;
-  const fixed = exitDef.direction;
   const btnDefs = fixed === 'in' ? [['Ko', 'red', 40]] : fixed === 'out' ? [] : [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]];
   btnDefs.forEach(([id, color, x]) => {
     const b = button(x, by, 5.5, color, { kind: 'block', exit: tile.exit, btn: id }, id, 'below');

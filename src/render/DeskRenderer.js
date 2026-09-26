@@ -281,11 +281,13 @@ export class DeskRenderer {
     const b = this.sim.blocks.get(exitId);
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
-    setLamp(r.req, b.request === 'theirs' ? 'white blink' : (b.request === 'ours' ? 'white' : 'off'));
-    setLamp(r.in, b.direction === 'in' ? 'white' : 'off');
-    setLamp(r.out, b.direction === 'out' && b.permission ? 'red' : (b.direction === 'out' ? 'red blink' : 'off'));
-    setLamp(r.occ, b.occupied ? 'red' : 'off');
-    setLamp(r.po, b.poBlocked ? 'red' : 'off');
+    // strzałka „wyjazd”: biała – pozwolenie na wyjazd, czerwona – nasz pociąg na szlaku (Po zablokowany)
+    setLamp(r.outW, b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied ? 'white' : (b.request === 'ours' ? 'white blink' : 'off'));
+    setLamp(r.outR, b.poBlocked ? 'red' : 'off');
+    // strzałka „wjazd”: biała – pozwolenie dane sąsiadowi, czerwona – pociąg sąsiada na szlaku
+    setLamp(r.inW, b.direction === 'in' && !b.occupied && !b.koPending ? 'white' : 'off');
+    setLamp(r.inR, b.direction === 'in' && b.occupied ? 'red' : 'off');
+    setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
     setLamp(r.ko, b.koPending ? 'white blink' : 'off');
     r.cntPo.textContent = String(b.counters.dPo).padStart(3, '0');
     r.cntKo.textContent = String(b.counters.dKo).padStart(3, '0');
