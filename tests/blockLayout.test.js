@@ -9,17 +9,17 @@ import { getTileDef } from '../src/tiles/registry.js';
 
 const straight = (st, x, y) => st.tiles.find((t) => t.x === x && t.y === y && t.type === 'track' && t.ports.every((p) => p === 'W' || p === 'E'));
 
-test('kostki blokady Eap dwukierunkowej: strzałki na dwóch skrajnych kostkach toru, Ko | Poz | Wbl nad torem, dKo | dPo wyżej', () => {
+test('kostki blokady Eap dwukierunkowej: strzałki wyjazd | wjazd na dwóch skrajnych kostkach toru, Ko | Poz | Wbl nad torem, dKo | dPo wyżej', () => {
   const L = blockLayouts(szkolna);
   const W = L.get('W'), E = L.get('E');
-  assert.deepEqual(W.arrows, [{ x: 0, y: 4, kind: 'in' }, { x: 1, y: 4, kind: 'out' }]);
+  assert.deepEqual(W.arrows, [{ x: 0, y: 4, kind: 'out' }, { x: 1, y: 4, kind: 'in' }]); // groty od siebie: wyjazd ku krawędzi, wjazd ku stacji
   assert.deepEqual(W.name, { x: 2, y: 4 });
   assert.deepEqual(W.devices, [
     { x: 0, y: 3, role: 'Ko' }, { x: 1, y: 3, role: 'Poz' }, { x: 2, y: 3, role: 'Wbl' },
     { x: 0, y: 2, role: 'dKo' }, { x: 1, y: 2, role: 'dPo' },
   ]);
   // prawy kraniec – lustrzanie, od krawędzi pulpitu do środka
-  assert.deepEqual(E.arrows, [{ x: 31, y: 4, kind: 'in' }, { x: 30, y: 4, kind: 'out' }]);
+  assert.deepEqual(E.arrows, [{ x: 31, y: 4, kind: 'out' }, { x: 30, y: 4, kind: 'in' }]);
   assert.deepEqual(E.devices.map((d) => [d.role, d.x, d.y]), [['Ko', 31, 3], ['Poz', 30, 3], ['Wbl', 29, 3], ['dKo', 31, 2], ['dPo', 30, 2]]);
 });
 
@@ -30,7 +30,7 @@ test('blokada jednokierunkowa: jedna strzałka; wjazdowa ma Ko i dKo, wyjazdowa 
   assert.deepEqual(Lw.get('K2').arrows, [{ x: 0, y: 6, kind: 'in' }]); // tor wjazdowy
   assert.deepEqual(Lw.get('K2').devices.map((d) => [d.role, d.y]), [['Ko', 5], ['dKo', 7]]); // rząd 4 zajęty torem K1 → licznik pod torem
   const Ls = blockLayouts(sopot);
-  assert.deepEqual(Ls.get('GD1').arrows.map((a) => a.kind), ['in', 'out']); // SBL: kierunek zmienny (Zk) – obie strzałki
+  assert.deepEqual(Ls.get('GD1').arrows.map((a) => a.kind), ['out', 'in']); // SBL: kierunek zmienny (Zk) – obie strzałki
   assert.deepEqual(Ls.get('GD1').devices.map((d) => d.role), ['Zk', 'dKo']);
   assert.deepEqual(Ls.get('GD2').devices.map((d) => d.role), ['Zk', 'dPo']);
 });

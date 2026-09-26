@@ -75,7 +75,7 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   const arrows = await page.locator('#desk .t-track .arrow-lamp').evaluateAll((els) => els.length);
   expect(arrows).toBe(4); // dwa krańce × (wjazd + wyjazd)
   const labelsByCol = await page.locator('#desk .t-track:has(.blk-arrow-label)').evaluateAll((els) => Object.fromEntries(els.map((g) => [+/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40, g.querySelector('.blk-arrow-label').textContent])));
-  expect(labelsByCol).toEqual({ 0: 'wjazd', 1: 'wyjazd', 30: 'wyjazd', 31: 'wjazd' }); // strzałka „wjazd” na kostce skrajnej, „wyjazd” na następnej
+  expect(labelsByCol).toEqual({ 0: 'wyjazd', 1: 'wjazd', 30: 'wjazd', 31: 'wyjazd' }); // strzałka „wyjazd” na kostce skrajnej (grot ku krawędzi), „wjazd” na następnej (grot ku stacji)
   // nazwa sąsiada przeniesiona na trzecią kostkę od krańca (nie zasłania strzałek)
   const names = await page.locator('#desk .t-track:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
   const exits = await page.evaluate(() => ({ W: window.sim.station.exits.W.name, E: window.sim.station.exits.E.name }));

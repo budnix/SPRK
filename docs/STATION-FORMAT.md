@@ -79,7 +79,7 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
   na pulpicie kostkowym przycisk Wbl) przy wolnym odstępie; sąsiad zmienia kierunek sam, gdy odstęp jest wolny
   i nie mamy nastawionego wyjazdu. Przy usterce – zapowiadanie telefoniczne i dPo/dKo jak w Eap.
   Blokady nie definiuje się kostkami: pulpit kostkowy rysuje ją sam z definicji wyjazdu (`src/render/blockLayout.js`) jako
-  kostki przy końcu toru szlakowego – strzałki „wjazd”/„wyjazd” na dwóch skrajnych kostkach toru, w rzędzie nad torem
+  kostki przy końcu toru szlakowego – strzałki „wyjazd” (kostka skrajna) i „wjazd” (następna) w kanale toru, w rzędzie nad torem
   (lub pod, gdy zajęty) przyciski Ko | Poz | Wbl (Eap dwukierunkowa), Ko (jednokierunkowa wjazdowa) albo Zk (SBL),
   wyżej liczniki dKo | dPo; nazwa sąsiedniego posterunku (`text` kostki wyjazdu) idzie na trzecią kostkę od krańca.
   Monitor pokazuje stan blokady przy wyjeździe.

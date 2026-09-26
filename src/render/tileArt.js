@@ -303,10 +303,11 @@ export function blockArrowArt(g, kind, toWest) {
   const arrow = (a, b, h, H, tip) => pointLeft
     ? `M${a},${C} L${a + tip},${C - H} L${a + tip},${C - h} H${b} V${C + h} H${a + tip} L${a + tip},${C + H} Z`
     : `M${CELL - a},${C} L${CELL - a - tip},${C - H} L${CELL - a - tip},${C - h} H${CELL - b} V${C + h} H${CELL - a - tip} L${CELL - a - tip},${C + H} Z`;
-  // strzałka w kanale toru: obrys i wypełnienie jak kanał, ale węższa od kanału, żeby obwódka była widoczna także
-  // wzdłuż korpusu; w niej lampka-strzałka o tym samym kształcie, równo odsunięta od obwódki
-  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(2, 0, CHANNEL_W / 2 - 1, 8.5, 9) }));
-  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(4.6, 3.4, BAR_W / 2 - 0.4, 5.6, 8) });
+  // kanał w kształcie strzałki: korpus tej szerokości co kanał toru (obwódka korpusu pokrywa się z obwódką kanału –
+  // jeden kształt, bez „drugiej strzałki”), grot wystaje poza kanał i ma obwódkę dookoła, także na barkach;
+  // w środku lampka-strzałka: korpus tej szerokości co pasek świetlny toru, grot równo odsunięty od obwódki
+  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(2, 0, CHANNEL_W / 2 + 0.25, 8.5, 9) }));
+  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(4.6, 3.4, BAR_W / 2, 6, 8) });
   g.appendChild(lampEl);
   g.appendChild(text(C, 7, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;

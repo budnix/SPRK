@@ -4,7 +4,7 @@ import { getTileDef } from '../tiles/registry.js';
  * Układ kostek blokady liniowej na pulpicie kostkowym (bez DOM) – jak na pulpitach typu E (ISDR / AC-20):
  * blokada to nie osobne pole u góry pulpitu, tylko zwykłe kostki przy końcu toru szlakowego.
  *
- *  - na kostce wyjazdu (skrajnej) i sąsiedniej – strzałki „wjazd” / „wyjazd” nad kanałem toru (lampki biała/czerwona);
+ *  - na kostce wyjazdu (skrajnej) strzałka „wyjazd”, na sąsiedniej „wjazd” – w kanale toru (lampka biała/czerwona);
  *  - w rzędzie obok toru (nad, a gdy zajęty – pod) – kostki przycisków, od krawędzi pulpitu do środka:
  *    Eap dwukierunkowa: Ko | Poz | Wbl; Eap jednokierunkowa wjazdowa: Ko; wyjazdowa: bez przycisków;
  *    SBL (samoczynna): Zk (zmiana kierunku);
@@ -31,9 +31,10 @@ export function blockLayouts(station) {
     const inward = e.dir === 'W' ? 1 : -1;
     const fixed = e.direction;
     const auto = e.block === 'sbl';
-    // strzałki: obie dla blokady dwukierunkowej i samoczynnej; jedna dla jednokierunkowej Eap
+    // strzałki: obie dla blokady dwukierunkowej i samoczynnej („wyjazd” na kostce skrajnej – grot ku krawędzi pulpitu,
+    // „wjazd” na następnej – grot ku stacji; groty nie stykają się), jedna dla jednokierunkowej Eap
     const arrows = [];
-    if (auto || !fixed) { arrows.push({ x, y, kind: 'in' }); if (trackAt(x + inward, y)) arrows.push({ x: x + inward, y, kind: 'out' }); }
+    if (auto || !fixed) { arrows.push({ x, y, kind: 'out' }); if (trackAt(x + inward, y)) arrows.push({ x: x + inward, y, kind: 'in' }); }
     else arrows.push({ x, y, kind: fixed });
     const nameCell = trackAt(x + 2 * inward, y) ? { x: x + 2 * inward, y } : null;
     const buttons = auto ? ['Zk'] : fixed === 'in' ? ['Ko'] : fixed === 'out' ? [] : ['Ko', 'Poz', 'Wbl'];
