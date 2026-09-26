@@ -101,11 +101,8 @@ export class DeskRenderer {
     const deferred = [];
     // blokada liniowa jako kostki przy końcu toru szlakowego: strzałki na kostkach toru, przyciski i liczniki obok
     const plan = blockLayouts(this.station);
-    const arrowAt = new Map(), nameAt = new Map();
-    for (const L of plan.values()) {
-      for (const a of L.arrows) arrowAt.set(`${a.x},${a.y}`, { exit: L.exit, kind: a.kind, toWest: L.dir === 'W' });
-      if (L.name) nameAt.set(`${L.name.x},${L.name.y}`, this.station.exits[L.exit].name);
-    }
+    const arrowAt = new Map();
+    for (const L of plan.values()) for (const a of L.arrows) arrowAt.set(`${a.x},${a.y}`, { exit: L.exit, kind: a.kind, toWest: L.dir === 'W' });
     const blockRef = (exit) => { if (!this.blockRefs.has(exit)) this.blockRefs.set(exit, { btns: {} }); return this.blockRefs.get(exit); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
@@ -116,11 +113,10 @@ export class DeskRenderer {
         case 'track': {
           const key = `${tile.x},${tile.y}`;
           const arrow = arrowAt.get(key);
-          // na kostkach ze strzałką blokady nazwa sąsiedniego posterunku idzie na trzecią kostkę od krańca
-          const t = arrow ? { ...tile, text: undefined, endButtonBelow: true } : nameAt.has(key) ? { ...tile, text: nameAt.get(key) } : tile;
-          out = art.trackArt(t, ctx);
+          // kostka ze strzałką: nazwa sąsiedniego posterunku (text) nad torem, przycisk końca przebiegu pod torem
+          out = art.trackArt(arrow ? { ...tile, endButtonBelow: true } : tile, ctx);
           if (arrow) {
-            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest, !!tile.endButton);
             out.refs.slits = out.refs.slits.filter((e) => e.isConnected); // kostka kierunkowa bez paska odcinka
           }
           break;

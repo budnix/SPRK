@@ -13,7 +13,6 @@ test('kostki blokady Eap dwukierunkowej: strzałki wyjazd | wjazd na dwóch skra
   const L = blockLayouts(szkolna);
   const W = L.get('W'), E = L.get('E');
   assert.deepEqual(W.arrows, [{ x: 0, y: 4, kind: 'out' }, { x: 1, y: 4, kind: 'in' }]); // groty od siebie: wyjazd ku krawędzi, wjazd ku stacji
-  assert.deepEqual(W.name, { x: 2, y: 4 });
   assert.deepEqual(W.devices, [
     { x: 0, y: 3, role: 'Ko' }, { x: 1, y: 3, role: 'Poz' }, { x: 2, y: 3, role: 'Wbl' },
     { x: 0, y: 2, role: 'dKo' }, { x: 1, y: 2, role: 'dPo' },

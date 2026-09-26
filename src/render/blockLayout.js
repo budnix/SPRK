@@ -11,8 +11,7 @@ import { getTileDef } from '../tiles/registry.js';
  *  - w następnym rzędzie (lub po drugiej stronie toru / w tym samym rzędzie, gdy brak miejsca) – liczniki doraźne
  *    dKo | dPo z przyciskami (jednokierunkowa: tylko odpowiedni licznik).
  *
- * @returns Map exitId → { exit, dir, inward, arrows: [{ x, y, kind: 'in'|'out' }], name: { x, y } | null,
- *   devices: [{ x, y, role }] } – tylko dla wyjazdów W/E; wyjazdy bez miejsca na kostki pomijają je (devices: []).
+ * @returns Map exitId → { exit, dir, inward, arrows: [{ x, y, kind: 'in'|'out' }], devices: [{ x, y, role }] } – tylko dla wyjazdów W/E; wyjazdy bez miejsca na kostki pomijają je (devices: []).
  */
 export function blockLayouts(station) {
   const out = new Map();
@@ -36,7 +35,6 @@ export function blockLayouts(station) {
     const arrows = [];
     if (auto || !fixed) { arrows.push({ x, y, kind: 'out' }); if (trackAt(x + inward, y)) arrows.push({ x: x + inward, y, kind: 'in' }); }
     else arrows.push({ x, y, kind: fixed });
-    const nameCell = trackAt(x + 2 * inward, y) ? { x: x + 2 * inward, y } : null;
     const buttons = auto ? ['Zk'] : fixed === 'in' ? ['Ko'] : fixed === 'out' ? [] : ['Ko', 'Poz', 'Wbl'];
     const counters = fixed === 'in' ? ['dKo'] : fixed === 'out' ? ['dPo'] : ['dKo', 'dPo'];
     const rowFree = (yy, n) => Array.from({ length: n }, (_, i) => free(x + i * inward, yy)).every(Boolean);
@@ -50,7 +48,7 @@ export function blockLayouts(station) {
     }
     devices ??= [];
     for (const d of devices) used.add(`${d.x},${d.y}`);
-    out.set(id, { exit: id, dir: e.dir, inward, arrows, name: nameCell, devices });
+    out.set(id, { exit: id, dir: e.dir, inward, arrows, devices });
   }
   return out;
 }

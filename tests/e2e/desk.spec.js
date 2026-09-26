@@ -76,11 +76,11 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   expect(arrows).toBe(4); // dwa krańce × (wjazd + wyjazd)
   const labelsByCol = await page.locator('#desk .t-track:has(.blk-arrow-label)').evaluateAll((els) => Object.fromEntries(els.map((g) => [+/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40, g.querySelector('.blk-arrow-label').textContent])));
   expect(labelsByCol).toEqual({ 0: 'wyjazd', 1: 'wjazd', 30: 'wjazd', 31: 'wyjazd' }); // strzałka „wyjazd” na kostce skrajnej (grot ku krawędzi), „wjazd” na następnej (grot ku stacji)
-  // nazwa sąsiada przeniesiona na trzecią kostkę od krańca (nie zasłania strzałek)
+  // nazwa sąsiedniego posterunku zostaje na kostce skrajnej (nad torem)
   const names = await page.locator('#desk .t-track:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
-  const exits = await page.evaluate(() => ({ W: window.sim.station.exits.W.name, E: window.sim.station.exits.E.name }));
-  expect(names[exits.W]).toBe(2);
-  expect(names[exits.E]).toBe(29);
+  const exits = await page.evaluate(() => { const st = window.sim.station; const txt = (id) => st.tiles.find((t) => t.x === st.exits[id].tile.x && t.y === st.exits[id].tile.y).text; return { W: txt('W'), E: txt('E') }; }); // napis z kostki wyjazdu (może być skrócony)
+  expect(names[exits.W]).toBe(0);
+  expect(names[exits.E]).toBe(31);
   await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
   const req = await page.evaluate(() => window.sim.blocks.get('E').request);
   expect(req).toBe('ours');
@@ -146,14 +146,14 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
   });
   expect(s.missing).toEqual([]);
   expect(s.unique).toBe(s.refs); // brak zdublowanych przycisków
-  // strzałka blokady (w kanale toru) i jej opis na kostce wyjazdu nie nachodzą na przycisk końca przebiegu (pod torem)
+  // na kostce wyjazdu opis strzałki (na dole po lewej) i nazwa sąsiada (nad torem) nie nachodzą na przycisk końca przebiegu (na dole po prawej)
   const overlaps = await page.evaluate(() => {
     const out = [];
     const hit = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
     for (const b of document.querySelectorAll(`#desk .btn[data-ref*='"kind":"end"']`)) {
-      const tile = b.closest('.tile'); const box = tile?.querySelector('.arrow-lamp'), lbl = tile?.querySelector('.blk-arrow-label'); if (!box) continue;
+      const tile = b.closest('.tile'); const box = tile?.querySelector('.arrow-lamp'), lbl = tile?.querySelector('.blk-arrow-label'), name = tile?.querySelector('text.small'); if (!box) continue;
       const rb = b.querySelector('.btn-ring').getBoundingClientRect(); // widoczny przycisk (bez niewidocznego pola trafienia)
-      out.push([lbl.textContent, hit(rb, box.getBoundingClientRect()) || hit(rb, lbl.getBoundingClientRect())]);
+      out.push([lbl.textContent, [box, lbl, name].filter(Boolean).some((e) => hit(rb, e.getBoundingClientRect()))]);
     }
     return out;
   });
