@@ -88,7 +88,16 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
   await expect(page.locator('text.platform-label').first()).toHaveText(/Peron II|Peron I/); // nazwa peronu na prostokącie
   // numery torów w ramkach na linii toru, opisy „tor N” nie są dublowane
-  expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['1', '13', '1a', '2', '2a', '4', '4a', '4b', '501', '502', '6', '6a', '6b']);
+  expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['tor 1', 'tor 13', 'tor 1a', 'tor 2', 'tor 2a', 'tor 4', 'tor 4a', 'tor 4b', 'tor 501', 'tor 502', 'tor 6', 'tor 6a', 'tor 6b']);
+  // ramka numeru toru i napis peronu wycentrowane: tekst w środku ramki / prostokąta (w układzie SVG)
+  const centred = await page.evaluate(() => {
+    const out = [];
+    for (const g of document.querySelectorAll('.trk-no')) { const r = g.querySelector('rect').getBBox(), t = g.querySelector('text').getBBox(); out.push([Math.abs((r.x + r.width / 2) - (t.x + t.width / 2)), Math.abs((r.y + r.height / 2) - (t.y + t.height / 2))]); }
+    const rects = [...document.querySelectorAll('rect.platform')], texts = [...document.querySelectorAll('text.platform-label')];
+    rects.forEach((r, i) => { const rb = r.getBBox(), tb = texts[i].getBBox(); out.push([Math.abs((rb.x + rb.width / 2) - (tb.x + tb.width / 2)), Math.abs((rb.y + rb.height / 2) - (tb.y + tb.height / 2))]); });
+    return out;
+  });
+  for (const [dx, dy] of centred) { expect(dx).toBeLessThan(2.5); expect(dy).toBeLessThan(2.5); } // tolerancja ~6 % kostki: obrys glifów a linia bazowa czcionki
   expect(await page.locator('.scr-label', { hasText: /^tor \d/ }).count()).toBe(0);
   const before = await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'));
   expect(before).toContain('scale(1.4)');

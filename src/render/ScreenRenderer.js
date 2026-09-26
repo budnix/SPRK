@@ -191,7 +191,7 @@ export class ScreenRenderer {
       const clash = (cx) => labels.some((t) => t.x - 2 <= cx + 2 && t.x + (t.span || 1) + 1 >= cx - 2);
       const mid = (x0 + x1) / 2;
       const cx = [mid, x0 + 2.5, x1 - 2.5].find((c) => !clash(c)) ?? mid;
-      this.layerTracks.appendChild(text((cx + 0.5 - this.x0) * CELL, y + 2.2, label, { class: 'scr-text platform-label' }));
+      this.layerTracks.appendChild(text((cx + 0.5 - this.x0) * CELL, y, label, { class: 'scr-text platform-label', 'dominant-baseline': 'central' }));
     };
     spans.sort((a, b) => a.y - b.y);
     for (const a of spans) {
@@ -231,16 +231,18 @@ export class ScreenRenderer {
       if (!cur || tiles.length > cur.tiles.length) byTrack.set(String(sec.track), { sid, tiles, y: ys[0] });
     }
     for (const [nr, { tiles, y }] of byTrack) {
-      const xs = tiles.map((t) => t.x).sort((a, b) => a - b);
-      // środek odcinka, ale nie na kostce z sygnalizatorem stojącym w tym rzędzie (symbol semafora jest na linii)
-      const sigX = new Set(this.station.tiles.filter((t) => t.type === 'signal' && t.at.y === y).map((t) => t.at.x));
-      let mid = xs[Math.floor(xs.length / 2)];
-      for (let d = 0; d < xs.length && (sigX.has(mid) || sigX.has(mid - 1) || sigX.has(mid + 1)); d++) mid = xs[Math.floor(xs.length / 2) + (d % 2 ? d : -d)] ?? mid;
-      const [cx, cy] = this.#ctr({ x: mid, y });
-      const w = Math.max(12, 5.2 * nr.length + 6);
+      const xs = tiles.map((t) => t.x);
+      const xmin = Math.min(...xs), xmax = Math.max(...xs);
+      // geometryczny środek odcinka; gdy stoi tam sygnalizator (symbol na linii) – przesunięcie o kostkę w bok
+      const sigX = this.station.tiles.filter((t) => t.type === 'signal' && t.at.y === y).map((t) => t.at.x + (t.dir === 'E' ? 1 : 0));
+      let mid = (xmin + xmax + 1) / 2;
+      for (let d = 1; d < 6 && sigX.some((x) => Math.abs(x - mid) < 1.2); d++) mid += d % 2 ? d : -d;
+      const cx = (mid - this.x0) * CELL, cy = (y * CELL + C) * this.ry;
+      const label = `tor ${nr}`;
+      const w = 4.3 * label.length + 8;
       const g = this.#sym(cx, cy, 'scr-el trk-no', [
         el('rect', { class: 'trk-no-box', x: -w / 2, y: -5.5, width: w, height: 11, rx: 1.5 }),
-        text(0, 2.4, nr, { class: 'scr-text trk-no-text' }),
+        text(0, 0, label, { class: 'scr-text trk-no-text', 'dominant-baseline': 'central' }),
       ]);
       this.layerMarks.appendChild(g);
     }
