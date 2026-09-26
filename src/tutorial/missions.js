@@ -124,21 +124,24 @@ export function missionSteps(view) {
   act('cross-out', 'Wyprawienie obu pociągów', `Po przyjeździe obu: <b>Ko</b> na obu blokadach, <b>Wbl</b> w obu kierunkach, przebiegi <b>D2 → szlak do ${DEBa}</b> (odjazd 07:43) i <b>C1 → szlak do ${LIPa}</b> (07:44). Pamiętaj: Wbl da się dopiero, gdy szlak jest wolny i blokada nie ma kierunku – najpierw Ko.`, blockE,
     (sim) => atNeighbour(sim, 6103) && atNeighbour(sim, 6104) && !sim.blocks.get('W').occupied && !sim.blocks.get('E').occupied);
 
-  /* ---------------- ćwiczenia bez pociągu: STOP, Pz, OPS, zwrotnice ---------------- */
-  info('lesson-intro', 'Przerwa w ruchu – ćwiczenia', `Do 08:02 nie ma pociągów. Poćwicz operacje, które przydają się przy pomyłkach i usterkach: wygaszenie sygnału, zwolnienie przebiegu, odwołanie polecenia, przestawianie i zamykanie zwrotnic.`, { el: '#desk' });
-  act('lesson-route', 'Przebieg bez pociągu', `Nastaw ${A('przebieg pociągowy')} <b>A → D1</b> (nic nie jedzie – to tylko ćwiczenie). Semafor A świeci zielono.`, cmd('train', sig('A')),
-    (sim) => active(sim, 'A-D1'));
-  act('lesson-stop', 'STOP – wygaszenie sygnału', `${P.stop('A')}. Semafor wraca na ${A('S1', '„Stój”')}, ale ${A('przebieg')} <b>pozostaje utwierdzony</b> (odcinki dalej ${m ? 'zielone' : 'białe'}). Tak zatrzymuje się pociąg w razie zagrożenia bez rozwiązywania drogi.`, cmd('stop', sig('A')),
-    (sim) => active(sim, 'A-D1') && sim.ilk.signals.get('A').aspect === 'S1');
-  act('lesson-pz', 'Zwolnienie przebiegu (Pz)', `${P.pz('A')}. Odcinki wracają do stanu podstawowego, zwrotnica 1 jest znów wolna.<p>${A('Pz')} działa natychmiast, gdy ${A('odcinek zbliżania')} jest wolny. Gdyby pociąg już jechał do semafora, zwolnienie byłoby opóźnione o 90 s (${m ? 'fiolet' : 'lampka'} – zwalnianie czasowe). ${A('dPz')} pomija to zabezpieczenie i jest liczone – nie używaj go bez potrzeby.</p>`, cmd('pz', { ref: { kind: 'group', id: 'Pz', role: 'route-release' } }),
-    (sim, ctx) => !active(sim, 'A-D1') && ctx.seen.has('step:lesson-stop'));
-  act('lesson-cancel', m ? 'OPS – odwołanie polecenia' : 'Uzbrojenie gaśnie samo', P.cancel(), cmd('train', sig('B')),
-    (sim, ctx) => ctx.seen.has('cancel:B') && !active(sim, 'B-C1') && !active(sim, 'B-C2'),
-    { wrong: (sim) => (active(sim, 'B-C1') || active(sim, 'B-C2') ? 'Nastawił się przebieg od B – zwolnij go (Pz) i spróbuj jeszcze raz: tylko semafor B, potem odwołanie.' : null) });
-  act('lesson-zw', 'Przestawienie zwrotnicy', `${P.zw('3')}. Zwrotnica przestawia się ok. 4 s (${m ? 'kreska w polu „Z” zmienia kierunek' : 'żółta lampka gaśnie i zapala się po drugiej stronie'}). Zwrotnica 3 kieruje z toru 2 na tor 3.<p>${A('Zw')} nie zadziała na zwrotnicy utwierdzonej w przebiegu, zajętej albo zamkniętej.</p>`, cmd('zw', { ref: { kind: 'group', id: 'Zw', role: 'group-point' } }),
-    (sim, ctx) => ctx.seen.has('minus:Zw3'));
-  act('lesson-zz', 'Zamknięcie indywidualne (Zz)', `${P.zz('3')} – zwrotnica jest zamknięta (${m ? 'różowy numer' : 'biała lampka przy przycisku'}); nie przestawi jej ani Zw, ani przebieg. Potem <b>otwórz</b> ją tak samo i przestaw z powrotem na <b>+</b> (tor zasadniczy).<p>${A('Zz')} stosuje się np. przy robotach na zwrotnicy albo przed wydaniem ${A('rozkaz pisemny', 'rozkazu pisemnego')}.</p>`, cmd('zz', { ref: { kind: 'group', id: 'Zz', role: 'point-lock' } }),
-    (sim, ctx) => { const p = sim.ilk.points.get('Zw3'); return ctx.seen.has('lock:Zw3') && !p.individualLock && p.position === '+' && !p.moving; });
+  /* ---------------- ćwiczenia bez pociągu: STOP, Pz, OPS, zwrotnice – tylko na monitorze ----------------
+     Na pulpicie kostkowym przebieg bez pociągu wymagałby obsługi blokady (pozwolenia od sąsiada), więc ćwiczeń nie ma. */
+  if (m) {
+    info('lesson-intro', 'Przerwa w ruchu – ćwiczenia', `Do 08:02 nie ma pociągów. Poćwicz operacje, które przydają się przy pomyłkach i usterkach: wygaszenie sygnału, zwolnienie przebiegu, odwołanie polecenia, przestawianie i zamykanie zwrotnic.`, { el: '#desk' });
+    act('lesson-route', 'Przebieg bez pociągu', `Nastaw ${A('przebieg pociągowy')} <b>A → D1</b> (nic nie jedzie – to tylko ćwiczenie). Semafor A świeci zielono.`, cmd('train', sig('A')),
+      (sim) => active(sim, 'A-D1'));
+    act('lesson-stop', 'STOP – wygaszenie sygnału', `${P.stop('A')}. Semafor wraca na ${A('S1', '„Stój”')}, ale ${A('przebieg')} <b>pozostaje utwierdzony</b> (odcinki dalej ${m ? 'zielone' : 'białe'}). Tak zatrzymuje się pociąg w razie zagrożenia bez rozwiązywania drogi.`, cmd('stop', sig('A')),
+      (sim) => active(sim, 'A-D1') && sim.ilk.signals.get('A').aspect === 'S1');
+    act('lesson-pz', 'Zwolnienie przebiegu (Pz)', `${P.pz('A')}. Odcinki wracają do stanu podstawowego, zwrotnica 1 jest znów wolna.<p>${A('Pz')} działa natychmiast, gdy ${A('odcinek zbliżania')} jest wolny. Gdyby pociąg już jechał do semafora, zwolnienie byłoby opóźnione o 90 s (${m ? 'fiolet' : 'lampka'} – zwalnianie czasowe). ${A('dPz')} pomija to zabezpieczenie i jest liczone – nie używaj go bez potrzeby.</p>`, cmd('pz', { ref: { kind: 'group', id: 'Pz', role: 'route-release' } }),
+      (sim, ctx) => !active(sim, 'A-D1') && ctx.seen.has('step:lesson-stop'));
+    act('lesson-cancel', m ? 'OPS – odwołanie polecenia' : 'Uzbrojenie gaśnie samo', P.cancel(), cmd('train', sig('B')),
+      (sim, ctx) => ctx.seen.has('cancel:B') && !active(sim, 'B-C1') && !active(sim, 'B-C2'),
+      { wrong: (sim) => (active(sim, 'B-C1') || active(sim, 'B-C2') ? 'Nastawił się przebieg od B – zwolnij go (Pz) i spróbuj jeszcze raz: tylko semafor B, potem odwołanie.' : null) });
+    act('lesson-zw', 'Przestawienie zwrotnicy', `${P.zw('3')}. Zwrotnica przestawia się ok. 4 s (${m ? 'kreska w polu „Z” zmienia kierunek' : 'żółta lampka gaśnie i zapala się po drugiej stronie'}). Zwrotnica 3 kieruje z toru 2 na tor 3.<p>${A('Zw')} nie zadziała na zwrotnicy utwierdzonej w przebiegu, zajętej albo zamkniętej.</p>`, cmd('zw', { ref: { kind: 'group', id: 'Zw', role: 'group-point' } }),
+      (sim, ctx) => ctx.seen.has('minus:Zw3'));
+    act('lesson-zz', 'Zamknięcie indywidualne (Zz)', `${P.zz('3')} – zwrotnica jest zamknięta (${m ? 'różowy numer' : 'biała lampka przy przycisku'}); nie przestawi jej ani Zw, ani przebieg. Potem <b>otwórz</b> ją tak samo i przestaw z powrotem na <b>+</b> (tor zasadniczy).<p>${A('Zz')} stosuje się np. przy robotach na zwrotnicy albo przed wydaniem ${A('rozkaz pisemny', 'rozkazu pisemnego')}.</p>`, cmd('zz', { ref: { kind: 'group', id: 'Zz', role: 'point-lock' } }),
+      (sim, ctx) => { const p = sim.ilk.points.get('Zw3'); return ctx.seen.has('lock:Zw3') && !p.individualLock && p.position === '+' && !p.moving; });
+  }
 
   /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
   info('shunt-intro', 'Pociąg zdawczy', `O 08:02 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:30 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });

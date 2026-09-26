@@ -26,6 +26,9 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
     const steps = missionSteps(view);
     assert.ok(steps.length > 30, `${view}: za mało kroków`);
     assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
+    // ćwiczenia bez pociągu (przebieg A→D1, STOP, Pz, OPS, zwrotnice) tylko na monitorze – na pulpicie kostkowym
+    // przebieg bez pociągu wymagałby obsługi blokady z sąsiadem
+    assert.equal(steps.some((s) => s.id.startsWith('lesson-')), view === 'monitor', `${view}: kroki ćwiczeń`);
     for (const s of steps) {
       assert.ok(s.title && s.text, `${view}/${s.id}: brak tytułu lub tekstu`);
       assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
