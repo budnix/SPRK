@@ -101,8 +101,8 @@ jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `block` z przyciskami.
 Perony na pulpicie kostkowym: `DeskRenderer.#buildPlatforms` rysuje obrys z nazwą z tej samej geometrii
 (`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
-jest rysowany delikatnie i przy krawędzi kostki od strony opisywanego toru (`labelSide`); opis leżący w wierszu peronu
-przenosi się na wolną kostkę po drugiej stronie toru (`trackLabelPlace`), żeby nie leżał na obrysie peronu.
+jest rysowany delikatnie, zawsze nad opisywanym torem, na prostej kostce toru tuż nad paskiem (`trackLabelPlace`);
+własna kostka opisu zostaje pusta, więc opis nigdy nie leży na obrysie peronu.
 
 ## Ekran startowy (`src/ui/StartScreen.js`)
 

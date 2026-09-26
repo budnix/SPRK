@@ -136,7 +136,7 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .tile-text.small { font-size: 7px; }
 .tile-text.tiny { font-size: 5.5px; }
 .tile-text.label { font-size: 9px; letter-spacing: 0.3px; }
-.tile-text.track-label { font-size: 7.5px; font-weight: 400; fill: #6b7580; letter-spacing: 0.4px; } /* „tor N” na jednej kostce, delikatnie, przy krawędzi od strony toru */
+.tile-text.track-label { font-size: 7px; font-weight: 400; fill: #2d3740; letter-spacing: 0.3px; } /* „tor N” na jednej kostce, delikatnie, przy krawędzi od strony toru */
 .tile-text.point-label { font-size: 8.5px; }
 .tile-text.sig-label { font-size: 8.5px; font-weight: 700; fill: #1f2325; } /* nazwy sygnalizatorów na pulpicie – ciemne, czytelne na jasnej kostce */
 .desk-platform rect { fill: rgba(80, 90, 100, 0.08); stroke: #3d4750; stroke-width: 1; } /* obrys peronu; krawędź peronowa od strony toru – podwójna kreska */

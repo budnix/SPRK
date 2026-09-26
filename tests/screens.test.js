@@ -85,24 +85,6 @@ test('perony: geometria wspólna dla monitora i pulpitu – wyspowy między tora
   assert.equal(platformSpans(sopot, [0, 30]).length, 0);
 });
 
-test('opis „tor N” na pulpicie kostkowym: strona kostki, po której leży opisywany tor', async () => {
-  const { labelSide } = await import('../src/render/platforms.js');
-  const szkolna = (await import('../src/stations/szkolna.js')).default;
-  const lab = (txt) => szkolna.tiles.find((t) => t.type === 'label' && t.text === txt);
-  assert.equal(labelSide(szkolna, lab('tor 1')), 'down'); // tor 1 w rzędzie 4, opis w rzędzie 3
-  assert.equal(labelSide(szkolna, lab('tor 2')), 'down'); // tor 2 w rzędzie 6, opis w rzędzie 5 (w wierszu peronu)
-  assert.equal(labelSide(szkolna, lab('tor 3')), 'up'); // tor 3 w rzędzie 8, opis w rzędzie 9
-  assert.equal(labelSide(szkolna, lab('Wk1')), null); // nie jest opisem toru
-  assert.equal(labelSide(szkolna, { x: 14, y: 5, type: 'label', text: 'tor 9', span: 2 }), null); // brak takiego toru
-  // Sopot: „tor 2 · Peron II” (rząd 5) nad torem 2 (rząd 4)? – sprawdzamy tylko, że wynik jest spójny z geometrią
-  for (const t of sopot.tiles.filter((t) => t.type === 'label' && /^tor /.test(t.text))) {
-    const side = labelSide(sopot, t);
-    if (!side) continue;
-    const y = side === 'down' ? t.y + 1 : t.y - 1;
-    assert.ok(sopot.tiles.some((u) => u.y === y && u.type === 'track' && Math.abs(u.x - t.x) <= 3), `${t.text}: tor po stronie ${side}`);
-  }
-});
-
 test('opis toru na pulpicie kostkowym: „tor N” bez dopisku peronu, inne opisy bez zmian', async () => {
   const { trackLabelText } = await import('../src/render/platforms.js');
   assert.equal(trackLabelText('tor 2'), 'tor 2');
@@ -129,26 +111,28 @@ test('krawędzie peronowe: peron wyspowy ma dwie (góra i dół), boczny jedną 
   assert.deepEqual(platformEdgeLines(0, 0, 1, 1, undefined), []);
 });
 
-test('opis „tor N” w wierszu peronu przenosi się na wolną kostkę po drugiej stronie toru; poza peronem zostaje', async () => {
+test('opis „tor N” na pulpicie kostkowym rysuje się nad opisywanym torem, na prostej kostce toru', async () => {
   const { trackLabelPlace, platformSpans, trackLabelText } = await import('../src/render/platforms.js');
   const szkolna = (await import('../src/stations/szkolna.js')).default;
   const { STATIONS } = await import('../src/stations/index.js');
   const lab = (st, txt) => st.tiles.find((t) => t.type === 'label' && t.text === txt);
-  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 2')), { x: 14, y: 7, side: 'up' }); // spod peronu pod tor 2
-  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 1')), { x: 14, y: 3, side: 'down' }); // bez zmian
-  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 3')), { x: 26, y: 9, side: 'up' });
+  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 1')), { x: 14, y: 4, side: 'top' });
+  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 2')), { x: 14, y: 6, side: 'top' }); // z wiersza peronu na kostkę toru 2
+  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 3')), { x: 26, y: 8, side: 'top' }); // opis pod torem → napis nad torem
   assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'Wk1')), { x: 24, y: 7, side: null });
-  // zajęta kostka po drugiej stronie toru → opis zostaje
-  const blocked = { ...szkolna, tiles: [...szkolna.tiles, { x: 14, y: 7, type: 'label', text: 'X' }] };
-  assert.deepEqual(trackLabelPlace(blocked, lab(blocked, 'tor 2')), { x: 14, y: 5, side: 'down' });
-  // na żadnym pulpicie opis toru nie leży już w wierszu peronu (o ile jest gdzie go przenieść)
+  assert.deepEqual(trackLabelPlace(szkolna, { x: 14, y: 5, type: 'label', text: 'tor 9' }), { x: 14, y: 5, side: null }); // brak toru
+  // każdy opis toru na każdym pulpicie trafia na prostą kostkę toru o tym numerze, poza wierszami peronów
   for (const st of STATIONS) {
     const W = Math.max(...st.tiles.map((t) => t.x));
-    const rows = platformSpans(st, [0, W]).flatMap((p) => [p, Math.floor(p.yRow), Math.ceil(p.yRow)].slice(1).map((y) => [y, p.x0 - 1, p.x1 + 1]));
+    const plats = platformSpans(st, [0, W]);
+    const onPlatform = (x, y) => plats.some((p) => [Math.floor(p.yRow), Math.ceil(p.yRow)].includes(y) && x >= p.x0 - 1 && x <= p.x1 + 1);
     for (const t of st.tiles.filter((t) => t.type === 'label' && trackLabelText(t.text))) {
       const pos = trackLabelPlace(st, t);
-      const onPlatform = rows.some(([y, a, b]) => pos.y === y && pos.x >= a && pos.x <= b);
-      assert.ok(!onPlatform || pos.y === t.y, `${st.id}: ${t.text} nadal w wierszu peronu (${pos.x},${pos.y})`);
+      assert.equal(pos.side, 'top', `${st.id}: ${t.text} bez kostki toru`);
+      const nr = trackLabelText(t.text).slice(4);
+      const under = st.tiles.find((u) => u.x === pos.x && u.y === pos.y && u.type === 'track');
+      assert.equal(String(st.sections[under.section].track), nr, `${st.id}: ${t.text} nad torem ${st.sections[under.section].track}`);
+      assert.ok(!onPlatform(pos.x, pos.y), `${st.id}: ${t.text} w wierszu peronu`);
     }
   }
 });

@@ -79,22 +79,6 @@ export function platformSpans(station, win, labelText = (t) => t) {
 }
 
 /**
- * Po której stronie kostki opisu „tor N” leży opisywany tor (bez DOM) – napis na pulpicie kostkowym rysuje się
- * przy tej krawędzi, żeby nie wpadał na obrys peronu między torami.
- * @returns 'up' | 'down' | null (opis nie dotyczy toru lub tor nie sąsiaduje z kostką)
- */
-export function labelSide(station, tile) {
-  const m = /^tor\s+(\S+)/i.exec(tile.text || '');
-  if (!m) return null;
-  const nr = m[1];
-  const secs = new Set(Object.entries(station.sections || {}).filter(([, s]) => String(s.track ?? '') === nr).map(([id]) => id));
-  const x0 = tile.x - 2, x1 = tile.x + (tile.span || 1) + 1;
-  const near = (y) => station.tiles.some((t) => t.y === y && t.x >= x0 && t.x <= x1 && (t.type === 'track' || t.type === 'point') && secs.has(t.section));
-  const down = near(tile.y + 1), up = near(tile.y - 1);
-  return down && !up ? 'down' : up && !down ? 'up' : null;
-}
-
-/**
  * Opis toru na pulpicie kostkowym: „tor N” (ewentualny dopisek „· Peron …” pomija się – peron ma własny obrys
  * z nazwą). Taki opis mieści się na jednej kostce i rysuje się delikatnie. Inne opisy → null (rysowane jak dotąd).
  */
@@ -117,30 +101,21 @@ export function platformEdgeLines(x, y, w, h, edges, gap = 3) {
 }
 
 /**
- * Położenie opisu „tor N” na pulpicie kostkowym (bez DOM). Opis leży w wierszu peronu (między torami peronowymi)
- * → przenosi się na wolną kostkę po drugiej stronie opisywanego toru, żeby nie zasłaniał obrysu peronu; inaczej
- * zostaje na swojej kostce. Zwraca { x, y, side } – side to krawędź kostki od strony toru (jak w labelSide).
+ * Położenie opisu „tor N” na pulpicie kostkowym (bez DOM): napis rysuje się zawsze NAD opisywanym torem, na kostce
+ * toru (tuż nad paskiem), w kolumnie opisu lub najbliższej z prostą kostką toru. Zwraca { x, y: rząd toru,
+ * side: 'top' }; gdy toru nie da się znaleźć – { x, y: własna kostka, side: null } (opis rysowany jak dotąd).
  */
 export function trackLabelPlace(station, tile) {
-  const keep = { x: tile.x, y: tile.y, side: labelSide(station, tile) };
+  const keep = { x: tile.x, y: tile.y, side: null };
   const m = /^tor\s+(\S+)/i.exec(tile.text || '');
   if (!m) return keep;
-  const W = Math.max(...station.tiles.map((t) => t.x));
-  const onPlatform = platformSpans(station, [0, W]).some((p) => {
-    const rows = [Math.floor(p.yRow), Math.ceil(p.yRow)];
-    return rows.includes(tile.y) && tile.x >= p.x0 - 1 && tile.x <= p.x1 + 1;
-  });
-  if (!onPlatform) return keep;
   const secs = new Set(Object.entries(station.sections || {}).filter(([, s]) => String(s.track ?? '') === m[1]).map(([id]) => id));
-  const near = (y) => station.tiles.some((t) => t.y === y && Math.abs(t.x - tile.x) <= 3 && (t.type === 'track' || t.type === 'point') && secs.has(t.section));
-  const ty = [1, 2, -1, -2].map((d) => tile.y + d).find(near); // rząd opisywanego toru
-  if (ty == null) return keep;
-  const y = ty + (ty > tile.y ? 1 : -1); // kostka za torem, patrząc od peronu
-  const busy = station.tiles.some((t) => {
-    if (t === tile) return false;
-    const sp = t.type === 'label' ? { w: t.span || 1, h: 1 } : getTileDef(t.type)?.span || { w: 1, h: 1 };
-    return tile.x >= t.x && tile.x < t.x + sp.w && y >= t.y && y < t.y + sp.h;
-  });
-  if (busy) return keep;
-  return { x: tile.x, y, side: ty > tile.y ? 'up' : 'down' };
+  const straight = (t) => t.type === 'track' && secs.has(t.section) && !t.endButton && !t.derailer && t.ports.length === 2 && t.ports.every((q) => q === 'W' || q === 'E');
+  for (const dy of [1, -1, 2, -2, 3, -3]) {
+    const y = tile.y + dy;
+    for (const dx of [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5]) {
+      if (station.tiles.some((t) => t.y === y && t.x === tile.x + dx && straight(t))) return { x: tile.x + dx, y, side: 'top' };
+    }
+  }
+  return keep;
 }

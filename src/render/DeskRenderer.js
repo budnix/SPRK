@@ -97,11 +97,12 @@ export class DeskRenderer {
   #buildTiles() {
     const ctx = this.#ctx();
     const filled = new Set();
+    const deferred = [];
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
       let out;
-      // opis „tor N” w wierszu peronu wędruje na kostkę po drugiej stronie toru (nie zasłania obrysu peronu)
-      const pos = tile.type === 'label' && trackLabelText(tile.text) ? trackLabelPlace(this.station, tile) : tile;
+      // opis „tor N” rysuje się nad opisywanym torem, na kostce toru; jego własna kostka zostaje pusta
+      const pos = tile.type === 'label' && trackLabelText(tile.text) ? trackLabelPlace(this.station, tile) : { x: tile.x, y: tile.y, side: null };
       switch (tile.type) {
         case 'track': out = art.trackArt(tile, ctx); break;
         case 'buffer': out = art.bufferArt(tile, ctx); break;
@@ -115,11 +116,12 @@ export class DeskRenderer {
       }
       out.g.setAttribute('transform', `translate(${(pos.x - this.x0) * CELL},${pos.y * CELL})`);
       out.g.dataset.tile = tile._key;
-      this.layerTiles.appendChild(out.g);
+      if (pos.side === 'top') deferred.push(out.g); // sam napis, ponad płytką kostki toru
+      else this.layerTiles.appendChild(out.g);
       this.tileRefs.set(tile._key, out.refs);
       const def = getTileDef(tile.type);
       const span = tile.type === 'label' ? { w: trackLabelText(tile.text) ? 1 : tile.span || 1, h: 1 } : def.span;
-      for (let dx = 0; dx < span.w; dx++) for (let dy = 0; dy < span.h; dy++) filled.add(`${pos.x + dx},${pos.y + dy}`);
+      if (pos.side !== 'top') for (let dx = 0; dx < span.w; dx++) for (let dy = 0; dy < span.h; dy++) filled.add(`${tile.x + dx},${tile.y + dy}`);
 
       if (def.category === 'track' && tile.type !== 'point') {
         if (!this.sectionSlits.has(tile.section)) this.sectionSlits.set(tile.section, []);
@@ -131,6 +133,7 @@ export class DeskRenderer {
       if (tile.type === 'button' && out.refs.counter) this.counterRefs.set(tile.id, out.refs.counter);
       if (tile.type === 'block') this.blockRefs.set(tile.exit, out.refs);
     }
+    for (const g of deferred) this.layerTiles.appendChild(g);
     // Puste kostki
     for (let y = 0; y < this.rows; y++) for (let x = this.x0; x <= this.x1; x++) {
       if (filled.has(`${x},${y}`)) continue;

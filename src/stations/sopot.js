@@ -127,7 +127,7 @@ sec('S501d', { length: 40, kind: 'plain' }); tiles.push(...H(61, 62, 12, 'S501d'
 tiles.push(SIG(63, 11, 'L502', 'semafor', { x: 63, y: 10 }, 'W', { shunting: true }), SIG(63, 13, 'L501', 'semafor', { x: 63, y: 12 }, 'W', { shunting: true }));
 sec('T502a', { length: 220, kind: 'station', track: '502', platform: 'Peron I (SKM)' }); tiles.push(...H(63, 84, 10, 'T502a'));
 sec('T501a', { length: 220, kind: 'station', track: '501', platform: 'Peron I (SKM)' }); tiles.push(...H(63, 84, 12, 'T501a'));
-tiles.push({ x: 70, y: 11, type: 'label', text: 'tor 502a · Peron I (SKM)', span: 5, size: 8 }, { x: 70, y: 13, type: 'label', text: 'tor 501a · Peron I (SKM)', span: 5, size: 8 });
+tiles.push({ x: 70, y: 11, type: 'label', text: 'tor 502 · Peron I (SKM)', span: 5, size: 8 }, { x: 70, y: 13, type: 'label', text: 'tor 501 · Peron I (SKM)', span: 5, size: 8 });
 tiles.push(SIG(85, 11, 'R502', 'semafor', { x: 84, y: 10 }, 'E', { shunting: true }), SIG(85, 13, 'R501', 'semafor', { x: 84, y: 12 }, 'E', { shunting: true }));
 sec('S502e', { length: 80, kind: 'plain' }); tiles.push(...H(85, 90, 10, 'S502e'));
 sec('S501e', { length: 60, kind: 'plain' }); tiles.push(...H(85, 88, 12, 'S501e'));

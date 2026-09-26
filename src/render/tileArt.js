@@ -269,16 +269,19 @@ export function buttonTileArt(tile) {
   return { g, refs };
 }
 
-/** @param side 'up' | 'down' | null – krawędź kostki, przy której leży opisywany tor (napis przysuwa się do niej) */
+/**
+ * Opis (napis) na kostce. Opis toru „tor N” (trackLabelText) z side === 'top' to sam napis bez płytki – rysowany na
+ * kostce toru tuż nad paskiem (DeskRenderer kładzie go nad płytką toru); inaczej napis na własnej kostce.
+ */
 export function labelArt(tile, side = null) {
   const trk = trackLabelText(tile.text);
+  if (trk && side === 'top') return { g: el('g', { class: 'tile t-label' }, [text(CELL / 2, 7, trk, { class: 'tile-text label track-label' })]), refs: {} };
   const span = trk ? 1 : tile.span || 1;
   const g = el('g', { class: 'tile t-label' }, [
     el('rect', { class: `face ${tile.face || ''}`.trim(), x: 0, y: 0, width: CELL * span, height: CELL }),
   ]);
-  const y = side === 'down' ? CELL - 4.5 : side === 'up' ? 4.5 : C;
-  if (trk) g.appendChild(text(CELL / 2, y, trk, { class: 'tile-text label track-label' }));
-  else g.appendChild(text((CELL * span) / 2, y, tile.text, { class: 'tile-text label', style: `font-size:${tile.size || 10}px` }));
+  if (trk) g.appendChild(text(CELL / 2, C, trk, { class: 'tile-text label track-label' }));
+  else g.appendChild(text((CELL * span) / 2, C, tile.text, { class: 'tile-text label', style: `font-size:${tile.size || 10}px` }));
   return { g, refs: {} };
 }
 
