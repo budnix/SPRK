@@ -8,6 +8,19 @@
 - Pracuj bezpośrednio na `main`, chyba że użytkownik poprosi o gałąź.
 - Przed pushem: `npm test` musi przechodzić.
 
+## Testy – ochrona przed regresją
+
+- **Każda zmiana zachowania ma test.** Nowa funkcja, poprawka błędu, zmiana reguły ruchu, nowa stacja, zmiana
+  algorytmu (np. podział na ekrany, automat dyżurnego) – w tym samym commicie dochodzi test w `tests/`, który
+  bez tej zmiany by nie przeszedł. Poprawka błędu zaczyna się od testu odtwarzającego błąd.
+- Logika (`src/model/`, `src/srk/registry.js`, `src/render/screens.js`) jest testowana w Node (`node --test`).
+  Kod UI/DOM (`src/render/*Renderer.js`, `src/ui/`, `src/main.js`) sprawdza się w przeglądarce (Playwright,
+  Chromium z `/opt/pw-browsers/chromium`) – co najmniej scenariusz „kliknięcia → stan symulacji” i zrzut ekranu;
+  jeśli da się wydzielić logikę bez DOM (jak `screens.js`), wydziel ją i przetestuj w Node.
+- Testy „wszystkich kombinacji” (`tests/matrix-*.test.js`) i pełne zmiany stacji (`tests/<stacja>.test.js`)
+  są siatką bezpieczeństwa – nie osłabiaj ich asercji, żeby przeszły; napraw przyczynę.
+- Zmiana wymagająca aktualizacji istniejącego testu musi być uzasadniona w commicie (co się zmieniło w regule).
+
 ## Projekt
 
 - Czysty JavaScript (moduły ES), bez frameworków. Vite tylko jako serwer dev/build. Testy: `node --test`.
