@@ -19,6 +19,9 @@ export default {
   srk: 'E',
   srkInfo: 'Stacja fikcyjna: urządzenia przekaźnikowe typu E z pulpitem kostkowym, blokady jednokierunkowe linii dwutorowej i Eap na odgałęzieniu.',
   description: 'Stacja węzłowa: linia dwutorowa Krasne – Zalesie (blokady jednokierunkowe) i odgałęzienie do Borków (Eap). Cztery tory, bocznica z wykolejnicą.',
+  location: 'Stacja fikcyjna, węzeł: linia dwutorowa Krasne – Zalesie i odgałęzienie do Borków.',
+  traffic: 'Ruch jednokierunkowy na linii dwutorowej, pociągi do Borków przez tor 3, zdawczy z manewrami.',
+  difficulty: 3,
   startTime: '06:55',
   desk: { cols: 36, rows: 13 },
 

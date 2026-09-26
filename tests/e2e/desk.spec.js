@@ -3,13 +3,32 @@ import { openShift, btn, simState, advance } from './helpers.js';
 
 /* Pulpit kostkowy (urządzenia typu E) – Stare Pustkowie */
 
-test('ekran startowy bez parametrów: wybór stacji i start zmiany ustawia parametry URL', async ({ page }) => {
+test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / wg trudności, wybór posterunku rozwija parametry i startuje zmianę', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.locator('#start')).toBeVisible();
-  await page.selectOption('#st-station', 'sopot');
+  // misje przed listą posterunków
+  const order = await page.evaluate(() => [...document.querySelectorAll('.st-missions, .st-stations')].map((e) => e.className));
+  expect(order).toEqual(['st-missions', 'st-stations']);
+  expect(await page.locator('.st-mission').count()).toBeGreaterThanOrEqual(2);
+  // domyślnie alfabetycznie
+  const names = await page.locator('.st-card .st-name').allTextContents();
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pl')));
+  expect(await page.locator('.st-card .st-stars').first()).toBeVisible();
+  // wg trudności: gwiazdki niemalejąco, wybór zapamiętany po przeładowaniu
+  await page.click('.st-sort button[data-sort=difficulty]');
+  const starsList = await page.locator('.st-card .st-stars').allTextContents();
+  const counts = starsList.map((s) => (s.match(/★/g) || []).length);
+  expect(counts).toEqual([...counts].sort((a, b) => a - b));
+  await page.reload({ waitUntil: 'networkidle' });
+  await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);
+  // wybór posterunku: parametry pod kartą
+  await expect(page.locator('#st-params')).toBeHidden();
+  await page.click('.st-card[data-id=sopot]');
+  await expect(page.locator('.st-card[data-id=sopot] #st-params')).toBeVisible();
   await expect(page.locator('#st-station-desc')).toContainText('Ebilock');
+  await page.selectOption('#st-level', 'none');
   await page.click('#st-go');
-  await page.waitForURL(/stacja=sopot/);
+  await page.waitForURL(/stacja=sopot.*zaklocenia=none/);
   await expect(page.locator('#station-name')).toContainText('Sopot');
 });
 

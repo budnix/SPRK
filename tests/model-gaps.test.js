@@ -265,3 +265,20 @@ test('perony: każdy odcinek peronowy ma nazwę peronu (napis), pociągi osobowe
   const sim = new Simulation(szkolna, { scenario: 'zmiana' });
   assert.ok(sim.ilk.sections.get('T1').platform, 'nazwa peronu jest wartością prawdziwą dla modelu');
 });
+
+test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 1–5; sortowanie i lista misji', async () => {
+  const { STATIONS } = await import('../src/stations/index.js');
+  const { sortStations, missionList, stars } = await import('../src/ui/StartScreen.js');
+  for (const st of STATIONS) {
+    assert.ok(st.location && st.traffic, `${st.id}: brak location/traffic`);
+    assert.ok(Number.isInteger(st.difficulty) && st.difficulty >= 1 && st.difficulty <= 5, `${st.id}: trudność ${st.difficulty}`);
+  }
+  const byName = sortStations(STATIONS, 'name').map((s) => s.name);
+  assert.deepEqual(byName, [...byName].sort((a, b) => a.localeCompare(b, 'pl')));
+  const byDiff = sortStations(STATIONS, 'difficulty').map((s) => s.difficulty);
+  assert.deepEqual(byDiff, [...byDiff].sort((a, b) => a - b));
+  assert.equal(sortStations(STATIONS, 'difficulty')[0].id, 'szkolna', 'najłatwiejsza – stacja szkolna');
+  const missions = missionList(STATIONS);
+  assert.deepEqual(missions.map((m) => m.scenario.id), ['nauka-1', 'nauka-2']);
+  assert.equal(stars(3), '★★★☆☆');
+});

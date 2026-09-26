@@ -267,7 +267,30 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .grade { font-size: 16px; }
 .modal-box.start label { display: block; margin: 8px 0; font-size: 13px; color: var(--muted); }
 .modal-box.start select, .modal-box.start input { width: 100%; box-sizing: border-box; background: var(--input-bg); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 6px; font-size: 14px; margin-top: 2px; }
-.modal-box.start { min-width: 360px; }
+.modal-box.start { min-width: 360px; max-width: 880px; width: calc(100vw - 32px); }
+.modal-box.start h3 { font-size: 14px; margin: 14px 0 4px; color: var(--accent); }
+.st-missions { border: 1px solid var(--accent); border-radius: 8px; padding: 6px 12px 10px; background: var(--panel2); }
+.st-missions h3 { margin-top: 4px; }
+.st-missions p { margin: 0 0 8px; font-size: 12px; }
+.st-mission-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.st-mission { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; text-align: left; background: var(--panel); color: var(--text); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; cursor: pointer; font: inherit; }
+.st-mission:hover, .st-mission:focus-visible { border-color: var(--accent); }
+.st-no { grid-row: 1 / span 2; align-self: start; background: var(--accent); color: var(--accent-text); font-weight: 700; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
+.st-mtitle { font-weight: 600; }
+.st-mdesc { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.st-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.st-list { display: flex; flex-direction: column; gap: 6px; }
+.st-card { border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; cursor: pointer; background: var(--panel); }
+.st-card:hover { border-color: var(--accent); }
+.st-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; cursor: default; }
+.st-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.st-name { font-weight: 700; font-size: 15px; }
+.st-srk { font-size: 11px; color: var(--muted); border: 1px solid var(--border2); border-radius: 10px; padding: 0 7px; }
+.st-stars { margin-left: auto; color: var(--warn); letter-spacing: 1px; font-size: 14px; }
+.st-loc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.st-traffic { font-size: 12px; margin-top: 2px; }
+.st-params { border-top: 1px dashed var(--border2); margin-top: 8px; padding-top: 4px; cursor: auto; }
+.st-params .order-actions { margin-top: 8px; }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
 .task { font-size: 12px; padding: 3px 0; }
 .task.done { color: var(--accent); }
@@ -408,7 +431,5 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .tut-hl { outline: 3px solid #35c2ff; outline-offset: 2px; border-radius: 4px; animation: tutpulse 1s ease-in-out infinite; }
 svg .tut-hl { outline: none; filter: drop-shadow(0 0 4px #35c2ff) drop-shadow(0 0 8px #35c2ff); }
 @keyframes tutpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-.start-tutorial { background: var(--panel2); border: 1px solid var(--accent); border-radius: 8px; padding: 8px 10px; margin: 0 0 10px; font-size: 13px; }
-.start-tutorial button { margin-top: 6px; }
 dl.gloss dt { font-weight: 600; margin-top: 6px; }
 dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }

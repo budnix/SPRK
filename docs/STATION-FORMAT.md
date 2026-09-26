@@ -9,6 +9,9 @@ export default {
   id: 'stare-pustkowie',          // identyfikator (URL: ?stacja=…)
   name: 'Stare Pustkowie',
   description: '…',
+  location: '…',                  // gdzie leży posterunek (linia, region) – karta na ekranie startowym
+  traffic: '…',                   // krótki opis ruchu – karta na ekranie startowym
+  difficulty: 2,                  // trudność 1–5 (gwiazdki; sortowanie „wg trudności”)
   startTime: '05:52',             // początek zmiany
   desk: { cols: 32, rows: 10 },   // wymiary pulpitu w kostkach (40×40 px)
   exits: { … },                   // szlaki (wyjazdy ze stacji)

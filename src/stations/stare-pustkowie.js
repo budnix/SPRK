@@ -21,6 +21,9 @@ export default {
   srk: 'E',
   srkInfo: 'Stacja fikcyjna: urządzenia przekaźnikowe typu E z pulpitem kostkowym (wzorzec ISDR).',
   description: 'Mała stacja na linii jednotorowej Lipowa – Dąbrowa Leśna. Urządzenia przekaźnikowe typu E, blokada liniowa Eap.',
+  location: 'Stacja fikcyjna na linii jednotorowej Lipowa – Dąbrowa Leśna.',
+  traffic: '11 pociągów: osobowe z krzyżowaniami, towarowe przelotem, zdawczy z manewrami na bocznicę.',
+  difficulty: 2,
   startTime: '05:52',
   desk: { cols: 32, rows: 10 },
 

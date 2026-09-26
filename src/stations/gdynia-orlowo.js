@@ -125,6 +125,9 @@ export default {
   srk: 'komputerowe',
   srkInfo: 'Komputerowe (Ebilock 950 ze sterownikami STC i licznikami osi, 2014, obszar LCS Gdynia – sterowanie zdalne z Gdyni Głównej); tory SKM 501/502 – obiekt zdalnego sterowania „GOr-SKM” (PKP SKM). W symulatorze stanowisko obsługi na miejscu.',
   description: 'Stacja na linii dwutorowej 202 Sopot – Gdynia Główna z równoległą linią SKM 250. Perony I (SKM) i 2, tory 3 i 4, tor 6 Bazy EZ Sopot, bocznica 18 z wykolejnicą. Numeracja rozjazdów i semaforów z planu stacji (2024).',
+  location: 'Linie 202 Gdańsk – Gdynia i 250 (SKM), między Sopotem a Gdynią Główną, woj. pomorskie.',
+  traffic: 'SKM co 15 min, regionalne z postojem, IC/TLK przelotem, towarowy torem 3, skład EZT z Bazy Sopot.',
+  difficulty: 3,
   startTime: '05:55',
   desk: { cols: 70, rows: 16 },
 

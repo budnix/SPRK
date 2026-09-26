@@ -5,8 +5,8 @@ import { openShift, tap, advance, pressBtn } from './helpers.js';
 
 test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
-  await expect(page.locator('#st-tutorial')).toBeVisible();
-  await page.click('#st-tutorial');
+  await expect(page.locator('.st-mission').first()).toContainText('Misja 1');
+  await page.click('.st-mission[data-scenario="nauka-1"]');
   await page.waitForURL(/stacja=szkolna.*scenariusz=nauka-1/);
   await expect(page.locator('.tut-box')).toBeVisible();
   await expect(page.locator('.tut-step')).toHaveText(/Krok 1\//);

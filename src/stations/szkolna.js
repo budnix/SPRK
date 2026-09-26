@@ -21,6 +21,9 @@ export default {
   srk: 'komputerowe',
   srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; ta sama stacja w misji 2 ma pulpit kostkowy typu E.',
   description: 'Stacja treningowa na linii jednotorowej Lipno – Dębno. Dwa tory peronowe, bocznica z kozłem, blokada liniowa Eap. Misje wprowadzające prowadzą krok po kroku.',
+  location: 'Stacja fikcyjna na linii jednotorowej Lipno – Dębno (poligon szkoleniowy).',
+  traffic: 'Kilka osobowych, towarowy przelotem, zdawczy z manewrami; rozkład liniowy pod samouczek.',
+  difficulty: 1,
   startTime: '07:00',
   desk: { cols: 32, rows: 10 },
 

@@ -85,6 +85,13 @@ jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez
 `route:set`). Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `block` z przyciskami.
 
+## Ekran startowy (`src/ui/StartScreen.js`)
+
+Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków z `location`, `traffic`,
+`difficulty` (gwiazdki) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
+zapamiętany w localStorage). Kliknięcie karty rozwija pod nią parametry zmiany (okręg, scenariusz, zakłócenia, ziarno).
+Funkcje sortowania i listy misji są bez DOM – testowane w Node.
+
 ## Misje wprowadzające (`src/tutorial/`)
 
 * `missions.js` – kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
