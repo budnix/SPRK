@@ -79,9 +79,9 @@ function updateSpeed() {
 }
 updateSpeed();
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') { help.hide(); toggleMenu(false); return; }
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
-  if (e.key === 'Escape') { help.hide(); toggleMenu(false); }
 });
 
 /* ---- zoom pulpitu ---- */
