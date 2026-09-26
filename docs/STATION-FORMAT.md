@@ -134,3 +134,17 @@ Typy usterek: `signal-fail` (semafor bez sygnału zezwalającego), `point-contro
 `false-occupancy` (zajętość bez pociągu), `block-fail` (blokada bez łączności – zapowiadanie telefoniczne).
 `duration` w minutach. Poziomy zakłóceń (`none`/`low`/`high`) dodają losowe opóźnienia, usterki i pociągi nadzwyczajne;
 ziarno losowe (`seed`) daje powtarzalną zmianę.
+
+## Okręgi nastawcze (`districts`)
+
+```js
+districts: {
+  GO:  { name: 'GO – nastawnia dysponująca', short: 'GO', role: 'dysponująca', cols: [35, 99] },
+  GO2: { name: 'GO2 – nastawnia wykonawcza', short: 'GO2', role: 'wykonawcza', cols: [0, 34] },
+}
+```
+
+Pulpit dzieli się po kolumnach na osobne pulpity (zakładki). Sygnalizatory, zwrotnice i szlaki należą do okręgu
+wg kolumny kostki. Gracz wybiera okręg (`?okreg=GO|GO2|both`); pozostałe prowadzi `AutoOperator`:
+nastawnia wykonawcza działa tylko na polecenia dyżurnego (`sim.issueCommand`), dyżurny-automat sam wydaje polecenia
+graczowi-nastawniczemu. Przyciski obcego okręgu są zablokowane, jego pulpit jest w podglądzie.

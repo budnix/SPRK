@@ -43,6 +43,12 @@ export class Help {
         <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Bloki zwalnia się dPo / dKo po telefonicznym potwierdzeniu.</li>
         <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dPo/dKo bez uzasadnienia −15; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
       </ul>
+      <h3>Okręgi nastawcze (Gdynia Główna)</h3>
+      <ul>
+        <li>Stacja ma dwie nastawnie: <b>GO</b> (dysponująca, głowica wschodnia) i <b>GO2</b> (wykonawcza, głowica zachodnia). Na ekranie startowym wybierasz stanowisko; drugi pulpit prowadzi automat i jest widoczny w podglądzie (zakładki nad pulpitem).</li>
+        <li><b>Jako dyżurny GO</b>: zakładka <i>Polecenia</i> – wydajesz nastawni GO2 polecenia „przyjąć pociąg nr … na tor …” i „wyprawić pociąg nr … do …”. GO2 daje pozwolenie sąsiadowi, nastawia przebieg i melduje wykonanie przez łączność. Bez polecenia pociąg od Gdańska czeka u sąsiada.</li>
+        <li><b>Jako nastawniczy GO2</b>: otrzymujesz polecenia dyżurnego (łączność i zakładka <i>Polecenia</i>) i wykonujesz je na swoim pulpicie. Wykonanie w ciągu 4 min: +2 pkt, później −5, brak wykonania przez 12 min: −10.</li>
+      </ul>
       <h3>Pociągi</h3>
       <ul>
         <li>Pociągi osobowe zatrzymują się przy peronie i odjeżdżają nie wcześniej niż o czasie rozkładowym – gdy semafor wyjazdowy pokaże sygnał zezwalający.</li>

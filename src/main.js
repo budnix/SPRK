@@ -11,7 +11,7 @@ import { getStation } from './stations/index.js';
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
 const startScreen = new StartScreen(document.getElementById('start'), {
-  station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'),
+  station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
 });
 if (!params.get('scenariusz')) startScreen.show();
 
@@ -20,17 +20,47 @@ const sim = new Simulation(station, {
   scenario: params.get('scenariusz') || undefined,
   disruptions: params.get('zaklocenia') || 'none',
   seed: params.get('seed') ? Number(params.get('seed')) : undefined,
+  district: params.get('okreg') || undefined,
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;
-document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}`;
+document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? 'oba okręgi' : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
 const report = new Report(document.getElementById('report'), sim);
 sim.bus.on('shift-end', () => report.show());
 
-const desk = new DeskRenderer(document.getElementById('desk'), sim, {
-  onPress: (ref) => sim.press(ref),
-  onPull: (ref) => sim.pull(ref),
-});
+/* ---- pulpity: jeden lub po jednym na okręg nastawczy ---- */
+const handlers = { onPress: (ref) => sim.press(ref), onPull: (ref) => sim.pull(ref) };
+const deskRoot = document.getElementById('desk');
+const desks = [];
+let activeDesk = null;
+if (station.districts) {
+  const tabs = document.getElementById('desk-tabs');
+  tabs.classList.remove('hidden');
+  for (const [id, d] of Object.entries(station.districts)) {
+    const wrap = document.createElement('div');
+    wrap.className = 'desk-district hidden'; wrap.dataset.district = id;
+    deskRoot.appendChild(wrap);
+    const mine = sim.playerControls(id);
+    const r = new DeskRenderer(wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id });
+    desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, el: wrap });
+    const b = document.createElement('button');
+    b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
+    b.title = d.name;
+    b.addEventListener('click', () => showDesk(id));
+    tabs.appendChild(b);
+  }
+  showDesk(sim.playerDistrict === 'both' ? desks[0].id : sim.playerDistrict);
+} else {
+  desks.push({ id: null, renderer: new DeskRenderer(deskRoot, sim, handlers), cols: station.desk.cols, el: deskRoot });
+}
+activeDesk = desks[0];
+function showDesk(id) {
+  for (const d of desks) d.el.classList.toggle('hidden', d.id !== id);
+  for (const b of document.querySelectorAll('#desk-tabs button')) b.classList.toggle('active', b.textContent.startsWith(station.districts?.[id]?.short || id));
+  activeDesk = desks.find((d) => d.id === id) || desks[0];
+  requestAnimationFrame(() => fit());
+}
+const desk = desks[0].renderer;
 const side = new SidePanel(document.getElementById('side'), sim);
 const help = new Help(document.getElementById('help'), sim);
 document.getElementById('btn-help').addEventListener('click', () => help.toggle());
@@ -105,16 +135,20 @@ document.addEventListener('keydown', (e) => {
 const deskEl = document.getElementById('desk');
 const scroll = document.getElementById('desk-scroll');
 let zoom = 1;
+function deskSize() {
+  const cols = activeDesk?.cols ?? station.desk.cols;
+  return { w: cols * 40 + 44, h: station.desk.rows * 40 + 44 };
+}
 function fit() {
-  const { cols, rows } = station.desk;
+  const { w: dw, h: dh } = deskSize();
   const w = scroll.clientWidth - 8, h = scroll.clientHeight - 8;
-  zoom = Math.max(0.3, Math.min(w / (cols * 40 + 44), h / (rows * 40 + 44)));
+  zoom = Math.max(0.3, Math.min(w / dw, h / dh));
   applyZoom();
 }
 function applyZoom() {
-  const { cols, rows } = station.desk;
-  deskEl.style.width = `${(cols * 40 + 44) * zoom}px`;
-  deskEl.style.height = `${(rows * 40 + 44) * zoom}px`;
+  const { w, h } = deskSize();
+  deskEl.style.width = `${w * zoom}px`;
+  deskEl.style.height = `${h * zoom}px`;
 }
 /** Zmiana powiększenia wokół punktu (px, py) w układzie widocznego obszaru pulpitu. */
 function zoomAt(factor, px, py) {

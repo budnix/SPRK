@@ -36,15 +36,16 @@ export class Comms {
   }
 
   /** Wysłanie telefonogramu / komunikatu radiowego. */
-  send(formulaId, params) {
+  send(formulaId, params, opts = {}) {
     const f = FORMULAS.find((x) => x.id === formulaId);
     if (!f) return { ok: false, reason: 'Nieznana formuła' };
     const p = { ...params, time: Clock.format(this.time) };
     const text = f.text(p);
     const to = f.to === 'neighbour' ? this.sim.blocks.get(params.exit)?.neighbour : `maszynista poc. ${params.nr}`;
-    this.messages.push({ dir: 'out', time: this.time, to, text });
-    this.bus.emit('comms-log', { dir: 'out', time: this.time, to, text });
+    this.messages.push({ dir: 'out', time: this.time, to, text, auto: !!opts.silent });
+    this.bus.emit('comms-log', { dir: 'out', time: this.time, to, text, auto: !!opts.silent });
     const res = this.#handle(f, params);
+    if (opts.silent) return res;
     if (!res.ok) {
       this.bus.emit('score', { time: this.time, code: 'comms-wrong', points: -5, msg: `Niewłaściwy telefonogram: „${text}” – ${res.reason}` });
       this.#incoming({ time: this.time + 3, from: to, kind: 'info', text: `Nie rozumiem. ${res.reason}.` });

@@ -14,6 +14,7 @@ export class SidePanel {
         <button data-tab="stan">Stan</button>
         <button data-tab="rozkazy">Rozkazy</button>
         <button data-tab="lacznosc">Łączność <span id="comms-badge" class="badge hidden">0</span></button>
+        <button data-tab="polecenia" id="tab-btn-polecenia" class="hidden">Polecenia <span id="cmd-badge" class="badge hidden">0</span></button>
       </nav>
       <section class="tab" id="tab-rj">
         <table class="rj"><thead><tr><th>Nr</th><th>Relacja</th><th>Przyj.</th><th>Odj.</th><th>Tor</th><th>Stan</th></tr></thead><tbody></tbody></table>
@@ -60,6 +61,20 @@ export class SidePanel {
         <p class="muted small">Telefonogramy wg Ir-1 stosuje się przy usterce blokady liniowej (zapowiadanie telefoniczne). Błędna formuła jest punktowana ujemnie.</p>
         <h4>Rozmowy</h4>
         <ul class="log comms" id="comms-log"></ul>
+      </section>
+      <section class="tab hidden" id="tab-polecenia">
+        <div id="cmd-form-wrap">
+          <h4>Polecenie dla nastawni wykonawczej</h4>
+          <form id="cmd-form" class="order-form">
+            <label>Pociąg <select id="cmd-train"></select></label>
+            <label id="cmd-track-wrap">Na tor <select id="cmd-track"></select></label>
+            <label id="cmd-exit-wrap">Do <select id="cmd-exit"></select></label>
+            <div class="order-actions"><button type="submit">Wydaj polecenie</button> <span id="cmd-msg" class="order-msg"></span></div>
+          </form>
+        </div>
+        <p class="muted small" id="cmd-help"></p>
+        <h4>Polecenia</h4>
+        <div id="cmd-list"></div>
       </section>`;
     this.tbody = root.querySelector('.rj tbody');
     this.logEl = root.querySelector('#log');
@@ -79,6 +94,80 @@ export class SidePanel {
     this.lastRender = 0;
     this.#initOrders();
     this.#initComms();
+    this.#initCommands();
+  }
+
+  #initCommands() {
+    const sim = this.sim;
+    if (!sim.districts || sim.playerDistrict === 'both') return;
+    this.root.querySelector('#tab-btn-polecenia').classList.remove('hidden');
+    const mine = sim.districts[sim.playerDistrict];
+    const isDispatcher = mine.role === 'dysponująca';
+    const other = Object.keys(sim.districts).find((id) => id !== sim.playerDistrict);
+    const formWrap = this.root.querySelector('#cmd-form-wrap');
+    this.root.querySelector('#cmd-help').textContent = isDispatcher
+      ? `Nastawnia ${other} przyjmuje i wyprawia pociągi po swojej stronie wyłącznie na Twoje polecenie (Ir-1). Melduje wykonanie przez łączność.`
+      : `Polecenia dyżurnego ruchu (${other}). Wykonaj je na swoim pulpicie: daj pozwolenie sąsiadowi, nastaw przebieg na wskazany tor lub wypraw pociąg na wskazany szlak.`;
+    if (!isDispatcher) { formWrap.classList.add('hidden'); }
+    const trSel = this.root.querySelector('#cmd-train');
+    const tkSel = this.root.querySelector('#cmd-track');
+    const exSel = this.root.querySelector('#cmd-exit');
+    const msg = this.root.querySelector('#cmd-msg');
+    const platformTracks = [...new Set([...sim.ilk.sections.values()].filter((x) => x.kind === 'station' && x.track).map((x) => String(x.track)))];
+    const candidates = () => sim.traffic.timetable().filter((e) => {
+      const done = (k) => sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === k);
+      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.status !== 'u sąsiada';
+      const departing = e.to && sim.exitDistrict(e.to) === other && e.train && !e.train.finished && e.train.entered && !done('dispatch');
+      return arriving || departing;
+    }).map((e) => {
+      const arriving = e.from && sim.exitDistrict(e.from) === other && !sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === 'accept') && !(e.train && e.train.entered);
+      return { e, kind: arriving ? 'accept' : 'dispatch' };
+    });
+    const fill = () => {
+      const c = candidates();
+      const cur = trSel.value;
+      trSel.innerHTML = c.map(({ e, kind }) => `<option value="${e.nr}" data-kind="${kind}">${e.nr} ${e.name} – ${kind === 'accept' ? `przyjąć od ${sim.station.exits[e.from].name}` : `wyprawić do ${sim.station.exits[e.to].name}`}</option>`).join('') || '<option value="">brak pociągów do polecenia</option>';
+      if ([...trSel.options].some((o) => o.value === cur)) trSel.value = cur;
+      upd();
+    };
+    const upd = () => {
+      const opt = trSel.selectedOptions[0];
+      const kind = opt?.dataset.kind;
+      const e = sim.traffic.timetable().find((x) => String(x.nr) === trSel.value);
+      this.root.querySelector('#cmd-track-wrap').classList.toggle('hidden', kind !== 'accept');
+      this.root.querySelector('#cmd-exit-wrap').classList.toggle('hidden', kind !== 'dispatch');
+      if (kind === 'accept') { tkSel.innerHTML = platformTracks.map((t) => `<option value="${t}">${t}</option>`).join(''); if (e) tkSel.value = String(e.track); }
+      if (kind === 'dispatch') { exSel.innerHTML = Object.entries(sim.station.exits).filter(([id]) => sim.exitDistrict(id) === other).map(([id, ex]) => `<option value="${id}">${ex.label || ex.name}</option>`).join(''); if (e) exSel.value = e.to; }
+    };
+    trSel.addEventListener('change', upd);
+    this.root.querySelector('#cmd-form').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const opt = trSel.selectedOptions[0];
+      if (!opt || !trSel.value) { msg.textContent = 'Brak pociągu'; msg.className = 'order-msg err'; return; }
+      const kind = opt.dataset.kind;
+      sim.issueCommand({ kind, nr: Number(trSel.value), track: kind === 'accept' ? tkSel.value : undefined, exit: kind === 'dispatch' ? exSel.value : undefined, from: sim.playerDistrict, to: other });
+      msg.textContent = 'Polecenie wydane.'; msg.className = 'order-msg ok';
+      fill(); this.renderCommands();
+    });
+    this.cmdUnread = 0;
+    sim.bus.on('commands', () => { this.renderCommands(); if (!isDispatcher) this.#cmdBadge(); });
+    sim.bus.on('comms', (m) => { if (m.kind === 'order' && !isDispatcher && this.root.querySelector('#tab-polecenia').classList.contains('hidden')) { this.cmdUnread++; this.#cmdBadge(); this.flash('polecenia'); } });
+    this.refreshCommandForm = isDispatcher ? fill : () => {};
+    fill(); this.renderCommands();
+  }
+
+  #cmdBadge() {
+    const b = this.root.querySelector('#cmd-badge');
+    if (!b) return;
+    b.textContent = String(this.cmdUnread);
+    b.classList.toggle('hidden', this.cmdUnread === 0);
+  }
+
+  renderCommands() {
+    const list = this.root.querySelector('#cmd-list');
+    if (!list) return;
+    const cmds = [...this.sim.commands].reverse();
+    list.innerHTML = cmds.length ? cmds.map((c) => `<div class="cmd ${c.status}"><span class="t">${Clock.format(c.time)}</span> nr ${c.id} · ${c.from} → ${c.to}: ${escapeHtml(c.text)} ${c.status === 'done' ? '✔' : '☐'}</div>`).join('') : '<div class="muted">brak</div>';
   }
 
   #initComms() {
@@ -163,6 +252,7 @@ export class SidePanel {
     for (const s of this.root.querySelectorAll('.tab')) s.classList.toggle('hidden', s.id !== `tab-${id}`);
     if (id === 'log') { this.unread = 0; this.#badge(); }
     if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
+    if (id === 'polecenia') { this.cmdUnread = 0; this.#cmdBadge(); this.refreshCommandForm?.(); }
     if (id === 'rozkazy') this.refreshOrderTrains?.();
   }
 
@@ -179,6 +269,7 @@ export class SidePanel {
     this.renderTimetable();
     this.renderState();
     this.refreshOrderTrains?.();
+    if (!this.root.querySelector('#tab-polecenia').classList.contains('hidden')) this.refreshCommandForm?.();
   }
 
   addLog(e) {

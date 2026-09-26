@@ -213,6 +213,15 @@ export default {
   startTime: '05:55',
   desk: { cols: 100, rows: 28 },
 
+  /**
+   * Okręgi nastawcze. GO – nastawnia dysponująca (dyżurny ruchu, głowica wschodnia),
+   * GO2 – nastawnia wykonawcza (nastawniczy, głowica zachodnia). Podział pulpitu po kolumnach.
+   */
+  districts: {
+    GO: { name: 'GO – nastawnia dysponująca (głowica wschodnia)', short: 'GO', role: 'dysponująca', cols: [35, 99] },
+    GO2: { name: 'GO2 – nastawnia wykonawcza (głowica zachodnia)', short: 'GO2', role: 'wykonawcza', cols: [0, 34] },
+  },
+
   exits: {
     K: { name: 'Gdynia Wielki Kack', label: 'Wlk. Kack – 201', tile: { x: 0, y: 2 }, dir: 'W', lineLength: 5200, lineSpeed: 80 },
     G1: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', lineLength: 3600, lineSpeed: 120 },

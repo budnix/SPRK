@@ -246,3 +246,16 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .task { font-size: 12px; padding: 3px 0; }
 .task.done { color: var(--accent); }
 .task.failed { color: var(--danger); }
+
+/* ---- okręgi nastawcze ---- */
+svg.desk.readonly .btn { cursor: not-allowed; }
+.readonly-banner rect { fill: rgba(30,32,34,0.85); }
+.readonly-text { fill: #ffd23f; font-size: 8px; font-weight: 700; }
+#desk-tabs { display: flex; gap: 4px; padding: 4px 8px 0; background: var(--panel); }
+#desk-tabs button { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); border-bottom: none; border-radius: 6px 6px 0 0; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+#desk-tabs button.active { background: var(--panel); color: var(--text); font-weight: 600; }
+#desk-tabs button .ai { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+.cmd { font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border3); }
+.cmd.pending { color: var(--warn); font-weight: 600; }
+.cmd.done { color: var(--muted); }
+.cmd .t { color: var(--muted); margin-right: 6px; }

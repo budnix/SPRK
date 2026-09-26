@@ -15,12 +15,17 @@ export class DeskRenderer {
    * @param sim Simulation
    * @param handlers { onPress(ref), onPull(ref) }
    */
-  constructor(container, sim, handlers) {
+  constructor(container, sim, handlers, opts = {}) {
     this.sim = sim;
     this.station = sim.station;
     this.ilk = sim.ilk;
     this.topo = sim.ilk.topo;
     this.handlers = handlers;
+    // Okno kolumn (okręg nastawczy) i tryb tylko do podglądu (okręg obsługiwany przez drugą nastawnię)
+    this.x0 = opts.window?.[0] ?? 0;
+    this.x1 = opts.window?.[1] ?? this.station.desk.cols - 1;
+    this.readonly = !!opts.readonly;
+    this.title = opts.title || null;
     this.tileRefs = new Map();     // tileKey -> refs
     this.sectionSlits = new Map(); // sectionId -> [{el, tile}]
     this.pointRefs = new Map();
@@ -31,10 +36,11 @@ export class DeskRenderer {
     this.counterRefs = new Map();
     this.trainLabels = new Map();
 
-    const { cols, rows } = this.station.desk;
+    const cols = this.x1 - this.x0 + 1, rows = this.station.desk.rows;
+    this.cols = cols; this.rows = rows;
     this.FRAME = FRAME;
     this.svg = el('svg', {
-      class: 'desk', viewBox: `0 0 ${cols * CELL + 2 * FRAME} ${rows * CELL + 2 * FRAME}`,
+      class: `desk${this.readonly ? ' readonly' : ''}`, viewBox: `0 0 ${cols * CELL + 2 * FRAME} ${rows * CELL + 2 * FRAME}`,
       preserveAspectRatio: 'xMidYMid meet',
     });
     this.svg.appendChild(el('defs', {}, [
@@ -45,6 +51,13 @@ export class DeskRenderer {
     ]));
     this.svg.appendChild(el('rect', { class: 'desk-bg', x: 0, y: 0, width: cols * CELL + 2 * FRAME, height: rows * CELL + 2 * FRAME, rx: 4 }));
     this.svg.appendChild(el('rect', { class: 'desk-face-bg', x: FRAME, y: FRAME, width: cols * CELL, height: rows * CELL }));
+    if (this.readonly) {
+      const banner = el('g', { class: 'readonly-banner' }, [
+        el('rect', { x: FRAME + 4, y: 2, width: 260, height: 16, rx: 3 }),
+        text(FRAME + 134, 11, `${this.title || 'okręg'} – obsługuje druga nastawnia (podgląd)`, { class: 'readonly-text' }),
+      ]);
+      this.svg.appendChild(banner);
+    }
     this.inner = el('g', { transform: `translate(${FRAME},${FRAME})` });
     this.layerTiles = el('g', { class: 'layer-tiles' });
     this.layerGrid = el('g', { class: 'layer-grid' });
@@ -76,6 +89,7 @@ export class DeskRenderer {
     const ctx = this.#ctx();
     const filled = new Set();
     for (const tile of this.station.tiles) {
+      if (tile.x < this.x0 || tile.x > this.x1) continue;
       let out;
       switch (tile.type) {
         case 'track': out = art.trackArt(tile, ctx); break;
@@ -88,7 +102,7 @@ export class DeskRenderer {
         case 'block': out = art.blockArt(tile, this.station.exits[tile.exit]); break;
         default: out = art.blankArt();
       }
-      out.g.setAttribute('transform', `translate(${tile.x * CELL},${tile.y * CELL})`);
+      out.g.setAttribute('transform', `translate(${(tile.x - this.x0) * CELL},${tile.y * CELL})`);
       out.g.dataset.tile = tile._key;
       this.layerTiles.appendChild(out.g);
       this.tileRefs.set(tile._key, out.refs);
@@ -107,11 +121,10 @@ export class DeskRenderer {
       if (tile.type === 'block') this.blockRefs.set(tile.exit, out.refs);
     }
     // Puste kostki
-    const { cols, rows } = this.station.desk;
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    for (let y = 0; y < this.rows; y++) for (let x = this.x0; x <= this.x1; x++) {
       if (filled.has(`${x},${y}`)) continue;
       const b = art.blankArt();
-      b.g.setAttribute('transform', `translate(${x * CELL},${y * CELL})`);
+      b.g.setAttribute('transform', `translate(${(x - this.x0) * CELL},${y * CELL})`);
       this.layerTiles.insertBefore(b.g, this.layerTiles.firstChild);
     }
     for (const b of this.svg.querySelectorAll('.btn')) {
@@ -122,14 +135,14 @@ export class DeskRenderer {
 
   /** Rama pulpitu: numeracja kolumn (od lewej) i rzędów (od dołu), śruby. */
   #buildFrame() {
-    const { cols, rows } = this.station.desk;
+    const cols = this.cols, rows = this.rows;
     const W = cols * CELL + 2 * FRAME, H = rows * CELL + 2 * FRAME;
     const g = el('g', { class: 'frame' });
     const pad = (n) => String(n).padStart(2, '0');
     for (let x = 0; x < cols; x++) {
       const cx = FRAME + x * CELL + CELL / 2;
-      g.appendChild(text(cx, FRAME / 2 + 3, pad(x + 1), { class: 'frame-text' }));
-      g.appendChild(text(cx, H - FRAME / 2 + 3, pad(x + 1), { class: 'frame-text' }));
+      g.appendChild(text(cx, FRAME / 2 + 3, pad(this.x0 + x + 1), { class: 'frame-text' }));
+      g.appendChild(text(cx, H - FRAME / 2 + 3, pad(this.x0 + x + 1), { class: 'frame-text' }));
       g.appendChild(el('circle', { class: 'frame-screw', cx: FRAME + x * CELL, cy: 5, r: 1.8 }));
       g.appendChild(el('circle', { class: 'frame-screw', cx: FRAME + x * CELL, cy: H - 5, r: 1.8 }));
     }
@@ -145,7 +158,7 @@ export class DeskRenderer {
   }
 
   #buildGrid() {
-    const { cols, rows } = this.station.desk;
+    const cols = this.cols, rows = this.rows;
     const d = [];
     for (let x = 0; x <= cols; x++) d.push(`M${x * CELL},0 V${rows * CELL}`);
     for (let y = 0; y <= rows; y++) d.push(`M0,${y * CELL} H${cols * CELL}`);
@@ -157,6 +170,7 @@ export class DeskRenderer {
     let timer = null; let active = null; let longFired = false;
     const cancel = () => { if (timer) clearTimeout(timer); timer = null; };
     this.svg.addEventListener('pointerdown', (ev) => {
+      if (this.readonly) return;
       const b = ev.target.closest('.btn');
       if (!b) return;
       ev.preventDefault();
@@ -318,7 +332,9 @@ export class DeskRenderer {
       }
       const above = headTile.y >= 6 || headTile.y === 4;
       const ty = headTile.y * CELL + (above ? -6 : CELL + 8);
-      lbl.setAttribute('transform', `translate(${headTile.x * CELL + CELL / 2},${ty})`);
+      const visible = headTile.x >= this.x0 && headTile.x <= this.x1;
+      lbl.style.display = visible ? '' : 'none';
+      lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + CELL / 2},${ty})`);
       lbl.querySelector('.train-nr').textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
     }
     for (const [nr, lbl] of this.trainLabels) if (!seen.has(nr)) { lbl.remove(); this.trainLabels.delete(nr); }

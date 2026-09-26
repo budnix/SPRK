@@ -7,6 +7,7 @@ import { Traffic } from './Traffic.js';
 import { Faults } from './Faults.js';
 import { Comms } from './Comms.js';
 import { Score } from './Score.js';
+import { AutoOperator } from './Operator.js';
 import { validateStation } from './validate.js';
 
 /**
@@ -48,7 +49,95 @@ export class Simulation {
     this.traffic.start(this.clock.time);
     this.ended = false;
     this.accum = 0;
+    // Okręgi nastawcze: gracz obsługuje jeden okręg, pozostałe prowadzi automat
+    this.districts = station.districts || null;
+    this.playerDistrict = this.districts ? (opts.district && (opts.district === 'both' || this.districts[opts.district]) ? opts.district : Object.keys(this.districts)[0]) : null;
+    this.commands = [];
+    this.operators = [];
+    if (this.districts && this.playerDistrict !== 'both') {
+      for (const [id, d] of Object.entries(this.districts)) {
+        if (id === this.playerDistrict) continue;
+        const role = d.role === 'dysponująca' ? 'dispatcher' : 'executive';
+        this.operators.push(new AutoOperator(this, { district: id, role, playerDistrict: this.playerDistrict, delay: 6 }));
+      }
+    }
     if (this.scenario.description) this.bus.emit('log', { time: this.clock.time, level: 'info', msg: `Scenariusz: ${this.scenario.name} – ${this.scenario.description}` });
+  }
+
+  /** Okręg, do którego należy sygnalizator (wg kolumny kostki). */
+  districtOf(signalId) {
+    if (!this.districts) return null;
+    const t = this.ilk.topo.signals.get(signalId);
+    if (!t) return null;
+    return this.#districtAtX(t.x);
+  }
+
+  exitDistrict(exitId) {
+    if (!this.districts) return null;
+    const e = this.station.exits[exitId];
+    return e ? this.#districtAtX(e.tile.x) : null;
+  }
+
+  #districtAtX(x) {
+    for (const [id, d] of Object.entries(this.districts)) if (x >= d.cols[0] && x <= d.cols[1]) return id;
+    return null;
+  }
+
+  /** Czy gracz może obsługiwać element (przycisk) w tym okręgu. */
+  playerControls(districtId) {
+    return !this.districts || this.playerDistrict === 'both' || this.playerDistrict === districtId;
+  }
+
+  /**
+   * Polecenie nastawcze między nastawniami (Ir-1): { kind: 'accept'|'dispatch', nr, track?, exit?, from, to, text }.
+   * Wydaje je dyżurny dysponujący (gracz lub automat); wykonuje nastawnia wykonawcza (automat lub gracz).
+   */
+  issueCommand(cmd) {
+    const c = { id: this.commands.length + 1, time: this.clock.time, status: 'pending', ...cmd };
+    if (!c.text) {
+      const ex = this.station.exits;
+      c.text = c.kind === 'accept'
+        ? `Przyjąć pociąg nr ${c.nr} na tor ${c.track}.`
+        : `Wyprawić pociąg nr ${c.nr} do ${ex[c.exit]?.name} (${ex[c.exit]?.label || c.exit}).`;
+    }
+    this.commands.push(c);
+    this.bus.emit('comms', { time: this.clock.time, from: c.from, kind: 'order', text: `Polecenie nr ${c.id}: ${c.text}`, nr: c.nr });
+    this.bus.emit('log', { time: this.clock.time, level: 'info', msg: `Polecenie ${c.from} → ${c.to}: ${c.text}` });
+    this.bus.emit('commands', this.commands);
+    return c;
+  }
+
+  /** Wykrywanie wykonania poleceń przez gracza-nastawniczego (przebieg nastawiony zgodnie z poleceniem). */
+  #checkCommands(t) {
+    for (const c of this.commands) {
+      if (c.status !== 'pending' || c.to !== this.playerDistrict) continue;
+      const e = this.traffic.timetable().find((x) => String(x.nr) === String(c.nr));
+      if (!e) continue;
+      let done = false;
+      for (const act of this.ilk.active.values()) {
+        const r = act.route;
+        if (r.kind !== 'train') continue;
+        if (c.kind === 'accept' && e.from) {
+          const app = this.ilk.topo.trackAt(this.station.exits[e.from].tile.x, this.station.exits[e.from].tile.y).section;
+          const last = r.sections[r.sections.length - 1];
+          if (r.approach === app && String(this.ilk.sections.get(last)?.track) === String(c.track)) done = true;
+        }
+        if (c.kind === 'dispatch' && r.exit === c.exit && e.train && !e.train.finished) {
+          const cur = [...e.train.occupiedSections()].map((sid) => this.ilk.sections.get(sid)?.track).find(Boolean);
+          if (String(this.ilk.sections.get(r.approach)?.track) === String(cur)) done = true;
+        }
+      }
+      if (done) {
+        c.status = 'done'; c.doneAt = t;
+        const late = Math.round((t - c.time) / 60);
+        this.bus.emit('score', { time: t, code: 'command', points: late > 4 ? -5 : 2, msg: `Polecenie nr ${c.id} wykonane${late > 4 ? ` z opóźnieniem ${late} min` : ''}: ${c.text}` });
+        this.bus.emit('commands', this.commands);
+      } else if (t - c.time > 12 * 60 && !c.overdue) {
+        c.overdue = true;
+        this.bus.emit('score', { time: t, code: 'command-late', points: -10, msg: `Polecenie nr ${c.id} niewykonane od 12 min: ${c.text}` });
+        this.bus.emit('comms', { time: t, from: c.from, kind: 'order', text: `Ponawiam polecenie nr ${c.id}: ${c.text}`, nr: c.nr });
+      }
+    }
   }
 
   static resolveScenario(station, sc) {
@@ -97,6 +186,8 @@ export class Simulation {
       this.traffic.tick(h, t);
       this.ilk.tick(t);
       this.comms.tick(t);
+      for (const op of this.operators) op.tick();
+      if (this.commands.length) this.#checkCommands(t);
     }
     this.bus.emit('tick', { time: this.clock.time });
     this.#checkEnd();
@@ -137,8 +228,19 @@ export class Simulation {
 
   /** Naciśnięcie przycisku – ref jak w Interlocking.press lub { kind:'block', exit, btn }. */
   press(ref) {
+    if (!this.#refAllowed(ref)) return { ok: false, reason: 'Element w okręgu obsługiwanym przez drugą nastawnię' };
     if (ref.kind === 'block') return this.blocks.get(ref.exit)?.press(ref.btn) ?? { ok: false };
     return this.ilk.press(ref);
+  }
+
+  #refAllowed(ref) {
+    if (!this.districts || this.playerDistrict === 'both') return true;
+    if (ref.kind === 'block') return this.playerControls(this.exitDistrict(ref.exit));
+    if (ref.kind === 'signal') return this.playerControls(this.districtOf(ref.id));
+    if (ref.kind === 'point') { const t = this.ilk.topo.points.get(ref.id); return this.playerControls(this.#districtAtX(t.x)); }
+    if (ref.kind === 'derailer') { const t = this.ilk.topo.derailers.get(ref.id); return this.playerControls(this.#districtAtX(t.x)); }
+    if (ref.kind === 'end') { const t = this.ilk.topo.endButtons.get(ref.id); return t ? this.playerControls(this.#districtAtX(t.x)) : true; }
+    return true;
   }
 
   pull(ref) {
