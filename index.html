@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" href="data:," />
+  <title>SPRK – Symulator Prowadzenia Ruchu Kolejowego</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand"><span class="logo">SPRK</span><span id="station-name">…</span></div>
+      <div class="clock"><span id="clock">00:00:00</span></div>
+      <div class="controls">
+        <button id="btn-pause" class="tb" title="Pauza (spacja)">❚❚</button>
+        <div class="speed" id="speed"></div>
+        <button id="btn-help" class="tb" title="Instrukcja obsługi">?</button>
+      </div>
+    </header>
+    <main id="main">
+      <section id="desk-wrap">
+        <div id="desk-scroll"><div id="desk"></div></div>
+        <div id="desk-tools">
+          <button class="tb" id="zoom-out">−</button>
+          <button class="tb" id="zoom-fit">dopasuj</button>
+          <button class="tb" id="zoom-in">+</button>
+          <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
+        </div>
+      </section>
+      <aside id="side"></aside>
+    </main>
+  </div>
+  <div id="help" class="modal hidden"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

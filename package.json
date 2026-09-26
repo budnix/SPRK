@@ -1,0 +1,16 @@
+{
+  "name": "sprk",
+  "version": "0.1.0",
+  "description": "SPRK – Symulator Prowadzenia Ruchu Kolejowego. Przeglądarkowy symulator pracy dyżurnego ruchu na pulpicie kostkowym (urządzenia przekaźnikowe typu E).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "node --test \"tests/**/*.test.js\""
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}
