@@ -216,7 +216,10 @@ export class DeskRenderer {
     const sec = this.ilk.sections.get(id);
     if (!sec) return;
     const st = this.#sectionState(sec);
-    for (const { el: e } of this.sectionSlits.get(id) || []) setLamp(e, st);
+    for (const { el: e, tile } of this.sectionSlits.get(id) || []) {
+      setLamp(e, st);
+      for (const sc of this.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', st !== 'off');
+    }
     // zwrotnice w tym odcinku
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);
@@ -233,14 +236,11 @@ export class DeskRenderer {
     if (p.moving || !p.control) {
       setLamp(r.toe, p.trailed ? 'red blink' : 'off');
       setLamp(r.straight, 'off'); setLamp(r.diverge, 'off');
-      setLamp(r.posStraight, 'off'); setLamp(r.posDiverge, 'off');
     } else {
-      // pełny leg świeci biało/czerwono (przebieg/zajętość); żółty krótki wskaźnik – położenie
+      // ostrze świeci tylko w przebiegu/zajętości; leg w położeniu – żółty (lub biały/czerwony)
       setLamp(r.toe, lit ? state : 'off');
-      setLamp(r.straight, lit && p.position === '+' ? state : 'off');
-      setLamp(r.diverge, lit && p.position === '-' ? state : 'off');
-      setLamp(r.posStraight, !lit && p.position === '+' ? 'yellow' : 'off');
-      setLamp(r.posDiverge, !lit && p.position === '-' ? 'yellow' : 'off');
+      setLamp(r.straight, p.position === '+' ? state : 'off');
+      setLamp(r.diverge, p.position === '-' ? state : 'off');
     }
     setLamp(r.lockLamp, p.individualLock ? 'white' : 'off');
   }
@@ -258,14 +258,20 @@ export class DeskRenderer {
     const r = this.signalRefs.get(id);
     if (!s || !r) return;
     const a = s.aspect;
-    if (s.kind === 'tm') { setLamp(r.top, a === 'Ms2' ? 'off' : 'blue'); setLamp(r.ms, a === 'Ms2' ? 'white' : 'off'); r.btnWhite?.classList.toggle('active', a === 'Ms2'); return; }
+    if (s.kind === 'tm') {
+      setLamp(r.lamps.blue, a === 'Ms2' ? 'off' : 'blue');
+      setLamp(r.lamps.white, a === 'Ms2' ? 'white' : 'off');
+      r.btnWhite?.classList.toggle('active', a === 'Ms2');
+      return;
+    }
+    // Powtarzacz: lampki pomarańczowa / zielona / czerwona / biała (obrazy dwuświatłowe – uproszczenie)
     const map = {
-      S1: ['red', 'off'], S2: ['green', 'off'], S3: ['green blink', 'off'], S4: ['orange blink', 'off'], S5: ['orange', 'off'],
-      S10: ['orange', 'green'], S11: ['orange', 'green blink'], S12: ['orange', 'orange blink'], S13: ['orange', 'orange'],
-      Sz: ['red', 'white blink'], Ms2: ['off', 'white'],
+      S1: { red: 'red' }, S2: { green: 'green' }, S3: { green: 'green blink' }, S4: { orange: 'orange blink' }, S5: { orange: 'orange' },
+      S10: { orange: 'orange', green: 'green' }, S11: { orange: 'orange', green: 'green blink' }, S12: { orange: 'orange blink', green: 'green' },
+      S13: { orange: 'orange' }, Sz: { red: 'red', white: 'white blink' }, Ms2: { white: 'white' },
     };
-    const [top, bottom] = map[a] || ['off', 'off'];
-    setLamp(r.top, top); setLamp(r.bottom, bottom);
+    const m = map[a] || {};
+    for (const [c, e] of Object.entries(r.lamps)) setLamp(e, m[c] || 'off');
     r.btnGreen?.classList.toggle('active', s.route != null && a !== 'S1' && a !== 'Ms2');
     r.btnWhite?.classList.toggle('active', a === 'Ms2');
   }
@@ -276,10 +282,10 @@ export class DeskRenderer {
     if (!b || !r) return;
     setLamp(r.req, b.request === 'theirs' ? 'white blink' : (b.request === 'ours' ? 'white' : 'off'));
     setLamp(r.in, b.direction === 'in' ? 'white' : 'off');
-    setLamp(r.out, b.direction === 'out' && b.permission ? 'white' : (b.direction === 'out' ? 'white blink' : 'off'));
+    setLamp(r.out, b.direction === 'out' && b.permission ? 'red' : (b.direction === 'out' ? 'red blink' : 'off'));
     setLamp(r.occ, b.occupied ? 'red' : 'off');
     setLamp(r.po, b.poBlocked ? 'red' : 'off');
-    setLamp(r.ko, b.koPending ? 'yellow blink' : 'off');
+    setLamp(r.ko, b.koPending ? 'white blink' : 'off');
     r.cntPo.textContent = String(b.counters.dPo).padStart(3, '0');
     r.cntKo.textContent = String(b.counters.dKo).padStart(3, '0');
   }

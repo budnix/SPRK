@@ -40,60 +40,62 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 }
 
 /* ---- pulpit ---- */
-svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "Helvetica Neue", Arial, sans-serif; }
+svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }
 .desk-bg { fill: var(--desk-frame); }
 .desk-face-bg { fill: var(--desk-face); }
-.frame-text { fill: #cfd3d5; font-size: 8px; font-weight: 600; }
+.frame-text { fill: #d2d5d7; font-size: 8px; font-weight: 600; }
 .frame-screw { fill: #8d9295; stroke: #1f2123; stroke-width: 0.6; }
 .tile .face { fill: var(--desk-face); }
-.tile.t-blank .face { fill: var(--desk-face2); }
-.tile .face.green, .tile.t-point .face { fill: var(--desk-face-green); }
-.tile.t-point.plain .face { fill: var(--desk-face); }
-.grid { stroke: var(--desk-line); stroke-width: 0.7; fill: none; }
-.slit-edge { stroke: var(--slit-edge); }
-.slit { stroke: var(--slit-off); }
-.slit.on.lamp-white { stroke: #fbfbf2; }
-.slit.on.lamp-red { stroke: #f52a1e; }
-.slit.on.lamp-yellow { stroke: #f5cf1c; }
-.slit.on.lamp-green { stroke: #37d16a; }
-.pos { stroke: transparent; }
-.pos.on.lamp-yellow { stroke: #f5cf1c; }
-.joint { stroke: var(--joint); }
-.buffer-bar { stroke: #2d3133; fill: none; }
-.mast { stroke: #2d3133; }
-.sig-head { fill: #3a3e40; stroke: #1c1e20; stroke-width: 0.8; }
-.tm-bar { stroke: #9fb3aa; }
-.dir-arrow { fill: #2d3133; }
-.tile-text { fill: #1f2325; font-size: 8px; font-weight: 500; }
+.tile .face.green { fill: var(--desk-face-green); }
+.tile .face.teal { fill: #c9ded8; }
+.grid { stroke: #7c8285; stroke-width: 0.6; fill: none; stroke-dasharray: 5 3; }
+/* kanał torowy */
+.channel-edge { stroke: #8f9395; }
+.channel-fill { stroke: #bfc2c4; }
+.bar { stroke: #2a2b2c; }
+.bar.on.lamp-white { stroke: #f7ebcf; }
+.bar.on.lamp-red { stroke: #e8281c; }
+.bar.on.lamp-yellow { stroke: #f2c318; }
+.screw { fill: #e4e6e7; stroke: #6d7173; stroke-width: 0.6; }
+.screw.lit { fill: #ffffff; stroke: #9a9d9f; }
+.joint { stroke: #1e2021; }
+.mast { stroke: #2d3133; fill: none; }
+.pill { fill: #c4c7c9; stroke: #8b8f91; stroke-width: 0.8; }
+.tile-text { fill: #1f2325; font-size: 8px; font-weight: 400; }
 .tile-text.small { font-size: 7px; }
 .tile-text.tiny { font-size: 5.5px; }
 .tile-text.label { font-size: 9px; letter-spacing: 0.3px; }
-.tile-text.point-label { font-size: 8px; }
-.tile-text.sig-label { font-size: 8px; }
-.tile-text.btn-title { font-size: 7.5px; }
-.tile-text.block-title { font-size: 8px; font-weight: 700; }
+.tile-text.point-label { font-size: 8.5px; }
+.tile-text.sig-label { font-size: 8.5px; }
 .tile-text.plus { font-size: 9px; font-weight: 700; }
 .wk-body { fill: #4a4f4c; stroke: #23302b; stroke-width: 0.6; }
 
 /* lampki */
-.lamp { fill: #4b5052; stroke: #2a2d2f; stroke-width: 0.6; }
-.lamp.on.lamp-red { fill: #ff2a1e; }
+.lamp { fill: #2e3031; stroke: #1b1d1e; stroke-width: 0.6; }
+.lamp.on.lamp-red { fill: #f52a1e; }
 .lamp.on.lamp-white { fill: #fff8dc; }
-.lamp.on.lamp-yellow { fill: #ffc61a; }
+.lamp.on.lamp-yellow { fill: #f5cf1c; }
 .lamp.on.lamp-green { fill: #2ee06a; }
-.lamp.on.lamp-orange { fill: #ff9a1a; }
+.lamp.on.lamp-orange { fill: #ffa11a; }
 .lamp.on.lamp-blue { fill: #4b86ff; }
 .lamp.on { filter: url(#glow); }
+.lamp.arrow { stroke: #1b1d1e; }
+.arrow-box { fill: none; stroke: #1f2325; stroke-width: 0.8; }
+.lampbar-frame { fill: #c4c7c9; stroke: #8b8f91; stroke-width: 0.6; }
+.lampbar-lamp { fill: #2e3031; }
+.lampbar-lamp.on.lamp-red { fill: #f52a1e; }
+.lampbar-lamp.on.lamp-white { fill: #fff2cc; }
+.lampbar-lamp.on.lamp-yellow { fill: #f5cf1c; }
 .blink { animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0.15; } }
 
 /* przyciski */
 .btn { cursor: pointer; }
 .btn-shadow { fill: rgba(0,0,0,0.3); }
-.btn-ring { fill: #9da2a4; }
-.btn-cap { fill: #888; stroke: rgba(0,0,0,0.35); stroke-width: 0.5; }
+.btn-ring { fill: #2a2c2d; }
+.btn-cap { fill: #888; stroke: rgba(0,0,0,0.35); stroke-width: 0.4; }
 .btn-hl { fill: rgba(255,255,255,0.35); }
-.btn-green .btn-cap { fill: #1d9e48; }
+.btn-green .btn-cap { fill: #1f9e48; }
 .btn-white .btn-cap { fill: #f6f6f0; }
 .btn-red .btn-cap { fill: #d9262a; }
 .btn-black .btn-cap { fill: #1e1f20; }
@@ -101,7 +103,7 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .btn-grey .btn-cap { fill: #7d8385; }
 .btn-blue .btn-cap { fill: #2d63c8; }
 .btn-yellow .btn-cap { fill: #e6b800; }
-.btn-label { font-size: 6.5px; fill: #1f2325; font-weight: 600; }
+.btn-label { font-size: 7.5px; fill: #1f2325; font-weight: 400; }
 .btn.pressed .btn-cap, .btn.armed .btn-cap { transform: translate(0.4px, 0.9px); }
 .btn.pressed .btn-hl, .btn.armed .btn-hl { opacity: 0.4; }
 .btn.armed .btn-ring { fill: #ffd23f; }
@@ -112,11 +114,13 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .btn:focus .btn-ring { stroke: #fff; stroke-width: 1; }
 
 /* liczniki */
-.counter rect { fill: #141516; stroke: #5a5e60; stroke-width: 0.8; }
-.counter-text { fill: #f4f4f4; font-size: 6px; font-family: "Courier New", monospace; font-weight: 700; }
-
-/* blokada */
-.block-frame { fill: none; stroke: #b9bfc1; stroke-width: 0.8; }
+.counter-body { fill: #3d3f41; stroke: #202223; stroke-width: 0.6; }
+.counter-inner { fill: #5a5d5f; stroke: #2a2c2d; stroke-width: 0.4; }
+.counter-win { fill: #101112; stroke: #6a6d6f; stroke-width: 0.5; }
+.counter-plate { fill: #e9e2c8; stroke: #7a7462; stroke-width: 0.4; }
+.counter-seal { fill: #9a9d9f; stroke: #2a2c2d; stroke-width: 0.5; }
+.counter-text { fill: #f4f4f4; font-size: 5.5px; font-family: "Courier New", monospace; font-weight: 700; letter-spacing: 0.3px; }
+.counter-label { fill: #3a3a3a; font-size: 4.5px; font-weight: 600; }
 
 /* pociągi */
 .train-label rect { fill: rgba(30,32,34,0.9); stroke: #fff; stroke-width: 0.5; }
