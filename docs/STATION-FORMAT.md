@@ -148,3 +148,10 @@ Pulpit dzieli się po kolumnach na osobne pulpity (zakładki). Sygnalizatory, zw
 wg kolumny kostki. Gracz wybiera okręg (`?okreg=GO|GO2|both`); pozostałe prowadzi `AutoOperator`:
 nastawnia wykonawcza działa tylko na polecenia dyżurnego (`sim.issueCommand`), dyżurny-automat sam wydaje polecenia
 graczowi-nastawniczemu. Przyciski obcego okręgu są zablokowane, jego pulpit jest w podglądzie.
+
+## System srk stacji (`srk`)
+
+Pole opcjonalne na najwyższym poziomie definicji: `srk: 'E'` (urządzenia przekaźnikowe typu E, pulpit kostkowy –
+domyślnie) lub `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
+polecenia specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla obu
+stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Nieznana wartość jest błędem walidacji.

@@ -154,6 +154,7 @@ export default {
   schemaVersion: 1,
   id: 'sopot',
   name: 'Sopot',
+  srk: 'komputerowe',
   description: 'Stacja na liniach 202 Gdańsk – Stargard i 250 SKM. Grupa zachodnia (tory 6, 2a, 4, 1a), peron 2 (tory 2/1), peron 1 SKM (502a/501a), tor 13 z wykolejnicą Wk7. Przejazd pociągu to trzy przebiegi. Numeracja rozjazdów i semaforów z planu stacji (2023).',
   startTime: '05:55',
   desk: { cols: 112, rows: 16 },

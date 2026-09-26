@@ -1,5 +1,5 @@
 import { Simulation } from './model/Simulation.js';
-import { DeskRenderer } from './render/DeskRenderer.js';
+import { createView, viewSize, viewHint, armHint } from './srk/views.js';
 import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
@@ -10,6 +10,7 @@ import { getStation } from './stations/index.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
+const settings = new Settings((key) => { if (key === 'srk') location.reload(); else requestAnimationFrame(fit); });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
 });
@@ -21,10 +22,12 @@ const sim = new Simulation(station, {
   disruptions: params.get('zaklocenia') || 'none',
   seed: params.get('seed') ? Number(params.get('seed')) : undefined,
   district: params.get('okreg') || undefined,
+  srk: settings.values.srk === 'auto' ? undefined : settings.values.srk,
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? 'oba okręgi' : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
+document.getElementById('hint').textContent = viewHint(sim.srk);
 const report = new Report(document.getElementById('report'), sim);
 sim.bus.on('shift-end', () => report.show());
 
@@ -41,7 +44,7 @@ if (station.districts) {
     wrap.className = 'desk-district hidden'; wrap.dataset.district = id;
     deskRoot.appendChild(wrap);
     const mine = sim.playerControls(id);
-    const r = new DeskRenderer(wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id });
+    const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id });
     desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, el: wrap });
     const b = document.createElement('button');
     b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
@@ -51,7 +54,7 @@ if (station.districts) {
   }
   showDesk(sim.playerDistrict === 'both' ? desks[0].id : sim.playerDistrict);
 } else {
-  desks.push({ id: null, renderer: new DeskRenderer(deskRoot, sim, handlers), cols: station.desk.cols, el: deskRoot });
+  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers), cols: station.desk.cols, el: deskRoot });
 }
 activeDesk = desks[0];
 function showDesk(id) {
@@ -68,7 +71,6 @@ document.getElementById('btn-help').addEventListener('click', () => help.toggle(
 /* ---- menu i ustawienia ---- */
 const menuEl = document.getElementById('menu');
 const menuBtn = document.getElementById('btn-menu');
-const settings = new Settings(() => requestAnimationFrame(fit));
 settings.bindMenu(menuEl);
 function toggleMenu(show = menuEl.classList.contains('hidden')) {
   menuEl.classList.toggle('hidden', !show);
@@ -89,21 +91,10 @@ function setStatus(msg, level = 'info', ms = 6000) {
   clearTimeout(statusTimer);
   if (ms) statusTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status'; }, ms);
 }
-const ARM_HINT = {
-  point: (a) => `Zwrotnica ${a.id} uzbrojona – naciśnij Zw (przestawienie) lub Zz (zamknięcie)`,
-  derailer: (a) => `Wykolejnica ${a.id} uzbrojona – naciśnij Zw`,
-  signal: (a) => `${a.color === 'white' ? 'Manewrowy' : 'Pociągowy'} początek przebiegu ${a.id} – naciśnij przycisk końca przebiegu`,
-  group: (a) => ({
-    'group-point': 'Zw – naciśnij przycisk zwrotnicy lub wykolejnicy',
-    'point-lock': 'Zz – naciśnij przycisk zwrotnicy (zamknięcie/otwarcie)',
-    'route-release': 'Pz – naciśnij przycisk sygnałowy przebiegu do zwolnienia',
-    'emergency-release': 'dPz – naciśnij przycisk sygnałowy (zwolnienie doraźne, licznik!)',
-    'substitute': 'Sz – naciśnij zielony przycisk semafora (sygnał zastępczy, licznik!)',
-  })[a.role] || `${a.id} uzbrojony`,
-};
 sim.bus.on('armed', (a) => {
   if (!a) { if (statusEl.classList.contains('lv-armed')) setStatus('', 'info', 0); return; }
-  setStatus(ARM_HINT[a.kind]?.(a) || '', 'armed', 0);
+  const msg = armHint(sim.srk, a);
+  if (msg) setStatus(msg, 'armed', 0);
 });
 sim.bus.on('log', (e) => { if (e.level !== 'info') setStatus(e.msg, e.level); });
 
@@ -137,7 +128,7 @@ const scroll = document.getElementById('desk-scroll');
 let zoom = 1;
 function deskSize() {
   const cols = activeDesk?.cols ?? station.desk.cols;
-  return { w: cols * 40 + 44, h: station.desk.rows * 40 + 44 };
+  return viewSize(sim.srk, cols, station.desk.rows);
 }
 function fit() {
   const { w: dw, h: dh } = deskSize();

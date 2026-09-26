@@ -9,6 +9,7 @@ import { Comms } from './Comms.js';
 import { Score } from './Score.js';
 import { AutoOperator } from './Operator.js';
 import { validateStation } from './validate.js';
+import { getSrk } from '../srk/registry.js';
 
 /**
  * Symulacja: spina zegar, zależności (Interlocking), blokady liniowe, ruch, usterki,
@@ -21,6 +22,8 @@ export class Simulation {
     const v = validateStation(station);
     if (v.errors.length) throw new Error(`Definicja stacji niepoprawna:\n${v.errors.join('\n')}`);
     this.station = station;
+    // System sterowania ruchem (strategia): ze stacji lub nadpisany w opcjach (ustawienia gracza)
+    this.srk = getSrk(opts.srk || station.srk);
     this.scenario = Simulation.resolveScenario(station, opts.scenario);
     this.bus = new EventBus();
     this.seed = opts.seed ?? Math.floor(Math.random() * 1e9);
@@ -35,6 +38,7 @@ export class Simulation {
     for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus));
     this.ilk = new Interlocking(station, this.bus, {
       blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
+      ...this.srk.model,
     });
     const timetable = this.scenario.timetable
       ? this.scenario.timetable

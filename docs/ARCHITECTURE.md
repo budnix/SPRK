@@ -9,8 +9,11 @@ src/
                Train (ruch pociągu, manewry, rozkazy), Traffic (rozkład, ruch, zadania manewrowe),
                Faults (usterki), Comms (łączność), Score (ocena), Simulation (spięcie, scenariusze),
                validate (walidacja definicji stacji)
-  render/      DeskRenderer (SVG pulpitu, obsługa dotyku/myszy), tileArt (grafika kostek), svg (helpery)
-  ui/          SidePanel (rozkład, dziennik, stan), Help (instrukcja)
+  srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
+               views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
+  render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego),
+               tileArt (grafika kostek), svg (helpery)
+  ui/          SidePanel (rozkład, dziennik, stan), Help (instrukcja), Settings, StartScreen, Report
   stations/    definicje stacji + rejestr
 tests/         node --test (logika bez przeglądarki)
 docs/          format stacji, architektura, źródła
@@ -28,6 +31,28 @@ docs/          format stacji, architektura, źródła
   (nie po „ścieżce przebiegu”), więc jazda na Sz, rozprucie, manewry działają naturalnie.
 * **Stan serializowalny.** `Simulation.snapshot()` – podstawa pod zapis gry i tryb sieciowy
   (serwer autorytatywny + klienci-renderery).
+
+## Strategie systemów srk (`src/srk/`)
+
+Stacja deklaruje `srk: 'E' | 'komputerowe'` (domyślnie `E`). Strategia to wpis w rejestrze
+(`registerSrk({ id, name, description, view, model })`):
+
+* `model` – parametry przekazywane do `Interlocking` (np. `armTimeout`: 6 s na drugi przycisk pulpitu,
+  60 s na wskazanie końca przebiegu na monitorze). Logika zależności (utwierdzenie, zwalnianie odcinkowe,
+  ochrona boczna, liczniki, blokady) jest **wspólna** – to cechy ruchu kolejowego, nie stanowiska.
+* `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe) lub `screen`
+  (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
+  Widoki dobiera `src/srk/views.js` (`createView`, `viewSize`, `armHint`, `viewHelp`); model ich nie importuje.
+* Obydwa widoki wysyłają do symulacji te same `press(ref)` / `pull(ref)`; stanowisko komputerowe składa
+  polecenia dwuprzyciskowe (Zw+zwrotnica, Pz+semafor) samo, a `AutoOperator` i testy działają identycznie
+  niezależnie od strategii.
+* Gracz może wymusić stanowisko w ustawieniach (`srk: auto | E | komputerowe`) – przydatne do porównania
+  obsługi tej samej stacji na pulpicie i na monitorze.
+
+Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR): wpis w `registry.js`
+(parametry) + ewentualny nowy widok w `views.js` / `render/`. Różnice w samych zależnościach (np. brak
+liczników, inne zwalnianie) należy dodawać jako opcje `Interlocking` sterowane przez `model`, nie jako
+osobne kopie logiki.
 
 ## Pętla
 

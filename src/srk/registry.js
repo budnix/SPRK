@@ -1,0 +1,50 @@
+/**
+ * Rejestr systemów sterowania ruchem kolejowym (srk) – „strategii” obsługi stacji.
+ *
+ * Każda stacja deklaruje `srk: '<id>'` (domyślnie 'E'). Strategia opisuje:
+ *  - `model`   – parametry zależności przekazywane do Interlocking (czasy, liczniki),
+ *  - `view`    – rodzaj stanowiska obsługi ('desk' = pulpit kostkowy, 'screen' = monitor komputerowy);
+ *                same widoki rejestruje warstwa UI (src/srk/views.js), model nie zna DOM.
+ *
+ * Logika zależności (przebiegi, utwierdzenie, zwalnianie, blokady) jest wspólna – różni się sposób
+ * wydawania poleceń i obraz stanu. Nowe systemy (np. mechaniczne z pulpitem kluczowym, EbiScreen,
+ * ILTOR) to nowy wpis tutaj + widok w views.js.
+ */
+const SRK = new Map();
+
+export function registerSrk(def) {
+  if (!def.id) throw new Error('Strategia srk bez id');
+  SRK.set(def.id, { model: {}, ...def });
+  return def;
+}
+
+/** Strategia po id; nieznane / brak → urządzenia przekaźnikowe typu E. */
+export function getSrk(id) {
+  return SRK.get(id) || SRK.get('E');
+}
+
+export function hasSrk(id) {
+  return SRK.has(id);
+}
+
+export function listSrk() {
+  return [...SRK.values()];
+}
+
+registerSrk({
+  id: 'E',
+  name: 'Urządzenia przekaźnikowe typu E',
+  short: 'przekaźnikowe E',
+  description: 'Pulpit kostkowy: przyciski dwuprzyciskowe (uzbrojenie 6 s), liczniki plombowane dPz/Sz/dPo/dKo, lampki na kostkach.',
+  view: 'desk',
+  model: { armTimeout: 6 },
+});
+
+registerSrk({
+  id: 'komputerowe',
+  name: 'Komputerowe urządzenia srk (stanowisko z monitorem)',
+  short: 'komputerowe',
+  description: 'Obraz stanu na monitorze (ciemne tło, tor szary/zielony/czerwony), polecenia z menu elementu: przebieg = wskazanie początku i końca, polecenia specjalne (dPz, Sz, Zz, dPo, dKo) z potwierdzeniem i rejestracją.',
+  view: 'screen',
+  model: { armTimeout: 60 },
+});

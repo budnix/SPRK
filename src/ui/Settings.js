@@ -3,9 +3,10 @@
  *  - deskPos: położenie pulpitu w pionie ('top' | 'middle' | 'bottom')
  *  - sidePos: położenie panelu bocznego ('right' | 'left' | 'bottom')
  *  - theme: motyw interfejsu ('dark' | 'light'); kostki pulpitu są niezależne od motywu
+ *  - srk: stanowisko obsługi ('auto' = wg definicji stacji | id strategii z src/srk/registry.js)
  */
 const KEY = 'sprk.settings';
-const DEFAULTS = { deskPos: 'middle', sidePos: 'right', theme: 'dark' };
+const DEFAULTS = { deskPos: 'middle', sidePos: 'right', theme: 'dark', srk: 'auto' };
 
 export class Settings {
   constructor(onChange) {

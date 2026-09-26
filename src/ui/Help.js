@@ -1,13 +1,14 @@
-/** Okno pomocy – instrukcja obsługi pulpitu. */
+import { viewHelp } from '../srk/views.js';
+
+/** Okno pomocy – instrukcja obsługi stanowiska (część zależna od systemu srk) i zasad ruchu. */
 export class Help {
   constructor(root, sim) {
     this.root = root;
     this.sim = sim;
     root.innerHTML = `<div class="modal-box">
       <button class="close" aria-label="Zamknij">×</button>
-      <h2>Obsługa pulpitu kostkowego (urządzenia typu E)</h2>
-      <p><b>Naciśnięcie</b> przycisku – kliknięcie / dotknięcie. <b>Wyciągnięcie</b> – przytrzymanie (0,5 s) lub prawy przycisk myszy.
-      Operacje dwuprzyciskowe: naciśnij pierwszy przycisk, a w ciągu 6 s drugi (przycisk „uzbrojony” jest podświetlony).</p>
+      ${viewHelp(sim.srk)}
+      <p class="muted">Stacja: ${sim.station.name} – ${sim.srk.name}. Poniższe zasady (przebiegi, zwrotnice, blokada, rozkazy) są wspólne; na pulpicie kostkowym wykonuje się je przyciskami, na stanowisku komputerowym – poleceniami z menu elementu.</p>
       <h3>Przebiegi</h3>
       <ul>
         <li><b>Przebieg pociągowy</b>: zielony przycisk semafora początkowego → zielony przycisk semafora końcowego (lub przycisk końca przebiegu na szlaku <i>kW</i>/<i>kE</i>). Zwrotnice przestawiają się same, odcinki świecą na biało (utwierdzenie), semafor podaje sygnał zezwalający wg Ie-1.</li>

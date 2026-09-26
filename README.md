@@ -44,6 +44,11 @@ Station selection: `?stacja=<id>` (default `stare-pustkowie`).
 * **Shift report**: scoring of every procedural decision (punctual dispatch, holding trains, dPz, dPo/dKo,
   Sz, orders, wrong formulas, run-throughs) with a grade at the end of the shift.
 * **Shunting tasks**: terminating trains must be stabled on a siding and brought back as a new train.
+* **Control systems as strategies** (`src/srk/`): each station declares its interlocking type. Type E relay
+  interlocking is operated on the cube desk (two-button commands, sealed counters); computer interlocking
+  (Sopot) is operated on a monitor in the style of Polish CBI workstations (ISKRA-SRK / EbiScreen): dark
+  schematic, element command menus, special commands with confirmation. The interlocking logic is shared;
+  the setting *Stanowisko obsługi* lets you run any station on either workstation.
 * **Stations and scenarios**: Stare Pustkowie (single-track line, crossings, siding), Wola Pustkowska
   (double-track line with one-way blocks, a branch line with Eap, junction work) and **Gdynia Główna**
   (real station: 10 platform tracks, SKM tracks 501/502, lines 202, 250 and 201 in both directions, point and

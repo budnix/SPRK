@@ -32,6 +32,7 @@ export class Interlocking {
     this.station = station;
     this.bus = bus;
     this.opts = opts;
+    this.armTimeout = opts.armTimeout ?? ARM_TIMEOUT; // czas na drugi przycisk / wskazanie końca (zależny od systemu srk)
     this.topo = new Topology(station);
     this.time = 0;
     this.log = [];
@@ -183,7 +184,7 @@ export class Interlocking {
   }
 
   #arm(ref) {
-    this.armed = { ...ref, until: this.time + ARM_TIMEOUT };
+    this.armed = { ...ref, until: this.time + this.armTimeout };
     this.bus.emit('armed', this.armed);
   }
 

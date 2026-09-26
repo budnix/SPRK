@@ -60,3 +60,11 @@ tak jak na planie. Uproszczenia: numer 41 występuje na planie dwukrotnie (głow
 torze 13 ma id `Zw41s`; pominięto sygnalizatory blokady samoczynnej (82–83, 101–108, 121–132), tarczę T13 i tarcze
 ostrzegawcze; p.o. Sopot Wyścigi jest tylko opisem na odcinku zbliżania linii 250. Blokady dwukierunkowe (Eap),
 rozkład jazdy fikcyjny.
+
+## Stanowisko komputerowe
+
+Widok monitora (`src/render/ScreenRenderer.js`) wzoruje się na stanowiskach komputerowych urządzeń srk stosowanych
+na PKP PLK (ISKRA-SRK firmy Elester-PKP, EbiScreen): ciemne tło, schemat liniowy, tor zajęty czerwony, utwierdzony
+zielony (pociągowy) / żółty (manewrowy), polecenia z menu elementu, polecenia specjalne potwierdzane i rejestrowane.
+Zrzut ekranu ISKRA-SRK wskazany przez autora projektu (elester-pkp.com.pl) nie był dostępny z tego środowiska –
+kolorystykę i układ poleceń przyjęto na podstawie ogólnie znanych konwencji tych systemów.

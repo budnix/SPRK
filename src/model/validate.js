@@ -1,5 +1,6 @@
 import { hasTileDef, getTileDef } from '../tiles/registry.js';
 import { isDir } from '../tiles/directions.js';
+import { hasSrk } from '../srk/registry.js';
 
 /**
  * Walidacja definicji stacji (schemat v1). Zwraca { errors: [], warnings: [] }.
@@ -13,6 +14,7 @@ export function validateStation(st) {
   if (!st.id) errors.push('Brak pola id');
   if (!st.name) errors.push('Brak pola name');
   if (!st.desk || !(st.desk.cols > 0) || !(st.desk.rows > 0)) errors.push('Brak wymiarów pulpitu desk.cols/desk.rows');
+  if (st.srk != null && !hasSrk(st.srk)) errors.push(`Nieznany system srk: ${st.srk}`);
   if (!Array.isArray(st.tiles)) { errors.push('Brak listy kostek tiles'); return { errors, warnings }; }
   const occupied = new Map();
   const ids = new Set();

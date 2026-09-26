@@ -1,5 +1,6 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
+import { getSrk } from '../srk/registry.js';
 
 /** Ekran startowy: wybór stacji, scenariusza i poziomu zakłóceń. Uruchamia zmianę przez parametry URL. */
 export class StartScreen {
@@ -28,7 +29,7 @@ export class StartScreen {
     const dSel = root.querySelector('#st-district');
     const fill = () => {
       const st = STATIONS.find((s) => s.id === stSel.value);
-      root.querySelector('#st-station-desc').textContent = st.description || '';
+      root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${getSrk(st.srk).name}.`;
       const dw = root.querySelector('#st-district-wrap');
       if (st.districts) {
         dw.classList.remove('hidden');
