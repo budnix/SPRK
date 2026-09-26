@@ -35,6 +35,11 @@
           <label><input type="radio" name="theme" value="light"> jasny</label>
         </fieldset>
         <fieldset>
+          <legend>Ekrany pulpitu</legend>
+          <label><input type="radio" name="screens" value="auto"> podział na ekrany wg szerokości okna</label>
+          <label><input type="radio" name="screens" value="off"> cały pulpit na jednym ekranie</label>
+        </fieldset>
+        <fieldset>
           <legend>Stanowisko obsługi (urządzenia srk)</legend>
           <label><input type="radio" name="srk" value="auto"> wg stacji</label>
           <label><input type="radio" name="srk" value="E"> pulpit kostkowy (typ E)</label>
@@ -55,6 +60,7 @@
         <div id="cmd-host"></div>
         <div id="desk-scroll"><div id="desk"></div></div>
         <div id="desk-tools">
+          <div id="screen-tabs" class="screen-tabs hidden" aria-label="Ekrany pulpitu"></div>
           <button class="tb" id="zoom-out">−</button>
           <button class="tb" id="zoom-fit">dopasuj</button>
           <button class="tb" id="zoom-in">+</button>

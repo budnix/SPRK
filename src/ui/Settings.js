@@ -3,11 +3,12 @@
  *  - deskPos: położenie pulpitu w pionie ('top' | 'middle' | 'bottom')
  *  - sidePos: położenie panelu bocznego ('right' | 'left' | 'bottom')
  *  - theme: motyw interfejsu ('dark' | 'light'); kostki pulpitu są niezależne od motywu
+ *  - screens: podział szerokiego pulpitu na ekrany wg szerokości okna ('auto' | 'off')
  *  - sideCollapsed: panel boczny zwinięty (pulpit na całym ekranie, powiadomienia w listwie narzędzi)
  *  - srk: stanowisko obsługi ('auto' = wg definicji stacji | id strategii z src/srk/registry.js)
  */
 const KEY = 'sprk.settings';
-const DEFAULTS = { deskPos: 'middle', sidePos: 'right', theme: 'dark', srk: 'auto', sideCollapsed: false };
+const DEFAULTS = { deskPos: 'middle', sidePos: 'right', theme: 'dark', srk: 'auto', sideCollapsed: false, screens: 'auto' };
 
 export class Settings {
   constructor(onChange) {

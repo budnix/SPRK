@@ -155,3 +155,10 @@ Pole opcjonalne na najwyższym poziomie definicji: `srk: 'E'` (urządzenia przek
 domyślnie) lub `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
 polecenia specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla obu
 stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Nieznana wartość jest błędem walidacji.
+
+## Ekrany pulpitu (`screens`, opcjonalne)
+
+Szerokie stacje są dzielone automatycznie na „ekrany” (okna kolumn) mieszczące się w oknie przeglądarki – jak
+monitory stanowiska LCS (`src/render/screens.js`: cięcia poza rozjazdami, skosami i sygnalizatorami, zakładka
+2 kolumn, nazwy wg wyjazdów). Autor stacji może narzucić podział: `screens: [{ x0, x1, name }, …]` – wtedy
+podział automatyczny jest pomijany.

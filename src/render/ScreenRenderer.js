@@ -81,6 +81,13 @@ export class ScreenRenderer {
     this.refreshAll();
   }
 
+  /** Widoczny wycinek kolumn (ekran monitora) – zmiana viewBox, bez przebudowy grafiki. */
+  setView(x0, x1) {
+    const H = this.rows * CELL + 2 * PAD;
+    this.svg.setAttribute('viewBox', `${(x0 - this.x0) * CELL} 0 ${(x1 - x0 + 1) * CELL + 2 * PAD} ${H}`);
+  }
+  resetView() { this.setView(this.x0, this.x1); }
+
   /* ---------------- geometria ---------------- */
   #pt(tile, port) { const [px, py] = PORT_XY[port]; return [(tile.x - this.x0) * CELL + px, tile.y * CELL + py]; }
   #ctr(tile) { return [(tile.x - this.x0) * CELL + C, tile.y * CELL + C]; }

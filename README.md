@@ -44,6 +44,8 @@ Station selection: `?stacja=<id>` (default `stare-pustkowie`).
 * **Shift report**: scoring of every procedural decision (punctual dispatch, holding trains, dPz, dPo/dKo,
   Sz, orders, wrong formulas, run-throughs) with a grade at the end of the shift.
 * **Shunting tasks**: terminating trains must be stabled on a siding and brought back as a new train.
+* **Screens like LCS monitors**: wide stations are split into logical screens that fit the browser width (cuts avoid
+  point groups, 2-column overlap, tabs / arrow keys / swipe); a command may start on one screen and end on another.
 * **Control systems as strategies** (`src/srk/`): each station declares its interlocking type. Type E relay
   interlocking is operated on the cube desk (two-button commands, sealed counters); computer interlocking
   (Sopot) is operated on a monitor in the style of Polish CBI workstations (ISKRA-SRK / EbiScreen): dark

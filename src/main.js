@@ -1,5 +1,6 @@
 import { Simulation } from './model/Simulation.js';
 import { createView, viewSize, viewHint, armHint } from './srk/views.js';
+import { planScreens, screenLabel } from './render/screens.js';
 import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
@@ -10,7 +11,7 @@ import { getStation } from './stations/index.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
-const settings = new Settings((key) => { if (key === 'srk') location.reload(); else requestAnimationFrame(fit); });
+const settings = new Settings((key) => { if (key === 'srk') location.reload(); else if (key === 'screens') planAll(); else requestAnimationFrame(fit); });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
 });
@@ -45,7 +46,7 @@ if (station.districts) {
     deskRoot.appendChild(wrap);
     const mine = sim.playerControls(id);
     const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id, cmdHost: document.getElementById('cmd-host') });
-    desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, el: wrap });
+    desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, x0: d.cols[0], x1: d.cols[1], el: wrap, screens: [], screen: -1 });
     const b = document.createElement('button');
     b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
     b.title = d.name;
@@ -54,14 +55,62 @@ if (station.districts) {
   }
   showDesk(sim.playerDistrict === 'both' ? desks[0].id : sim.playerDistrict);
 } else {
-  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers, { cmdHost: document.getElementById('cmd-host') }), cols: station.desk.cols, el: deskRoot });
+  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers, { cmdHost: document.getElementById('cmd-host') }), cols: station.desk.cols, x0: 0, x1: station.desk.cols - 1, el: deskRoot, screens: [], screen: -1 });
 }
 activeDesk = desks[0];
 function showDesk(id) {
   for (const d of desks) { d.el.classList.toggle('hidden', d.id !== id); d.renderer.cmdBar?.classList.toggle('hidden', d.id !== id); }
   for (const b of document.querySelectorAll('#desk-tabs button')) b.classList.toggle('active', b.textContent.startsWith(station.districts?.[id]?.short || id));
   activeDesk = desks.find((d) => d.id === id) || desks[0];
-  requestAnimationFrame(() => fit());
+  requestAnimationFrame(() => planAll());
+}
+
+/* ---- ekrany pulpitu: podział szerokiej stacji na okna mieszczące się w oknie przeglądarki (jak monitory LCS) ---- */
+const screenTabs = document.getElementById('screen-tabs');
+const TARGET_CELL_PX = 30; // czytelne powiększenie: ~30 px na kostkę
+function maxCols() { return Math.max(12, Math.floor((scroll.clientWidth - 8) / TARGET_CELL_PX)); }
+function planAll() {
+  for (const d of desks) {
+    const scr = settings.values.screens === 'off' ? [{ x0: d.x0, x1: d.x1, from: d.x0, to: d.x1 }] : planScreens(station, [d.x0, d.x1], maxCols());
+    if (JSON.stringify(scr) !== JSON.stringify(d.screens)) {
+      d.screens = scr;
+      d.screen = scr.length > 1 ? Math.max(0, Math.min(d.screen, scr.length - 1)) : -1;
+    }
+  }
+  applyScreen();
+}
+function currentScreen() {
+  const d = activeDesk;
+  return d && d.screen >= 0 && d.screens.length > 1 ? d.screens[d.screen] : null;
+}
+function applyScreen() {
+  const d = activeDesk; if (!d) return;
+  const s = currentScreen();
+  if (s) d.renderer.setView(s.x0, s.x1); else d.renderer.resetView();
+  const n = d.screens.length;
+  screenTabs.classList.toggle('hidden', n <= 1);
+  screenTabs.innerHTML = '';
+  if (n > 1) {
+    const mk = (label, idx, sub) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = `tb${d.screen === idx ? ' active' : ''}`;
+      b.innerHTML = sub ? `${label}<small>${sub}</small>` : label;
+      b.addEventListener('click', () => setScreen(idx)); screenTabs.appendChild(b);
+    };
+    mk('całość', -1);
+    d.screens.forEach((sc, i) => mk(String(i + 1), i, screenLabel(station, sc, i, n)));
+  }
+  fit();
+}
+function setScreen(i) {
+  const d = activeDesk; if (!d) return;
+  d.screen = Math.max(-1, Math.min(i, d.screens.length - 1));
+  applyScreen();
+}
+function stepScreen(delta) {
+  const d = activeDesk; if (!d || d.screens.length <= 1) return;
+  if (d.screen < 0) { setScreen(delta > 0 ? 0 : d.screens.length - 1); return; }
+  const next = d.screen + delta;
+  if (next >= 0 && next < d.screens.length) setScreen(next);
 }
 const desk = desks[0].renderer;
 const side = new SidePanel(document.getElementById('side'), sim, {
@@ -131,7 +180,8 @@ const deskEl = document.getElementById('desk');
 const scroll = document.getElementById('desk-scroll');
 let zoom = 1;
 function deskSize() {
-  const cols = activeDesk?.cols ?? station.desk.cols;
+  const s = currentScreen();
+  const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
   return viewSize(sim.srk, cols, station.desk.rows);
 }
 function fit() {
@@ -197,12 +247,29 @@ function fitHeight() {
 }
 document.getElementById('zoom-fit').addEventListener('click', fit);
 document.getElementById('zoom-height').addEventListener('click', fitHeight);
-window.addEventListener('resize', fit);
-window.addEventListener('orientationchange', () => setTimeout(fit, 300));
-window.addEventListener('load', fit);
-requestAnimationFrame(fit);
-setTimeout(fit, 250);
-if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+let replanTimer = null;
+function onResize() { clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', () => setTimeout(planAll, 300));
+window.addEventListener('load', planAll);
+requestAnimationFrame(planAll);
+setTimeout(planAll, 250);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
+// przełączanie ekranów: strzałki ← → oraz przesunięcie palcem, gdy pulpit nie przewija się w poziomie
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.key === 'ArrowRight') stepScreen(1);
+  if (e.key === 'ArrowLeft') stepScreen(-1);
+});
+let swipe = null;
+scroll.addEventListener('touchstart', (e) => { swipe = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, sx: scroll.scrollLeft } : null; }, { passive: true });
+scroll.addEventListener('touchend', (e) => {
+  if (!swipe || e.changedTouches.length !== 1) return;
+  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y;
+  const noHScroll = scroll.scrollWidth <= scroll.clientWidth + 2;
+  if (noHScroll && Math.abs(dx) > 70 && Math.abs(dy) < 50) stepScreen(dx < 0 ? 1 : -1);
+  swipe = null;
+}, { passive: true });
 
 /* ---- pętla ---- */
 let last = performance.now();

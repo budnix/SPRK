@@ -12,7 +12,7 @@ src/
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego),
-               tileArt (grafika kostek), svg (helpery)
+               screens (podział szerokiego pulpitu na ekrany wg szerokości okna), tileArt (grafika kostek), svg (helpery)
   ui/          SidePanel (rozkład, dziennik, stan), Help (instrukcja), Settings, StartScreen, Report
   stations/    definicje stacji + rejestr
 tests/         node --test (logika bez przeglądarki)
@@ -53,6 +53,14 @@ Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR
 (parametry) + ewentualny nowy widok w `views.js` / `render/`. Różnice w samych zależnościach (np. brak
 liczników, inne zwalnianie) należy dodawać jako opcje `Interlocking` sterowane przez `model`, nie jako
 osobne kopie logiki.
+
+## Ekrany pulpitu
+
+Szeroka stacja (100+ kolumn) na tablecie jest nieczytelna w całości. `planScreens(station, okno, maxKolumn)` dzieli
+pulpit na ekrany programowaniem dynamicznym: koszt cięcia = elementy głowicy w sąsiednich kolumnach, kara za ekran
+szerszy niż limit lub węższy niż połowa limitu, koszt każdego dodatkowego ekranu; liczba ekranów wybierana spośród
+n₀−1, n₀, n₀+1. Renderer ma jedną instancję – ekran to tylko zmiana `viewBox` (`setView`), więc polecenie zaczęte na
+jednym ekranie kończy się na drugim. Przełączanie: zakładki w listwie, strzałki ← →, przesunięcie palcem.
 
 ## Pętla
 

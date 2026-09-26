@@ -73,6 +73,13 @@ export class DeskRenderer {
     this.refreshAll();
   }
 
+  /** Widoczny wycinek kolumn (ekran) – zmiana viewBox, bez przebudowy grafiki. */
+  setView(x0, x1) {
+    const H = this.rows * CELL + 2 * FRAME;
+    this.svg.setAttribute('viewBox', `${(x0 - this.x0) * CELL} 0 ${(x1 - x0 + 1) * CELL + 2 * FRAME} ${H}`);
+  }
+  resetView() { this.setView(this.x0, this.x1); }
+
   #ctx() {
     return {
       isJoint: (tile, port) => {
