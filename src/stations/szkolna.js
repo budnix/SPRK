@@ -138,6 +138,6 @@ export default {
 
   tasks: [
     { id: 'odstaw-90201', unit: 90201, type: 'move', toTrack: '3', deadline: '08:16', text: 'Skład zdawczego 90201 odstawić manewrami na tor 3.' },
-    { id: 'podstaw-90202', unit: 90201, type: 'move', toTrack: '2', after: '08:14', deadline: '08:28', text: 'Skład podstawić z powrotem na tor 2 jako pociąg 90202 do Lipna (odjazd 08:30).' },
+    { id: 'podstaw-90202', unit: 90201, type: 'move', toTrack: '2', afterTask: 'odstaw-90201', deadline: '08:28', text: 'Skład podstawić z powrotem na tor 2 jako pociąg 90202 do Lipna (odjazd 08:30).' },
   ],
 };

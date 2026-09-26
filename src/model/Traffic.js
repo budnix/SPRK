@@ -363,6 +363,7 @@ export class Traffic {
     // Zadania manewrowe
     for (const task of this.tasks) {
       if (task.done || task.failed) continue;
+      if (task.afterTask && !this.tasks.find((x) => x.id === task.afterTask)?.done) continue; // kolejność zadań (np. odstawić, potem podstawić)
       const u = this.entries.find((x) => String(x.nr) === String(task.unit));
       const tr = u?.train || this.entries.find((x) => String(x.unit) === String(task.unit))?.train;
       if (time >= task.afterTime && tr && !tr.finished && tr.entered && tr.v === 0) {

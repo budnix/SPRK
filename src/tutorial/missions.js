@@ -153,7 +153,7 @@ export function missionSteps(view) {
     (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); });
   act('shunt-back', 'Powrót na tor 2 – w dwóch etapach', `${P.shuntRoute('Tm1', m ? 'tarczę Tm2' : 'tarczy Tm2')} – ${A('przebieg manewrowy')} z tarczy <b>Tm1</b> na tor 2. Skład (180 m) jest dłuższy niż miejsce przed <b>Tm2</b>, więc od razu nastaw też drugi etap: ${P.shuntRoute('Tm2', m ? 'semafor C2' : 'semafora C2')}. Skład przejedzie do C2 i stanie czołem na zachód – gotowy do odjazdu.`, cmd('shunt', sig('Tm1', 'white')),
     (sim, ctx) => (ctx.seen.has('route:Tm1-Tm2:set') && active(sim, 'Tm2-C2')) || !!sim.traffic.tasks.find((t) => t.id === 'podstaw-90202')?.done);
-  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 (zadanie 2 odhaczone), potem przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan). Od 08:15 skład będzie w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
+  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce Stan – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan, kolejność dowolna). Od 08:15 skład będzie w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
     (sim) => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = entry(sim, 90202)?.train || entry(sim, 90201)?.train; return !!t?.done && !!tr && tr.mode === 'train'; });
   act('out-90202', 'Wyprawienie 90202', `<b>Wbl</b> do ${LIP}, przebieg <b>C2 → szlak ${LIP}</b>. Pociąg odjedzie o 08:30.`, blockW,
     (sim) => atNeighbour(sim, 90202) && !sim.blocks.get('W').occupied);

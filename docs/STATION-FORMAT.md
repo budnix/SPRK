@@ -136,7 +136,8 @@ Pociąg tworzony ze składu innego pociągu (np. zdawczy powrotny):
 { id: 'odstaw-90211', unit: 90211, type: 'move', toTrack: '3', deadline: '07:52', after: '07:40', text: '…' }
 ```
 
-Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po `after`, jeśli podane).
+Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po godzinie `after` lub po wykonaniu zadania
+`afterTask: 'odstaw-90211'`, jeśli podane – tak zadanie „podstawić z powrotem” nie zalicza się przed odstawieniem).
 Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt.
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
 

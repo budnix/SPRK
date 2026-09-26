@@ -121,7 +121,7 @@ for (const [scenario, mission] of [['nauka-1', 'monitor'], ['nauka-2', 'pulpit']
       sim.step(0.5);
       if (n++ % 2 === 0) script[progress.step.id]?.();
       if (progress.index !== lastIdx) { lastIdx = progress.index; since = sim.clock.time; }
-      assert.ok(sim.clock.time - since < 25 * 60, `krok ${progress.step?.id} nie kończy się (od ${Clock.format(since)})`);
+      assert.ok(sim.clock.time - since < 35 * 60, `krok ${progress.step?.id} nie kończy się (od ${Clock.format(since)})`); // najdłuższy krok: podstawiony skład czeka na odjazd 08:30
     }
     assert.ok(progress.finished, `misja nieukończona – utknęła na kroku ${progress.step?.id} o ${Clock.format(sim.clock.time)}`);
     assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
@@ -167,4 +167,28 @@ test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez koli
   let n = 0;
   while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable()) assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+});
+
+test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawieniu na tor 3 (afterTask), niezależnie od godziny', () => {
+  const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  let n = 0;
+  const until = (hhmm, auto) => { const t = Clock.parse(hhmm); while (sim.clock.time < t) { sim.step(0.5); if (auto && n++ % 4 === 0) autoDispatch(sim); } };
+  // ręcznie: przyjąć zdawczy na tor 2 i zostawić go tam stojącego
+  until('07:55', true);
+  const W = sim.blocks.get('W');
+  until('08:03', false); // bez automatu – nikt nie odstawia składu
+  if (W.request === 'theirs') sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+  sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });
+  until('08:09', false);
+  const e = sim.traffic.timetable().find((x) => x.nr === 90201);
+  assert.equal(e.status, 'zakończył bieg', `zdawczy stoi na torze 2 po przyjeździe (${e.status})`);
+  assert.equal(e.train.v, 0);
+  const t1 = sim.traffic.tasks.find((t) => t.id === 'odstaw-90201'), t2 = sim.traffic.tasks.find((t) => t.id === 'podstaw-90202');
+  assert.equal(t1.done, false);
+  assert.equal(t2.done, false, 'skład stojący na torze 2 przed odstawieniem nie zalicza zadania 2');
+  // dalej automat: odstawia na tor 3 i podstawia z powrotem
+  until('08:29', true);
+  assert.equal(t1.done, true, 'automat odstawił skład na tor 3');
+  assert.equal(t2.done, true, 'po powrocie na tor 2 zadanie 2 zaliczone');
+  assert.ok(t2.doneAt > t1.doneAt, 'zadanie 2 po zadaniu 1');
 });
