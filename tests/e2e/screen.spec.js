@@ -167,3 +167,17 @@ test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd
   await page.click('#side .tabs button[data-tab=stan]');
   await expect(page.locator('#counters')).toContainText('dPo');
 });
+
+test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapisane ustawienie ma pierwszeństwo', async ({ page }) => {
+  await page.goto('/?stacja=szkolna&scenariusz=zmiana&zaklocenia=none', { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.removeItem('sprk.settings')); // nowy użytkownik – bez zapisanych ustawień
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
+  expect(await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1.25)');
+  await page.click('#btn-menu');
+  await expect(page.locator('#symScale')).toHaveValue('1.25');
+  await expect(page.locator('output[for=symScale]')).toHaveText('125%');
+  // użytkownik z zapisaną skalą 100 % zostaje przy swojej
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' }, settings: { symScale: '1' } });
+  expect(await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1)');
+});
