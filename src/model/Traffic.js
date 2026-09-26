@@ -338,7 +338,7 @@ export class Traffic {
       }
       if (e.requested && !e.dispatched && time > e.neighbourDep + 60 && !e.waitLogged) {
         e.waitLogged = true;
-        this.bus.emit('log', { time, level: 'warn', msg: `Pociąg ${e.nr} czeka w ${block.neighbour} na pozwolenie (Poz)` });
+        this.bus.emit('log', { time, level: 'warn', msg: `${block.neighbour}: pociąg ${e.nr} czeka na pozwolenie na wyprawienie (Poz)` });
       }
     }
     // Pociągi tworzone ze składu innego pociągu (np. zdawczy powrotny)

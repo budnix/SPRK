@@ -2,21 +2,24 @@
 
 ```
 src/
-  core/        EventBus (zdarzenia), Clock (czas symulacji)
+  core/        EventBus (zdarzenia), Clock (czas symulacji), Random (ziarno, poziomy zakłóceń)
+  data/        glossary (słownik skrótów Ie-1 / Ir-1 – dymki samouczka, instrukcja, podpowiedzi przycisków)
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól)
-  model/       Topology (graf toru z kostek), Interlocking (zależności typu E),
-               Block (blokada Eap / jednokierunkowa + AI sąsiada + zapowiadanie telefoniczne),
-               Train (ruch pociągu, manewry, rozkazy), Traffic (rozkład, ruch, zadania manewrowe),
-               Faults (usterki), Comms (łączność), Score (ocena), Simulation (spięcie, scenariusze),
-               validate (walidacja definicji stacji)
+  model/       Topology (graf toru z kostek), Interlocking (zależności), Block (blokada Eap / jednokierunkowa /
+               samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy),
+               Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
+               Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
-  render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego),
-               screens (podział szerokiego pulpitu na ekrany wg szerokości okna), tileArt (grafika kostek), svg (helpery)
-  ui/          SidePanel (rozkład, dziennik, stan), Help (instrukcja), Settings, StartScreen, Report
-  stations/    definicje stacji + rejestr
-tests/         node --test (logika bez przeglądarki)
-docs/          format stacji, architektura, źródła
+  render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
+               screens (podział szerokiego pulpitu na ekrany), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
+               tileArt (grafika kostek), svg (helpery)
+  tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
+  ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
+               Settings (ustawienia, motyw wg systemu), StartScreen (misje i posterunki, odprawa), Report, drag (przeciąganie okienek)
+  stations/    definicje stacji + rejestr (Szkolna, Stare Pustkowie, Wola Pustkowska, Sopot, Gdynia Orłowo, Chylonia, Główna)
+tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
+docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
 
 ## Zasady
@@ -75,7 +78,19 @@ jednym ekranie kończy się na drugim. Przełączanie: zakładki w listwie, strz
   zwalnia się po wjeździe na tor docelowy.
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania), dPz (doraźne, licznik).
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
-* Blokada Eap: Wbl (żądanie), Poz (pozwolenie), Ko (potwierdzenie przyjazdu), dPo/dKo (doraźne, liczniki).
+* Blokada Eap: Wbl (żądanie pozwolenia), Poz (danie pozwolenia), Ko (zwolnienie bloku końcowego po przyjeździe
+  w całości), dPo/dKo (doraźne, liczniki); blokada samoczynna SBL: bez pozwoleń i Ko, Zk (zmiana kierunku).
+
+## Monitor stanowiska komputerowego (`src/render/ScreenRenderer.js`)
+
+Zobrazowanie wg Ie-104 (kolory odcinków, stany sygnalizatorów, pole „Z” zwrotnicy, ramki selekcji i alarmu).
+Uproszczenia dla czytelności: semafory i tarcze rysowane na linii toru w miejscu ustawienia (grot w kierunku jazdy,
+bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramkach „tor N” na linii (opisy kostek
+`label` w formie „tor N · …” są skracane – `ScreenRenderer.labelText`), perony jako szare prostokąty z nazwą
+(`platform: 'Peron II'`, numeracja rzymska), stan blokady przy wyjeździe na szlak. Polecenia w formie rzeczownikowej
+(„Nastawienie przebiegu pociągowego od A”, „Zwolnienie przebiegu (Pz)”, „Danie pozwolenia na wyprawienie pociągu
+(Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
+(domyślnie 1,25), rzędy ściskane `rowScale`.
 
 ## Blokada liniowa (`src/model/Block.js`)
 
@@ -105,14 +120,26 @@ Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
   komunikaty `wrong` (np. przebieg na zły tor). Testowany w Node skryptem „ucznia” (`tests/szkolna.test.js`).
 * `Tutorial.js` – UI: dymek przypięty do elementu (`renderer.elementFor(ref)`, `cmdButton(id)`), podświetlenie `.tut-hl`,
   słownik skrótów (`src/data/glossary.js`) po kliknięciu `<abbr data-term>`, „Dalej” / „Pomiń krok” / „Pokaż gdzie”.
+  Położenie dymku wybierane spośród kandydatów (pod, nad, obok elementu, pas nad planem i pod planem) wg pola
+  zasłoniętego rysunku planu, elementu i pasków sterowania; dymek, słownik i pasek potwierdzenia dają się przeciągać
+  (`src/ui/drag.js`) – przesunięty dymek zostaje do następnego kroku.
+* Zadania manewrowe mogą zależeć od siebie (`afterTask`), więc krok „podstaw z powrotem” nie zalicza się przed
+  odstawieniem, niezależnie od godziny.
 * Stacja treningowa `src/stations/szkolna.js`; scenariusz z polem `tutorial` uruchamia misję (main.js).
+
+## Ustawienia (`src/ui/Settings.js`)
+
+`DEFAULTS` dla nowego użytkownika: pulpit na środku, panel boczny na dole, motyw wg systemu operacyjnego
+(`prefers-color-scheme`, zmiana na żywo; skrypt w `index.html` ustawia motyw przed załadowaniem aplikacji), podział na
+ekrany, symbole monitora 125 %, odstęp torów normalny, stanowisko wg stacji. Zapisane ustawienia (localStorage) mają
+pierwszeństwo; zmiana `srk` / `rowScale` przeładowuje stronę, `symScale` działa na żywo.
 
 ## Testy
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`).
-* `tests/e2e/` – Playwright: `desk.spec.js` (pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada, ustawienia,
-  struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
-  skala symboli, perony, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, słownik, obie misje), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
+* `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
+  ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
+  skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
   próg 300 pikseli, żeby drobne zmiany symboli też były wykrywane). Pomocniki w `helpers.js`: `openShift` (ustawienia w localStorage, zegar zatrzymany),
   `btn`/`tap` (przyciski wg `data-ref`), `simState`, `advance` (krok symulacji bez czekania).
 * Wzorce zrzutów powstają w kontenerze Playwright (czcionki DejaVu) – lokalnie odświeżaj je

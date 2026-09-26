@@ -67,7 +67,7 @@ Na komputerowych stanowiskach obsługi stan blokady liniowej nie jest osobnym po
 pulpitu kostkowego z blokadą Eap), lecz zobrazowaniem przy wyjeździe na szlak: strzałka kierunku blokady,
 zajętość odstępu (tor szlakowy na czerwono) i znaczniki żądania / potwierdzenia; polecenia (żądanie, pozwolenie,
 potwierdzenie przyjazdu, zmiana kierunku, zwolnienia doraźne) wydaje się z menu elementu, a zwolnienia doraźne
-są rejestrowane w dzienniku zdarzeń i licznikach systemu, nie przy blokadzie. Tak jest w grze od tej wersji;
+są rejestrowane w dzienniku zdarzeń i licznikach systemu, nie przy blokadzie. Tak jest w grze;
 geometria symbolu (strzałka szlaku, strzałka kierunku nad torem, napis stanu) jest własna, w duchu Ie-104.
 
 Linie 202 (Gdańsk – Gdynia) i 250 (SKM) są dwutorowe z samoczynną blokadą liniową (SBL) – bez pozwoleń
@@ -99,10 +99,15 @@ Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustal
 * polecenia (Ie-104.2 / EbiScreen): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
   inicjowane i potwierdzane, rejestrowane w licznikach, odwołanie OPS.
 
+Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą (numeracja rzymska,
+jak w nomenklaturze PKP: peron I, II; tory arabskie). Polecenia w menu elementów mają formę rzeczownikową zgodną
+z terminologią Ie-1 / Ir-1 (nastawienie przebiegu, zwolnienie przebiegu, danie pozwolenia, zwolnienie bloku końcowego,
+podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne).
+
 Nieodwzorowane lub uproszczone: stany „ciemnoczerwony – w ochronie bocznej”, „turkusowy – nastawianie miejscowe”,
-symbole blokady liniowej wg Ie-104.1 (pola blokad zachowują układ z pulpitu kostkowego), dokładne skróty poleceń
-EbiScreen (ZD, ZDM, ZW, ZWP, SZP, NSZ, WTAB, KTAB – nazwy własne producenta, w symulatorze opisowe), tabele zdarzeń
-i alarmów u dołu ekranu (rolę pełni zakładka Dziennik).
+dokładna geometria symbolu blokady wg Ie-104.1 (własna: strzałka szlaku, strzałka kierunku, napis stanu), dokładne
+skróty poleceń EbiScreen (ZD, ZDM, ZW, ZWP, SZP, NSZ, WTAB, KTAB – nazwy własne producenta, w symulatorze opisowe),
+tabele zdarzeń i alarmów u dołu ekranu (rolę pełni zakładka Dziennik).
 
 ## Systemy srk stacji – stan rzeczywisty
 
