@@ -113,6 +113,20 @@ export default {
   },
 
   /**
+   * Scenariusze: podzbiór rozkładu, czas, usterki zadane, zamknięcia torów, poziom zakłóceń.
+   */
+  scenarios: [
+    { id: 'zmiana', name: 'Pełna zmiana (05:52–08:10)', description: 'Cały rozkład, 10 pociągów, dwa krzyżowania i pociąg zdawczy. Poziom zakłóceń do wyboru.', endTime: '08:30' },
+    { id: 'krzyzowanie', name: 'Krzyżowanie (30 min)', description: 'Dwa osobowe z przeciwnych kierunków o tej samej porze. Przyjmij oba na różne tory i wypraw punktualnie.', trains: [5311, 5310], endTime: '06:25' },
+    { id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: 'Zwrotnica 3 traci kontrolę w porze przyjazdu pociągu zdawczego. Pociąg musi dojechać na tor 2, a zdawczy trzeba odstawić.',
+      trains: [5314, 5315, 90211, 5316], startTime: '07:10', endTime: '08:20', faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }], disruptions: 'none' },
+    { id: 'tor1-zamkniety', name: 'Tor 1 zamknięty', description: 'Tor 1 zamknięty dla ruchu do 06:50 (roboty). Wszystkie pociągi przez tor 2, krzyżowanie niemożliwe – trzeba je rozegrać.',
+      trains: [5311, 5310, 44120, 5312], endTime: '07:10', closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }], disruptions: 'none' },
+    { id: 'usterki', name: 'Zmiana z usterkami', description: 'Pełny rozkład, usterka semafora A i blokady do Lipowej. Sz, rozkazy pisemne i zapowiadanie telefoniczne.',
+      endTime: '08:30', faults: [{ type: 'signal-fail', target: 'A', at: '06:35', duration: 15 }, { type: 'block-fail', target: 'W', at: '07:05', duration: 40 }], disruptions: 'low' },
+  ],
+
+  /**
    * Rozkład jazdy. from/to – szlaki (W/E), arr/dep – czasy planowe na stacji,
    * track – tor planowy, stop – zatrzymanie, terminates – kończy bieg na stacji.
    */

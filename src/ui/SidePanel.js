@@ -9,10 +9,11 @@ export class SidePanel {
     this.root = root;
     root.innerHTML = `
       <nav class="tabs">
-        <button data-tab="rj" class="active">Rozkład jazdy</button>
+        <button data-tab="rj" class="active">Rozkład</button>
         <button data-tab="log">Dziennik <span id="log-badge" class="badge hidden">0</span></button>
         <button data-tab="stan">Stan</button>
         <button data-tab="rozkazy">Rozkazy</button>
+        <button data-tab="lacznosc">Łączność <span id="comms-badge" class="badge hidden">0</span></button>
       </nav>
       <section class="tab" id="tab-rj">
         <table class="rj"><thead><tr><th>Nr</th><th>Relacja</th><th>Przyj.</th><th>Odj.</th><th>Tor</th><th>Stan</th></tr></thead><tbody></tbody></table>
@@ -23,6 +24,8 @@ export class SidePanel {
         <ul class="log" id="log"></ul>
       </section>
       <section class="tab hidden" id="tab-stan">
+        <h4>Usterki</h4>
+        <div id="faults" class="muted">brak</div>
         <h4>Blokady liniowe</h4>
         <div id="blocks"></div>
         <h4>Przebiegi nastawione</h4>
@@ -44,6 +47,17 @@ export class SidePanel {
         <p class="muted small">Warunki (Ir-1): pociąg stoi przed semaforem, zwrotnice w drodze jazdy zamknięte (Zz) lub utwierdzone, wykolejnice zdjęte, odcinki wolne, przy wyjeździe – pozwolenie blokady. Pociąg jedzie do następnego semafora z prędkością do 20 km/h.</p>
         <h4>Wydane rozkazy</h4>
         <ol id="orders" class="orders"></ol>
+      </section>
+      <section class="tab hidden" id="tab-lacznosc">
+        <form id="comms-form" class="order-form">
+          <label>Do <select id="comms-to"></select></label>
+          <label>Telefonogram / komunikat <select id="comms-formula"></select></label>
+          <label>Pociąg nr <input id="comms-nr" inputmode="numeric"></label>
+          <div class="order-actions"><button type="submit">Nadaj</button> <span id="comms-msg" class="order-msg"></span></div>
+        </form>
+        <p class="muted small">Telefonogramy wg Ir-1 stosuje się przy usterce blokady liniowej (zapowiadanie telefoniczne). Błędna formuła jest punktowana ujemnie.</p>
+        <h4>Rozmowy</h4>
+        <ul class="log comms" id="comms-log"></ul>
       </section>`;
     this.tbody = root.querySelector('.rj tbody');
     this.logEl = root.querySelector('#log');
@@ -62,6 +76,46 @@ export class SidePanel {
     this.renderState();
     this.lastRender = 0;
     this.#initOrders();
+    this.#initComms();
+  }
+
+  #initComms() {
+    const toSel = this.root.querySelector('#comms-to');
+    const fSel = this.root.querySelector('#comms-formula');
+    const nrEl = this.root.querySelector('#comms-nr');
+    const msg = this.root.querySelector('#comms-msg');
+    const logEl = this.root.querySelector('#comms-log');
+    const exits = [...this.sim.blocks.values()];
+    toSel.innerHTML = exits.map((b) => `<option value="${b.id}">${b.neighbour} (posterunek)</option>`).join('') + '<option value="driver">maszynista (radio)</option>';
+    const fillFormulas = () => {
+      const to = toSel.value === 'driver' ? 'driver' : 'neighbour';
+      fSel.innerHTML = this.sim.comms.available().filter((f) => f.to === to).map((f) => `<option value="${f.id}">${f.text({ nr: '…', time: '…' })}</option>`).join('');
+    };
+    toSel.addEventListener('change', fillFormulas); fillFormulas();
+    this.root.querySelector('#comms-form').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const r = this.sim.comms.send(fSel.value, { exit: toSel.value, nr: nrEl.value.trim() });
+      msg.textContent = r.ok ? 'Nadano.' : (r.reason || 'Błąd');
+      msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
+    });
+    this.commsUnread = 0;
+    this.sim.bus.on('comms-log', (m) => {
+      const li = document.createElement('li');
+      li.className = m.dir === 'out' ? 'out' : `in kind-${m.kind}`;
+      li.innerHTML = `<span class="t">${Clock.format(m.time)}</span> <b>${escapeHtml(m.dir === 'out' ? `→ ${m.to}` : m.from)}</b>: ${escapeHtml(m.text)}`;
+      logEl.prepend(li);
+      if (m.dir === 'in' && this.root.querySelector('#tab-lacznosc').classList.contains('hidden')) {
+        this.commsUnread++; this.#commsBadge();
+        if (m.kind === 'ask' || m.kind === 'radio') this.flash('lacznosc');
+      }
+      if (m.dir === 'in' && m.nr && !nrEl.value) nrEl.value = m.nr;
+    });
+  }
+
+  #commsBadge() {
+    const b = this.root.querySelector('#comms-badge');
+    b.textContent = String(this.commsUnread);
+    b.classList.toggle('hidden', this.commsUnread === 0);
   }
 
   #initOrders() {
@@ -106,6 +160,7 @@ export class SidePanel {
     for (const b of this.root.querySelectorAll('.tabs button')) b.classList.toggle('active', b.dataset.tab === id);
     for (const s of this.root.querySelectorAll('.tab')) s.classList.toggle('hidden', s.id !== `tab-${id}`);
     if (id === 'log') { this.unread = 0; this.#badge(); }
+    if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
     if (id === 'rozkazy') this.refreshOrderTrains?.();
   }
 
@@ -137,16 +192,21 @@ export class SidePanel {
   alarm(a) {
     const div = document.createElement('div');
     div.className = `alert alert-${a.type}`;
-    div.textContent = a.type === 'request'
-      ? `${this.sim.blocks.get(a.exit).neighbour} żąda pozwolenia na wyprawienie pociągu – naciśnij Poz na blokadzie.`
-      : a.type === 'rozprucie' ? `ROZPRUCIE zwrotnicy ${a.id}!` : JSON.stringify(a);
+    const texts = {
+      request: () => `${this.sim.blocks.get(a.exit).neighbour} żąda pozwolenia na wyprawienie pociągu – naciśnij Poz na blokadzie.`,
+      rozprucie: () => `ROZPRUCIE zwrotnicy ${a.id}!`,
+      fault: () => `USTERKA: ${a.fault.type === 'signal-fail' ? `semafor ${a.fault.target}` : a.fault.type === 'point-control' ? `zwrotnica ${a.fault.target}` : a.fault.type === 'false-occupancy' ? `odcinek ${a.fault.target}` : `blokada ${this.sim.blocks.get(a.fault.target)?.neighbour}`}`,
+      phone: () => `Telefon od ${this.sim.blocks.get(a.exit).neighbour} – odpowiedz w zakładce Łączność.`,
+      radio: () => `Radio: maszynista pociągu ${a.nr} melduje – zakładka Łączność.`,
+    };
+    div.textContent = (texts[a.type] || (() => JSON.stringify(a)))();
     this.alertsEl.prepend(div);
     setTimeout(() => div.remove(), 30000);
     this.flash();
   }
 
-  flash() {
-    const b = this.root.querySelector('[data-tab="log"]');
+  flash(tab = 'log') {
+    const b = this.root.querySelector(`[data-tab="${tab}"]`);
     b.classList.add('flash');
     setTimeout(() => b.classList.remove('flash'), 3000);
   }
@@ -174,6 +234,9 @@ export class SidePanel {
       return `<div class="blk"><b>${b.neighbour}</b>: kierunek ${dir}${b.permission ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
+    const faults = this.sim.faults?.active() || [];
+    const fname = { 'signal-fail': 'semafor', 'point-control': 'zwrotnica (napęd)', 'false-occupancy': 'fałszywa zajętość', 'block-fail': 'blokada bez łączności' };
+    this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${fname[f.type]} ${f.type === 'block-fail' ? this.sim.blocks.get(f.target)?.neighbour : f.target}</div>`).join('') : '<span class="muted">brak</span>';
     const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${a.route.kind === 'train' ? 'pociągowy' : 'manewrowy'})${a.timedRelease ? ' – zwalnianie czasowe' : ''}${a.trainEntered ? ' – pociąg w przebiegu' : ''}</li>`)
       .concat(this.sim.ilk.pending.map((p) => `<li>${p.route.id} – nastawianie…</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || '<li class="muted">brak</li>';

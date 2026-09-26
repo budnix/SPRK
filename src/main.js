@@ -3,14 +3,29 @@ import { DeskRenderer } from './render/DeskRenderer.js';
 import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
+import { StartScreen } from './ui/StartScreen.js';
+import { Report } from './ui/Report.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
+const startScreen = new StartScreen(document.getElementById('start'), {
+  station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'),
+});
+if (!params.get('scenariusz')) startScreen.show();
 
-const sim = new Simulation(station, { speed: 1 });
-document.getElementById('station-name').textContent = station.name;
+const sim = new Simulation(station, {
+  speed: 1,
+  scenario: params.get('scenariusz') || undefined,
+  disruptions: params.get('zaklocenia') || 'none',
+  seed: params.get('seed') ? Number(params.get('seed')) : undefined,
+});
+if (!params.get('scenariusz')) sim.clock.paused = true;
+document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}`;
+document.title = `SPRK – ${station.name}`;
+const report = new Report(document.getElementById('report'), sim);
+sim.bus.on('shift-end', () => report.show());
 
 const desk = new DeskRenderer(document.getElementById('desk'), sim, {
   onPress: (ref) => sim.press(ref),
@@ -32,6 +47,8 @@ function toggleMenu(show = menuEl.classList.contains('hidden')) {
 menuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
 document.addEventListener('click', (e) => { if (!menuEl.contains(e.target)) toggleMenu(false); });
 document.getElementById('menu-help').addEventListener('click', () => { toggleMenu(false); help.toggle(); });
+document.getElementById('menu-new').addEventListener('click', () => { toggleMenu(false); startScreen.show(); });
+document.getElementById('menu-report').addEventListener('click', () => { toggleMenu(false); report.show(); });
 
 /* ---- pasek stanu: uzbrojenie i ostatni komunikat ---- */
 const statusEl = document.getElementById('status');
@@ -79,7 +96,7 @@ function updateSpeed() {
 }
 updateSpeed();
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { help.hide(); toggleMenu(false); return; }
+  if (e.key === 'Escape') { help.hide(); toggleMenu(false); report.hide(); if (params.get('scenariusz')) startScreen.hide(); return; }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
 });

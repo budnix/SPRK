@@ -36,6 +36,13 @@ export class Help {
         <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 20 km/h (np. przy usterce semafora).</li>
         <li>Warunki wydania (Ir-1): pociąg stoi przed tym semaforem, zwrotnice w drodze jazdy zamknięte <b>Zz</b> lub utwierdzone w przebiegu, wykolejnice zdjęte, odcinki wolne, przy wyjeździe pozwolenie blokady.</li>
       </ul>
+      <h3>Zakłócenia, łączność i ocena</h3>
+      <ul>
+        <li>Na ekranie startowym wybierasz scenariusz i poziom zakłóceń: opóźnienia pociągów od sąsiadów, usterki (semafor bez sygnału, zwrotnica bez kontroli, fałszywa zajętość, blokada bez łączności), pociągi nadzwyczajne.</li>
+        <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: czekaj na naprawę lub zamknij ją Zz i wydaj rozkaz.</li>
+        <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Bloki zwalnia się dPo / dKo po telefonicznym potwierdzeniu.</li>
+        <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dPo/dKo bez uzasadnienia −15; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
+      </ul>
       <h3>Pociągi</h3>
       <ul>
         <li>Pociągi osobowe zatrzymują się przy peronie i odjeżdżają nie wcześniej niż o czasie rozkładowym – gdy semafor wyjazdowy pokaże sygnał zezwalający.</li>

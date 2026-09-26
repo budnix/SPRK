@@ -6,14 +6,18 @@ import { Clock } from '../core/Clock.js';
  * na pulpit, zajętość odcinków, dziennik ruchu.
  */
 export class Traffic {
-  constructor(station, ilk, blocks, bus) {
+  constructor(station, ilk, blocks, bus, opts = {}) {
     this.station = station;
     this.ilk = ilk;
     this.blocks = blocks;
     this.bus = bus;
     this.trains = [];
     this.time = 0;
-    this.entries = station.timetable.map((t, i) => this.#prepare(t, i));
+    this.rng = opts.rng || null;
+    this.level = opts.level || null;
+    const tt = opts.timetable || station.timetable;
+    this.entries = tt.map((t, i) => this.#prepare(t, i));
+    this.#applyDisruptions();
     this.journal = [];
     this.orders = [];
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
@@ -105,6 +109,9 @@ export class Traffic {
     };
     this.orders.push(order);
     tr.orders.push({ signal, used: false, id: order.id });
+    const justified = !!sig.failed || [...this.ilk.sections.values()].some((x) => x.forced);
+    this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
+    this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 20 km/h.` });
     this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (20 km/h)` });
     this.bus.emit('orders', this.orders);
     return { ok: true, order };
@@ -122,10 +129,44 @@ export class Traffic {
     const neighbourDep = t.from ? ref - lineTravel - stationRun : null;
     return {
       idx: i, ...t, arrTime: arr, depTime: dep,
-      neighbourDep, requestAt: t.from ? neighbourDep - 240 : null,
+      neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
       status: t.from ? 'oczekiwany' : 'na stacji', requested: false, dispatched: false,
       train: null, actualArr: null, actualDep: null, delay: 0, track: t.track,
     };
+  }
+
+  /** Losowe opóźnienia pociągów od sąsiadów (poziom zakłóceń). */
+  #applyDisruptions() {
+    if (!this.rng || !this.level || !this.level.delayChance) return;
+    for (const e of this.entries) {
+      if (!e.from || e.delayIn) continue;
+      if (this.rng.chance(this.level.delayChance)) this.setInboundDelay(e, this.rng.int(3, this.level.delayMax));
+    }
+  }
+
+  /** Opóźnienie pociągu jeszcze u sąsiada (minuty) – przesuwa jego wyprawienie. */
+  setInboundDelay(e, minutes) {
+    e.delayIn = minutes;
+    e.neighbourDep += minutes * 60;
+    e.requestAt += minutes * 60;
+    e.delay = minutes;
+  }
+
+  /** Zbiór odcinków zajętych przez pociągi (bez usterek). */
+  currentOccupancy() {
+    const occ = new Set();
+    for (const tr of this.trains) for (const s of tr.occupiedSections()) occ.add(s);
+    return occ;
+  }
+
+  /** Dodanie pociągu do rozkładu w trakcie zmiany (pociąg nadzwyczajny). */
+  addTrain(def) {
+    const e = this.#prepare(def, this.entries.length);
+    e.extra = true;
+    this.entries.push(e);
+    this.entries.sort((a, b) => (a.arrTime ?? a.depTime) - (b.arrTime ?? b.depTime));
+    this.bus.emit('timetable', this.entries);
+    return e;
   }
 
   /** Aktualny rozkład z stanami (dla panelu bocznego). */
@@ -184,25 +225,39 @@ export class Traffic {
         this.bus.emit('log', { time: t, level: e.delay > 2 ? 'warn' : 'info', msg: `Pociąg ${e.nr} przyjazd tor ${track}${e.delay > 0 ? `, opóźnienie ${e.delay} min` : ''}` });
         if (track && e.track && String(track) !== String(e.track)) {
           this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
+          const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
+          if (!plannedClosed && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }
         break;
       }
-      case 'depart':
+      case 'depart': {
         e.actualDep = t; e.status = 'odjeżdża';
         this.#journal(e, 'odjazd', t, e.actualTrack);
         this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} odjazd` });
+        // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój)
+        const earliest = Math.max(e.depTime ?? 0, (e.actualArr ?? 0) + (e.dwell ?? 40));
+        const late = Math.round((t - earliest) / 60);
+        if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
+        else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
         break;
+      }
       case 'order-used':
         this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (20 km/h)` });
         break;
       case 'stop':
         if (tr.stoppedAt?.kind === 'signal') {
           this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} zatrzymany przed ${tr.stoppedAt.signal}` });
+          tr.stoppedSince = t;
         }
         break;
       case 'leave':
         e.status = 'odjechał';
         if (e.to) this.blocks.get(e.to)?.trainDeparted(tr);
+        if (!e.stop && e.arrTime != null) {
+          const late = Math.round((t - e.arrTime) / 60) - (e.delayIn || 0);
+          if (late >= 3) this.bus.emit('score', { time: t, code: 'late-pass', points: -late, msg: `Pociąg ${e.nr} (przelot) opóźniony na stacji o ${late} min` });
+          else this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} przepuszczony punktualnie` });
+        }
         if (!e.stop && e.arrTime != null && e.actualArr == null) {
           // przelot – czas przejazdu liczony przy wyjeździe
           e.actualArr = t; e.delay = Math.round((t - e.arrTime) / 60) || 0;
@@ -244,12 +299,17 @@ export class Traffic {
       if (!e.from || e.dispatched) continue;
       const block = this.blocks.get(e.from);
       if (!block) continue;
+      if (e.delayIn && !e.announced && time >= (e.arrTime ?? e.depTime) - 12 * 60) {
+        e.announced = true;
+        this.bus.emit('comms', { time, from: block.neighbour, kind: 'info', text: `Pociąg nr ${e.nr} opóźniony około ${e.delayIn} min.` });
+        this.bus.emit('log', { time, level: 'warn', msg: `${block.neighbour}: pociąg ${e.nr} opóźniony ok. ${e.delayIn} min` });
+      }
       if (!e.requested && time >= e.requestAt) {
         // Jeden pociąg naraz na szlaku – żądanie, gdy blokada wolna
         const earlier = this.entries.some((o) => o !== e && o.from === e.from && !o.dispatched && o.requestAt < e.requestAt);
-        if (!earlier && block.neighbourRequests()) { e.requested = true; e.status = 'żądanie pozwolenia'; this.bus.emit('timetable', this.entries); }
+        if (!earlier && block.neighbourRequests(e.nr)) { e.requested = true; e.status = 'żądanie pozwolenia'; this.bus.emit('timetable', this.entries); }
       }
-      if (e.requested && time >= e.neighbourDep && block.canNeighbourDispatch()) {
+      if (e.requested && time >= e.neighbourDep && block.canNeighbourDispatch(e.nr)) {
         e.dispatched = true;
         const train = this.#makeTrain(e);
         train.placeOnLine(e.from, this.station.exits[e.from].lineLength ?? 3000);
@@ -266,9 +326,7 @@ export class Traffic {
     // Pociągi
     for (const tr of this.trains) tr.tick(dt, time);
     // Zajętość
-    const occ = new Set();
-    for (const tr of this.trains) for (const s of tr.occupiedSections()) occ.add(s);
-    this.ilk.updateOccupancy(occ);
+    this.ilk.updateOccupancy(this.currentOccupancy());
     // Stan rozkładu
     for (const e of this.entries) {
       if (e.train && !e.train.finished) {
@@ -279,6 +337,10 @@ export class Traffic {
         else if (st === 'moving' && e.train.entered) e.status = e.train.mode === 'shunt' ? 'manewruje' : 'jedzie';
         if (e.train.state === 'dwell' && e.depTime != null && time > e.depTime + 60) {
           e.delay = Math.round((time - e.depTime) / 60);
+        }
+        if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
+          e.holdScored = true;
+          this.bus.emit('score', { time, code: 'held', points: -5, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
         }
       }
     }

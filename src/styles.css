@@ -231,3 +231,15 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 ol.orders { padding-left: 18px; font-size: 12px; }
 ol.orders li { margin-bottom: 8px; }
 .order-text { color: var(--muted); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }
+
+/* ---- łączność, raport, start ---- */
+ul.comms li.out { color: var(--text); }
+ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
+.modal-box.report table.rj td.pts { text-align: right; font-weight: 700; }
+.modal-box.report tr.neg td.pts { color: var(--danger); }
+.modal-box.report tr.pos td.pts { color: var(--accent); }
+.grade { font-size: 16px; }
+.modal-box.start label { display: block; margin: 8px 0; font-size: 13px; color: var(--muted); }
+.modal-box.start select, .modal-box.start input { width: 100%; box-sizing: border-box; background: var(--input-bg); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 6px; font-size: 14px; margin-top: 2px; }
+.modal-box.start { min-width: 360px; }
+.bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }

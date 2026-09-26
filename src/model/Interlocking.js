@@ -318,6 +318,7 @@ export class Interlocking {
     p.trailed = true; p.control = false;
     this.counters.rozprucie++;
     this.alarms.add(`rozprucie:${id}`);
+    this.bus.emit('score', { time: this.time, code: 'rozprucie', points: -100, msg: `Rozprucie zwrotnicy ${id}` });
     this.#log('alarm', `ROZPRUCIE zwrotnicy ${id}! Brak kontroli położenia.`);
     this.bus.emit('point', p);
     this.bus.emit('alarm', { type: 'rozprucie', id });
@@ -358,6 +359,7 @@ export class Interlocking {
     route.sections.forEach((sid, i) => {
       const s = this.sections.get(sid);
       const last = i === route.sections.length - 1;
+      if (s.closed) problems.push(`Odcinek ${sid} zamknięty dla ruchu`);
       if (s.route && s.route !== route.id) problems.push(`Odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
       if (s.occupied && !(route.kind === 'shunt' && last)) problems.push(`Odcinek ${sid} zajęty`);
       for (const pr of this.pending) if (pr.route.sections.includes(sid)) problems.push(`Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
@@ -523,6 +525,7 @@ export class Interlocking {
     if (emergency) {
       this.counters.dPz++;
       this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (dPz, licznik ${this.counters.dPz})`);
+      this.bus.emit('score', { time: this.time, code: 'dPz', points: -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (dPz)` });
       this.#dissolve(act);
       return { ok: true };
     }
@@ -565,7 +568,7 @@ export class Interlocking {
     const sig = this.signals.get(signalId);
     if (!sig || sig.kind !== 'semafor') return this.#fail(`Sz tylko na semaforze`);
     if (!sig.canSubstitute) return this.#fail(`Semafor ${signalId} nie ma sygnału zastępczego`);
-    if (sig.route && !this.active.get(sig.route)?.signalOff) return this.#fail(`Semafor ${signalId} wyświetla sygnał zezwalający`);
+    if (sig.route && Interlocking.isProceed(sig.aspect)) return this.#fail(`Semafor ${signalId} wyświetla sygnał zezwalający`);
     const route = [...this.routes.values()].find((r) => r.start === signalId && r.exit);
     if (route && this.opts.blockGate) {
       const g = this.opts.blockGate(route.exit);
@@ -574,6 +577,8 @@ export class Interlocking {
     sig.substitute = true; sig.substituteUntil = this.time + SUBSTITUTE_TIME;
     this.counters.Sz++;
     this.#log('warn', `Sygnał zastępczy Sz na semaforze ${signalId} (licznik ${this.counters.Sz})`);
+    const justified = !!sig.failed || [...this.sections.values()].some((x) => x.forced) || [...this.points.values()].some((p) => p.faultUntil > this.time);
+    this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.#refreshSignals();
     return { ok: true };
   }
@@ -597,6 +602,8 @@ export class Interlocking {
     return aspect !== 'S1' && aspect !== 'Ms1';
   }
 
+  refreshSignals() { this.#refreshSignals(); }
+
   #refreshSignals() {
     // Dwa przebiegi, aby uwzględnić zależność od następnego semafora
     for (let i = 0; i < 2; i++) {
@@ -611,6 +618,7 @@ export class Interlocking {
 
   #computeAspect(sig) {
     if (sig.substitute) return 'Sz';
+    if (sig.failed) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
     if (!sig.route) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
     const act = this.active.get(sig.route);
     if (!act || act.signalOff) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
@@ -633,7 +641,7 @@ export class Interlocking {
   /** Aktualizacja zajętości odcinków (zbiór id odcinków zajętych). */
   updateOccupancy(occupiedSet) {
     for (const s of this.sections.values()) {
-      const occ = occupiedSet.has(s.id);
+      const occ = occupiedSet.has(s.id) || !!s.forced;
       if (occ !== s.occupied) {
         s.occupied = occ;
         if (occ) s.wasOccupied = true;
@@ -649,7 +657,9 @@ export class Interlocking {
     // Zwrotnice i wykolejnice kończą przestawianie
     for (const p of this.points.values()) {
       if (p.moving && p.movingUntil <= time) {
-        p.moving = false; p.position = p.target; p.control = true; p.trailed = false;
+        p.moving = false; p.position = p.target; p.trailed = false;
+        p.control = !(p.faultUntil && p.faultUntil > time); // usterka napędu: brak kontroli do czasu naprawy
+        if (!p.control) this.#log('alarm', `Zwrotnica ${p.id}: brak kontroli położenia po przestawieniu!`);
         this.alarms.delete(`rozprucie:${p.id}`);
         this.bus.emit('point', p);
       }

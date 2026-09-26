@@ -209,6 +209,7 @@ export class DeskRenderer {
   #sectionState(sec) {
     if (sec.occupied) return 'red';
     if (sec.route) return 'white';
+    if (sec.closed) return 'yellow blink';
     return 'off';
   }
 
