@@ -81,6 +81,19 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   const exits = await page.evaluate(() => { const st = window.sim.station; const txt = (id) => st.tiles.find((t) => t.x === st.exits[id].tile.x && t.y === st.exits[id].tile.y).text; return { W: txt('W'), E: txt('E') }; }); // napis z kostki wyjazdu (może być skrócony)
   expect(names[exits.W]).toBe(0);
   expect(names[exits.E]).toBe(31);
+  // zajętość odcinka pod kostką strzałki: strzałka świeci na czerwono (kostka nie ma paska świetlnego)
+  const red = await page.evaluate(() => {
+    const st = window.sim.station, ex = st.exits.E.tile;
+    const sid = st.tiles.find((t) => t.x === ex.x && t.y === ex.y).section;
+    const sec = window.sim.ilk.sections.get(sid);
+    const arrow = [...document.querySelectorAll('#desk .t-track')].find((g) => /translate\(1240,/.test(g.getAttribute('transform'))).querySelector('.arrow-lamp');
+    const before = arrow.classList.contains('lamp-red');
+    sec.occupied = true; window.sim.bus.emit('section', sec);
+    const during = arrow.classList.contains('lamp-red') && arrow.classList.contains('on');
+    sec.occupied = false; window.sim.bus.emit('section', sec);
+    return { before, during, after: arrow.classList.contains('lamp-red') };
+  });
+  expect(red).toEqual({ before: false, during: true, after: false });
   await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
   const req = await page.evaluate(() => window.sim.blocks.get('E').request);
   expect(req).toBe('ours');

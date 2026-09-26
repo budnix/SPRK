@@ -116,7 +116,9 @@ export class DeskRenderer {
           // kostka skrajna blokady: nazwa sąsiedniego posterunku (text) nad torem obok przycisku końca przebiegu
           out = art.trackArt(arrow ? { ...tile, blockEdge: arrow.toWest ? 'W' : 'E' } : tile, ctx);
           if (arrow) {
-            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+            const r = blockRef(arrow.exit);
+            r[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+            r[arrow.kind === 'out' ? 'outSection' : 'inSection'] = tile.section; // zajętość odcinka kostki pokazuje strzałka
             out.refs.slits = out.refs.slits.filter((e) => e.isConnected); // kostka kierunkowa bez paska odcinka
           }
           break;
@@ -304,6 +306,8 @@ export class DeskRenderer {
       setLamp(e, st);
       for (const sc of this.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', st !== 'off');
     }
+    // strzałki blokady na kostkach tego odcinka (świecą na czerwono przy zajętości)
+    for (const [ex, r] of this.blockRefs) if (r.outSection === id || r.inSection === id) this.updateBlock(ex);
     // zwrotnice w tym odcinku
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);
@@ -365,10 +369,12 @@ export class DeskRenderer {
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
     // strzałka „wyjazd”: czerwona – nasz pociąg na szlaku (Po zablokowany), biała – pozwolenie na wyjazd, migająca – żądanie wysłane
+    // zajęty odcinek pod kostką strzałki (tabor na kostce) – strzałka czerwona jak pasek toru
+    const occ = (sid) => !!(sid && this.ilk.sections.get(sid)?.occupied);
     const outPerm = b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied;
-    setLamp(r.outArrow, b.poBlocked ? 'red' : outPerm ? 'white' : b.request === 'ours' ? 'white blink' : 'off');
+    setLamp(r.outArrow, b.poBlocked || occ(r.outSection) ? 'red' : outPerm ? 'white' : b.request === 'ours' ? 'white blink' : 'off');
     // strzałka „wjazd”: czerwona – pociąg sąsiada na szlaku, biała – pozwolenie dane sąsiadowi
-    setLamp(r.inArrow, b.direction === 'in' && b.occupied ? 'red' : b.direction === 'in' && !b.koPending ? 'white' : 'off');
+    setLamp(r.inArrow, (b.direction === 'in' && b.occupied) || occ(r.inSection) ? 'red' : b.direction === 'in' && !b.koPending ? 'white' : 'off');
     setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
     setLamp(r.wbl, b.request === 'ours' ? 'white blink' : 'off');
     setLamp(r.ko, b.koPending ? 'white blink' : 'off');
