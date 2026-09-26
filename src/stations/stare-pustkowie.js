@@ -18,6 +18,8 @@ export default {
   schemaVersion: 1,
   id: 'stare-pustkowie',
   name: 'Stare Pustkowie',
+  srk: 'E',
+  srkInfo: 'Stacja fikcyjna: urządzenia przekaźnikowe typu E z pulpitem kostkowym (wzorzec ISDR).',
   description: 'Mała stacja na linii jednotorowej Lipowa – Dąbrowa Leśna. Urządzenia przekaźnikowe typu E, blokada liniowa Eap.',
   startTime: '05:52',
   desk: { cols: 32, rows: 10 },

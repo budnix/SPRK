@@ -29,7 +29,7 @@ export class StartScreen {
     const dSel = root.querySelector('#st-district');
     const fill = () => {
       const st = STATIONS.find((s) => s.id === stSel.value);
-      root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${getSrk(st.srk).name}.`;
+      root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${st.srkInfo || getSrk(st.srk).name}`;
       const dw = root.querySelector('#st-district-wrap');
       if (st.districts) {
         dw.classList.remove('hidden');

@@ -184,6 +184,8 @@ export default {
   schemaVersion: 1,
   id: 'gdynia-chylonia',
   name: 'Gdynia Chylonia',
+  srk: 'komputerowe',
+  srkInfo: 'Komputerowe: tory linii 202 zmodernizowane w ramach E65 (2012–2014, obszar LCS Gdynia, Ebilock 950), tory SKM 501/502 – komputery sterujące włączone do systemu zdalnego sterowania i kierowania dyspozytorskiego (ZSiKD) Gdynia Główna SKM (nastawnia „GCh-SKM”). Typ urządzeń dla „Chy” po modernizacji Chylonia–Słupsk (2023–2025) nieustalony.',
   description: 'Stacja węzłowa na liniach 202 Gdańsk – Stargard i 250 SKM, z odgałęzieniami do Gdyni Postojowej (964) i Gdyni Portu (723). Perony 1 (SKM 502/501), 2 (tory 2/1) i 3, tory odstawcze 21/22, tor 503, bocznica 51. Numeracja rozjazdów i semaforów z planu stacji (2024).',
   startTime: '05:55',
   desk: { cols: 112, rows: 20 },

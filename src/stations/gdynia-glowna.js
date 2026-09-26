@@ -209,6 +209,8 @@ export default {
   schemaVersion: 1,
   id: 'gdynia-glowna',
   name: 'Gdynia Główna',
+  srk: 'komputerowe',
+  srkInfo: 'Komputerowe (Ebilock 950 firmy Bombardier/ZWUS, nastawnia dysponująca GO – Lokalne Centrum Sterowania Gdynia, od 2013: monitory, klawiatury, cztery komputery zależnościowe); nastawnia wykonawcza GO2. Tory SKM 501/502 – nastawnia zdalnego sterowania GG-SKM (PKP SKM).',
   description: 'Okręg pasażerski Gdyni Głównej: 10 torów peronowych, 2 tory SKM, linie 202 i 250 od Gdańska i Chyloni, 201 do Wielkiego Kacka i Gdyni Portu. Schemat wg planu stacji (2024), rozjazdy i semafory z numeracją rzeczywistą.',
   startTime: '05:55',
   desk: { cols: 100, rows: 28 },

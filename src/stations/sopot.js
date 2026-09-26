@@ -155,6 +155,7 @@ export default {
   id: 'sopot',
   name: 'Sopot',
   srk: 'komputerowe',
+  srkInfo: 'Komputerowe (Ebilock 950 / EbiScreen). Od modernizacji E65 (2011–2015) tory linii 202 są obiektem zdalnego sterowania LCS Gdynia (dawna nastawnia „Sp” zlikwidowana, „Sp1” rezerwowa); tory SKM 501/502 – obiekt zdalnego sterowania „Sp-SKM” nastawni G-SKM (Gdańsk Główny, PKP SKM). W symulatorze oba obszary obsługuje jedno stanowisko na miejscu.',
   description: 'Stacja na liniach 202 Gdańsk – Stargard i 250 SKM. Grupa zachodnia (tory 6, 2a, 4, 1a), peron 2 (tory 2/1), peron 1 SKM (502a/501a), tor 13 z wykolejnicą Wk7. Przejazd pociągu to trzy przebiegi. Numeracja rozjazdów i semaforów z planu stacji (2023).',
   startTime: '05:55',
   desk: { cols: 112, rows: 16 },

@@ -16,6 +16,8 @@ export default {
   schemaVersion: 1,
   id: 'wola-pustkowska',
   name: 'Wola Pustkowska',
+  srk: 'E',
+  srkInfo: 'Stacja fikcyjna: urządzenia przekaźnikowe typu E z pulpitem kostkowym, blokady jednokierunkowe linii dwutorowej i Eap na odgałęzieniu.',
   description: 'Stacja węzłowa: linia dwutorowa Krasne – Zalesie (blokady jednokierunkowe) i odgałęzienie do Borków (Eap). Cztery tory, bocznica z wykolejnicą.',
   startTime: '06:55',
   desk: { cols: 36, rows: 13 },

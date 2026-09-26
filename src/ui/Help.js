@@ -8,7 +8,7 @@ export class Help {
     root.innerHTML = `<div class="modal-box">
       <button class="close" aria-label="Zamknij">×</button>
       ${viewHelp(sim.srk)}
-      <p class="muted">Stacja: ${sim.station.name} – ${sim.srk.name}. Poniższe zasady (przebiegi, zwrotnice, blokada, rozkazy) są wspólne; na pulpicie kostkowym wykonuje się je przyciskami, na stanowisku komputerowym – poleceniami z menu elementu.</p>
+      <p class="muted">Stacja: ${sim.station.name} – ${sim.srk.name}. ${sim.station.srkInfo || ''} Poniższe zasady (przebiegi, zwrotnice, blokada, rozkazy) są wspólne; na pulpicie kostkowym wykonuje się je przyciskami, na stanowisku komputerowym – poleceniami z menu elementu.</p>
       <h3>Przebiegi</h3>
       <ul>
         <li><b>Przebieg pociągowy</b>: zielony przycisk semafora początkowego → zielony przycisk semafora końcowego (lub przycisk końca przebiegu na szlaku <i>kW</i>/<i>kE</i>). Zwrotnice przestawiają się same, odcinki świecą na biało (utwierdzenie), semafor podaje sygnał zezwalający wg Ie-1.</li>
