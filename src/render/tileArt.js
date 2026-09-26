@@ -234,13 +234,15 @@ export function signalArt(tile) {
     const use = hasShunt ? order : order.filter((c) => c !== 'white');
     refs.lamps = {};
     use.forEach((c, i) => { refs.lamps[c] = lamp(lx(i), py, 2.8, ''); g.appendChild(refs.lamps[c]); });
-    refs.btnGreen = button(9, 29, 5, 'green', { kind: 'signal', id: tile.id, color: 'green' }, null);
+    // semafor z sygnałem manewrowym: dwa przyciski jeden pod drugim (obok siebie opis pociągowego wchodził pod biały przycisk)
+    const gy = hasShunt ? 23.5 : 29, r = hasShunt ? 4.5 : 5;
+    refs.btnGreen = button(9, gy, r, 'green', { kind: 'signal', id: tile.id, color: 'green' }, null);
     g.appendChild(refs.btnGreen);
-    g.appendChild(text(16, 29.5, tile.id, { class: 'tile-text sig-label', 'text-anchor': 'start' }));
+    g.appendChild(text(16, gy + 0.5, tile.id, { class: 'tile-text sig-label', 'text-anchor': 'start' }));
     if (hasShunt) {
-      refs.btnWhite = button(27, 29, 5, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null);
+      refs.btnWhite = button(9, 34, r, 'white', { kind: 'signal', id: tile.id, color: 'white' }, null);
       g.appendChild(refs.btnWhite);
-      const t = text(34, 29.5, '', { class: 'tile-text sig-label', 'text-anchor': 'start' });
+      const t = text(16, 34.5, '', { class: 'tile-text sig-label', 'text-anchor': 'start' });
       t.appendChild(el('tspan', { text: tile.id }));
       t.appendChild(el('tspan', { text: 'm', 'baseline-shift': 'super', style: 'font-size:5px' }));
       g.appendChild(t);

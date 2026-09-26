@@ -158,6 +158,17 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
     return out;
   });
   expect(overlaps.length).toBeGreaterThan(0);
+  // semafor z sygnałem manewrowym: biały przycisk nie zasłania opisu przycisku pociągowego (przyciski jeden pod drugim)
+  const sigOverlaps = await page.evaluate(() => {
+    const hit = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+    return [...document.querySelectorAll('#desk .t-signal')].filter((t) => t.querySelectorAll('.btn').length === 2).map((t) => {
+      const [lblGreen] = t.querySelectorAll('text.sig-label');
+      const white = t.querySelector('.btn-white .btn-ring');
+      return [lblGreen.textContent, hit(white.getBoundingClientRect(), lblGreen.getBoundingClientRect())];
+    });
+  });
+  expect(sigOverlaps.length).toBeGreaterThan(0);
+  for (const [id, ov] of sigOverlaps) expect(ov, `${id}: biały przycisk zasłania opis`).toBe(false);
   // peron na pulpicie: przerywany obrys z nazwą; nazwy sygnalizatorów ciemne (nie żółte jak na monitorze)
   await expect(page.locator('#desk .desk-platform .platform-label')).toHaveText(['Peron I']);
   expect(await page.locator('#desk .desk-platform line.platform-edge').count()).toBe(2); // peron wyspowy: podwójna kreska na obu krawędziach peronowych
