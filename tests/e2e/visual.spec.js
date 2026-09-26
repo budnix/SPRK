@@ -1,13 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { openShift } from './helpers.js';
 
-/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update */
+/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update.
+   Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu) – wysokość nagłówka różni się
+   o piksel między środowiskami, a porównanie obrazów o różnych wymiarach zawsze pada. */
+
+async function shot(page, selector, width, height) {
+  const r = await page.locator(selector).boundingBox();
+  return page.screenshot({ clip: { x: Math.round(r.x), y: Math.round(r.y), width, height } });
+}
 
 test('wygląd pulpitu kostkowego (Stare Pustkowie) po nastawieniu przebiegu', async ({ page }) => {
   await openShift(page, 'stare-pustkowie', { settings: { sideCollapsed: true } });
   await page.evaluate(() => { window.sim.press({ kind: 'signal', id: 'A', color: 'green' }); window.sim.press({ kind: 'signal', id: 'D1', color: 'green' }); for (let i = 0; i < 20; i++) window.sim.step(0.5); });
   await page.waitForTimeout(200);
-  await expect(page.locator('#desk')).toHaveScreenshot('desk-stare-pustkowie.png');
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-stare-pustkowie.png');
 });
 
 test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manewrowym', async ({ page }) => {
@@ -19,6 +26,6 @@ test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manew
     for (let i = 0; i < 20; i++) s.step(0.5);
   });
   await page.waitForTimeout(200);
-  await expect(page.locator('#desk')).toHaveScreenshot('screen-sopot-zachod.png');
-  await expect(page.locator('#desk-tools')).toHaveScreenshot('toolbar.png');
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('screen-sopot-zachod.png');
+  expect(await shot(page, '#desk-tools', 1000, 40)).toMatchSnapshot('toolbar.png');
 });
