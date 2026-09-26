@@ -151,3 +151,31 @@ test('migawka stanu jest serializowalna', () => {
   assert.ok(JSON.stringify(snap).length > 100);
   assert.equal(snap.interlocking.points.length, 3);
 });
+
+test('krzyżowanie: przebieg B→C1 czeka, dopóki zwrotnica 1 (droga ochronna za C1) jest utwierdzona w przebiegu A→D2', () => {
+  const sim = makeSim();
+  sim.press(G('A')); sim.press(G('D2'));
+  run(sim, 10);
+  assert.equal(sim.ilk.signals.get('A').route, 'A-D2');
+  assert.equal(sim.ilk.sections.get('Iz1').route, 'A-D2');
+  const msgs = []; sim.bus.on('log', (e) => msgs.push(e.msg));
+  sim.press(G('B')); sim.press(G('C1'));
+  run(sim, 10);
+  assert.equal(sim.ilk.signals.get('B').route, null, 'B→C1 nie może być nastawiony – droga ochronna na Iz1');
+  assert.ok(msgs.some((m) => /Droga ochronna: odcinek Iz1 utwierdzony w przebiegu A-D2/.test(m)), msgs.join(' | '));
+  // w odwrotnej kolejności tak samo: Iz1 leży w drodze ochronnej B→C1, więc A→D2 nie przejdzie
+  const sim2 = makeSim();
+  sim2.press(G('B')); sim2.press(G('C1'));
+  run(sim2, 10);
+  const msgs2 = []; sim2.bus.on('log', (e) => msgs2.push(e.msg));
+  sim2.press(G('A')); sim2.press(G('D2'));
+  run(sim2, 10);
+  assert.equal(sim2.ilk.signals.get('A').route, null);
+  assert.ok(msgs2.some((m) => /Odcinek Iz1 w drodze ochronnej przebiegu B-C1/.test(m)), msgs2.join(' | '));
+  // po zwolnieniu przebiegu A→D2 (Pz) droga ochronna jest wolna i B→C1 przechodzi
+  sim.press({ kind: 'group', id: 'Pz', role: 'route-release' }); sim.press(G('A'));
+  run(sim, 100);
+  sim.press(G('B')); sim.press(G('C1'));
+  run(sim, 10);
+  assert.equal(sim.ilk.signals.get('B').route, 'B-C1');
+});

@@ -115,10 +115,10 @@ export function missionSteps(view) {
     (sim) => atNeighbour(sim, 42101) && blockFree(sim.blocks.get('W')) && !sim.blocks.get('E').occupied);
 
   /* ---------------- krzyżowanie: 6103 (tor 2) i 6104 (tor 1) ---------------- */
-  info('crossing-intro', 'Krzyżowanie', `Zaraz przyjadą dwa pociągi naprzeciw siebie: <b>6103</b> z ${LIPa} (07:40, tor <b>2</b>) i <b>6104</b> z ${DEBa} (07:41, tor <b>1</b>). To ${A('krzyżowanie')} – każdy musi stanąć na innym torze, bo dalej pojadą tym samym torem szlakowym.<p>Zwrotnica 1 dla 6103 ustawi się na tor zwrotny (prędkość 40 km/h). Obsłuż oba pozwolenia i oba przebiegi.</p>`, { el: '#desk' });
+  info('crossing-intro', 'Krzyżowanie', `Zaraz przyjadą dwa pociągi naprzeciw siebie: <b>6103</b> z ${LIPa} (07:40, tor <b>2</b>) i <b>6104</b> z ${DEBa} (07:41, tor <b>1</b>). To ${A('krzyżowanie')} – każdy musi stanąć na innym torze, bo dalej pojadą tym samym torem szlakowym.<p>Zwrotnica 1 dla 6103 ustawi się na tor zwrotny (prędkość 40 km/h). Obsłuż oba pozwolenia i oba przebiegi – drugi dopiero, gdy pierwszy pociąg minie zwrotnicę 1.</p>`, { el: '#desk' });
   act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB}.`, blockW,
     (sim) => (sim.blocks.get('W').direction === 'in' || arrived(sim, 6103)) && (sim.blocks.get('E').direction === 'in' || arrived(sim, 6104)));
-  act('cross-routes', 'Dwa przebiegi', `Nastaw <b>A → D2</b> (6103 na tor 2) i <b>B → C1</b> (6104 na tor 1). Oba mogą być utwierdzone jednocześnie – ${A('ochrona boczna')} jest zapewniona przez urządzenia.`, sig('A'),
+  act('cross-routes', 'Dwa przebiegi', `Nastaw <b>A → D2</b> (6103 na tor 2). Przebieg <b>B → C1</b> (6104 na tor 1) urządzenia odrzucą, dopóki zwrotnica 1 jest utwierdzona w przebiegu na tor 2: ${A('droga ochronna')} za semaforem C1 leży właśnie na zwrotnicy 1. Nastaw go, gdy 6103 minie zwrotnicę i odcinek Iz1 się zwolni – 6104 chwilę poczeka przed semaforem B, to normalne przy krzyżowaniu.`, sig('A'),
     (sim, ctx) => (ctx.seen.has('route:A-D2:set') || arrived(sim, 6103)) && (ctx.seen.has('route:B-C1:set') || arrived(sim, 6104)),
     { wrong: (sim) => (active(sim, 'A-D1') ? '6103 ma jechać na tor 2 (A → D2) – tor 1 potrzebny dla 6104.' : null) });
   act('cross-out', 'Wyprawienie obu pociągów', `Po przyjeździe obu: <b>Ko</b> na obu blokadach, <b>Wbl</b> w obu kierunkach, przebiegi <b>D2 → szlak do ${DEBa}</b> (odjazd 07:43) i <b>C1 → szlak do ${LIPa}</b> (07:44). Pamiętaj: Wbl da się dopiero, gdy szlak jest wolny i blokada nie ma kierunku – najpierw Ko.`, blockE,
