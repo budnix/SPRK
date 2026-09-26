@@ -114,11 +114,14 @@ export class Tutorial {
       return;
     }
     let top, side;
-    if (r.bottom + M + bh <= window.innerHeight) { top = r.bottom + M; side = 'below'; }
+    const inSide = !!t.closest?.('#side');
+    if (inSide && r.left - M - W >= 0) { top = Math.max(M, Math.min(window.innerHeight - bh - M, r.top)); side = 'left'; }
+    else if (r.bottom + M + bh <= window.innerHeight) { top = r.bottom + M; side = 'below'; }
     else if (r.top - M - bh >= 0) { top = r.top - M - bh; side = 'above'; }
     else { top = Math.max(M, Math.min(window.innerHeight - bh - M, r.top)); side = 'beside'; }
     let left = r.left + r.width / 2 - W / 2;
     if (side === 'beside') left = r.right + M + W <= window.innerWidth ? r.right + M : Math.max(M, r.left - M - W);
+    if (side === 'left') left = r.left - M - W;
     left = Math.max(M, Math.min(window.innerWidth - W - M, left));
     box.style.left = `${left}px`; box.style.top = `${top}px`;
     box.dataset.side = side;

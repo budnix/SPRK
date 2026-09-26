@@ -105,3 +105,25 @@ test('okręgi na monitorze: zakładki GO/GO2, okręg automatu tylko do podglądu
   await expect(page.locator('#help')).toContainText('Ie-104');
   await expect(page.locator('#help')).toContainText('Ebilock');
 });
+
+test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawędź kostki w kierunku jazdy), tarcza w Ms1 szara', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  const pos = await page.evaluate(() => {
+    const st = window.sim.station;
+    const CELL = 40;
+    const out = {};
+    for (const t of st.tiles.filter((x) => x.type === 'signal')) {
+      const g = [...document.querySelectorAll('#desk .scr-el.signal')].find((el) => el.querySelector('.sig-label')?.textContent === t.id);
+      const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform'));
+      const expX = t.at.x * CELL + (t.dir === 'E' ? CELL : 0), expY = t.at.y * CELL + CELL / 2;
+      out[t.id] = { dx: Math.abs(+m[1] - expX), dy: Math.abs(+m[2] - expY), body: g.querySelector('.sig-body').getAttribute('class'), labelBelow: +g.querySelector('.sig-label').getAttribute('y') > 0, dir: t.dir, kind: t.kind };
+    }
+    return out;
+  });
+  for (const [id, p] of Object.entries(pos)) {
+    expect(p.dx, `${id}: x`).toBeLessThan(0.01);
+    expect(p.dy, `${id}: y na linii toru`).toBeLessThan(0.01);
+    expect(p.labelBelow, `${id}: nazwa po prawej stronie w kierunku jazdy`).toBe(p.dir === 'E');
+    if (p.kind === 'tm') expect(p.body, `${id}: Ms1 = stan podstawowy`).toContain('st-base');
+  }
+});

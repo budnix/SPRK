@@ -325,7 +325,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .wk-mark.on { fill: #ffd21f; stroke: #ffd21f; }
 .derailer.locked .wk-mark { stroke: #ff7ad9; stroke-width: 1.6; }
 /* sygnalizatory: podwójny grot (semafor) / pojedynczy (Tm); kolor = stan wg Ie-104 */
-.sig-mast { fill: none; stroke: #b5bec7; stroke-width: 1.4; }
+.sig-back { fill: #000; }
 .sig-body path { fill: #6d7884; stroke: none; }
 .sig-body.st-base path { fill: #6d7884; }
 .sig-body.st-train path { fill: #21d04a; filter: url(#glow); }

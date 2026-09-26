@@ -297,25 +297,28 @@ export class ScreenRenderer {
     this.hitEls.set(refKey(ref), g);
   }
 
-  /** Semafor: podwójny grot z kreską masztu (EbiScreen/Ie-104.1); tarcza manewrowa: pojedynczy grot. */
+  /**
+   * Semafor / tarcza manewrowa rysowane NA linii toru, w miejscu, gdzie sygnalizator stoi (krawędź kostki `at`
+   * w kierunku `dir`) – jak na stanowiskach komputerowych (i w SimRail): nie ma wątpliwości, którego toru dotyczy.
+   * Symbol: podwójny grot (semafor) lub pojedynczy (tarcza) skierowany w kierunku jazdy, bez masztu (uproszczenie
+   * dla czytelności); nazwa sygnalizatora po prawej stronie toru w kierunku jazdy (E – pod torem, W – nad torem).
+   */
   #signal(tile) {
-    const [cx, cy] = this.#ctr(tile);
     const at = this.topo.trackAt(tile.at.x, tile.at.y);
-    const above = at ? tile.y < at.y : true;
+    const [cx, cy] = at ? this.#pt(at, tile.dir) : this.#ctr(tile);
     const dir = tile.dir === 'E' ? 1 : -1;
-    // maszt: kreska w stronę toru i podstawa; symbol w lokalnych współrzędnych (0,0 = środek symbolu)
-    const baseY = (above ? 12 : -12) * this.ry;
-    const chevron = (x) => `M${x - dir * 5},-5 L${x + dir * 2},0 L${x - dir * 5},5 Z`;
+    const side = dir; // prawa strona toru w kierunku jazdy: E → pod torem (+y), W → nad torem (−y)
+    const chevron = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4 Z`;
     const body = el('g', { class: 'sig-body' });
-    if (tile.kind === 'tm') body.appendChild(el('path', { d: chevron(-dir * 2) }));
-    else body.append(el('path', { d: chevron(-dir * 6) }), el('path', { d: chevron(dir * 2) }));
+    if (tile.kind === 'tm') body.appendChild(el('path', { d: chevron(dir * 1) }));
+    else body.append(el('path', { d: chevron(-dir * 3) }), el('path', { d: chevron(dir * 4) }));
     const endTri = el('path', { class: 'sig-end', d: `M${dir * 9},-3 L${dir * 13},0 L${dir * 9},3 Z` });
     const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, [
-      this.#frame(0, 0, 30, 20),
-      el('path', { class: 'sig-mast', d: `M${-dir * 11},${baseY} L${-dir * 11},0` }),
+      el('rect', { class: 'sig-back', x: -10, y: -5, width: 20, height: 10 }),
+      this.#frame(0, 0, 28, 18),
       body, endTri,
-      text(0, above ? -10 : 14, tile.id, { class: 'scr-text sig-label' }),
-      this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 11),
+      text(-dir * 2, side > 0 ? 18 : -12, tile.id, { class: 'scr-text sig-label' }),
+      this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 10),
     ]);
     this.layerSignals.appendChild(g);
     this.signalRefs.set(tile.id, { body, endTri, g, tile });
@@ -613,7 +616,7 @@ export class ScreenRenderer {
     const isEnd = [...this.ilk.active.values()].some((act) => act.route.end.type === 'signal' && act.route.end.id === id);
     if (a === 'Sz') st = 'sz';
     else if (a === 'Ms2') st = 'shunt';
-    else if (a && a !== 'S1') st = 'train';
+    else if (a && a !== 'S1' && a !== 'Ms1') st = 'train';
     else if (s.route != null || isEnd) st = 'locked';
     r.body.setAttribute('class', `sig-body st-${st}`);
     r.endTri.setAttribute('class', `sig-end${isEnd ? ' on' : ''}`);

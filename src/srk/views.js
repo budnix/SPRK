@@ -42,7 +42,7 @@ const VIEWS = {
       <p>Odcinki toru: <span class="sw g"></span> szary – wolny, <span class="sw grn"></span> zielony – utwierdzony w przebiegu pociągowym,
       <span class="sw y"></span> żółty – w przebiegu manewrowym, <span class="sw r"></span> czerwony – zajęty, <span class="sw v"></span> fioletowy – zwalnianie czasowe,
       podwójna szara linia – tor zamknięty. Zwrotnica: pole „Z” pokazuje położenie iglic (kreska przerywana, migająca – brak kontroli), „+” przy ramieniu zasadniczym,
-      <span class="sw p"></span> różowy numer – zamknięcie indywidualne. Semafor: podwójny grot (tarcza manewrowa – pojedynczy): szary – stan podstawowy,
+      <span class="sw p"></span> różowy numer – zamknięcie indywidualne. Semafor: podwójny grot (tarcza manewrowa – pojedynczy) rysowany na linii toru w miejscu, gdzie stoi, grotem w kierunku jazdy (bez masztu); nazwa po prawej stronie toru w kierunku jazdy. Kolory: szary – stan podstawowy,
       zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – początek lub koniec utwierdzonego przebiegu, biały migający – sygnał zastępczy.
       Numery pociągów w czerwonych kasetkach. Niebieska ramka – element wybrany do polecenia, czerwona migająca – alarm.</p>
       <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ PRZEBIEG, ZWROTNICA, STOP …), potem wskaż element(y):
