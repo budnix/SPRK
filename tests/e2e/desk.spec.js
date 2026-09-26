@@ -103,6 +103,23 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   expect(perm).toBeTruthy();
 });
 
+test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasłania przycisków w sąsiednim rzędzie)', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { srk: 'E' } });
+  await advance(page, 30); // Lipno zgłasza 6101
+  await btn(page, { kind: 'block', exit: 'W', btn: 'Poz' }).click();
+  await btn(page, { kind: 'signal', id: 'A', color: 'green' }).click();
+  await btn(page, { kind: 'signal', id: 'D1', color: 'green' }).click();
+  await advance(page, 300); // 6101 wjeżdża na stację
+  const labels = await page.locator('#desk .train-label').evaluateAll((els) => els.filter((e) => e.style.display !== 'none').map((e) => {
+    const ty = +/,(-?[\d.]+)\)/.exec(e.getAttribute('transform'))[1];
+    const r = e.querySelector('rect'); const top = ty + +r.getAttribute('y'), bottom = top + +r.getAttribute('height');
+    const rowTop = Math.floor(ty / 40) * 40;
+    return { nr: e.textContent.trim(), inside: top >= rowTop && bottom <= rowTop + 40 };
+  }));
+  expect(labels.length).toBeGreaterThan(0);
+  for (const l of labels) expect(l.inside, `${l.nr}: etykieta wychodzi poza rząd kostki`).toBe(true);
+});
+
 test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru szlakowego', async ({ page }) => {
   await openShift(page, 'sopot', { settings: { srk: 'E' } });
   const before = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
