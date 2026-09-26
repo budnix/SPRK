@@ -93,7 +93,7 @@ export function missionSteps(view) {
     { wrong: (sim) => (sim.blocks.get('E').request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Dębna.' : null) });
   act('out-6101', 'Przebieg wyjazdowy na szlak', `Masz pozwolenie. Nastaw ${A('przebieg pociągowy')} wyjazdowy: ${P.trainRoute('D1', null, P.exitEnd(DEBa))}.<p>Przebieg wyjazdowy kończy się na szlaku, nie na semaforze – dlatego wskazujesz kraniec toru.</p>`, cmd('train', sig('D1')),
     (sim) => active(sim, 'D1-E') || atNeighbour(sim, 6101));
-  act('depart-6101', 'Odjazd i blok początkowy', `Semafor D1 pokazuje sygnał zezwalający; pociąg odjedzie o 07:08. Po wyjeździe na szlak ${A('Po', 'blok początkowy')} zablokuje się (${m ? 'strzałka szlaku czerwona' : 'pole „wyjazd” czerwone'}), aż ${DEB} potwierdzi przyjazd. Poczekaj, aż 6101 dojedzie do sąsiada – szlak zwolni się sam.`, blockE,
+  act('depart-6101', 'Odjazd i blok początkowy', `Semafor D1 pokazuje sygnał zezwalający; pociąg odjedzie o 07:08. Po wyjeździe na szlak ${A('Po', 'blok początkowy')} zablokuje się (${m ? 'strzałka szlaku czerwona' : 'pole „wyjazd” czerwone'}), aż ${DEB} potwierdzi przyjazd. Poczekaj, aż 6101 dojedzie do następnego posterunku – szlak zwolni się sam.`, blockE,
     (sim) => atNeighbour(sim, 6101) && !sim.blocks.get('E').occupied);
 
   /* ---------------- pociąg 2: 6102 z Dębna, tor 1, dalej do Lipna (menu elementu) ---------------- */
