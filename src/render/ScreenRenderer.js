@@ -3,6 +3,7 @@ import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './DeskRenderer.js';
 import { tip } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
+import { platformSpans, platformEdgeLines } from './platforms.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -157,66 +158,17 @@ export class ScreenRenderer {
   /** Perony (Ie-104: grupa G2 – infrastruktura niesterowana): szare prostokąty wzdłuż torów peronowych.
    *  Dwa tory peronowe dwa rzędy od siebie = peron wyspowy między nimi; pojedynczy tor – peron po wolnej stronie. */
   #platforms() {
-    const spans = [];
-    for (const [sid, sec] of Object.entries(this.station.sections || {})) {
-      if (!sec.platform) continue;
-      const tiles = this.station.tiles.filter((t) => t.section === sid && t.type === 'track' && t.x >= this.x0 && t.x <= this.x1);
-      if (!tiles.length) continue;
-      const ys = [...new Set(tiles.map((t) => t.y))];
-      if (ys.length !== 1) continue;
-      spans.push({ sid, y: ys[0], x0: Math.min(...tiles.map((t) => t.x)), x1: Math.max(...tiles.map((t) => t.x)), done: false });
-    }
-    const TRACKY = new Set(['track', 'point', 'buffer', 'crossing', 'block', 'button']);
-    const rowBusy = (y, x0, x1) => this.station.tiles.some((t) => t.y === y && t.x >= x0 && t.x <= x1 && TRACKY.has(t.type));
-    /** Zakres kolumn peronu po odcięciu semaforów stojących w tym rzędzie (symbole na końcach toru). */
-    const clip = (y, x0, x1) => {
-      const mid = (x0 + x1) / 2;
-      const sig = this.station.tiles.filter((t) => t.type === 'signal' && t.y === y && t.x >= x0 && t.x <= x1);
-      const left = sig.filter((t) => t.x < mid).map((t) => t.x), right = sig.filter((t) => t.x >= mid).map((t) => t.x);
-      return [left.length ? Math.max(x0, Math.max(...left) + 1) : x0, right.length ? Math.min(x1, Math.min(...right) - 1) : x1];
-    };
-    /** Nazwa peronu z pola `platform` odcinka: napis („Peron II”), liczba (2 → „Peron II”) lub true („Peron”). */
-    const nameOf = (...spans) => {
-      const vals = spans.map((sp) => this.station.sections[sp.sid].platform);
-      const v = vals.find((x) => typeof x === 'string') ?? vals.find((x) => typeof x === 'number');
-      return typeof v === 'string' ? v : typeof v === 'number' ? `Peron ${['I','II','III','IV','V','VI','VII','VIII'][v - 1] || v}` : 'Peron';
-    };
-    const rect = (x0, x1, yRow, cls, hCells = 0.42, label = 'Peron') => {
-      if (x1 - x0 < 2) return;
-      const h = CELL * this.ry * hCells;
-      const y = (yRow * CELL + C) * this.ry;
-      const r = el('rect', { class: `platform ${cls}`, x: (x0 - this.x0) * CELL + 3, y: y - h / 2, width: (x1 - x0 + 1) * CELL - 6, height: h, rx: 2 });
-      this.layerTracks.appendChild(r);
-      // napis peronu: na środku, a gdy tam leży opis toru (kostka label w rzędach peronu) – bliżej końca prostokątu
-      const rows = [Math.floor(yRow), Math.ceil(yRow)];
-      const labels = this.station.tiles.filter((t) => t.type === 'label' && ScreenRenderer.labelText(t.text) && rows.includes(t.y) && t.x + (t.span || 1) - 1 >= x0 && t.x <= x1);
-      const clash = (cx) => labels.some((t) => t.x - 2 <= cx + 2 && t.x + (t.span || 1) + 1 >= cx - 2);
-      const mid = (x0 + x1) / 2;
-      const cx = [mid, x0 + 2.5, x1 - 2.5].find((c) => !clash(c)) ?? mid;
-      this.layerTracks.appendChild(text((cx + 0.5 - this.x0) * CELL, y, label, { class: 'scr-text platform-label', 'dominant-baseline': 'central' }));
-    };
-    spans.sort((a, b) => a.y - b.y);
-    for (const a of spans) {
-      if (a.done) continue;
-      // peron wyspowy: drugi tor peronowy 2 lub 4 rzędy niżej, rzędy pomiędzy bez torów
-      const b = spans.find((o) => !o.done && o !== a && (o.y === a.y + 2 || o.y === a.y + 4) && o.x0 <= a.x1 && o.x1 >= a.x0);
-      if (b) {
-        const X0 = Math.max(a.x0, b.x0), X1 = Math.min(a.x1, b.x1);
-        let free = true;
-        for (let y = a.y + 1; y < b.y; y++) if (rowBusy(y, X0, X1)) free = false;
-        if (free) {
-          let [c0, c1] = [X0, X1];
-          for (let y = a.y + 1; y < b.y; y++) { const [q0, q1] = clip(y, X0, X1); c0 = Math.max(c0, q0); c1 = Math.min(c1, q1); }
-          rect(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? 0.42 : 1.1, nameOf(a, b));
-          a.done = b.done = true;
-          continue;
-        }
-      }
-      const side = !rowBusy(a.y - 1, a.x0, a.x1) ? a.y - 1 : !rowBusy(a.y + 1, a.x0, a.x1) ? a.y + 1 : null;
-      if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); rect(c0, c1, side, 'side', 0.42, nameOf(a)); }
-      a.done = true;
+    for (const p of platformSpans(this.station, [this.x0, this.x1], ScreenRenderer.labelText)) {
+      const h = CELL * this.ry * p.hCells;
+      const y = (p.yRow * CELL + C) * this.ry;
+      const rx = (p.x0 - this.x0) * CELL + 3, ry = y - h / 2, rw = (p.x1 - p.x0 + 1) * CELL - 6;
+      this.layerTracks.appendChild(el('rect', { class: `platform ${p.kind}`, x: rx, y: ry, width: rw, height: h, rx: 2 }));
+      // krawędź peronowa od strony toru peronowego: podwójna kreska
+      for (const [x1, y1, x2, y2] of platformEdgeLines(rx, ry, rw, h, p.edges, 2.5)) this.layerTracks.appendChild(el('line', { class: 'platform-edge', x1, y1, x2, y2 }));
+      this.layerTracks.appendChild(text((p.labelX + 0.5 - this.x0) * CELL, y, p.name, { class: 'scr-text platform-label', 'dominant-baseline': 'central' }));
     }
   }
+
 
   /**
    * Numery torów rysowane NA linii toru w małej ramce (jak na stanowiskach komputerowych) – jedna ramka na numer

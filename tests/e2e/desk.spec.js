@@ -127,6 +127,25 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
     return out;
   });
   expect(overlaps.length).toBeGreaterThan(0);
+  // peron na pulpicie: przerywany obrys z nazwą; nazwy sygnalizatorów ciemne (nie żółte jak na monitorze)
+  await expect(page.locator('#desk .desk-platform .platform-label')).toHaveText(['Peron I']);
+  expect(await page.locator('#desk .desk-platform line.platform-edge').count()).toBe(2); // peron wyspowy: podwójna kreska na obu krawędziach peronowych
+  // opis „tor 2” z wiersza peronu wędruje pod tor 2 (napis przy górnej krawędzi kostki), „tor 1” nad torem 1 przy dolnej krawędzi
+  const trackLabelY = await page.locator('#desk .t-label text.track-label').evaluateAll((els) => Object.fromEntries(els.map((e) => [e.textContent, +e.getAttribute('y')])));
+  expect(Object.keys(trackLabelY).sort()).toEqual(['tor 1', 'tor 2', 'tor 3']);
+  // opis toru na jednej kostce (face szerokości jednej kostki), delikatny (mniejsza, szara czcionka niż zwykły opis)
+  const trkFace = await page.locator('#desk .t-label:has(text.track-label) rect.face').evaluateAll((els) => els.map((e) => +e.getAttribute('width')));
+  expect(trkFace).toEqual([40, 40, 40]);
+  const trkFont = await page.locator('#desk .t-label text.track-label').first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  const stFont = await page.locator('#desk .t-label text.label:not(.track-label)').first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(trkFont).toBeLessThan(stFont);
+  expect(trackLabelY['tor 2']).toBeLessThan(12);
+  expect(trackLabelY['tor 1']).toBeGreaterThan(28);
+  const tor2Row = await page.locator('#desk .t-label:has(text.track-label)').evaluateAll((els) => els.map((g) => [g.querySelector('text').textContent, +/,(\d+)\)/.exec(g.getAttribute('transform'))[1] / 40]));
+  expect(Object.fromEntries(tor2Row)).toEqual({ 'tor 1': 3, 'tor 2': 7, 'tor 3': 9 });
+  expect(trackLabelY['tor 3']).toBeLessThan(12);
+  const sigFill = await page.evaluate(() => getComputedStyle(document.querySelector('#desk text.sig-label')).fill);
+  expect(sigFill).toBe('rgb(31, 35, 37)');
   for (const [name, ov] of overlaps) expect(ov, `${name} zasłonięte przyciskiem`).toBe(false);
   expect(s.tiles).toBeGreaterThanOrEqual(s.defined); // każda kostka z definicji narysowana
 });

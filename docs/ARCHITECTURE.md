@@ -12,7 +12,7 @@ src/
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
-               screens (podział szerokiego pulpitu na ekrany), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
+               screens (podział szerokiego pulpitu na ekrany), platforms (geometria peronów, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
                tileArt (grafika kostek), svg (helpery)
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
@@ -99,6 +99,10 @@ jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
 `route:set`). Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `block` z przyciskami.
+Perony na pulpicie kostkowym: `DeskRenderer.#buildPlatforms` rysuje obrys z nazwą z tej samej geometrii
+(`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
+jest rysowany delikatnie i przy krawędzi kostki od strony opisywanego toru (`labelSide`); opis leżący w wierszu peronu
+przenosi się na wolną kostkę po drugiej stronie toru (`trackLabelPlace`), żeby nie leżał na obrysie peronu.
 
 ## Ekran startowy (`src/ui/StartScreen.js`)
 

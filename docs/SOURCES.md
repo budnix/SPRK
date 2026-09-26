@@ -99,7 +99,7 @@ Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustal
 * polecenia (Ie-104.2 / EbiScreen): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
   inicjowane i potwierdzane, rejestrowane w licznikach, odwołanie OPS.
 
-Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą (numeracja rzymska,
+Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
 jak w nomenklaturze PKP: peron I, II; tory arabskie). Polecenia w menu elementów mają formę rzeczownikową zgodną
 z terminologią Ie-1 / Ir-1 (nastawienie przebiegu, zwolnienie przebiegu, danie pozwolenia, zwolnienie bloku końcowego,
 podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne).

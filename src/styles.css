@@ -136,8 +136,12 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .tile-text.small { font-size: 7px; }
 .tile-text.tiny { font-size: 5.5px; }
 .tile-text.label { font-size: 9px; letter-spacing: 0.3px; }
+.tile-text.track-label { font-size: 7.5px; font-weight: 400; fill: #6b7580; letter-spacing: 0.4px; } /* „tor N” na jednej kostce, delikatnie, przy krawędzi od strony toru */
 .tile-text.point-label { font-size: 8.5px; }
-.tile-text.sig-label { font-size: 8.5px; }
+.tile-text.sig-label { font-size: 8.5px; font-weight: 700; fill: #1f2325; } /* nazwy sygnalizatorów na pulpicie – ciemne, czytelne na jasnej kostce */
+.desk-platform rect { fill: rgba(80, 90, 100, 0.08); stroke: #3d4750; stroke-width: 1; } /* obrys peronu; krawędź peronowa od strony toru – podwójna kreska */
+.desk-platform .platform-edge { stroke: #3d4750; stroke-width: 1; }
+.desk-platform .platform-label { font-size: 8px; font-weight: 700; fill: #2d3740; letter-spacing: 0.5px; }
 .tile-text.plus { font-size: 9px; font-weight: 700; }
 .wk-body { fill: #4a4f4c; stroke: #23302b; stroke-width: 0.6; }
 
@@ -367,6 +371,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
 .platform { fill: #1f262d; stroke: #4a5563; stroke-width: 1; }
 .platform.side { fill: #1a2026; }
+.platform-edge { stroke: #5c6978; stroke-width: 0.8; } /* krawędź peronowa – druga kreska obrysu */
 .trk-no-box { fill: #000; stroke: #8a949e; stroke-width: 0.9; }
 .trk-no-text { fill: #dfe6ec; font-size: 6.8px; font-weight: 700; }
 .platform-label { fill: #7d8994; font-size: 6.2px; letter-spacing: 0.4px; pointer-events: none; }
@@ -397,7 +402,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .sig-body.st-nodata path { fill: #ffffff; }
 .sig-end { fill: none; stroke: #6d7884; stroke-width: 0.8; }
 .sig-end.on { fill: #ff2419; stroke: #ff2419; }
-.sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy sygnalizatorów */
+svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy sygnalizatorów na monitorze */
 /* blokada liniowa na wyjeździe: strzałka szlaku (czerwona – odstęp zajęty), strzałki kierunku nad torem, napis stanu */
 .exit-arrow { fill: #2d3a46; stroke: #8c98a4; stroke-width: 1; }
 .blk-occ .exit-arrow { fill: #ff2419; stroke: #ff2419; }

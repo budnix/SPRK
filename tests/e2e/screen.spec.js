@@ -86,6 +86,7 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   });
   expect(inside).toBe(true);
   expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
+  expect(await page.locator('line.platform-edge').count()).toBe(2 * await page.locator('rect.platform.island').count() + await page.locator('rect.platform.side').count()); // krawędź peronowa – podwójna kreska
   await expect(page.locator('text.platform-label').first()).toHaveText(/Peron II|Peron I/); // nazwa peronu na prostokącie
   // numery torów w ramkach na linii toru, opisy „tor N” nie są dublowane
   expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['tor 1', 'tor 13', 'tor 1a', 'tor 2', 'tor 2a', 'tor 4', 'tor 4a', 'tor 4b', 'tor 501', 'tor 502', 'tor 6', 'tor 6a', 'tor 6b']);

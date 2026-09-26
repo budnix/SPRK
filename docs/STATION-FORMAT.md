@@ -59,8 +59,8 @@ T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
 * `length` – długość w metrach (rozkładana na kostki proporcjonalnie do geometrii),
 * `kind` – `approach` (zbliżania), `point` (zwrotnicowy), `station`, `siding`, `plain`,
 * `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
-  (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą (wyspowy między dwoma torami
-  peronowymi, inaczej boczny).
+  (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą, pulpit kostkowy jako obrys; krawędź peronowa od strony
+  toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna).
 
 ## Szlaki (`exits`)
 

@@ -1,3 +1,4 @@
+import { platformSpans, trackLabelText, trackLabelPlace, platformEdgeLines } from './platforms.js';
 import { el, text, CELL } from './svg.js';
 
 const FRAME = 22;
@@ -68,6 +69,7 @@ export class DeskRenderer {
 
     this.#buildFrame();
     this.#buildTiles();
+    this.#buildPlatforms();
     this.#buildGrid();
     this.#bindEvents();
     this.refreshAll();
@@ -98,6 +100,8 @@ export class DeskRenderer {
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
       let out;
+      // opis „tor N” w wierszu peronu wędruje na kostkę po drugiej stronie toru (nie zasłania obrysu peronu)
+      const pos = tile.type === 'label' && trackLabelText(tile.text) ? trackLabelPlace(this.station, tile) : tile;
       switch (tile.type) {
         case 'track': out = art.trackArt(tile, ctx); break;
         case 'buffer': out = art.bufferArt(tile, ctx); break;
@@ -105,17 +109,17 @@ export class DeskRenderer {
         case 'crossing': out = art.crossingArt(tile, ctx); break;
         case 'signal': out = art.signalArt(tile); break;
         case 'button': out = art.buttonTileArt(tile); break;
-        case 'label': out = art.labelArt(tile); break;
+        case 'label': out = art.labelArt(tile, pos.side ?? null); break;
         case 'block': out = art.blockArt(tile, this.station.exits[tile.exit]); break;
         default: out = art.blankArt();
       }
-      out.g.setAttribute('transform', `translate(${(tile.x - this.x0) * CELL},${tile.y * CELL})`);
+      out.g.setAttribute('transform', `translate(${(pos.x - this.x0) * CELL},${pos.y * CELL})`);
       out.g.dataset.tile = tile._key;
       this.layerTiles.appendChild(out.g);
       this.tileRefs.set(tile._key, out.refs);
       const def = getTileDef(tile.type);
-      const span = tile.type === 'label' ? { w: tile.span || 1, h: 1 } : def.span;
-      for (let dx = 0; dx < span.w; dx++) for (let dy = 0; dy < span.h; dy++) filled.add(`${tile.x + dx},${tile.y + dy}`);
+      const span = tile.type === 'label' ? { w: trackLabelText(tile.text) ? 1 : tile.span || 1, h: 1 } : def.span;
+      for (let dx = 0; dx < span.w; dx++) for (let dy = 0; dy < span.h; dy++) filled.add(`${pos.x + dx},${pos.y + dy}`);
 
       if (def.category === 'track' && tile.type !== 'point') {
         if (!this.sectionSlits.has(tile.section)) this.sectionSlits.set(tile.section, []);
@@ -144,6 +148,22 @@ export class DeskRenderer {
   elementFor(ref) {
     if (ref.kind === 'blockpanel') return this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' }))?.closest('.tile') || this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' })) || null;
     return this.buttonEls.get(refKey(ref)) || (ref.kind === 'signal' && !ref.color ? this.buttonEls.get(refKey({ ...ref, color: 'green' })) || this.buttonEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
+  }
+
+  /** Perony: przerywany obrys z nazwą (Peron I, II…) w rzędzie między torami peronowymi lub obok toru. */
+  #buildPlatforms() {
+    for (const p of platformSpans(this.station, [this.x0, this.x1])) {
+      const h = CELL * p.hCells;
+      const y = p.yRow * CELL + CELL / 2;
+      const rx = (p.x0 - this.x0) * CELL + 4, ry = y - h / 2, rw = (p.x1 - p.x0 + 1) * CELL - 8;
+      const g = el('g', { class: 'desk-platform' }, [
+        el('rect', { x: rx, y: ry, width: rw, height: h }),
+        // krawędź peronowa od strony toru: podwójna kreska (jak na pulpitach nastawczych)
+        ...platformEdgeLines(rx, ry, rw, h, p.edges).map(([x1, y1, x2, y2]) => el('line', { class: 'platform-edge', x1, y1, x2, y2 })),
+        text((p.labelX + 0.5 - this.x0) * CELL, y, p.name, { class: 'tile-text platform-label', 'dominant-baseline': 'central' }),
+      ]);
+      this.layerTiles.appendChild(g);
+    }
   }
 
   /** Rama pulpitu: numeracja kolumn (od lewej) i rzędów (od dołu), śruby. */
