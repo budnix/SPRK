@@ -235,9 +235,18 @@ export class Interlocking {
   /* Zwrotnice i wykolejnice                                              */
   /* ------------------------------------------------------------------ */
 
-  pointLockedByRoute(id) {
+  /**
+   * Przebieg, w którym zwrotnica jest utwierdzona. `ignoreOverlapOf` – id przebiegów,
+   * których utwierdzenie wyłącznie w drodze ochronnej pomijamy (kontynuacja przebiegu).
+   */
+  pointLockedByRoute(id, ignoreOverlapOf = null) {
     for (const r of this.active.values()) {
-      if (r.lockedPoints.has(id)) return r;
+      if (!r.lockedPoints.has(id)) continue;
+      if (ignoreOverlapOf?.has(r.id)) {
+        const inRoute = [...r.route.points, ...r.route.flank].some((p) => p.id === id);
+        if (!inRoute) continue; // utwierdzona tylko jako droga ochronna – zwalniana przez kontynuację
+      }
+      return r;
     }
     for (const r of this.pending) if (r.route.points.some((p) => p.id === id) || r.route.flank.some((p) => p.id === id)) return r.route;
     return null;
@@ -324,10 +333,25 @@ export class Interlocking {
   /* Przebiegi                                                            */
   /* ------------------------------------------------------------------ */
 
+  /** Aktywne przebiegi kończące się na semaforze początkowym `route` (ich kontynuacja). */
+  #continuedBy(route) {
+    return [...this.active.values()].filter((a) => a.route.end.type === 'signal' && a.route.end.id === route.start);
+  }
+
+  /** Czy semafor końcowy przebiegu ma nastawiony własny przebieg (kontynuacja – droga ochronna zbędna). */
+  #hasContinuation(route) {
+    if (route.end.type !== 'signal') return false;
+    const endSig = this.signals.get(route.end.id);
+    return !!(endSig?.route && this.active.has(endSig.route));
+  }
+
   /** Sprawdzenie warunków nastawienia przebiegu (bez zmiany stanu). */
   checkRoute(route) {
     const problems = [];
     const sig = this.signals.get(route.start);
+    const predecessors = this.#continuedBy(route);           // przebiegi, których jesteśmy kontynuacją
+    const predIds = new Set(predecessors.map((a) => a.id));
+    const overlapNeeded = !this.#hasContinuation(route);
     if (sig.route) problems.push(`Semafor ${sig.id} ma już nastawiony przebieg ${sig.route}`);
     if (this.pending.some((p) => p.route.start === route.start)) problems.push(`Przebieg z ${route.start} w trakcie nastawiania`);
     // Odcinki drogi przebiegu
@@ -338,15 +362,17 @@ export class Interlocking {
       if (s.occupied && !(route.kind === 'shunt' && last)) problems.push(`Odcinek ${sid} zajęty`);
       for (const pr of this.pending) if (pr.route.sections.includes(sid)) problems.push(`Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
     });
-    // Droga ochronna
-    for (const sid of route.overlap) {
-      const s = this.sections.get(sid);
-      if (s.occupied) problems.push(`Droga ochronna: odcinek ${sid} zajęty`);
-      if (s.route && s.route !== route.id) problems.push(`Droga ochronna: odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+    // Droga ochronna (zbędna, gdy semafor końcowy ma nastawiony przebieg – kontynuacja)
+    if (overlapNeeded) {
+      for (const sid of route.overlap) {
+        const s = this.sections.get(sid);
+        if (s.occupied) problems.push(`Droga ochronna: odcinek ${sid} zajęty`);
+        if (s.route && s.route !== route.id) problems.push(`Droga ochronna: odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+      }
     }
-    // Odcinki przebiegu nie mogą leżeć w drodze ochronnej innego przebiegu
+    // Odcinki przebiegu nie mogą leżeć w drodze ochronnej innego przebiegu (poza przebiegami, których jesteśmy kontynuacją)
     for (const act of this.active.values()) {
-      if (act.id === route.id) continue;
+      if (act.id === route.id || predIds.has(act.id)) continue;
       for (const sid of route.sections) if (act.overlap.includes(sid)) problems.push(`Odcinek ${sid} w drodze ochronnej przebiegu ${act.id}`);
     }
     // Zwrotnice w przebiegu i ochrony bocznej
@@ -356,12 +382,12 @@ export class Interlocking {
       if (p.trailed) problems.push(`Zwrotnica ${req.id} rozpruta`);
       if (p.position !== req.position || !p.control) {
         if (p.individualLock) problems.push(`Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
-        const r = this.pointLockedByRoute(req.id);
+        const r = this.pointLockedByRoute(req.id, predIds);
         if (r) problems.push(`Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
         if (this.sections.get(p.section).occupied) problems.push(`Zwrotnica ${req.id}: odcinek zajęty – nie można przestawić`);
       } else {
-        const r = this.pointLockedByRoute(req.id);
-        if (r && this.#lockedPosition(req.id) !== req.position) problems.push(`Zwrotnica ${req.id} utwierdzona w innym położeniu`);
+        const r = this.pointLockedByRoute(req.id, predIds);
+        if (r && this.#lockedPosition(req.id, predIds) !== req.position) problems.push(`Zwrotnica ${req.id} utwierdzona w innym położeniu`);
       }
     }
     for (const req of [...route.derailers.onRoute, ...route.derailers.protect]) {
@@ -391,9 +417,10 @@ export class Interlocking {
     return out;
   }
 
-  #lockedPosition(pointId) {
+  #lockedPosition(pointId, ignoreOverlapOf = null) {
     for (const r of this.active.values()) {
-      const req = [...r.route.points, ...r.route.flank, ...r.overlapPoints].find((p) => p.id === pointId);
+      const inRoute = [...r.route.points, ...r.route.flank].find((p) => p.id === pointId);
+      const req = inRoute || (ignoreOverlapOf?.has(r.id) ? null : r.overlapPoints.find((p) => p.id === pointId));
       if (req && r.lockedPoints.has(pointId)) return req.position;
     }
     return null;
@@ -429,6 +456,7 @@ export class Interlocking {
     if (!route) return this.#fail(`Nieznany przebieg ${routeId}`);
     const problems = this.checkRoute(route);
     if (problems.length) return this.#fail(`Przebieg ${routeId}: ${problems.join('; ')}`);
+    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred);
     // Przestaw zwrotnice i wykolejnice (nastawianie przebiegowe)
     for (const req of [...route.points, ...route.flank]) {
       const p = this.points.get(req.id);
@@ -445,13 +473,15 @@ export class Interlocking {
   }
 
   #completeRoute(route) {
+    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred); // kontynuacja zastępuje drogę ochronną
+    const hasCont = this.#hasContinuation(route);
     const act = {
       id: route.id, route, since: this.time,
       lockedSections: [...route.sections], released: new Set(), trainEntered: false,
-      overlapPoints: this.#overlapPoints(route),
-      lockedPoints: new Set([...route.points, ...route.flank, ...this.#overlapPoints(route)].map((p) => p.id)),
+      overlapPoints: hasCont ? [] : this.#overlapPoints(route),
+      lockedPoints: new Set([...route.points, ...route.flank, ...(hasCont ? [] : this.#overlapPoints(route))].map((p) => p.id)),
       lockedDerailers: new Set([...route.derailers.onRoute, ...route.derailers.protect].map((d) => d.id)),
-      overlap: [...route.overlap], signalOff: false, timedRelease: null,
+      overlap: hasCont ? [] : [...route.overlap], signalOff: false, timedRelease: null,
     };
     for (const sid of route.sections) { const s = this.sections.get(sid); s.route = route.id; s.wasOccupied = false; }
     this.active.set(route.id, act);

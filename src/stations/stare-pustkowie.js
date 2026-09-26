@@ -33,7 +33,7 @@ export default {
     T1: { length: 520, kind: 'station', track: '1', platform: true },
     T2: { length: 300, kind: 'station', track: '2', platform: true },
     Iz3: { length: 70, kind: 'point' },
-    T2b: { length: 75, kind: 'station', track: '2b' },
+    T2b: { length: 75, kind: 'station', track: '2' },
     Iz4: { length: 140, kind: 'point' },
     ZbB: { length: 320, kind: 'approach' },
     T3: { length: 160, kind: 'siding', track: '3' },
