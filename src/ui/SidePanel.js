@@ -325,7 +325,7 @@ export class SidePanel {
     const div = document.createElement('div');
     div.className = `alert alert-${a.type}`;
     const texts = {
-      request: () => `${this.sim.blocks.get(a.exit).neighbour} żąda pozwolenia na wyprawienie pociągu – naciśnij Poz na blokadzie.`,
+      request: () => `${this.sim.blocks.get(a.exit).neighbour} żąda pozwolenia na wyprawienie pociągu – daj pozwolenie (Poz) na blokadzie.`,
       rozprucie: () => `ROZPRUCIE zwrotnicy ${a.id}!`,
       fault: () => `USTERKA: ${a.fault.type === 'signal-fail' ? `semafor ${a.fault.target}` : a.fault.type === 'point-control' ? `zwrotnica ${a.fault.target}` : a.fault.type === 'false-occupancy' ? `odcinek ${a.fault.target}` : `blokada ${this.sim.blocks.get(a.fault.target)?.neighbour}`}`,
       phone: () => `Telefon od ${this.sim.blocks.get(a.exit).neighbour} – odpowiedz w zakładce Łączność.`,
@@ -364,7 +364,7 @@ export class SidePanel {
   renderState() {
     const bl = [...this.sim.blocks.values()].map((b) => {
       const dir = b.direction === 'out' ? 'wyjazd' : b.direction === 'in' ? 'wjazd' : '–';
-      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? ' (samoczynna)' : ''}: kierunek ${dir}${b.permission && !b.auto ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
+      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? ' (samoczynna)' : ''}: kierunek ${dir}${b.permission && !b.auto ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">zwolnić blok końcowy (Ko)</span>' : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];

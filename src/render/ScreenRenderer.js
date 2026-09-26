@@ -411,7 +411,7 @@ export class ScreenRenderer {
     const bar = document.createElement('div');
     bar.className = 'scr-cmdbar';
     const CMDS = [
-      ['train', 'PRZEBIEG POCIĄGOWY'], ['shunt', 'PRZEBIEG MANEWROWY'], ['pz', 'ZWOLNIJ PRZEBIEG'], ['dpz', 'dPz', true],
+      ['train', 'PRZEBIEG POCIĄGOWY'], ['shunt', 'PRZEBIEG MANEWROWY'], ['pz', 'ZWOLNIENIE PRZEBIEGU'], ['dpz', 'dPz', true],
       ['zw', 'ZWROTNICA'], ['zz', 'Zz', true], ['sz', 'Sz', true], ['stop', 'STOP'], ['ops', 'OPS'],
     ];
     this.cmdButtons = new Map();
@@ -486,9 +486,9 @@ export class ScreenRenderer {
     const cmd = this.#commands(ref);
     const find = (re) => cmd?.items.find((it) => re.test(it.label));
     const M = {
-      train: [/^Przebieg pociągowy/, ['signal']], shunt: [/^Przebieg manewrowy/, ['signal']], pz: [/^Zwolnij przebieg/, ['signal']],
-      dpz: [/^Zwolnienie doraźne/, ['signal']], zw: [/^(Przestaw|Zdejmij|Nałóż)/, ['point', 'derailer']], zz: [/\(Zz\)/, ['point', 'derailer']],
-      sz: [/^Sygnał zastępczy/, ['signal']], stop: [/^Wygaś/, ['signal']],
+      train: [/^Nastawienie przebiegu pociągowego/, ['signal']], shunt: [/^Nastawienie przebiegu manewrowego/, ['signal']], pz: [/^Zwolnienie przebiegu/, ['signal']],
+      dpz: [/^Doraźne zwolnienie przebiegu/, ['signal']], zw: [/^(Przestawienie|Zdjęcie|Nałożenie)/, ['point', 'derailer']], zz: [/\(Zz\)/, ['point', 'derailer']],
+      sz: [/^Podanie sygnału zastępczego/, ['signal']], stop: [/^Wygaszenie/, ['signal']],
     }[this.mode];
     if (!M || !M[1].includes(ref.kind)) { this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: 'Polecenie nie dotyczy wskazanego elementu' }); return; }
     const item = find(M[0]);
@@ -512,26 +512,26 @@ export class ScreenRenderer {
         return res;
       };
       const items = [];
-      if (s.kind === 'semafor') items.push({ label: `Przebieg pociągowy od ${ref.id} …`, run: startRoute('green') });
-      if (s.kind === 'tm' || s.shunting) items.push({ label: `Przebieg manewrowy od ${ref.id} …`, run: startRoute('white') });
-      items.push({ label: 'Wygaś sygnał – STOP (przebieg pozostaje)', run: () => H.onPull(sigRef(s.kind === 'tm' ? 'white' : 'green')) });
-      items.push({ label: 'Zwolnij przebieg (Pz)', run: two('Pz', 'route-release', sigRef('green')) });
-      items.push({ label: 'Zwolnienie doraźne przebiegu (dPz)', special: true, run: two('dPz', 'emergency-release', sigRef('green')) });
-      if (s.kind === 'semafor') items.push({ label: 'Sygnał zastępczy Sz', special: true, run: two('Sz', 'substitute', sigRef('green')) });
+      if (s.kind === 'semafor') items.push({ label: `Nastawienie przebiegu pociągowego od ${ref.id} …`, run: startRoute('green') });
+      if (s.kind === 'tm' || s.shunting) items.push({ label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
+      items.push({ label: 'Wygaszenie sygnału – STOP (przebieg pozostaje utwierdzony)', run: () => H.onPull(sigRef(s.kind === 'tm' ? 'white' : 'green')) });
+      items.push({ label: 'Zwolnienie przebiegu (Pz)', run: two('Pz', 'route-release', sigRef('green')) });
+      items.push({ label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, run: two('dPz', 'emergency-release', sigRef('green')) });
+      if (s.kind === 'semafor') items.push({ label: 'Podanie sygnału zastępczego (Sz)', special: true, run: two('Sz', 'substitute', sigRef('green')) });
       return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };
     }
     if (ref.kind === 'point') {
       const p = this.ilk.points.get(ref.id);
       return { title: `Zwrotnica ${p?.label || ref.id}`, items: [
-        { label: 'Przestaw zwrotnicę (Zw)', run: two('Zw', 'group-point', { kind: 'point', id: ref.id }) },
-        { label: p?.individualLock ? 'Otwórz zamknięcie indywidualne (Zz)' : 'Zamknij indywidualnie (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'point', id: ref.id }) },
+        { label: 'Przestawienie zwrotnicy (Zw)', run: two('Zw', 'group-point', { kind: 'point', id: ref.id }) },
+        { label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'point', id: ref.id }) },
       ] };
     }
     if (ref.kind === 'derailer') {
       const d = this.ilk.derailers.get(ref.id);
       return { title: `Wykolejnica ${ref.id}`, items: [
-        { label: d?.position === 'on' ? 'Zdejmij wykolejnicę (Zw)' : 'Nałóż wykolejnicę (Zw)', run: two('Zw', 'group-point', { kind: 'derailer', id: ref.id }) },
-        { label: d?.individualLock ? 'Otwórz zamknięcie (Zz)' : 'Zamknij indywidualnie (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'derailer', id: ref.id }) },
+        { label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Zw)' : 'Nałożenie wykolejnicy (Zw)', run: two('Zw', 'group-point', { kind: 'derailer', id: ref.id }) },
+        { label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'derailer', id: ref.id }) },
       ] };
     }
     if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);
@@ -549,10 +549,10 @@ export class ScreenRenderer {
     const b = this.sim.blocks.get(exit);
     const press = (btn) => () => this.handlers.onPress({ kind: 'block', exit, btn });
     const items = [];
-    if (b?.auto) items.push({ label: `Zmiana kierunku blokady samoczynnej (Zk) – teraz ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
+    if (b?.auto) items.push({ label: `Zmiana kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
     else {
-      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie (Wbl)', run: press('Wbl') }, { label: 'Pozwolenie dla sąsiada (Poz)', run: press('Poz') });
-      items.push({ label: 'Potwierdzenie przyjazdu (Ko)', run: press('Ko') });
+      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie pociągu (Wbl)', run: press('Wbl') }, { label: 'Danie pozwolenia na wyprawienie pociągu (Poz)', run: press('Poz') });
+      items.push({ label: 'Zwolnienie bloku końcowego – pociąg przybył w całości (Ko)', run: press('Ko') });
     }
     items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
     items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });

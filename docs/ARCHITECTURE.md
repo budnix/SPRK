@@ -89,7 +89,9 @@ daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `b
 
 Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków z `location`, `traffic`,
 `difficulty` (gwiazdki) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
-zapamiętany w localStorage). Kliknięcie karty rozwija pod nią parametry zmiany (okręg, scenariusz, zakłócenia, ziarno).
+zapamiętany w localStorage). Układ dwuetapowy: przewijana lista (misje, potem posterunki) po lewej, „tor” ze strzałką i odprawa (briefing) po prawej –
+miniatura, opis i parametry zmiany (okręg, scenariusz, zakłócenia, ziarno) albo, dla misji, opis i liczba kroków.
+Na wąskim ekranie odprawa staje pod wybraną kartą. Ekran startowy leży nad dymkami samouczka i menu (z-index).
 Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
 Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
 

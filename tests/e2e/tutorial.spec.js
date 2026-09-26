@@ -7,6 +7,12 @@ test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', 
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.locator('.st-mission').first()).toContainText('Misja 1');
   await page.click('.st-mission[data-scenario="nauka-1"]');
+  // etap 2: odprawa misji po prawej – bez parametrów zmiany, z liczbą kroków i przyciskiem startu
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 1');
+  await expect(page.locator('#st-briefing .st-bstars')).toContainText('kroków');
+  await expect(page.locator('.st-form')).toBeHidden();
+  await expect(page.locator('#st-go')).toHaveText('Rozpocznij misję');
+  await page.click('#st-go');
   await page.waitForURL(/stacja=szkolna.*scenariusz=nauka-1/);
   await expect(page.locator('.tut-box')).toBeVisible();
   await expect(page.locator('.tut-step')).toHaveText(/Krok 1\//);
@@ -31,7 +37,7 @@ test('misja 1: kroki informacyjne zatrzymują zegar, dymek wskazuje blokadę, Po
   await expect(page.locator('.tut-hl')).toHaveCount(1); // pole blokady Lipno
   await box.locator('.tut-next').click();
   expect(await page.evaluate(() => window.sim.clock.paused)).toBe(false);
-  await expect(box.locator('.tut-title')).toContainText('Pozwolenie dla Lipna');
+  await expect(box.locator('.tut-title')).toContainText('Danie pozwolenia');
   await advance(page, 3);
   expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
   // Poz z menu elementu (pole blokady)
@@ -80,7 +86,7 @@ test('instrukcja zawiera słownik skrótów, a przyciski paska poleceń mają po
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await expect(page.locator('.scr-cmdbar button[data-cmd=pz]')).toHaveAttribute('title', /zwolnienie przebiegu/i);
   await page.click('#btn-help');
-  await expect(page.locator('#help dl.gloss')).toContainText('Poz – pozwolenie');
+  await expect(page.locator('#help dl.gloss')).toContainText('Poz – danie pozwolenia');
 });
 
 test('dymek samouczka nie zasłania wskazywanego elementu, da się przeciągnąć za nagłówek i zostaje na miejscu do następnego kroku', async ({ page }) => {
@@ -123,4 +129,18 @@ test('dymek samouczka nie zasłania wskazywanego elementu, da się przeciągną�
   await page.mouse.move(gb.x + 20, gb.y + 8); await page.mouse.down(); await page.mouse.move(gb.x + 120, gb.y + 60, { steps: 5 }); await page.mouse.up();
   const gb2 = await g.boundingBox();
   expect(Math.round(gb2.x - gb.x)).toBe(100);
+});
+
+test('ekran startowy otwarty z menu w trakcie misji leży nad dymkami samouczka', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-1' } });
+  await page.waitForFunction(() => window.tutorial);
+  await expect(page.locator('.tut-box')).toBeVisible();
+  await page.click('#btn-menu');
+  await page.click('#menu-new');
+  await expect(page.locator('#start')).toBeVisible();
+  // element na wierzchu w miejscu dymka to ekran startowy, nie dymek
+  const top = await page.evaluate(() => { const r = document.querySelector('.tut-box').getBoundingClientRect(); const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!el?.closest('#start'); });
+  expect(top).toBe(true);
+  await page.click('#st-close');
+  await expect(page.locator('#start')).toBeHidden();
 });

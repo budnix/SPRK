@@ -2,6 +2,7 @@ import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
 import { getSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
+import { getMission } from '../tutorial/missions.js';
 
 const SORT_KEY = 'sprk.startSort';
 
@@ -47,47 +48,57 @@ export class StartScreen {
       <header class="st-hero">
         <div class="st-logo">SPRK</div>
         <div class="st-tagline">Symulator Prowadzenia Ruchu Kolejowego</div>
-        <div class="st-sub">Wybierz misję albo posterunek. Nastawnia czeka.</div>
+        <div class="st-sub">1. Wybierz misję albo posterunek z listy · 2. Ustaw zmianę i rozpocznij służbę.</div>
         ${current.scenario ? '<button type="button" class="tb st-close" id="st-close">‹ Wróć do zmiany</button>' : ''}
       </header>
-      <section class="st-missions">
-        <h3><span class="st-kicker">Szkolenie</span>Misje wprowadzające</h3>
-        <div class="st-mission-list">${missions.map((m, i) => `<button type="button" class="st-mission" data-station="${m.station.id}" data-scenario="${m.scenario.id}">
-            <div class="st-mthumb">${stationThumbnail(m.station, { w: 320, h: 110 })}<span class="st-no">${i + 1}</span></div>
-            <div class="st-mbody"><span class="st-mtitle">${esc(m.scenario.name.replace(/\s*\(samouczek\)/, ''))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span>
-            <span class="st-mgo">Rozpocznij ›</span></div></button>`).join('')}</div>
-      </section>
-      <section class="st-stations">
-        <div class="st-head"><h3><span class="st-kicker">Służba</span>Posterunki</h3>
-          <div class="seg st-sort" aria-label="Kolejność posterunków"><button type="button" class="tb" data-sort="name">alfabetycznie</button><button type="button" class="tb" data-sort="difficulty">wg trudności</button></div></div>
-        <div class="st-grid"><div id="st-list" class="st-list"></div>
-        <aside id="st-briefing" class="st-briefing hidden">
-          <div class="st-bthumb"></div>
-          <div class="st-btitle"><span class="st-bname"></span><span class="st-bstars"></span></div>
-          <div class="st-bmeta"></div>
-          <div id="st-params" class="st-params">
-            <p class="muted" id="st-station-desc"></p>
-            <label id="st-district-wrap" class="hidden">Okręg nastawczy (stanowisko) <select id="st-district"></select></label>
-            <p class="muted" id="st-district-desc"></p>
-            <label>Scenariusz <select id="st-scenario"></select></label>
-            <p class="muted" id="st-scenario-desc"></p>
-            <label>Zakłócenia (opóźnienia, usterki)
-              <select id="st-level">${Object.entries(DISRUPTION_LEVELS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
-            </label>
-            <label>Ziarno losowe (puste = losowe) <input id="st-seed" inputmode="numeric" placeholder="np. 42"></label>
-            <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">Rozpocznij zmianę</button></div>
+      <div class="st-layout">
+        <nav class="st-left" aria-label="Lista misji i posterunków">
+          <section class="st-missions">
+            <h3><span class="st-kicker">Szkolenie</span>Misje wprowadzające</h3>
+            <div class="st-mission-list">${missions.map((m, i) => `<button type="button" class="st-mission" data-station="${m.station.id}" data-scenario="${m.scenario.id}" data-idx="${i}">
+                <span class="st-mthumb">${stationThumbnail(m.station, { w: 240, h: 90 })}<span class="st-no">${i + 1}</span></span>
+                <span class="st-mbody"><span class="st-mtitle">${esc(m.scenario.name.replace(/\s*\(samouczek\)/, ''))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span></span></button>`).join('')}</div>
+          </section>
+          <section class="st-stations">
+            <div class="st-head"><h3><span class="st-kicker">Służba</span>Posterunki</h3>
+              <div class="seg st-sort" aria-label="Kolejność posterunków"><button type="button" class="tb" data-sort="name">A–Z</button><button type="button" class="tb" data-sort="difficulty">trudność</button></div></div>
+            <div id="st-list" class="st-list"></div>
+          </section>
+        </nav>
+        <div class="st-arrow" aria-hidden="true"><span class="st-rail"></span><span class="st-chev">›</span><span class="st-rail"></span></div>
+        <aside id="st-briefing" class="st-briefing">
+          <div class="st-bplaceholder"><div class="st-bpicon">‹</div><div>Wybierz misję albo posterunek z listy.<br>Tu ustawisz zmianę i rozpoczniesz służbę.</div></div>
+          <div class="st-bcontent hidden">
+            <div class="st-bthumb"></div>
+            <div class="st-btitle"><span class="st-bname"></span><span class="st-bstars"></span></div>
+            <div class="st-bmeta"></div>
+            <div id="st-params" class="st-params">
+              <p class="muted" id="st-station-desc"></p>
+              <div class="st-form">
+                <label id="st-district-wrap" class="hidden">Okręg nastawczy (stanowisko) <select id="st-district"></select></label>
+                <p class="muted" id="st-district-desc"></p>
+                <label>Scenariusz <select id="st-scenario"></select></label>
+                <p class="muted" id="st-scenario-desc"></p>
+                <label>Zakłócenia (opóźnienia, usterki)
+                  <select id="st-level">${Object.entries(DISRUPTION_LEVELS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
+                </label>
+                <label>Ziarno losowe (puste = losowe) <input id="st-seed" inputmode="numeric" placeholder="np. 42"></label>
+              </div>
+              <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">Rozpocznij zmianę</button></div>
+            </div>
           </div>
-        </aside></div>
-      </section>
+        </aside>
+      </div>
     </div>`;
     this.params = root.querySelector('#st-params');
     this.briefing = root.querySelector('#st-briefing');
     this.list = root.querySelector('#st-list');
     root.querySelector('#st-level').value = current.level || 'low';
     root.querySelector('#st-close')?.addEventListener('click', () => this.hide());
+    this.missions = missions;
     root.querySelector('.st-mission-list').addEventListener('click', (ev) => {
       const b = ev.target.closest('.st-mission'); if (!b) return;
-      this.#go(b.dataset.station, b.dataset.scenario, 'none');
+      this.selectMission(Number(b.dataset.idx));
     });
     for (const b of root.querySelectorAll('.st-sort button')) b.addEventListener('click', () => this.setSort(b.dataset.sort));
     this.list.addEventListener('click', (ev) => {
@@ -95,6 +106,7 @@ export class StartScreen {
       this.select(card.dataset.id);
     });
     root.querySelector('#st-go').addEventListener('click', () => {
+      if (this.mission) { this.#go(this.mission.station.id, this.mission.scenario.id, 'none'); return; }
       const p = new URLSearchParams();
       p.set('stacja', this.selected); p.set('scenariusz', root.querySelector('#st-scenario').value); p.set('zaklocenia', root.querySelector('#st-level').value);
       if (!root.querySelector('#st-district-wrap').classList.contains('hidden')) p.set('okreg', root.querySelector('#st-district').value);
@@ -126,23 +138,35 @@ export class StartScreen {
       </div>`).join('');
   }
 
+  /** Odprawa misji wprowadzającej: opis, liczba kroków, przycisk startu (bez parametrów zmiany). */
+  selectMission(i) {
+    const m = this.missions[i]; if (!m) return;
+    this.mission = m; this.selected = null;
+    this.#mark('.st-mission', (el) => Number(el.dataset.idx) === i);
+    const b = this.#openBriefing(m.station, `Misja ${i + 1}: ${m.scenario.name.replace(/\s*\(samouczek\)/, '')}`);
+    const btn = this.root.querySelector(`.st-mission[data-idx="${i}"]`);
+    if (window.innerWidth < 900) { btn.after(b); b.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else this.root.querySelector('.st-layout').appendChild(b);
+    const steps = getMission(m.scenario.tutorial)?.steps().length;
+    b.querySelector('.st-bstars').innerHTML = `${stars(1)} <small>samouczek${steps ? ` · ${steps} kroków` : ''}</small>`;
+    b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
+    this.root.querySelector('#st-station-desc').textContent = m.scenario.description || '';
+    this.root.querySelector('.st-form').classList.add('hidden');
+    this.root.querySelector('#st-go').textContent = 'Rozpocznij misję';
+  }
+
   /** Zaznacza posterunek i pokazuje odprawę (briefing) z parametrami zmiany. */
   select(id, scroll = true) {
     const st = STATIONS.find((s) => s.id === id); if (!st) return;
-    this.selected = id;
+    this.selected = id; this.mission = null;
     const root = this.root;
-    for (const c of this.list.querySelectorAll('.st-card')) c.classList.toggle('active', c.dataset.id === id);
+    this.#mark('.st-card', (el) => el.dataset.id === id);
     const card = this.list.querySelector(`.st-card[data-id="${id}"]`);
-    const b = this.briefing;
-    b.classList.remove('hidden');
-    b.querySelector('.st-bthumb').innerHTML = stationThumbnail(st, { w: 480, h: 150 });
-    b.querySelector('.st-bname').textContent = st.name;
+    const b = this.#openBriefing(st, st.name);
     b.querySelector('.st-bstars').innerHTML = `${stars(st.difficulty)} <small>trudność ${st.difficulty || '?'}/5</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(st.location || '')}</div><div>${esc(st.traffic || '')}</div>`;
-    // na wąskim ekranie odprawa jest pod listą – przewiń do niej; na szerokim stoi obok
+    root.querySelector('.st-form').classList.remove('hidden');
+    root.querySelector('#st-go').textContent = 'Rozpocznij zmianę';
     const narrow = window.innerWidth < 900;
-    if (narrow) card.after(b);
-    else root.querySelector('.st-grid').appendChild(b);
     root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${st.srkInfo || getSrk(st.srk).name}`;
     const dw = root.querySelector('#st-district-wrap'), dSel = root.querySelector('#st-district');
     if (st.districts) {
@@ -159,17 +183,35 @@ export class StartScreen {
     } else { dw.classList.add('hidden'); root.querySelector('#st-district-desc').textContent = ''; }
     const scSel = root.querySelector('#st-scenario'), lvSel = root.querySelector('#st-level');
     const scs = st.scenarios || [{ id: 'zmiana', name: 'Pełna zmiana' }];
-    scSel.innerHTML = scs.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
-    if (this.current.scenario && this.current.station === id && scs.some((s) => s.id === this.current.scenario)) scSel.value = this.current.scenario;
-    else { const first = scs.find((s) => !s.tutorial); if (first) scSel.value = first.id; }
+    scSel.innerHTML = scs.map((sc) => `<option value="${sc.id}">${esc(sc.name)}</option>`).join('');
+    if (this.current.scenario && this.current.station === id && scs.some((sc) => sc.id === this.current.scenario)) scSel.value = this.current.scenario;
+    else { const first = scs.find((sc) => !sc.tutorial); if (first) scSel.value = first.id; }
     const upd = () => {
-      const sc = scs.find((s) => s.id === scSel.value);
+      const sc = scs.find((x) => x.id === scSel.value);
       root.querySelector('#st-scenario-desc').textContent = sc?.description || '';
       lvSel.disabled = !!sc?.disruptions;
       if (sc?.disruptions) lvSel.value = sc.disruptions;
     };
     scSel.onchange = upd; upd();
-    if (scroll) (narrow ? b : card).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // na wąskim ekranie odprawa staje pod wybraną kartą; na szerokim – w swojej kolumnie obok listy
+    if (narrow) card.after(this.briefing); else root.querySelector('.st-layout').appendChild(this.briefing);
+    if (scroll && narrow) this.briefing.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    else if (scroll) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  #mark(selector, isActive) {
+    for (const el of this.root.querySelectorAll('.st-mission, .st-card')) el.classList.toggle('active', el.matches(selector) && isActive(el));
+  }
+
+  /** Wspólna część odprawy: miniatura, tytuł; zwraca element odprawy. */
+  #openBriefing(station, title) {
+    const b = this.briefing;
+    b.classList.add('open');
+    b.querySelector('.st-bplaceholder').classList.add('hidden');
+    b.querySelector('.st-bcontent').classList.remove('hidden');
+    b.querySelector('.st-bthumb').innerHTML = stationThumbnail(station, { w: 480, h: 150 });
+    b.querySelector('.st-bname').textContent = title;
+    return b;
   }
 
   #go(station, scenario, level) {

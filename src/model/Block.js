@@ -285,7 +285,7 @@ export class LineBlock {
     if (this.fixed === 'out') return false;
     if (this.request || this.direction || this.occupied) return false;
     this.request = 'theirs'; this.requestSince = this.time;
-    this.log('info', `${this.neighbour} żąda pozwolenia na wyprawienie pociągu – naciśnij Poz`);
+    this.log('info', `${this.neighbour} żąda pozwolenia na wyprawienie pociągu – daj pozwolenie (Poz)`);
     this.bus.emit('alarm', { type: 'request', exit: this.id });
     this.#emit();
     return true;

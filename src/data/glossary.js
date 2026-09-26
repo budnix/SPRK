@@ -3,9 +3,9 @@
  * Bez DOM – używany w dymkach samouczka, w instrukcji i jako podpowiedzi przycisków.
  */
 export const GLOSSARY = {
-  Poz: { name: 'Poz – pozwolenie', text: 'Danie sąsiedniemu posterunkowi pozwolenia na wyprawienie pociągu w naszą stronę (blokada Eap). Naciska się, gdy sąsiad żąda pozwolenia – miga pole „żąd.”. Po Poz kierunek blokady ustawia się na wjazd.' },
+  Poz: { name: 'Poz – danie pozwolenia', text: 'Danie sąsiedniemu posterunkowi pozwolenia na wyprawienie pociągu w naszą stronę (blokada Eap). Naciska się, gdy sąsiad żąda pozwolenia – miga pole „żąd.”. Po Poz kierunek blokady ustawia się na wjazd.' },
   Wbl: { name: 'Wbl – żądanie pozwolenia', text: 'Żądanie od sąsiada pozwolenia na wyprawienie naszego pociągu. Sąsiad odpowiada po chwili; gdy da pozwolenie, pole „wyjazd” świeci i można nastawić przebieg wyjazdowy.' },
-  Ko: { name: 'Ko – blok końcowy', text: 'Potwierdzenie sąsiadowi, że jego pociąg przybył w całości. Naciska się, gdy miga pole „Ko” (pociąg cały na stacji). Zwalnia blokadę – szlak jest znów wolny.' },
+  Ko: { name: 'Ko – zwolnienie bloku końcowego', text: 'Zwolnienie bloku końcowego po przyjeździe pociągu sąsiada w całości – potwierdzenie przyjazdu. Naciska się, gdy miga pole „Ko” (pociąg cały na stacji). Zwalnia blokadę – szlak jest znów wolny.' },
   Po: { name: 'Po – blok początkowy', text: 'Po wyjeździe naszego pociągu na szlak blok początkowy blokuje się (czerwone pole „wyjazd”) do chwili, gdy sąsiad potwierdzi przyjazd (Ko u sąsiada).' },
   dPo: { name: 'dPo – doraźne zwolnienie bloku początkowego', text: 'Zwolnienie bloku początkowego bez potwierdzenia od sąsiada przez blokadę – tylko przy usterce, po telefonicznym potwierdzeniu przyjazdu. Rejestrowane w liczniku (plombowanym).' },
   dKo: { name: 'dKo – doraźne zwolnienie bloku końcowego', text: 'Zwolnienie bloku końcowego bez działania blokady – tylko przy usterce, gdy pociąg sąsiada przybył w całości. Rejestrowane w liczniku.' },

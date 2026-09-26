@@ -24,7 +24,7 @@ test('menu elementu: przebieg manewrowy na tor 13 (żółty), STOP gasi, polecen
   await openShift(page, 'sopot');
   await tap(page, 'L501');
   await expect(page.locator('.scr-menu')).toBeVisible();
-  await page.click('.scr-menu button:has-text("Przebieg manewrowy")');
+  await page.click('.scr-menu button:has-text("przebiegu manewrowego")');
   await tap(page, 'kT13');
   await advance(page, 8);
   let st = await simState(page);

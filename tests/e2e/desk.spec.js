@@ -6,9 +6,11 @@ import { openShift, btn, simState, advance } from './helpers.js';
 test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / wg trudności, wybór posterunku rozwija parametry i startuje zmianę', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
   await expect(page.locator('#start')).toBeVisible();
-  // misje przed listą posterunków
-  const order = await page.evaluate(() => [...document.querySelectorAll('.st-missions, .st-stations')].map((e) => e.className));
+  // lista po lewej: misje przed posterunkami; odprawa (etap 2) po prawej z podpowiedzią
+  const order = await page.evaluate(() => [...document.querySelectorAll('.st-left .st-missions, .st-left .st-stations')].map((e) => e.className));
   expect(order).toEqual(['st-missions', 'st-stations']);
+  await expect(page.locator('#st-briefing .st-bplaceholder')).toBeVisible();
+  await expect(page.locator('.st-arrow')).toBeVisible();
   expect(await page.locator('.st-mission').count()).toBeGreaterThanOrEqual(2);
   // domyślnie alfabetycznie
   const names = await page.locator('.st-card .st-name').allTextContents();
@@ -22,10 +24,11 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   await page.reload({ waitUntil: 'networkidle' });
   await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);
   // wybór posterunku: parametry pod kartą
-  await expect(page.locator('#st-briefing')).toBeHidden();
+  await expect(page.locator('#st-params')).toBeHidden();
   expect(await page.locator('.st-card .st-thumb svg path').count()).toBeGreaterThan(0); // miniatury planów
   await page.click('.st-card[data-id=sopot]');
-  await expect(page.locator('#st-briefing')).toBeVisible();
+  await expect(page.locator('#st-params')).toBeVisible();
+  await expect(page.locator('#st-briefing')).toHaveClass(/open/);
   await expect(page.locator('.st-card[data-id=sopot]')).toHaveClass(/active/);
   await expect(page.locator('#st-briefing .st-bname')).toHaveText('Sopot');
   await expect(page.locator('#st-station-desc')).toContainText('Ebilock');
