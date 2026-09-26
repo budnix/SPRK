@@ -31,6 +31,11 @@ export class Help {
         <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca lampka „żąd.”, komunikat). Naciśnij <b>Poz</b>. Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (miga „Ko”) naciśnij <b>Ko</b>.</li>
         <li><b>dPo</b>, <b>dKo</b> – doraźne zwolnienie bloków (liczniki).</li>
       </ul>
+      <h3>Rozkazy pisemne</h3>
+      <ul>
+        <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 20 km/h (np. przy usterce semafora).</li>
+        <li>Warunki wydania (Ir-1): pociąg stoi przed tym semaforem, zwrotnice w drodze jazdy zamknięte <b>Zz</b> lub utwierdzone w przebiegu, wykolejnice zdjęte, odcinki wolne, przy wyjeździe pozwolenie blokady.</li>
+      </ul>
       <h3>Pociągi</h3>
       <ul>
         <li>Pociągi osobowe zatrzymują się przy peronie i odjeżdżają nie wcześniej niż o czasie rozkładowym – gdy semafor wyjazdowy pokaże sygnał zezwalający.</li>

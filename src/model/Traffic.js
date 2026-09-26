@@ -15,7 +15,99 @@ export class Traffic {
     this.time = 0;
     this.entries = station.timetable.map((t, i) => this.#prepare(t, i));
     this.journal = [];
+    this.orders = [];
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
+  }
+
+  /** Stojące pociągi, którym można wydać rozkaz pisemny (wraz z najbliższym semaforem). */
+  standingTrains() {
+    return this.entries
+      .filter((e) => e.train && !e.train.finished && e.train.entered && e.train.v === 0)
+      .map((e) => ({ nr: e.nr, name: e.name, signal: e.train.nextSignal(), entry: e }));
+  }
+
+  /**
+   * Szablon treści rozkazu pisemnego „S” (wg wzoru Ir-1): pozwolenie na przejazd obok
+   * semafora wskazującego sygnał „Stój” z prędkością do 20 km/h do następnego semafora.
+   */
+  orderTemplate(nr, signalId, reason = 'usterki urządzeń srk') {
+    const st = this.station.name;
+    return `Rozkaz pisemny „S”. Do pociągu nr ${nr}. Semafor ${signalId} na stacji ${st} wskazuje sygnał „Stój” z powodu ${reason}. `
+      + `Pociąg nr ${nr} ma pozwolenie na przejechanie obok semafora ${signalId} wskazującego sygnał „Stój” i jazdę do następnego semafora `
+      + `z prędkością nieprzekraczającą 20 km/h. Droga przebiegu jest przygotowana, zwrotnice zamknięte.`;
+  }
+
+  /**
+   * Wydanie rozkazu pisemnego „S”. Warunki (Ir-1, uproszczone):
+   *  - pociąg stoi na stacji przed semaforem `signalId` wskazującym „Stój”,
+   *  - droga jazdy do następnego semafora: zwrotnice utwierdzone w przebiegu lub zamknięte indywidualnie (Zz),
+   *    wykolejnice zdjęte, odcinki wolne i nieutwierdzone w innym przebiegu,
+   *  - wyjazd na szlak tylko z pozwoleniem blokady liniowej.
+   */
+  issueOrder({ nr, signal, text, reason }) {
+    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    if (!e?.train || e.train.finished || !e.train.entered) return { ok: false, reason: `Pociąg ${nr} nie stoi na stacji` };
+    const tr = e.train;
+    if (tr.v > 0) return { ok: false, reason: `Pociąg ${nr} jest w ruchu – rozkaz doręcza się na postoju` };
+    const next = tr.nextSignal();
+    if (next !== signal) return { ok: false, reason: `Pociąg ${nr} stoi przed ${next ?? 'brakiem semafora'}, nie przed ${signal}` };
+    const sig = this.ilk.signals.get(signal);
+    if (!sig || sig.kind !== 'semafor') return { ok: false, reason: `${signal} nie jest semaforem` };
+    if (sig.aspect !== 'S1') return { ok: false, reason: `Semafor ${signal} nie wskazuje „Stój” – rozkaz zbędny` };
+    if (tr.hasOrderFor(signal)) return { ok: false, reason: `Pociąg ${nr} ma już rozkaz na ${signal}` };
+    // Droga jazdy za semaforem do następnego semafora
+    const problems = [];
+    const positions = this.ilk.positions();
+    const start = this.ilk.topo.trackAt(sig.tile.at.x, sig.tile.at.y);
+    let outPort = start._def.ports(start).find((p) => (p.includes('E') ? 'E' : p.includes('W') ? 'W' : null) === sig.dir);
+    let tile = start, guard = 0, exitId = null;
+    const sections = new Set();
+    while (guard++ < 100) {
+      const exit = this.ilk.topo.exitAt(tile, outPort);
+      if (exit) { exitId = exit.id; break; }
+      const nb = this.ilk.topo.neighbour(tile, outPort);
+      if (!nb) break;
+      tile = nb.tile;
+      sections.add(tile.section);
+      if (tile.type === 'point') {
+        const p = this.ilk.points.get(tile.id);
+        const lockedInRoute = !!this.ilk.pointLockedByRoute(tile.id);
+        if (!p.individualLock && !lockedInRoute) problems.push(`zwrotnica ${tile.id} niezamknięta (Zz) ani nieutwierdzona`);
+        if (!p.control || p.moving) problems.push(`zwrotnica ${tile.id} bez kontroli`);
+      }
+      if (tile.derailer) {
+        const d = this.ilk.derailers.get(tile.derailer);
+        if (d.position !== 'off') problems.push(`wykolejnica ${tile.derailer} nałożona`);
+      }
+      if (tile.type === 'buffer') break;
+      const st = this.ilk.topo.step(tile, nb.inPort, positions);
+      if (st.trailing) problems.push(`zwrotnica ${tile.id} w położeniu na rozprucie`);
+      outPort = st.outPort;
+      if (!outPort) break;
+      if (this.ilk.topo.signalsAt(tile, outPort).some((sg) => sg.kind === 'semafor')) break;
+    }
+    for (const sid of sections) {
+      const s = this.ilk.sections.get(sid);
+      if (s.occupied) problems.push(`odcinek ${sid} zajęty`);
+      if (s.route) {
+        const act = this.ilk.active.get(s.route);
+        if (act && act.route.start !== signal) problems.push(`odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+      }
+    }
+    if (exitId) {
+      const g = this.blocks.get(exitId)?.gate();
+      if (g && !g.ok) problems.push(g.reason);
+    }
+    if (problems.length) return { ok: false, reason: `Rozkaz dla ${nr} na ${signal}: ${problems.join('; ')}` };
+    const order = {
+      id: this.orders.length + 1, time: this.time, nr: e.nr, signal, type: 'S',
+      text: text || this.orderTemplate(e.nr, signal, reason), reason: reason || '',
+    };
+    this.orders.push(order);
+    tr.orders.push({ signal, used: false, id: order.id });
+    this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (20 km/h)` });
+    this.bus.emit('orders', this.orders);
+    return { ok: true, order };
   }
 
   #prepare(t, i) {
@@ -99,6 +191,9 @@ export class Traffic {
         e.actualDep = t; e.status = 'odjeżdża';
         this.#journal(e, 'odjazd', t, e.actualTrack);
         this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} odjazd` });
+        break;
+      case 'order-used':
+        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor na rozkaz pisemny` });
         break;
       case 'stop':
         if (tr.stoppedAt?.kind === 'signal') {

@@ -12,6 +12,7 @@ export class SidePanel {
         <button data-tab="rj" class="active">Rozkład jazdy</button>
         <button data-tab="log">Dziennik <span id="log-badge" class="badge hidden">0</span></button>
         <button data-tab="stan">Stan</button>
+        <button data-tab="rozkazy">Rozkazy</button>
       </nav>
       <section class="tab" id="tab-rj">
         <table class="rj"><thead><tr><th>Nr</th><th>Relacja</th><th>Przyj.</th><th>Odj.</th><th>Tor</th><th>Stan</th></tr></thead><tbody></tbody></table>
@@ -30,6 +31,19 @@ export class SidePanel {
         <div id="counters"></div>
         <h4>Manewry</h4>
         <div id="shunt"></div>
+      </section>
+      <section class="tab hidden" id="tab-rozkazy">
+        <h4>Rozkaz pisemny „S” – przejazd obok semafora „Stój”</h4>
+        <form id="order-form" class="order-form">
+          <label>Pociąg nr <select name="nr" id="order-train"></select></label>
+          <label>Semafor <input name="signal" id="order-signal" readonly></label>
+          <label>Z powodu <input name="reason" id="order-reason" value="usterki urządzeń srk"></label>
+          <label>Treść rozkazu <textarea name="text" id="order-text" rows="6"></textarea></label>
+          <div class="order-actions"><button type="submit">Wydaj rozkaz</button> <span id="order-msg" class="order-msg"></span></div>
+        </form>
+        <p class="muted small">Warunki (Ir-1): pociąg stoi przed semaforem, zwrotnice w drodze jazdy zamknięte (Zz) lub utwierdzone, wykolejnice zdjęte, odcinki wolne, przy wyjeździe – pozwolenie blokady. Pociąg jedzie do następnego semafora z prędkością do 20 km/h.</p>
+        <h4>Wydane rozkazy</h4>
+        <ol id="orders" class="orders"></ol>
       </section>`;
     this.tbody = root.querySelector('.rj tbody');
     this.logEl = root.querySelector('#log');
@@ -47,12 +61,52 @@ export class SidePanel {
     this.renderTimetable();
     this.renderState();
     this.lastRender = 0;
+    this.#initOrders();
+  }
+
+  #initOrders() {
+    const form = this.root.querySelector('#order-form');
+    const sel = this.root.querySelector('#order-train');
+    const sigEl = this.root.querySelector('#order-signal');
+    const reasonEl = this.root.querySelector('#order-reason');
+    const textEl = this.root.querySelector('#order-text');
+    const msg = this.root.querySelector('#order-msg');
+    const fill = () => {
+      const nr = sel.value;
+      const st = this.sim.traffic.standingTrains().find((t) => String(t.nr) === nr);
+      sigEl.value = st?.signal ?? '';
+      textEl.value = st?.signal ? this.sim.traffic.orderTemplate(st.nr, st.signal, reasonEl.value) : '';
+    };
+    sel.addEventListener('change', fill);
+    reasonEl.addEventListener('input', fill);
+    form.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const r = this.sim.traffic.issueOrder({ nr: sel.value, signal: sigEl.value, text: textEl.value, reason: reasonEl.value });
+      msg.textContent = r.ok ? `Rozkaz nr ${r.order.id} wydany.` : r.reason;
+      msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
+      this.renderOrders();
+    });
+    this.sim.bus.on('orders', () => this.renderOrders());
+    this.refreshOrderTrains = () => {
+      const standing = this.sim.traffic.standingTrains();
+      const cur = sel.value;
+      const opts = standing.map((t) => `<option value="${t.nr}">${t.nr} ${t.name} – przed ${t.signal ?? '–'}</option>`).join('');
+      if (sel.innerHTML !== opts) { sel.innerHTML = opts || '<option value="">brak stojących pociągów</option>'; if ([...sel.options].some((o) => o.value === cur)) sel.value = cur; fill(); }
+    };
+    this.refreshOrderTrains();
+    this.renderOrders();
+  }
+
+  renderOrders() {
+    const ol = this.root.querySelector('#orders');
+    ol.innerHTML = this.sim.traffic.orders.slice().reverse().map((o) => `<li><b>Nr ${o.id}</b> · ${Clock.format(o.time)} · pociąg ${o.nr} · semafor ${o.signal}<div class="order-text">${escapeHtml(o.text)}</div></li>`).join('') || '<li class="muted">brak</li>';
   }
 
   showTab(id) {
     for (const b of this.root.querySelectorAll('.tabs button')) b.classList.toggle('active', b.dataset.tab === id);
     for (const s of this.root.querySelectorAll('.tab')) s.classList.toggle('hidden', s.id !== `tab-${id}`);
     if (id === 'log') { this.unread = 0; this.#badge(); }
+    if (id === 'rozkazy') this.refreshOrderTrains?.();
   }
 
   #badge() {
@@ -67,6 +121,7 @@ export class SidePanel {
     this.lastRender = now;
     this.renderTimetable();
     this.renderState();
+    this.refreshOrderTrains?.();
   }
 
   addLog(e) {

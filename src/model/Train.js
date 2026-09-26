@@ -39,6 +39,18 @@ export class Train {
     this.fullyIn = false;     // cały pociąg na pulpicie
     this.lineSpeed = (opts.lineSpeed ?? 100) * KMH;
     this.activeLimit = Infinity; // ograniczenie obowiązujące do następnego sygnalizatora (np. Sz – 20 km/h)
+    this.orders = [];            // rozkazy pisemne: { signal, used }
+  }
+
+  /** Czy pociąg ma niewykorzystany rozkaz pisemny na przejazd obok sygnalizatora. */
+  hasOrderFor(signalId) {
+    return this.orders.some((o) => o.signal === signalId && !o.used);
+  }
+
+  /** Identyfikator najbliższego sygnalizatora przed czołem (ważnego dla tej jazdy) lub null. */
+  nextSignal() {
+    const c = this.#lookahead(3000, true).find((x) => x.kind === 'signal' || x.kind === 'passed-signal');
+    return c ? c.signal : null;
   }
 
   /** Umieszcza pociąg na wirtualnym torze szlakowym przed wjazdem przez `exitId`. */
@@ -113,7 +125,7 @@ export class Train {
    * Skanuje tor przed czołem: zwraca listę ograniczeń { dist, speed, reason, kind }.
    * `dist` – odległość od czoła do początku ograniczenia.
    */
-  #lookahead(maxDist) {
+  #lookahead(maxDist, listSignals = false) {
     const constraints = [];
     const positions = this.ilk.positions();
     let seg = this.trail[this.trail.length - 1];
@@ -145,9 +157,15 @@ export class Train {
           const relevant = this.mode === 'train' ? sig.kind === 'semafor' : true;
           if (!relevant) continue;
           if (!Interlocking.isProceed(sig.aspect)) {
+            if (this.hasOrderFor(sig.id)) {
+              // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 20 km/h
+              constraints.push({ dist, speed: 20 * KMH, reason: `rozkaz pisemny ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id });
+              continue;
+            }
             constraints.push({ dist, speed: 0, reason: sig.id, kind: 'signal', signal: sig.id });
             return constraints;
           }
+          if (listSignals) constraints.push({ dist, speed: Infinity, kind: 'passed-signal', signal: sig.id });
           const sp = Interlocking.aspectSpeed(sig.aspect);
           if (sp < Infinity) constraints.push({ dist, speed: sp * KMH, reason: `sygnał ${sig.aspect} na ${sig.id}`, kind: 'limit', until: 'next-signal' });
         }
@@ -294,7 +312,9 @@ export class Train {
         for (const sg of this.topo.signalsAt(last.tile, last.outPort)) {
           const sig = this.ilk.signals.get(sg.id);
           if (this.mode === 'train' && sig.kind !== 'semafor') continue;
-          this.activeLimit = sig.aspect === 'Sz' ? 20 * KMH : Infinity;
+          const order = this.orders.find((o) => o.signal === sig.id && !o.used);
+          if (order && !Interlocking.isProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
+          this.activeLimit = (sig.aspect === 'Sz' || order) ? 20 * KMH : Infinity;
         }
       }
       this.trail.push(next);

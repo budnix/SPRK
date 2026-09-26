@@ -30,7 +30,7 @@ export class Simulation {
   /** Krok symulacji o `realDt` sekund czasu rzeczywistego. */
   step(realDt) {
     const dt = this.clock.advance(realDt);
-    if (dt <= 0) return;
+    if (dt <= 0) { this.bus.emit('tick', { time: this.clock.time, paused: true }); return; }
     // Stały krok wewnętrzny (max 0.5 s symulacji) dla stabilności ruchu
     let remaining = dt;
     while (remaining > 0) {
