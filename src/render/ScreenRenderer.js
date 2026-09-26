@@ -314,7 +314,8 @@ export class ScreenRenderer {
     else body.append(el('path', { d: chevron(-dir * 3) }), el('path', { d: chevron(dir * 4) }));
     const endTri = el('path', { class: 'sig-end', d: `M${dir * 9},-3 L${dir * 13},0 L${dir * 9},3 Z` });
     const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, [
-      el('rect', { class: 'sig-back', x: -10, y: -5, width: 20, height: 10 }),
+      // tło przerywa linię toru pod całym symbolem, także pod trójkątem końca przebiegu (dir*9..13)
+      el('rect', { class: 'sig-back', x: dir > 0 ? -9 : -15, y: -5, width: 24, height: 10 }),
       this.#frame(0, 0, 28, 18),
       body, endTri,
       text(-dir * 2, side > 0 ? 18 : -12, tile.id, { class: 'scr-text sig-label' }),
