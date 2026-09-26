@@ -94,7 +94,7 @@ function applyScreen() {
   const s = currentScreen();
   if (s) d.renderer.setView(s.x0, s.x1); else d.renderer.resetView();
   const n = d.screens.length;
-  screenTabs.classList.toggle('hidden', n <= 1);
+  document.getElementById('screen-group').classList.toggle('hidden', n <= 1);
   screenTabs.innerHTML = '';
   if (n > 1) {
     const mk = (label, idx, sub) => {

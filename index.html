@@ -69,12 +69,9 @@
         <div id="cmd-host"></div>
         <div id="desk-scroll"><div id="desk"></div></div>
         <div id="desk-tools">
-          <div id="screen-tabs" class="screen-tabs hidden" aria-label="Ekrany pulpitu"></div>
-          <button class="tb" id="zoom-out">−</button>
-          <button class="tb" id="zoom-fit">dopasuj</button>
-          <button class="tb" id="zoom-in">+</button>
-          <button class="tb" id="side-toggle" title="Ukryj / pokaż panel boczny">ukryj</button>
-          <div id="mini-tabs" class="mini-tabs" aria-label="Panel boczny (zwinięty)"></div>
+          <div class="tool-group tg-screens hidden" id="screen-group"><span class="lbl">ekran</span><div id="screen-tabs" class="screen-tabs seg" aria-label="Ekrany pulpitu"></div></div>
+          <div class="tool-group tg-zoom"><span class="lbl">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz">−</button><button class="tb" id="zoom-fit" title="Dopasuj do okna">dopasuj</button><button class="tb" id="zoom-in" title="Powiększ">+</button></div></div>
+          <div class="tool-group tg-panel"><span class="lbl">panel</span><button class="tb" id="side-toggle" title="Ukryj / pokaż panel boczny">ukryj</button><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)"></div></div>
           <span id="status" class="status"></span>
           <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
         </div>
