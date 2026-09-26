@@ -23,8 +23,6 @@ const sections = {};
 const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski, opisy ----
-[['GD1', 6], ['GD2', 10], ['GS2', 14], ['GS1', 18], ['OR1', 60], ['OR2', 64], ['OS2', 68], ['OS1', 72]]
-  .forEach(([exit, x]) => tiles.push({ x, y: 0, type: 'block', exit }));
 tiles.push({ x: 30, y: 0, type: 'label', text: 'SOPOT', size: 12, span: 18 });
 tiles.push({ x: 32, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
 tiles.push({ x: 33, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });

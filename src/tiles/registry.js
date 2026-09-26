@@ -181,22 +181,6 @@ registerTile({
   exits: () => [],
 });
 
-/**
- * Pole blokady liniowej (półsamoczynna, typu Eap) dla jednego toru szlakowego.
- * Zajmuje 4×2 kostki. Odnosi się do wyjazdu `exit`.
- */
-registerTile({
-  type: 'block',
-  category: 'block',
-  title: 'Blokada liniowa Eap',
-  span: { w: 4, h: 2 },
-  schema: {
-    exit: { type: 'string', required: true, doc: 'Id wyjazdu (szlaku) z definicji stacji' },
-  },
-  ports: () => [],
-  exits: () => [],
-});
-
 /** Opis (np. nazwa toru, nazwa stacji). */
 registerTile({
   type: 'label',

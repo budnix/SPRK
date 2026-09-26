@@ -194,7 +194,7 @@ test('walidacja: każdy rodzaj błędu definicji jest raportowany', () => {
   assert.ok(errs([{ x: 0, y: 0, type: 'signal', id: 'A', kind: 'lampa', at: { x: 0, y: 1 }, dir: 'E' }]).some((e) => /dopuszczalne semafor\/tm/.test(e)));
   assert.ok(errs([{ x: 0, y: 0, type: 'signal', id: 'A', kind: 'semafor', at: { x: 3, y: 3 }, dir: 'E' }]).some((e) => /nie wskazuje kostki torowej/.test(e)));
   assert.ok(errs([{ x: 0, y: 0, type: 'point', id: 'Zw1', toe: 'W', straight: 'E', diverge: 'NE', section: 's' }, { x: 2, y: 0, type: 'point', id: 'Zw1', toe: 'W', straight: 'E', diverge: 'NE', section: 's' }]).some((e) => /powtórzony id/.test(e)));
-  assert.ok(errs([{ x: 0, y: 0, type: 'block', exit: 'ZZ' }]).some((e) => /nieznany wyjazd 'ZZ'/.test(e)));
+  assert.ok(errs([{ x: 0, y: 0, type: 'block', exit: 'ZZ' }]).some((e) => /nieznany typ 'block'/.test(e))); // pole blokady nie jest już kostką – blokadę rysuje się z definicji wyjazdu
   const ex = errs([{ x: 0, y: 0, type: 'track', ports: ['W', 'E'], section: 's' }], { exits: { W: { tile: { x: 1, y: 1 }, dir: 'Q' } } });
   assert.ok(ex.some((e) => /kostka nie jest torowa/.test(e)) && ex.some((e) => /zły kierunek/.test(e)));
   const v = validateStation({ ...base, tiles: [], exits: { W: { tile: { x: 0, y: 0 }, dir: 'W' } } });
@@ -208,7 +208,7 @@ test('walidacja: każdy rodzaj błędu definicji jest raportowany', () => {
 
 test('rejestr kostek: wszystkie typy mają porty i wyjścia, zwrotnica zależy od położenia, skrzyżowanie bez połączeń', () => {
   const defs = listTileDefs();
-  assert.ok(defs.length >= 9);
+  assert.ok(defs.length >= 8) // bez kostki 'block' – blokadę rysuje się z definicji wyjazdu;
   for (const d of defs) assert.equal(typeof d.ports, 'function', d.type);
   const track = getTileDef('track');
   assert.deepEqual(track.exits({ ports: ['W', 'E'] }, 'W'), ['E']);
@@ -229,7 +229,7 @@ test('rejestr kostek: wszystkie typy mają porty i wyjścia, zwrotnica zależy o
   const buffer = getTileDef('buffer');
   assert.deepEqual(buffer.ports({ port: 'W' }), ['W']);
   assert.deepEqual(buffer.exits({ port: 'W' }, 'W'), []);
-  for (const t of ['signal', 'button', 'label', 'block', 'blank']) assert.deepEqual(getTileDef(t).ports({}), [], t);
+  for (const t of ['signal', 'button', 'label', 'blank']) assert.deepEqual(getTileDef(t).ports({}), [], t);
   assert.throws(() => getTileDef('nie-ma'));
   assert.throws(() => registerTile({}));
   registerTile({ type: 'test-tile', category: 'blank', ports: () => [] });

@@ -111,7 +111,7 @@ Guided mission: `?stacja=szkolna&scenariusz=nauka-1`.
 | Emergency release | `dPz` + signal button (counted) | dPz → signal → WYKONAJ |
 | Substitute signal | `Sz` + green signal button (counted) | Sz → signal → WYKONAJ |
 | Point | `Zw` + point button; lock with `Zz` | ZWROTNICA → point; Zz → point → WYKONAJ |
-| Line block | `Wbl` request, `Poz` grant, `Ko` confirm arrival | click the line arrow: Wbl / Poz / Ko, or Zk on automatic block |
+| Line block | tiles at the end of the line track: arrows on the track, `Wbl` request, `Poz` grant, `Ko` confirm arrival, `Zk` on automatic block | click the line arrow: Wbl / Poz / Ko, or Zk on automatic block |
 
 Full manual and glossary: the **?** button in the app (Polish, as is the whole UI, since the simulator follows
 Polish railway rules and terminology).

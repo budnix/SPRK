@@ -16,7 +16,7 @@ const A = (term, label = term) => `<abbr data-term="${term}">${label}</abbr>`;
 const sig = (id, color = 'green') => ({ ref: { kind: 'signal', id, color } });
 
 function entry(sim, nr) { return sim.traffic.timetable().find((e) => String(e.nr) === String(nr)); }
-function atNeighbour(sim, nr) { return entry(sim, nr)?.status === 'u sąsiada'; }
+function atNeighbour(sim, nr) { return entry(sim, nr)?.status === 'na następnym posterunku'; }
 function arrived(sim, nr) { const e = entry(sim, nr); return !!e && e.actualArr != null; }
 function blockFree(b) { return !b.koPending && !b.occupied && b.direction == null && !b.poBlocked; }
 function active(sim, id) { return sim.ilk.active.has(id); }
@@ -29,7 +29,7 @@ function phrases(view) {
     // `name` w dopełniaczu („Lipna”, „Dębna”)
     blockPress: (exit, name, btn) => m
       ? `kliknij <b>strzałkę szlaku do ${name}</b> na krańcu toru i wybierz <b>${btn}</b>`
-      : `naciśnij przycisk <b>${btn}</b> na polu blokady do <b>${name}</b> (lewy górny / prawy górny róg pulpitu)`,
+      : `naciśnij przycisk <b>${btn}</b> na kostkach blokady przy końcu toru szlakowego do <b>${name}</b> (lewy / prawy kraniec pulpitu)`,
     trainRoute: (s, e, what) => m
       ? `na pasku poleceń wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>${s}</b>, a potem ${what || `semafor <b>${e}</b>`}`
       : `naciśnij <b>zielony przycisk</b> semafora <b>${s}</b>, a w ciągu 6 s ${what || `zielony przycisk semafora <b>${e}</b>`}`,
@@ -45,7 +45,7 @@ function phrases(view) {
     zw: (p) => m ? `wybierz <b>ZWROTNICA</b> i kliknij zwrotnicę <b>${p}</b>` : `naciśnij przycisk grupowy <b>Zw</b>, a potem czarny przycisk zwrotnicy <b>${p}</b>`,
     zz: (p) => m ? `wybierz <b>Zz</b>, kliknij zwrotnicę <b>${p}</b> i potwierdź <b>WYKONAJ</b>` : `naciśnij przycisk grupowy <b>Zz</b>, a potem przycisk zwrotnicy <b>${p}</b>`,
     sz: (s) => m ? `wybierz <b>Sz</b>, kliknij semafor <b>${s}</b> i potwierdź <b>WYKONAJ</b>` : `naciśnij przycisk grupowy <b>Sz</b>, a potem zielony przycisk semafora <b>${s}</b>`,
-    dpo: (name) => m ? `kliknij strzałkę szlaku do <b>${name}</b> → <b>dPo</b> → <b>WYKONAJ</b>` : `naciśnij <b>dPo</b> na polu blokady do <b>${name}</b>`,
+    dpo: (name) => m ? `kliknij strzałkę szlaku do <b>${name}</b> → <b>dPo</b> → <b>WYKONAJ</b>` : `naciśnij <b>dPo</b> na kostce licznika blokady do <b>${name}</b>`,
     cancel: () => m ? `Wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>B</b> … i rozmyśl się: naciśnij <b>OPS</b> (albo Esc). Polecenie zostaje odwołane, nic się nie nastawia.`
       : `Naciśnij zielony przycisk semafora <b>B</b> … i nic więcej. Uzbrojony przycisk (podświetlony) gaśnie sam po 6 s – przebieg nie powstaje. Wyciągnięcie przycisku też odwołuje uzbrojenie.`,
     colours: m
@@ -76,24 +76,24 @@ export function missionSteps(view) {
   info('layout', 'Plan stacji', `Tor <b>1</b> i <b>2</b> mają perony (szare prostokąty), tor <b>3</b> to bocznica z kozłem oporowym i ${A('wykolejnica', 'wykolejnicą')} Wk1. ${A('semafor', 'Semafory')} wjazdowe: <b>A</b> (od ${LIPa}) i <b>B</b> (od ${DEBa}); wyjazdowe: <b>C1, C2</b> (na zachód) i <b>D1, D2</b> (na wschód). <b>Tm1, Tm2</b> to ${A('Tm', 'tarcze manewrowe')}.<p>${P.colours}</p>`, { el: '#desk' });
   info('block-intro', 'Blokada liniowa', `${m
     ? `Stan ${A('Eap', 'blokady liniowej Eap')} do ${LIPa} i do ${DEBa} jest przy wyjazdach na szlak, na krańcach toru: <b>strzałka szlaku</b> (czerwona – odstęp zajęty przez pociąg), nad torem <b>strzałka kierunku</b> (w stronę sąsiada – mamy pozwolenie na wyjazd; do nas – sąsiad ma pozwolenie) oraz napis: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Wbl</b> – czekamy na pozwolenie, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić.`
-    : `Pola w górnych rogach to ${A('Eap', 'blokada liniowa Eap')} do ${LIPa} i do ${DEBa}. Lampki: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas, <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić.`}<p>${m ? 'Na monitorze nie ma przycisków – <b>kliknij strzałkę szlaku</b>, a otworzy się menu z poleceniami' : 'Przyciski pod polem'}: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – danie pozwolenia sąsiadowi, ${A('Ko')} – zwolnienie bloku końcowego po przyjeździe pociągu w całości; ${A('dPo')} i ${A('dKo')} – doraźne zwolnienia (tylko przy usterce, ${m ? 'potwierdzane WYKONAJ, ' : ''}liczniki).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
+    : `Kostki przy obu krańcach toru szlakowego to ${A('Eap', 'blokada liniowa Eap')} do ${LIPa} i do ${DEBa}. Na kostkach toru są strzałki z lampkami: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas. Nad torem kostki przycisków z lampkami: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić; wyżej liczniki doraźne.`}<p>${m ? 'Na monitorze nie ma przycisków – <b>kliknij strzałkę szlaku</b>, a otworzy się menu z poleceniami' : 'Przyciski na kostkach obok toru'}: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – danie pozwolenia sąsiadowi, ${A('Ko')} – zwolnienie bloku końcowego po przyjeździe pociągu w całości; ${A('dPo')} i ${A('dKo')} – doraźne zwolnienia (tylko przy usterce, ${m ? 'potwierdzane WYKONAJ, ' : ''}liczniki).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
 
   /* ---------------- pociąg 1: 6101 z Lipna, tor 1, dalej do Dębna ---------------- */
-  act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga ${m ? 'napis' : 'pole'} „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
+  act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga ${m ? 'napis' : 'lampka'} „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
     (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: 'Żądanie pojawia się chwilę po starcie zegara. Jeśli go nie widać – odczekaj kilka sekund.' });
   act('route-6101', 'Przebieg wjazdowy na tor 1', `Pociąg jest w drodze. Nastaw ${A('przebieg pociągowy')} od semafora wjazdowego <b>A</b> na tor 1, czyli do semafora wyjazdowego <b>D1</b>: ${P.trainRoute('A', 'D1')}.<p>Zwrotnica 1 ustawi się sama, odcinki zostaną ${A('utwierdzenie', 'utwierdzone')} i semafor A poda sygnał zezwalający.</p>`, cmd('train', sig('A')),
     (sim) => active(sim, 'A-D1') || arrived(sim, 6101),
     { wrong: (sim) => (active(sim, 'A-D2') ? 'To przebieg na tor 2. Pociąg 6101 ma tor 1 – zwolnij przebieg (ZWOLNIJ PRZEBIEG / Pz + A) i nastaw A → D1.' : null) });
   act('watch-6101', 'Pociąg wjeżdża', `Obserwuj: zajęte odcinki są <b>czerwone</b>, a za pociągiem przebieg rozwiązuje się odcinkowo. Pociąg zatrzyma się przy peronie toru 1 (przyjazd planowy 07:06). Możesz przyspieszyć czas przyciskami <b>2×</b>, <b>5×</b> w nagłówku.`, { el: '#speed' },
     (sim) => arrived(sim, 6101));
-  act('ko-6101', 'Zwolnienie bloku końcowego (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIPa} miga ${m ? 'napis' : 'pole'} <b>Ko</b>. Zwolnij blok końcowy, potwierdzając sąsiadowi przyjazd: ${P.blockPress('W', LIPa, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIPa} jest znów wolny dla następnych pociągów.</p>`, blockW,
+  act('ko-6101', 'Zwolnienie bloku końcowego (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIPa} miga ${m ? 'napis' : 'lampka'} <b>Ko</b>. Zwolnij blok końcowy, potwierdzając sąsiadowi przyjazd: ${P.blockPress('W', LIPa, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIPa} jest znów wolny dla następnych pociągów.</p>`, blockW,
     (sim) => blockFree(sim.blocks.get('W')));
   act('wbl-6101', 'Żądanie pozwolenia (Wbl)', `6101 odjeżdża o 07:08 do ${DEBa}. Zanim nastawisz przebieg wyjazdowy, musisz mieć <b>pozwolenie</b> od ${DEBa}: ${P.blockPress('E', DEBa, 'Wbl')}. Sąsiad odpowie po kilkunastu sekundach – ${m ? 'nad torem pojawi się strzałka kierunku w stronę ' + DEB : 'pole <b>wyjazd</b> zaświeci'}.<p>To jest ${A('Wbl')} – lustrzane odbicie Poz, które dawałeś przed chwilą.</p>`, blockE,
     (sim) => { const b = sim.blocks.get('E'); return (b.direction === 'out' && b.permission) || atNeighbour(sim, 6101); },
     { wrong: (sim) => (sim.blocks.get('E').request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Dębna.' : null) });
   act('out-6101', 'Przebieg wyjazdowy na szlak', `Masz pozwolenie. Nastaw ${A('przebieg pociągowy')} wyjazdowy: ${P.trainRoute('D1', null, P.exitEnd(DEBa))}.<p>Przebieg wyjazdowy kończy się na szlaku, nie na semaforze – dlatego wskazujesz kraniec toru.</p>`, cmd('train', sig('D1')),
     (sim) => active(sim, 'D1-E') || atNeighbour(sim, 6101));
-  act('depart-6101', 'Odjazd i blok początkowy', `Semafor D1 pokazuje sygnał zezwalający; pociąg odjedzie o 07:08. Po wyjeździe na szlak ${A('Po', 'blok początkowy')} zablokuje się (${m ? 'strzałka szlaku czerwona' : 'pole „wyjazd” czerwone'}), aż ${DEB} potwierdzi przyjazd. Poczekaj, aż 6101 dojedzie do następnego posterunku – szlak zwolni się sam.`, blockE,
+  act('depart-6101', 'Odjazd i blok początkowy', `Semafor D1 pokazuje sygnał zezwalający; pociąg odjedzie o 07:08. Po wyjeździe na szlak ${A('Po', 'blok początkowy')} zablokuje się (${m ? 'strzałka szlaku czerwona' : 'strzałka „wyjazd” czerwona'}), aż ${DEB} potwierdzi przyjazd. Poczekaj, aż 6101 dojedzie do następnego posterunku – szlak zwolni się sam.`, blockE,
     (sim) => atNeighbour(sim, 6101) && !sim.blocks.get('E').occupied);
 
   /* ---------------- pociąg 2: 6102 z Dębna, tor 1, dalej do Lipna (menu elementu) ---------------- */

@@ -1,4 +1,5 @@
 import { platformSpans, trackLabelText, trackLabelPlace, platformEdgeLines } from './platforms.js';
+import { blockLayouts } from './blockLayout.js';
 import { el, text, CELL } from './svg.js';
 
 const FRAME = 22;
@@ -98,20 +99,35 @@ export class DeskRenderer {
     const ctx = this.#ctx();
     const filled = new Set();
     const deferred = [];
+    // blokada liniowa jako kostki przy końcu toru szlakowego: strzałki na kostkach toru, przyciski i liczniki obok
+    const plan = blockLayouts(this.station);
+    const arrowAt = new Map(), nameAt = new Map();
+    for (const L of plan.values()) {
+      for (const a of L.arrows) arrowAt.set(`${a.x},${a.y}`, { exit: L.exit, kind: a.kind, toWest: L.dir === 'W' });
+      if (L.name) nameAt.set(`${L.name.x},${L.name.y}`, this.station.exits[L.exit].name);
+    }
+    const blockRef = (exit) => { if (!this.blockRefs.has(exit)) this.blockRefs.set(exit, { btns: {} }); return this.blockRefs.get(exit); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
       let out;
       // opis „tor N” rysuje się nad opisywanym torem, na kostce toru; jego własna kostka zostaje pusta
       const pos = tile.type === 'label' && trackLabelText(tile.text) ? trackLabelPlace(this.station, tile) : { x: tile.x, y: tile.y, side: null };
       switch (tile.type) {
-        case 'track': out = art.trackArt(tile, ctx); break;
+        case 'track': {
+          const key = `${tile.x},${tile.y}`;
+          const arrow = arrowAt.get(key);
+          // na kostkach ze strzałką blokady nazwa sąsiedniego posterunku idzie na trzecią kostkę od krańca
+          const t = arrow ? { ...tile, text: undefined, endButtonBelow: true } : nameAt.has(key) ? { ...tile, text: nameAt.get(key) } : tile;
+          out = art.trackArt(t, ctx);
+          if (arrow) blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
+          break;
+        }
         case 'buffer': out = art.bufferArt(tile, ctx); break;
         case 'point': out = art.pointArt(tile, ctx); break;
         case 'crossing': out = art.crossingArt(tile, ctx); break;
         case 'signal': out = art.signalArt(tile); break;
         case 'button': out = art.buttonTileArt(tile); break;
         case 'label': out = art.labelArt(tile, pos.side ?? null); break;
-        case 'block': out = art.blockArt(tile, this.station.exits[tile.exit]); break;
         default: out = art.blankArt();
       }
       out.g.setAttribute('transform', `translate(${(pos.x - this.x0) * CELL},${pos.y * CELL})`);
@@ -131,9 +147,27 @@ export class DeskRenderer {
       if (tile.derailer) this.derailerRefs.set(tile.derailer, out.refs);
       if (tile.type === 'signal') this.signalRefs.set(tile.id, out.refs);
       if (tile.type === 'button' && out.refs.counter) this.counterRefs.set(tile.id, out.refs.counter);
-      if (tile.type === 'block') this.blockRefs.set(tile.exit, out.refs);
     }
     for (const g of deferred) this.layerTiles.appendChild(g);
+    // Kostki urządzeń blokady (Wbl / Poz / Ko / Zk, liczniki dKo / dPo) – grupa na wyjazd, do wskazywania w samouczku
+    for (const L of plan.values()) {
+      const cluster = el('g', { class: 'block-cluster', 'data-exit': L.exit });
+      const r = blockRef(L.exit);
+      for (const d of L.devices) {
+        if (d.x < this.x0 || d.x > this.x1) continue;
+        const dev = art.blockDeviceArt(d.role, L.exit);
+        dev.g.setAttribute('transform', `translate(${(d.x - this.x0) * CELL},${d.y * CELL})`);
+        cluster.appendChild(dev.g);
+        filled.add(`${d.x},${d.y}`);
+        Object.assign(r.btns, dev.refs.btns);
+        if (d.role === 'Poz') r.req = dev.refs.lamp;
+        if (d.role === 'Ko') r.ko = dev.refs.lamp;
+        if (d.role === 'Wbl') r.wbl = dev.refs.lamp;
+        if (d.role === 'dPo') r.cntPo = dev.refs.counter;
+        if (d.role === 'dKo') r.cntKo = dev.refs.counter;
+      }
+      if (cluster.childNodes.length) this.layerTiles.appendChild(cluster);
+    }
     // Puste kostki
     for (let y = 0; y < this.rows; y++) for (let x = this.x0; x <= this.x1; x++) {
       if (filled.has(`${x},${y}`)) continue;
@@ -149,7 +183,7 @@ export class DeskRenderer {
 
   /** Przycisk pulpitu odpowiadający ref (do podświetlania w samouczku). */
   elementFor(ref) {
-    if (ref.kind === 'blockpanel') return this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' }))?.closest('.tile') || this.buttonEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' })) || null;
+    if (ref.kind === 'blockpanel') return this.layerTiles.querySelector(`.block-cluster[data-exit="${ref.exit}"]`) || null;
     return this.buttonEls.get(refKey(ref)) || (ref.kind === 'signal' && !ref.color ? this.buttonEls.get(refKey({ ...ref, color: 'green' })) || this.buttonEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
   }
 
@@ -331,13 +365,13 @@ export class DeskRenderer {
     const b = this.sim.blocks.get(exitId);
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
-    // strzałka „wyjazd”: biała – pozwolenie na wyjazd, czerwona – nasz pociąg na szlaku (Po zablokowany)
-    setLamp(r.outW, b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied ? 'white' : (b.request === 'ours' ? 'white blink' : 'off'));
-    setLamp(r.outR, b.poBlocked ? 'red' : 'off');
-    // strzałka „wjazd”: biała – pozwolenie dane sąsiadowi, czerwona – pociąg sąsiada na szlaku
-    setLamp(r.inW, b.direction === 'in' && !b.occupied && !b.koPending ? 'white' : 'off');
-    setLamp(r.inR, b.direction === 'in' && b.occupied ? 'red' : 'off');
+    // strzałka „wyjazd”: czerwona – nasz pociąg na szlaku (Po zablokowany), biała – pozwolenie na wyjazd, migająca – żądanie wysłane
+    const outPerm = b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied;
+    setLamp(r.outArrow, b.poBlocked ? 'red' : outPerm ? 'white' : b.request === 'ours' ? 'white blink' : 'off');
+    // strzałka „wjazd”: czerwona – pociąg sąsiada na szlaku, biała – pozwolenie dane sąsiadowi
+    setLamp(r.inArrow, b.direction === 'in' && b.occupied ? 'red' : b.direction === 'in' && !b.koPending ? 'white' : 'off');
     setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
+    setLamp(r.wbl, b.request === 'ours' ? 'white blink' : 'off');
     setLamp(r.ko, b.koPending ? 'white blink' : 'off');
     if (r.cntPo) r.cntPo.textContent = String(b.counters.dPo).padStart(5, '0');
     if (r.cntKo) r.cntKo.textContent = String(b.counters.dKo).padStart(5, '0');

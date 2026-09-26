@@ -21,8 +21,6 @@ const sections = {};
 const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski, opisy ----
-[['GS1', 6], ['GS2', 10], ['GG1', 14], ['GG2', 18], ['RS1', 50], ['RS2', 54], ['RG1', 58], ['RG2', 62], ['PORT', 66]]
-  .forEach(([exit, x]) => tiles.push({ x, y: 0, type: 'block', exit }));
 tiles.push({ x: 28, y: 0, type: 'label', text: 'GDYNIA CHYLONIA', size: 12, span: 20 });
 tiles.push({ x: 30, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
 tiles.push({ x: 31, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });

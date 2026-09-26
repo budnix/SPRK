@@ -52,8 +52,6 @@ export default {
   },
 
   tiles: [
-    { x: 0, y: 0, type: 'block', exit: 'W' },
-    { x: 28, y: 0, type: 'block', exit: 'E' },
 
     { x: 12, y: 0, type: 'label', text: 'SZKOLNA', size: 12, span: 8 },
     { x: 10, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' },

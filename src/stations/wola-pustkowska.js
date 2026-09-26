@@ -53,11 +53,6 @@ export default {
   },
 
   tiles: [
-    { x: 0, y: 0, type: 'block', exit: 'K1' },
-    { x: 4, y: 0, type: 'block', exit: 'K2' },
-    { x: 28, y: 0, type: 'block', exit: 'Z1' },
-    { x: 32, y: 0, type: 'block', exit: 'Z2' },
-    { x: 32, y: 11, type: 'block', exit: 'B' },
     { x: 14, y: 0, type: 'label', text: 'WOLA PUSTKOWSKA', size: 12, span: 8 },
     { x: 12, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' },
     { x: 13, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' },

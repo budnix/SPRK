@@ -20,7 +20,6 @@ const sections = {};
 const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski ----
-[['S2', 0], ['S1', 4], ['S502', 8], ['S501', 12], ['Z2', 54], ['Z1', 58], ['Z502', 62], ['Z501', 66]].forEach(([exit, x]) => tiles.push({ x, y: 0, type: 'block', exit }));
 tiles.push({ x: 26, y: 0, type: 'label', text: 'GDYNIA ORŁOWO', size: 12, span: 18 });
 tiles.push({ x: 30, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
 tiles.push({ x: 31, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });

@@ -33,8 +33,6 @@ const tiles = [];
 const sections = {};
 
 // ---------------- blokady i przyciski ----------------
-const blocksTop = [['K', 0], ['G2', 4], ['G1', 8], ['S2', 12], ['S1', 16], ['C1', 80], ['C2', 84], ['R2', 88], ['R1', 92], ['P', 96]];
-for (const [exit, x] of blocksTop) tiles.push({ x, y: 0, type: 'block', exit });
 tiles.push({ x: 38, y: 0, type: 'label', text: 'GDYNIA GŁÓWNA', size: 13, span: 24 });
 tiles.push({ x: 45, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
 tiles.push({ x: 46, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });

@@ -155,7 +155,10 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .lamp.on.lamp-blue { fill: #4b86ff; }
 .lamp.on { filter: url(#glow); }
 .lamp.arrow { stroke: #1b1d1e; }
-.arrow-box { fill: #d7dadb; stroke: #1f2325; stroke-width: 0.9; }
+.arrow-channel-edge { fill: #8f9395; } /* strzałka blokady: kanał w kształcie strzałki (obrys i wypełnienie jak kanał toru) */
+.arrow-channel { fill: #bfc2c4; }
+.arrow-lamp { stroke-width: 0.6; } /* lampka-strzałka w kanale */
+.blk-arrow-label { font-size: 5.5px; fill: #3a4247; }
 .lampbar-frame { fill: #c4c7c9; stroke: #8b8f91; stroke-width: 0.6; }
 .lampbar-lamp { fill: #2e3031; }
 .lampbar-lamp.on.lamp-red { fill: #f52a1e; }

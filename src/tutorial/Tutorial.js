@@ -3,7 +3,7 @@ import { GLOSSARY } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 
 /**
- * Samouczek (UI): dymek z bieżącym krokiem misji przypięty do wskazywanego elementu (semafor, pole blokady,
+ * Samouczek (UI): dymek z bieżącym krokiem misji przypięty do wskazywanego elementu (semafor, kostki blokady,
  * przycisk paska poleceń, zakładka panelu), podświetlenie elementu, słownik skrótów po kliknięciu
  * <abbr data-term>, przycisk „Dalej” na krokach informacyjnych. Logika kroków: progress.js / missions.js.
  *

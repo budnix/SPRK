@@ -53,8 +53,6 @@ export default {
 
   tiles: [
     // ---- Blokady liniowe ----
-    { x: 0, y: 0, type: 'block', exit: 'W' },
-    { x: 28, y: 0, type: 'block', exit: 'E' },
 
     // ---- Nazwa stacji i przyciski grupowe ----
     { x: 12, y: 0, type: 'label', text: 'STARE PUSTKOWIE', size: 12, span: 8 },

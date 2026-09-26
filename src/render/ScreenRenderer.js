@@ -264,7 +264,6 @@ export class ScreenRenderer {
           break;
         }
         case 'signal': this.#signal(tile); break;
-        case 'block': break; // pole blokady Eap to element pulpitu kostkowego; na monitorze stan blokady jest przy wyjeździe na szlak
         case 'button': {
           if (!tile.counter) break;
           const g = el('g', { class: 'scr-counter' }, [

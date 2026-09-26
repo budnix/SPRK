@@ -64,14 +64,40 @@ test('przebieg pociągowy dwoma przyciskami, wyciągnięcie gasi sygnał, Zw + z
   expect((await simState(page)).points[free]).not.toBe(before);
 });
 
-test('blokada liniowa: Wbl wysyła żądanie, lampka „wyjazd” miga, po odpowiedzi sąsiada pozwolenie', async ({ page }) => {
+test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl obok, liczniki wyżej); Wbl wysyła żądanie, po odpowiedzi sąsiada pozwolenie', async ({ page }) => {
   await openShift(page, 'stare-pustkowie');
+  // brak osobnego pola blokady; kostki blokady leżą w rzędach 2–3 przy prawym krańcu, strzałki na dwóch skrajnych kostkach toru
+  expect(await page.locator('#desk .t-block').count()).toBe(0);
+  const cluster = page.locator('#desk .block-cluster[data-exit=E]');
+  expect(await cluster.locator('.t-blockdev').count()).toBe(5);
+  const cells = await cluster.locator('.t-blockdev').evaluateAll((els) => els.map((g) => /translate\((-?[\d.]+),(-?[\d.]+)\)/.exec(g.getAttribute('transform')).slice(1).map((v) => +v / 40)));
+  expect(cells).toEqual([[31, 3], [30, 3], [29, 3], [31, 2], [30, 2]]);
+  const arrows = await page.locator('#desk .t-track .arrow-lamp').evaluateAll((els) => els.length);
+  expect(arrows).toBe(4); // dwa krańce × (wjazd + wyjazd)
+  const labelsByCol = await page.locator('#desk .t-track:has(.blk-arrow-label)').evaluateAll((els) => Object.fromEntries(els.map((g) => [+/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40, g.querySelector('.blk-arrow-label').textContent])));
+  expect(labelsByCol).toEqual({ 0: 'wjazd', 1: 'wyjazd', 30: 'wyjazd', 31: 'wjazd' }); // strzałka „wjazd” na kostce skrajnej, „wyjazd” na następnej
+  // nazwa sąsiada przeniesiona na trzecią kostkę od krańca (nie zasłania strzałek)
+  const names = await page.locator('#desk .t-track:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
+  const exits = await page.evaluate(() => ({ W: window.sim.station.exits.W.name, E: window.sim.station.exits.E.name }));
+  expect(names[exits.W]).toBe(2);
+  expect(names[exits.E]).toBe(29);
   await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
   const req = await page.evaluate(() => window.sim.blocks.get('E').request);
   expect(req).toBe('ours');
+  await expect(cluster.locator('.t-blockdev').nth(2).locator('.lamp')).toHaveClass(/blink/); // lampka na kostce Wbl miga, dopóki sąsiad nie odpowie
   await advance(page, 40);
   const perm = await page.evaluate(() => { const b = window.sim.blocks.get('E'); return b.permission || b.direction; });
   expect(perm).toBeTruthy();
+});
+
+test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru szlakowego', async ({ page }) => {
+  await openShift(page, 'sopot', { settings: { srk: 'E' } });
+  const before = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
+  await btn(page, { kind: 'block', exit: 'OR1', btn: 'Zk' }).click();
+  await advance(page, 2);
+  const after = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
+  expect(after).not.toBe(before);
+  expect(await page.locator('#desk .block-cluster[data-exit=OR1] .t-blockdev').count()).toBe(2); // Zk + licznik doraźny
 });
 
 test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu; ukryty panel pokazuje licznik dziennika', async ({ page }) => {
@@ -107,7 +133,11 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
       if (t.derailer && !has((r) => r.kind === 'derailer' && r.id === t.derailer)) missing.push(`derailer ${t.derailer}`);
       if (t.endButton && !has((r) => r.kind === 'end' && r.id === t.endButton.id)) missing.push(`end ${t.endButton.id}`);
       if (t.type === 'button' && !has((r) => r.kind === 'group' && r.id === t.id)) missing.push(`group ${t.id}`);
-      if (t.type === 'block') for (const b of ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo']) if (!has((r) => r.kind === 'block' && r.exit === t.exit && r.btn === b)) missing.push(`block ${t.exit} ${b}`);
+    }
+    // blokada liniowa: kostki przy końcu toru szlakowego (z definicji wyjazdu, nie z kostek stacji)
+    for (const [id, e] of Object.entries(st.exits)) {
+      const want = e.block === 'sbl' ? ['Zk'] : e.direction === 'in' ? ['Ko', 'dKo'] : e.direction === 'out' ? ['dPo'] : ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo'];
+      for (const b of want) if (!has((r) => r.kind === 'block' && r.exit === id && r.btn === b)) missing.push(`block ${id} ${b}`);
     }
     return {
       missing, refs: refs.length, unique: new Set(refs.map((r) => JSON.stringify(r))).size,
@@ -116,13 +146,14 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
   });
   expect(s.missing).toEqual([]);
   expect(s.unique).toBe(s.refs); // brak zdublowanych przycisków
-  // nazwa sąsiedniego posterunku na kostce wyjazdu nie nachodzi na przycisk końca przebiegu
+  // strzałka blokady (w kanale toru) i jej opis na kostce wyjazdu nie nachodzą na przycisk końca przebiegu (pod torem)
   const overlaps = await page.evaluate(() => {
     const out = [];
+    const hit = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
     for (const b of document.querySelectorAll(`#desk .btn[data-ref*='"kind":"end"']`)) {
-      const tile = b.closest('.tile'); const t = tile?.querySelector('text.tile-text.small'); if (!t) continue;
-      const rb = b.getBoundingClientRect(), rt = t.getBoundingClientRect();
-      out.push([t.textContent, !(rb.right <= rt.left || rb.left >= rt.right || rb.bottom <= rt.top || rb.top >= rt.bottom)]);
+      const tile = b.closest('.tile'); const box = tile?.querySelector('.arrow-lamp'), lbl = tile?.querySelector('.blk-arrow-label'); if (!box) continue;
+      const rb = b.querySelector('.btn-ring').getBoundingClientRect(); // widoczny przycisk (bez niewidocznego pola trafienia)
+      out.push([lbl.textContent, hit(rb, box.getBoundingClientRect()) || hit(rb, lbl.getBoundingClientRect())]);
     }
     return out;
   });

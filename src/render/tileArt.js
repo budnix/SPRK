@@ -142,8 +142,9 @@ export function trackArt(tile, ctx) {
     g.appendChild(text(C - 9, C + 12.5, 'Wk', { class: 'tile-text tiny' }));
   }
   if (tile.endButton) {
-    const onTop = tile.ports.every((p) => !p.includes('N'));
-    refs.endBtn = button(C + 11, onTop ? 9 : 31, 5, tile.endButton.color || 'green', { kind: 'end', id: tile.endButton.id }, null);
+    // na kostce ze strzałką blokady (endButtonBelow) opis strzałki jest u góry, przycisk końca przebiegu idzie pod tor
+    const onTop = !tile.endButtonBelow && tile.ports.every((p) => !p.includes('N'));
+    refs.endBtn = button(C + 11, onTop ? 9 : tile.endButtonBelow ? 34.5 : 31, 5, tile.endButton.color || 'green', { kind: 'end', id: tile.endButton.id }, null);
     g.appendChild(refs.endBtn);
   }
   return { g, refs };
@@ -289,61 +290,49 @@ export function blankArt() {
   return { g: tileBase('t-blank'), refs: {} };
 }
 
-/**
- * Pole blokady liniowej Eap: 4×2 kostki.
- * Rząd 1: nazwa posterunku, strzałki kierunku (◀ wjazd / ▶ wyjazd), lampki-paski: żądanie, szlak, Po, Ko.
- * Rząd 2: przyciski Wbl, Poz, Ko (czerwone) oraz dPo, dKo z licznikami.
- */
 /** Skrzynka wskaźnika kierunku blokady: obrys w kształcie strzałki, w środku dwie okrągłe lampki (biała, czerwona). */
-function arrowBox(x, y, w, h, pointLeft) {
-  const tip = 7;
-  const d = pointLeft
-    ? `M${x + tip},${y} H${x + w} V${y + h} H${x + tip} L${x},${y + h / 2} Z`
-    : `M${x},${y} H${x + w - tip} L${x + w},${y + h / 2} L${x + w - tip},${y + h} H${x} Z`;
-  const g = el('g', { class: 'arrow-box-g' }, [el('path', { class: 'arrow-box', d })]);
-  const cx1 = pointLeft ? x + tip + 8 : x + 8, cx2 = pointLeft ? x + w - 8 : x + w - tip - 8;
-  const white = lamp(cx1, y + h / 2, 3.6, 'lamp-white');
-  const red = lamp(cx2, y + h / 2, 3.6, 'lamp-red');
-  g.append(white, red);
-  return { g, white, red };
+/**
+ * Strzałka blokady liniowej na kostce toru szlakowego – jak na pulpitach typu E: pasek świetlny w kanale toru ma kształt
+ * strzałki (biały – pozwolenie / kierunek, czerwony – tor szlakowy zajęty), nad kanałem opis „wjazd” / „wyjazd”.
+ * Dokłada się do gotowej kostki toru (`g`); zwraca lampkę-strzałkę. `toWest` – szlak leży na zachód.
+ */
+export function blockArrowArt(g, kind, toWest) {
+  const pointLeft = kind === 'out' ? toWest : !toWest;
+  const x0 = 2, x1 = CELL - 2;
+  // strzałka: korpus o połowie wysokości `h`, grot o połowie wysokości `H` i długości `tip`
+  const arrow = (h, H, tip) => pointLeft
+    ? `M${x0},${C} L${x0 + tip},${C - H} L${x0 + tip},${C - h} H${x1} V${C + h} H${x0 + tip} L${x0 + tip},${C + H} Z`
+    : `M${x1},${C} L${x1 - tip},${C - H} L${x1 - tip},${C - h} H${x0} V${C + h} H${x1 - tip} L${x1 - tip},${C + H} Z`;
+  // szary kanał w kształcie strzałki (obrys i wypełnienie jak kanał zwykłego toru), w nim lampka-strzałka
+  g.appendChild(el('path', { class: 'arrow-channel-edge', d: arrow(CHANNEL_W / 2 + 0.7, 9.2, 9) }));
+  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(CHANNEL_W / 2, 8.5, 9) }));
+  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(BAR_W / 2, 5.5, 8.2) });
+  g.appendChild(lampEl);
+  g.appendChild(text(C, 7, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
+  return lampEl;
 }
 
-export function blockArt(tile, exitDef) {
-  const W = CELL * 4, Hh = CELL * 2;
-  const g = el('g', { class: 'tile t-block' }, [
-    el('rect', { class: 'face', x: 0, y: 0, width: W, height: Hh }),
-  ]);
+/**
+ * Kostka urządzenia blokady liniowej – w układzie zwykłych kostek przyciskowych pulpitu (buttonTileArt):
+ * przycisk Wbl / Poz / Ko / Zk z opisem po prawej i lampką w rogu (żąd. / Ko / Wbl), albo licznik doraźny dKo / dPo
+ * z przyciskiem pod nim. Poz i Wbl na zielonym polu, jak na pulpitach typu E.
+ */
+export function blockDeviceArt(role, exit) {
   const refs = { btns: {} };
-  const toWest = exitDef.dir === 'W';
-  const fixed = exitDef.direction;
-  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${fixed === 'in' ? ' – tor wjazdowy' : fixed === 'out' ? ' – tor wyjazdowy' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
-  const bx = 6, bw = 44, bh = 15;
-  const lampX = 100;
-  // Wiersze wskaźników: blokada dwukierunkowa – dwa (wyjazd, wjazd); jednokierunkowa – jeden, wyśrodkowany
-  const rows = fixed ? [[fixed, 22]] : [['out', 13], ['in', 31]];
-  for (const [kind, y] of rows) {
-    const box = arrowBox(bx, y, bw, bh, kind === 'out' ? toWest : !toWest);
-    g.appendChild(box.g);
-    if (kind === 'out') { refs.outW = box.white; refs.outR = box.red; } else { refs.inW = box.white; refs.inR = box.red; }
-    g.appendChild(text(bx + bw + 4, y + bh / 2 + 0.5, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
-    // lampka przy wierszu: żądanie pozwolenia (wyjazd) / Ko do obsłużenia (wjazd)
-    if (kind === 'out' && !fixed) { refs.req = lamp(lampX, y + bh / 2, 3.6, 'lamp-white'); g.appendChild(refs.req); g.appendChild(text(lampX + 7, y + bh / 2 + 0.5, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
-    if (kind === 'in') { refs.ko = lamp(lampX, y + bh / 2, 3.6, 'lamp-white'); g.appendChild(refs.ko); g.appendChild(text(lampX + 7, y + bh / 2 + 0.5, 'Ko', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
+  const ref = { kind: 'block', exit, btn: role };
+  if (role === 'dPo' || role === 'dKo') {
+    const g = tileBase('t-blockdev t-counter');
+    const c = counterDevice(5, 1, 30, 22, role); g.appendChild(c.g);
+    refs.counter = c.t;
+    refs.btns[role] = button(11, 32, 5, 'black', ref, role, 'right'); g.appendChild(refs.btns[role]);
+    return { g, refs };
   }
-  // Przyciski (rząd dolny) i liczniki doraźne – te same pozycje we wszystkich wariantach
-  const by = 58;
-  const btnDefs = fixed === 'in' ? [['Ko', 'red', 12]] : fixed === 'out' ? [] : [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]];
-  for (const [id, color, x] of btnDefs) {
-    const b = button(x, by, 5.5, color, { kind: 'block', exit: tile.exit, btn: id }, id, 'below');
-    refs.btns[id] = b; g.appendChild(b);
+  const g = tileBase('t-blockdev', role === 'Poz' || role === 'Wbl' ? 'green' : '');
+  if (role !== 'Zk') {
+    // lampka w prawym górnym rogu (żąd. – sąsiad żąda pozwolenia, Ko – potwierdzić przyjazd, Wbl – żądanie wysłane)
+    refs.lamp = lamp(33, 7, 3, 'lamp-white'); g.appendChild(refs.lamp);
+    if (role === 'Poz') g.appendChild(text(28.5, 7.5, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'end' }));
   }
-  if (fixed !== 'in') {
-    const c1 = counterDevice(84, 46, 26, 19, 'dPo'); g.appendChild(c1.g); refs.cntPo = c1.t;
-    refs.btns.dPo = button(97, 73, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dPo' }, null); g.appendChild(refs.btns.dPo);
-  }
-  if (fixed !== 'out') {
-    const c2 = counterDevice(122, 46, 26, 19, 'dKo'); g.appendChild(c2.g); refs.cntKo = c2.t;
-    refs.btns.dKo = button(135, 73, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dKo' }, null); g.appendChild(refs.btns.dKo);
-  }
+  refs.btns[role] = button(11, 20, 6, role === 'Zk' ? 'black' : 'red', ref, role, 'right'); g.appendChild(refs.btns[role]);
   return { g, refs };
 }

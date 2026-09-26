@@ -98,7 +98,9 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
 `route:set`). Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
-daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje kostkę `block` z przyciskami.
+daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
+(`src/render/blockLayout.js`, bez DOM: strzałki na kostkach toru, przyciski Ko | Poz | Wbl albo Zk w rzędzie obok,
+liczniki dKo | dPo wyżej – jak na pulpitach typu E), bez osobnej kostki `block`.
 Perony na pulpicie kostkowym: `DeskRenderer.#buildPlatforms` rysuje obrys z nazwą z tej samej geometrii
 (`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
 jest rysowany delikatnie, zawsze nad opisywanym torem, na prostej kostce toru tuż nad paskiem (`trackLabelPlace`);

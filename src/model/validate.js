@@ -47,7 +47,6 @@ export function validateStation(st) {
       const at = occupied.get(`${t.at?.x},${t.at?.y}`);
       if (!at || getTileDef(at.type).category !== 'track') errors.push(`Sygnalizator ${t.id}: 'at' nie wskazuje kostki torowej`);
     }
-    if (t.type === 'block' && !(st.exits || {})[t.exit]) errors.push(`Pole blokady (${t.x},${t.y}): nieznany wyjazd '${t.exit}'`);
   }
   for (const [id, e] of Object.entries(st.exits || {})) {
     if (e.block && !['eap', 'sbl'].includes(e.block)) errors.push(`Wyjazd ${id}: nieznany rodzaj blokady '${e.block}' (eap | sbl)`);
