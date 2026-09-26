@@ -408,7 +408,7 @@ export class DeskRenderer {
       // etykieta wewnątrz kostki czoła pociągu (nad albo pod kanałem toru) – nie wchodzi na sąsiedni rząd,
       // gdzie zasłaniałaby przyciski semaforów
       const above = headTile.y >= 6 || headTile.y === 4;
-      const ty = headTile.y * CELL + (above ? 7 : CELL - 7);
+      const ty = headTile.y * CELL + (above ? 8 : CELL - 6);
       const visible = headTile.x >= this.x0 && headTile.x <= this.x1;
       lbl.style.display = visible ? '' : 'none';
       lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + CELL / 2},${ty})`);
