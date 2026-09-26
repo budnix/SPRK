@@ -1,21 +1,30 @@
 /**
  * Ustawienia interfejsu (zapisywane w localStorage):
  *  - deskPos: położenie pulpitu w pionie ('top' | 'middle' | 'bottom')
- *  - sidePos: położenie panelu bocznego ('right' | 'left' | 'bottom')
- *  - theme: motyw interfejsu ('dark' | 'light'); kostki pulpitu są niezależne od motywu
+ *  - sidePos: położenie panelu bocznego ('right' | 'left' | 'bottom', domyślnie 'bottom')
+ *  - theme: motyw interfejsu ('system' = wg systemu operacyjnego | 'dark' | 'light'); kostki pulpitu są niezależne od motywu
  *  - symScale: skala symboli i napisów monitora ('1'…'1.5', domyślnie '1.25'), rowScale: odstęp rzędów monitora ('1' | '0.7')
  *  - screens: podział szerokiego pulpitu na ekrany wg szerokości okna ('auto' | 'off')
  *  - sideCollapsed: panel boczny zwinięty (pulpit na całym ekranie, powiadomienia w listwie narzędzi)
  *  - srk: stanowisko obsługi ('auto' = wg definicji stacji | id strategii z src/srk/registry.js)
  */
 const KEY = 'sprk.settings';
-const DEFAULTS = { deskPos: 'middle', sidePos: 'right', theme: 'dark', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1' };
+/** Ustawienia domyślne (nowy użytkownik): pulpit na środku, motyw wg systemu, panel na dole, podział na ekrany, symbole 125 %. */
+export const DEFAULTS = { deskPos: 'middle', sidePos: 'bottom', theme: 'system', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1' };
 
 export class Settings {
   constructor(onChange) {
     this.onChange = onChange;
     this.values = { ...DEFAULTS, ...Settings.load() };
     this.apply();
+    // motyw „wg systemu”: reaguj na zmianę trybu jasny/ciemny w systemie
+    const mq = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
+    mq?.addEventListener?.('change', () => { if (this.values.theme === 'system') this.apply(); });
+  }
+
+  /** Motyw do zastosowania: jawny lub wg systemu operacyjnego. */
+  static resolveTheme(theme, prefersDark = typeof matchMedia === 'function' && matchMedia('(prefers-color-scheme: dark)').matches) {
+    return theme === 'dark' || theme === 'light' ? theme : (prefersDark ? 'dark' : 'light');
   }
 
   static load() {
@@ -39,7 +48,7 @@ export class Settings {
     app.dataset.deskPos = this.values.deskPos;
     app.dataset.sidePos = this.values.sidePos;
     app.dataset.sideCollapsed = String(!!this.values.sideCollapsed);
-    document.documentElement.dataset.theme = this.values.theme;
+    document.documentElement.dataset.theme = Settings.resolveTheme(this.values.theme);
   }
 
   /** Podpina menu (radia) pod ustawienia. */
