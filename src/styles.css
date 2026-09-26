@@ -72,6 +72,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
   #side { flex: 0 0 40%; border-left: none; border-right: none; border-top: 1px solid var(--border); }
 }
 /* położenie pulpitu w pionie */
+/* panel zwinięty: pulpit na całym ekranie, powiadomienia w listwie narzędzi */
+#app[data-side-collapsed="true"] #side { display: none; }
+.tabs .collapse-btn { flex: 0 0 auto; background: var(--panel2); color: var(--muted); border: none; padding: 9px 10px; font-size: 14px; cursor: pointer; }
+.tabs .collapse-btn:hover { color: var(--text); }
+.mini-tabs { display: none; gap: 4px; align-items: center; margin-left: 8px; }
+#app[data-side-collapsed="true"] .mini-tabs { display: flex; flex-wrap: wrap; }
+.mini-tabs .tb { padding: 4px 8px; font-size: 12px; min-width: 0; }
+.mini-tabs .tb .badge { margin-left: 4px; }
+.mini-tabs .tb.flash { animation: flash 0.6s ease-in-out 4; }
 #app[data-desk-pos="top"] #desk { margin-top: 0; }
 #app[data-desk-pos="bottom"] #desk { margin-bottom: 0; }
 /* menu */
@@ -325,14 +334,13 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }
 /* pasek poleceń (układ EbiScreen) */
-.screen-host { padding-top: 30px; }
-.screen-host svg.screen { height: calc(100% - 30px); }
-.scr-cmdbar { position: absolute; top: 3px; left: 4px; right: 4px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; z-index: 5; pointer-events: none; }
-.scr-cmdbar button { pointer-events: auto; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 3px; padding: 3px 8px; font: 600 11px "DejaVu Sans Mono", Menlo, Consolas, monospace; cursor: pointer; }
+#cmd-host { flex: 0 0 auto; }
+.scr-cmdbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; padding: 4px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.scr-cmdbar button { background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 3px; padding: 3px 8px; font: 600 11px "DejaVu Sans Mono", Menlo, Consolas, monospace; cursor: pointer; }
 .scr-cmdbar button:hover { background: #1b2430; }
 .scr-cmdbar button.active { background: #1f3f7a; border-color: #3f8cff; color: #fff; }
 .scr-cmdbar button.special { color: #ffb84d; }
-.scr-cmdinfo { color: #8fb0c9; font-size: 11px; margin-left: 6px; pointer-events: none; }
+.scr-cmdinfo { color: var(--muted); font-size: 12px; margin-right: auto; order: -1; }
 .scr-menu { position: fixed; z-index: 60; min-width: 250px; max-width: 320px; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; font-size: 13px; }
 .scr-menu h5 { margin: 0; padding: 6px 10px; background: #1b242c; color: #8fb0c9; font-size: 12px; font-weight: 600; }
 .scr-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid #1b242c; color: inherit; padding: 8px 10px; font: inherit; cursor: pointer; }

@@ -66,7 +66,6 @@ export class ScreenRenderer {
     this.layerTrains = el('g', { class: 'layer-trains' });
     this.inner.append(this.layerTracks, this.layerMarks, this.layerSignals, this.layerTrains);
     this.svg.appendChild(this.inner);
-    container.classList.add('screen-host');
     container.appendChild(this.svg);
 
     this.menu = document.createElement('div');
@@ -75,7 +74,7 @@ export class ScreenRenderer {
     this.confirmBar = document.createElement('div');
     this.confirmBar.className = 'scr-confirm hidden';
     document.body.appendChild(this.confirmBar);
-    if (!this.readonly) this.#buildCmdBar(container);
+    if (!this.readonly) this.#buildCmdBar(opts.cmdHost || container);
 
     this.#build();
     this.#bind();

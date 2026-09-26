@@ -4,9 +4,13 @@ import { Clock } from '../core/Clock.js';
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
  */
 export class SidePanel {
-  constructor(root, sim) {
+  /**
+   * opts: { miniHost – element listwy narzędzi na mini-zakładki po zwinięciu panelu, onToggle(collapsed) }
+   */
+  constructor(root, sim, opts = {}) {
     this.sim = sim;
     this.root = root;
+    this.opts = opts;
     root.innerHTML = `
       <nav class="tabs">
         <button data-tab="rj" class="active">Rozkład</button>
@@ -15,6 +19,7 @@ export class SidePanel {
         <button data-tab="rozkazy">Rozkazy</button>
         <button data-tab="lacznosc">Łączność <span id="comms-badge" class="badge hidden">0</span></button>
         <button data-tab="polecenia" id="tab-btn-polecenia" class="hidden">Polecenia <span id="cmd-badge" class="badge hidden">0</span></button>
+        <button type="button" class="collapse-btn" title="Zwiń panel (pulpit na całym ekranie)" aria-label="Zwiń panel">⇥</button>
       </nav>
       <section class="tab" id="tab-rj">
         <table class="rj"><thead><tr><th>Nr</th><th>Relacja</th><th>Przyj.</th><th>Odj.</th><th>Tor</th><th>Stan</th></tr></thead><tbody></tbody></table>
@@ -80,9 +85,19 @@ export class SidePanel {
     this.logEl = root.querySelector('#log');
     this.alertsEl = root.querySelector('#alerts');
     this.unread = 0;
-    for (const b of root.querySelectorAll('.tabs button')) {
+    for (const b of root.querySelectorAll('.tabs button[data-tab]')) {
       b.addEventListener('click', () => this.showTab(b.dataset.tab));
     }
+    root.querySelector('.collapse-btn').addEventListener('click', () => this.collapse(true));
+    this.mini = opts.miniHost || null;
+    if (this.mini) {
+      this.mini.addEventListener('click', (ev) => {
+        const b = ev.target.closest('button'); if (!b) return;
+        this.collapse(false);
+        if (b.dataset.tab) this.showTab(b.dataset.tab);
+      });
+    }
+    this.#syncMini();
     sim.bus.on('log', (e) => this.addLog(e));
     sim.bus.on('timetable', () => this.renderTimetable());
     sim.bus.on('tick', () => this.#throttled());
@@ -161,6 +176,7 @@ export class SidePanel {
     if (!b) return;
     b.textContent = String(this.cmdUnread);
     b.classList.toggle('hidden', this.cmdUnread === 0);
+    this.#syncMini();
   }
 
   renderCommands() {
@@ -207,6 +223,7 @@ export class SidePanel {
     const b = this.root.querySelector('#comms-badge');
     b.textContent = String(this.commsUnread);
     b.classList.toggle('hidden', this.commsUnread === 0);
+    this.#syncMini();
   }
 
   #initOrders() {
@@ -247,8 +264,29 @@ export class SidePanel {
     ol.innerHTML = this.sim.traffic.orders.slice().reverse().map((o) => `<li><b>Nr ${o.id}</b> · ${Clock.format(o.time)} · pociąg ${o.nr} · semafor ${o.signal}<div class="order-text">${escapeHtml(o.text)}</div></li>`).join('') || '<li class="muted">brak</li>';
   }
 
+  /** Zwija / rozwija panel; po zwinięciu zakładki z licznikami powiadomień są w listwie narzędzi pulpitu. */
+  collapse(v) {
+    this.collapsed = !!v;
+    document.getElementById('app').dataset.sideCollapsed = String(this.collapsed);
+    this.#syncMini();
+    this.opts.onToggle?.(this.collapsed);
+  }
+
+  /** Mini-zakładki: kopia przycisków panelu z aktualnymi licznikami (Dziennik, Łączność, Polecenia). */
+  #syncMini() {
+    if (!this.mini) return;
+    const parts = ['<button type="button" class="tb mini-open" title="Rozwiń panel">⇤ panel</button>'];
+    for (const b of this.root.querySelectorAll('.tabs button[data-tab]')) {
+      if (b.classList.contains('hidden')) continue;
+      const badge = b.querySelector('.badge');
+      const n = badge && !badge.classList.contains('hidden') ? `<span class="badge">${badge.textContent}</span>` : '';
+      parts.push(`<button type="button" class="tb${b.classList.contains('flash') ? ' flash' : ''}" data-tab="${b.dataset.tab}">${b.firstChild.textContent.trim()}${n}</button>`);
+    }
+    this.mini.innerHTML = parts.join('');
+  }
+
   showTab(id) {
-    for (const b of this.root.querySelectorAll('.tabs button')) b.classList.toggle('active', b.dataset.tab === id);
+    for (const b of this.root.querySelectorAll('.tabs button[data-tab]')) b.classList.toggle('active', b.dataset.tab === id);
     for (const s of this.root.querySelectorAll('.tab')) s.classList.toggle('hidden', s.id !== `tab-${id}`);
     if (id === 'log') { this.unread = 0; this.#badge(); }
     if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
@@ -260,6 +298,7 @@ export class SidePanel {
     const b = this.root.querySelector('#log-badge');
     b.textContent = String(this.unread);
     b.classList.toggle('hidden', this.unread === 0);
+    this.#syncMini();
   }
 
   #throttled() {
@@ -301,7 +340,8 @@ export class SidePanel {
   flash(tab = 'log') {
     const b = this.root.querySelector(`[data-tab="${tab}"]`);
     b.classList.add('flash');
-    setTimeout(() => b.classList.remove('flash'), 3000);
+    this.#syncMini();
+    setTimeout(() => { b.classList.remove('flash'); this.#syncMini(); }, 3000);
   }
 
   renderTimetable() {

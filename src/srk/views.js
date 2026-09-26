@@ -30,7 +30,7 @@ const VIEWS = {
   },
   screen: {
     create: (container, sim, handlers, opts) => new ScreenRenderer(container, sim, handlers, opts),
-    size: (cols, rows) => ({ w: cols * 40 + 24, h: rows * 40 + 24 + 30 }), // +30 px na pasek poleceń
+    size: (cols, rows) => ({ w: cols * 40 + 24, h: rows * 40 + 24 }),
     hint: 'pasek poleceń lub menu elementu · przebieg: początek, potem koniec · OPS / Esc = odwołaj',
     armHint: {
       point: () => '',

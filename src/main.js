@@ -44,7 +44,7 @@ if (station.districts) {
     wrap.className = 'desk-district hidden'; wrap.dataset.district = id;
     deskRoot.appendChild(wrap);
     const mine = sim.playerControls(id);
-    const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id });
+    const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id, cmdHost: document.getElementById('cmd-host') });
     desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, el: wrap });
     const b = document.createElement('button');
     b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
@@ -54,17 +54,21 @@ if (station.districts) {
   }
   showDesk(sim.playerDistrict === 'both' ? desks[0].id : sim.playerDistrict);
 } else {
-  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers), cols: station.desk.cols, el: deskRoot });
+  desks.push({ id: null, renderer: createView(sim.srk, deskRoot, sim, handlers, { cmdHost: document.getElementById('cmd-host') }), cols: station.desk.cols, el: deskRoot });
 }
 activeDesk = desks[0];
 function showDesk(id) {
-  for (const d of desks) d.el.classList.toggle('hidden', d.id !== id);
+  for (const d of desks) { d.el.classList.toggle('hidden', d.id !== id); d.renderer.cmdBar?.classList.toggle('hidden', d.id !== id); }
   for (const b of document.querySelectorAll('#desk-tabs button')) b.classList.toggle('active', b.textContent.startsWith(station.districts?.[id]?.short || id));
   activeDesk = desks.find((d) => d.id === id) || desks[0];
   requestAnimationFrame(() => fit());
 }
 const desk = desks[0].renderer;
-const side = new SidePanel(document.getElementById('side'), sim);
+const side = new SidePanel(document.getElementById('side'), sim, {
+  miniHost: document.getElementById('mini-tabs'),
+  onToggle: (collapsed) => settings.set('sideCollapsed', collapsed),
+});
+if (settings.values.sideCollapsed) side.collapse(true);
 const help = new Help(document.getElementById('help'), sim);
 document.getElementById('btn-help').addEventListener('click', () => help.toggle());
 
@@ -185,7 +189,14 @@ scroll.addEventListener('wheel', (e) => {
   const r = scroll.getBoundingClientRect();
   zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
+/** Dopasowanie do wysokości: szerokie pulpity (100+ kolumn) na tablecie – większy obraz, przewijanie w poziomie. */
+function fitHeight() {
+  const { h: dh } = deskSize();
+  zoom = Math.max(0.3, Math.min(4, (scroll.clientHeight - 8) / dh));
+  applyZoom();
+}
 document.getElementById('zoom-fit').addEventListener('click', fit);
+document.getElementById('zoom-height').addEventListener('click', fitHeight);
 window.addEventListener('resize', fit);
 window.addEventListener('orientationchange', () => setTimeout(fit, 300));
 window.addEventListener('load', fit);
