@@ -18,6 +18,23 @@
         <button id="btn-pause" class="tb" title="Pauza (spacja)">❚❚</button>
         <div class="speed" id="speed"></div>
         <button id="btn-help" class="tb" title="Instrukcja obsługi">?</button>
+        <button id="btn-menu" class="tb" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+      </div>
+      <div id="menu" class="menu hidden" role="menu">
+        <h4>Ustawienia</h4>
+        <fieldset>
+          <legend>Położenie pulpitu</legend>
+          <label><input type="radio" name="deskPos" value="top"> góra</label>
+          <label><input type="radio" name="deskPos" value="middle"> środek</label>
+          <label><input type="radio" name="deskPos" value="bottom"> dół</label>
+        </fieldset>
+        <fieldset>
+          <legend>Panel boczny (rozkład, dziennik, stan)</legend>
+          <label><input type="radio" name="sidePos" value="right"> po prawej</label>
+          <label><input type="radio" name="sidePos" value="left"> po lewej</label>
+          <label><input type="radio" name="sidePos" value="bottom"> na dole</label>
+        </fieldset>
+        <div class="menu-actions"><button type="button" id="menu-help" class="tb">Instrukcja obsługi</button></div>
       </div>
     </header>
     <main id="main">

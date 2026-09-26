@@ -2,6 +2,7 @@ import { Simulation } from './model/Simulation.js';
 import { DeskRenderer } from './render/DeskRenderer.js';
 import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
+import { Settings } from './ui/Settings.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
 
@@ -18,6 +19,19 @@ const desk = new DeskRenderer(document.getElementById('desk'), sim, {
 const side = new SidePanel(document.getElementById('side'), sim);
 const help = new Help(document.getElementById('help'), sim);
 document.getElementById('btn-help').addEventListener('click', () => help.toggle());
+
+/* ---- menu i ustawienia ---- */
+const menuEl = document.getElementById('menu');
+const menuBtn = document.getElementById('btn-menu');
+const settings = new Settings(() => requestAnimationFrame(fit));
+settings.bindMenu(menuEl);
+function toggleMenu(show = menuEl.classList.contains('hidden')) {
+  menuEl.classList.toggle('hidden', !show);
+  menuBtn.setAttribute('aria-expanded', String(show));
+}
+menuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+document.addEventListener('click', (e) => { if (!menuEl.contains(e.target)) toggleMenu(false); });
+document.getElementById('menu-help').addEventListener('click', () => { toggleMenu(false); help.toggle(); });
 
 /* ---- pasek stanu: uzbrojenie i ostatni komunikat ---- */
 const statusEl = document.getElementById('status');
@@ -67,7 +81,7 @@ updateSpeed();
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
-  if (e.key === 'Escape') help.hide();
+  if (e.key === 'Escape') { help.hide(); toggleMenu(false); }
 });
 
 /* ---- zoom pulpitu ---- */

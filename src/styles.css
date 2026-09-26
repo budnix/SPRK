@@ -39,10 +39,27 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .status.lv-alarm { color: var(--danger); font-weight: 700; }
 @media (max-width: 1100px) { .hint { display: none; } }
 #side { flex: 0 0 360px; background: var(--panel); border-left: 1px solid #000; display: flex; flex-direction: column; min-height: 0; }
-@media (max-width: 1100px) {
-  #main { flex-direction: column; }
-  #side { flex: 0 0 40%; border-left: none; border-top: 1px solid #000; }
+/* położenie panelu bocznego */
+#app[data-side-pos="left"] #main { flex-direction: row-reverse; }
+#app[data-side-pos="left"] #side { border-left: none; border-right: 1px solid #000; }
+#app[data-side-pos="bottom"] #main { flex-direction: column; }
+#app[data-side-pos="bottom"] #side { flex: 0 0 40%; border-left: none; border-top: 1px solid #000; }
+@media (max-width: 700px) {
+  #main { flex-direction: column !important; }
+  #side { flex: 0 0 40%; border-left: none; border-right: none; border-top: 1px solid #000; }
 }
+/* położenie pulpitu w pionie */
+#app[data-desk-pos="top"] #desk { margin-top: 0; }
+#app[data-desk-pos="bottom"] #desk { margin-bottom: 0; }
+/* menu */
+#topbar { position: relative; }
+.menu { position: absolute; top: 100%; right: 8px; z-index: 20; background: var(--panel); border: 1px solid #555; border-radius: 8px; padding: 10px 14px; min-width: 260px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); font-size: 13px; }
+.menu h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+.menu fieldset { border: none; padding: 0; margin: 6px 0 10px; }
+.menu legend { color: var(--text); font-weight: 600; padding: 0; margin-bottom: 4px; }
+.menu label { display: block; padding: 3px 0; cursor: pointer; }
+.menu input { margin-right: 6px; }
+.menu-actions { border-top: 1px solid #444; padding-top: 8px; }
 
 /* ---- pulpit ---- */
 svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }
