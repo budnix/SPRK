@@ -56,7 +56,7 @@ function studentScript(sim) {
   const wbl = (exit) => { const b = B(exit); if (!b.direction && !b.request && !b.occupied && !b.koPending) press(blk(exit, 'Wbl')); };
   const out = (nr, sigId, endId, exit, id) => {
     const en = e(nr); const b = B(exit);
-    if (!en?.train || en.actualArr == null || en.status === 'u sąsiada') return;
+    if (!en?.train || en.actualArr == null || en.status === 'na następnym posterunku') return;
     if (b.direction === 'out' && b.permission) route(sigId, { kind: 'end', id: endId }, id); else wbl(exit);
   };
   const stoppedBefore = (nr, sig) => e(nr)?.train?.stoppedAt?.signal === sig && e(nr).train.v === 0;
@@ -128,7 +128,7 @@ for (const [scenario, mission] of [['nauka-1', 'monitor'], ['nauka-2', 'pulpit']
     assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
     assert.equal(sim.clock.paused, false, 'po ostatnim „Dalej” zegar biegnie');
     for (const e of sim.traffic.timetable()) {
-      assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+      assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
       if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     }
     assert.equal(sim.ilk.counters.Sz, 1);
@@ -167,7 +167,7 @@ test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez koli
   const end = Clock.parse('09:10');
   let n = 0;
   while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
-  for (const e of sim.traffic.timetable()) assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+  for (const e of sim.traffic.timetable()) assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
 });
 
 test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawieniu na tor 3 (afterTask), niezależnie od godziny', () => {

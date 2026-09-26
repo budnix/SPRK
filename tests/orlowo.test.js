@@ -53,7 +53,7 @@ test('Gdynia Orłowo: pełna zmiana – SKM co 15 min, regionalne z postojem, sk
   assert.equal(tt.length, 29);
   for (const e of tt) {
     if (e.terminates) { assert.equal(e.status, 'zakończył bieg', `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -74,7 +74,7 @@ test('Gdynia Orłowo: scenariusz z usterką blokady od Gdyni – zapowiadanie te
   let n = 0;
   while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'Z2' || x.to === 'Z2')) {
-    assert.ok(e.status === 'u sąsiada' || e.status === 'zakończył bieg', `${e.nr}: ${e.status}`);
+    assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg', `${e.nr}: ${e.status}`);
   }
   assert.ok(sim.comms.messages.some((m) => m.kind === 'ask'), 'brak pytania telefonicznego');
   assert.ok(!sim.score.items.some((i) => i.code === 'comms-wrong'), 'zła formuła telefoniczna');

@@ -45,7 +45,7 @@ test('Gdynia Główna: pełna zmiana – 29 pociągów, SKM co 15 min, składy p
   assert.equal(tt.length, 29);
   for (const e of tt) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }

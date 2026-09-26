@@ -131,7 +131,7 @@ export class SidePanel {
     const platformTracks = [...new Set([...sim.ilk.sections.values()].filter((x) => x.kind === 'station' && x.track).map((x) => String(x.track)))];
     const candidates = () => sim.traffic.timetable().filter((e) => {
       const done = (k) => sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === k);
-      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.status !== 'u sąsiada';
+      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.status !== 'na następnym posterunku';
       const departing = e.to && sim.exitDistrict(e.to) === other && e.train && !e.train.finished && e.train.entered && !done('dispatch');
       return arriving || departing;
     }).map((e) => {

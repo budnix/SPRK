@@ -10,7 +10,7 @@ test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpru
   const tt = sim.traffic.timetable();
   for (const e of tt) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `pociąg ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, '2'); continue; }
-    assert.equal(e.status, 'u sąsiada', `pociąg ${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `pociąg ${e.nr}: ${e.status}`);
     assert.ok(e.delay <= 2, `pociąg ${e.nr} opóźniony ${e.delay} min`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `pociąg ${e.nr} na złym torze`);
   }

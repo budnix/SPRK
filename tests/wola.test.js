@@ -33,7 +33,7 @@ test('Wola Pustkowska: pełna zmiana z manewrami i przekazaniem składu, bez nar
   }
   for (const e of sim.traffic.timetable()) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -48,7 +48,7 @@ test('Wola Pustkowska: scenariusz z blokadą Borków bez łączności – zapowi
   let n = 0;
   while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   const borki = sim.traffic.timetable().filter((e) => e.from === 'B' || e.to === 'B');
-  for (const e of borki) assert.ok(e.status === 'u sąsiada' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+  for (const e of borki) assert.ok(e.status === 'na następnym posterunku' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
   assert.ok(sim.comms.messages.some((m) => m.kind === 'ask'), 'brak pytania telefonicznego');
   assert.ok(!sim.score.items.some((i) => i.code === 'comms-wrong'), 'dyżurny automatyczny użył złej formuły');
 });

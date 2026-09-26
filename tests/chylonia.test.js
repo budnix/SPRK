@@ -56,7 +56,7 @@ test('Gdynia Chylonia: pełna zmiana – 31 pociągów, wyjazdy dwustopniowe, od
   assert.equal(tt.length, 31);
   for (const e of tt) {
     if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -75,7 +75,7 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3', () =
   let n = 0;
   while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
   }
 });

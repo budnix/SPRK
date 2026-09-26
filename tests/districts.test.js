@@ -14,7 +14,7 @@ function runShift(sim, playerOp) {
 function assertAllDone(sim) {
   for (const e of sim.traffic.timetable()) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'u sąsiada', `${e.nr}: ${e.status}`);
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     assert.ok(e.delay <= 4, `${e.nr}: opóźnienie ${e.delay}`);
   }
   assert.equal(sim.ilk.counters.rozprucie, 0);

@@ -23,7 +23,7 @@ export class Score {
 
   report(traffic) {
     const tt = traffic.timetable();
-    const done = tt.filter((e) => e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'));
+    const done = tt.filter((e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'));
     const delays = tt.filter((e) => e.delay > 2).map((e) => ({ nr: e.nr, delay: e.delay, delayIn: e.delayIn }));
     return {
       total: this.total,

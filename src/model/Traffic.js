@@ -295,7 +295,7 @@ export class Traffic {
   }
 
   #onExit(e, exitId, tr) {
-    e.status = 'u sąsiada';
+    e.status = 'na następnym posterunku';
     const delay = (e.depTime != null && e.actualDep != null ? Math.round((e.actualDep - e.depTime) / 60) : e.delay) || 0;
     e.delay = delay;
     if (delay <= 2) this.score.onTime++; else { this.score.delayed++; this.score.totalDelayMin += delay; }
