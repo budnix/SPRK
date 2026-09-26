@@ -2,6 +2,7 @@ import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './DeskRenderer.js';
 import { tip } from '../data/glossary.js';
+import { makeDraggable } from '../ui/drag.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -80,6 +81,7 @@ export class ScreenRenderer {
     this.confirmBar = document.createElement('div');
     this.confirmBar.className = 'scr-confirm hidden';
     document.body.appendChild(this.confirmBar);
+    makeDraggable(this.confirmBar, null);
     if (!this.readonly) this.#buildCmdBar(opts.cmdHost || container);
 
     this.#build();

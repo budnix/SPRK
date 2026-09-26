@@ -82,3 +82,45 @@ test('instrukcja zawiera słownik skrótów, a przyciski paska poleceń mają po
   await page.click('#btn-help');
   await expect(page.locator('#help dl.gloss')).toContainText('Poz – pozwolenie');
 });
+
+test('dymek samouczka nie zasłania wskazywanego elementu, da się przeciągnąć za nagłówek i zostaje na miejscu do następnego kroku', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-1' } });
+  await page.waitForFunction(() => window.tutorial);
+  const box = page.locator('.tut-box');
+  for (let i = 0; i < 3; i++) await box.locator('.tut-next').click();
+  await advance(page, 3);
+  // krok Poz: kotwica = strzałka szlaku Lipno; dymek nie nachodzi na nią
+  const noOverlap = async () => page.evaluate(() => {
+    const b = document.querySelector('.tut-box').getBoundingClientRect(), t = document.querySelector('.tut-hl').getBoundingClientRect();
+    return b.right <= t.left || b.left >= t.right || b.bottom <= t.top || b.top >= t.bottom;
+  });
+  expect(await noOverlap()).toBe(true);
+  // przeciągnięcie za nagłówek
+  const head = box.locator('.tut-head');
+  const h = await head.boundingBox();
+  const before = await box.boundingBox();
+  await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(h.x + h.width / 2 + 200, h.y + h.height / 2 + 120, { steps: 8 });
+  await page.mouse.up();
+  const after = await box.boundingBox();
+  expect(Math.round(after.x - before.x)).toBe(200);
+  expect(Math.round(after.y - before.y)).toBe(120);
+  await expect(box).toHaveAttribute('data-dragged', 'true');
+  await advance(page, 2); // tick nie cofa ręcznego położenia
+  const still = await box.boundingBox();
+  expect(Math.round(still.x)).toBe(Math.round(after.x));
+  // następny krok wraca do automatycznego położenia
+  await page.locator(`.hit[data-ref*='"id":"kW"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 60, clientY: 200 });
+  await page.click('.scr-menu button:has-text("(Poz)")');
+  await expect(box.locator('.tut-title')).toContainText('Przebieg wjazdowy');
+  await expect(box).not.toHaveAttribute('data-dragged', 'true');
+  expect(await noOverlap()).toBe(true);
+  // słownik też da się przesunąć
+  await box.locator('abbr[data-term]').first().click();
+  const g = page.locator('.tut-gloss');
+  const gb = await g.boundingBox();
+  await page.mouse.move(gb.x + 20, gb.y + 8); await page.mouse.down(); await page.mouse.move(gb.x + 120, gb.y + 60, { steps: 5 }); await page.mouse.up();
+  const gb2 = await g.boundingBox();
+  expect(Math.round(gb2.x - gb.x)).toBe(100);
+});

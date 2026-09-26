@@ -389,6 +389,9 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 /* samouczek (misje wprowadzające) */
 .tut-box { position: fixed; z-index: 70; background: var(--panel); color: var(--text); border: 1px solid var(--accent); border-radius: 10px; box-shadow: 0 10px 30px var(--shadow); font-size: 13px; line-height: 1.45; max-height: 60vh; display: flex; flex-direction: column; }
 .tut-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border2); background: var(--panel2); border-radius: 10px 10px 0 0; }
+.draggable { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.draggable:active { cursor: grabbing; }
+.tut-head::after { content: '⋮⋮'; color: var(--muted); font-size: 12px; letter-spacing: -2px; margin-left: 4px; }
 .tut-step { font-size: 11px; color: var(--muted); white-space: nowrap; }
 .tut-title { font-weight: 700; flex: 1 1 auto; }
 .tut-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; }
