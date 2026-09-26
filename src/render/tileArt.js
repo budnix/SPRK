@@ -124,8 +124,10 @@ export function trackArt(tile, ctx) {
   g.appendChild(b); refs.slits.push(b);
   for (const p of tile.ports) { const s = screw(p); g.appendChild(s); refs.screws.push(s); if (ctx.isJoint(tile, p)) g.appendChild(joint(p)); }
   if (tile.text) {
+    // opis (nazwa sąsiedniego posterunku) po przeciwnej stronie toru niż przycisk końca przebiegu – nie nachodzą na siebie
     const above = tile.ports.every((p) => !p.includes('N'));
-    g.appendChild(text(C, above ? 8 : 34, tile.text, { class: 'tile-text small' }));
+    const y = tile.endButton ? (above ? 34 : 8) : (above ? 8 : 34);
+    g.appendChild(text(C, y, tile.text, { class: 'tile-text small' }));
   }
   if (tile.derailer) {
     const wk = el('g', { class: 'derailer' }, [

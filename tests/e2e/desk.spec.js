@@ -116,5 +116,17 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
   });
   expect(s.missing).toEqual([]);
   expect(s.unique).toBe(s.refs); // brak zdublowanych przycisków
+  // nazwa sąsiedniego posterunku na kostce wyjazdu nie nachodzi na przycisk końca przebiegu
+  const overlaps = await page.evaluate(() => {
+    const out = [];
+    for (const b of document.querySelectorAll(`#desk .btn[data-ref*='"kind":"end"']`)) {
+      const tile = b.closest('.tile'); const t = tile?.querySelector('text.tile-text.small'); if (!t) continue;
+      const rb = b.getBoundingClientRect(), rt = t.getBoundingClientRect();
+      out.push([t.textContent, !(rb.right <= rt.left || rb.left >= rt.right || rb.bottom <= rt.top || rb.top >= rt.bottom)]);
+    }
+    return out;
+  });
+  expect(overlaps.length).toBeGreaterThan(0);
+  for (const [name, ov] of overlaps) expect(ov, `${name} zasłonięte przyciskiem`).toBe(false);
   expect(s.tiles).toBeGreaterThanOrEqual(s.defined); // każda kostka z definicji narysowana
 });
