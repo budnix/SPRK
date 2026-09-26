@@ -146,7 +146,7 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
   });
   expect(s.missing).toEqual([]);
   expect(s.unique).toBe(s.refs); // brak zdublowanych przycisków
-  // na kostce wyjazdu opis strzałki (na dole po lewej) i nazwa sąsiada (nad torem) nie nachodzą na przycisk końca przebiegu (na dole po prawej)
+  // na kostce wyjazdu opis strzałki (pod torem) i nazwa sąsiada (nad torem, obok przycisku) nie nachodzą na przycisk końca przebiegu (nad torem, od krawędzi pulpitu)
   const overlaps = await page.evaluate(() => {
     const out = [];
     const hit = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);

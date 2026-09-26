@@ -127,8 +127,10 @@ export function trackArt(tile, ctx) {
   if (tile.text) {
     // opis (nazwa sąsiedniego posterunku) po przeciwnej stronie toru niż przycisk końca przebiegu – nie nachodzą na siebie
     const above = tile.ports.every((p) => !p.includes('N'));
-    const y = tile.endButton && !tile.endButtonBelow ? (above ? 34 : 8) : (above ? 8 : 34);
-    g.appendChild(text(C, y, tile.text, { class: 'tile-text small' }));
+    const y = tile.endButton && !tile.blockEdge ? (above ? 34 : 8) : (above ? 8 : 34);
+    // kostka skrajna blokady: nazwa nad torem obok przycisku końca przebiegu (przycisk od strony krawędzi pulpitu)
+    if (tile.blockEdge) g.appendChild(text(tile.blockEdge === 'W' ? 14 : CELL - 14, 8, tile.text, { class: 'tile-text small', 'text-anchor': tile.blockEdge === 'W' ? 'start' : 'end' }));
+    else g.appendChild(text(C, y, tile.text, { class: 'tile-text small' }));
   }
   if (tile.derailer) {
     const wk = el('g', { class: 'derailer' }, [
@@ -142,9 +144,11 @@ export function trackArt(tile, ctx) {
     g.appendChild(text(C - 9, C + 12.5, 'Wk', { class: 'tile-text tiny' }));
   }
   if (tile.endButton) {
-    // na kostce ze strzałką blokady (endButtonBelow) przycisk jest pod torem, w połowie między kanałem a dolną krawędzią
-    const onTop = !tile.endButtonBelow && tile.ports.every((p) => !p.includes('N'));
-    refs.endBtn = button(C + 11, onTop ? 9 : tile.endButtonBelow ? 32.5 : 31, 5, tile.endButton.color || 'green', { kind: 'end', id: tile.endButton.id }, null);
+    const onTop = tile.ports.every((p) => !p.includes('N'));
+    // kostka skrajna blokady (blockEdge): przycisk nad torem od strony krawędzi pulpitu, w połowie między krawędzią a kanałem
+    refs.endBtn = tile.blockEdge
+      ? button(tile.blockEdge === 'W' ? 7 : CELL - 7, 7.5, 5, tile.endButton.color || 'green', { kind: 'end', id: tile.endButton.id }, null)
+      : button(C + 11, onTop ? 9 : 31, 5, tile.endButton.color || 'green', { kind: 'end', id: tile.endButton.id }, null);
     g.appendChild(refs.endBtn);
   }
   return { g, refs };
@@ -296,10 +300,10 @@ export function blankArt() {
 /**
  * Strzałka blokady liniowej na kostce toru szlakowego – jak na pulpitach typu E: kanał toru w kształcie strzałki, w nim
  * zamiast paska świetlnego krótka lampka-strzałka (biała – pozwolenie / kierunek, czerwona – tor szlakowy zajęty),
- * pod kanałem opis „wjazd” / „wyjazd” (na kostce z przyciskiem końca przebiegu – po lewej, przycisk po prawej).
+ * pod kanałem opis „wjazd” / „wyjazd”.
  * Dokłada się do gotowej kostki toru (`g`), usuwając jej pasek i śrubki; zwraca lampkę-strzałkę. `toWest` – szlak leży na zachód.
  */
-export function blockArrowArt(g, kind, toWest, hasEndButton = false) {
+export function blockArrowArt(g, kind, toWest) {
   const pointLeft = kind === 'out' ? toWest : !toWest;
   // zwykły prosty kanał toru zostaje; zamiast paska świetlnego jest w nim czarna strzałka o grubości paska,
   // z grotem mieszczącym się w kanale (bez własnego kanału i obwódki)
@@ -311,7 +315,7 @@ export function blockArrowArt(g, kind, toWest, hasEndButton = false) {
     : `M${b},${C} L${b - tip},${C - H} L${b - tip},${C - h} H${a} V${C + h} H${b - tip} L${b - tip},${C + H} Z`;
   const lampEl = el('path', { class: 'lamp arrow-lamp', d });
   g.appendChild(lampEl);
-  g.appendChild(text(hasEndButton ? 3 : C, 33, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label', ...(hasEndButton ? { 'text-anchor': 'start' } : {}) }));
+  g.appendChild(text(C, 33, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;
 }
 

@@ -113,10 +113,10 @@ export class DeskRenderer {
         case 'track': {
           const key = `${tile.x},${tile.y}`;
           const arrow = arrowAt.get(key);
-          // kostka ze strzałką: nazwa sąsiedniego posterunku (text) nad torem, przycisk końca przebiegu pod torem
-          out = art.trackArt(arrow ? { ...tile, endButtonBelow: true } : tile, ctx);
+          // kostka skrajna blokady: nazwa sąsiedniego posterunku (text) nad torem obok przycisku końca przebiegu
+          out = art.trackArt(arrow ? { ...tile, blockEdge: arrow.toWest ? 'W' : 'E' } : tile, ctx);
           if (arrow) {
-            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest, !!tile.endButton);
+            blockRef(arrow.exit)[arrow.kind === 'out' ? 'outArrow' : 'inArrow'] = art.blockArrowArt(out.g, arrow.kind, arrow.toWest);
             out.refs.slits = out.refs.slits.filter((e) => e.isConnected); // kostka kierunkowa bez paska odcinka
           }
           break;
