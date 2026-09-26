@@ -169,8 +169,10 @@ export class Train {
           const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
           const nbT = this.topo.neighbour(tile, outPort);
           const sectionEnds = !nbT || nbT.tile.section !== tile.section;
+          const platform = this.ilk.sections.get(tile.section)?.platform;
           if (sigHere) constraints.push({ dist: dist - 12, speed: 0, reason: 'peron', kind: 'platform', tile });
-          else if (sectionEnds) constraints.push({ dist: dist - 15, speed: 0, reason: 'peron', kind: 'platform', tile });
+          // tor bez peronu (pociąg kończący bieg): zatrzymanie tylko przed sygnalizatorem na końcu toru
+          else if (platform && sectionEnds) constraints.push({ dist: dist - 15, speed: 0, reason: 'peron', kind: 'platform', tile });
         }
         // Sygnalizator przy wyjeździe z kostki `tile` portem `outPort`
         for (const s of this.topo.signalsAt(tile, outPort)) {
@@ -223,7 +225,8 @@ export class Train {
   #shouldStopAt(tile) {
     if (this.mode !== 'train' || !this.def.stop || this.hasStopped) return false;
     const sec = this.ilk.sections.get(tile.section);
-    if (!sec?.platform) return false;
+    // pociąg kończący bieg zatrzymuje się na torze stacyjnym także bez peronu (np. odstawczy)
+    if (!sec?.platform && !(this.def.terminates && sec?.kind === 'station')) return false;
     if (this.plannedTrack && String(sec.track) !== String(this.plannedTrack)) {
       // Zatrzymanie na innym torze niż planowany, jeżeli ma peron – dopuszczalne
     }

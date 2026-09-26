@@ -122,7 +122,13 @@ export class AutoOperator {
         const head = ['E', 'NE', 'SE'].includes(tr.direction) ? 'E' : 'W';
         const usable = routes.filter((x) => x.kind === 'shunt' && topo.signals.get(x.start).dir === head && (x.start === next || occ.has(x.approach)));
         const isSet = (x) => ilk.active.has(x.id) || ilk.pending.some((p) => p.route.id === x.id);
-        const r = usable.find((x) => routeTrack(x) === String(task.toTrack) && !isSet(x));
+        // Przebieg wprost na tor docelowy; gdy go nie ma – przebieg do tarczy, spod której (po zmianie
+        // kierunku) tor docelowy jest osiągalny (manewr „za rozjazdy i z powrotem”).
+        const opposite = (sigId) => { const s = topo.signals.get(sigId); return [...topo.signals.values()].find((o) => o.kind === 'tm' && o.at.x === s.at.x && o.at.y === s.at.y && o.dir !== s.dir); };
+        const leadsTo = (x) => { if (x.end.type !== 'signal') return false; const o = opposite(x.end.id); return !!o && routes.some((y) => y.kind === 'shunt' && y.start === o.id && routeTrack(y) === String(task.toTrack)); };
+        const free = usable.filter((x) => !isSet(x));
+        const r = free.find((x) => routeTrack(x) === String(task.toTrack))
+          || free.filter(leadsTo).sort((a, b) => a.sections.length - b.sections.length)[0];
         if (r) ilk.setRoute(r.id);
         else if (!usable.some(isSet)) sim.traffic.reverseTrain(e.nr);
         continue;

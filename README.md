@@ -48,7 +48,9 @@ Station selection: `?stacja=<id>` (default `stare-pustkowie`).
   (double-track line with one-way blocks, a branch line with Eap, junction work) and **Gdynia Główna**
   (real station: 10 platform tracks, SKM tracks 501/502, lines 202, 250 and 201 in both directions, point and
   signal numbering from the 2024 station plan, 29 trains in two hours, two signal boxes GO and GO2 with
-  dispatcher orders exchanged between them); each with scenarios such as
+  dispatcher orders exchanged between them) and **Gdynia Orłowo** (its simpler neighbour on the same lines:
+  platform tracks 1/2 and SKM 501/502, tracks 3, 4 and 6 of the Sopot EMU depot, siding 18 with a derailer,
+  a two-step shunting move of a terminating unit from track 4 to track 6); each with scenarios such as
   a closed track, a point failure, a block failure or a peak with heavy disruptions.
 
 ## Operating the desk (short version)

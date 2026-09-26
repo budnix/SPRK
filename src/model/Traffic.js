@@ -374,13 +374,15 @@ export class Traffic {
       if (e.train && !e.train.finished) {
         if (!e.actualTrack || (e.unit && e.train.v === 0)) { const tr = this.#trackOf(e.train); if (tr) e.actualTrack = tr; }
         const st = e.train.state;
-        if (st === 'dwell') e.status = 'postój';
+        const ended = e.terminates && e.actualArr != null; // pociąg zakończył bieg – dalej tylko manewry
+        if (ended) e.status = st === 'moving' ? 'manewruje' : 'zakończył bieg';
+        else if (st === 'dwell') e.status = 'postój';
         else if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal') e.status = `stoi przed ${e.train.stoppedAt.signal}`;
         else if (st === 'moving' && e.train.entered) e.status = e.train.mode === 'shunt' ? 'manewruje' : 'jedzie';
         if (e.train.state === 'dwell' && e.depTime != null && time > e.depTime + 60) {
           e.delay = Math.round((time - e.depTime) / 60);
         }
-        if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
+        if (!ended && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
           e.holdScored = true;
           this.bus.emit('score', { time, code: 'held', points: -5, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
         }
