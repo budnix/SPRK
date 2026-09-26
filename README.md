@@ -12,7 +12,7 @@ Bez frameworków: czysty JavaScript (moduły ES) + SVG.
 npm install
 npm run dev        # http://localhost:5173  (Vite, dostępne też w sieci lokalnej: --host)
 npm test           # testy logiki (node --test)
-npm run build      # statyczna wersja do katalogu dist/
+npm run build      # statyczna wersja do katalogu dist/ (na GH Pages: VITE_BASE=/SPRK/)
 ```
 
 Wybór stacji: `?stacja=<id>` (domyślnie `stare-pustkowie`).
@@ -61,3 +61,8 @@ Pełna instrukcja: przycisk **?** w aplikacji.
 
 Symulator jest uproszczeniem: szczegóły zależności (czasy, drogi ochronne, ochrona boczna) wzorowano na opisach
 urządzeń typu E, ale bez dostępu do dokumentacji zależnościowej konkretnych nastawni. Zgłoś różnice – model jest w jednym miejscu.
+
+## CI / deploy
+
+Workflow `.github/workflows/ci.yml`: każdy push i PR uruchamia `npm test`; po przejściu testów na `main`
+aplikacja jest budowana i publikowana na GitHub Pages (`https://budnix.github.io/SPRK/`).
