@@ -308,6 +308,8 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
 .platform { fill: #1f262d; stroke: #4a5563; stroke-width: 1; }
 .platform.side { fill: #1a2026; }
+.trk-no-box { fill: #000; stroke: #8a949e; stroke-width: 0.9; }
+.trk-no-text { fill: #dfe6ec; font-size: 6.8px; font-weight: 700; }
 .platform-label { fill: #7d8994; font-size: 6.2px; letter-spacing: 0.4px; pointer-events: none; }
 .buffer-bar { stroke: #b5bec7; stroke-width: 2.5; fill: none; }
 .scr-text { fill: #b6c0ca; font-size: 7px; }

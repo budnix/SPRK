@@ -87,6 +87,9 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   expect(inside).toBe(true);
   expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
   await expect(page.locator('text.platform-label').first()).toHaveText(/Peron II|Peron I/); // nazwa peronu na prostokącie
+  // numery torów w ramkach na linii toru, opisy „tor N” nie są dublowane
+  expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['1', '13', '1a', '2', '2a', '4', '4a', '4b', '501', '502', '6', '6a', '6b']);
+  expect(await page.locator('.scr-label', { hasText: /^tor \d/ }).count()).toBe(0);
   const before = await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'));
   expect(before).toContain('scale(1.4)');
   await page.click('#btn-menu');

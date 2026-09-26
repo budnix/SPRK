@@ -96,6 +96,17 @@ export class ScreenRenderer {
   /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
   cmdButton(id) { return this.cmdButtons?.get(id) || null; }
 
+  /**
+   * Tekst opisu na monitorze: „tor N” i „Peron …” są rysowane osobno (ramka na torze, prostokąt peronu), więc z opisu
+   * kostki `label` zostaje reszta („tor 6 · Baza EZ Sopot” → „Baza EZ Sopot”, „tor 2 · Peron II” → nic).
+   */
+  static labelText(text) {
+    const m = /^tor\s+\S+\s*(?:·\s*(.*))?$/i.exec(String(text).trim());
+    if (!m) return text;
+    const rest = (m[1] || '').replace(/^peron\b.*$/i, '').trim();
+    return rest || null;
+  }
+
   /** Widoczny wycinek kolumn (ekran monitora) – zmiana viewBox, bez przebudowy grafiki. */
   setView(x0, x1) {
     const H = this.rows * CELL * this.ry + 2 * PAD;
@@ -176,7 +187,7 @@ export class ScreenRenderer {
       this.layerTracks.appendChild(r);
       // napis peronu: na środku, a gdy tam leży opis toru (kostka label w rzędach peronu) – bliżej końca prostokątu
       const rows = [Math.floor(yRow), Math.ceil(yRow)];
-      const labels = this.station.tiles.filter((t) => t.type === 'label' && rows.includes(t.y) && t.x + (t.span || 1) - 1 >= x0 && t.x <= x1);
+      const labels = this.station.tiles.filter((t) => t.type === 'label' && ScreenRenderer.labelText(t.text) && rows.includes(t.y) && t.x + (t.span || 1) - 1 >= x0 && t.x <= x1);
       const clash = (cx) => labels.some((t) => t.x - 2 <= cx + 2 && t.x + (t.span || 1) + 1 >= cx - 2);
       const mid = (x0 + x1) / 2;
       const cx = [mid, x0 + 2.5, x1 - 2.5].find((c) => !clash(c)) ?? mid;
@@ -205,8 +216,39 @@ export class ScreenRenderer {
     }
   }
 
+  /**
+   * Numery torów rysowane NA linii toru w małej ramce (jak na stanowiskach komputerowych) – jedna ramka na numer
+   * toru, w środku najdłuższego odcinka z tym numerem. Dzięki temu napis peronu na prostokącie nie myli się z torem.
+   */
+  #trackNumbers() {
+    const byTrack = new Map();
+    for (const [sid, sec] of Object.entries(this.station.sections || {})) {
+      if (!sec.track) continue;
+      const tiles = this.station.tiles.filter((t) => t.section === sid && t.type === 'track' && t.x >= this.x0 && t.x <= this.x1 && !t.derailer);
+      const ys = [...new Set(tiles.map((t) => t.y))];
+      if (ys.length !== 1) continue; // odcinek ukośny / łuk – bez numeru
+      const cur = byTrack.get(String(sec.track));
+      if (!cur || tiles.length > cur.tiles.length) byTrack.set(String(sec.track), { sid, tiles, y: ys[0] });
+    }
+    for (const [nr, { tiles, y }] of byTrack) {
+      const xs = tiles.map((t) => t.x).sort((a, b) => a - b);
+      // środek odcinka, ale nie na kostce z sygnalizatorem stojącym w tym rzędzie (symbol semafora jest na linii)
+      const sigX = new Set(this.station.tiles.filter((t) => t.type === 'signal' && t.at.y === y).map((t) => t.at.x));
+      let mid = xs[Math.floor(xs.length / 2)];
+      for (let d = 0; d < xs.length && (sigX.has(mid) || sigX.has(mid - 1) || sigX.has(mid + 1)); d++) mid = xs[Math.floor(xs.length / 2) + (d % 2 ? d : -d)] ?? mid;
+      const [cx, cy] = this.#ctr({ x: mid, y });
+      const w = Math.max(12, 5.2 * nr.length + 6);
+      const g = this.#sym(cx, cy, 'scr-el trk-no', [
+        el('rect', { class: 'trk-no-box', x: -w / 2, y: -5.5, width: w, height: 11, rx: 1.5 }),
+        text(0, 2.4, nr, { class: 'scr-text trk-no-text' }),
+      ]);
+      this.layerMarks.appendChild(g);
+    }
+  }
+
   #build() {
     this.#platforms();
+    this.#trackNumbers();
     const addSec = (sid, e) => { if (!this.sectionEls.has(sid)) this.sectionEls.set(sid, []); this.sectionEls.get(sid).push(e); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
@@ -281,7 +323,9 @@ export class ScreenRenderer {
         }
         case 'label': {
           const span = tile.span || 1;
-          const t = text((tile.x - this.x0) * CELL + span * CELL / 2, cy, tile.text, { class: `scr-label${tile.size >= 11 ? ' title' : ''}`, 'font-size': Math.max(7, (tile.size || 8) * 0.95) });
+          const txt = ScreenRenderer.labelText(tile.text);
+          if (!txt) break;
+          const t = text((tile.x - this.x0) * CELL + span * CELL / 2, cy, txt, { class: `scr-label${tile.size >= 11 ? ' title' : ''}`, 'font-size': Math.max(7, (tile.size || 8) * 0.95) });
           this.layerMarks.appendChild(t);
           break;
         }

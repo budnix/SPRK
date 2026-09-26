@@ -39,3 +39,15 @@ test('nazwy ekranów: zachód / środek / wschód wg wyjazdów, jawny podział s
   const c = planScreens(custom, [0, 111], 30);
   assert.equal(c.length, 2); assert.equal(screenLabel(custom, c[0], 0, 2), 'głowica zachodnia');
 });
+
+test('monitor: opis „tor N · …” – numer toru i peron rysowane osobno, z opisu zostaje reszta', async () => {
+  const { ScreenRenderer } = await import('../src/render/ScreenRenderer.js');
+  const f = ScreenRenderer.labelText;
+  assert.equal(f('tor 1'), null);
+  assert.equal(f('tor 2 · Peron II'), null);
+  assert.equal(f('tor 502a · Peron I (SKM)'), null);
+  assert.equal(f('tor 6 · Baza EZ Sopot'), 'Baza EZ Sopot');
+  assert.equal(f('linia 202'), 'linia 202');
+  assert.equal(f('SZKOLNA'), 'SZKOLNA');
+  assert.equal(f('Wk1'), 'Wk1');
+});

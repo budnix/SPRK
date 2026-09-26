@@ -38,7 +38,7 @@ port `SE` łączy się z `(6,5)` posiadającą port `NW`.
 | `signal` | sygnał | `id`, `kind:'semafor'|'tm'`, `at:{x,y}`, `dir:'E'|'W'`, `shunting?`, `substitute?`, `overlap?`, `entry?` | powtarzacz sygnalizatora z przyciskami; stoi na granicy wyjścia z kostki `at` w kierunku `dir` |
 | `button` | sterownicza | `id`, `label`, `role`, `color?`, `counter?` | przycisk grupowy: `group-point` (Zw), `point-lock` (Zz), `route-release` (Pz), `emergency-release` (dPz), `substitute` (Sz) |
 | `block` | blokada | `exit` | pole blokady liniowej Eap (4×2 kostki) dla szlaku `exit` |
-| `label` | opis | `text`, `size?`, `span?` | napis |
+| `label` | opis | `text`, `size?`, `span?` | napis; na monitorze z opisu „tor N · …” zostaje tylko reszta (numery torów są rysowane w ramkach na linii toru, perony na prostokącie) |
 | `blank` | – | – | pusta kostka (uzupełniana automatycznie) |
 
 Dodatki na kostce torowej:
@@ -76,7 +76,7 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
   i bez Ko, odstęp zwalnia się sam; blokada dwukierunkowa – jazda „pod prąd” po zmianie kierunku (`Zk`,
   na pulpicie kostkowym przycisk Wbl) przy wolnym odstępie; sąsiad zmienia kierunek sam, gdy odstęp jest wolny
   i nie mamy nastawionego wyjazdu. Przy usterce – zapowiadanie telefoniczne i dPo/dKo jak w Eap.
-  Kostka `block` (pole Eap) jest rysowana tylko na pulpicie kostkowym; monitor pokazuje stan blokady przy wyjeździe,
+  Kostka `block` (pole Eap) jest rysowana tylko na pulpicie kostkowym; monitor pokazuje stan blokady przy wyjeździe.
 * `label` – napis na polu blokady (gdy dwa tory prowadzą do tego samego posterunku).
 
 ## Przebiegi (`routes`)
