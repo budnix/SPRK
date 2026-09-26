@@ -303,38 +303,37 @@ export function blockArt(tile, exitDef) {
   const g = el('g', { class: 'tile t-block' }, [
     el('rect', { class: 'face', x: 0, y: 0, width: W, height: Hh }),
   ]);
-  const refs = {};
+  const refs = { btns: {} };
   const toWest = exitDef.dir === 'W';
   const fixed = exitDef.direction;
-  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${fixed === 'in' ? ' – wjazd' : fixed === 'out' ? ' – wyjazd' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
-  // Wskaźniki kierunku: strzałka „wyjazd” (w stronę szlaku) i „wjazd” (w stronę stacji)
+  g.appendChild(text(4, 9, `[${exitDef.label || exitDef.name}]${fixed === 'in' ? ' – tor wjazdowy' : fixed === 'out' ? ' – tor wyjazdowy' : ''}`, { class: 'tile-text small', 'text-anchor': 'start' }));
   const bx = 6, bw = 44, bh = 15;
-  if (fixed !== 'in') {
-    const out = arrowBox(bx, 13, bw, bh, toWest);
-    g.appendChild(out.g); refs.outW = out.white; refs.outR = out.red;
-    g.appendChild(text(bx + bw + 4, 21, 'wyjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
+  const lampX = 100;
+  // Wiersze wskaźników: blokada dwukierunkowa – dwa (wyjazd, wjazd); jednokierunkowa – jeden, wyśrodkowany
+  const rows = fixed ? [[fixed, 22]] : [['out', 13], ['in', 31]];
+  for (const [kind, y] of rows) {
+    const box = arrowBox(bx, y, bw, bh, kind === 'out' ? toWest : !toWest);
+    g.appendChild(box.g);
+    if (kind === 'out') { refs.outW = box.white; refs.outR = box.red; } else { refs.inW = box.white; refs.inR = box.red; }
+    g.appendChild(text(bx + bw + 4, y + bh / 2 + 0.5, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
+    // lampka przy wierszu: żądanie pozwolenia (wyjazd) / Ko do obsłużenia (wjazd)
+    if (kind === 'out' && !fixed) { refs.req = lamp(lampX, y + bh / 2, 3.6, 'lamp-white'); g.appendChild(refs.req); g.appendChild(text(lampX + 7, y + bh / 2 + 0.5, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
+    if (kind === 'in') { refs.ko = lamp(lampX, y + bh / 2, 3.6, 'lamp-white'); g.appendChild(refs.ko); g.appendChild(text(lampX + 7, y + bh / 2 + 0.5, 'Ko', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
   }
-  if (fixed !== 'out') {
-    const inn = arrowBox(bx, 31, bw, bh, !toWest);
-    g.appendChild(inn.g); refs.inW = inn.white; refs.inR = inn.red;
-    g.appendChild(text(bx + bw + 4, 39, 'wjazd', { class: 'tile-text tiny', 'text-anchor': 'start' }));
-  }
-  // Lampki okrągłe: żądanie pozwolenia, Ko do obsłużenia
-  if (!fixed) { refs.req = lamp(96, 20, 3.6, 'lamp-white'); g.appendChild(refs.req); g.appendChild(text(103, 21, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
-  if (fixed !== 'out') { refs.ko = lamp(96, 38, 3.6, 'lamp-white'); g.appendChild(refs.ko); g.appendChild(text(103, 39, 'Ko', { class: 'tile-text tiny', 'text-anchor': 'start' })); }
-  // przyciski
-  refs.btns = {};
+  // Przyciski (rząd dolny) i liczniki doraźne – te same pozycje we wszystkich wariantach
   const by = 58;
-  const btnDefs = fixed === 'in' ? [['Ko', 'red', 40]] : fixed === 'out' ? [] : [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]];
-  btnDefs.forEach(([id, color, x]) => {
+  const btnDefs = fixed === 'in' ? [['Ko', 'red', 12]] : fixed === 'out' ? [] : [['Wbl', 'red', 12], ['Poz', 'red', 40], ['Ko', 'red', 66]];
+  for (const [id, color, x] of btnDefs) {
     const b = button(x, by, 5.5, color, { kind: 'block', exit: tile.exit, btn: id }, id, 'below');
     refs.btns[id] = b; g.appendChild(b);
-  });
-  const c1 = counterDevice(84, 42, 26, 19, 'dPo'); const c2 = counterDevice(122, 42, 26, 19, 'dKo');
-  g.append(c1.g, c2.g);
-  refs.cntPo = c1.t; refs.cntKo = c2.t;
-  refs.btns.dPo = button(97, 70, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dPo' }, null);
-  refs.btns.dKo = button(135, 70, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dKo' }, null);
-  g.append(refs.btns.dPo, refs.btns.dKo);
+  }
+  if (fixed !== 'in') {
+    const c1 = counterDevice(84, 46, 26, 19, 'dPo'); g.appendChild(c1.g); refs.cntPo = c1.t;
+    refs.btns.dPo = button(97, 73, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dPo' }, null); g.appendChild(refs.btns.dPo);
+  }
+  if (fixed !== 'out') {
+    const c2 = counterDevice(122, 46, 26, 19, 'dKo'); g.appendChild(c2.g); refs.cntKo = c2.t;
+    refs.btns.dKo = button(135, 73, 4.5, 'black', { kind: 'block', exit: tile.exit, btn: 'dKo' }, null); g.appendChild(refs.btns.dKo);
+  }
   return { g, refs };
 }

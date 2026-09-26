@@ -202,7 +202,7 @@ export class DeskRenderer {
     for (const id of this.derailerRefs.keys()) this.updateDerailer(id);
     for (const id of this.signalRefs.keys()) this.updateSignal(id);
     for (const id of this.blockRefs.keys()) this.updateBlock(id);
-    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(3, '0');
+    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(5, '0');
     this.updateArmed(this.ilk.armed);
   }
 
@@ -289,8 +289,8 @@ export class DeskRenderer {
     setLamp(r.inR, b.direction === 'in' && b.occupied ? 'red' : 'off');
     setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
     setLamp(r.ko, b.koPending ? 'white blink' : 'off');
-    r.cntPo.textContent = String(b.counters.dPo).padStart(3, '0');
-    r.cntKo.textContent = String(b.counters.dKo).padStart(3, '0');
+    if (r.cntPo) r.cntPo.textContent = String(b.counters.dPo).padStart(5, '0');
+    if (r.cntKo) r.cntKo.textContent = String(b.counters.dKo).padStart(5, '0');
   }
 
   updateArmed(a) {
@@ -322,7 +322,7 @@ export class DeskRenderer {
       lbl.querySelector('.train-nr').textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
     }
     for (const [nr, lbl] of this.trainLabels) if (!seen.has(nr)) { lbl.remove(); this.trainLabels.delete(nr); }
-    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(3, '0');
+    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(5, '0');
   }
 }
 
