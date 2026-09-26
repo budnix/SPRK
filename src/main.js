@@ -113,10 +113,12 @@ function stepScreen(delta) {
   if (next >= 0 && next < d.screens.length) setScreen(next);
 }
 const desk = desks[0].renderer;
+const sideToggle = document.getElementById('side-toggle');
 const side = new SidePanel(document.getElementById('side'), sim, {
   miniHost: document.getElementById('mini-tabs'),
-  onToggle: (collapsed) => settings.set('sideCollapsed', collapsed),
+  onToggle: (collapsed) => { settings.set('sideCollapsed', collapsed); sideToggle.textContent = collapsed ? 'pokaż' : 'ukryj'; },
 });
+sideToggle.addEventListener('click', () => side.collapse(!side.collapsed));
 if (settings.values.sideCollapsed) side.collapse(true);
 const help = new Help(document.getElementById('help'), sim);
 document.getElementById('btn-help').addEventListener('click', () => help.toggle());
@@ -239,14 +241,7 @@ scroll.addEventListener('wheel', (e) => {
   const r = scroll.getBoundingClientRect();
   zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
-/** Dopasowanie do wysokości: szerokie pulpity (100+ kolumn) na tablecie – większy obraz, przewijanie w poziomie. */
-function fitHeight() {
-  const { h: dh } = deskSize();
-  zoom = Math.max(0.3, Math.min(4, (scroll.clientHeight - 8) / dh));
-  applyZoom();
-}
 document.getElementById('zoom-fit').addEventListener('click', fit);
-document.getElementById('zoom-height').addEventListener('click', fitHeight);
 let replanTimer = null;
 function onResize() { clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
 window.addEventListener('resize', onResize);

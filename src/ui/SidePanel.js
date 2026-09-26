@@ -275,7 +275,7 @@ export class SidePanel {
   /** Mini-zakładki: kopia przycisków panelu z aktualnymi licznikami (Dziennik, Łączność, Polecenia). */
   #syncMini() {
     if (!this.mini) return;
-    const parts = ['<button type="button" class="tb mini-open" title="Rozwiń panel">⇤ panel</button>'];
+    const parts = [];
     for (const b of this.root.querySelectorAll('.tabs button[data-tab]')) {
       if (b.classList.contains('hidden')) continue;
       const badge = b.querySelector('.badge');
