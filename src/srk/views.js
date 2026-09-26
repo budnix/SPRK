@@ -30,21 +30,24 @@ const VIEWS = {
   },
   screen: {
     create: (container, sim, handlers, opts) => new ScreenRenderer(container, sim, handlers, opts),
-    size: (cols, rows) => ({ w: cols * 40 + 24, h: rows * 40 + 24 }),
-    hint: 'kliknij element = menu poleceń · przebieg: początek, potem koniec · Esc / prawy przycisk = anuluj',
+    size: (cols, rows) => ({ w: cols * 40 + 24, h: rows * 40 + 24 + 30 }), // +30 px na pasek poleceń
+    hint: 'pasek poleceń lub menu elementu · przebieg: początek, potem koniec · OPS / Esc = odwołaj',
     armHint: {
       point: () => '',
       derailer: () => '',
       signal: (a) => `${a.color === 'white' ? 'Przebieg manewrowy' : 'Przebieg pociągowy'} od ${a.id} – wskaż koniec przebiegu (semafor, tarczę lub szlak)`,
       group: () => '',
     },
-    help: `<h2>Obsługa stanowiska komputerowego</h2>
-      <p>Obraz stanu na monitorze: tor <span class="sw g"></span> szary – wolny, <span class="sw grn"></span> zielony – utwierdzony w przebiegu pociągowym,
-      <span class="sw y"></span> żółty – w przebiegu manewrowym, <span class="sw r"></span> czerwony – zajęty, niebieski przerywany – zamknięty.
-      Zwrotnica: jasny leg = położenie, numer obok; kwadrat przy numerze = zamknięcie indywidualne. Semafor: kółko w kolorze sygnału, grot = kierunek jazdy.</p>
-      <p><b>Polecenia</b> wydaje się z menu elementu (kliknięcie). Przebieg: „Przebieg pociągowy od A …”, potem kliknij semafor końcowy lub strzałkę szlaku.
-      Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) wymagają potwierdzenia „Wykonaj” i są rejestrowane w licznikach – tak jak plombowane przyciski na pulpicie.
-      Blokada liniowa: kliknij pole szlaku (Wbl, Poz, Ko, dPo, dKo). Esc lub prawy przycisk anuluje rozpoczęte polecenie.</p>`,
+    help: `<h2>Obsługa stanowiska komputerowego (zobrazowanie wg Ie-104)</h2>
+      <p>Odcinki toru: <span class="sw g"></span> szary – wolny, <span class="sw grn"></span> zielony – utwierdzony w przebiegu pociągowym,
+      <span class="sw y"></span> żółty – w przebiegu manewrowym, <span class="sw r"></span> czerwony – zajęty, <span class="sw v"></span> fioletowy – zwalnianie czasowe,
+      podwójna szara linia – tor zamknięty. Zwrotnica: pole „Z” pokazuje położenie iglic (kreska przerywana, migająca – brak kontroli), „+” przy ramieniu zasadniczym,
+      <span class="sw p"></span> różowy numer – zamknięcie indywidualne. Semafor: podwójny grot (tarcza manewrowa – pojedynczy): szary – stan podstawowy,
+      zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – początek lub koniec utwierdzonego przebiegu, biały migający – sygnał zastępczy.
+      Numery pociągów w czerwonych kasetkach. Niebieska ramka – element wybrany do polecenia, czerwona migająca – alarm.</p>
+      <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ PRZEBIEG, ZWROTNICA, STOP …), potem wskaż element(y):
+      przebieg = sygnalizator początkowy, potem końcowy lub szlak. To samo daje menu po kliknięciu elementu. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane,
+      potwierdzane „WYKONAJ” i rejestrowane w licznikach; <b>OPS</b>, Esc lub prawy przycisk odwołuje polecenie. Blokada liniowa: kliknij pole szlaku (Wbl, Poz, Ko, dPo, dKo).</p>`,
   },
 };
 

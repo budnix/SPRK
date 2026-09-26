@@ -260,59 +260,79 @@ svg.desk.readonly .btn { cursor: not-allowed; }
 .cmd.done { color: var(--muted); }
 .cmd .t { color: var(--muted); margin-right: 6px; }
 
-/* ---- stanowisko komputerowe (monitor) – kolory niezależne od motywu ---- */
+/* ---- stanowisko komputerowe (monitor) – zobrazowanie wg Ie-104, kolory niezależne od motywu ---- */
 svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "DejaVu Sans Mono", Menlo, Consolas, "Courier New", monospace; }
-.scr-bg { fill: #05080b; }
+.scr-bg { fill: #000000; }
 .scr-banner { fill: #ffb84d; font-size: 8px; }
-.trk { fill: none; stroke-width: 3.6; stroke-linecap: butt; stroke-linejoin: round; stroke: #6d7884; }
-.trk.free { stroke: #6d7884; }
-.trk.rt-train { stroke: #33d15a; }
-.trk.rt-shunt { stroke: #e6cf48; }
-.trk.occ { stroke: #ff3a2c; stroke-width: 4.6; }
-.trk.closed { stroke: #3d8bff; stroke-dasharray: 5 3; }
-.trk.dim { stroke: #2a3138; }
-.trk.nocontrol { animation: blink 0.8s steps(1) infinite; }
-.buffer-bar { stroke: #9aa5b0; stroke-width: 2.5; fill: none; }
+/* odcinki: seg = grupa (linia zewnętrzna + wewnętrzna); klasa stanu na grupie */
+.seg .trk { fill: none; stroke-width: 3.6; stroke-linecap: butt; stroke-linejoin: round; stroke: #8a949e; }
+.seg .trk-inner { fill: none; stroke-width: 2.2; stroke: #000; stroke-linecap: butt; display: none; }
+.seg.free .trk { stroke: #8a949e; }
+.seg.rt-train .trk { stroke: #21d04a; }
+.seg.rt-shunt .trk { stroke: #ffd21f; }
+.seg.occ .trk { stroke: #ff2419; stroke-width: 4.4; }
+.seg.timed .trk { stroke: #c04cff; }
+.seg.closed .trk { stroke: #8a949e; stroke-width: 6; }
+.seg.closed .trk-inner { display: block; }
+.seg.locked .trk { stroke: #ff7ad9; }
+.seg.dim .trk { stroke: #2b3339; }
+.seg.nodata .trk { stroke: #ffffff; }
+.z-field { fill: none; stroke-width: 3.6; stroke-linejoin: round; stroke: #8a949e; }
+.z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
+.z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
+.buffer-bar { stroke: #b5bec7; stroke-width: 2.5; fill: none; }
 .scr-text { fill: #b6c0ca; font-size: 7px; }
 .scr-text.small { font-size: 5.6px; fill: #8c98a4; }
 .scr-text.counter { font-size: 6.5px; fill: #e4b04a; }
 .scr-label { fill: #55606b; font-size: 8px; }
-.scr-label.title { fill: #8fb0c9; font-weight: 700; letter-spacing: 1px; }
-.pt-label { fill: #d9e1e8; font-size: 7px; }
-.pt-lock { fill: none; stroke: #0000; }
-.pt-lock.on { fill: #fff; stroke: #fff; }
-.point.trailed .pt-label { fill: #ff3a2c; animation: blink 0.5s steps(1) infinite; }
-.wk-mark { fill: #10171d; stroke: #9aa5b0; stroke-width: 1; }
-.wk-mark.on { fill: #e6cf48; stroke: #e6cf48; }
-.derailer.locked .wk-mark { stroke: #fff; stroke-width: 1.6; }
-.sig-mast { fill: none; stroke: #9aa5b0; stroke-width: 1.4; }
-.sig-body { fill: #14191e; stroke: #9aa5b0; stroke-width: 1; }
-.sig-body.on.lamp-red { fill: #ff2a1a; stroke: #ff2a1a; }
-.sig-body.on.lamp-green { fill: #2bf05f; stroke: #2bf05f; }
-.sig-body.on.lamp-orange { fill: #ffa11a; stroke: #ffa11a; }
-.sig-body.on.lamp-white { fill: #fff6d5; stroke: #fff6d5; }
-.sig-body.on.lamp-blue { fill: #3f7cff; stroke: #3f7cff; }
-.sig-body.on { filter: url(#glow); }
-.sig-dir { fill: #6d7884; }
-.signal.route .sig-dir { fill: #33d15a; }
-.sig-label { font-size: 6.5px; fill: #cfd8e0; }
+.scr-label.title { fill: #ffd21f; font-weight: 700; letter-spacing: 1px; }
+.pt-label { fill: #9fe3b4; font-size: 7px; }         /* seledynowe numery rozjazdów */
+.pt-label.locked { fill: #ff7ad9; }                  /* różowy – zamknięcie indywidualne */
+.pt-plus { fill: #9fe3b4; font-size: 7px; }
+.point.trailed .pt-label { fill: #ff2419; animation: blink 0.5s steps(1) infinite; }
+.wk-mark { fill: #10171d; stroke: #b5bec7; stroke-width: 1; }
+.wk-mark.on { fill: #ffd21f; stroke: #ffd21f; }
+.derailer.locked .wk-mark { stroke: #ff7ad9; stroke-width: 1.6; }
+/* sygnalizatory: podwójny grot (semafor) / pojedynczy (Tm); kolor = stan wg Ie-104 */
+.sig-mast { fill: none; stroke: #b5bec7; stroke-width: 1.4; }
+.sig-body path { fill: #6d7884; stroke: none; }
+.sig-body.st-base path { fill: #6d7884; }
+.sig-body.st-train path { fill: #21d04a; filter: url(#glow); }
+.sig-body.st-shunt path { fill: #ffd21f; filter: url(#glow); }
+.sig-body.st-locked path { fill: #ff2419; }
+.sig-body.st-sz path { fill: #ffffff; animation: blink 0.8s steps(1) infinite; }
+.sig-body.st-nodata path { fill: #ffffff; }
+.sig-end { fill: none; stroke: #6d7884; stroke-width: 0.8; }
+.sig-end.on { fill: #ff2419; stroke: #ff2419; }
+.sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy sygnalizatorów */
 .exit-arrow { fill: #2d3a46; stroke: #8c98a4; stroke-width: 1; }
-.end-mark { fill: #05080b; stroke: #9aa5b0; stroke-width: 1.2; }
+.end-mark { fill: #000; stroke: #b5bec7; stroke-width: 1.2; }
 .block-box { fill: #0c1218; stroke: #2f3d4a; stroke-width: 1; }
-.block-title { font-size: 6.5px; fill: #8fb0c9; }
+.block-title { font-size: 6.5px; fill: #ffd21f; }
 .scr-lamp { fill: #1a2128; stroke: #3a4653; stroke-width: 0.6; }
 .scr-lamp.on.lamp-white { fill: #fff6d5; }
-.scr-lamp.on.lamp-red { fill: #ff2a1a; }
+.scr-lamp.on.lamp-red { fill: #ff2419; }
 .scr-counter rect { fill: #0c1218; stroke: #2f3d4a; }
 .hit { fill: transparent; stroke: none; pointer-events: all; cursor: pointer; }
 .readonly .hit { cursor: default; }
-.scr-el:hover .sig-body, .scr-el:hover .pt-label, .scr-el:hover .exit-arrow, .scr-el:hover .wk-mark { stroke: #ffffff; }
-.scr-el:hover .block-box { stroke: #8fb0c9; }
-.scr-el.armed .sig-body, .scr-el.armed .exit-arrow, .scr-el.armed .wk-mark { stroke: #ffd23f; stroke-width: 2; animation: blink 0.8s steps(1) infinite; }
-.scr-el.armed .pt-label { fill: #ffd23f; }
+/* G4: ramka selekcji (niebieska), alarm (czerwona migająca) */
+.sel-frame { fill: none; stroke: none; stroke-width: 1.2; }
+.scr-el:hover .sel-frame { stroke: #3a6fd8; stroke-dasharray: 2 1.5; }
+.scr-el.selected .sel-frame { stroke: #3f8cff; stroke-dasharray: none; }
+.screen.picking .scr-el.selected .sel-frame { animation: blink 0.8s steps(1) infinite; }
+.scr-el.alarm .sel-frame { stroke: #ff2419; animation: blink 0.6s steps(1) infinite; }
 .screen.picking .hit { cursor: crosshair; }
-.scr-train rect { fill: #0c1218; stroke: #b6c0ca; stroke-width: 0.8; }
+.scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }
+/* pasek poleceń (układ EbiScreen) */
+.screen-host { padding-top: 30px; }
+.screen-host svg.screen { height: calc(100% - 30px); }
+.scr-cmdbar { position: absolute; top: 3px; left: 4px; right: 4px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; z-index: 5; pointer-events: none; }
+.scr-cmdbar button { pointer-events: auto; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 3px; padding: 3px 8px; font: 600 11px "DejaVu Sans Mono", Menlo, Consolas, monospace; cursor: pointer; }
+.scr-cmdbar button:hover { background: #1b2430; }
+.scr-cmdbar button.active { background: #1f3f7a; border-color: #3f8cff; color: #fff; }
+.scr-cmdbar button.special { color: #ffb84d; }
+.scr-cmdinfo { color: #8fb0c9; font-size: 11px; margin-left: 6px; pointer-events: none; }
 .scr-menu { position: fixed; z-index: 60; min-width: 250px; max-width: 320px; background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; font-size: 13px; }
 .scr-menu h5 { margin: 0; padding: 6px 10px; background: #1b242c; color: #8fb0c9; font-size: 12px; font-weight: 600; }
 .scr-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid #1b242c; color: inherit; padding: 8px 10px; font: inherit; cursor: pointer; }
@@ -320,4 +340,4 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .scr-menu button.special { color: #ffb84d; }
 .scr-confirm { position: fixed; z-index: 61; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: #3a2a00; color: #ffe2b0; border: 1px solid #ffb84d; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
 .scr-confirm .tb.warn { background: #ffb84d; color: #1c1300; border-color: #ffb84d; font-weight: 600; }
-.sw.g { background: #6d7884; } .sw.grn { background: #33d15a; }
+.sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }

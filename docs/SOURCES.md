@@ -61,10 +61,29 @@ torze 13 ma id `Zw41s`; pominięto sygnalizatory blokady samoczynnej (82–83, 1
 ostrzegawcze; p.o. Sopot Wyścigi jest tylko opisem na odcinku zbliżania linii 250. Blokady dwukierunkowe (Eap),
 rozkład jazdy fikcyjny.
 
-## Stanowisko komputerowe
+## Stanowisko komputerowe – zgodność z Ie-104
 
-Widok monitora (`src/render/ScreenRenderer.js`) wzoruje się na stanowiskach komputerowych urządzeń srk stosowanych
-na PKP PLK (ISKRA-SRK firmy Elester-PKP, EbiScreen): ciemne tło, schemat liniowy, tor zajęty czerwony, utwierdzony
-zielony (pociągowy) / żółty (manewrowy), polecenia z menu elementu, polecenia specjalne potwierdzane i rejestrowane.
-Zrzut ekranu ISKRA-SRK wskazany przez autora projektu (elester-pkp.com.pl) nie był dostępny z tego środowiska –
-kolorystykę i układ poleceń przyjęto na podstawie ogólnie znanych konwencji tych systemów.
+Standardem dla komputerowych stanowisk obsługi w PKP PLK są wytyczne **Ie-104** („Wytyczne w zakresie zobrazowania,
+wprowadzania poleceń oraz rejestracji zdarzeń dla komputerowych stanowisk obsługi urządzeń srk”, z załącznikami
+Ie-104.1 – symbole i kolory, Ie-104.2 – polecenia) oraz instrukcja **Ie-20** (obsługa komputerowych urządzeń srk).
+Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustalono z ich streszczeń i cytowań
+(wyszukiwarka, dokumentacja SCS-1 TD2 i opisy stanowisk EbiScreen/SimRail wzorowanych na Ie-104). Zastosowano:
+
+* odcinki toru (tab. 8 Ie-104): szary – stan podstawowy, czerwony – zajęty, zielony – utwierdzony w przebiegu
+  pociągowym, żółty – w przebiegu manewrowym, fioletowy – zwalnianie czasowe, podwójna szara linia – tor zamknięty,
+  biały – brak danych;
+* sygnalizatory (lista stanów wg malejącego priorytetu): biały – brak danych, biały migający – sygnał zastępczy,
+  zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – sygnalizator początkowy lub
+  końcowy utwierdzonego przebiegu, różowy – zamknięty indywidualnie, szary – stan podstawowy; mały trójkąt końca
+  przebiegu (Ie-104.1); symbol semafora jako podwójny grot z kreską masztu i żółtą nazwą (EbiScreen);
+* zwrotnica: pole „Z” (kształt – położenie iglic / brak kontroli, kolor – stan) i ramiona a/b/c, „+” przy ramieniu
+  położenia zasadniczego, różowy – zamknięcie indywidualne, seledynowe numery (EbiScreen);
+* grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
+  czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
+* polecenia (Ie-104.2 / EbiScreen): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
+  inicjowane i potwierdzane, rejestrowane w licznikach, odwołanie OPS.
+
+Nieodwzorowane lub uproszczone: stany „ciemnoczerwony – w ochronie bocznej”, „turkusowy – nastawianie miejscowe”,
+symbole blokady liniowej wg Ie-104.1 (pola blokad zachowują układ z pulpitu kostkowego), dokładne skróty poleceń
+EbiScreen (ZD, ZDM, ZW, ZWP, SZP, NSZ, WTAB, KTAB – nazwy własne producenta, w symulatorze opisowe), tabele zdarzeń
+i alarmów u dołu ekranu (rolę pełni zakładka Dziennik).
