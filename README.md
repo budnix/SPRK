@@ -1,68 +1,72 @@
-# SPRK – Symulator Prowadzenia Ruchu Kolejowego
+# SPRK – Polish Railway Traffic Control Simulator
 
-Przeglądarkowy symulator pracy dyżurnego ruchu na **pulpicie kostkowym** (urządzenia przekaźnikowe typu E),
-wzorowany na symulatorze ISDR. Działa w przeglądarce na komputerze i na iPadzie (obsługa dotyku).
-Bez frameworków: czysty JavaScript (moduły ES) + SVG.
+A browser-based simulator of a Polish train dispatcher's work at a **cube-type control desk**
+(*pulpit kostkowy*, relay interlocking type E), modelled on the ISDR simulator.
+Runs in desktop browsers and on iPad (touch support). No frameworks: plain JavaScript (ES modules) + SVG.
 
-![Pulpit stacji Stare Pustkowie](docs/screenshot.png)
+![Control desk of the Stare Pustkowie station](docs/screenshot.png)
 
-## Uruchomienie
+Live version: https://budnix.github.io/SPRK/
+
+## Getting started
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173  (Vite, dostępne też w sieci lokalnej: --host)
-npm test           # testy logiki (node --test)
-npm run build      # statyczna wersja do katalogu dist/ (na GH Pages: VITE_BASE=/SPRK/)
+npm run dev        # http://localhost:5173  (Vite; add --host to reach it from an iPad on the LAN)
+npm test           # logic tests (node --test)
+npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
-Wybór stacji: `?stacja=<id>` (domyślnie `stare-pustkowie`).
+Station selection: `?stacja=<id>` (default `stare-pustkowie`).
 
-## Co jest w wersji 0.1
+## What is in version 0.1
 
-* **Kostki modułowe** (`src/tiles/registry.js`): tor prosty/skos/łuk, zwrotnica, skrzyżowanie, kozioł,
-  powtarzacz semafora i tarczy manewrowej z przyciskami, przyciski grupowe z licznikami, pole blokady liniowej Eap,
-  opisy. Nowy typ kostki = wpis w rejestrze + funkcja rysująca.
-* **Zależności typu E** (`src/model/Interlocking.js`): nastawianie dwuprzyciskowe, automatyczne przestawianie
-  zwrotnic w przebiegu, utwierdzenie (białe), zajętość (czerwone), położenie zwrotnic (żółte), ochrona boczna,
-  drogi ochronne, wykolejnice, zwalnianie odcinkowe, Pz / zwalnianie czasowe, dPz i Sz z licznikami,
-  zamknięcie indywidualne Zz, rozprucie zwrotnicy, obrazy sygnałowe wg Ie-1 (S1–S5, S10–S13, Ms1/Ms2, Sz).
-* **Blokada liniowa Eap** (`src/model/Block.js`): Wbl, Poz, Ko, dPo, dKo; sąsiednie posterunki sterowane przez AI
-  (żądają pozwolenia, wyprawiają pociągi wg rozkładu, potwierdzają przyjazd).
-* **Ruch pociągów** (`src/model/Train.js`): jazda po rzeczywistym torze i położeniach zwrotnic, hamowanie przed
-  Stój, 40 km/h przez tor zwrotny, 20 km/h na Sz, postoje przy peronie wg rozkładu, przeloty, pociągi kończące bieg,
-  manewry za Ms2.
-* **Panel boczny**: zegar i tempo (1–30×), rozkład jazdy ze stanami i opóźnieniami, dziennik zdarzeń
-  z komunikatami od sąsiadów, stan blokad/przebiegów/liczników, przełączanie pociągu w manewry, instrukcja (?).
-* **Stacja testowa Stare Pustkowie**: linia jednotorowa, 2 tory główne z peronami, tor ładunkowy z wykolejnicą,
-  3 zwrotnice, 6 semaforów, 2 tarcze manewrowe, rozkład 10 pociągów (z krzyżowaniami).
+* **Modular desk tiles** (`src/tiles/registry.js`): straight / diagonal / curved track, point (turnout),
+  crossing, buffer stop, signal repeaters (main signal and shunting signal) with buttons, group buttons with
+  counters, Eap line-block panel, labels. A new tile type is one registry entry plus one drawing function.
+* **Type E interlocking** (`src/model/Interlocking.js`): two-button route setting, automatic point setting
+  in routes, route locking (white), track occupancy (red), point position (yellow), flank protection,
+  overlaps, derailers, sectional release, route cancel with timed release, emergency release and
+  substitute signal with counters, individual point locking, run-through (trailing) detection,
+  signal aspects per the Polish Ie-1 instruction (S1–S5, S10–S13, Ms1/Ms2, Sz).
+* **Eap semi-automatic line block** (`src/model/Block.js`): Wbl, Poz, Ko, dPo, dKo; neighbouring
+  stations are driven by AI (they request permission, dispatch trains per the timetable, confirm arrival).
+* **Train movement** (`src/model/Train.js`): trains run over the real track topology and current point
+  positions, brake for stop signals, 40 km/h over diverging points, 20 km/h on a substitute signal,
+  platform stops per timetable, non-stop passes, terminating trains, shunting under Ms2.
+* **Side panel**: clock and time factor (1–30×), timetable with live status and delays, event log with
+  messages from neighbouring stations, block / route / counter state, switching a train to shunting mode,
+  built-in manual (?).
+* **Test station Stare Pustkowie**: single-track line, two main tracks with platforms, a loading siding
+  with a derailer, 3 points, 6 main signals, 2 shunting signals, a timetable of 10 trains (with crossings).
 
-## Obsługa (skrót)
+## Operating the desk (short version)
 
-| Czynność | Jak |
+| Action | How |
 |---|---|
-| Naciśnięcie przycisku | kliknięcie / dotknięcie |
-| Wyciągnięcie przycisku | przytrzymanie 0,5 s lub prawy przycisk myszy |
-| Przebieg pociągowy | zielony przycisk semafora początkowego → zielony przycisk końca (semafor / `kW` `kE`) |
-| Przebieg manewrowy | biały przycisk początku → biały przycisk końca (`kT3`, Tm, C2) |
-| Wygaszenie sygnału | wyciągnij przycisk sygnałowy |
-| Zwolnienie przebiegu | `Pz` + przycisk sygnałowy (czasowe 90 s przy zajętym zbliżaniu) |
-| Doraźne zwolnienie | `dPz` + przycisk sygnałowy (licznik) |
-| Sygnał zastępczy | `Sz` + zielony przycisk semafora (licznik) |
-| Zwrotnica | `Zw` + przycisk zwrotnicy; zamknięcie `Zz` + przycisk zwrotnicy |
-| Blokada | `Wbl` żądanie pozwolenia, `Poz` danie pozwolenia, `Ko` potwierdzenie przyjazdu |
+| Press a button | click / tap |
+| Pull a button | hold for 0.5 s or right-click |
+| Train route | green button of the start signal → green button of the end (signal or line exit `kW` / `kE`) |
+| Shunting route | white button of the start → white button of the end (`kT3`, Tm, C2) |
+| Put a signal to stop | pull the signal button |
+| Cancel a route | `Pz` + signal button (timed release of 90 s when the approach section is occupied) |
+| Emergency release | `dPz` + signal button (counted) |
+| Substitute signal | `Sz` + green signal button (counted) |
+| Point | `Zw` + point button; lock with `Zz` + point button |
+| Line block | `Wbl` request permission, `Poz` grant permission, `Ko` confirm arrival |
 
-Pełna instrukcja: przycisk **?** w aplikacji.
+Full manual: the **?** button in the app (in Polish, as is the whole UI, since the simulator follows Polish railway rules and terminology).
 
-## Struktura i rozwój
+## Structure and roadmap
 
-* `docs/STATION-FORMAT.md` – format definicji stacji (pod przyszły edytor),
-* `docs/ARCHITECTURE.md` – architektura, zasady, plan rozwoju,
-* `docs/SOURCES.md` – źródła (Ie-1, Ir-1, dokumentacja ISDR, opisy urządzeń typu E).
+* `docs/STATION-FORMAT.md` – station definition format (the basis for a future station editor),
+* `docs/ARCHITECTURE.md` – architecture, design rules, roadmap,
+* `docs/SOURCES.md` – sources (Ie-1, Ir-1, ISDR documentation, descriptions of type E equipment).
 
-Symulator jest uproszczeniem: szczegóły zależności (czasy, drogi ochronne, ochrona boczna) wzorowano na opisach
-urządzeń typu E, ale bez dostępu do dokumentacji zależnościowej konkretnych nastawni. Zgłoś różnice – model jest w jednym miejscu.
+The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published
+descriptions of type E equipment, not the dependency tables of specific signal boxes. Report differences – the model lives in one place.
 
 ## CI / deploy
 
-Workflow `.github/workflows/ci.yml`: każdy push i PR uruchamia `npm test`; po przejściu testów na `main`
-aplikacja jest budowana i publikowana na GitHub Pages (`https://budnix.github.io/SPRK/`).
+Workflow `.github/workflows/ci.yml`: every push and pull request runs `npm test`; after the tests pass on
+`main`, the app is built and published to GitHub Pages (`https://budnix.github.io/SPRK/`).
