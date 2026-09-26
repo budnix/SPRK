@@ -306,8 +306,8 @@ export function blockArrowArt(g, kind, toWest) {
   // kanał w kształcie strzałki: korpus tej szerokości co kanał toru (obwódka korpusu pokrywa się z obwódką kanału –
   // jeden kształt, bez „drugiej strzałki”), grot wystaje poza kanał i ma obwódkę dookoła, także na barkach;
   // w środku lampka-strzałka: korpus tej szerokości co pasek świetlny toru, grot równo odsunięty od obwódki
-  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(2, 0, CHANNEL_W / 2 + 0.25, 8.5, 9) }));
-  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(4.6, 3.4, BAR_W / 2, 6, 8) });
+  g.appendChild(el('path', { class: 'arrow-channel', d: arrow(3, 0, CHANNEL_W / 2 + 0.2, 8.2, 8.5) }));
+  const lampEl = el('path', { class: 'lamp arrow-lamp', d: arrow(5.4, 3.4, BAR_W / 2, 5.8, 7.6) });
   g.appendChild(lampEl);
   g.appendChild(text(C, 7, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;
