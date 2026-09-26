@@ -734,6 +734,11 @@ export class Interlocking {
           this.#log('info', `Przebieg ${act.id} rozwiązany (pociąg przejechał)`);
           this.#dissolve(act);
         }
+      } else if (act.route.kind === 'shunt' && !secs.length) {
+        // przebieg manewrowy w obrębie jednego odcinka: rozwiązuje się, gdy tabor opuści odcinek
+        const app = this.sections.get(act.route.approach);
+        if (app?.occupied) act.sawTrain = true;
+        else if (act.sawTrain) { this.#log('info', `Przebieg manewrowy ${act.id} rozwiązany (tabor opuścił odcinek)`); this.#dissolve(act); }
       } else if (act.route.kind === 'shunt' && act.signalOff) {
         this.#tryReleaseShunt(act);
       }

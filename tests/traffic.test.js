@@ -1,44 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock } from './helpers.js';
-
-/** Automatyczny dyżurny – scenariusz pełnej zmiany. */
-function autoDispatch(sim) {
-  const ilk = sim.ilk;
-  for (const b of sim.blocks.values()) {
-    if (b.request === 'theirs') b.press('Poz');
-    if (b.koPending) b.press('Ko');
-  }
-  for (const e of sim.traffic.timetable()) {
-    if (e.train && !e.train.finished && e.from && !e.entryRouteSet) {
-      const sig = e.from === 'W' ? 'A' : 'B';
-      const end = e.from === 'W' ? (e.track === '2' ? 'D2' : 'D1') : (e.track === '2' ? 'C2' : 'C1');
-      if (ilk.requestRoute({ kind: 'signal', id: sig, color: 'green' }, { kind: 'end', id: end }).ok) e.entryRouteSet = true;
-    }
-    if (e.train && !e.train.finished && e.to && e.train.entered && !e.exitRouteSet) {
-      const b = sim.blocks.get(e.to);
-      const tr = e.actualTrack || e.track;
-      const startSig = e.to === 'E' ? (tr === '2' ? 'D2' : 'D1') : (tr === '2' ? 'C2' : 'C1');
-      if (!b.direction && !b.request && !b.occupied) b.press('Wbl');
-      if (b.direction === 'out' && b.permission) {
-        if (ilk.requestRoute({ kind: 'signal', id: startSig, color: 'green' }, { kind: 'end', id: e.to === 'E' ? 'kE' : 'kW' }).ok) e.exitRouteSet = true;
-      }
-    }
-  }
-}
+import { makeSim, run, Clock, autoDispatch } from './helpers.js';
 
 test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpruć', () => {
   const sim = makeSim();
-  const end = Clock.parse('08:20');
+  const end = Clock.parse('08:40');
   let n = 0;
   while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   const tt = sim.traffic.timetable();
   for (const e of tt) {
-    if (e.terminates) { assert.equal(e.status, 'zakończył bieg', `pociąg ${e.nr}`); assert.equal(e.actualTrack, '2'); continue; }
+    if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `pociąg ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, '2'); continue; }
     assert.equal(e.status, 'u sąsiada', `pociąg ${e.nr}: ${e.status}`);
     assert.ok(e.delay <= 2, `pociąg ${e.nr} opóźniony ${e.delay} min`);
-    assert.equal(String(e.actualTrack), String(e.track), `pociąg ${e.nr} na złym torze`);
+    if (e.from) assert.equal(String(e.actualTrack), String(e.track), `pociąg ${e.nr} na złym torze`);
   }
+  for (const t of sim.traffic.tasks) assert.equal(t.done, true, `zadanie ${t.id} niewykonane`);
+  assert.ok(sim.ended, 'zmiana powinna się zakończyć');
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.equal(sim.ilk.active.size, 0, 'wszystkie przebiegi rozwiązane');
   for (const b of sim.blocks.values()) assert.equal(b.occupied, false);

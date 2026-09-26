@@ -32,6 +32,8 @@ export class SidePanel {
         <ul id="routes" class="plain"></ul>
         <h4>Liczniki</h4>
         <div id="counters"></div>
+        <h4>Zadania manewrowe</h4>
+        <div id="tasks" class="muted">brak</div>
         <h4>Manewry</h4>
         <div id="shunt"></div>
       </section>
@@ -231,7 +233,7 @@ export class SidePanel {
   renderState() {
     const bl = [...this.sim.blocks.values()].map((b) => {
       const dir = b.direction === 'out' ? 'wyjazd' : b.direction === 'in' ? 'wjazd' : '–';
-      return `<div class="blk"><b>${b.neighbour}</b>: kierunek ${dir}${b.permission ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
+      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>: kierunek ${dir}${b.permission ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">obsłuż Ko</span>' : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
@@ -242,13 +244,18 @@ export class SidePanel {
     this.root.querySelector('#routes').innerHTML = routes.join('') || '<li class="muted">brak</li>';
     const c = this.sim.ilk.counters;
     this.root.querySelector('#counters').innerHTML = `dPz: ${c.dPz} · Sz: ${c.Sz} · rozprucia: ${c.rozprucie}`;
+    const tasks = this.sim.traffic.tasks || [];
+    this.root.querySelector('#tasks').innerHTML = tasks.length
+      ? tasks.map((t) => `<div class="task ${t.done ? 'done' : t.failed ? 'failed' : ''}">${t.done ? '✔' : t.failed ? '✘' : '☐'} ${escapeHtml(t.text)} <span class="muted">do ${t.deadline}</span></div>`).join('')
+      : '<span class="muted">brak</span>';
     const standing = this.sim.traffic.timetable().filter((e) => e.train && !e.train.finished && e.train.v === 0 && e.train.entered);
     this.root.querySelector('#shunt').innerHTML = standing.length
-      ? standing.map((e) => `<div class="shunt-row">Pociąg ${e.nr} (${e.train.mode === 'shunt' ? 'manewrowy' : 'pociągowy'}) <button data-nr="${e.nr}" data-act="shunt">jazda manewrowa</button> <button data-nr="${e.nr}" data-act="rev">zmiana czoła</button></div>`).join('')
+      ? standing.map((e) => `<div class="shunt-row">Pociąg ${e.nr} (${e.train.mode === 'shunt' ? 'manewrowy' : 'pociągowy'}, czoło ${['E', 'NE', 'SE'].includes(e.train.direction) ? '→' : '←'}) <button data-nr="${e.nr}" data-act="${e.train.mode === 'shunt' ? 'train' : 'shunt'}">${e.train.mode === 'shunt' ? 'jazda pociągowa' : 'jazda manewrowa'}</button> <button data-nr="${e.nr}" data-act="rev">zmiana czoła</button></div>`).join('')
       : '<div class="muted">brak stojących pociągów</div>';
     for (const b of this.root.querySelectorAll('#shunt button')) {
       b.addEventListener('click', () => {
         if (b.dataset.act === 'shunt') this.sim.traffic.toShunting(b.dataset.nr);
+        else if (b.dataset.act === 'train') this.sim.traffic.toTrainMode(b.dataset.nr);
         else this.sim.traffic.reverseTrain(b.dataset.nr);
         this.renderState();
       });

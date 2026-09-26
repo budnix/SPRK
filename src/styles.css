@@ -243,3 +243,6 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .modal-box.start select, .modal-box.start input { width: 100%; box-sizing: border-box; background: var(--input-bg); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 6px; font-size: 14px; margin-top: 2px; }
 .modal-box.start { min-width: 360px; }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
+.task { font-size: 12px; padding: 3px 0; }
+.task.done { color: var(--accent); }
+.task.failed { color: var(--danger); }

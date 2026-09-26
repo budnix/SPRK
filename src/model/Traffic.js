@@ -18,6 +18,10 @@ export class Traffic {
     const tt = opts.timetable || station.timetable;
     this.entries = tt.map((t, i) => this.#prepare(t, i));
     this.#applyDisruptions();
+    const taskDefs = opts.tasks || station.tasks || [];
+    this.tasks = taskDefs
+      .filter((t) => this.entries.some((e) => String(e.nr) === String(t.unit)))
+      .map((t) => ({ ...t, deadlineTime: Clock.parse(t.deadline), afterTime: t.after ? Clock.parse(t.after) : 0, done: false, failed: false, doneAt: null }));
     this.journal = [];
     this.orders = [];
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
@@ -130,7 +134,7 @@ export class Traffic {
     return {
       idx: i, ...t, arrTime: arr, depTime: dep,
       neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
-      status: t.from ? 'oczekiwany' : 'na stacji', requested: false, dispatched: false,
+      status: t.from ? 'oczekiwany' : (t.unit ? 'oczekuje na skład' : 'na stacji'), requested: false, dispatched: false,
       train: null, actualArr: null, actualDep: null, delay: 0, track: t.track,
     };
   }
@@ -323,14 +327,52 @@ export class Traffic {
         this.bus.emit('log', { time, level: 'warn', msg: `Pociąg ${e.nr} czeka w ${block.neighbour} na pozwolenie (Poz)` });
       }
     }
+    // Pociągi tworzone ze składu innego pociągu (np. zdawczy powrotny)
+    for (const e of this.entries) {
+      if (!e.unit || e.train || e.attached) continue;
+      if (time < e.depTime - 15 * 60) continue;
+      const u = this.entries.find((x) => String(x.nr) === String(e.unit));
+      const tr = u?.train;
+      if (!tr || tr.finished || !tr.entered || tr.v > 0) continue;
+      e.attached = true; e.train = tr;
+      u.status = `przekazany jako ${e.nr}`; u.train = null;
+      tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
+      tr.vmax = (e.vmax ?? 60) / 3.6; tr.holdUntil = e.depTime; tr.orders = [];
+      tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
+      tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
+      e.status = 'na stacji';
+      this.bus.emit('log', { time, level: 'info', msg: `Skład pociągu ${u.nr} przekazany jako pociąg ${e.nr} (odjazd ${e.dep})` });
+      this.bus.emit('timetable', this.entries);
+    }
     // Pociągi
     for (const tr of this.trains) tr.tick(dt, time);
+    // Zadania manewrowe
+    for (const task of this.tasks) {
+      if (task.done || task.failed) continue;
+      const u = this.entries.find((x) => String(x.nr) === String(task.unit));
+      const tr = u?.train || this.entries.find((x) => String(x.unit) === String(task.unit))?.train;
+      if (time >= task.afterTime && tr && !tr.finished && tr.entered && tr.v === 0) {
+        const secs = [...tr.occupiedSections()].map((sid) => this.ilk.sections.get(sid));
+        if (secs.length && secs.every((sec) => String(sec.track) === String(task.toTrack))) {
+          task.done = true; task.doneAt = time;
+          const late = time > task.deadlineTime;
+          this.bus.emit('score', { time, code: 'task', points: late ? 0 : 10, msg: `Zadanie manewrowe: ${task.text}${late ? ' (po terminie)' : ''}` });
+          this.bus.emit('log', { time, level: 'info', msg: `Zadanie wykonane: skład ${task.unit} na torze ${task.toTrack}` });
+          this.bus.emit('tasks', this.tasks);
+        }
+      }
+      if (!task.done && time > task.deadlineTime + 10 * 60) {
+        task.failed = true;
+        this.bus.emit('score', { time, code: 'task-failed', points: -10, msg: `Zadanie manewrowe niewykonane w terminie: ${task.text}` });
+        this.bus.emit('tasks', this.tasks);
+      }
+    }
     // Zajętość
     this.ilk.updateOccupancy(this.currentOccupancy());
     // Stan rozkładu
     for (const e of this.entries) {
       if (e.train && !e.train.finished) {
-        if (!e.actualTrack) { const tr = this.#trackOf(e.train); if (tr) e.actualTrack = tr; }
+        if (!e.actualTrack || (e.unit && e.train.v === 0)) { const tr = this.#trackOf(e.train); if (tr) e.actualTrack = tr; }
         const st = e.train.state;
         if (st === 'dwell') e.status = 'postój';
         else if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal') e.status = `stoi przed ${e.train.stoppedAt.signal}`;
@@ -354,6 +396,16 @@ export class Traffic {
     e.train.def.stop = false;
     e.train.state = 'moving';
     e.train.vmax = 25 / 3.6;
+    return true;
+  }
+
+  /** Skład manewrowy z powrotem w tryb jazdy pociągowej (po podstawieniu na tor). */
+  toTrainMode(nr) {
+    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    if (!e?.train || e.train.v > 0) return false;
+    e.train.mode = 'train';
+    e.train.vmax = (e.vmax ?? 60) / 3.6;
+    e.train.state = 'stopped';
     return true;
   }
 

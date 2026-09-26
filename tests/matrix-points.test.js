@@ -70,9 +70,9 @@ test('rozprucie: najazd na zwrotnicę z ostrza przy złym położeniu', () => {
   run(sim, POINT_SWITCH_TIME + 1);
   const t2b = sim.ilk.sections.get('T2b').tiles.sort((a, b) => b.x - a.x); // od czoła (x=21) do ogona (x=23)
   const e = { nr: 'M1', kind: 'tow', length: 20, vmax: 25, stop: false };
-  const tr = new Train(e, sim.ilk.topo, sim.ilk, { mode: 'shunt' });
+  const tr = new Train(e, sim.ilk.topo, sim.ilk, { mode: 'train' });
   tr.placeOnTrack([...t2b].reverse(), 'W'); // czoło na (21,6) w kierunku W
-  tr.mode = 'shunt'; tr.state = 'moving'; tr.vmax = 25 / 3.6;
+  tr.mode = 'train'; tr.state = 'moving'; tr.vmax = 25 / 3.6; // jazda bez przebiegu (np. na rozkaz) – wjazd na zwrotnicę z ostrza
   sim.traffic.trains.push(tr);
   run(sim, 60);
   assert.equal(sim.ilk.counters.rozprucie, 1, 'rozprucie niewykryte');

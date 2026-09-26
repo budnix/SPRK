@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch } from './helpers.js';
 
 /** Dyżurny automatyczny z wyborem toru dla danego pociągu. */
 function dispatcher(sim, trackFor) {
@@ -60,23 +60,24 @@ function safety(sim, where) {
 test('każdy pociąg na tor planowy i na tor zamienny: przyjazd, postój, odjazd, bez naruszeń bezpieczeństwa', () => {
   for (const variant of ['plan', 'swap']) {
     const sim = makeSim();
-    const trackFor = (e) => (variant === 'plan' ? e.track : (e.track === '1' ? '2' : '1'));
-    const end = Clock.parse('08:30');
+    const trackFor = (e) => (variant === 'plan' || e.terminates || e.unit ? e.track : (e.track === '1' ? '2' : '1'));
+    const end = Clock.parse('08:40');
     let n = 0;
     const seen = new Set();
     while (sim.clock.time < end) {
       sim.step(0.5);
-      if (n++ % 4 === 0) dispatcher(sim, trackFor);
+      if (n++ % 4 === 0) autoDispatch(sim, trackFor);
       safety(sim, `${variant} ${Clock.format(sim.clock.time, true)}`);
       for (const tr of sim.traffic.trains) for (const s of tr.occupiedSections()) seen.add(s);
     }
     for (const e of sim.traffic.timetable()) {
       const want = trackFor(e);
-      if (e.terminates) { assert.equal(e.status, 'zakończył bieg', `${variant} ${e.nr}`); assert.equal(e.actualTrack, want); continue; }
+      if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${variant} ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, want); continue; }
       assert.equal(e.status, 'u sąsiada', `${variant} ${e.nr}: ${e.status}`);
-      assert.equal(String(e.actualTrack), want, `${variant} ${e.nr}: tor ${e.actualTrack} zamiast ${want}`);
+      if (e.from) assert.equal(String(e.actualTrack), want, `${variant} ${e.nr}: tor ${e.actualTrack} zamiast ${want}`);
       assert.ok(e.delay <= 3, `${variant} ${e.nr}: opóźnienie ${e.delay}`);
     }
+    for (const t of sim.traffic.tasks) assert.equal(t.done, true, `${variant}: zadanie ${t.id} niewykonane`);
     assert.equal(sim.ilk.counters.rozprucie, 0);
   }
 });

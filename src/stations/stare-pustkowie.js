@@ -36,7 +36,8 @@ export default {
     T2b: { length: 75, kind: 'station', track: '2' },
     Iz4: { length: 140, kind: 'point' },
     ZbB: { length: 320, kind: 'approach' },
-    T3: { length: 160, kind: 'siding', track: '3' },
+    T3w: { length: 30, kind: 'siding', track: '3' },
+    T3: { length: 220, kind: 'siding', track: '3' },
   },
 
   points: {
@@ -86,7 +87,7 @@ export default {
     // ---- Tor 3 (y = 8) ----
     T(21, 7, ['NW', 'SE'], 'Iz3'),
     T(22, 8, ['NW', 'E'], 'Iz3'),
-    { ...T(23, 8, ['W', 'E'], 'T3'), derailer: 'Wk1' },
+    { ...T(23, 8, ['W', 'E'], 'T3w'), derailer: 'Wk1' },
     ...H(24, 28, 8, 'T3'),
     { x: 29, y: 8, type: 'buffer', port: 'W', section: 'T3', endButton: { id: 'kT3', color: 'white' } },
 
@@ -116,10 +117,10 @@ export default {
    * Scenariusze: podzbiór rozkładu, czas, usterki zadane, zamknięcia torów, poziom zakłóceń.
    */
   scenarios: [
-    { id: 'zmiana', name: 'Pełna zmiana (05:52–08:10)', description: 'Cały rozkład, 10 pociągów, dwa krzyżowania i pociąg zdawczy. Poziom zakłóceń do wyboru.', endTime: '08:30' },
+    { id: 'zmiana', name: 'Pełna zmiana (05:52–08:20)', description: 'Cały rozkład, 11 pociągów, dwa krzyżowania, pociąg zdawczy z manewrami na tor 3 i powrotem do Lipowej. Poziom zakłóceń do wyboru.', endTime: '08:40' },
     { id: 'krzyzowanie', name: 'Krzyżowanie (30 min)', description: 'Dwa osobowe z przeciwnych kierunków o tej samej porze. Przyjmij oba na różne tory i wypraw punktualnie.', trains: [5311, 5310], endTime: '06:25' },
-    { id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: 'Zwrotnica 3 traci kontrolę w porze przyjazdu pociągu zdawczego. Pociąg musi dojechać na tor 2, a zdawczy trzeba odstawić.',
-      trains: [5314, 5315, 90211, 5316], startTime: '07:10', endTime: '08:20', faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }], disruptions: 'none' },
+    { id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: 'Zwrotnica 3 traci kontrolę w porze przyjazdu pociągu zdawczego. Pociąg musi dojechać na tor 2, a zdawczy trzeba odstawić i wyprawić z powrotem.',
+      trains: [5314, 5315, 90211, 5316, 90212], startTime: '07:10', endTime: '08:30', faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }], disruptions: 'none' },
     { id: 'tor1-zamkniety', name: 'Tor 1 zamknięty', description: 'Tor 1 zamknięty dla ruchu do 06:50 (roboty). Wszystkie pociągi przez tor 2, krzyżowanie niemożliwe – trzeba je rozegrać.',
       trains: [5311, 5310, 44120, 5312], endTime: '07:10', closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }], disruptions: 'none' },
     { id: 'usterki', name: 'Zmiana z usterkami', description: 'Pełny rozkład, usterka semafora A i blokady do Lipowej. Sz, rozkazy pisemne i zapowiadanie telefoniczne.',
@@ -141,5 +142,12 @@ export default {
     { nr: 5314, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:25', dep: '07:27', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 90211, kind: 'tow', name: 'Zdawczy', from: 'W', to: null, arr: '07:40', track: '2', stop: true, terminates: true, length: 180, vmax: 60, dwell: 30 },
     { nr: 5316, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:55', dep: '07:56', track: '1', stop: true, length: 130, vmax: 100, dwell: 45 },
+    { nr: 90212, kind: 'tow', name: 'Zdawczy', unit: 90211, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 60 },
+  ],
+
+  /** Zadania manewrowe. */
+  tasks: [
+    { id: 'odstaw-90211', unit: 90211, type: 'move', toTrack: '3', deadline: '07:52', text: 'Skład zdawczego 90211 odstawić na tor 3 (tor 2 potrzebny; 5316 przyjeżdża 07:55).' },
+    { id: 'podstaw-90212', unit: 90211, type: 'move', toTrack: '2', after: '07:58', deadline: '08:10', text: 'Skład podstawić na tor 2 jako pociąg 90212 do Lipowej (odjazd 08:12).' },
   ],
 };

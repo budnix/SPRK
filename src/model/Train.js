@@ -1,4 +1,5 @@
 import { Interlocking } from './Interlocking.js';
+import { OPPOSITE } from '../tiles/directions.js';
 
 const KMH = 1 / 3.6;
 
@@ -45,6 +46,11 @@ export class Train {
   /** Czy pociąg ma niewykorzystany rozkaz pisemny na przejazd obok sygnalizatora. */
   hasOrderFor(signalId) {
     return this.orders.some((o) => o.signal === signalId && !o.used);
+  }
+
+  /** Ograniczenia przed czołem (do diagnostyki). */
+  constraintsAhead(maxDist = 1500) {
+    return this.#lookahead(maxDist);
   }
 
   /** Identyfikator najbliższego sygnalizatora przed czołem (ważnego dla tej jazdy) lub null. */
@@ -97,6 +103,7 @@ export class Train {
     const last = this.trail[this.trail.length - 1];
     if (!last) return null;
     if (last.outPort) return last.outPort;
+    if (last.tile && last.inPort) return OPPOSITE[last.inPort]; // czoło na kozle – kierunek jak przy wjeździe
     if (last.virtual && last.entering) return this.topo.station.exits[last.virtual].dir === 'W' ? 'E' : 'W';
     return null;
   }
@@ -139,6 +146,11 @@ export class Train {
     }
     if (seg.virtual && !seg.entering) {
       constraints.push({ dist: 0, speed: Math.min(this.lineSpeed, this.vmax), reason: 'szlak', kind: 'limit' });
+      return constraints;
+    }
+    if (tile && !outPort) {
+      // czoło na kostce bez wyjścia (kozioł) – koniec toru
+      constraints.push({ dist: 0, speed: 0, reason: 'kozioł', kind: 'end' });
       return constraints;
     }
     // Sygnalizator na końcu bieżącej kostki
@@ -242,6 +254,7 @@ export class Train {
   tick(dt, time) {
     if (this.finished) return;
     if (this.def.terminates && this.hasStopped && this.mode === 'train') return; // zakończył bieg – czeka na manewry
+    if (this.holdUntil && this.mode === 'train' && this.v === 0 && time < this.holdUntil) return; // pociąg gotowy, czeka na czas odjazdu
     if (this.state === 'dwell') {
       if (time >= this.dwellUntil && this.#canDepart(time)) {
         this.state = 'moving'; this.departedAt = time;
@@ -251,6 +264,7 @@ export class Train {
     const constraints = this.#lookahead(1500);
     // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s
     let allowed = Math.min(this.vmax, this.activeLimit);
+    if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
     let stopC = null;
     for (const c of constraints) {
       const v = Math.sqrt(c.speed * c.speed + 2 * this.brake * Math.max(0, c.dist));
@@ -293,6 +307,16 @@ export class Train {
     } else if (this.state === 'stopped') {
       this.state = 'moving';
     }
+  }
+
+  /** Jazda manewrowa dozwolona: tabor stoi w obrębie nastawionego przebiegu manewrowego. */
+  #shuntPermitted() {
+    const occ = this.occupiedSections();
+    for (const act of this.ilk.active.values()) {
+      if (act.route.kind !== 'shunt' || act.signalOff) continue;
+      if (occ.has(act.route.approach) || act.route.sections.some((sid) => occ.has(sid))) return true;
+    }
+    return false;
   }
 
   #canDepart(time) {
@@ -343,6 +367,7 @@ export class Train {
       return { tile: t, inPort: e.dir, outPort, len: t._len, start: last.start + last.len, virtual: null };
     }
     if (last.virtual) return null;
+    if (!last.outPort) return null; // kozioł – brak dalszej drogi
     const exit = this.topo.exitAt(last.tile, last.outPort);
     if (exit) {
       return { tile: null, inPort: null, outPort: null, len: exit.lineLength ?? 3000, start: last.start + last.len, virtual: exit.id, entering: false };

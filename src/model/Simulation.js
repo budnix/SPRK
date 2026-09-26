@@ -117,7 +117,8 @@ export class Simulation {
   #checkEnd() {
     if (this.ended) return;
     const tt = this.traffic.timetable();
-    const allDone = tt.length && tt.every((e) => e.status === 'u sąsiada' || e.status === 'zakończył bieg');
+    const isDone = (e) => e.status === 'u sąsiada' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
+    const allDone = tt.length && tt.every(isDone);
     const timeUp = this.endTime && this.clock.time >= this.endTime;
     if (allDone || timeUp) {
       this.ended = true;
@@ -128,7 +129,7 @@ export class Simulation {
 
   #finalScore() {
     for (const e of this.traffic.timetable()) {
-      if (e.status !== 'u sąsiada' && e.status !== 'zakończył bieg') {
+      if (e.status !== 'u sąsiada' && e.status !== 'zakończył bieg' && !e.status.startsWith('przekazany')) {
         this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, msg: `Pociąg ${e.nr} nie dojechał do końca zmiany (${e.status})` });
       }
     }
