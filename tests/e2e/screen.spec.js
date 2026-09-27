@@ -244,17 +244,19 @@ test('łączność: lista „Do” rozróżnia tory szlakowe do tego samego post
   expect(texts.at(-1)).toBe('maszynista (radio)');
 });
 
-test('monitor: menu strzałki szlaku pokazuje pod separatorem pociąg na torze szlakowym (po poleceniach), a bez pociągu – „brak”', async ({ page }) => {
+test('monitor: menu strzałki szlaku ma pod separatorem czerwone kasetki numerów – pociąg na szlaku, dalej kolejka zgłoszonych u sąsiada', async ({ page }) => {
   await openShift(page, 'gdynia-orlowo', { settings: { sideCollapsed: true } });
   const open = async (id) => { await page.keyboard.press('Escape'); await tap(page, `k${id}`); await expect(page.locator('.scr-menu')).toBeVisible(); };
+  const badges = page.locator('.scr-menu .menu-train');
   await open('S501');
-  const rows = page.locator('.scr-menu > *');
-  // start zmiany: sąsiad już zgłosił pierwszy SKM, ale na szlaku nikogo nie ma
-  await expect(page.locator('.scr-menu .menu-info')).toHaveText([/^zgłoszony przez Sopot SKM: SKM 92101 Gdańsk Śródmieście – Wejherowo – czeka/]);
-  expect(await rows.last().getAttribute('class')).toBe('menu-info'); // informacja na końcu, polecenia wyżej
+  // start zmiany: sąsiad już zgłosił pierwszy SKM (kolejka – kontur), na szlaku nikogo nie ma
+  await expect(badges).toHaveText(['92101']);
+  await expect(badges.first()).toHaveClass(/queued/);
+  expect(await page.locator('.scr-menu > *').last().getAttribute('class')).toBe('menu-trains'); // kasetki na końcu, polecenia wyżej
   expect(await page.locator('.scr-menu hr').count()).toBe(1);
-  await open('Z1'); // tor wyjazdowy do Gdyni: nikt nie zgłoszony, nikt na szlaku
-  await expect(page.locator('.scr-menu .menu-info')).toHaveText(['na szlaku: brak pociągów']);
+  await open('Z1'); // tor wyjazdowy do Gdyni: nikt
+  await expect(badges).toHaveCount(0);
+  await expect(page.locator('.scr-menu .menu-trains')).toHaveText('–');
   // pierwszy pociąg od Sopotu – krokujemy, aż sąsiad go wyprawi
   const exit = await page.evaluate(() => {
     const s = window.sim; s.clock.paused = false; s.clock.speed = 1;
@@ -263,15 +265,13 @@ test('monitor: menu strzałki szlaku pokazuje pod separatorem pociąg na torze s
   });
   expect(exit).not.toBeNull();
   await open(exit.id);
-  const info = page.locator('.scr-menu .menu-info');
-  await expect(info).toHaveCount(1);
-  await expect(info).toContainText(`na szlaku: SKM ${exit.nr}`);
-  await expect(info).toContainText('do nas');
+  await expect(badges.first()).toHaveText(exit.nr);
+  await expect(badges.first()).not.toHaveClass(/queued/); // pełna czerwona kasetka = na szlaku
+  await expect(badges.first()).toHaveAttribute('title', /na szlaku.*do nas/);
   await expect(page.locator('.scr-menu button').first()).toContainText('(Zk)'); // polecenia zostają u góry
-  // na ekranie nie ma osobnej kasetki przy strzałce – numer tylko w menu
-  await expect(page.locator('.scr-el.exit .scr-train')).toHaveCount(0);
-  // po zjeździe pociągu w całości – „brak”
+  await expect(page.locator('.scr-el.exit .scr-train')).toHaveCount(0); // bez kasetki przy strzałce na ekranie
+  // po zjeździe pociągu w całości znika z kasetek
   await page.evaluate((id) => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && s.blocks.get(id).lineTrain != null; i++) s.step(0.5); s.clock.paused = true; }, exit.id);
   await open(exit.id);
-  await expect(page.locator('.scr-menu .menu-info').filter({ hasText: 'na szlaku: SKM' })).toHaveCount(0);
+  await expect(page.locator('.scr-menu .menu-train:not(.queued)')).toHaveCount(0);
 });

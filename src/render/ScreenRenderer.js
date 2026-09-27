@@ -445,7 +445,7 @@ export class ScreenRenderer {
   /** Polecenie z paska zastosowane do wskazanego elementu. */
   #runMode(ref) {
     const cmd = this.#commands(ref);
-    const find = (re) => cmd?.items.find((it) => !it.info && !it.sep && re.test(it.label));
+    const find = (re) => cmd?.items.find((it) => it.label && re.test(it.label));
     const M = {
       train: [/^Nastawienie przebiegu pociągowego/, ['signal']], shunt: [/^Nastawienie przebiegu manewrowego/, ['signal']], pz: [/^Zwolnienie przebiegu/, ['signal']],
       dpz: [/^Doraźne zwolnienie przebiegu/, ['signal']], zw: [/^(Przestawienie|Zdjęcie|Nałożenie)/, ['point', 'derailer']], zz: [/\(Zz\)/, ['point', 'derailer']],
@@ -517,26 +517,24 @@ export class ScreenRenderer {
     }
     items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
     items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });
-    // pod separatorem: kto jest na tym torze szlakowym (jak system śledzenia numerów w komputerowych srk) –
-    // najpierw pociąg na szlaku, potem zgłoszone przez sąsiada i czekające na wyprawienie, w kolejności rozkładu
-    items.push({ sep: true });
-    for (const t of this.lineTrains(exit)) items.push({ info: true, label: t });
+    // pod separatorem: numery pociągów na tym torze szlakowym jako czerwone kasetki (jak na planie) – najpierw
+    // pociąg na szlaku, potem w kolejce pociągi zgłoszone przez sąsiada i czekające na wyprawienie (kontur)
+    items.push({ sep: true }, { trains: this.lineTrains(exit) });
     return { title: `Szlak ${b?.def?.label || b?.neighbour || exit} – blokada ${b?.auto ? 'samoczynna' : 'Eap'}`, items };
   }
 
-  /** Opisy pociągów na torze szlakowym `exit` (i zgłoszonych do wyprawienia na niego), w kolejności. */
+  /** Pociągi toru szlakowego `exit` w kolejności: na szlaku (`on: true`), potem zgłoszone u sąsiada i czekające. */
   lineTrains(exit) {
     const b = this.sim.blocks.get(exit);
     if (!b) return [];
     const tt = this.sim.traffic.timetable();
-    const desc = (e, nr) => e ? `${e.label} ${relationOf(e)}` : `pociąg nr ${nr}`;
     const out = [];
     if (b.lineTrain != null) {
       const e = tt.find((x) => String(x.nr) === String(b.lineTrain));
-      out.push(`na szlaku: ${desc(e, b.lineTrain)} – ${b.poBlocked ? `od nas do ${b.neighbour}` : `od ${b.neighbour} do nas`}`);
+      out.push({ nr: String(b.lineTrain), on: true, title: `${e ? `${e.label} ${relationOf(e)}` : `pociąg nr ${b.lineTrain}`} – na szlaku, ${b.poBlocked ? `od nas do ${b.neighbour}` : `od ${b.neighbour} do nas`}` });
     }
-    for (const e of tt.filter((x) => x.from === exit && x.requested && !x.dispatched)) out.push(`zgłoszony przez ${b.neighbour}: ${desc(e)} – czeka na wyprawienie`);
-    return out.length ? out : ['na szlaku: brak pociągów'];
+    for (const e of tt.filter((x) => x.from === exit && x.requested && !x.dispatched)) out.push({ nr: String(e.nr), on: false, title: `${e.label} ${relationOf(e)} – zgłoszony przez ${b.neighbour}, czeka na wyprawienie` });
+    return out;
   }
 
   #openMenu(ref, ev) {
@@ -545,7 +543,12 @@ export class ScreenRenderer {
     this.menu.innerHTML = `<h5>${cmd.title}</h5>`;
     for (const it of cmd.items) {
       if (it.sep) { this.menu.appendChild(document.createElement('hr')); continue; }
-      if (it.info) { const d = document.createElement('div'); d.className = 'menu-info'; d.textContent = it.label; this.menu.appendChild(d); continue; }
+      if (it.trains) {
+        const d = document.createElement('div'); d.className = 'menu-trains';
+        if (!it.trains.length) d.textContent = '–';
+        for (const t of it.trains) { const sp = document.createElement('span'); sp.className = `menu-train${t.on ? '' : ' queued'}`; sp.textContent = t.nr; sp.title = t.title; d.appendChild(sp); }
+        this.menu.appendChild(d); continue;
+      }
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = it.label; if (it.special) b.classList.add('special');
       b.addEventListener('click', () => { this.#closeMenu(); if (it.special) this.#confirm(it); else it.run(); });
