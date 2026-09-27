@@ -63,7 +63,12 @@ Szeroka stacja (100+ kolumn) na tablecie jest nieczytelna w całości. `planScre
 pulpit na ekrany programowaniem dynamicznym: koszt cięcia = elementy głowicy w sąsiednich kolumnach, kara za ekran
 szerszy niż limit lub węższy niż połowa limitu, koszt każdego dodatkowego ekranu; liczba ekranów wybierana spośród
 n₀−1, n₀, n₀+1. Renderer ma jedną instancję – ekran to tylko zmiana `viewBox` (`setView`), więc polecenie zaczęte na
-jednym ekranie kończy się na drugim. Przełączanie: zakładki w listwie, strzałki ← →, przesunięcie palcem.
+jednym ekranie kończy się na drugim. Przełączanie: zakładki ekranów w grupie „widok” listwy narzędzi (obok
+powiększenia), strzałki ← →, przesunięcie palcem.
+
+Listwa narzędzi (`#desk-tools`): na początku zakładki panelu bocznego (`SidePanel` renderuje je w `tabsHost`,
+w samym panelu zakładek nie ma – liczniki powiadomień i miganie są w listwie; aktywna karta schodzi do panelu pod
+listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i przycisk schowaj/pokaż panel.
 
 ## Pętla
 

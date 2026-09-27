@@ -166,7 +166,7 @@ test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd
   await expect(page.locator('.scr-menu button:has-text("(Poz)")')).toHaveCount(0);
   await expect(page.locator('.scr-menu button:has-text("(Zk)")')).toHaveCount(1);
   await page.keyboard.press('Escape');
-  await page.click('#side .tabs button[data-tab=stan]');
+  await page.click('#panel-tabs button[data-tab=stan]');
   await expect(page.locator('#counters')).toContainText('dPo');
 });
 

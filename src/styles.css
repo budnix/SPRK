@@ -6,8 +6,7 @@
   --muted: #9aa3ab;
   --accent: #3f8cff;
   --accent-text: #fff;
-  --grp-screen: #f0913a;   /* grupa „ekran” na pasku narzędzi – pomarańcz, kontrast do akcentu */
-  --grp-panel: #6fbf8f;    /* grupa „panel” – zieleń jak dawniej */
+  --grp-panel: #6fbf8f;    /* zakładki panelu na pasku narzędzi – zieleń */
   --warn: #f2b632;
   --danger: #ff5a4e;
   --border: #000;
@@ -33,7 +32,6 @@
   --muted: #5b6470;
   --accent: #1f6fe0;
   --accent-text: #fff;
-  --grp-screen: #d9731a;
   --grp-panel: #2e9a5c;
   --warn: #a86d00;
   --danger: #c8322a;
@@ -101,8 +99,6 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 /* położenie pulpitu w pionie */
 /* panel zwinięty: pulpit na całym ekranie, powiadomienia w listwie narzędzi */
 #app[data-side-collapsed="true"] #side { display: none; }
-.tabs .collapse-btn { flex: 0 0 auto; background: var(--panel2); color: var(--muted); border: none; padding: 9px 10px; font-size: 14px; cursor: pointer; }
-.tabs .collapse-btn:hover { color: var(--text); }
 /* grupy przycisków listwy narzędzi: ekrany (niebieska), widok (neutralna), panel boczny (zielona) */
 .tool-group { display: flex; align-items: center; gap: 4px; padding: 3px 6px 3px 4px; border-radius: 5px; border: 1px solid var(--border2); background: var(--panel2); }
 .tool-group .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin: 0 4px 0 2px; }
@@ -122,17 +118,23 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #app[data-side-pos="right"] #side-toggle.collapsed svg { transform: rotate(90deg); }
 #app[data-side-pos="left"] #side-toggle svg { transform: rotate(90deg); }
 #app[data-side-pos="left"] #side-toggle.collapsed svg { transform: rotate(-90deg); }
-.tg-screens { border-color: color-mix(in srgb, var(--grp-screen) 45%, transparent); background: color-mix(in srgb, var(--grp-screen) 12%, var(--panel2)); }
-.tg-screens .lbl { color: var(--grp-screen); }
-.tg-screens .tb.active { background: var(--grp-screen); color: #fff; border-color: var(--grp-screen); font-weight: 600; }
-.tg-screens .tb small { color: inherit; opacity: 0.75; font-weight: 400; margin-left: 4px; }
-.tg-panel { border-color: color-mix(in srgb, var(--grp-panel) 45%, transparent); background: color-mix(in srgb, var(--grp-panel) 12%, var(--panel2)); }
+/* grupa „widok”: ekrany pulpitu (gdy jest podział) i powiększenie w jednej szarej ramce */
+.tg-view .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.tg-view .tb small { color: inherit; opacity: 0.75; font-weight: 400; margin-left: 4px; }
+#screen-group { display: contents; }
+#screen-group.hidden { display: none; }
+/* zakładki panelu: jedyne zakładki (w panelu ich nie ma); grupa bez ramki, karty otwarte od dołu – aktywna schodzi do panelu */
+.tg-panel { border: none; background: none; padding: 0 0 0 4px; align-self: stretch; }
 .tg-panel .lbl { color: var(--grp-panel); }
-.tg-panel #side-toggle { border-color: color-mix(in srgb, var(--grp-panel) 50%, var(--border2)); }
-.mini-tabs { display: none; gap: 0; align-items: center; margin-left: 2px; }
-#app[data-side-collapsed="true"] .mini-tabs { display: flex; flex-wrap: wrap; }
-.mini-tabs .tb .badge { margin-left: 4px; }
-.mini-tabs .tb.flash { animation: flash 0.6s ease-in-out 4; }
+.panel-tabs { display: flex; gap: 2px; align-items: stretch; align-self: stretch; flex-wrap: wrap; }
+.panel-tabs .tb { border-radius: 4px 4px 0 0; border-bottom: none; background: var(--panel2); color: var(--muted); padding: 5px 10px 6px; min-width: 0; white-space: nowrap; border-top: 2px solid transparent; }
+.panel-tabs .tb.active { background: var(--panel); color: var(--text); border-color: var(--border2); border-top-color: var(--grp-panel); font-weight: 600; }
+.panel-tabs .tb .badge { margin-left: 4px; }
+.panel-tabs .tb.flash { animation: flash 0.6s ease-in-out 4; }
+/* panel na dole: aktywna karta łączy się z panelem pod listwą (ta sama krawędź, bez linii między nimi) */
+#app[data-side-pos="bottom"] #desk-tools { padding-bottom: 0; }
+#app[data-side-pos="bottom"] .panel-tabs .tb.active { margin-bottom: -1px; position: relative; z-index: 1; }
+#app[data-side-collapsed="true"] .panel-tabs .tb.active { margin-bottom: 0; border-bottom: 1px solid var(--border2); border-radius: 4px; }
 @media (max-width: 900px) { .tg-screens .tb small { display: none; } }
 #app[data-desk-pos="top"] #desk { margin-top: 0; }
 #app[data-desk-pos="bottom"] #desk { margin-bottom: 0; }
@@ -286,10 +288,6 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .train-nr { fill: #fff; font-size: 8px; font-weight: 700; }
 
 /* ---- panel boczny ---- */
-.tabs { display: flex; border-bottom: 1px solid var(--border); }
-.tabs button { flex: 1; background: var(--panel2); color: var(--muted); border: none; padding: 9px 4px; font-size: 13px; cursor: pointer; position: relative; }
-.tabs button.active { color: var(--text); background: var(--panel); box-shadow: inset 0 -2px 0 var(--accent); }
-.tabs button.flash { animation: flash 0.6s ease-in-out 4; }
 @keyframes flash { 50% { background: var(--warn); color: #000; } }
 .badge { background: var(--danger); color: #fff; border-radius: 10px; padding: 0 5px; font-size: 10px; margin-left: 4px; }
 .tab { overflow: auto; flex: 1 1 auto; padding: 8px; }

@@ -134,7 +134,7 @@ function stepScreen(delta) {
 const desk = desks[0].renderer;
 const sideToggle = document.getElementById('side-toggle');
 const side = new SidePanel(document.getElementById('side'), sim, {
-  miniHost: document.getElementById('mini-tabs'),
+  tabsHost: document.getElementById('panel-tabs'),
   onToggle: (collapsed) => {
     settings.set('sideCollapsed', collapsed);
     // ikona panelu: wypełniona część = panel widoczny; pusta = panel ukryty (etykieta dla czytników i podpowiedzi)
@@ -334,7 +334,7 @@ if (mission && params.get('scenariusz')) {
   const anchorEl = (a) => {
     const r = activeDesk?.renderer;
     if (a.el) return document.querySelector(a.el);
-    if (a.tab) { side.collapse(false); return document.querySelector(`#side .tabs button[data-tab="${a.tab}"]`); }
+    if (a.tab) { side.collapse(false); return document.querySelector(`#panel-tabs button[data-tab="${a.tab}"]`); }
     if (a.cmd) return r?.cmdButton?.(a.cmd) || null;
     if (a.block) return r?.elementFor?.({ kind: 'blockpanel', exit: a.block }) || null;
     if (a.ref) return r?.elementFor?.(a.ref) || null;

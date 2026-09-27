@@ -7,22 +7,14 @@ import { t } from '../i18n/index.js';
  */
 export class SidePanel {
   /**
-   * opts: { miniHost – element listwy narzędzi na mini-zakładki po zwinięciu panelu, onToggle(collapsed) }
+   * opts: { tabsHost – element listwy narzędzi na zakładki panelu (jedyne zakładki; liczniki powiadomień i miganie tam),
+   *         onToggle(collapsed) }
    */
   constructor(root, sim, opts = {}) {
     this.sim = sim;
     this.root = root;
     this.opts = opts;
     root.innerHTML = `
-      <nav class="tabs">
-        <button data-tab="rj" class="active">${t('sp.tab.rj')}</button>
-        <button data-tab="log">${t('sp.tab.log')} <span id="log-badge" class="badge hidden">0</span></button>
-        <button data-tab="stan">${t('sp.tab.stan')}</button>
-        <button data-tab="rozkazy">${t('sp.tab.rozkazy')}</button>
-        <button data-tab="lacznosc">${t('sp.tab.lacznosc')} <span id="comms-badge" class="badge hidden">0</span></button>
-        <button data-tab="polecenia" id="tab-btn-polecenia" class="hidden">${t('sp.tab.polecenia')} <span id="cmd-badge" class="badge hidden">0</span></button>
-        <button type="button" class="collapse-btn" title="${t('sp.collapse')}" aria-label="${t('sp.collapseShort')}">⇥</button>
-      </nav>
       <section class="tab" id="tab-rj">
         <table class="rj"><thead><tr><th>${t('sp.col.nr')}</th><th>${t('sp.col.rel')}</th><th>${t('sp.col.arr')}</th><th>${t('sp.col.dep')}</th><th>${t('sp.col.track')}</th><th>${t('sp.col.state')}</th></tr></thead><tbody></tbody></table>
         <div class="score" id="score"></div>
@@ -87,19 +79,16 @@ export class SidePanel {
     this.logEl = root.querySelector('#log');
     this.alertsEl = root.querySelector('#alerts');
     this.unread = 0;
-    for (const b of root.querySelectorAll('.tabs button[data-tab]')) {
-      b.addEventListener('click', () => this.showTab(b.dataset.tab));
-    }
-    root.querySelector('.collapse-btn').addEventListener('click', () => this.collapse(true));
-    this.mini = opts.miniHost || null;
-    if (this.mini) {
-      this.mini.addEventListener('click', (ev) => {
-        const b = ev.target.closest('button'); if (!b) return;
-        this.collapse(false);
-        if (b.dataset.tab) this.showTab(b.dataset.tab);
-      });
-    }
-    this.#syncMini();
+    // zakładki panelu żyją w listwie narzędzi (nad panelem); bez hosta – zapasowo w samym panelu
+    this.tabs = opts.tabsHost || root.insertBefore(document.createElement('nav'), root.firstChild);
+    this.tabs.classList.add('panel-tabs');
+    this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
+      .map(([id, badge, hidden]) => `<button type="button" class="tb${id === 'rj' ? ' active' : ''}${hidden ? ' hidden' : ''}" data-tab="${id}"${id === 'polecenia' ? ' id="tab-btn-polecenia"' : ''}>${t(`sp.tab.${id}`)}${badge ? ` <span id="${badge}" class="badge hidden">0</span>` : ''}</button>`).join('');
+    this.tabs.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-tab]'); if (!b) return;
+      this.collapse(false);
+      this.showTab(b.dataset.tab);
+    });
     sim.bus.on('log', (e) => this.addLog(e));
     sim.bus.on('timetable', () => this.renderTimetable());
     sim.bus.on('tick', () => this.#throttled());
@@ -117,7 +106,7 @@ export class SidePanel {
   #initCommands() {
     const sim = this.sim;
     if (!sim.districts || sim.playerDistrict === 'both') return;
-    this.root.querySelector('#tab-btn-polecenia').classList.remove('hidden');
+    this.tabs.querySelector('#tab-btn-polecenia').classList.remove('hidden');
     const mine = sim.districts[sim.playerDistrict];
     const isDispatcher = mine.role === 'dysponująca';
     const other = Object.keys(sim.districts).find((id) => id !== sim.playerDistrict);
@@ -174,11 +163,9 @@ export class SidePanel {
   }
 
   #cmdBadge() {
-    const b = this.root.querySelector('#cmd-badge');
-    if (!b) return;
+    const b = this.tabs.querySelector('#cmd-badge');
     b.textContent = String(this.cmdUnread);
     b.classList.toggle('hidden', this.cmdUnread === 0);
-    this.#syncMini();
   }
 
   renderCommands() {
@@ -222,10 +209,9 @@ export class SidePanel {
   }
 
   #commsBadge() {
-    const b = this.root.querySelector('#comms-badge');
+    const b = this.tabs.querySelector('#comms-badge');
     b.textContent = String(this.commsUnread);
     b.classList.toggle('hidden', this.commsUnread === 0);
-    this.#syncMini();
   }
 
   #initOrders() {
@@ -266,29 +252,15 @@ export class SidePanel {
     ol.innerHTML = this.sim.traffic.orders.slice().reverse().map((o) => `<li>${t('sp.order.item', { id: o.id, time: Clock.format(o.time), nr: o.nr, signal: o.signal })}<div class="order-text">${escapeHtml(o.text)}</div></li>`).join('') || `<li class="muted">${t('sp.none')}</li>`;
   }
 
-  /** Zwija / rozwija panel; po zwinięciu zakładki z licznikami powiadomień są w listwie narzędzi pulpitu. */
+  /** Zwija / rozwija panel; zakładki z licznikami powiadomień zostają w listwie narzędzi. */
   collapse(v) {
     this.collapsed = !!v;
     document.getElementById('app').dataset.sideCollapsed = String(this.collapsed);
-    this.#syncMini();
     this.opts.onToggle?.(this.collapsed);
   }
 
-  /** Mini-zakładki: kopia przycisków panelu z aktualnymi licznikami (Dziennik, Łączność, Polecenia). */
-  #syncMini() {
-    if (!this.mini) return;
-    const parts = [];
-    for (const b of this.root.querySelectorAll('.tabs button[data-tab]')) {
-      if (b.classList.contains('hidden')) continue;
-      const badge = b.querySelector('.badge');
-      const n = badge && !badge.classList.contains('hidden') ? `<span class="badge">${badge.textContent}</span>` : '';
-      parts.push(`<button type="button" class="tb${b.classList.contains('flash') ? ' flash' : ''}" data-tab="${b.dataset.tab}">${b.firstChild.textContent.trim()}${n}</button>`);
-    }
-    this.mini.innerHTML = parts.join('');
-  }
-
   showTab(id) {
-    for (const b of this.root.querySelectorAll('.tabs button[data-tab]')) b.classList.toggle('active', b.dataset.tab === id);
+    for (const b of this.tabs.querySelectorAll('button[data-tab]')) b.classList.toggle('active', b.dataset.tab === id);
     for (const s of this.root.querySelectorAll('.tab')) s.classList.toggle('hidden', s.id !== `tab-${id}`);
     if (id === 'log') { this.unread = 0; this.#badge(); }
     if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
@@ -297,10 +269,9 @@ export class SidePanel {
   }
 
   #badge() {
-    const b = this.root.querySelector('#log-badge');
+    const b = this.tabs.querySelector('#log-badge');
     b.textContent = String(this.unread);
     b.classList.toggle('hidden', this.unread === 0);
-    this.#syncMini();
   }
 
   #throttled() {
@@ -340,10 +311,9 @@ export class SidePanel {
   }
 
   flash(tab = 'log') {
-    const b = this.root.querySelector(`[data-tab="${tab}"]`);
+    const b = this.tabs.querySelector(`button[data-tab="${tab}"]`);
     b.classList.add('flash');
-    this.#syncMini();
-    setTimeout(() => { b.classList.remove('flash'); this.#syncMini(); }, 3000);
+    setTimeout(() => b.classList.remove('flash'), 3000);
   }
 
   renderTimetable() {

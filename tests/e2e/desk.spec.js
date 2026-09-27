@@ -149,10 +149,10 @@ test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu;
   await expect(page.locator('#side-toggle')).toHaveAttribute('aria-label', 'Pokaż panel'); // ikona panelu: część boczna pusta
   await expect(page.locator('#side-toggle')).toHaveClass(/collapsed/);
   await page.evaluate(() => window.sim.bus.emit('log', { time: window.sim.clock.time, level: 'warn', msg: 'Test ostrzeżenia' }));
-  await expect(page.locator('#mini-tabs button[data-tab=log] .badge')).toHaveText('1');
-  await page.click('#mini-tabs button[data-tab=log]');
+  await expect(page.locator('#panel-tabs button[data-tab=log] .badge')).toHaveText('1');
+  await page.click('#panel-tabs button[data-tab=log]');
   await expect(page.locator('#app')).toHaveAttribute('data-side-collapsed', 'false');
-  await expect(page.locator('.tabs button.active')).toContainText('Dziennik');
+  await expect(page.locator('#panel-tabs button.active')).toContainText('Dziennik');
   await expect(page.locator('#log li').first()).toContainText('Test ostrzeżenia');
 });
 
@@ -233,15 +233,18 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   await expect(page.locator('#topbar .logo')).not.toHaveText(/SPRK/); // napis zastąpiony grafiką (aria-label zostaje)
   const bg = await page.locator('.speed-btn.active').evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(['rgb(63, 140, 255)', 'rgb(31, 111, 224)']).toContain(bg); // ciemny / jasny motyw
-  const shadow = await page.locator('.tabs button.active').evaluate((el) => getComputedStyle(el).boxShadow);
-  expect(shadow).toContain(bg);
-  // grupy paska narzędzi w osobnych kolorach: panel zielonkawy, ekran pomarańczowy – różne od akcentu i od siebie
+  // listwa: zakładki panelu (zielona etykieta, bez ramki grupy) na początku, potem szara grupa „widok” z ekranami i zoomem
   const col = (sel) => page.locator(sel).evaluate((el) => getComputedStyle(el).color);
-  const panelCol = await col('.tg-panel .lbl'), screenCol = await col('.tg-screens .lbl');
-  expect(panelCol).not.toBe(screenCol);
-  expect([panelCol, screenCol]).not.toContain(bg);
+  const panelCol = await col('.tg-panel .lbl'), viewCol = await col('.tg-view .lbl');
   expect(['rgb(111, 191, 143)', 'rgb(46, 154, 92)']).toContain(panelCol);
-  expect(['rgb(240, 145, 58)', 'rgb(217, 115, 26)']).toContain(screenCol);
+  expect(viewCol).not.toBe(panelCol);
+  expect(await page.locator('.tg-panel').evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('none');
+  const groups = await page.locator('#desk-tools .tool-group').evaluateAll((els) => els.map((e) => e.className));
+  expect(groups[0]).toContain('tg-panel'); expect(groups[1]).toContain('tg-view');
+  expect(await page.locator('#side nav, #side .tabs').count()).toBe(0); // zakładki tylko w listwie
+  const active = page.locator('#panel-tabs .tb.active');
+  await expect(active).toHaveText('Rozkład');
+  expect(await active.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(panelCol);
   await page.click('#btn-menu');
   const border = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopColor);
   expect(border).not.toBe('rgb(68, 68, 68)'); // nie szara ramka – domieszka akcentu

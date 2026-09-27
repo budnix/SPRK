@@ -13,8 +13,8 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await page.waitForLoadState('load');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('#menu-new')).toHaveText('New shift…');
-  await expect(page.locator('#side .tabs button[data-tab=rj]')).toHaveText('Timetable');
-  await expect(page.locator('#side .tabs button[data-tab=lacznosc]')).toContainText('Comms');
+  await expect(page.locator('#panel-tabs button[data-tab=rj]')).toHaveText('Timetable');
+  await expect(page.locator('#panel-tabs button[data-tab=lacznosc]')).toContainText('Comms');
   await expect(page.locator('#hint')).toContainText('command bar');
   await expect(page.locator('#zoom-fit')).toHaveAttribute('title', 'Fit to window width');
   await expect(page).toHaveTitle(/SPRK – Szkolna/);
@@ -35,7 +35,7 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await page.waitForLoadState('load');
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
   await expect(page.locator('#menu-settings')).toHaveText('Einstellungen…');
-  await expect(page.locator('#side .tabs button[data-tab=rj]')).toHaveText('Fahrplan');
+  await expect(page.locator('#panel-tabs button[data-tab=rj]')).toHaveText('Fahrplan');
   await page.click('#btn-help');
   await expect(page.locator('#help h2').first()).toContainText('Bedienung');
 });
