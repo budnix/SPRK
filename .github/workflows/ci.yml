@@ -11,10 +11,6 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   test:
     name: Testy
@@ -88,6 +84,10 @@ jobs:
     needs: [build, test, e2e]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # tylko publikacja jest serializowana – testy i build kolejnych pushów biegną równolegle
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
