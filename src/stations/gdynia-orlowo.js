@@ -167,7 +167,7 @@ export default {
   ],
 
   scenarios: [
-    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:10)', description: 'SKM co 15 min, regionalne z postojem przy peronie II, IC i TLK przelotem, towarowy torem 3, skład EZT z Bazy i do Bazy.', endTime: '08:15' },
+    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min, regionalne z postojem przy peronie II, IC i TLK przelotem, towarowy torem 3, skład EZT z Bazy i do Bazy.', endTime: '08:15' },
     { id: 'usterka-202', name: 'Usterka blokady od Gdyni', description: 'Blokada toru 2 od Gdyni Głównej bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'Z2', at: '06:40', duration: 40 }], disruptions: 'none' },
     { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
   ],

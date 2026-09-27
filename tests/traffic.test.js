@@ -63,3 +63,22 @@ test('rozkład jest posortowany po czasie na każdej stacji, niezależnie od kol
   assert.deepEqual(orl.slice(0, 3).map((e) => e.arr), ['06:02', '06:08', '06:08']); // 06:02 SKM, potem Regio 55100 i SKM 92102 o 06:08
   assert.ok(orl.slice(0, 3).some((e) => e.nr === 55100), 'dalekobieżny między pociągami SKM, nie na końcu listy');
 });
+
+test('status „odjechał” zostaje, gdy pociąg jedzie torem szlakowym do sąsiada (nie jest nadpisywany przez „jedzie”)', async () => {
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const { Clock } = await import('../src/core/Clock.js');
+  const { autoDispatch } = await import('./helpers.js');
+  const szkolna = (await import('../src/stations/szkolna.js')).default;
+  const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
+  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const after = new Set(); // statusy od chwili, gdy pociąg opuścił stację
+  let n = 0, left = false;
+  while (sim.clock.time < Clock.parse('07:20') && e.status !== 'na następnym posterunku') {
+    sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim);
+    if (e.status === 'odjechał') left = true;
+    if (left) after.add(e.status);
+  }
+  assert.equal(e.status, 'na następnym posterunku');
+  assert.ok(left, 'pociąg powinien przejść przez status „odjechał”');
+  assert.deepEqual([...after].sort(), ['na następnym posterunku', 'odjechał'], 'na szlaku status nie wraca do „jedzie”');
+});

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 import { MissionProgress } from '../src/tutorial/progress.js';
 import { missionSteps, MISSIONS } from '../src/tutorial/missions.js';
 import { GLOSSARY } from '../src/data/glossary.js';
@@ -163,7 +163,7 @@ test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez koli
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   const end = Clock.parse('09:10');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable()) assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
 });
 

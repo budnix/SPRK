@@ -7,6 +7,11 @@ import { Clock } from '../core/Clock.js';
  * na pulpit, zajętość odcinków, dziennik ruchu.
  */
 export class Traffic {
+  /** Pociąg obsłużony: wyprawiony na szlak (albo dotarł do sąsiada), zakończył bieg lub przekazany jako inny pociąg. */
+  static isDone(e) {
+    return e.status === 'odjechał' || e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
+  }
+
   constructor(station, ilk, blocks, bus, opts = {}) {
     this.station = station;
     this.ilk = ilk;
@@ -392,6 +397,7 @@ export class Traffic {
     // Stan rozkładu
     for (const e of this.entries) {
       if (e.train && !e.train.finished) {
+        if (e.status === 'odjechał') continue; // na szlaku do sąsiada – status zostaje (nie „jedzie”)
         if (!e.actualTrack || (e.unit && e.train.v === 0)) { const tr = this.#trackOf(e.train); if (tr) e.actualTrack = tr; }
         const st = e.train.state;
         const ended = e.terminates && e.actualArr != null; // pociąg zakończył bieg – dalej tylko manewry

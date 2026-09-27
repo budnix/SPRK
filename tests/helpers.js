@@ -13,6 +13,11 @@ export function run(sim, seconds, each) {
   for (let i = 0; i < steps; i++) { sim.step(0.5); if (each) each(sim); }
 }
 
+/** Wszystkie pociągi rozkładu dotarły do sąsiada / zakończyły bieg (zmiana kończy się wcześniej – po wyprawieniu ostatniego). */
+export function allArrived(sim) {
+  return sim.traffic.timetable().every((e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'));
+}
+
 export { Clock, station };
 
 import { AutoOperator } from '../src/model/Operator.js';

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import orlowo from '../src/stations/gdynia-orlowo.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 
 test('Gdynia Orłowo: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(orlowo).errors, []);
@@ -38,7 +38,7 @@ test('Gdynia Orłowo: pełna zmiana – SKM co 15 min, regionalne z postojem, sk
   const sim = new Simulation(orlowo, { disruptions: 'none' });
   const end = Clock.parse('08:20');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) {
+  while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);
     if (n++ % 4 === 0) autoDispatch(sim);
     if (n % 20 === 0) {
@@ -72,7 +72,7 @@ test('Gdynia Orłowo: scenariusz z usterką blokady od Gdyni – zapowiadanie te
   const sim = new Simulation(orlowo, { scenario: 'usterka-202' });
   const end = Clock.parse('08:20');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'Z2' || x.to === 'Z2')) {
     assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg', `${e.nr}: ${e.status}`);
   }

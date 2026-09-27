@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 
 test('Gdynia Chylonia: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(chylonia).errors, []);
@@ -41,7 +41,7 @@ test('Gdynia Chylonia: pełna zmiana – 31 pociągów, wyjazdy dwustopniowe, od
   const sim = new Simulation(chylonia, { disruptions: 'none' });
   const end = Clock.parse('08:20');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) {
+  while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);
     if (n++ % 4 === 0) autoDispatch(sim);
     if (n % 20 === 0) {
@@ -73,7 +73,7 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3', () =
   const sim = new Simulation(chylonia, { scenario: 'tor-1-zamkniety', disruptions: 'none' });
   const end = Clock.parse('08:20');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
     assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);

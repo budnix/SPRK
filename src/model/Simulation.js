@@ -55,6 +55,10 @@ export class Simulation {
     for (const b of this.blocks.values()) b.time = this.clock.time;
     this.traffic.start(this.clock.time);
     this.ended = false;
+    this.endReason = null;   // 'all-done' | 'time' | 'manual' (samouczek)
+    this.endedAt = null;
+    this.startTime = this.clock.time;
+    this.lateHinted = false; // podpowiedź „rozkład wyczerpany”, gdy zmiana nie kończy się sama
     // w misji (samouczek) zmiana nie kończy się sama po ostatnim pociągu – kończy ją ostatni krok samouczka (endShift)
     this.autoEnd = !this.scenario.tutorial;
     this.accum = 0;
@@ -214,29 +218,52 @@ export class Simulation {
     }
   }
 
+  /** Zmiana kończy się sama, gdy ostatni pociąg rozkładu jest wyprawiony na szlak (nie trzeba czekać, aż dojedzie
+   *  do sąsiada) i zadania manewrowe są wykonane albo przepadły; inaczej – o `endTime` scenariusza. */
   #checkEnd() {
     if (this.ended) return;
     const tt = this.traffic.timetable();
-    const isDone = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
-    const allDone = tt.length && tt.every(isDone);
+    const tasks = this.traffic.tasks || [];
+    const trainsDone = tt.length && tt.every(Traffic.isDone);
+    const tasksDone = tasks.every((t) => t.done || t.failed);
     const timeUp = this.endTime && this.clock.time >= this.endTime;
-    if ((allDone && this.autoEnd) || timeUp) this.endShift();
+    if ((trainsDone && tasksDone && this.autoEnd) || timeUp) { this.endShift(timeUp && !(trainsDone && tasksDone) ? 'time' : 'all-done'); return; }
+    // rozkład wyczerpany, a zmiana trwa – jedna podpowiedź, co ją trzyma (pociąg na stacji, zadanie manewrowe)
+    if (!this.lateHinted && this.autoEnd) {
+      const last = Math.max(...tt.map((e) => Math.max(e.arrTime ?? 0, e.depTime ?? 0)), ...tasks.map((t) => t.deadlineTime || 0));
+      if (this.clock.time >= last + 3 * 60) {
+        this.lateHinted = true;
+        const left = [...tt.filter((e) => !Traffic.isDone(e)).map((e) => `${e.label ?? e.nr} (${e.status})`), ...tasks.filter((t) => !t.done && !t.failed).map((t) => `zadanie: ${t.text}`)];
+        this.bus.emit('log', { time: this.clock.time, level: 'warn', msg: `Rozkład wyczerpany – do zakończenia zmiany: ${left.join('; ')}` });
+      }
+    }
   }
 
   /** Koniec zmiany: ocena końcowa i raport (zdarzenie `shift-end`); wołane też przez samouczek po ostatnim kroku. */
-  endShift() {
+  endShift(reason = 'manual') {
     if (this.ended) return;
     this.ended = true;
+    this.endReason = reason;
+    this.endedAt = this.clock.time;
     this.#finalScore();
-    this.bus.emit('shift-end', this.score.report(this.traffic));
+    this.bus.emit('shift-end', this.report());
   }
 
   #finalScore() {
     for (const e of this.traffic.timetable()) {
-      if (e.status !== 'na następnym posterunku' && e.status !== 'zakończył bieg' && !e.status.startsWith('przekazany')) {
-        this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, msg: `Pociąg ${e.nr} nie dojechał do końca zmiany (${e.status})` });
-      }
+      if (!Traffic.isDone(e)) this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany (${e.status})` });
     }
+  }
+
+  /** Pełny raport zmiany (także w trakcie): ocena, pociągi, zadania, liczniki, dane zmiany. */
+  report() {
+    const counters = { ...this.ilk.counters, dPo: 0, dKo: 0 };
+    for (const b of this.blocks.values()) { counters.dPo += b.counters?.dPo || 0; counters.dKo += b.counters?.dKo || 0; }
+    return this.score.report(this.traffic, {
+      counters, ended: this.ended, endReason: this.endReason, endedAt: this.endedAt, now: this.clock.time, startTime: this.startTime,
+      station: this.station.name, scenario: this.scenario.name, srk: this.srk.short || this.srk.name, level: this.level.label, seed: this.seed,
+      district: this.districts ? (this.playerDistrict === 'both' ? 'oba okręgi' : this.playerDistrict) : null,
+    });
   }
 
   /** Naciśnięcie przycisku – ref jak w Interlocking.press lub { kind:'block', exit, btn }. */

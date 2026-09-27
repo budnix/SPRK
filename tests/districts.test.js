@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { allArrived } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import gdynia from '../src/stations/gdynia-glowna.js';
 import { Clock } from '../src/core/Clock.js';
@@ -8,7 +9,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 function runShift(sim, playerOp) {
   const end = Clock.parse('08:25');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) playerOp.tick(); }
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) playerOp.tick(); }
 }
 
 function assertAllDone(sim) {

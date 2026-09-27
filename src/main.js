@@ -37,7 +37,7 @@ if (!params.get('scenariusz')) sim.clock.paused = true;
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? 'oba okręgi' : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
 document.getElementById('hint').textContent = viewHint(sim.srk);
-const report = new Report(document.getElementById('report'), sim);
+const report = new Report(document.getElementById('report'), sim, { onNew: () => startScreen.show() });
 sim.bus.on('shift-end', () => report.show());
 
 /* ---- pulpity: jeden lub po jednym na okręg nastawczy ---- */

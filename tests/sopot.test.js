@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import sopot from '../src/stations/sopot.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 
 test('Sopot: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(sopot).errors, []);
@@ -34,7 +34,7 @@ test('Sopot: pełna zmiana – przejazdy trzyprzebiegowe, odstawianie na tor 13 
   const sim = new Simulation(sopot, { disruptions: 'none' });
   const end = Clock.parse('08:20');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) {
+  while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);
     if (n++ % 4 === 0) autoDispatch(sim);
     if (n % 20 === 0) {

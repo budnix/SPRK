@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import wola from '../src/stations/wola-pustkowska.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 
 test('Wola Pustkowska: definicja poprawna, przebiegi zgodne z układem', () => {
   assert.deepEqual(validateStation(wola).errors, []);
@@ -22,7 +22,7 @@ test('Wola Pustkowska: pełna zmiana z manewrami i przekazaniem składu, bez nar
   const sim = new Simulation(wola, { disruptions: 'none' });
   const end = Clock.parse('09:25');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) {
+  while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);
     if (n++ % 4 === 0) autoDispatch(sim);
     const occ = new Map();
@@ -46,7 +46,7 @@ test('Wola Pustkowska: scenariusz z blokadą Borków bez łączności – zapowi
   const sim = new Simulation(wola, { scenario: 'borki-bez-blokady' });
   const end = Clock.parse('09:25');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
   const borki = sim.traffic.timetable().filter((e) => e.from === 'B' || e.to === 'B');
   for (const e of borki) assert.ok(e.status === 'na następnym posterunku' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
   assert.ok(sim.comms.messages.some((m) => m.kind === 'ask'), 'brak pytania telefonicznego');

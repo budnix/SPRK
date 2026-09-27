@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import gdynia from '../src/stations/gdynia-glowna.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, allArrived } from './helpers.js';
 
 test('Gdynia Główna: definicja poprawna, brak urwanych torów, każdy tor peronowy osiągalny z obu głowic', () => {
   assert.deepEqual(validateStation(gdynia).errors, []);
@@ -30,7 +30,7 @@ test('Gdynia Główna: pełna zmiana – 29 pociągów, SKM co 15 min, składy p
   const sim = new Simulation(gdynia, { disruptions: 'none' });
   const end = Clock.parse('08:25');
   let n = 0;
-  while (sim.clock.time < end && !sim.ended) {
+  while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);
     if (n++ % 4 === 0) autoDispatch(sim);
     if (n % 20 === 0) {

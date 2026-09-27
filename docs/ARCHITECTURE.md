@@ -121,6 +121,18 @@ Na wąskim ekranie odprawa staje pod wybraną kartą. Ekran startowy leży nad d
 Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
 Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
 
+## Koniec zmiany i raport (`src/model/Score.js`, `src/ui/Report.js`)
+
+Zmiana kończy się sama (`Simulation.#checkEnd`), gdy ostatni pociąg rozkładu jest wyprawiony na szlak (status
+„odjechał” – nie czeka na dojazd do sąsiada; status na szlaku nie wraca do „jedzie”) i zadania manewrowe są wykonane
+albo przepadły (`Traffic.isDone`); inaczej o `endTime` scenariusza. Gdy rozkład jest wyczerpany (3 min po ostatnim
+czasie rozkładu / terminie zadania), a zmiana trwa, dziennik dostaje jedną podpowiedź „Rozkład wyczerpany – do
+zakończenia zmiany: …” z pociągami stojącymi na stacji i zadaniami. `sim.report()` (także w trakcie) daje pełny
+raport: ocena i punkty, wiersze pociągów (plan / rzeczywistość / tor / opóźnienie / stan), punktualność, zadania,
+bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endReason`: all-done | time | manual).
+`Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena z gwiazdkami, kafelki, tabele) z przyciskami
+„Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu.
+
 ## Misje wprowadzające (`src/tutorial/`)
 
 * `missions.js` – kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
