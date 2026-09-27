@@ -14,7 +14,8 @@ export default {
   'top.bothDistricts': 'both areas',
   'tools.screens': 'Desk screens',
   'tools.whole': 'all',
-  'tools.view': 'view',
+  'tools.view': 'screen',
+  'tools.align': 'fit',
   'tools.zoomOut': 'Zoom out',
   'tools.zoomIn': 'Zoom in',
   'tools.fitW': 'Fit to window width',
@@ -97,7 +98,7 @@ export default {
   'set.screens.auto': 'split into screens by window width',
   'set.screens.off': 'whole desk on one screen',
   'set.edgePanels.title': 'Pinned edge panels',
-  'set.edgePanels.desc': 'When zoomed beyond the window width, the outer columns with the block system (line arrows, Ko/Poz/Wbl tiles) stay pinned on both sides behind a dashed line while the middle scrolls. You see what is coming from the neighbour and what has been dispatched. The panels work like the desk. The “view” bar gets a “height” button: fills the window vertically, the middle scrolls, the block system stays at the edges.',
+  'set.edgePanels.desc': 'When zoomed beyond the window width, the outer columns with the block system (line arrows, Ko/Poz/Wbl tiles) stay pinned on both sides behind a dashed line while the middle scrolls. You see what is coming from the neighbour and what has been dispatched. The panels work like the desk. The “screen” group gets a “height” button next to “fit”: fills the window vertically, the middle scrolls, the block system stays at the edges.',
   'set.edgePanels.off': 'off',
   'set.edgePanels.on': 'on',
   'set.edgePanels.on.hint': 'outer columns pinned to the window edges, middle scrolls',
@@ -317,7 +318,7 @@ export default {
   'help.body': `<h3>Routes</h3>
       <ul>
         <li><b>Train route</b>: green button of the start signal → green button of the end signal (or the route end button on the line <i>kW</i>/<i>kE</i>). Points throw automatically, sections light white (locking), the signal shows a proceed aspect per Ie-1.</li>
-        <li><b>Zoom and edge panels</b>: zoom the desk (−/+ buttons, pinch, Ctrl + wheel). When it no longer fits the width, the outer columns with the block system (line arrows, Ko/Poz/Wbl tiles) stay pinned on both sides behind a dashed line while you scroll the middle – you see what is coming from the neighbour and what has been dispatched. The panels work like the desk; the option “Pinned edge panels” is in menu ≡ → Settings (off by default); when on, the “view” bar has “height” next to “fit” (width), filling the window vertically.</li>
+        <li><b>Zoom and edge panels</b>: zoom the desk (−/+ buttons, pinch, Ctrl + wheel). When it no longer fits the width, the outer columns with the block system (line arrows, Ko/Poz/Wbl tiles) stay pinned on both sides behind a dashed line while you scroll the middle – you see what is coming from the neighbour and what has been dispatched. The panels work like the desk; the option “Pinned edge panels” is in menu ≡ → Settings (off by default); when on, the “screen” group has “height” next to the width fit under “fit”, filling the window vertically.</li>
         <li><b>Compound route</b> (computer workstation): when several consecutive routes through intermediate signals lead to the destination (e.g. in Sopot A → H → O → line, in Chylonia G502 → A502 → line), select the start signal and the distant end at once – the system sets all links in turn if each is clear; otherwise it refuses and names the link. On the push-button desk every route is set separately.</li>
         <li><b>Shunting route</b>: white button of the shunting signal (or of a signal with Ms2) → white button of the end signal / track end button (<i>kT3</i>).</li>
         <li><b>Cancelling the aspect</b>: pull the signal button. The route stays locked.</li>

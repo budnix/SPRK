@@ -233,9 +233,11 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   await expect(page.locator('#topbar .logo')).not.toHaveText(/SPRK/); // napis zastąpiony grafiką (aria-label zostaje)
   const bg = await page.locator('.speed-btn.active').evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(['rgb(63, 140, 255)', 'rgb(31, 111, 224)']).toContain(bg); // ciemny / jasny motyw
-  // listwa: zakładki panelu (zielona etykieta, bez ramki grupy) na początku, potem szara grupa „widok” z ekranami i zoomem
+  // listwa: zakładki panelu (zielona etykieta, bez ramki grupy) na początku, potem szara grupa „ekran” z ekranami, podpisem „wyrównanie” i zoomem
   const col = (sel) => page.locator(sel).evaluate((el) => getComputedStyle(el).color);
   const panelCol = await col('.tg-panel .lbl'), viewCol = await col('.tg-view .lbl');
+  await expect(page.locator('.tg-view .lbl').first()).toHaveText('ekran');
+  await expect(page.locator('.tg-view .lbl-align')).toHaveText('wyrównanie');
   expect(['rgb(111, 191, 143)', 'rgb(46, 154, 92)']).toContain(panelCol);
   expect(viewCol).not.toBe(panelCol);
   expect(await page.locator('.tg-panel').evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('none');
@@ -250,6 +252,16 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   const active = page.locator('#panel-tabs .tb.active');
   await expect(active).toHaveText('Rozkład');
   expect(await active.evaluate((el) => getComputedStyle(el).borderTopColor)).toBe(panelCol);
+  // stabilność: zmiana zakładki ani licznik powiadomień nie przesuwają sąsiednich kart; przyciski „widok” jednej wysokości
+  const boxes = async () => page.locator('#panel-tabs .tb').evaluateAll((els) => els.map((e) => [e.getBoundingClientRect().x, e.getBoundingClientRect().width]));
+  const before = await boxes();
+  await page.click('#panel-tabs button[data-tab=stan]');
+  expect(await boxes()).toEqual(before);
+  await page.evaluate(() => window.sim.bus.emit('log', { time: window.sim.clock.time, level: 'warn', msg: 'test' }));
+  await expect(page.locator('#panel-tabs button[data-tab=log] .badge')).toBeVisible();
+  expect(await boxes()).toEqual(before);
+  const heights = await page.locator('.tg-view .tb').evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().height)))]);
+  expect(heights).toHaveLength(1);
   await page.click('#btn-menu');
   const border = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopColor);
   expect(border).not.toBe('rgb(68, 68, 68)'); // nie szara ramka – domieszka akcentu

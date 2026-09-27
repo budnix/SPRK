@@ -104,10 +104,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tool-group .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin: 0 4px 0 2px; }
 .tool-group .seg { display: flex; }
 .tool-group .seg .tb { border-radius: 0; margin-left: -1px; }
-.tool-group .seg .tb:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
+.tool-group .seg .tb:first-child { border-radius: 4px 0 0 4px; margin-left: 0; }
 .tool-group .seg .tb:last-child { border-radius: 0 4px 4px 0; }
-.tool-group .tb { padding: 4px 10px; font-size: 12px; min-width: 0; white-space: nowrap; background: var(--panel); }
-.tool-group .tb.tb-icon { padding: 2px 10px; display: inline-flex; align-items: center; height: 26px; }   /* ikony dopasowania: do szerokości ↔, do wysokości ↕ */
+/* wszystkie przyciski listwy tej samej wysokości i w jednej linii – ekrany, zoom i ikony wyrównane */
+.tool-group .tb { padding: 0 10px; height: 26px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; line-height: 1; font-size: 12px; min-width: 0; white-space: nowrap; background: var(--panel); }
+.tool-group .tb.tb-icon { padding: 0 10px; }   /* ikony dopasowania: do szerokości ↔, do wysokości ↕ */
 .tool-group .tb.tb-icon svg { display: block; opacity: 0.85; }
 /* schowaj/pokaż panel: podwójny szewron w stronę panelu (widoczny → schowaj) albo od panelu (ukryty → pokaż) */
 .tg-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
@@ -119,17 +120,19 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #app[data-side-pos="left"] #side-toggle svg { transform: rotate(90deg); }
 #app[data-side-pos="left"] #side-toggle.collapsed svg { transform: rotate(-90deg); }
 /* grupa „widok”: ekrany pulpitu (gdy jest podział) i powiększenie w jednej szarej ramce */
-.tg-view .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.tg-view .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .tg-view .tb small { color: inherit; opacity: 0.75; font-weight: 400; margin-left: 4px; }
 #screen-group { display: contents; }
+.tg-view .lbl-align { margin-left: 6px; }
 #screen-group.hidden { display: none; }
 /* zakładki panelu: jedyne zakładki (w panelu ich nie ma); grupa bez ramki, karty otwarte od dołu – aktywna schodzi do panelu */
 .tg-panel { border: none; background: none; padding: 0 0 0 4px; align-self: stretch; }
 .tg-panel .lbl { color: var(--grp-panel); }
 .panel-tabs { display: flex; gap: 2px; align-items: stretch; align-self: stretch; flex-wrap: wrap; }
-.panel-tabs .tb { border-radius: 4px 4px 0 0; border-bottom: none; background: var(--panel2); color: var(--muted); padding: 5px 10px 6px; min-width: 0; white-space: nowrap; border-top: 2px solid transparent; }
-.panel-tabs .tb.active { background: var(--panel); color: var(--text); border-color: var(--border2); border-top-color: var(--grp-panel); font-weight: 600; }
-.panel-tabs .tb .badge { margin-left: 4px; }
+/* karty stabilne: bez zmiany grubości pisma po zaznaczeniu, licznik powiadomień w rogu karty (nie zmienia jej szerokości) */
+.panel-tabs .tb { position: relative; height: auto; border-radius: 4px 4px 0 0; border-bottom: none; background: var(--panel2); color: var(--muted); padding: 5px 12px 6px; min-width: 0; white-space: nowrap; border-top: 2px solid transparent; font-size: 13px; }
+.panel-tabs .tb.active { background: var(--panel); color: var(--text); border-color: var(--border2); border-top-color: var(--grp-panel); }
+.panel-tabs .tb .badge { position: absolute; top: -7px; right: -5px; margin: 0; line-height: 15px; z-index: 2; }
 .panel-tabs .tb.flash { animation: flash 0.6s ease-in-out 4; }
 /* panel na dole: aktywna karta łączy się z panelem pod listwą (ta sama krawędź, bez linii między nimi) */
 /* listwa zachowuje symetryczne odstępy (grupa „widok” i przycisk panelu w pionie na środku); karty panelu sięgają w dół do krawędzi listwy */

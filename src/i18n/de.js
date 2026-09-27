@@ -14,7 +14,8 @@ export default {
   'top.bothDistricts': 'beide Bezirke',
   'tools.screens': 'Pultbilder',
   'tools.whole': 'gesamt',
-  'tools.view': 'Ansicht',
+  'tools.view': 'Bild',
+  'tools.align': 'Ausrichtung',
   'tools.zoomOut': 'Verkleinern',
   'tools.zoomIn': 'Vergrößern',
   'tools.fitW': 'An Fensterbreite anpassen',
@@ -97,7 +98,7 @@ export default {
   'set.screens.auto': 'Aufteilung in Bilder nach Fensterbreite',
   'set.screens.off': 'ganzes Pult auf einem Bild',
   'set.edgePanels.title': 'Fixierte Randfelder',
-  'set.edgePanels.desc': 'Beim Vergrößern über die Fensterbreite hinaus bleiben die äußeren Spalten mit dem Streckenblock (Streckenpfeile, Felder Ko/Poz/Wbl) beidseitig hinter einer gestrichelten Linie fixiert, die Mitte scrollt. Man sieht, was vom Nachbarn kommt und was abgelassen wurde. Die Felder bedient man wie das Pult. In der Leiste „Ansicht“ erscheint die Taste „Höhe“: füllt das Fenster vertikal, die Mitte scrollt, der Block bleibt am Rand.',
+  'set.edgePanels.desc': 'Beim Vergrößern über die Fensterbreite hinaus bleiben die äußeren Spalten mit dem Streckenblock (Streckenpfeile, Felder Ko/Poz/Wbl) beidseitig hinter einer gestrichelten Linie fixiert, die Mitte scrollt. Man sieht, was vom Nachbarn kommt und was abgelassen wurde. Die Felder bedient man wie das Pult. In der Gruppe „Bild“ erscheint neben „Ausrichtung“ die Taste „Höhe“: füllt das Fenster vertikal, die Mitte scrollt, der Block bleibt am Rand.',
   'set.edgePanels.off': 'aus',
   'set.edgePanels.on': 'ein',
   'set.edgePanels.on.hint': 'äußere Spalten am Fensterrand fixiert, Mitte scrollbar',
@@ -317,7 +318,7 @@ export default {
   'help.body': `<h3>Fahrstraßen</h3>
       <ul>
         <li><b>Zugstraße</b>: grüne Taste des Startsignals → grüne Taste des Zielsignals (oder Zieltaste auf der Strecke <i>kW</i>/<i>kE</i>). Weichen stellen sich selbst um, Abschnitte leuchten weiß (Verschluss), das Signal zeigt Fahrt nach Ie-1.</li>
-        <li><b>Vergrößern und Randfelder</b>: Pult vergrößern (Tasten −/+, Zusammenziehen, Strg + Rad). Passt es nicht mehr in die Breite, bleiben die äußeren Spalten mit dem Streckenblock (Streckenpfeile, Felder Ko/Poz/Wbl) beidseitig hinter einer gestrichelten Linie fixiert, die Mitte scrollst du – man sieht, was vom Nachbarn kommt und was abgelassen wurde. Die Felder bedient man wie das Pult; Option „Fixierte Randfelder“ im Menü ≡ → Einstellungen (standardmäßig aus); ist sie ein, steht in der Leiste „Ansicht“ neben „Breite“ auch „Höhe“ (füllt das Fenster vertikal).</li>
+        <li><b>Vergrößern und Randfelder</b>: Pult vergrößern (Tasten −/+, Zusammenziehen, Strg + Rad). Passt es nicht mehr in die Breite, bleiben die äußeren Spalten mit dem Streckenblock (Streckenpfeile, Felder Ko/Poz/Wbl) beidseitig hinter einer gestrichelten Linie fixiert, die Mitte scrollst du – man sieht, was vom Nachbarn kommt und was abgelassen wurde. Die Felder bedient man wie das Pult; Option „Fixierte Randfelder“ im Menü ≡ → Einstellungen (standardmäßig aus); ist sie ein, steht in der Gruppe „Bild“ bei „Ausrichtung“ neben „Breite“ auch „Höhe“ (füllt das Fenster vertikal).</li>
         <li><b>Zusammengesetzte Fahrstraße</b> (Rechnerarbeitsplatz): führen mehrere aufeinanderfolgende Fahrstraßen über Zwischensignale zum Ziel (z. B. in Sopot A → H → O → Strecke, in Chylonia G502 → A502 → Strecke), wähle das Startsignal und sofort das entfernte Ziel – das System stellt alle Glieder nacheinander ein, wenn jedes frei ist; sonst lehnt es ab und nennt das Glied. Am Drucktastenpult wird jede Fahrstraße einzeln eingestellt.</li>
         <li><b>Rangierstraße</b>: weiße Taste des Rangiersignals (oder eines Signals mit Ms2) → weiße Taste des Zielsignals / Gleisendtaste (<i>kT3</i>).</li>
         <li><b>Signal auf Halt stellen</b>: Signaltaste ziehen. Die Fahrstraße bleibt verschlossen.</li>

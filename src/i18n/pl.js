@@ -16,7 +16,8 @@ export default {
   // pasek narzędzi pulpitu
   'tools.screens': 'Ekrany pulpitu',
   'tools.whole': 'całość',
-  'tools.view': 'widok',
+  'tools.view': 'ekran',
+  'tools.align': 'wyrównanie',
   'tools.zoomOut': 'Pomniejsz',
   'tools.zoomIn': 'Powiększ',
   'tools.fitW': 'Dopasuj do szerokości okna',
@@ -102,7 +103,7 @@ export default {
   'set.screens.auto': 'podział na ekrany wg szerokości okna',
   'set.screens.off': 'cały pulpit na jednym ekranie',
   'set.edgePanels.title': 'Stałe pola skrajne',
-  'set.edgePanels.desc': 'Po powiększeniu ponad szerokość okna skrajne kolumny z blokadą liniową (strzałki szlaku, kostki Ko/Poz/Wbl) zostają przypięte po obu stronach za linią przerywaną, a środek przewijasz. Widać, co jedzie od sąsiada i co wyprawiono. Pola obsługują się jak pulpit. Na pasku „widok” pojawia się przycisk „wysokość”: wypełnia okno w pionie, środek przewijasz, blokada zostaje na brzegach.',
+  'set.edgePanels.desc': 'Po powiększeniu ponad szerokość okna skrajne kolumny z blokadą liniową (strzałki szlaku, kostki Ko/Poz/Wbl) zostają przypięte po obu stronach za linią przerywaną, a środek przewijasz. Widać, co jedzie od sąsiada i co wyprawiono. Pola obsługują się jak pulpit. W grupie „ekran” obok „wyrównanie” pojawia się przycisk „wysokość”: wypełnia okno w pionie, środek przewijasz, blokada zostaje na brzegach.',
   'set.edgePanels.off': 'wyłączone',
   'set.edgePanels.on': 'włączone',
   'set.edgePanels.on.hint': 'skrajne kolumny przypięte do krawędzi okna, środek przewijany',
@@ -326,7 +327,7 @@ export default {
   'help.body': `<h3>Przebiegi</h3>
       <ul>
         <li><b>Przebieg pociągowy</b>: zielony przycisk semafora początkowego → zielony przycisk semafora końcowego (lub przycisk końca przebiegu na szlaku <i>kW</i>/<i>kE</i>). Zwrotnice przestawiają się same, odcinki świecą na biało (utwierdzenie), semafor podaje sygnał zezwalający wg Ie-1.</li>
-        <li><b>Powiększenie i pola skrajne</b>: przybliż pulpit (przyciski −/+, szczypnięcie, Ctrl + kółko). Gdy nie mieści się na szerokość, skrajne kolumny z blokadą liniową (strzałki szlaku, kostki Ko/Poz/Wbl) zostają przypięte po obu stronach za linią przerywaną, a środek przewijasz palcem – widać, co jedzie od sąsiada i co wyprawiono. Pola obsługują się jak pulpit; opcja „Stałe pola skrajne” w menu ≡ → Ustawienia (domyślnie wyłączona); przy włączonej na pasku „widok” obok „dopasuj” (do szerokości) jest „wysokość” (wypełnia okno w pionie).</li>
+        <li><b>Powiększenie i pola skrajne</b>: przybliż pulpit (przyciski −/+, szczypnięcie, Ctrl + kółko). Gdy nie mieści się na szerokość, skrajne kolumny z blokadą liniową (strzałki szlaku, kostki Ko/Poz/Wbl) zostają przypięte po obu stronach za linią przerywaną, a środek przewijasz palcem – widać, co jedzie od sąsiada i co wyprawiono. Pola obsługują się jak pulpit; opcja „Stałe pola skrajne” w menu ≡ → Ustawienia (domyślnie wyłączona); przy włączonej w grupie „ekran” przy „wyrównanie” obok dopasowania do szerokości jest „wysokość” (wypełnia okno w pionie).</li>
         <li><b>Przebieg złożony</b> (stanowisko komputerowe): gdy do celu prowadzi kilka kolejnych przebiegów przez semafory pośrednie (np. w Sopocie A → H → O → szlak, w Chyloni G502 → A502 → szlak), wskaż semafor początkowy i od razu odległy koniec – system nastawi wszystkie ogniwa po kolei, jeśli każde jest wolne; inaczej odmówi i nazwie ogniwo. Na pulpicie kostkowym każdy przebieg nastawia się osobno.</li>
         <li><b>Przebieg manewrowy</b>: biały przycisk tarczy manewrowej (lub semafora z Ms2) → biały przycisk sygnalizatora końcowego / przycisk końca toru (<i>kT3</i>).</li>
         <li><b>Wygaszenie sygnału</b>: wyciągnij przycisk sygnałowy. Przebieg pozostaje utwierdzony.</li>
