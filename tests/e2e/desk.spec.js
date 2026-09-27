@@ -133,9 +133,12 @@ test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru 
 test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu; ukryty panel pokazuje licznik dziennika', async ({ page }) => {
   await openShift(page, 'stare-pustkowie', { settings: { theme: 'dark', sidePos: 'right' } });
   await page.click('#btn-menu');
-  await page.check('input[name=theme][value=light]');
-  await page.check('input[name=sidePos][value=bottom]');
+  await page.click('#menu-settings');
+  await expect(page.locator('#settings')).toBeVisible();
+  await page.check('#settings input[name=theme][value=light]');
+  await page.check('#settings input[name=sidePos][value=bottom]');
   await page.keyboard.press('Escape');
+  await expect(page.locator('#settings')).toBeHidden();
   await page.reload({ waitUntil: 'networkidle' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');

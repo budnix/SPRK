@@ -70,8 +70,9 @@ test('ekrany: podział wg szerokości, strzałki, przebieg zaczęty na ekranie 1
   await advance(page, 10);
   expect((await simState(page)).active).toContain('C-M2');
   // wyłączenie podziału w ustawieniach
-  await page.click('#btn-menu');
-  await page.check('input[name=screens][value=off]');
+  await page.click('#btn-menu'); await page.click('#menu-settings');
+  await page.check('#settings input[name=screens][value=off]');
+  await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await expect(page.locator('#screen-group')).toBeHidden();
 });
@@ -175,20 +176,20 @@ test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapi
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   expect(await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1.25)');
-  await page.click('#btn-menu');
+  await page.click('#btn-menu'); await page.click('#menu-settings');
   await expect(page.locator('#symScale')).toHaveValue('1.25');
   await expect(page.locator('output[for=symScale]')).toHaveText('125%');
   // pozostałe domyślne: pulpit na środku, motyw wg systemu, podział na ekrany, odstęp normalny, stanowisko wg stacji, panel na dole
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');
   for (const [name, value] of [['deskPos', 'middle'], ['theme', 'system'], ['screens', 'auto'], ['rowScale', '1'], ['srk', 'auto'], ['sidePos', 'bottom']]) {
-    await expect(page.locator(`input[name=${name}][value="${value}"]`), name).toBeChecked();
+    await expect(page.locator(`#settings input[name=${name}][value="${value}"]`), name).toBeChecked();
   }
   // motyw wg systemu: ciemny tryb systemu → ciemny, jasny → jasny (także na żywo, bez przeładowania)
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.check('input[name=theme][value=dark]');
+  await page.check('#settings input[name=theme][value=dark]');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   // użytkownik z zapisaną skalą 100 % zostaje przy swojej
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' }, settings: { symScale: '1' } });

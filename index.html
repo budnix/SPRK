@@ -22,51 +22,13 @@
         <button id="btn-menu" class="tb" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
       </div>
       <div id="menu" class="menu hidden" role="menu">
-        <h4>Ustawienia</h4>
-        <fieldset>
-          <legend>Położenie pulpitu</legend>
-          <label><input type="radio" name="deskPos" value="top"> góra</label>
-          <label><input type="radio" name="deskPos" value="middle"> środek</label>
-          <label><input type="radio" name="deskPos" value="bottom"> dół</label>
-        </fieldset>
-        <fieldset>
-          <legend>Motyw interfejsu</legend>
-          <label><input type="radio" name="theme" value="system"> wg systemu operacyjnego</label>
-          <label><input type="radio" name="theme" value="dark"> ciemny</label>
-          <label><input type="radio" name="theme" value="light"> jasny</label>
-        </fieldset>
-        <fieldset>
-          <legend>Ekrany pulpitu</legend>
-          <label><input type="radio" name="screens" value="auto"> podział na ekrany wg szerokości okna</label>
-          <label><input type="radio" name="screens" value="off"> cały pulpit na jednym ekranie</label>
-        </fieldset>
-        <fieldset>
-          <legend>Stałe pola skrajne (blokada zawsze widoczna po powiększeniu)</legend>
-          <label><input type="radio" name="edgePanels" value="off"> wyłączone</label>
-          <label><input type="radio" name="edgePanels" value="on"> włączone – skrajne kolumny przypięte do krawędzi okna, środek przewijany</label>
-        </fieldset>
-        <fieldset>
-          <legend>Monitor: wielkość symboli i napisów</legend>
-          <label class="range"><input type="range" id="symScale" name="symScale" min="1" max="1.5" step="0.05"> <output for="symScale">100%</output></label>
-        </fieldset>
-        <fieldset>
-          <legend>Monitor: odstęp torów</legend>
-          <label><input type="radio" name="rowScale" value="1"> normalny</label>
-          <label><input type="radio" name="rowScale" value="0.7"> ciasny (semafory i tarcze bliżej toru)</label>
-        </fieldset>
-        <fieldset>
-          <legend>Stanowisko obsługi (urządzenia srk)</legend>
-          <label><input type="radio" name="srk" value="auto"> wg stacji</label>
-          <label><input type="radio" name="srk" value="E"> pulpit kostkowy (typ E)</label>
-          <label><input type="radio" name="srk" value="komputerowe"> komputerowe (monitor)</label>
-        </fieldset>
-        <fieldset>
-          <legend>Panel boczny (rozkład, dziennik, stan)</legend>
-          <label><input type="radio" name="sidePos" value="right"> po prawej</label>
-          <label><input type="radio" name="sidePos" value="left"> po lewej</label>
-          <label><input type="radio" name="sidePos" value="bottom"> na dole</label>
-        </fieldset>
-        <div class="menu-actions"><button type="button" id="menu-new" class="tb">Nowa zmiana…</button> <button type="button" id="menu-report" class="tb">Raport zmiany</button> <button type="button" id="menu-help" class="tb">Instrukcja obsługi</button></div>
+        <h4>Menu</h4>
+        <div class="menu-actions">
+          <button type="button" id="menu-new" class="tb">Nowa zmiana…</button>
+          <button type="button" id="menu-settings" class="tb">Ustawienia…</button>
+          <button type="button" id="menu-report" class="tb">Raport zmiany</button>
+          <button type="button" id="menu-help" class="tb">Instrukcja obsługi</button>
+        </div>
       </div>
     </header>
     <main id="main">
@@ -76,7 +38,7 @@
         <div id="desk-scroll"><div id="desk"></div></div>
         <div id="desk-tools">
           <div class="tool-group tg-screens hidden" id="screen-group"><span class="lbl">ekran</span><div id="screen-tabs" class="screen-tabs seg" aria-label="Ekrany pulpitu"></div></div>
-          <div class="tool-group tg-zoom"><span class="lbl">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz">−</button><button class="tb" id="zoom-fit" title="Dopasuj do okna">dopasuj</button><button class="tb" id="zoom-in" title="Powiększ">+</button></div></div>
+          <div class="tool-group tg-zoom"><span class="lbl">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz">−</button><button class="tb" id="zoom-fit" title="Dopasuj do szerokości okna">dopasuj</button><button class="tb hidden" id="zoom-fit-h" title="Wypełnij okno w pionie – środek przewijany, skrajne pola z blokadą przypięte">wysokość</button><button class="tb" id="zoom-in" title="Powiększ">+</button></div></div>
           <div class="tool-group tg-panel"><span class="lbl">panel</span><button class="tb" id="side-toggle" title="Ukryj / pokaż panel boczny">ukryj</button><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)"></div></div>
           <span id="status" class="status"></span>
           <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
@@ -88,6 +50,7 @@
   <div id="help" class="modal hidden"></div>
   <div id="start" class="modal hidden"></div>
   <div id="report" class="modal hidden"></div>
+  <div id="settings" class="modal hidden"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -7,6 +7,7 @@ import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
+import { SettingsScreen } from './ui/SettingsScreen.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
 import { Tutorial } from './tutorial/Tutorial.js';
@@ -17,7 +18,7 @@ const station = getStation(params.get('stacja'));
 const settings = new Settings((key, value) => {
   if (key === 'srk' || key === 'rowScale') location.reload();
   else if (key === 'screens') planAll();
-  else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); }
+  else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
   else requestAnimationFrame(fit);
 });
@@ -137,7 +138,7 @@ document.getElementById('btn-help').addEventListener('click', () => help.toggle(
 /* ---- menu i ustawienia ---- */
 const menuEl = document.getElementById('menu');
 const menuBtn = document.getElementById('btn-menu');
-settings.bindMenu(menuEl);
+const settingsScreen = new SettingsScreen(document.getElementById('settings'), settings);
 function toggleMenu(show = menuEl.classList.contains('hidden')) {
   menuEl.classList.toggle('hidden', !show);
   menuBtn.setAttribute('aria-expanded', String(show));
@@ -145,6 +146,7 @@ function toggleMenu(show = menuEl.classList.contains('hidden')) {
 menuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
 document.addEventListener('click', (e) => { if (!menuEl.contains(e.target)) toggleMenu(false); });
 document.getElementById('menu-help').addEventListener('click', () => { toggleMenu(false); help.toggle(); });
+document.getElementById('menu-settings').addEventListener('click', () => { toggleMenu(false); settingsScreen.show(); });
 document.getElementById('menu-new').addEventListener('click', () => { toggleMenu(false); startScreen.show(); });
 document.getElementById('menu-report').addEventListener('click', () => { toggleMenu(false); report.show(); });
 
@@ -199,12 +201,30 @@ function deskSize() {
   const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
   return viewSize(sim.srk, cols, station.desk.rows, viewOpts());
 }
+const clampZoom = (z) => Math.max(0.3, Math.min(4, z));
+/** Dopasowanie całości do okna (po zmianie ekranu / rozmiaru okna). */
 function fit() {
   const { w: dw, h: dh } = deskSize();
   const w = scroll.clientWidth - 8, h = scroll.clientHeight - 8;
   zoom = Math.max(0.3, Math.min(w / dw, h / dh));
   applyZoom();
 }
+/** Przycisk „dopasuj”: do szerokości okna (wysokość może wymagać przewijania). */
+function fitWidth() {
+  const { w: dw } = deskSize();
+  zoom = clampZoom((scroll.clientWidth - 8) / dw);
+  applyZoom();
+  scroll.scrollLeft = 0;
+}
+/** Przycisk „wysokość”: wypełnia okno w pionie – pulpit zwykle szerszy niż okno, środek przewijany, a przy włączonych
+ *  stałych polach skrajnych blokada z obu krańców jest przypięta do krawędzi. */
+function fitHeight() {
+  const { h: dh } = deskSize();
+  zoom = clampZoom((scroll.clientHeight - 8) / dh);
+  applyZoom();
+  scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
+}
+function syncFitButtons() { document.getElementById('zoom-fit-h').classList.toggle('hidden', settings.values.edgePanels !== 'on'); }
 function applyZoom() {
   const { w, h } = deskSize();
   deskEl.style.width = `${w * zoom}px`;
@@ -255,7 +275,9 @@ scroll.addEventListener('wheel', (e) => {
   const r = scroll.getBoundingClientRect();
   zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
-document.getElementById('zoom-fit').addEventListener('click', fit);
+document.getElementById('zoom-fit').addEventListener('click', fitWidth);
+document.getElementById('zoom-fit-h').addEventListener('click', fitHeight);
+syncFitButtons();
 let replanTimer = null;
 function onResize() { clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
 window.addEventListener('resize', onResize);

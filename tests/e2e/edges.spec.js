@@ -12,10 +12,12 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
   await expect(left).toBeHidden(); // pulpit dopasowany do okna (1400 px mieści Sopot przy minimalnym powiększeniu) – bez pól
   for (let i = 0; i < 3; i++) await page.click('#zoom-in');
   await expect(left).toBeHidden(); // opcja domyślnie wyłączona
-  await page.click('#btn-menu');
-  await page.check('input[name=edgePanels][value=on]');
+  await page.click('#btn-menu'); await page.click('#menu-settings');
+  await expect(page.locator('#zoom-fit-h')).toBeHidden(); // przycisk „wysokość” tylko przy włączonych polach
+  await page.check('#settings input[name=edgePanels][value=on]');
   await page.keyboard.press('Escape');
   await expect(left).toBeVisible(); await expect(right).toBeVisible();
+  await expect(page.locator('#zoom-fit-h')).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).edgePanels)).toBe('on'); // zapamiętane
   const scroll = await box(page.locator('#desk-scroll'));
   const l = await box(left), r = await box(right);
@@ -45,8 +47,20 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
   await expect(page.locator('.scr-menu')).toBeVisible();
   await expect(page.locator('.scr-menu h5')).toContainText('Szlak Gdańsk Oliwa – 202 t.2');
   await page.keyboard.press('Escape');
+  // „dopasuj” = do szerokości: pulpit mieści się na szerokość, pola znikają
   await page.click('#zoom-fit');
   await expect(left).toBeHidden(); await expect(right).toBeHidden();
+  const sc = await page.locator('#desk-scroll').evaluate((s) => ({ w: s.clientWidth, h: s.clientHeight }));
+  const d1 = await box(page.locator('#desk'));
+  expect(Math.abs(d1.width - (sc.w - 8))).toBeLessThan(3);
+  // „wysokość” = wypełnia okno w pionie: pulpit szerszy niż okno, pola przypięte, środek na środku
+  await page.click('#zoom-fit-h');
+  const d2 = await box(page.locator('#desk'));
+  expect(Math.abs(d2.height - (sc.h - 8))).toBeLessThan(3);
+  expect(d2.width).toBeGreaterThan(sc.w);
+  await expect(left).toBeVisible(); await expect(right).toBeVisible();
+  const sl = await page.locator('#desk-scroll').evaluate((s) => s.scrollLeft / Math.max(1, s.scrollWidth - s.clientWidth));
+  expect(sl).toBeGreaterThan(0.4); expect(sl).toBeLessThan(0.6);
 });
 
 test('pulpit kostkowy: pola skrajne z kostkami blokady; naciśnięcie Wbl przez pole wysyła żądanie jak z pulpitu', async ({ page }) => {

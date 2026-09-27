@@ -92,6 +92,16 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 (Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
 (domyślnie 1,25), rzędy ściskane `rowScale`.
 
+## Ekran ustawień (`src/ui/settingsSchema.js`, `src/ui/SettingsScreen.js`)
+
+Menu ≡ ma tylko akcje (Nowa zmiana…, Ustawienia…, Raport zmiany, Instrukcja obsługi). Ustawienia to osobny pełny ekran
+w motywie ekranu startowego: kategorie po lewej (Stanowisko, Pulpit, Monitor, Motyw, Panel boczny), po prawej opcje
+z tytułem, opisem działania i wyborami z podpowiedziami; opcje przeładowujące widok mają znacznik. Treść opisuje
+`SETTINGS_CATEGORIES` (bez DOM; test pilnuje, że każdy klucz `DEFAULTS` jest opisany raz i wartość domyślna jest wśród
+wyborów), a `SettingsScreen` buduje z niego DOM i podpina kontrolki przez `Settings.bindMenu` – zmiana działa od razu
+i zapisuje się jak dotąd. Pasek „widok”: „dopasuj” dopasowuje do szerokości okna, „wysokość” (tylko przy włączonych
+stałych polach skrajnych) wypełnia okno w pionie i ustawia środek pulpitu.
+
 ## Stałe pola skrajne (`src/render/edges.js`, `src/ui/EdgePanels.js`)
 
 Gdy powiększony pulpit nie mieści się na szerokość okna, skrajne kolumny z blokadą liniową (strzałki szlaku, na pulpicie
