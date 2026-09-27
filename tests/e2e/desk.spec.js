@@ -235,6 +235,13 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   expect(['rgb(63, 140, 255)', 'rgb(31, 111, 224)']).toContain(bg); // ciemny / jasny motyw
   const shadow = await page.locator('.tabs button.active').evaluate((el) => getComputedStyle(el).boxShadow);
   expect(shadow).toContain(bg);
+  // grupy paska narzędzi w osobnych kolorach: panel zielonkawy, ekran pomarańczowy – różne od akcentu i od siebie
+  const col = (sel) => page.locator(sel).evaluate((el) => getComputedStyle(el).color);
+  const panelCol = await col('.tg-panel .lbl'), screenCol = await col('.tg-screens .lbl');
+  expect(panelCol).not.toBe(screenCol);
+  expect([panelCol, screenCol]).not.toContain(bg);
+  expect(['rgb(111, 191, 143)', 'rgb(46, 154, 92)']).toContain(panelCol);
+  expect(['rgb(240, 145, 58)', 'rgb(217, 115, 26)']).toContain(screenCol);
   await page.click('#btn-menu');
   const border = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopColor);
   expect(border).not.toBe('rgb(68, 68, 68)'); // nie szara ramka – domieszka akcentu

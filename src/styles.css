@@ -6,6 +6,8 @@
   --muted: #9aa3ab;
   --accent: #3f8cff;
   --accent-text: #fff;
+  --grp-screen: #f0913a;   /* grupa „ekran” na pasku narzędzi – pomarańcz, kontrast do akcentu */
+  --grp-panel: #6fbf8f;    /* grupa „panel” – zieleń jak dawniej */
   --warn: #f2b632;
   --danger: #ff5a4e;
   --border: #000;
@@ -31,6 +33,8 @@
   --muted: #5b6470;
   --accent: #1f6fe0;
   --accent-text: #fff;
+  --grp-screen: #d9731a;
+  --grp-panel: #2e9a5c;
   --warn: #a86d00;
   --danger: #c8322a;
   --border: #b9bec3;
@@ -118,13 +122,13 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #app[data-side-pos="right"] #side-toggle.collapsed svg { transform: rotate(90deg); }
 #app[data-side-pos="left"] #side-toggle svg { transform: rotate(90deg); }
 #app[data-side-pos="left"] #side-toggle.collapsed svg { transform: rotate(-90deg); }
-.tg-screens { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); }
-.tg-screens .lbl { color: var(--accent); }
-.tg-screens .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+.tg-screens { border-color: color-mix(in srgb, var(--grp-screen) 45%, transparent); background: color-mix(in srgb, var(--grp-screen) 12%, var(--panel2)); }
+.tg-screens .lbl { color: var(--grp-screen); }
+.tg-screens .tb.active { background: var(--grp-screen); color: #fff; border-color: var(--grp-screen); font-weight: 600; }
 .tg-screens .tb small { color: inherit; opacity: 0.75; font-weight: 400; margin-left: 4px; }
-.tg-panel { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); }
-.tg-panel .lbl { color: var(--accent); }
-.tg-panel #side-toggle { border-color: color-mix(in srgb, var(--accent) 50%, var(--border2)); }
+.tg-panel { border-color: color-mix(in srgb, var(--grp-panel) 45%, transparent); background: color-mix(in srgb, var(--grp-panel) 12%, var(--panel2)); }
+.tg-panel .lbl { color: var(--grp-panel); }
+.tg-panel #side-toggle { border-color: color-mix(in srgb, var(--grp-panel) 50%, var(--border2)); }
 .mini-tabs { display: none; gap: 0; align-items: center; margin-left: 2px; }
 #app[data-side-collapsed="true"] .mini-tabs { display: flex; flex-wrap: wrap; }
 .mini-tabs .tb .badge { margin-left: 4px; }
