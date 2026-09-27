@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openShift, tap, simState, advance } from './helpers.js';
+import { openShift, tap, hit, simState, advance } from './helpers.js';
 
 /* Stanowisko komputerowe (monitor, Ie-104) – Sopot */
 
@@ -193,4 +193,15 @@ test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapi
   // użytkownik z zapisaną skalą 100 % zostaje przy swojej
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' }, settings: { symScale: '1' } });
   expect(await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1)');
+});
+
+test('monitor: semafor A i tarcza Tm1 w tym samym punkcie toru (Orłowo) są oba widoczne i klikalne – każdy otwiera własne menu', async ({ page }) => {
+  await openShift(page, 'gdynia-orlowo', { settings: { screens: 'off' } });
+  for (const [id, title] of [['A', 'Semafor A'], ['Tm1', 'Tarcza manewrowa Tm1']]) {
+    const box = await hit(page, id).boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); // prawdziwe kliknięcie w środek symbolu, nie zdarzenie na elemencie
+    await expect(page.locator('.scr-menu')).toBeVisible();
+    await expect(page.locator('.scr-menu .scr-menu-title, .scr-menu h4, .scr-menu').first()).toContainText(title);
+    await page.keyboard.press('Escape');
+  }
 });

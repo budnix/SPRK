@@ -333,10 +333,19 @@ export class ScreenRenderer {
    * Symbol: podwójny grot (semafor) lub pojedynczy (tarcza) skierowany w kierunku jazdy, bez masztu (uproszczenie
    * dla czytelności); nazwa sygnalizatora po prawej stronie toru w kierunku jazdy (E – pod torem, W – nad torem).
    */
-  #signal(tile) {
+  /** Punkt zaczepienia symbolu sygnalizatora na linii toru (krawędź kostki `at` w kierunku jazdy). */
+  #signalAnchor(tile) {
     const at = this.topo.trackAt(tile.at.x, tile.at.y);
-    const [cx, cy] = at ? this.#pt(at, tile.dir) : this.#ctr(tile);
+    return at ? this.#pt(at, tile.dir) : this.#ctr(tile);
+  }
+
+  #signal(tile) {
+    let [cx, cy] = this.#signalAnchor(tile);
     const dir = tile.dir === 'E' ? 1 : -1;
+    // dwa sygnalizatory w tym samym punkcie (np. semafor A na kostce 5 w kierunku E i tarcza Tm1 na kostce 6
+    // w kierunku W – oba na wspólnej krawędzi): każdy cofa się o kawałek na swoją kostkę, żeby oba były widoczne i klikalne
+    const twin = this.station.tiles.some((t) => t.type === 'signal' && t !== tile && t.at && this.#signalAnchor(t).every((v, i) => Math.abs(v - [cx, cy][i]) < 0.5));
+    if (twin) cx -= dir * 8;
     const side = dir; // prawa strona toru w kierunku jazdy: E → pod torem (+y), W → nad torem (−y)
     const chevron = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4 Z`;
     const body = el('g', { class: 'sig-body' });

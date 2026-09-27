@@ -1,3 +1,4 @@
+import { normalizeStation } from './normalize.js';
 import { EventBus } from '../core/EventBus.js';
 import { Clock } from '../core/Clock.js';
 import { Random, DISRUPTION_LEVELS } from '../core/Random.js';
@@ -21,7 +22,7 @@ export class Simulation {
   constructor(station, opts = {}) {
     const v = validateStation(station);
     if (v.errors.length) throw new Error(`Definicja stacji niepoprawna:\n${v.errors.join('\n')}`);
-    this.station = station;
+    this.station = normalizeStation(station); // łącznice: osobny odcinek izolowany na każdą zwrotnicę
     this.scenario = Simulation.resolveScenario(station, opts.scenario);
     // System sterowania ruchem (strategia): wymuszony przez scenariusz (samouczek), z ustawień gracza lub ze stacji
     this.srk = getSrk(this.scenario.srk || opts.srk || station.srk);
@@ -36,7 +37,7 @@ export class Simulation {
     this.score = new Score(this.bus);
     this.blocks = new Map();
     for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus));
-    this.ilk = new Interlocking(station, this.bus, {
+    this.ilk = new Interlocking(this.station, this.bus, {
       blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
       ...this.srk.model,
     });
@@ -45,7 +46,7 @@ export class Simulation {
     const timetable = this.scenario.timetable
       ? this.scenario.timetable
       : (this.scenario.trains ? station.timetable.filter((t) => this.scenario.trains.includes(t.nr)) : station.timetable);
-    this.traffic = new Traffic(station, this.ilk, this.blocks, this.bus, { rng: this.rng, level: this.level, timetable, tasks: this.scenario.tasks });
+    this.traffic = new Traffic(this.station, this.ilk, this.blocks, this.bus, { rng: this.rng, level: this.level, timetable, tasks: this.scenario.tasks });
     this.comms = new Comms(this);
     this.faults = new Faults(this, this.rng, this.level, this.scenario.faults || []);
     this.closed = (this.scenario.closedSections || []).map((c) => ({ section: c.section, from: c.from ? Clock.parse(c.from) : 0, to: c.to ? Clock.parse(c.to) : Infinity, active: false }));
