@@ -3,6 +3,9 @@
  *
  * Układ jak na małej stacji linii jednotorowej: tor 1 i 2 (perony), tor 3 (boczny, kozioł, wykolejnica Wk1).
  * Zwrotnice 1 (głowica zachodnia), 3 (odgałęzienie toru 3), 4 (głowica wschodnia).
+ * Za każdym semaforem wyjazdowym (C1, C2, D1, D2) jest osobny odcinek toru (T1w, T2w, T1e, T2e) przed rozjazdem,
+ * więc drogi ochronne wjazdów kończą się przed rozjazdami i jednoczesne wjazdy z obu kierunków (krzyżowanie A→D2
+ * i B→C1) nie wykluczają się – jak na stacji, gdzie semafory stoją z zapasem przed głowicą.
  * Semafory: A, B (wjazdowe), C1, C2 (wyjazdowe na zachód), D1, D2 (wyjazdowe na wschód, D2 z Ms2).
  * Tarcze manewrowe: Tm1 (tor 3), Tm2 (tor 2, kierunek zachodni). Szlaki: Lipno (W), Dębno (E) – blokada Eap.
  *
@@ -34,12 +37,16 @@ export default {
 
   sections: {
     ZbA: { length: 320, kind: 'approach' },
-    Iz1: { length: 130, kind: 'point' },
+    Iz1: { length: 110, kind: 'point' },
+    T1w: { length: 60, kind: 'station', track: '1' },
     T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' },
-    T2: { length: 300, kind: 'station', track: '2', platform: 'Peron I' },
+    T1e: { length: 60, kind: 'station', track: '1' },
+    T2w: { length: 60, kind: 'station', track: '2' },
+    T2: { length: 280, kind: 'station', track: '2', platform: 'Peron I' },
+    T2e: { length: 60, kind: 'station', track: '2' },
     Iz3: { length: 70, kind: 'point' },
     T2b: { length: 75, kind: 'station', track: '2' },
-    Iz4: { length: 140, kind: 'point' },
+    Iz4: { length: 120, kind: 'point' },
     ZbB: { length: 320, kind: 'approach' },
     T3w: { length: 30, kind: 'siding', track: '3' },
     T3: { length: 220, kind: 'siding', track: '3' },
@@ -65,9 +72,9 @@ export default {
     { ...T(0, 4, ['W', 'E'], 'ZbA'), endButton: { id: 'kW', color: 'green' }, text: 'Lipno' },
     ...H(4, 4, 4, 'Iz1'),
     { x: 5, y: 4, type: 'point', id: 'Zw1', label: '1', toe: 'W', straight: 'E', diverge: 'SE', section: 'Iz1' },
-    T(6, 4, ['W', 'E'], 'Iz1'),
+    T(6, 4, ['W', 'E'], 'T1w'),   // osobny odcinek za C1 – droga ochronna kończy się przed Zw1
     ...H(7, 23, 4, 'T1'),
-    T(24, 4, ['W', 'E'], 'Iz4'),
+    T(24, 4, ['W', 'E'], 'T1e'),  // osobny odcinek za D1 – przed Zw4
     T(25, 4, ['W', 'E'], 'Iz4'),
     { x: 26, y: 4, type: 'point', id: 'Zw4', label: '4', toe: 'E', straight: 'W', diverge: 'SW', section: 'Iz4' },
     T(27, 4, ['W', 'E'], 'Iz4'),
@@ -81,15 +88,17 @@ export default {
     T(24, 6, ['NE', 'W'], 'Iz4'),
 
     // tor 2 (y = 6)
-    ...H(8, 19, 6, 'T2'),
-    { x: 20, y: 6, type: 'point', id: 'Zw3', label: '3', toe: 'W', straight: 'E', diverge: 'SE', section: 'Iz3' },
-    ...H(21, 23, 6, 'T2b'),
+    T(8, 6, ['W', 'E'], 'T2w'),   // za C2 – przed Zw1
+    ...H(9, 19, 6, 'T2'),
+    T(20, 6, ['W', 'E'], 'T2e'),  // za D2 – przed Zw3
+    { x: 21, y: 6, type: 'point', id: 'Zw3', label: '3', toe: 'W', straight: 'E', diverge: 'SE', section: 'Iz3' },
+    ...H(22, 23, 6, 'T2b'),
 
     // tor 3 (y = 8)
-    T(21, 7, ['NW', 'SE'], 'Iz3'),
-    T(22, 8, ['NW', 'E'], 'Iz3'),
-    { ...T(23, 8, ['W', 'E'], 'T3w'), derailer: 'Wk1' },
-    ...H(24, 28, 8, 'T3'),
+    T(22, 7, ['NW', 'SE'], 'Iz3'),
+    T(23, 8, ['NW', 'E'], 'Iz3'),
+    { ...T(24, 8, ['W', 'E'], 'T3w'), derailer: 'Wk1' },
+    ...H(25, 28, 8, 'T3'),
     { x: 29, y: 8, type: 'buffer', port: 'W', section: 'T3', endButton: { id: 'kT3', color: 'white' } },
 
     // sygnalizatory
@@ -106,7 +115,7 @@ export default {
     { x: 14, y: 3, type: 'label', text: 'tor 1', span: 2 },
     { x: 14, y: 5, type: 'label', text: 'tor 2', span: 2 },
     { x: 26, y: 9, type: 'label', text: 'tor 3', span: 2 },
-    { x: 24, y: 7, type: 'label', text: 'Wk1', size: 8 },
+    { x: 25, y: 7, type: 'label', text: 'Wk1', size: 8 },
   ],
 
   routes: { disable: [], override: {} },

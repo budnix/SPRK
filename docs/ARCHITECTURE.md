@@ -90,6 +90,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 
 * Przebieg: dwa przyciski (początek, koniec) → sprawdzenie warunków → automatyczne przestawienie zwrotnic
   (nastawianie przebiegowe) → utwierdzenie (odcinki białe) → obraz sygnałowy (Ie-1: S1–S5, S10–S13, Ms2, Sz).
+* Jednoczesne wjazdy z obu kierunków są możliwe tylko, gdy drogi ochronne nie są wspólne: w Szkolnej za każdym
+  semaforem wyjazdowym jest osobny odcinek (T1w/T2w/T1e/T2e) przed rozjazdem, więc krzyżowanie A→D2 + B→C1 nastawia
+  się od razu; w Starym Pustkowiu droga ochronna za C1 leży na rozjazdzie 1 i drugi wjazd czeka na zwolnienie Iz1.
 * Przejazd: semafor na Stój po zajęciu pierwszego odcinka za nim; zwalnianie odcinkowe; droga ochronna
   zwalnia się po wjeździe na tor docelowy.
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania), dPz (doraźne, licznik).

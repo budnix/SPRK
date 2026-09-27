@@ -73,8 +73,8 @@ test('perony: geometria wspólna dla monitora i pulpitu – wyspowy między tora
   const p = platformSpans(szkolna, [0, 31]);
   assert.equal(p.length, 1);
   assert.equal(p[0].kind, 'island'); assert.equal(p[0].yRow, 5); assert.equal(p[0].name, 'Peron I');
-  assert.ok(p[0].x0 >= 8 && p[0].x1 <= 19, `zakres ${p[0].x0}–${p[0].x1} między semaforami C2 i Tm2/D2`);
-  assert.equal(p[0].labelX, 10, 'na środku leży opis „tor 2” – napis peronu w wolnej części po lewej');
+  assert.ok(p[0].x0 >= 9 && p[0].x1 <= 19, `zakres ${p[0].x0}–${p[0].x1} między semaforami C2 i Tm2/D2 (T2w za C2 nie jest peronem)`);
+  assert.equal(p[0].labelX, 10.5, 'na środku leży opis „tor 2” – napis peronu w wolnej części po lewej (9–12)');
   // monitor pomija opisy „tor N”, więc napis może stać na środku
   const pm = platformSpans(szkolna, [0, 31], (t) => (/^tor \d/.test(t) ? null : t));
   assert.equal(pm[0].labelX, (pm[0].x0 + pm[0].x1) / 2);
@@ -119,7 +119,7 @@ test('opis „tor N” na pulpicie kostkowym rysuje się nad opisywanym torem, n
   assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 1')), { x: 14, y: 4, side: 'top' });
   assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 2')), { x: 14, y: 6, side: 'top' }); // z wiersza peronu na kostkę toru 2
   assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'tor 3')), { x: 26, y: 8, side: 'top' }); // opis pod torem → napis nad torem
-  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'Wk1')), { x: 24, y: 7, side: null });
+  assert.deepEqual(trackLabelPlace(szkolna, lab(szkolna, 'Wk1')), { x: 25, y: 7, side: null });
   assert.deepEqual(trackLabelPlace(szkolna, { x: 14, y: 5, type: 'label', text: 'tor 9' }), { x: 14, y: 5, side: null }); // brak toru
   // każdy opis toru na każdym pulpicie trafia na prostą kostkę toru o tym numerze, poza wierszami peronów
   for (const st of STATIONS) {

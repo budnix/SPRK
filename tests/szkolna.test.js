@@ -267,3 +267,24 @@ test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – ko�
   assert.equal(sim2.ended, true);
   assert.ok(sim2.clock.time < end, 'koniec przed 08:49 – po ostatnim pociągu, nie po czasie');
 });
+
+test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocześnie (drogi ochronne T2e / T1w kończą się przed rozjazdami)', () => {
+  const sim = new Simulation(szkolna, { disruptions: 'none' });
+  const G = (id) => ({ kind: 'signal', id, color: 'green' });
+  const run = (s) => { for (let i = 0; i < s * 2; i++) sim.step(0.5); };
+  assert.deepEqual(sim.ilk.routes.get('A-D2').overlap, ['T2e']);
+  assert.deepEqual(sim.ilk.routes.get('B-C1').overlap, ['T1w']);
+  assert.deepEqual(sim.ilk.routes.get('A-D1').overlap, ['T1e']);
+  assert.deepEqual(sim.ilk.routes.get('B-C2').overlap, ['T2w']);
+  sim.press(G('A')); sim.press(G('D2')); run(10);
+  assert.equal(sim.ilk.signals.get('A').route, 'A-D2');
+  assert.deepEqual(sim.ilk.checkRoute(sim.ilk.routes.get('B-C1')), [], 'B→C1 bez konfliktu z A→D2');
+  sim.press(G('B')); sim.press(G('C1')); run(10);
+  assert.equal(sim.ilk.signals.get('B').route, 'B-C1');
+  assert.ok(sim.ilk.active.has('A-D2') && sim.ilk.active.has('B-C1'));
+  assert.notEqual(sim.ilk.signals.get('A').aspect, 'S1'); assert.notEqual(sim.ilk.signals.get('B').aspect, 'S1');
+  // wjazdy na ten sam tor (A→D2 i B→C2) nadal się wykluczają – wspólny odcinek T2
+  const sim2 = new Simulation(szkolna, { disruptions: 'none' });
+  sim2.press(G('A')); sim2.press(G('D2')); for (let i = 0; i < 20; i++) sim2.step(0.5);
+  assert.ok(sim2.ilk.checkRoute(sim2.ilk.routes.get('B-C2')).some((m) => /T2 utwierdzony/.test(m)), 'B→C2 koliduje z A→D2 na torze 2');
+});
