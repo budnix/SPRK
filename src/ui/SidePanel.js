@@ -187,7 +187,8 @@ export class SidePanel {
     const tasks = this.sim.traffic.tasks || [];
     const now = this.sim.clock.time;
     this.root.querySelector('#tasks-progress').textContent = tasks.length ? t('sp.tasks.progress', { done: tasks.filter((x) => x.done).length, n: tasks.length }) : '';
-    this.root.querySelector('#tasks').innerHTML = tasks.length ? tasks.map((x, i) => {
+    const host = this.root.querySelector('#tasks');
+    const html = tasks.length ? tasks.map((x, i) => {
       const prev = x.afterTask ? tasks.find((y) => y.id === x.afterTask) : null;
       const waiting = !x.done && !x.failed && ((prev && !prev.done) || (x.afterTime && now < x.afterTime));
       const state = x.done ? 'done' : x.failed ? 'failed' : waiting ? 'waiting' : 'active';
@@ -196,6 +197,7 @@ export class SidePanel {
       const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');
       return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${x.done ? '✔' : x.failed ? '✘' : waiting ? '◌' : '☐'}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
     }).join('') : `<div class="muted">${t('sp.tasks.none')}</div>`;
+    if (host.dataset.html !== html) { host.dataset.html = html; host.innerHTML = html; }
   }
 
   #tasksBadge() {
@@ -405,7 +407,7 @@ export class SidePanel {
     const sim = this.sim;
     const onStation = sim.traffic.timetable().filter((e) => e.train && e.train.entered && !e.train.finished);
     const host = this.root.querySelector('#trains');
-    host.innerHTML = onStation.length ? onStation.map((e) => {
+    const html = onStation.length ? onStation.map((e) => {
       const tr = e.train;
       const tracks = [...new Set([...tr.occupiedSections()].map((id) => sim.ilk.sections.get(id)?.track).filter(Boolean))];
       const ended = e.terminates && tr.hasStopped && tr.mode === 'train';
@@ -424,6 +426,8 @@ export class SidePanel {
         <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
+    if (host.dataset.html === html) return; // bez zmian – nie przebudowuj DOM (stabilne przyciski i pomiary)
+    host.dataset.html = html; host.innerHTML = html;
     for (const b of host.querySelectorAll('button')) {
       b.addEventListener('click', () => {
         if (b.dataset.act === 'shunt') sim.traffic.toShunting(b.dataset.nr);
