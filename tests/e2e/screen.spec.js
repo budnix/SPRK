@@ -202,7 +202,7 @@ test('monitor: semafor A i tarcza Tm1 w tym samym punkcie toru (Orłowo) są oba
   await expect(page.locator('table.rj td.nr .cat').first()).toBeVisible();
   const icRow = page.locator('table.rj tr', { hasText: 'Kraków Gł. – Gdynia Gł.' }).first();
   await expect(icRow.locator('td.nr .cat')).toHaveText('IC');
-  await expect(icRow.locator('td.rel .via')).toContainText('Sopot');
+  await expect(icRow.locator('td.rel .via')).toContainText('Sopot – 202 t.1 → Gdynia Gł. – 202 t.1'); // tory szlakowe z etykiet wyjazdów
   for (const [id, title] of [['A', 'Semafor A'], ['Tm1', 'Tarcza manewrowa Tm1']]) {
     const box = await hit(page, id).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); // prawdziwe kliknięcie w środek symbolu, nie zdarzenie na elemencie

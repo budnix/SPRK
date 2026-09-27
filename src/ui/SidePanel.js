@@ -348,7 +348,10 @@ export class SidePanel {
   renderTimetable() {
     const ex = this.sim.station.exits;
     const rows = this.sim.traffic.timetable().map((e) => {
-      const via = `${e.from ? ex[e.from].name : this.sim.station.name} → ${e.to ? ex[e.to].name : this.sim.station.name}`;
+      // skąd → dokąd z torem szlakowym (etykieta wyjazdu, np. „Gdynia Gł. – 202 t.2”): kolumna „tor” to tor stacyjny,
+      // tu widać, którym torem szlakowym pociąg przyjeżdża i wyjeżdża
+      const side = (id) => (id ? (ex[id].label || ex[id].name) : this.sim.station.name);
+      const via = `${side(e.from)} → ${side(e.to)}`;
       const cls = e.status === 'odjechał' || e.status === 'zakończył bieg' ? 'done' : (e.train ? 'active' : '');
       const delay = e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : '';
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
