@@ -110,7 +110,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tool-group .tb.tb-icon { padding: 2px 10px; display: inline-flex; align-items: center; height: 26px; }   /* ikony dopasowania: do szerokości ↔, do wysokości ↕ */
 .tool-group .tb.tb-icon svg { display: block; opacity: 0.85; }
 /* schowaj/pokaż panel: podwójny szewron w stronę panelu (widoczny → schowaj) albo od panelu (ukryty → pokaż) */
-.tg-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.tg-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .tool-group.tg-toggle { padding: 3px 4px; }
 #side-toggle svg { transition: transform .15s; }
 #app[data-side-pos="bottom"] #side-toggle.collapsed svg { transform: rotate(180deg); }
@@ -132,7 +132,8 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .panel-tabs .tb .badge { margin-left: 4px; }
 .panel-tabs .tb.flash { animation: flash 0.6s ease-in-out 4; }
 /* panel na dole: aktywna karta łączy się z panelem pod listwą (ta sama krawędź, bez linii między nimi) */
-#app[data-side-pos="bottom"] #desk-tools { padding-bottom: 0; }
+/* listwa zachowuje symetryczne odstępy (grupa „widok” i przycisk panelu w pionie na środku); karty panelu sięgają w dół do krawędzi listwy */
+#app[data-side-pos="bottom"] .tg-panel { margin-bottom: -4px; }
 #app[data-side-pos="bottom"] .panel-tabs .tb.active { margin-bottom: -1px; position: relative; z-index: 1; }
 #app[data-side-collapsed="true"] .panel-tabs .tb.active { margin-bottom: 0; border-bottom: 1px solid var(--border2); border-radius: 4px; }
 @media (max-width: 900px) { .tg-screens .tb small { display: none; } }

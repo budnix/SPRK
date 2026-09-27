@@ -241,6 +241,11 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   expect(await page.locator('.tg-panel').evaluate((el) => getComputedStyle(el).borderTopStyle)).toBe('none');
   const groups = await page.locator('#desk-tools .tool-group').evaluateAll((els) => els.map((e) => e.className));
   expect(groups[0]).toContain('tg-panel'); expect(groups[1]).toContain('tg-view');
+  // „widok” wyrównany do prawej (obok przycisku panelu) i w pionie na środku listwy – tak jak ten przycisk
+  const tools = await page.locator('#desk-tools').boundingBox(), view = await page.locator('.tg-view').boundingBox(), tog = await page.locator('#side-toggle').boundingBox();
+  expect(view.x + view.width).toBeGreaterThan(tools.x + tools.width / 2);
+  expect(view.x + view.width).toBeLessThan(tog.x);
+  expect(Math.abs((view.y - tools.y) - (tools.y + tools.height - view.y - view.height))).toBeLessThanOrEqual(1);
   expect(await page.locator('#side nav, #side .tabs').count()).toBe(0); // zakładki tylko w listwie
   const active = page.locator('#panel-tabs .tb.active');
   await expect(active).toHaveText('Rozkład');
