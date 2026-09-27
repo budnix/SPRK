@@ -42,7 +42,7 @@
   --shadow: rgba(0,0,0,0.2);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.35 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bg); color: var(--text); font: 14px/1.35 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-text-size-adjust: 100%; }
 #app { height: 100%; display: flex; flex-direction: column; }
 #topbar { display: flex; align-items: center; gap: 16px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto; }
 .brand { display: flex; gap: 10px; align-items: center; }
@@ -330,8 +330,18 @@ ul.log li.lv-alarm { color: var(--danger); font-weight: 700; }
 .warn { color: var(--warn); font-weight: 600; }
 ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .muted { color: var(--muted); }
+/* zakładka „Pociągi”: karty pociągów na posterunku ze stanem i sterowaniem (tryb jazdy, czoło) */
+.train-card { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: 4px; font-size: 12px; }
+.train-card.moving { border-left-color: var(--accent); }
+.train-card.shunt { border-left-color: var(--warn); }
+.train-card .train-head { font-weight: 600; font-size: 13px; }
+.train-card .train-head .rel { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.train-card .train-state { grid-column: 1; color: var(--muted); }
+.train-card .train-state b { color: var(--text); font-weight: 600; }
+.train-card .train-actions { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 4px; }
+.train-card .delay { color: var(--danger); font-weight: 600; }
 .shunt-row { font-size: 12px; padding: 3px 0; }
-.shunt-row button { background: var(--panel2); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer; }
+.shunt-row button, .train-actions button { background: var(--panel2); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer; }
 
 /* ---- pomoc ---- */
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10; }

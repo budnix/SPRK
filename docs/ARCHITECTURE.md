@@ -68,7 +68,13 @@ powiększenia), strzałki ← →, przesunięcie palcem.
 
 Panel boczny ma zakładki: Rozkład, Dziennik, Zadania (tylko gdy scenariusz ma zadania manewrowe – karty z terminem,
 składem, torem docelowym i stanem: do wykonania / czeka na porę lub poprzednie zadanie / wykonane / niewykonane;
-powiadomienie na karcie po zdarzeniu `tasks`), Stan, Rozkazy, Łączność, Polecenia (okręgi).
+powiadomienie na karcie po zdarzeniu `tasks`), Pociągi (każdy pociąg na posterunku: jedzie / stoi i dlaczego – semafor,
+peron, koniec toru, postój do odjazdu, zakończył bieg; tor, czoło, tryb; po zatrzymaniu przyciski jazda manewrowa /
+pociągowa i zmiana czoła – dawniej sekcja „Manewry” w Stanie), Stan, Rozkazy, Łączność, Polecenia (okręgi).
+
+Strona nie przewija się i nie odświeża gestem (tablet): `html, body { overflow: hidden; overscroll-behavior: none }`
+oraz `src/ui/noBounce.js` – `touchmove` jednym palcem dostaje `preventDefault`, chyba że któryś przodek celu może się
+jeszcze przewinąć w tym kierunku (`scrollAllowed`, testowane w Node); pola formularzy i szczypnięcie zostają natywne.
 
 Listwa narzędzi (`#desk-tools`): na początku zakładki panelu bocznego (`SidePanel` renderuje je w `tabsHost`,
 w samym panelu zakładek nie ma – liczniki powiadomień i miganie są w listwie; aktywna karta schodzi do panelu pod

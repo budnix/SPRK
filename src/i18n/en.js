@@ -132,7 +132,7 @@ export default {
   'set.lang.de': 'German (Deutsch)',
   'set.cat.panel.kicker': 'View',
   'set.cat.panel.title': 'Side panel',
-  'set.cat.panel.intro': 'Timetable, log, tasks, state, orders and communication. The panel can also be collapsed with the “hide” button on the toolbar.',
+  'set.cat.panel.intro': 'Timetable, log, tasks, trains, state, orders and communication. The panel can also be collapsed with the “hide” button on the toolbar.',
   'set.sidePos.title': 'Panel position',
   'set.sidePos.desc': 'On the right or left the panel takes a column next to the desk; at the bottom it lies under the desk at full width (handy on a tablet in landscape).',
   'set.sidePos.right': 'right',
@@ -214,6 +214,18 @@ export default {
   'sp.tasks.waiting': 'not yet – wait for the time or the previous task',
   'sp.tasks.active': 'to do',
   'sp.tasks.none': 'This scenario has no shunting tasks.',
+  'sp.tab.pociagi': 'Trains',
+  'sp.trains.intro': 'Trains at the station: what they are doing and why they stand. A standing train can be switched between train and shunting movement and its front changed.',
+  'sp.trains.none': 'no trains at the station',
+  'sp.trains.moving': 'running {v} km/h',
+  'sp.trains.atSignal': 'standing at {signal}',
+  'sp.trains.atPlatform': 'standing at the platform',
+  'sp.trains.atEnd': 'standing at the track end',
+  'sp.trains.dwell': 'stop, departure {time}',
+  'sp.trains.ended': 'ended its run – can be switched to shunting',
+  'sp.trains.stopped': 'standing',
+  'sp.trains.track': 'track {track}',
+  'sp.trains.front': 'front {arrow}',
   'sp.tab.stan': 'State',
   'sp.tab.rozkazy': 'Orders',
   'sp.tab.lacznosc': 'Comms',
@@ -228,7 +240,6 @@ export default {
   'sp.blocks': 'Block system',
   'sp.routes': 'Routes set',
   'sp.counters': 'Counters',
-  'sp.shunt': 'Shunting',
   'sp.none': 'none',
   'sp.order.title': 'Written order “S” – passing a signal at “Stop”',
   'sp.order.train': 'Train no.',
@@ -288,13 +299,11 @@ export default {
   'sp.counters.line': 'dPz: {dPz} · Sz: {sz} · run-throughs: {split}',
   'sp.counters.blk': 'dPo / dKo: 0',
   'sp.task.due': 'by {time}',
-  'sp.shunt.row': 'Train {nr} ({mode}, front {arrow})',
   'sp.shunt.modeShunt': 'shunting',
   'sp.shunt.modeTrain': 'train',
   'sp.shunt.toTrain': 'train movement',
   'sp.shunt.toShunt': 'shunting movement',
   'sp.shunt.reverse': 'change front',
-  'sp.shunt.none': 'no standing trains',
   'sp.alarm.request': '{name} requests permission to dispatch a train – give permission (Poz) on the block system.',
   'sp.alarm.split': 'RUN-THROUGH of point {id}!',
   'sp.alarm.fault': 'FAULT: {what}',
@@ -373,6 +382,6 @@ export default {
       <h3>Trains</h3>
       <ul>
         <li>Passenger trains stop at the platform and leave no earlier than the timetable time – once the departure signal shows a proceed aspect.</li>
-        <li>A train that has ended its run can be switched to shunting (<i>State</i> tab) – it then follows the Ms2 signal.</li>
+        <li>A train that has ended its run can be switched to shunting (<i>Trains</i> tab) – it then follows the Ms2 signal.</li>
       </ul>`,
 };

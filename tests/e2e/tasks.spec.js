@@ -6,9 +6,9 @@ test('zakładka „Zadania”: zadania manewrowe scenariusza z postępem, poza �
   const tab = page.locator('#panel-tabs button[data-tab=zadania]');
   await expect(tab).toBeVisible();
   await expect(tab).toContainText('Zadania');
-  // kolejność zakładek: Rozkład, Dziennik, Zadania, Stan…
+  // kolejność zakładek: Rozkład, Dziennik, Zadania, Pociągi, Stan…
   const order = await page.locator('#panel-tabs button[data-tab]:not(.hidden)').evaluateAll((els) => els.map((e) => e.dataset.tab));
-  expect(order.slice(0, 4)).toEqual(['rj', 'log', 'zadania', 'stan']);
+  expect(order.slice(0, 5)).toEqual(['rj', 'log', 'zadania', 'pociagi', 'stan']);
   await tab.click();
   await expect(page.locator('#tasks-scenario')).toContainText('Pełna zmiana');
   await expect(page.locator('#tasks-progress')).toHaveText('0 / 2 wykonane');

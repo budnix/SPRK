@@ -14,6 +14,7 @@ import { Tutorial } from './tutorial/Tutorial.js';
 import { getMission } from './tutorial/missions.js';
 import { applyDom, detectLang, setLang, t } from './i18n/index.js';
 import { logoSvg } from './ui/brand.js';
+import { installNoBounce } from './ui/noBounce.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
@@ -28,6 +29,7 @@ const settings = new Settings((key, value) => {
 document.documentElement.lang = setLang(detectLang(settings.values.lang === 'auto' ? null : settings.values.lang));
 document.title = t('app.title');
 applyDom(document.body);
+installNoBounce(document); // bez przesuwania strony i „pull to refresh” na tablecie
 document.querySelector('#topbar .logo').innerHTML = logoSvg(22);
 const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
 const startScreen = new StartScreen(document.getElementById('start'), {

@@ -132,7 +132,7 @@ export default {
   'set.lang.de': 'Deutsch',
   'set.cat.panel.kicker': 'Ansicht',
   'set.cat.panel.title': 'Seitenpanel',
-  'set.cat.panel.intro': 'Fahrplan, Protokoll, Aufgaben, Zustand, Befehle und Kommunikation. Das Panel lässt sich auch mit der Taste „ausblenden“ in der Werkzeugleiste einklappen.',
+  'set.cat.panel.intro': 'Fahrplan, Protokoll, Aufgaben, Züge, Zustand, Befehle und Kommunikation. Das Panel lässt sich auch mit der Taste „ausblenden“ in der Werkzeugleiste einklappen.',
   'set.sidePos.title': 'Position des Panels',
   'set.sidePos.desc': 'Rechts oder links belegt das Panel eine Spalte neben dem Pult; unten liegt es in voller Breite unter dem Pult (praktisch am Tablet im Querformat).',
   'set.sidePos.right': 'rechts',
@@ -214,6 +214,18 @@ export default {
   'sp.tasks.waiting': 'noch nicht – auf die Zeit oder die vorige Aufgabe warten',
   'sp.tasks.active': 'zu erledigen',
   'sp.tasks.none': 'Dieses Szenario hat keine Rangieraufgaben.',
+  'sp.tab.pociagi': 'Züge',
+  'sp.trains.intro': 'Züge auf der Betriebsstelle: was sie tun und warum sie stehen. Ein stehender Zug lässt sich zwischen Zug- und Rangierfahrt umschalten und die Spitze wechseln.',
+  'sp.trains.none': 'keine Züge auf der Betriebsstelle',
+  'sp.trains.moving': 'fährt {v} km/h',
+  'sp.trains.atSignal': 'steht vor {signal}',
+  'sp.trains.atPlatform': 'steht am Bahnsteig',
+  'sp.trains.atEnd': 'steht am Gleisende',
+  'sp.trains.dwell': 'Halt, Abfahrt {time}',
+  'sp.trains.ended': 'Lauf beendet – kann auf Rangierfahrt umgestellt werden',
+  'sp.trains.stopped': 'steht',
+  'sp.trains.track': 'Gleis {track}',
+  'sp.trains.front': 'Spitze {arrow}',
   'sp.tab.stan': 'Zustand',
   'sp.tab.rozkazy': 'Befehle',
   'sp.tab.lacznosc': 'Kommunikation',
@@ -228,7 +240,6 @@ export default {
   'sp.blocks': 'Streckenblock',
   'sp.routes': 'Eingestellte Fahrstraßen',
   'sp.counters': 'Zähler',
-  'sp.shunt': 'Rangieren',
   'sp.none': 'keine',
   'sp.order.title': 'Schriftlicher Befehl „S“ – Vorbeifahrt am Halt zeigenden Signal',
   'sp.order.train': 'Zug Nr.',
@@ -288,13 +299,11 @@ export default {
   'sp.counters.line': 'dPz: {dPz} · Sz: {sz} · Weichenauffahrten: {split}',
   'sp.counters.blk': 'dPo / dKo: 0',
   'sp.task.due': 'bis {time}',
-  'sp.shunt.row': 'Zug {nr} ({mode}, Spitze {arrow})',
   'sp.shunt.modeShunt': 'Rangierfahrt',
   'sp.shunt.modeTrain': 'Zugfahrt',
   'sp.shunt.toTrain': 'Zugfahrt',
   'sp.shunt.toShunt': 'Rangierfahrt',
   'sp.shunt.reverse': 'Spitze wechseln',
-  'sp.shunt.none': 'keine stehenden Züge',
   'sp.alarm.request': '{name} fragt die Erlaubnis zum Ablassen eines Zuges an – Erlaubnis (Poz) am Streckenblock geben.',
   'sp.alarm.split': 'AUFFAHREN der Weiche {id}!',
   'sp.alarm.fault': 'STÖRUNG: {what}',
@@ -373,6 +382,6 @@ export default {
       <h3>Züge</h3>
       <ul>
         <li>Reisezüge halten am Bahnsteig und fahren nicht vor der Fahrplanzeit ab – sobald das Ausfahrsignal Fahrt zeigt.</li>
-        <li>Ein Zug, der seinen Lauf beendet hat, kann auf Rangierfahrt umgestellt werden (Reiter <i>Zustand</i>) – er folgt dann dem Signal Ms2.</li>
+        <li>Ein Zug, der seinen Lauf beendet hat, kann auf Rangierfahrt umgestellt werden (Reiter <i>Züge</i>) – er folgt dann dem Signal Ms2.</li>
       </ul>`,
 };

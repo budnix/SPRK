@@ -32,8 +32,10 @@ export class SidePanel {
         <ul id="routes" class="plain"></ul>
         <h4>${t('sp.counters')}</h4>
         <div id="counters"></div>
-        <h4>${t('sp.shunt')}</h4>
-        <div id="shunt"></div>
+      </section>
+      <section class="tab hidden" id="tab-pociagi">
+        <p class="muted small">${t('sp.trains.intro')}</p>
+        <div id="trains"></div>
       </section>
       <section class="tab hidden" id="tab-zadania">
         <div class="tasks-head"><b id="tasks-scenario"></b><span id="tasks-progress" class="muted"></span></div>
@@ -85,7 +87,7 @@ export class SidePanel {
     // zakładki panelu żyją w listwie narzędzi (nad panelem); bez hosta – zapasowo w samym panelu
     this.tabs = opts.tabsHost || root.insertBefore(document.createElement('nav'), root.firstChild);
     this.tabs.classList.add('panel-tabs');
-    this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['zadania', 'tasks-badge', !(sim.traffic.tasks || []).length], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
+    this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['zadania', 'tasks-badge', !(sim.traffic.tasks || []).length], ['pociagi'], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
       .map(([id, badge, hidden]) => `<button type="button" class="tb${id === 'rj' ? ' active' : ''}${hidden ? ' hidden' : ''}" data-tab="${id}"${id === 'polecenia' ? ' id="tab-btn-polecenia"' : ''}>${t(`sp.tab.${id}`)}${badge ? ` <span id="${badge}" class="badge hidden">0</span>` : ''}</button>`).join('');
     this.tabs.addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-tab]'); if (!b) return;
@@ -93,13 +95,14 @@ export class SidePanel {
       this.showTab(b.dataset.tab);
     });
     sim.bus.on('log', (e) => this.addLog(e));
-    sim.bus.on('timetable', () => this.renderTimetable());
+    sim.bus.on('timetable', () => { this.renderTimetable(); this.renderTrains(); }); // zmiana statusu pociągu (wjazd, postój, odjazd) od razu w „Pociągach”
     sim.bus.on('tick', () => this.#throttled());
     sim.bus.on('block', () => this.renderState());
     sim.bus.on('route', () => this.renderState());
     sim.bus.on('alarm', (a) => this.alarm(a));
     this.renderTimetable();
     this.renderState();
+    this.renderTrains();
     this.lastRender = 0;
     this.#initOrders();
     this.#initComms();
@@ -305,6 +308,7 @@ export class SidePanel {
     if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
     if (id === 'polecenia') { this.cmdUnread = 0; this.#cmdBadge(); this.refreshCommandForm?.(); }
     if (id === 'zadania') { this.tasksUnread = 0; this.#tasksBadge(); this.renderTasks(); }
+    if (id === 'pociagi') this.renderTrains();
     if (id === 'rozkazy') this.refreshOrderTrains?.();
   }
 
@@ -321,6 +325,7 @@ export class SidePanel {
     this.renderTimetable();
     this.renderState();
     if (!this.root.querySelector('#tab-zadania').classList.contains('hidden')) this.renderTasks();
+    if (!this.root.querySelector('#tab-pociagi').classList.contains('hidden')) this.renderTrains();
     this.refreshOrderTrains?.();
     if (!this.root.querySelector('#tab-polecenia').classList.contains('hidden')) this.refreshCommandForm?.();
   }
@@ -392,16 +397,38 @@ export class SidePanel {
     const c = this.sim.ilk.counters;
     const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);
     this.root.querySelector('#counters').innerHTML = t('sp.counters.line', { dPz: c.dPz, sz: c.Sz, split: c.rozprucie }) + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : `<div class="muted">${t('sp.counters.blk')}</div>`);
-    const standing = this.sim.traffic.timetable().filter((e) => e.train && !e.train.finished && e.train.v === 0 && e.train.entered);
-    this.root.querySelector('#shunt').innerHTML = standing.length
-      ? standing.map((e) => `<div class="shunt-row">${t('sp.shunt.row', { nr: e.nr, mode: t(e.train.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain'), arrow: ['E', 'NE', 'SE'].includes(e.train.direction) ? '→' : '←' })} <button data-nr="${e.nr}" data-act="${e.train.mode === 'shunt' ? 'train' : 'shunt'}">${t(e.train.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button> <button data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button></div>`).join('')
-      : `<div class="muted">${t('sp.shunt.none')}</div>`;
-    for (const b of this.root.querySelectorAll('#shunt button')) {
+  }
+
+  /** Zakładka „Pociągi”: każdy pociąg na posterunku ze stanem (jedzie / stoi i dlaczego, tor, czoło, tryb) i sterowaniem po zatrzymaniu. */
+  renderTrains() {
+    const sim = this.sim;
+    const onStation = sim.traffic.timetable().filter((e) => e.train && e.train.entered && !e.train.finished);
+    const host = this.root.querySelector('#trains');
+    host.innerHTML = onStation.length ? onStation.map((e) => {
+      const tr = e.train;
+      const tracks = [...new Set([...tr.occupiedSections()].map((id) => sim.ilk.sections.get(id)?.track).filter(Boolean))];
+      const ended = e.terminates && tr.hasStopped && tr.mode === 'train';
+      const where = tr.v > 0 ? t('sp.trains.moving', { v: Math.round(tr.v * 3.6) })
+        : ended ? t('sp.trains.ended')
+        : tr.state === 'dwell' ? t('sp.trains.dwell', { time: e.dep ?? '–' })
+        : tr.stoppedAt?.kind === 'signal' ? t('sp.trains.atSignal', { signal: tr.stoppedAt.signal })
+        : tr.stoppedAt?.kind === 'platform' ? t('sp.trains.atPlatform')
+        : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd') : t('sp.trains.stopped');
+      const meta = [t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain'), tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', t('sp.trains.front', { arrow: ['E', 'NE', 'SE'].includes(tr.direction) ? '→' : '←' })].filter(Boolean).join(' · ');
+      const canControl = tr.v === 0;
+      const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
+      return `<div class="${cls}" data-nr="${e.nr}">
+        <div class="train-head"><span class="cat cat-${e.cat}">${CATEGORIES[e.cat]?.label ?? ''}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
+        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta} · ${escapeHtml(e.status)}</div>
+        <div class="train-actions">${canControl ? `<button type="button" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
+      </div>`;
+    }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
+    for (const b of host.querySelectorAll('button')) {
       b.addEventListener('click', () => {
-        if (b.dataset.act === 'shunt') this.sim.traffic.toShunting(b.dataset.nr);
-        else if (b.dataset.act === 'train') this.sim.traffic.toTrainMode(b.dataset.nr);
-        else this.sim.traffic.reverseTrain(b.dataset.nr);
-        this.renderState();
+        if (b.dataset.act === 'shunt') sim.traffic.toShunting(b.dataset.nr);
+        else if (b.dataset.act === 'train') sim.traffic.toTrainMode(b.dataset.nr);
+        else sim.traffic.reverseTrain(b.dataset.nr);
+        this.renderTrains();
       });
     }
   }

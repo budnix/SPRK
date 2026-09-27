@@ -125,17 +125,17 @@ export function missionSteps(view) {
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
     { tip: `${LIP} zażąda pozwolenia dopiero, gdy 6104 tam dojedzie i szlak się zwolni – kilka minut po jego odjeździe. Do tego czasu Poz nie zadziała.`,
       wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
-  act('shunt-mode', 'Jazda manewrowa', `Skład stoi na torze 2 i zakończył bieg. Przełącz go w ${A('jazda manewrowa', 'jazdę manewrową')}: zakładka <b>Stan</b> → Manewry → przycisk <b>„jazda manewrowa”</b> przy pociągu 90201.`, { tab: 'stan' },
+  act('shunt-mode', 'Jazda manewrowa', `Skład stoi na torze 2 i zakończył bieg. Przełącz go w ${A('jazda manewrowa', 'jazdę manewrową')}: zakładka <b>Pociągi</b> → przycisk <b>„jazda manewrowa”</b> przy pociągu 90201.`, { tab: 'pociagi' },
     (sim) => entry(sim, 90201)?.train?.mode === 'shunt');
   act('shunt-route', 'Przebieg manewrowy na tor 3', `Nastaw ${A('przebieg manewrowy')} z semafora <b>D2</b> (ma ${A('Ms2')}) na koniec toru 3: ${P.shuntRoute('D2', m ? 'koniec toru 3 (kT3, kółko przy koźle)' : 'końca toru 3 (kT3 przy koźle)')}. Zwrotnica 3 ustawi się na tor 3, ${A('wykolejnica')} Wk1 zdejmie się sama, odcinki ${m ? 'zżółkną' : 'zaświecą'}, a D2 pokaże Ms2. Skład ruszy sam.`, cmd('shunt', sig('D2', 'white')),
     (sim) => active(sim, 'D2-kT3m') || sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
   act('shunt-task1', 'Skład na torze 3', `Poczekaj, aż cały skład stanie na torze 3 – zadanie w zakładce <b>Zadania</b> zostanie odhaczone.`, { tab: 'zadania' },
     (sim) => !!sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
-  act('shunt-reverse', 'Zmiana czoła', `Skład ma wrócić na tor 2 w drugą stronę: zakładka <b>Stan</b> → <b>„zmiana czoła”</b> przy 90201 (${A('zmiana czoła')}).`, { tab: 'stan' },
+  act('shunt-reverse', 'Zmiana czoła', `Skład ma wrócić na tor 2 w drugą stronę: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 90201 (${A('zmiana czoła')}).`, { tab: 'pociagi' },
     (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); });
   act('shunt-back', 'Powrót na tor 2 – w dwóch etapach', `${P.shuntRoute('Tm1', m ? 'tarczę Tm2' : 'tarczy Tm2')} – ${A('przebieg manewrowy')} z tarczy <b>Tm1</b> na tor 2. Skład (180 m) jest dłuższy niż miejsce przed <b>Tm2</b>, więc od razu nastaw też drugi etap: ${P.shuntRoute('Tm2', m ? 'semafor C2' : 'semafora C2')}. Skład przejedzie do C2 i stanie czołem na zachód – gotowy do odjazdu.`, cmd('shunt', sig('Tm1', 'white')),
     (sim, ctx) => (ctx.seen.has('route:Tm1-Tm2:set') && active(sim, 'Tm2-C2')) || !!sim.traffic.tasks.find((t) => t.id === 'podstaw-90202')?.done);
-  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce <b>Zadania</b> – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Stan, kolejność dowolna). Gdy stanie w trybie jazdy pociągowej (nie wcześniej niż 07:57), pojawi się w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
+  act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce <b>Zadania</b> – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Pociągi, kolejność dowolna). Gdy stanie w trybie jazdy pociągowej (nie wcześniej niż 07:57), pojawi się w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'stan' },
     (sim) => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = entry(sim, 90202)?.train || entry(sim, 90201)?.train; return !!t?.done && !!tr && tr.mode === 'train'; });
   act('out-90202', 'Wyprawienie 90202', `<b>Wbl</b> do ${LIPa}, przebieg <b>C2 → szlak do ${LIPa}</b>. Pociąg odjedzie o 08:12 – wcześniej stoi mimo sygnału zezwalającego (skład manewrowy nie wyjedzie na szlak wcale).`, blockW,
     (sim) => atNeighbour(sim, 90202) && !sim.blocks.get('W').occupied);

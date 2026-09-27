@@ -137,7 +137,7 @@ export default {
   'set.lang.de': 'niemiecki (Deutsch)',
   'set.cat.panel.kicker': 'Widok',
   'set.cat.panel.title': 'Panel boczny',
-  'set.cat.panel.intro': 'Rozkład jazdy, dziennik, zadania, stan, rozkazy i łączność. Panel można też zwinąć przyciskiem „ukryj” na pasku narzędzi.',
+  'set.cat.panel.intro': 'Rozkład jazdy, dziennik, zadania, pociągi, stan, rozkazy i łączność. Panel można też zwinąć przyciskiem „ukryj” na pasku narzędzi.',
   'set.sidePos.title': 'Położenie panelu',
   'set.sidePos.desc': 'Po prawej lub po lewej panel zajmuje kolumnę obok pulpitu; na dole leży pod pulpitem na całą szerokość (wygodne na tablecie w poziomie).',
   'set.sidePos.right': 'po prawej',
@@ -221,6 +221,18 @@ export default {
   'sp.tasks.waiting': 'jeszcze nie – czekaj na porę lub poprzednie zadanie',
   'sp.tasks.active': 'do wykonania',
   'sp.tasks.none': 'Ten scenariusz nie ma zadań manewrowych.',
+  'sp.tab.pociagi': 'Pociągi',
+  'sp.trains.intro': 'Pociągi na posterunku: co robią i dlaczego stoją. Stojący skład można przełączyć między jazdą pociągową a manewrową i zmienić mu czoło.',
+  'sp.trains.none': 'brak pociągów na posterunku',
+  'sp.trains.moving': 'jedzie {v} km/h',
+  'sp.trains.atSignal': 'stoi przed {signal}',
+  'sp.trains.atPlatform': 'stoi przy peronie',
+  'sp.trains.atEnd': 'stoi na końcu toru',
+  'sp.trains.dwell': 'postój, odjazd {time}',
+  'sp.trains.ended': 'zakończył bieg – można przełączyć na manewry',
+  'sp.trains.stopped': 'stoi',
+  'sp.trains.track': 'tor {track}',
+  'sp.trains.front': 'czoło {arrow}',
   'sp.tab.stan': 'Stan',
   'sp.tab.rozkazy': 'Rozkazy',
   'sp.tab.lacznosc': 'Łączność',
@@ -235,7 +247,6 @@ export default {
   'sp.blocks': 'Blokady liniowe',
   'sp.routes': 'Przebiegi nastawione',
   'sp.counters': 'Liczniki',
-  'sp.shunt': 'Manewry',
   'sp.none': 'brak',
   'sp.order.title': 'Rozkaz pisemny „S” – przejazd obok semafora „Stój”',
   'sp.order.train': 'Pociąg nr',
@@ -295,13 +306,11 @@ export default {
   'sp.counters.line': 'dPz: {dPz} · Sz: {sz} · rozprucia: {split}',
   'sp.counters.blk': 'dPo / dKo: 0',
   'sp.task.due': 'do {time}',
-  'sp.shunt.row': 'Pociąg {nr} ({mode}, czoło {arrow})',
   'sp.shunt.modeShunt': 'manewrowy',
   'sp.shunt.modeTrain': 'pociągowy',
   'sp.shunt.toTrain': 'jazda pociągowa',
   'sp.shunt.toShunt': 'jazda manewrowa',
   'sp.shunt.reverse': 'zmiana czoła',
-  'sp.shunt.none': 'brak stojących pociągów',
   'sp.alarm.request': '{name} żąda pozwolenia na wyprawienie pociągu – daj pozwolenie (Poz) na blokadzie.',
   'sp.alarm.split': 'ROZPRUCIE zwrotnicy {id}!',
   'sp.alarm.fault': 'USTERKA: {what}',
@@ -382,6 +391,6 @@ export default {
       <h3>Pociągi</h3>
       <ul>
         <li>Pociągi osobowe zatrzymują się przy peronie i odjeżdżają nie wcześniej niż o czasie rozkładowym – gdy semafor wyjazdowy pokaże sygnał zezwalający.</li>
-        <li>Pociąg, który zakończył bieg, można przełączyć w jazdę manewrową (zakładka <i>Stan</i>) – porusza się wtedy za sygnałem Ms2.</li>
+        <li>Pociąg, który zakończył bieg, można przełączyć w jazdę manewrową (zakładka <i>Pociągi</i>) – porusza się wtedy za sygnałem Ms2.</li>
       </ul>`,
 };
