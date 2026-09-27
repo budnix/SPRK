@@ -63,7 +63,7 @@ Play it: **https://budnix.github.io/SPRK/**
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
-| **Gdynia Główna** | computer | 5/5 | 10 platform tracks, SKM 501 / 502, lines 202, 250 and 201; two signal boxes GO and GO2 with dispatcher orders between them. |
+| **Gdynia Główna** | computer | 5/5 | 10 platform tracks, SKM 501 / 502, lines 202, 250 and 201; the whole station from one workstation, split into screens. |
 
 Real stations follow the current station plans (point and signal numbering, platform names, real interlocking:
 Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenarios (full shift, a closed track, a point
@@ -103,7 +103,7 @@ npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
-URL parameters: `?stacja=<id>&scenariusz=<id>&zaklocenia=none|low|high&okreg=GO|GO2|both&seed=<n>`.
+URL parameters: `?stacja=<id>&scenariusz=<id>&zaklocenia=none|low|high&seed=<n>`.
 Guided mission: `?stacja=szkolna&scenariusz=nauka-1`.
 
 ## Operating the desk (short version)

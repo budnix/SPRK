@@ -374,12 +374,6 @@ export default {
         <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Formeln nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“, „Strecke … frei“, „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“. Die Blockfelder werden nach fernmündlicher Bestätigung mit dPo / dKo aufgelöst.</li>
         <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dPo/dKo ohne Grund −15; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
       </ul>
-      <h3>Stellwerksbezirke (Gdynia Główna)</h3>
-      <ul>
-        <li>Die Station hat zwei Stellwerke: <b>GO</b> (disponierend, Ostkopf) und <b>GO2</b> (ausführend, Westkopf). Auf dem Startbildschirm wählst du den Arbeitsplatz; das andere Pult führt die Automatik, es ist in der Vorschau sichtbar (Reiter über dem Pult).</li>
-        <li><b>Als Fahrdienstleiter GO</b>: Reiter <i>Anweisungen</i> – du weist Stellwerk GO2 an, „Zug Nr. … auf Gleis … anzunehmen“ und „Zug Nr. … nach … abzulassen“. GO2 gibt dem Nachbarn die Erlaubnis, stellt die Fahrstraße ein und meldet die Ausführung über die Kommunikation. Ohne Anweisung wartet ein Zug aus Gdańsk beim Nachbarn.</li>
-        <li><b>Als Weichenwärter GO2</b>: du erhältst die Anweisungen des Fahrdienstleiters (Kommunikation und Reiter <i>Anweisungen</i>) und führst sie an deinem Pult aus. Ausführung innerhalb von 4 min: +2 Pkt., später −5, keine Ausführung innerhalb von 12 min: −10.</li>
-      </ul>
       <h3>Züge</h3>
       <ul>
         <li>Reisezüge halten am Bahnsteig und fahren nicht vor der Fahrplanzeit ab – sobald das Ausfahrsignal Fahrt zeigt.</li>

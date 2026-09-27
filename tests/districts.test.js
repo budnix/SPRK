@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { allArrived } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
-import gdynia from '../src/stations/gdynia-glowna.js';
+import gdynia from './fixtures/gdynia-glowna-okregi.js'; // okręgi tylko w stacji testowej – w grze Gdynia Główna jest jednym stanowiskiem
 import { Clock } from '../src/core/Clock.js';
 import { AutoOperator } from '../src/model/Operator.js';
 

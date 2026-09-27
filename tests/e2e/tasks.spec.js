@@ -32,6 +32,6 @@ test('zakładka „Zadania”: zadania manewrowe scenariusza z postępem, poza �
   await expect(cards.nth(0)).toHaveClass(/done/);
   await expect(cards.nth(0).locator('.task-status')).toContainText('wykonane');
   // scenariusz bez zadań: zakładki nie ma
-  await openShift(page, 'gdynia-glowna', { params: { okreg: 'GO' } });
+  await openShift(page, 'gdynia-glowna');
   await expect(page.locator('#panel-tabs button[data-tab=zadania]')).toBeHidden();
 });

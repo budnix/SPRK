@@ -22,7 +22,7 @@ test('i18n: słowniki en i de mają dokładnie te same klucze co pl, bez pustych
     assert.ok(same.length < keys.length * 0.1, `${lang}: nieprzetłumaczone ${same.join(', ')}`);
   }
   // klucze pomocy zawierają HTML z tymi samymi nagłówkami (liczba <h3>) w każdym języku
-  for (const lang of LANGS) assert.equal((DICTS[lang]['help.body'].match(/<h3>/g) || []).length, 7, `${lang}: sekcje pomocy`);
+  for (const lang of LANGS) assert.equal((DICTS[lang]['help.body'].match(/<h3>/g) || []).length, 6, `${lang}: sekcje pomocy`);
 });
 
 test('i18n: t() tłumaczy w bieżącym języku, podstawia parametry, brak klucza → polski → sam klucz', () => {

@@ -186,7 +186,10 @@ Typy usterek: `signal-fail` (semafor bez sygnału zezwalającego), `point-contro
 `duration` w minutach. Poziomy zakłóceń (`none`/`low`/`high`) dodają losowe opóźnienia, usterki i pociągi nadzwyczajne;
 ziarno losowe (`seed`) daje powtarzalną zmianę.
 
-## Okręgi nastawcze (`districts`)
+## Okręgi nastawcze (`districts`) – opcjonalne
+
+Obecnie żadna stacja w grze nie ma okręgów (Gdynia Główna jest prowadzona z jednego stanowiska); mechanizm zostaje
+dla przyszłych stacji i jest testowany na `tests/fixtures/gdynia-glowna-okregi.js`.
 
 ```js
 districts: {

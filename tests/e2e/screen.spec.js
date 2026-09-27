@@ -110,15 +110,22 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).symScale)).toBe('1');
 });
 
-test('okręgi na monitorze: zakładki GO/GO2, okręg automatu tylko do podglądu, instrukcja opisuje zobrazowanie Ie-104', async ({ page }) => {
-  await openShift(page, 'gdynia-glowna', { params: { okreg: 'GO' } });
-  await expect(page.locator('#desk-tabs button')).toHaveCount(2);
-  await page.click('#desk-tabs button:has-text("GO2")');
-  await expect(page.locator('.desk-district[data-district=GO2] svg.screen.readonly')).toBeVisible();
-  await expect(page.locator('.desk-district[data-district=GO2] .scr-banner')).toContainText('druga nastawnia');
+test('Gdynia Główna: jedno stanowisko na całą stację – bez zakładek okręgów, bez wyboru okręgu, bez zakładki „Polecenia”; instrukcja opisuje zobrazowanie Ie-104', async ({ page }) => {
+  await openShift(page, 'gdynia-glowna');
+  await expect(page.locator('#desk-tabs')).toBeHidden();
+  expect(await page.locator('#desk svg.screen').count()).toBe(1);
+  expect(await page.locator('#desk svg.screen.readonly').count()).toBe(0);
+  await expect(page.locator('#panel-tabs button[data-tab=polecenia]')).toBeHidden();
+  await expect(page.locator('#station-name')).not.toContainText('GO');
   await page.click('#btn-help');
   await expect(page.locator('#help')).toContainText('Ie-104');
   await expect(page.locator('#help')).toContainText('Ebilock');
+  await expect(page.locator('#help')).not.toContainText('Okręgi nastawcze');
+  await page.keyboard.press('Escape');
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await page.click('.st-card[data-id=gdynia-glowna]');
+  await expect(page.locator('#st-district-wrap')).toBeHidden();
+  await expect(page.locator('.st-card[data-id=gdynia-glowna] .st-srk', { hasText: 'dwa okręgi' })).toHaveCount(0);
 });
 
 test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawędź kostki w kierunku jazdy), tarcza w Ms1 szara', async ({ page }) => {

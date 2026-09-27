@@ -6,7 +6,7 @@ import { EventBus } from '../src/core/EventBus.js';
 import { listTileDefs, getTileDef, registerTile, hasTileDef } from '../src/tiles/registry.js';
 import { DISRUPTION_LEVELS } from '../src/core/Random.js';
 import { makeSim, run, station } from './helpers.js';
-import gdynia from '../src/stations/gdynia-glowna.js';
+import gdynia from './fixtures/gdynia-glowna-okregi.js'; // mechanizm okręgów – tylko w stacji testowej
 import sopot from '../src/stations/sopot.js';
 
 /** Doprowadza pociąg 5310 przed semafor A (bez przebiegu). */

@@ -374,12 +374,6 @@ export default {
         <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 formulas): “Is the line clear for train no. …?”, “Line … clear”, “Train no. … departed at …”, “Train no. … arrived at …”. Blocks are released with dPo / dKo after telephone confirmation.</li>
         <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dPo/dKo without reason −15; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
       </ul>
-      <h3>Signal boxes (Gdynia Główna)</h3>
-      <ul>
-        <li>The station has two signal boxes: <b>GO</b> (in charge, east end) and <b>GO2</b> (subordinate, west end). On the start screen you choose the workstation; the other desk is run automatically and shown in preview (tabs above the desk).</li>
-        <li><b>As dispatcher GO</b>: <i>Commands</i> tab – you order signal box GO2 to “accept train no. … on track …” and “dispatch train no. … to …”. GO2 gives the neighbour permission, sets the route and reports completion over the comms. Without a command a train from Gdańsk waits at the neighbour.</li>
-        <li><b>As signalman GO2</b>: you receive the dispatcher’s commands (comms and the <i>Commands</i> tab) and carry them out on your desk. Done within 4 min: +2 pts, later −5, not done within 12 min: −10.</li>
-      </ul>
       <h3>Trains</h3>
       <ul>
         <li>Passenger trains stop at the platform and leave no earlier than the timetable time – once the departure signal shows a proceed aspect.</li>
