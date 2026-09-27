@@ -26,9 +26,10 @@ test('łącznica dzieli się na dwa odcinki izolowane – po jednym na zwrotnic�
   const g = splitCrossovers(gdynia);
   assert.ok(g.tiles.find((t) => t.id === 'Zw3').section === 'Iz3' && g.tiles.find((t) => t.id === 'Zw4').section === 'Iz4');
   // długi skos (Sopot Iz1: Zw1, trzy kostki skośne, Zw2): kostka przy Zw1 zostaje, reszta idzie do Iz2
+  // (rzędy po odbiciu bloku 202 w pionie: Zw1 na torze 1 w rzędzie 2, Zw2 na torze 2 w rzędzie 6)
   const s = splitCrossovers(sopot);
-  assert.deepEqual(s.tiles.filter((t) => t.section === 'Iz1').map((t) => `${t.x},${t.y}`).sort(), ['7,8', '8,7']);
-  assert.deepEqual(s.tiles.filter((t) => t.section === 'Iz2').map((t) => `${t.x},${t.y}`).sort(), ['10,5', '11,4', '9,6']);
+  assert.deepEqual(s.tiles.filter((t) => t.section === 'Iz1').map((t) => `${t.x},${t.y}`).sort(), ['7,2', '8,3']);
+  assert.deepEqual(s.tiles.filter((t) => t.section === 'Iz2').map((t) => `${t.x},${t.y}`).sort(), ['10,5', '11,6', '9,4']);
   // stacje bez łącznic (jedna zwrotnica w odcinku) – bez zmian; normalizacja jest idempotentna
   assert.deepEqual(splitCrossovers(szkolna)._split, []);
   assert.equal(normalizeStation(n), n);

@@ -74,3 +74,23 @@ test('tabor manewrujący zatrzymuje się przed taborem stojącym na torze zajęt
   assert.equal(b.stoppedAt?.reason, 'tabor na torze');
   for (const s of b.occupiedSections()) assert.ok(!a.occupiedSections().has(s), `najechanie na ${s}`);
 });
+
+test('Sopot: ruch prawostronny jak w Orłowie – tor 1 linii 202 (jazda na Gdynię) pod torem 2, SKM 501 pod 502; sygnalizatory przy swoich torach', async () => {
+  const { validateStation } = await import('../src/model/validate.js');
+  assert.deepEqual(validateStation(sopot).errors, []);
+  const ex = sopot.exits;
+  assert.ok(ex.GD1.tile.y > ex.GD2.tile.y && ex.OR1.tile.y > ex.OR2.tile.y, '202: t.1 (in od Gdańska / out na Orłowo) niżej niż t.2');
+  assert.ok(ex.GS1.tile.y > ex.GS2.tile.y && ex.OS1.tile.y > ex.OS2.tile.y, 'SKM: 501 niżej niż 502');
+  assert.equal(ex.GD1.direction, 'in'); assert.equal(ex.OR1.direction, 'out');
+  // każdy sygnalizator stoi w rzędzie sąsiednim do swojego toru, a kostka `at` jest torem
+  for (const s of sopot.tiles.filter((t) => t.type === 'signal')) {
+    assert.equal(Math.abs(s.y - s.at.y), 1, `${s.id}: sygnalizator nie przy torze`);
+    const under = sopot.tiles.find((t) => t.x === s.at.x && t.y === s.at.y && t.type !== 'signal' && t.type !== 'label');
+    assert.ok(under && under.type !== 'button', `${s.id}: pod kotwicą brak toru`);
+  }
+  // topologia po odbiciu spójna: bez urwanych portów, przebiegi zachodniej głowicy istnieją
+  const sim = new Simulation(sopot, { disruptions: 'none' });
+  assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, 'urwane porty toru');
+  const ids = new Set(sim.ilk.routeList().map((r) => r.id));
+  for (const id of ['A-H', 'H-O', 'S-L', 'L-C', 'A501-R501', 'L502-GS2']) assert.ok(ids.has(id), `brak przebiegu ${id}`);
+});

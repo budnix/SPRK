@@ -1,9 +1,10 @@
 /**
  * Sopot – stacja na liniach 202 (Gdańsk – Stargard) i 250 (SKM), wg planu schematycznego stacji (VI 2023).
  *
- * Pulpit 112×16. Rzędy: 2 – tor 6 (odstawczy, kozły 6b/6a), 4 – linia 202 t.1 → tor 2a → tor 2 (peron II),
- * 6 – tor 4 (odstawczy, kozły 4b/4a), 8 – linia 202 t.2 → tor 1a → tor 1 (peron II), 10 – linia 250 t.502 → tor 502a
- * (peron I SKM), 12 – linia 250 t.501 → tor 501a, 14 – tor 13 (bocznica z wykolejnicą Wk7).
+ * Pulpit 112×16. Rzędy w definicji (jak na planie): 2 – tor 6 (odstawczy, kozły 6b/6a), 4 – linia 202 t.1 → tor 2a →
+ * tor 2 (peron II), 6 – tor 4 (odstawczy, kozły 4b/4a), 8 – linia 202 t.2 → tor 1a → tor 1 (peron II); blok 202 jest
+ * na końcu odbijany w pionie (ruch prawostronny, patrz niżej), więc na pulpicie tor 1 jest w rzędzie 2, a tor 2 w 6.
+ * 10 – linia 250 t.502 → tor 502a (peron I SKM), 12 – linia 250 t.501 → tor 501a, 14 – tor 13 (bocznica z wykolejnicą Wk7).
  *
  * Stacja jest długa: przejazd toru 202 to trzy przebiegi (A → H, H → O, O → szlak; z drugiej strony S → L, L → C,
  * C → szlak). Semafory M/L (na wjeździe z torów 2/1 do grupy 2a/1a) i L502/L501 wg planu.
@@ -148,6 +149,21 @@ const skm = (t, nrE, nrW) => {
   ];
 };
 
+// ---- ruch prawostronny: odbicie bloku linii 202 w pionie ----
+// Plan schematyczny Sopotu rysuje tor 1 linii 202 u góry. Sąsiednie posterunki (Gdynia Orłowo) mają Gdańsk po lewej,
+// SKM (po wschodniej stronie linii 202) na dole i tor 1 – jazda w prawo, na Gdynię – na dole pary, jak w ruchu
+// prawostronnym oglądanym od zachodu. Żeby obraz był spójny wzdłuż linii, blok 202 (rzędy 1–9: tory 6, 2a/2, 4, 1a/1
+// z głowicami i sygnalizatorami) jest odbijany lustrzanie: rząd y → 10 − y, porty N↔S. SKM (rzędy 10–14) i przyciski
+// (rząd 1) zostają. Po odbiciu: rząd 2 – linia 202 t.2 → tor 1a → tor 1, 4 – tor 4, 6 – t.1 → tor 2a → tor 2, 8 – tor 6.
+const FLIP = { N: 'S', S: 'N', NE: 'SE', SE: 'NE', NW: 'SW', SW: 'NW', E: 'E', W: 'W' };
+for (const t of tiles) {
+  if (t.y < 1 || t.y > 9 || t.type === 'button' || (t.type === 'signal' && t.at.y >= 10)) continue;
+  t.y = 10 - t.y;
+  if (t.ports) t.ports = t.ports.map((p) => FLIP[p]);
+  if (t.type === 'point') { t.toe = FLIP[t.toe]; t.straight = FLIP[t.straight]; t.diverge = FLIP[t.diverge]; }
+  if (t.at) t.at = { ...t.at, y: 10 - t.at.y };
+}
+
 export default {
   schemaVersion: 1,
   id: 'sopot',
@@ -162,12 +178,12 @@ export default {
   desk: { cols: 112, rows: 16 },
 
   exits: {
-    GD1: { name: 'Gdańsk Oliwa', label: 'Gdańsk Oliwa – 202 t.1', tile: { x: 0, y: 4 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 4200, lineSpeed: 120 },
-    GD2: { name: 'Gdańsk Oliwa', label: 'Gdańsk Oliwa – 202 t.2', tile: { x: 0, y: 8 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 4200, lineSpeed: 120 },
+    GD1: { name: 'Gdańsk Oliwa', label: 'Gdańsk Oliwa – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 4200, lineSpeed: 120 },
+    GD2: { name: 'Gdańsk Oliwa', label: 'Gdańsk Oliwa – 202 t.2', tile: { x: 0, y: 2 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 4200, lineSpeed: 120 },
     GS2: { name: 'Gdańsk Oliwa SKM', label: 'Gdańsk Oliwa – 250 t.502', tile: { x: 0, y: 10 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3600, lineSpeed: 100 },
     GS1: { name: 'Gdańsk Oliwa SKM', label: 'Gdańsk Oliwa – 250 t.501', tile: { x: 0, y: 12 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3600, lineSpeed: 100 },
-    OR1: { name: 'Gdynia Orłowo', label: 'Gdynia Orłowo – 202 t.1', tile: { x: 111, y: 4 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 3900, lineSpeed: 120 },
-    OR2: { name: 'Gdynia Orłowo', label: 'Gdynia Orłowo – 202 t.2', tile: { x: 111, y: 8 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 3900, lineSpeed: 120 },
+    OR1: { name: 'Gdynia Orłowo', label: 'Gdynia Orłowo – 202 t.1', tile: { x: 111, y: 6 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 3900, lineSpeed: 120 },
+    OR2: { name: 'Gdynia Orłowo', label: 'Gdynia Orłowo – 202 t.2', tile: { x: 111, y: 2 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 3900, lineSpeed: 120 },
     OS2: { name: 'Gdynia Orłowo SKM', label: 'Gdynia Orłowo – 250 t.502', tile: { x: 111, y: 10 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 3700, lineSpeed: 100 },
     OS1: { name: 'Gdynia Orłowo SKM', label: 'Gdynia Orłowo – 250 t.501', tile: { x: 111, y: 12 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 3700, lineSpeed: 100 },
   },
