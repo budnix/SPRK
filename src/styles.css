@@ -66,7 +66,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #desk-tools { position: relative; display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
 #desk-tools .tb { white-space: nowrap; }
 @media (max-width: 1500px) { .hint { display: none; } }
-.hint { color: var(--muted); font-size: 12px; margin-left: auto; }
+.hint { color: var(--muted); font-size: 12px; }
 /* komunikat stanu – nakładka nad paskiem narzędzi (poza przepływem flex): pojawienie się dłuższego tekstu
    nie zawija paska i nie przesuwa pulpitu */
 .status { position: absolute; left: 8px; bottom: calc(100% + 6px); max-width: calc(100% - 16px); z-index: 5; pointer-events: none;
@@ -101,7 +101,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tool-group .tb { padding: 4px 10px; font-size: 12px; min-width: 0; white-space: nowrap; background: var(--panel); }
 .tool-group .tb.tb-icon { padding: 2px 10px; display: inline-flex; align-items: center; height: 26px; }   /* ikony dopasowania: do szerokości ↔, do wysokości ↕ */
 .tool-group .tb.tb-icon svg { display: block; opacity: 0.85; }
-#side-toggle.collapsed svg .side { opacity: 0; }   /* panel ukryty – pusta część ikony */
+/* schowaj/pokaż panel: podwójny szewron w stronę panelu (widoczny → schowaj) albo od panelu (ukryty → pokaż) */
+.tg-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+#side-toggle { padding: 4px 8px; }
+#side-toggle svg { transition: transform .15s; }
+#app[data-side-pos="bottom"] #side-toggle.collapsed svg { transform: rotate(180deg); }
+#app[data-side-pos="right"] #side-toggle svg { transform: rotate(-90deg); }
+#app[data-side-pos="right"] #side-toggle.collapsed svg { transform: rotate(90deg); }
+#app[data-side-pos="left"] #side-toggle svg { transform: rotate(90deg); }
+#app[data-side-pos="left"] #side-toggle.collapsed svg { transform: rotate(-90deg); }
 .tg-screens { border-color: #3f8cff66; background: color-mix(in srgb, #3f8cff 12%, var(--panel2)); }
 .tg-screens .lbl { color: #3f8cff; }
 .tg-screens .tb.active { background: #3f8cff; color: #fff; border-color: #3f8cff; font-weight: 600; }

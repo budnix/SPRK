@@ -39,9 +39,12 @@
         <div id="desk-tools">
           <div class="tool-group tg-screens hidden" id="screen-group"><span class="lbl">ekran</span><div id="screen-tabs" class="screen-tabs seg" aria-label="Ekrany pulpitu"></div></div>
           <div class="tool-group tg-zoom"><span class="lbl">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz">−</button><button class="tb tb-icon" id="zoom-fit" title="Dopasuj do szerokości okna" aria-label="Dopasuj do szerokości"><svg viewBox="0 0 22 14" width="18" height="11" aria-hidden="true"><path d="M1.5 2v10M20.5 2v10M5 7h12M5 7l3-3M5 7l3 3M17 7l-3-3M17 7l-3 3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb tb-icon hidden" id="zoom-fit-h" title="Dopasuj do wysokości okna – środek przewijany, skrajne pola z blokadą przypięte" aria-label="Dopasuj do wysokości"><svg viewBox="0 0 14 22" width="11" height="18" aria-hidden="true"><path d="M2 1.5h10M2 20.5h10M7 5v12M7 5l-3 3M7 5l3 3M7 17l-3-3M7 17l3-3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb" id="zoom-in" title="Powiększ">+</button></div></div>
-          <div class="tool-group tg-panel"><span class="lbl">panel</span><button class="tb tb-icon" id="side-toggle" title="Ukryj panel boczny" aria-label="Ukryj panel" aria-pressed="true"><svg viewBox="0 0 22 14" width="18" height="11" aria-hidden="true"><rect class="pane" x="1.5" y="1.5" width="19" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.1"/><rect class="side" x="14" y="1.5" width="6.5" height="11" rx="1.2" fill="currentColor" stroke="none" opacity="0.55"/><path class="bar" d="M14 1.5v11" fill="none" stroke="currentColor" stroke-width="1.1"/></svg></button><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)"></div></div>
+          <div class="tool-group tg-panel"><span class="lbl">panel</span><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)"></div></div>
           <span id="status" class="status"></span>
-          <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
+          <div class="tg-right">
+            <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
+            <button class="tb tb-icon" id="side-toggle" title="Ukryj panel boczny" aria-label="Ukryj panel" aria-pressed="true"><svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M3 2.5l4 4 4-4M3 8l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
         </div>
       </section>
       <aside id="side"></aside>
