@@ -472,6 +472,7 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .st-loc { font-size: 11.5px; color: var(--sc-muted); margin-top: 1px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .st-chips { display: flex; gap: 5px; flex-wrap: wrap; margin: 5px 0 0; }
 .st-srk { font-size: 10px; color: var(--sc-muted); border: 1px solid var(--sc-border); background: var(--sc-panel2); border-radius: var(--sc-radius); padding: 1px 7px; letter-spacing: 0.3px; }
+.st-srk-both { color: var(--sc-accent); border-color: color-mix(in srgb, var(--sc-accent) 55%, var(--sc-border)); }
 .st-traffic { display: none; }
 /* strzałka etapu 2: dwie „szyny” z podkładami i grot w stronę odprawy */
 .st-arrow { flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--sc-accent); }

@@ -21,9 +21,17 @@ export function missionList(stations) {
   return out;
 }
 
-/** Krótka etykieta stanowiska na karcie posterunku. */
-export function srkBadge(srkId) {
-  return t(getSrk(srkId).view === 'screen' ? 'start.srkScreen' : 'start.srkDesk');
+/** Stanowiska posterunku wg zmian bez samouczka (scenariusz może wymuszać swoje); pusta lista scenariuszy = stanowisko stacji. */
+export function stationViews(station) {
+  const scs = (station.scenarios || []).filter((sc) => !sc.tutorial);
+  return [...new Set((scs.length ? scs.map((sc) => sc.srk || station.srk) : [station.srk]).map((id) => getSrk(id).view))];
+}
+
+/** Krótka etykieta stanowiska na karcie posterunku; przy różnych stanowiskach w zmianach – „do wyboru”. */
+export function srkBadge(station) {
+  const views = stationViews(station);
+  if (views.length > 1) return t('start.srkBoth');
+  return t(views[0] === 'screen' ? 'start.srkScreen' : 'start.srkDesk');
 }
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -129,7 +137,7 @@ export class StartScreen {
         <div class="st-body">
           <div class="st-row"><span class="st-name">${esc(s.name)}</span>${difficultyMark(s.difficulty)}</div>
           <div class="st-loc">${esc(s.location || '')}</div>
-          <div class="st-chips"><span class="st-srk">${srkBadge(s.srk)}</span>${s.districts ? `<span class="st-srk">${t('start.twoDistricts')}</span>` : ''}<span class="st-srk">${t('start.scen', { n: (s.scenarios || []).filter((x) => !x.tutorial).length })}</span></div>
+          <div class="st-chips"><span class="st-srk${stationViews(s).length > 1 ? ' st-srk-both' : ''}">${srkBadge(s)}</span>${s.districts ? `<span class="st-srk">${t('start.twoDistricts')}</span>` : ''}<span class="st-srk">${t('start.scen', { n: (s.scenarios || []).filter((x) => !x.tutorial).length })}</span></div>
           <div class="st-traffic">${esc(s.traffic || '')}</div>
         </div>
       </div>`).join('');

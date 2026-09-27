@@ -291,3 +291,13 @@ test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocze
   sim2.press(G('A')); sim2.press(G('D2')); for (let i = 0; i < 20; i++) sim2.step(0.5);
   assert.ok(sim2.ilk.checkRoute(sim2.ilk.routes.get('B-C2')).some((m) => /T2 utwierdzony/.test(m)), 'B→C2 koliduje z A→D2 na torze 2');
 });
+
+test('Szkolna: karta posterunku oznacza stanowisko „do wyboru” (zmiany na monitorze i na pulpicie typu E); Sopot – tylko monitor', async () => {
+  const { srkBadge, stationViews } = await import('../src/ui/StartScreen.js');
+  const sopot = (await import('../src/stations/sopot.js')).default;
+  assert.deepEqual(stationViews(szkolna).sort(), ['desk', 'screen']);
+  assert.match(srkBadge(szkolna), /do wyboru/);
+  assert.deepEqual(stationViews(sopot), ['screen']);
+  assert.equal(srkBadge(sopot), 'komputerowe · monitor');
+  assert.deepEqual(stationViews({ srk: 'E' }), ['desk'], 'bez scenariuszy – stanowisko stacji');
+});
