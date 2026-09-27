@@ -61,7 +61,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
 .speed { display: flex; gap: 4px; }
 #main { flex: 1 1 auto; display: flex; min-height: 0; }
-#desk-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+#desk-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; min-height: 0; } /* min-height: 0 – po powiększeniu pulpitu rozwinięty panel na dole ma dostać miejsce, a nie wypaść poza okno */
 #desk-scroll { flex: 1 1 auto; overflow: auto; padding: 4px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; display: flex; }
 #desk { position: relative; margin: auto; flex: 0 0 auto; }
 /* stałe pola skrajne: nakładka nad obszarem przewijania; żywa kopia skrajnych kolumn pulpitu w tej samej skali */

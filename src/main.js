@@ -22,7 +22,7 @@ const settings = new Settings((key, value) => {
   else if (key === 'screens') planAll();
   else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
-  else requestAnimationFrame(fit);
+  else requestAnimationFrame(refit); // zmiana układu (panel, położenie pulpitu): ten sam tryb dopasowania co dotąd
 });
 // język interfejsu przed zbudowaniem jakiegokolwiek ekranu; 'auto' = wg przeglądarki
 document.documentElement.lang = setLang(detectLang(settings.values.lang === 'auto' ? null : settings.values.lang));
@@ -95,13 +95,14 @@ function planAll() {
       d.screen = scr.length > 1 ? Math.max(0, Math.min(d.screen, scr.length - 1)) : -1;
     }
   }
-  applyScreen();
+  applyScreen(true); // zmiana rozmiaru okna / ustawienia: ten sam tryb dopasowania co dotąd
 }
 function currentScreen() {
   const d = activeDesk;
   return d && d.screen >= 0 && d.screens.length > 1 ? d.screens[d.screen] : null;
 }
-function applyScreen() {
+/** Buduje zakładki ekranów i ustawia widok; `keepMode` – zachowaj bieżący tryb dopasowania (zmiana układu), inaczej „całość” (nowy ekran). */
+function applyScreen(keepMode = false) {
   const d = activeDesk; if (!d) return;
   const s = currentScreen();
   if (s) d.renderer.setView(s.x0, s.x1); else d.renderer.resetView();
@@ -118,7 +119,7 @@ function applyScreen() {
     mk(t('tools.whole'), -1);
     d.screens.forEach((sc, i) => mk(String(i + 1), i, screenLabel(station, sc, i, n)));
   }
-  fit();
+  if (keepMode) refit(); else fit();
 }
 function setScreen(i) {
   const d = activeDesk; if (!d) return;
@@ -217,7 +218,13 @@ function deskSize() {
 }
 const clampZoom = (z) => Math.max(0.3, Math.min(4, z));
 /** Dopasowanie całości do okna (po zmianie ekranu / rozmiaru okna). */
+/** Ostatni tryb dopasowania: 'whole' | 'width' | 'height' | null (ręczne powiększenie) – po zmianie układu okna wraca ten sam tryb. */
+let fitMode = 'whole';
+function refit() {
+  if (fitMode === 'width') fitWidth(); else if (fitMode === 'height') fitHeight(); else if (fitMode === 'whole') fit(); else applyZoom();
+}
 function fit() {
+  fitMode = 'whole';
   const { w: dw, h: dh } = deskSize();
   const w = scroll.clientWidth - 8, h = scroll.clientHeight - 8;
   zoom = Math.max(0.3, Math.min(w / dw, h / dh));
@@ -225,6 +232,7 @@ function fit() {
 }
 /** Przycisk „dopasuj”: do szerokości okna (wysokość może wymagać przewijania). */
 function fitWidth() {
+  fitMode = 'width';
   const { w: dw } = deskSize();
   zoom = clampZoom((scroll.clientWidth - 8) / dw);
   applyZoom();
@@ -233,6 +241,7 @@ function fitWidth() {
 /** Przycisk „wysokość”: wypełnia okno w pionie – pulpit zwykle szerszy niż okno, środek przewijany, a przy włączonych
  *  stałych polach skrajnych blokada z obu krańców jest przypięta do krawędzi. */
 function fitHeight() {
+  fitMode = 'height';
   const { h: dh } = deskSize();
   zoom = clampZoom((scroll.clientHeight - 8) / dh);
   applyZoom();
@@ -247,6 +256,7 @@ function applyZoom() {
 }
 /** Zmiana powiększenia wokół punktu (px, py) w układzie widocznego obszaru pulpitu. */
 function zoomAt(factor, px, py) {
+  fitMode = null;
   const prev = zoom;
   zoom = Math.max(0.3, Math.min(4, zoom * factor));
   const k = zoom / prev;

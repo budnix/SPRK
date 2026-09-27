@@ -78,6 +78,21 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
   await expect(left).toBeVisible(); await expect(right).toBeVisible();
   const sl = await page.locator('#desk-scroll').evaluate((s) => s.scrollLeft / Math.max(1, s.scrollWidth - s.clientWidth));
   expect(sl).toBeGreaterThan(0.4); expect(sl).toBeLessThan(0.6);
+  // rozwinięcie panelu (test startuje ze zwiniętym): mniej miejsca w pionie – ten sam tryb („wysokość”) dopasowany na nowo, nie „całość”
+  await page.click('#side-toggle');
+  await page.waitForTimeout(150);
+  const sc2 = await page.locator('#desk-scroll').evaluate((s) => ({ w: s.clientWidth, h: s.clientHeight }));
+  expect(sc2.h).toBeLessThan(sc.h); // panel na dole dostał miejsce (dawniej powiększony pulpit wypychał go poza okno)
+  const d3 = await box(page.locator('#desk'));
+  expect(Math.abs(d3.height - (sc2.h - 8))).toBeLessThan(3);
+  expect(d3.width).toBeGreaterThan(sc2.w);
+  // kliknięcie zakładek przy rozwiniętym panelu nie zmienia widoku (dawniej resetowało do „całość”)
+  await page.click('#panel-tabs button[data-tab=log]');
+  await page.click('#panel-tabs button[data-tab=rj]');
+  await page.waitForTimeout(150);
+  const d4 = await box(page.locator('#desk'));
+  expect(Math.abs(d4.height - d3.height)).toBeLessThan(1);
+  expect(Math.abs(d4.width - d3.width)).toBeLessThan(1);
 });
 
 test('pulpit kostkowy: pola skrajne z kostkami blokady; naciśnięcie Wbl przez pole wysyła żądanie jak z pulpitu', async ({ page }) => {
