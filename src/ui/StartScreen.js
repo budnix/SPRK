@@ -177,10 +177,11 @@ export class StartScreen {
       dSel.onchange = updD; updD();
     } else { dw.classList.add('hidden'); root.querySelector('#st-district-desc').textContent = ''; }
     const scSel = root.querySelector('#st-scenario'), lvSel = root.querySelector('#st-level');
-    const scs = st.scenarios || [{ id: 'zmiana', name: t('start.fullShift') }];
+    // samouczki są na liście misji u góry – w wyborze scenariusza tylko zmiany
+    const scs = (st.scenarios || [{ id: 'zmiana', name: t('start.fullShift') }]).filter((sc) => !sc.tutorial);
     scSel.innerHTML = scs.map((sc) => `<option value="${sc.id}">${esc(sc.name)}</option>`).join('');
     if (this.current.scenario && this.current.station === id && scs.some((sc) => sc.id === this.current.scenario)) scSel.value = this.current.scenario;
-    else { const first = scs.find((sc) => !sc.tutorial); if (first) scSel.value = first.id; }
+    else if (scs[0]) scSel.value = scs[0].id;
     const upd = () => {
       const sc = scs.find((x) => x.id === scSel.value);
       root.querySelector('#st-scenario-desc').textContent = sc?.description || '';

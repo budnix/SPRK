@@ -131,7 +131,9 @@ export default {
     { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', endTime: '08:50',
       description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E: obsługa dwuprzyciskowa, wyciąganie przycisków, przyciski grupowe Zw, Zz, Pz, Sz i kostki blokady Eap przy końcach toru.',
       faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
-    { id: 'zmiana', name: 'Zmiana bez samouczka (07:00–08:50)', description: 'Ten sam rozkład bez podpowiedzi. Poziom zakłóceń do wyboru.', endTime: '08:50' },
+    // zmiany bez samouczka – po jednej na każde stanowisko (samouczki są na liście misji, nie w wyborze scenariusza)
+    { id: 'zmiana', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:50)', srk: 'komputerowe', description: 'Ten sam rozkład bez podpowiedzi, na monitorze (zobrazowanie wg Ie-104). Poziom zakłóceń do wyboru.', endTime: '08:50' },
+    { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)', srk: 'E', description: 'Ten sam rozkład bez podpowiedzi, na pulpicie kostkowym urządzeń przekaźnikowych typu E. Poziom zakłóceń do wyboru.', endTime: '08:50' },
   ],
 
   timetable: [

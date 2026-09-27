@@ -18,6 +18,9 @@ test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scen
   for (const sc of szkolna.scenarios.filter((s) => s.tutorial)) assert.ok(MISSIONS[sc.tutorial], `scenariusz ${sc.id}: nieznana misja ${sc.tutorial}`);
   // misja 1 – monitor, misja 2 – pulpit kostkowy (scenariusz wymusza stanowisko)
   assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).srk.view, 'screen');
+  assert.equal(new Simulation(szkolna, { scenario: 'zmiana' }).srk.view, 'screen', 'pełna zmiana – monitor');
+  assert.equal(new Simulation(szkolna, { scenario: 'zmiana-e' }).srk.view, 'desk', 'pełna zmiana – pulpit typu E');
+  assert.deepEqual(szkolna.scenarios.filter((x) => !x.tutorial).map((x) => x.id), ['zmiana', 'zmiana-e'], 'w wyborze scenariusza dwie zmiany bez samouczka');
   assert.equal(new Simulation(szkolna, { scenario: 'nauka-2', srk: 'komputerowe' }).srk.view, 'desk', 'scenariusz misji 2 wygrywa z ustawieniem gracza');
 });
 
