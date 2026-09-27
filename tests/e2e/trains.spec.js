@@ -37,6 +37,14 @@ test('zakładka „Pociągi”: pociąg na posterunku ze stanem, torem i czołem
   await page.click('#panel-tabs button[data-tab=lacznosc]');
   const h2 = await page.locator('#comms-form button[type=submit]').evaluate((el) => el.getBoundingClientRect().height);
   expect(Math.round(h)).toBe(28); expect(Math.round(h2)).toBe(28);
+  // ikony i tekst wiersza stanu w jednej osi: środki ikon w pionie równe środkowi tekstu (±1.5 px)
+  await page.click('#panel-tabs button[data-tab=pociagi]');
+  const centres = await card.locator('.train-state').evaluate((el) => {
+    const mid = (r) => r.y + r.height / 2;
+    const text = document.createRange(); text.selectNodeContents(el.querySelector('b'));
+    return [mid(text.getBoundingClientRect()), ...[...el.querySelectorAll('svg')].map((s) => mid(s.getBoundingClientRect()))];
+  });
+  for (const c of centres.slice(1)) expect(Math.abs(c - centres[0])).toBeLessThanOrEqual(1.5);
   await page.click('#panel-tabs button[data-tab=pociagi]');
   // sterowanie: tryb manewrowy, zmiana czoła
   await card.locator('button[data-act=shunt]').click();

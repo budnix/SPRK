@@ -336,12 +336,12 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .train-card.shunt { border-left-color: var(--warn); }
 .train-card .train-head { font-weight: 600; font-size: 13px; }
 .train-card .train-head .rel { font-weight: 400; color: var(--muted); margin-left: 6px; }
-.train-card .train-state { grid-column: 1; color: var(--muted); }
+.train-card .train-state { grid-column: 1; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; line-height: 1.4; } /* ikony i tekst w jednej osi */
 .train-card .train-state b { color: var(--text); font-weight: 600; }
 .train-card .train-actions { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 4px; }
 .train-card .delay { color: var(--danger); font-weight: 600; }
 /* ikony: czoło pojazdu z lampami (tryb jazdy) i sylwetka lokomotywy ze strzałką (czoło składu) */
-.train-card .ic { vertical-align: -6px; margin-right: 2px; color: var(--muted); }
+.train-card .ic { display: block; margin: 0 1px 0 0; color: var(--muted); }
 .train-card .ic .body { fill: none; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; stroke-linecap: round; }
 .train-card .ic .glass { fill: none; stroke: currentColor; stroke-width: 0.8; opacity: 0.7; }
 .train-card .ic .wheel { fill: none; stroke: currentColor; stroke-width: 1; }

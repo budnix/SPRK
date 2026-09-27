@@ -10,7 +10,7 @@ export function modeIcon(mode) {
   const shunt = mode === 'shunt';
   const lit = shunt ? [true, false, false] : [true, true, true]; // [dolne lewe, dolne prawe, górne]
   const lamp = (cx, cy, on) => `<circle cx="${cx}" cy="${cy}" r="1.4" class="lamp ${on ? 'on' : 'off'}"/>`;
-  return `<svg class="ic ic-mode" viewBox="0 0 22 22" width="24" height="24" aria-hidden="true" data-mode="${shunt ? 'shunt' : 'train'}">
+  return `<svg class="ic ic-mode" viewBox="0 1.5 22 19.5" width="20" height="18" aria-hidden="true" data-mode="${shunt ? 'shunt' : 'train'}">
     <path d="M8.5 2.5h5" class="body"/>
     <path d="M4 18V6.6c0-1.2.8-2.1 2-2.3C7.6 4.1 9.3 4 11 4s3.4.1 5 .3c1.2.2 2 1.1 2 2.3V18z" class="body"/>
     <path d="M6.2 8.3h9.6v4.2H6.2z" class="glass"/>
@@ -22,7 +22,7 @@ export function modeIcon(mode) {
 export function frontIcon(direction) {
   const east = ['E', 'NE', 'SE'].includes(direction);
   const flip = east ? '' : ' transform="translate(36 0) scale(-1 1)"';
-  return `<svg class="ic ic-front" viewBox="0 0 36 18" width="36" height="18" aria-hidden="true" data-dir="${east ? 'E' : 'W'}">
+  return `<svg class="ic ic-front" viewBox="0 2 36 16" width="40" height="18" aria-hidden="true" data-dir="${east ? 'E' : 'W'}">
     <g${flip}>
       <path d="M12 5.2l2.5-2.2h4l2.5 2.2" class="body"/>
       <path d="M3 13.5V7.8c0-.6.3-1.1.8-1.4L5.5 5.2h17l1.7 1.2c.5.3.8.8.8 1.4v5.7z" class="body"/>
