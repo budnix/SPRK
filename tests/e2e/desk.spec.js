@@ -360,3 +360,14 @@ test('Pruszcz Gdański: karta „komputerowe”; monitor z blokadami linii 9 (SB
     .toEqual({ srk: 'screen', blocks: ['SP:both', 'PS2:sbl', 'PS1:sbl', 'ZT:both', 'GD2:sbl', 'GD1:sbl', 'GP:both'] });
   for (const id of ['C', 'D', 'P', 'S', 'R', 'E3', 'G7']) await expect(hit(page, id)).toBeAttached();
 });
+
+test('Gdańsk Główny: karta „komputerowe”; monitor z blokadami SBL (9, Śródmieście, 202, 250) i Eap (227, 249), semafory wjazdowe B, A501, G, N, H, M i kozły torów czołowych', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-name')).toHaveText('Gdańsk Główny');
+  await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-srk').first()).toHaveText('komputerowe · monitor');
+  await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-srk-both')).toHaveCount(0);
+  await openShift(page, 'gdansk-glowny', { settings: { sideCollapsed: true } });
+  expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.values()].map((b) => `${b.id}:${b.auto ? 'sbl' : b.fixed || 'both'}`) })))
+    .toEqual({ srk: 'screen', blocks: ['GP2:sbl', 'GP1:sbl', 'SR2:sbl', 'SR1:sbl', 'ZT:both', 'WR2:sbl', 'WR1:sbl', 'SK2:sbl', 'SK1:sbl', 'BR:both'] });
+  for (const id of ['B', 'A501', 'G', 'N', 'H', 'M', 'F7', 'E502']) await expect(hit(page, id)).toBeAttached();
+});
