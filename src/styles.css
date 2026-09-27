@@ -103,7 +103,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tool-group .tb.tb-icon svg { display: block; opacity: 0.85; }
 /* schowaj/pokaż panel: podwójny szewron w stronę panelu (widoczny → schowaj) albo od panelu (ukryty → pokaż) */
 .tg-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-#side-toggle { padding: 4px 8px; }
+.tool-group.tg-toggle { padding: 3px 4px; }
 #side-toggle svg { transition: transform .15s; }
 #app[data-side-pos="bottom"] #side-toggle.collapsed svg { transform: rotate(180deg); }
 #app[data-side-pos="right"] #side-toggle svg { transform: rotate(-90deg); }
