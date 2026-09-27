@@ -277,4 +277,11 @@ test('grupa „ekran”: etykiety i przyciski w jednej osi, numer ekranu tym sam
   expect(Math.max(...mids) - Math.min(...mids)).toBeLessThanOrEqual(1);
   const fonts = await page.locator('#screen-tabs .tb, #screen-tabs .tb small').evaluateAll((els) => [...new Set(els.map((e) => `${getComputedStyle(e).fontFamily}|${getComputedStyle(e).fontSize}|${getComputedStyle(e).fontWeight}`))]);
   expect(fonts).toHaveLength(1);
+  // bez podziału na ekrany znika też etykieta „ekran” – zostaje samo „wyrównanie” z przyciskami
+  await page.click('#btn-menu'); await page.click('#menu-settings');
+  await page.check('#settings input[name=screens][value=off]');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#screen-group')).toBeHidden();
+  await expect(page.locator('.tg-view .lbl:not(.lbl-align)')).toBeHidden();
+  await expect(page.locator('.tg-view .lbl-align')).toBeVisible();
 });
