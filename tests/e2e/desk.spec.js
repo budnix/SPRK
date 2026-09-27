@@ -106,7 +106,7 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
 });
 
 test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasłania przycisków w sąsiednim rzędzie)', async ({ page }) => {
-  await openShift(page, 'szkolna', { settings: { srk: 'E' } });
+  await openShift(page, 'szkolna', { params: { srk: 'E' } });
   await advance(page, 30); // Lipno zgłasza 6101
   await btn(page, { kind: 'block', exit: 'W', btn: 'Poz' }).click();
   await btn(page, { kind: 'signal', id: 'A', color: 'green' }).click();
@@ -123,7 +123,7 @@ test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasł
 });
 
 test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru szlakowego', async ({ page }) => {
-  await openShift(page, 'sopot', { settings: { srk: 'E' } });
+  await openShift(page, 'sopot', { params: { srk: 'E' } });
   const before = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
   await btn(page, { kind: 'block', exit: 'OR1', btn: 'Zk' }).click();
   await advance(page, 2);
@@ -225,4 +225,19 @@ test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec prz
   expect(sigFill).toBe('rgb(31, 35, 37)');
   for (const [name, ov] of overlaps) expect(ov, `${name} zasłonięte przyciskiem`).toBe(false);
   expect(s.tiles).toBeGreaterThanOrEqual(s.defined); // każda kostka z definicji narysowana
+});
+
+test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo SVG na pasku górnym, popupy z niebieską ramką', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  expect(await page.locator('#topbar .logo .st-logo-svg').count()).toBe(1);
+  await expect(page.locator('#topbar .logo')).not.toHaveText(/SPRK/); // napis zastąpiony grafiką (aria-label zostaje)
+  const bg = await page.locator('.speed-btn.active').evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(['rgb(63, 140, 255)', 'rgb(31, 111, 224)']).toContain(bg); // ciemny / jasny motyw
+  const shadow = await page.locator('.tabs button.active').evaluate((el) => getComputedStyle(el).boxShadow);
+  expect(shadow).toContain(bg);
+  await page.click('#btn-menu');
+  const border = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopColor);
+  expect(border).not.toBe('rgb(68, 68, 68)'); // nie szara ramka – domieszka akcentu
+  const radius = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+  expect(radius).toBe('4px');
 });

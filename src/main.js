@@ -13,11 +13,12 @@ import { getStation } from './stations/index.js';
 import { Tutorial } from './tutorial/Tutorial.js';
 import { getMission } from './tutorial/missions.js';
 import { applyDom, detectLang, setLang, t } from './i18n/index.js';
+import { logoSvg } from './ui/brand.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
 const settings = new Settings((key, value) => {
-  if (key === 'srk' || key === 'rowScale' || key === 'lang') location.reload();
+  if (key === 'rowScale' || key === 'lang') location.reload();
   else if (key === 'screens') planAll();
   else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
@@ -27,6 +28,7 @@ const settings = new Settings((key, value) => {
 document.documentElement.lang = setLang(detectLang(settings.values.lang === 'auto' ? null : settings.values.lang));
 document.title = t('app.title');
 applyDom(document.body);
+document.querySelector('#topbar .logo').innerHTML = logoSvg(22);
 const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
@@ -39,7 +41,7 @@ const sim = new Simulation(station, {
   disruptions: params.get('zaklocenia') || 'none',
   seed: params.get('seed') ? Number(params.get('seed')) : undefined,
   district: params.get('okreg') || undefined,
-  srk: settings.values.srk === 'auto' ? undefined : settings.values.srk,
+  srk: params.get('srk') || undefined, // tylko do testów/porównań; stanowisko zawsze wynika z definicji stacji lub scenariusza
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? t('top.bothDistricts') : sim.playerDistrict}` : ''}`;
