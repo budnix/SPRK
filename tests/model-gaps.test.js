@@ -283,9 +283,9 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.equal(stars(3), '★★★☆☆');
 });
 
-test('ustawienia domyślne: pulpit na środku, motyw wg systemu, panel na dole, ekrany auto, symbole 125 %, odstęp normalny, stanowisko wg stacji', async () => {
+test('ustawienia domyślne: pulpit na środku, motyw wg systemu, panel na dole, ekrany auto, symbole 125 %, odstęp normalny, stanowisko wg stacji, pola skrajne wyłączone', async () => {
   const { DEFAULTS, Settings } = await import('../src/ui/Settings.js');
-  assert.deepEqual(DEFAULTS, { deskPos: 'middle', sidePos: 'bottom', theme: 'system', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1' });
+  assert.deepEqual(DEFAULTS, { deskPos: 'middle', sidePos: 'bottom', theme: 'system', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1', edgePanels: 'off' });
   assert.equal(Settings.resolveTheme('system', true), 'dark'); assert.equal(Settings.resolveTheme('system', false), 'light');
   assert.equal(Settings.resolveTheme('dark', false), 'dark'); assert.equal(Settings.resolveTheme('light', true), 'light');
 });

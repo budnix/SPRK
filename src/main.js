@@ -6,6 +6,7 @@ import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { Report } from './ui/Report.js';
+import { EdgePanels } from './ui/EdgePanels.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
 import { Tutorial } from './tutorial/Tutorial.js';
@@ -16,6 +17,7 @@ const station = getStation(params.get('stacja'));
 const settings = new Settings((key, value) => {
   if (key === 'srk' || key === 'rowScale') location.reload();
   else if (key === 'screens') planAll();
+  else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
   else requestAnimationFrame(fit);
 });
@@ -95,6 +97,7 @@ function applyScreen() {
   const d = activeDesk; if (!d) return;
   const s = currentScreen();
   if (s) d.renderer.setView(s.x0, s.x1); else d.renderer.resetView();
+  if (edges.svg !== d.renderer.svg) edges.attach(d.renderer);
   const n = d.screens.length;
   document.getElementById('screen-group').classList.toggle('hidden', n <= 1);
   screenTabs.innerHTML = '';
@@ -188,6 +191,8 @@ document.addEventListener('keydown', (e) => {
 /* ---- zoom pulpitu ---- */
 const deskEl = document.getElementById('desk');
 const scroll = document.getElementById('desk-scroll');
+// stałe pola skrajne z blokadą liniową – widoczne, gdy powiększony pulpit nie mieści się na szerokość
+const edges = new EdgePanels(scroll, deskEl, { enabled: settings.values.edgePanels === 'on' });
 let zoom = 1;
 function deskSize() {
   const s = currentScreen();
@@ -204,6 +209,7 @@ function applyZoom() {
   const { w, h } = deskSize();
   deskEl.style.width = `${w * zoom}px`;
   deskEl.style.height = `${h * zoom}px`;
+  edges.update();
 }
 /** Zmiana powiększenia wokół punktu (px, py) w układzie widocznego obszaru pulpitu. */
 function zoomAt(factor, px, py) {

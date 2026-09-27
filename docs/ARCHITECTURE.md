@@ -92,6 +92,18 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 (Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
 (domyślnie 1,25), rzędy ściskane `rowScale`.
 
+## Stałe pola skrajne (`src/render/edges.js`, `src/ui/EdgePanels.js`)
+
+Gdy powiększony pulpit nie mieści się na szerokość okna, skrajne kolumny z blokadą liniową (strzałki szlaku, na pulpicie
+kostkowym także Ko/Poz/Wbl i liczniki) są przypięte do lewej i prawej krawędzi okna (`position: sticky`), a środek
+przewija się między nimi za linią przerywaną – jak stałe pola z blokadą przy krawędziach monitorów w komputerowych srk.
+Pola to dwa małe SVG z `<use>` wskazującym grupę `inner` aktywnego pulpitu (żywa kopia, bez drugiego renderowania) i
+viewBoxem skrajnych kolumn; geometrię liczy `edgeLayout` bez DOM (aktywne tylko przy przepełnieniu i gdy oba pola
+zajmują ≤ 60 % okna). Dotknięcia na polu trafiają do właściwego elementu pulpitu: punkt pola przelicza się na jednostki
+rysunku, szuka się przycisku (`.btn`) lub punktu dotyku (`.hit`) pod nim i wysyła mu ten sam `pointerdown` /
+`pointerup`, więc blokadę obsługuje się z pola. `main.js` woła `edges.attach(renderer)` przy zmianie pulpitu/ekranu
+i `edges.update()` po każdej zmianie powiększenia. Opcja menu `edgePanels`, domyślnie wyłączona.
+
 ## Zwalnianie odcinkowe (`Interlocking.tick`)
 
 Czoło pociągu w przebiegu to najdalszy odcinek zajęty od chwili utwierdzenia (`wasOccupied` zeruje się przy

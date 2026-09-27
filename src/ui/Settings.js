@@ -7,10 +7,11 @@
  *  - screens: podział szerokiego pulpitu na ekrany wg szerokości okna ('auto' | 'off')
  *  - sideCollapsed: panel boczny zwinięty (pulpit na całym ekranie, powiadomienia w listwie narzędzi)
  *  - srk: stanowisko obsługi ('auto' = wg definicji stacji | id strategii z src/srk/registry.js)
+ *  - edgePanels: stałe pola skrajne z blokadą po powiększeniu pulpitu ('on' | 'off', domyślnie 'off')
  */
 const KEY = 'sprk.settings';
 /** Ustawienia domyślne (nowy użytkownik): pulpit na środku, motyw wg systemu, panel na dole, podział na ekrany, symbole 125 %. */
-export const DEFAULTS = { deskPos: 'middle', sidePos: 'bottom', theme: 'system', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1' };
+export const DEFAULTS = { deskPos: 'middle', sidePos: 'bottom', theme: 'system', srk: 'auto', sideCollapsed: false, screens: 'auto', symScale: '1.25', rowScale: '1', edgePanels: 'off' };
 
 export class Settings {
   constructor(onChange) {
