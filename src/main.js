@@ -12,16 +12,21 @@ import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
 import { Tutorial } from './tutorial/Tutorial.js';
 import { getMission } from './tutorial/missions.js';
+import { applyDom, detectLang, setLang, t } from './i18n/index.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
 const settings = new Settings((key, value) => {
-  if (key === 'srk' || key === 'rowScale') location.reload();
+  if (key === 'srk' || key === 'rowScale' || key === 'lang') location.reload();
   else if (key === 'screens') planAll();
   else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
   else requestAnimationFrame(fit);
 });
+// język interfejsu przed zbudowaniem jakiegokolwiek ekranu; 'auto' = wg przeglądarki
+document.documentElement.lang = setLang(detectLang(settings.values.lang === 'auto' ? null : settings.values.lang));
+document.title = t('app.title');
+applyDom(document.body);
 const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
@@ -37,7 +42,7 @@ const sim = new Simulation(station, {
   srk: settings.values.srk === 'auto' ? undefined : settings.values.srk,
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;
-document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? 'oba okręgi' : sim.playerDistrict}` : ''}`;
+document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? t('top.bothDistricts') : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
 document.getElementById('hint').textContent = viewHint(sim.srk);
 const report = new Report(document.getElementById('report'), sim, { onNew: () => startScreen.show() });
@@ -108,7 +113,7 @@ function applyScreen() {
       b.innerHTML = sub ? `${label}<small>${sub}</small>` : label;
       b.addEventListener('click', () => setScreen(idx)); screenTabs.appendChild(b);
     };
-    mk('całość', -1);
+    mk(t('tools.whole'), -1);
     d.screens.forEach((sc, i) => mk(String(i + 1), i, screenLabel(station, sc, i, n)));
   }
   fit();
@@ -133,8 +138,8 @@ const side = new SidePanel(document.getElementById('side'), sim, {
     // ikona panelu: wypełniona część = panel widoczny; pusta = panel ukryty (etykieta dla czytników i podpowiedzi)
     sideToggle.classList.toggle('collapsed', collapsed);
     sideToggle.setAttribute('aria-pressed', String(!collapsed));
-    sideToggle.setAttribute('aria-label', collapsed ? 'Pokaż panel' : 'Ukryj panel');
-    sideToggle.title = collapsed ? 'Pokaż panel boczny' : 'Ukryj panel boczny';
+    sideToggle.setAttribute('aria-label', t(collapsed ? 'tools.showPanel' : 'tools.hidePanel'));
+    sideToggle.title = t(collapsed ? 'tools.showSide' : 'tools.hideSide');
   },
 });
 sideToggle.addEventListener('click', () => side.collapse(!side.collapsed));
@@ -333,7 +338,7 @@ if (mission && params.get('scenariusz')) {
     if (a.ref) return r?.elementFor?.(a.ref) || null;
     return null;
   };
-  tutorial = new Tutorial(sim, { steps: mission.steps(), anchorEl, showTab: (id) => { side.collapse(false); side.showTab(id); }, onFinish: () => setStatus('Samouczek zakończony', 'info') });
+  tutorial = new Tutorial(sim, { steps: mission.steps(), anchorEl, showTab: (id) => { side.collapse(false); side.showTab(id); }, onFinish: () => setStatus(t('status.tutorialDone'), 'info') });
   tutorial.start();
 }
 

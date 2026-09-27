@@ -16,18 +16,18 @@
       <div class="brand"><span class="logo">SPRK</span><span id="station-name">…</span></div>
       <div class="clock"><span id="clock">00:00:00</span></div>
       <div class="controls">
-        <button id="btn-pause" class="tb" title="Pauza (spacja)">❚❚</button>
+        <button id="btn-pause" class="tb" title="Pauza (spacja)" data-i18n-title="top.pause">❚❚</button>
         <div class="speed" id="speed"></div>
-        <button id="btn-help" class="tb" title="Instrukcja obsługi">?</button>
-        <button id="btn-menu" class="tb" title="Menu" aria-haspopup="true" aria-expanded="false">☰</button>
+        <button id="btn-help" class="tb" title="Instrukcja obsługi" data-i18n-title="top.help">?</button>
+        <button id="btn-menu" class="tb" title="Menu" data-i18n-title="top.menu" aria-haspopup="true" aria-expanded="false">☰</button>
       </div>
       <div id="menu" class="menu hidden" role="menu">
-        <h4>Menu</h4>
+        <h4 data-i18n="menu.title">Menu</h4>
         <div class="menu-actions">
-          <button type="button" id="menu-new" class="tb">Nowa zmiana…</button>
-          <button type="button" id="menu-settings" class="tb">Ustawienia…</button>
-          <button type="button" id="menu-report" class="tb">Raport zmiany</button>
-          <button type="button" id="menu-help" class="tb">Instrukcja obsługi</button>
+          <button type="button" id="menu-new" class="tb" data-i18n="menu.new">Nowa zmiana…</button>
+          <button type="button" id="menu-settings" class="tb" data-i18n="menu.settings">Ustawienia…</button>
+          <button type="button" id="menu-report" class="tb" data-i18n="menu.report">Raport zmiany</button>
+          <button type="button" id="menu-help" class="tb" data-i18n="menu.help">Instrukcja obsługi</button>
         </div>
       </div>
     </header>
@@ -37,13 +37,13 @@
         <div id="cmd-host"></div>
         <div id="desk-scroll"><div id="desk"></div></div>
         <div id="desk-tools">
-          <div class="tool-group tg-screens hidden" id="screen-group"><span class="lbl">ekran</span><div id="screen-tabs" class="screen-tabs seg" aria-label="Ekrany pulpitu"></div></div>
-          <div class="tool-group tg-zoom"><span class="lbl">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz">−</button><button class="tb tb-icon" id="zoom-fit" title="Dopasuj do szerokości okna" aria-label="Dopasuj do szerokości"><svg viewBox="0 0 22 14" width="18" height="11" aria-hidden="true"><path d="M1.5 2v10M20.5 2v10M5 7h12M5 7l3-3M5 7l3 3M17 7l-3-3M17 7l-3 3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb tb-icon hidden" id="zoom-fit-h" title="Dopasuj do wysokości okna – środek przewijany, skrajne pola z blokadą przypięte" aria-label="Dopasuj do wysokości"><svg viewBox="0 0 14 22" width="11" height="18" aria-hidden="true"><path d="M2 1.5h10M2 20.5h10M7 5v12M7 5l-3 3M7 5l3 3M7 17l-3-3M7 17l3-3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb" id="zoom-in" title="Powiększ">+</button></div></div>
-          <div class="tool-group tg-panel"><span class="lbl">panel</span><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)"></div></div>
+          <div class="tool-group tg-screens hidden" id="screen-group"><span class="lbl" data-i18n="tools.screen">ekran</span><div id="screen-tabs" class="screen-tabs seg" aria-label="Ekrany pulpitu" data-i18n-aria="tools.screens"></div></div>
+          <div class="tool-group tg-zoom"><span class="lbl" data-i18n="tools.view">widok</span><div class="seg"><button class="tb" id="zoom-out" title="Pomniejsz" data-i18n-title="tools.zoomOut">−</button><button class="tb tb-icon" id="zoom-fit" title="Dopasuj do szerokości okna" data-i18n-title="tools.fitW" aria-label="Dopasuj do szerokości" data-i18n-aria="tools.fitWShort"><svg viewBox="0 0 22 14" width="18" height="11" aria-hidden="true"><path d="M1.5 2v10M20.5 2v10M5 7h12M5 7l3-3M5 7l3 3M17 7l-3-3M17 7l-3 3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb tb-icon hidden" id="zoom-fit-h" title="Dopasuj do wysokości okna – środek przewijany, skrajne pola z blokadą przypięte" data-i18n-title="tools.fitH" aria-label="Dopasuj do wysokości" data-i18n-aria="tools.fitHShort"><svg viewBox="0 0 14 22" width="11" height="18" aria-hidden="true"><path d="M2 1.5h10M2 20.5h10M7 5v12M7 5l-3 3M7 5l3 3M7 17l-3-3M7 17l3-3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="tb" id="zoom-in" title="Powiększ" data-i18n-title="tools.zoomIn">+</button></div></div>
+          <div class="tool-group tg-panel"><span class="lbl" data-i18n="tools.panel">panel</span><div id="mini-tabs" class="mini-tabs seg" aria-label="Panel boczny (zwinięty)" data-i18n-aria="tools.miniTabs"></div></div>
           <span id="status" class="status"></span>
           <div class="tg-right">
             <span id="hint" class="hint">kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij</span>
-            <div class="tool-group tg-toggle"><button class="tb tb-icon" id="side-toggle" title="Ukryj panel boczny" aria-label="Ukryj panel" aria-pressed="true"><svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M3 2.5l4 4 4-4M3 8l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+            <div class="tool-group tg-toggle"><button class="tb tb-icon" id="side-toggle" title="Ukryj panel boczny" data-i18n-title="tools.hideSide" aria-label="Ukryj panel" data-i18n-aria="tools.hidePanel" aria-pressed="true"><svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M3 2.5l4 4 4-4M3 8l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
           </div>
         </div>
       </section>

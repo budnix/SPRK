@@ -95,10 +95,10 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 ## Ekran ustawień (`src/ui/settingsSchema.js`, `src/ui/SettingsScreen.js`)
 
 Menu ≡ ma tylko akcje (Nowa zmiana…, Ustawienia…, Raport zmiany, Instrukcja obsługi). Ustawienia to osobny pełny ekran
-w motywie ekranu startowego: kategorie po lewej (Stanowisko, Pulpit, Monitor, Motyw, Panel boczny), po prawej opcje
+w motywie ekranu startowego: kategorie po lewej (Stanowisko, Pulpit, Monitor, Motyw, Język, Panel boczny), po prawej opcje
 z tytułem, opisem działania i wyborami z podpowiedziami; opcje przeładowujące widok mają znacznik. Treść opisuje
-`SETTINGS_CATEGORIES` (bez DOM; test pilnuje, że każdy klucz `DEFAULTS` jest opisany raz i wartość domyślna jest wśród
-wyborów), a `SettingsScreen` buduje z niego DOM i podpina kontrolki przez `Settings.bindMenu` – zmiana działa od razu
+`settingsCategories()` (bez DOM, funkcja – teksty z `t()` zależą od języka; test pilnuje, że każdy klucz `DEFAULTS` jest
+opisany raz i wartość domyślna jest wśród wyborów), a `SettingsScreen` buduje z niego DOM i podpina kontrolki przez `Settings.bindMenu` – zmiana działa od razu
 i zapisuje się jak dotąd. Pasek „widok”: „dopasuj” dopasowuje do szerokości okna, „wysokość” (tylko przy włączonych
 stałych polach skrajnych) wypełnia okno w pionie i ustawia środek pulpitu.
 
@@ -202,7 +202,20 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 `DEFAULTS` dla nowego użytkownika: pulpit na środku, panel boczny na dole, motyw wg systemu operacyjnego
 (`prefers-color-scheme`, zmiana na żywo; skrypt w `index.html` ustawia motyw przed załadowaniem aplikacji), podział na
 ekrany, symbole monitora 125 %, odstęp torów normalny, stanowisko wg stacji. Zapisane ustawienia (localStorage) mają
-pierwszeństwo; zmiana `srk` / `rowScale` przeładowuje stronę, `symScale` działa na żywo.
+pierwszeństwo; zmiana `srk` / `rowScale` / `lang` przeładowuje stronę, `symScale` działa na żywo.
+
+## Język interfejsu (`src/i18n/`)
+
+Słowniki płaskie `pl.js` (źródłowy), `en.js`, `de.js` – ten sam zbiór kluczy, parametry `{x}` (test `i18n.test.js`
+pilnuje zgodności kluczy i parametrów oraz że tłumaczenia nie są kopią polskiego). `t(key, params)` czyta bieżący
+język (brak klucza → polski → sam klucz), `setLang` ustawia go w `main.js` przed zbudowaniem jakiegokolwiek ekranu:
+ustawienie `lang` (`auto` = `detectLang` po `navigator.languages`, inaczej polski) – dlatego zmiana języka przeładowuje
+stronę. Statyczny `index.html` tłumaczy `applyDom` po atrybutach `data-i18n` / `data-i18n-title` / `data-i18n-aria`.
+Przez `t()` przechodzi warstwa interfejsu: menu i pasek narzędzi, ekran startowy, ustawienia, raport, panel boczny,
+dymek samouczka, podpowiedzi stanowiska i instrukcja (`help.*`). **Nie** przechodzą: komunikaty modelu (`src/model/`
+– dziennik, statusy rozkładu, telefonogramy wg Ir-1, komunikaty oceny), polecenia paska Ie-104 na monitorze, opisy
+posterunków i scenariuszy, kroki misji i słownik – to treść domenowa po polsku, testowana w Node na polskich tekstach.
+Testy e2e działają z `locale: 'pl-PL'` (konfiguracja Playwright), bo „auto” w angielskiej przeglądarce dałoby angielski.
 
 ## Testy
 

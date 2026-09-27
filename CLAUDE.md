@@ -30,5 +30,7 @@
 - Logika symulacji (`src/model/`) nie może zależeć od DOM – testy działają w Node.
 - Nowe kostki pulpitu: wpis w `src/tiles/registry.js` + funkcja rysująca w `src/render/tileArt.js`.
 - Definicje stacji wg `docs/STATION-FORMAT.md`; walidacja w `src/model/validate.js`.
+- Teksty interfejsu (menu, ekrany, panel, pomoc) przez `t()` z `src/i18n/`: nowy tekst = klucz w `pl.js`, `en.js` i `de.js`
+  (test pilnuje zgodności). Komunikaty modelu (`src/model/`), polecenia Ie-104 i treść stacji/misji zostają po polsku.
 - Terminologia kolejowa po polsku, zgodnie z Ie-1 / Ir-1 (semafor, tarcza manewrowa, przebieg, utwierdzenie,
   odcinek zbliżania, droga ochronna, blokada liniowa Eap).

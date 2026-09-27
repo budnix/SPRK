@@ -12,9 +12,9 @@ test('menu ≡ ma tylko akcje; „Ustawienia…” otwiera pełny ekran z katego
   const se = page.locator('#settings');
   await expect(se).toBeVisible();
   await expect(se.locator('.st-tagline')).toHaveText('Ustawienia');
-  await expect(se.locator('.se-cat')).toHaveCount(5);
-  await expect(se.locator('.se-section')).toHaveCount(5);
-  await expect(se.locator('.se-option')).toHaveCount(8);
+  await expect(se.locator('.se-cat')).toHaveCount(6);
+  await expect(se.locator('.se-section')).toHaveCount(6);
+  await expect(se.locator('.se-option')).toHaveCount(9);
   await expect(se.locator('.se-option[data-key=edgePanels] .se-desc')).toContainText('przypięte');
   await expect(se.locator('.se-option[data-key=srk] .se-tag')).toHaveText('przeładowuje widok');
   await expect(se.locator('input[name=theme][value=dark]')).toBeChecked();

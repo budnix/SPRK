@@ -1,5 +1,6 @@
 import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
 import { Clock } from '../core/Clock.js';
+import { t } from '../i18n/index.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -14,16 +15,16 @@ export class SidePanel {
     this.opts = opts;
     root.innerHTML = `
       <nav class="tabs">
-        <button data-tab="rj" class="active">Rozkład</button>
-        <button data-tab="log">Dziennik <span id="log-badge" class="badge hidden">0</span></button>
-        <button data-tab="stan">Stan</button>
-        <button data-tab="rozkazy">Rozkazy</button>
-        <button data-tab="lacznosc">Łączność <span id="comms-badge" class="badge hidden">0</span></button>
-        <button data-tab="polecenia" id="tab-btn-polecenia" class="hidden">Polecenia <span id="cmd-badge" class="badge hidden">0</span></button>
-        <button type="button" class="collapse-btn" title="Zwiń panel (pulpit na całym ekranie)" aria-label="Zwiń panel">⇥</button>
+        <button data-tab="rj" class="active">${t('sp.tab.rj')}</button>
+        <button data-tab="log">${t('sp.tab.log')} <span id="log-badge" class="badge hidden">0</span></button>
+        <button data-tab="stan">${t('sp.tab.stan')}</button>
+        <button data-tab="rozkazy">${t('sp.tab.rozkazy')}</button>
+        <button data-tab="lacznosc">${t('sp.tab.lacznosc')} <span id="comms-badge" class="badge hidden">0</span></button>
+        <button data-tab="polecenia" id="tab-btn-polecenia" class="hidden">${t('sp.tab.polecenia')} <span id="cmd-badge" class="badge hidden">0</span></button>
+        <button type="button" class="collapse-btn" title="${t('sp.collapse')}" aria-label="${t('sp.collapseShort')}">⇥</button>
       </nav>
       <section class="tab" id="tab-rj">
-        <table class="rj"><thead><tr><th>Nr</th><th>Relacja</th><th>Przyj.</th><th>Odj.</th><th>Tor</th><th>Stan</th></tr></thead><tbody></tbody></table>
+        <table class="rj"><thead><tr><th>${t('sp.col.nr')}</th><th>${t('sp.col.rel')}</th><th>${t('sp.col.arr')}</th><th>${t('sp.col.dep')}</th><th>${t('sp.col.track')}</th><th>${t('sp.col.state')}</th></tr></thead><tbody></tbody></table>
         <div class="score" id="score"></div>
       </section>
       <section class="tab hidden" id="tab-log">
@@ -31,55 +32,55 @@ export class SidePanel {
         <ul class="log" id="log"></ul>
       </section>
       <section class="tab hidden" id="tab-stan">
-        <h4>Usterki</h4>
-        <div id="faults" class="muted">brak</div>
-        <h4>Blokady liniowe</h4>
+        <h4>${t('sp.faults')}</h4>
+        <div id="faults" class="muted">${t('sp.none')}</div>
+        <h4>${t('sp.blocks')}</h4>
         <div id="blocks"></div>
-        <h4>Przebiegi nastawione</h4>
+        <h4>${t('sp.routes')}</h4>
         <ul id="routes" class="plain"></ul>
-        <h4>Liczniki</h4>
+        <h4>${t('sp.counters')}</h4>
         <div id="counters"></div>
-        <h4>Zadania manewrowe</h4>
-        <div id="tasks" class="muted">brak</div>
-        <h4>Manewry</h4>
+        <h4>${t('sp.tasks')}</h4>
+        <div id="tasks" class="muted">${t('sp.none')}</div>
+        <h4>${t('sp.shunt')}</h4>
         <div id="shunt"></div>
       </section>
       <section class="tab hidden" id="tab-rozkazy">
-        <h4>Rozkaz pisemny „S” – przejazd obok semafora „Stój”</h4>
+        <h4>${t('sp.order.title')}</h4>
         <form id="order-form" class="order-form">
-          <label>Pociąg nr <select name="nr" id="order-train"></select></label>
-          <label>Semafor <input name="signal" id="order-signal" readonly></label>
-          <label>Z powodu <input name="reason" id="order-reason" value="usterki urządzeń srk"></label>
-          <label>Treść rozkazu <textarea name="text" id="order-text" rows="6"></textarea></label>
-          <div class="order-actions"><button type="submit">Wydaj rozkaz</button> <span id="order-msg" class="order-msg"></span></div>
+          <label>${t('sp.order.train')} <select name="nr" id="order-train"></select></label>
+          <label>${t('sp.order.signal')} <input name="signal" id="order-signal" readonly></label>
+          <label>${t('sp.order.reason')} <input name="reason" id="order-reason" value="${t('sp.order.reasonDefault')}"></label>
+          <label>${t('sp.order.text')} <textarea name="text" id="order-text" rows="6"></textarea></label>
+          <div class="order-actions"><button type="submit">${t('sp.order.issue')}</button> <span id="order-msg" class="order-msg"></span></div>
         </form>
-        <p class="muted small">Warunki (Ir-1): pociąg stoi przed semaforem, zwrotnice w drodze jazdy zamknięte (Zz) lub utwierdzone, wykolejnice zdjęte, odcinki wolne, przy wyjeździe – pozwolenie blokady. Pociąg jedzie do następnego semafora z prędkością do 20 km/h.</p>
-        <h4>Wydane rozkazy</h4>
+        <p class="muted small">${t('sp.order.rules')}</p>
+        <h4>${t('sp.order.issued')}</h4>
         <ol id="orders" class="orders"></ol>
       </section>
       <section class="tab hidden" id="tab-lacznosc">
         <form id="comms-form" class="order-form">
-          <label>Do <select id="comms-to"></select></label>
-          <label>Telefonogram / komunikat <select id="comms-formula"></select></label>
-          <label>Pociąg nr <input id="comms-nr" inputmode="numeric"></label>
-          <div class="order-actions"><button type="submit">Nadaj</button> <span id="comms-msg" class="order-msg"></span></div>
+          <label>${t('sp.comms.to')} <select id="comms-to"></select></label>
+          <label>${t('sp.comms.formula')} <select id="comms-formula"></select></label>
+          <label>${t('sp.comms.train')} <input id="comms-nr" inputmode="numeric"></label>
+          <div class="order-actions"><button type="submit">${t('sp.comms.send')}</button> <span id="comms-msg" class="order-msg"></span></div>
         </form>
-        <p class="muted small">Telefonogramy wg Ir-1 stosuje się przy usterce blokady liniowej (zapowiadanie telefoniczne). Błędna formuła jest punktowana ujemnie.</p>
-        <h4>Rozmowy</h4>
+        <p class="muted small">${t('sp.comms.rules')}</p>
+        <h4>${t('sp.comms.log')}</h4>
         <ul class="log comms" id="comms-log"></ul>
       </section>
       <section class="tab hidden" id="tab-polecenia">
         <div id="cmd-form-wrap">
-          <h4>Polecenie dla nastawni wykonawczej</h4>
+          <h4>${t('sp.cmd.title')}</h4>
           <form id="cmd-form" class="order-form">
-            <label>Pociąg <select id="cmd-train"></select></label>
-            <label id="cmd-track-wrap">Na tor <select id="cmd-track"></select></label>
-            <label id="cmd-exit-wrap">Do <select id="cmd-exit"></select></label>
-            <div class="order-actions"><button type="submit">Wydaj polecenie</button> <span id="cmd-msg" class="order-msg"></span></div>
+            <label>${t('sp.cmd.train')} <select id="cmd-train"></select></label>
+            <label id="cmd-track-wrap">${t('sp.cmd.track')} <select id="cmd-track"></select></label>
+            <label id="cmd-exit-wrap">${t('sp.cmd.to')} <select id="cmd-exit"></select></label>
+            <div class="order-actions"><button type="submit">${t('sp.cmd.issue')}</button> <span id="cmd-msg" class="order-msg"></span></div>
           </form>
         </div>
         <p class="muted small" id="cmd-help"></p>
-        <h4>Polecenia</h4>
+        <h4>${t('sp.cmd.list')}</h4>
         <div id="cmd-list"></div>
       </section>`;
     this.tbody = root.querySelector('.rj tbody');
@@ -122,8 +123,8 @@ export class SidePanel {
     const other = Object.keys(sim.districts).find((id) => id !== sim.playerDistrict);
     const formWrap = this.root.querySelector('#cmd-form-wrap');
     this.root.querySelector('#cmd-help').textContent = isDispatcher
-      ? `Nastawnia ${other} przyjmuje i wyprawia pociągi po swojej stronie wyłącznie na Twoje polecenie (Ir-1). Melduje wykonanie przez łączność.`
-      : `Polecenia dyżurnego ruchu (${other}). Wykonaj je na swoim pulpicie: daj pozwolenie sąsiadowi, nastaw przebieg na wskazany tor lub wypraw pociąg na wskazany szlak.`;
+      ? t('sp.cmd.helpDispatcher', { other })
+      : t('sp.cmd.helpSignalman', { other });
     if (!isDispatcher) { formWrap.classList.add('hidden'); }
     const trSel = this.root.querySelector('#cmd-train');
     const tkSel = this.root.querySelector('#cmd-track');
@@ -142,7 +143,7 @@ export class SidePanel {
     const fill = () => {
       const c = candidates();
       const cur = trSel.value;
-      trSel.innerHTML = c.map(({ e, kind }) => `<option value="${e.nr}" data-kind="${kind}">${e.label} ${relationOf(e)} – ${kind === 'accept' ? `przyjąć od ${sim.station.exits[e.from].name}` : `wyprawić do ${sim.station.exits[e.to].name}`}</option>`).join('') || '<option value="">brak pociągów do polecenia</option>';
+      trSel.innerHTML = c.map(({ e, kind }) => `<option value="${e.nr}" data-kind="${kind}">${e.label} ${relationOf(e)} – ${kind === 'accept' ? t('sp.cmd.accept', { name: sim.station.exits[e.from].name }) : t('sp.cmd.dispatch', { name: sim.station.exits[e.to].name })}</option>`).join('') || `<option value="">${t('sp.cmd.noTrains')}</option>`;
       if ([...trSel.options].some((o) => o.value === cur)) trSel.value = cur;
       upd();
     };
@@ -159,10 +160,10 @@ export class SidePanel {
     this.root.querySelector('#cmd-form').addEventListener('submit', (ev) => {
       ev.preventDefault();
       const opt = trSel.selectedOptions[0];
-      if (!opt || !trSel.value) { msg.textContent = 'Brak pociągu'; msg.className = 'order-msg err'; return; }
+      if (!opt || !trSel.value) { msg.textContent = t('sp.cmd.noTrain'); msg.className = 'order-msg err'; return; }
       const kind = opt.dataset.kind;
       sim.issueCommand({ kind, nr: Number(trSel.value), track: kind === 'accept' ? tkSel.value : undefined, exit: kind === 'dispatch' ? exSel.value : undefined, from: sim.playerDistrict, to: other });
-      msg.textContent = 'Polecenie wydane.'; msg.className = 'order-msg ok';
+      msg.textContent = t('sp.cmd.issued'); msg.className = 'order-msg ok';
       fill(); this.renderCommands();
     });
     this.cmdUnread = 0;
@@ -184,7 +185,7 @@ export class SidePanel {
     const list = this.root.querySelector('#cmd-list');
     if (!list) return;
     const cmds = [...this.sim.commands].reverse();
-    list.innerHTML = cmds.length ? cmds.map((c) => `<div class="cmd ${c.status}"><span class="t">${Clock.format(c.time)}</span> nr ${c.id} · ${c.from} → ${c.to}: ${escapeHtml(c.text)} ${c.status === 'done' ? '✔' : '☐'}</div>`).join('') : '<div class="muted">brak</div>';
+    list.innerHTML = cmds.length ? cmds.map((c) => `<div class="cmd ${c.status}"><span class="t">${Clock.format(c.time)}</span> nr ${c.id} · ${c.from} → ${c.to}: ${escapeHtml(c.text)} ${c.status === 'done' ? '✔' : '☐'}</div>`).join('') : `<div class="muted">${t('sp.none')}</div>`;
   }
 
   #initComms() {
@@ -194,7 +195,7 @@ export class SidePanel {
     const msg = this.root.querySelector('#comms-msg');
     const logEl = this.root.querySelector('#comms-log');
     const exits = [...this.sim.blocks.values()];
-    toSel.innerHTML = exits.map((b) => `<option value="${b.id}">${b.neighbour} (posterunek)${b.trackLabel ? ` – ${b.trackLabel}` : ''}</option>`).join('') + '<option value="driver">maszynista (radio)</option>';
+    toSel.innerHTML = exits.map((b) => `<option value="${b.id}">${b.neighbour} (${t('sp.comms.post')})${b.trackLabel ? ` – ${b.trackLabel}` : ''}</option>`).join('') + `<option value="driver">${t('sp.comms.driver')}</option>`;
     const fillFormulas = () => {
       const to = toSel.value === 'driver' ? 'driver' : 'neighbour';
       fSel.innerHTML = this.sim.comms.available().filter((f) => f.to === to).map((f) => `<option value="${f.id}">${f.text({ nr: '…', time: '…' })}</option>`).join('');
@@ -203,7 +204,7 @@ export class SidePanel {
     this.root.querySelector('#comms-form').addEventListener('submit', (ev) => {
       ev.preventDefault();
       const r = this.sim.comms.send(fSel.value, { exit: toSel.value, nr: nrEl.value.trim() });
-      msg.textContent = r.ok ? 'Nadano.' : (r.reason || 'Błąd');
+      msg.textContent = r.ok ? t('sp.comms.sent') : (r.reason || t('sp.comms.error'));
       msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
     });
     this.commsUnread = 0;
@@ -245,7 +246,7 @@ export class SidePanel {
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
       const r = this.sim.traffic.issueOrder({ nr: sel.value, signal: sigEl.value, text: textEl.value, reason: reasonEl.value });
-      msg.textContent = r.ok ? `Rozkaz nr ${r.order.id} wydany.` : r.reason;
+      msg.textContent = r.ok ? t('sp.order.ok', { id: r.order.id }) : r.reason;
       msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
       this.renderOrders();
     });
@@ -253,8 +254,8 @@ export class SidePanel {
     this.refreshOrderTrains = () => {
       const standing = this.sim.traffic.standingTrains();
       const cur = sel.value;
-      const opts = standing.map((t) => `<option value="${t.nr}">${t.label ?? t.nr} ${relationOf(t)} – przed ${t.signal ?? '–'}</option>`).join('');
-      if (sel.innerHTML !== opts) { sel.innerHTML = opts || '<option value="">brak stojących pociągów</option>'; if ([...sel.options].some((o) => o.value === cur)) sel.value = cur; fill(); }
+      const opts = standing.map((x) => `<option value="${x.nr}">${x.label ?? x.nr} ${relationOf(x)} – ${t('sp.order.before')} ${x.signal ?? '–'}</option>`).join('');
+      if (sel.innerHTML !== opts) { sel.innerHTML = opts || `<option value="">${t('sp.order.noTrains')}</option>`; if ([...sel.options].some((o) => o.value === cur)) sel.value = cur; fill(); }
     };
     this.refreshOrderTrains();
     this.renderOrders();
@@ -262,7 +263,7 @@ export class SidePanel {
 
   renderOrders() {
     const ol = this.root.querySelector('#orders');
-    ol.innerHTML = this.sim.traffic.orders.slice().reverse().map((o) => `<li><b>Nr ${o.id}</b> · ${Clock.format(o.time)} · pociąg ${o.nr} · semafor ${o.signal}<div class="order-text">${escapeHtml(o.text)}</div></li>`).join('') || '<li class="muted">brak</li>';
+    ol.innerHTML = this.sim.traffic.orders.slice().reverse().map((o) => `<li>${t('sp.order.item', { id: o.id, time: Clock.format(o.time), nr: o.nr, signal: o.signal })}<div class="order-text">${escapeHtml(o.text)}</div></li>`).join('') || `<li class="muted">${t('sp.none')}</li>`;
   }
 
   /** Zwija / rozwija panel; po zwinięciu zakładki z licznikami powiadomień są w listwie narzędzi pulpitu. */
@@ -326,11 +327,11 @@ export class SidePanel {
     const div = document.createElement('div');
     div.className = `alert alert-${a.type}`;
     const texts = {
-      request: () => `${this.sim.blocks.get(a.exit).neighbour} żąda pozwolenia na wyprawienie pociągu – daj pozwolenie (Poz) na blokadzie.`,
-      rozprucie: () => `ROZPRUCIE zwrotnicy ${a.id}!`,
-      fault: () => `USTERKA: ${a.fault.type === 'signal-fail' ? `semafor ${a.fault.target}` : a.fault.type === 'point-control' ? `zwrotnica ${a.fault.target}` : a.fault.type === 'false-occupancy' ? `odcinek ${a.fault.target}` : `blokada ${this.sim.blocks.get(a.fault.target)?.neighbour}`}`,
-      phone: () => `Telefon od ${this.sim.blocks.get(a.exit).neighbour} – odpowiedz w zakładce Łączność.`,
-      radio: () => `Radio: maszynista pociągu ${a.nr} melduje – zakładka Łączność.`,
+      request: () => t('sp.alarm.request', { name: this.sim.blocks.get(a.exit).neighbour }),
+      rozprucie: () => t('sp.alarm.split', { id: a.id }),
+      fault: () => t('sp.alarm.fault', { what: a.fault.type === 'signal-fail' ? t('sp.alarm.fault.signal', { id: a.fault.target }) : a.fault.type === 'point-control' ? t('sp.alarm.fault.point', { id: a.fault.target }) : a.fault.type === 'false-occupancy' ? t('sp.alarm.fault.section', { id: a.fault.target }) : t('sp.alarm.fault.block', { name: this.sim.blocks.get(a.fault.target)?.neighbour }) }),
+      phone: () => t('sp.alarm.phone', { name: this.sim.blocks.get(a.exit).neighbour }),
+      radio: () => t('sp.alarm.radio', { nr: a.nr }),
     };
     div.textContent = (texts[a.type] || (() => JSON.stringify(a)))();
     this.alertsEl.prepend(div);
@@ -358,37 +359,36 @@ export class SidePanel {
       return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h">
         <td class="nr"><span class="cat cat-${e.cat}">${cat.label}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
-        <td>${e.dep ?? (e.terminates ? 'k.b.' : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>
+        <td>${e.dep ?? (e.terminates ? t('rp.endsHere') : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>
         <td>${e.track ?? ''}</td><td class="st">${e.status}${delay}</td></tr>`;
     });
     this.tbody.innerHTML = rows.join('');
     const s = this.sim.traffic.score;
-    this.root.querySelector('#score').textContent = `Wyprawione punktualnie: ${s.onTime} · opóźnione: ${s.delayed} (${s.totalDelayMin} min) · dPz: ${this.sim.ilk.counters.dPz} · Sz: ${this.sim.ilk.counters.Sz}`;
+    this.root.querySelector('#score').textContent = t('sp.score', { onTime: s.onTime, delayed: s.delayed, min: s.totalDelayMin, dPz: this.sim.ilk.counters.dPz, sz: this.sim.ilk.counters.Sz });
   }
 
   renderState() {
     const bl = [...this.sim.blocks.values()].map((b) => {
-      const dir = b.direction === 'out' ? 'wyjazd' : b.direction === 'in' ? 'wjazd' : '–';
-      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? ' (samoczynna)' : ''}: kierunek ${dir}${b.permission && !b.auto ? ' (pozwolenie)' : ''}${b.request === 'theirs' ? ' · <span class="warn">żądanie pozwolenia!</span>' : b.request === 'ours' ? ' · żądanie wysłane' : ''}${b.occupied ? ' · <span class="warn">szlak zajęty</span>' : ''}${b.koPending ? ' · <span class="warn">zwolnić blok końcowy (Ko)</span>' : ''}</div>`;
+      const dir = b.direction === 'out' ? t('sp.blk.out') : b.direction === 'in' ? t('sp.blk.in') : '–';
+      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? t('sp.blk.auto') : ''}: ${t('sp.blk.dir')} ${dir}${b.permission && !b.auto ? t('sp.blk.perm') : ''}${b.request === 'theirs' ? ` · <span class="warn">${t('sp.blk.request')}</span>` : b.request === 'ours' ? ` · ${t('sp.blk.requested')}` : ''}${b.occupied ? ` · <span class="warn">${t('sp.blk.occupied')}</span>` : ''}${b.koPending ? ` · <span class="warn">${t('sp.blk.ko')}</span>` : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
-    const fname = { 'signal-fail': 'semafor', 'point-control': 'zwrotnica (napęd)', 'false-occupancy': 'fałszywa zajętość', 'block-fail': 'blokada bez łączności' };
-    this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${fname[f.type]} ${f.type === 'block-fail' ? this.sim.blocks.get(f.target)?.neighbour : f.target}</div>`).join('') : '<span class="muted">brak</span>';
-    const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${a.route.kind === 'train' ? 'pociągowy' : 'manewrowy'})${a.timedRelease ? ' – zwalnianie czasowe' : ''}${a.trainEntered ? ' – pociąg w przebiegu' : ''}</li>`)
-      .concat(this.sim.ilk.pending.map((p) => `<li>${p.route.id} – nastawianie…</li>`));
-    this.root.querySelector('#routes').innerHTML = routes.join('') || '<li class="muted">brak</li>';
+    this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${t(`sp.fault.${f.type}`)} ${f.type === 'block-fail' ? this.sim.blocks.get(f.target)?.neighbour : f.target}</div>`).join('') : `<span class="muted">${t('sp.none')}</span>`;
+    const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${t(a.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${a.timedRelease ? t('sp.route.timed') : ''}${a.trainEntered ? t('sp.route.entered') : ''}</li>`)
+      .concat(this.sim.ilk.pending.map((p) => `<li>${t('sp.route.setting', { id: p.route.id })}</li>`));
+    this.root.querySelector('#routes').innerHTML = routes.join('') || `<li class="muted">${t('sp.none')}</li>`;
     const c = this.sim.ilk.counters;
     const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);
-    this.root.querySelector('#counters').innerHTML = `dPz: ${c.dPz} · Sz: ${c.Sz} · rozprucia: ${c.rozprucie}` + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : '<div class="muted">dPo / dKo: 0</div>');
+    this.root.querySelector('#counters').innerHTML = t('sp.counters.line', { dPz: c.dPz, sz: c.Sz, split: c.rozprucie }) + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : `<div class="muted">${t('sp.counters.blk')}</div>`);
     const tasks = this.sim.traffic.tasks || [];
     this.root.querySelector('#tasks').innerHTML = tasks.length
-      ? tasks.map((t) => `<div class="task ${t.done ? 'done' : t.failed ? 'failed' : ''}">${t.done ? '✔' : t.failed ? '✘' : '☐'} ${escapeHtml(t.text)} <span class="muted">do ${t.deadline}</span></div>`).join('')
-      : '<span class="muted">brak</span>';
+      ? tasks.map((x) => `<div class="task ${x.done ? 'done' : x.failed ? 'failed' : ''}">${x.done ? '✔' : x.failed ? '✘' : '☐'} ${escapeHtml(x.text)} <span class="muted">${t('sp.task.due', { time: x.deadline })}</span></div>`).join('')
+      : `<span class="muted">${t('sp.none')}</span>`;
     const standing = this.sim.traffic.timetable().filter((e) => e.train && !e.train.finished && e.train.v === 0 && e.train.entered);
     this.root.querySelector('#shunt').innerHTML = standing.length
-      ? standing.map((e) => `<div class="shunt-row">Pociąg ${e.nr} (${e.train.mode === 'shunt' ? 'manewrowy' : 'pociągowy'}, czoło ${['E', 'NE', 'SE'].includes(e.train.direction) ? '→' : '←'}) <button data-nr="${e.nr}" data-act="${e.train.mode === 'shunt' ? 'train' : 'shunt'}">${e.train.mode === 'shunt' ? 'jazda pociągowa' : 'jazda manewrowa'}</button> <button data-nr="${e.nr}" data-act="rev">zmiana czoła</button></div>`).join('')
-      : '<div class="muted">brak stojących pociągów</div>';
+      ? standing.map((e) => `<div class="shunt-row">${t('sp.shunt.row', { nr: e.nr, mode: t(e.train.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain'), arrow: ['E', 'NE', 'SE'].includes(e.train.direction) ? '→' : '←' })} <button data-nr="${e.nr}" data-act="${e.train.mode === 'shunt' ? 'train' : 'shunt'}">${t(e.train.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button> <button data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button></div>`).join('')
+      : `<div class="muted">${t('sp.shunt.none')}</div>`;
     for (const b of this.root.querySelectorAll('#shunt button')) {
       b.addEventListener('click', () => {
         if (b.dataset.act === 'shunt') this.sim.traffic.toShunting(b.dataset.nr);

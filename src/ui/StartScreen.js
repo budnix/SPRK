@@ -4,6 +4,7 @@ import { difficultyMark, logoSvg } from './brand.js';
 import { getSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
 import { getMission } from '../tutorial/missions.js';
+import { t } from '../i18n/index.js';
 
 const SORT_KEY = 'sprk.startSort';
 
@@ -22,7 +23,7 @@ export function missionList(stations) {
 
 /** Krótka etykieta stanowiska na karcie posterunku. */
 export function srkBadge(srkId) {
-  return getSrk(srkId).view === 'screen' ? 'komputerowe · monitor' : 'typ E · pulpit kostkowy';
+  return t(getSrk(srkId).view === 'screen' ? 'start.srkScreen' : 'start.srkDesk');
 }
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -43,27 +44,27 @@ export class StartScreen {
     root.innerHTML = `<div class="start-screen">
       <header class="st-hero">
         <div class="st-logo">${logoSvg()}</div>
-        <div class="st-tagline">Symulator Prowadzenia Ruchu Kolejowego</div>
-        <div class="st-sub">1. Wybierz misję albo posterunek z listy · 2. Ustaw zmianę i rozpocznij służbę.</div>
-        ${current.scenario ? '<button type="button" class="tb st-close" id="st-close">‹ Wróć do zmiany</button>' : ''}
+        <div class="st-tagline">${t('app.tagline')}</div>
+        <div class="st-sub">${t('start.sub')}</div>
+        ${current.scenario ? `<button type="button" class="tb st-close" id="st-close">${t('start.back')}</button>` : ''}
       </header>
       <div class="st-layout">
-        <nav class="st-left" aria-label="Lista misji i posterunków">
+        <nav class="st-left" aria-label="${t('start.nav')}">
           <section class="st-missions">
-            <h3><span class="st-kicker">Szkolenie</span>Misje wprowadzające</h3>
+            <h3><span class="st-kicker">${t('start.training')}</span>${t('start.missions')}</h3>
             <div class="st-mission-list">${missions.map((m, i) => `<button type="button" class="st-mission" data-station="${m.station.id}" data-scenario="${m.scenario.id}" data-idx="${i}">
                 <span class="st-mthumb">${stationThumbnail(m.station, { w: 240, h: 90 })}<span class="st-no">${i + 1}</span></span>
                 <span class="st-mbody"><span class="st-mtitle">${esc(m.scenario.name.replace(/\s*\(samouczek\)/, ''))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span></span></button>`).join('')}</div>
           </section>
           <section class="st-stations">
-            <div class="st-head"><h3><span class="st-kicker">Służba</span>Posterunki</h3>
-              <div class="seg st-sort" aria-label="Kolejność posterunków"><button type="button" class="tb" data-sort="name">A–Z</button><button type="button" class="tb" data-sort="difficulty">trudność</button></div></div>
+            <div class="st-head"><h3><span class="st-kicker">${t('start.duty')}</span>${t('start.stations')}</h3>
+              <div class="seg st-sort" aria-label="${t('start.sortLabel')}"><button type="button" class="tb" data-sort="name">${t('start.sortName')}</button><button type="button" class="tb" data-sort="difficulty">${t('start.sortDiff')}</button></div></div>
             <div id="st-list" class="st-list"></div>
           </section>
         </nav>
         <div class="st-arrow" aria-hidden="true"><span class="st-rail"></span><span class="st-chev">›</span><span class="st-rail"></span></div>
         <aside id="st-briefing" class="st-briefing">
-          <div class="st-bplaceholder"><div class="st-bpicon">‹</div><div>Wybierz misję albo posterunek z listy.<br>Tu ustawisz zmianę i rozpoczniesz służbę.</div></div>
+          <div class="st-bplaceholder"><div class="st-bpicon">‹</div><div>${t('start.placeholder')}</div></div>
           <div class="st-bcontent hidden">
             <div class="st-bthumb"></div>
             <div class="st-btitle"><span class="st-bname"></span><span class="st-bdiff"></span></div>
@@ -71,16 +72,16 @@ export class StartScreen {
             <div id="st-params" class="st-params">
               <p class="muted" id="st-station-desc"></p>
               <div class="st-form">
-                <label id="st-district-wrap" class="hidden">Okręg nastawczy (stanowisko) <select id="st-district"></select></label>
+                <label id="st-district-wrap" class="hidden">${t('start.district')} <select id="st-district"></select></label>
                 <p class="muted" id="st-district-desc"></p>
-                <label>Scenariusz <select id="st-scenario"></select></label>
+                <label>${t('start.scenario')} <select id="st-scenario"></select></label>
                 <p class="muted" id="st-scenario-desc"></p>
-                <label>Zakłócenia (opóźnienia, usterki)
-                  <select id="st-level">${Object.entries(DISRUPTION_LEVELS).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}</select>
+                <label>${t('start.level')}
+                  <select id="st-level">${Object.keys(DISRUPTION_LEVELS).map((k) => `<option value="${k}">${t(`level.${k}`)}</option>`).join('')}</select>
                 </label>
-                <label>Ziarno losowe (puste = losowe) <input id="st-seed" inputmode="numeric" placeholder="np. 42"></label>
+                <label>${t('start.seed')} <input id="st-seed" inputmode="numeric" placeholder="${t('start.seedPh')}"></label>
               </div>
-              <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">Rozpocznij zmianę</button></div>
+              <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">${t('start.go')}</button></div>
             </div>
           </div>
         </aside>
@@ -128,7 +129,7 @@ export class StartScreen {
         <div class="st-body">
           <div class="st-row"><span class="st-name">${esc(s.name)}</span>${difficultyMark(s.difficulty)}</div>
           <div class="st-loc">${esc(s.location || '')}</div>
-          <div class="st-chips"><span class="st-srk">${srkBadge(s.srk)}</span>${s.districts ? '<span class="st-srk">dwa okręgi</span>' : ''}<span class="st-srk">${(s.scenarios || []).filter((x) => !x.tutorial).length} scen.</span></div>
+          <div class="st-chips"><span class="st-srk">${srkBadge(s.srk)}</span>${s.districts ? `<span class="st-srk">${t('start.twoDistricts')}</span>` : ''}<span class="st-srk">${t('start.scen', { n: (s.scenarios || []).filter((x) => !x.tutorial).length })}</span></div>
           <div class="st-traffic">${esc(s.traffic || '')}</div>
         </div>
       </div>`).join('');
@@ -139,15 +140,15 @@ export class StartScreen {
     const m = this.missions[i]; if (!m) return;
     this.mission = m; this.selected = null;
     this.#mark('.st-mission', (el) => Number(el.dataset.idx) === i);
-    const b = this.#openBriefing(m.station, `Misja ${i + 1}: ${m.scenario.name.replace(/\s*\(samouczek\)/, '')}`);
+    const b = this.#openBriefing(m.station, t('start.mission', { n: i + 1, name: m.scenario.name.replace(/\s*\(samouczek\)/, '') }));
     const btn = this.root.querySelector(`.st-mission[data-idx="${i}"]`);
     if (window.innerWidth < 900) { btn.after(b); b.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else this.root.querySelector('.st-layout').appendChild(b);
     const steps = getMission(m.scenario.tutorial)?.steps().length;
-    b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>samouczek${steps ? ` · ${steps} kroków` : ''}</small>`;
+    b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>${t('start.tutorial')}${steps ? ` · ${t('start.steps', { n: steps })}` : ''}</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
     this.root.querySelector('#st-station-desc').textContent = m.scenario.description || '';
     this.root.querySelector('.st-form').classList.add('hidden');
-    this.root.querySelector('#st-go').textContent = 'Rozpocznij misję';
+    this.root.querySelector('#st-go').textContent = t('start.goMission');
   }
 
   /** Zaznacza posterunek i pokazuje odprawę (briefing) z parametrami zmiany. */
@@ -158,27 +159,25 @@ export class StartScreen {
     this.#mark('.st-card', (el) => el.dataset.id === id);
     const card = this.list.querySelector(`.st-card[data-id="${id}"]`);
     const b = this.#openBriefing(st, st.name);
-    b.querySelector('.st-bdiff').innerHTML = difficultyMark(st.difficulty, 'trudność');
+    b.querySelector('.st-bdiff').innerHTML = difficultyMark(st.difficulty, t('start.difficulty'));
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(st.location || '')}</div><div>${esc(st.traffic || '')}</div>`;
     root.querySelector('.st-form').classList.remove('hidden');
-    root.querySelector('#st-go').textContent = 'Rozpocznij zmianę';
+    root.querySelector('#st-go').textContent = t('start.go');
     const narrow = window.innerWidth < 900;
-    root.querySelector('#st-station-desc').textContent = `${st.description || ''} Urządzenia srk: ${st.srkInfo || getSrk(st.srk).name}`;
+    root.querySelector('#st-station-desc').textContent = `${st.description || ''} ${t('start.srkInfo', { info: st.srkInfo || getSrk(st.srk).name })}`;
     const dw = root.querySelector('#st-district-wrap'), dSel = root.querySelector('#st-district');
     if (st.districts) {
       dw.classList.remove('hidden');
-      dSel.innerHTML = Object.entries(st.districts).map(([did, d]) => `<option value="${did}">${esc(d.name)}</option>`).join('') + '<option value="both">oba okręgi jednoosobowo (bez poleceń)</option>';
+      dSel.innerHTML = Object.entries(st.districts).map(([did, d]) => `<option value="${did}">${esc(d.name)}</option>`).join('') + `<option value="both">${t('start.bothDistricts')}</option>`;
       if (this.current.district && this.current.station === id) dSel.value = this.current.district;
       const updD = () => {
         const d = st.districts[dSel.value];
-        root.querySelector('#st-district-desc').textContent = !d ? 'Obsługujesz oba pulpity sam.'
-          : d.role === 'dysponująca' ? 'Jesteś dyżurnym ruchu dysponującym: obsługujesz ten pulpit i wydajesz polecenia nastawni wykonawczej (automat), która przyjmuje i wyprawia pociągi po swojej stronie tylko na Twoje polecenie.'
-          : 'Jesteś nastawniczym: obsługujesz ten pulpit i wykonujesz polecenia dyżurnego ruchu (automat) – pozwolenia, przebiegi wjazdowe i wyjazdowe po swojej stronie.';
+        root.querySelector('#st-district-desc').textContent = t(!d ? 'start.bothDesc' : d.role === 'dysponująca' ? 'start.dispatcherDesc' : 'start.signalmanDesc');
       };
       dSel.onchange = updD; updD();
     } else { dw.classList.add('hidden'); root.querySelector('#st-district-desc').textContent = ''; }
     const scSel = root.querySelector('#st-scenario'), lvSel = root.querySelector('#st-level');
-    const scs = st.scenarios || [{ id: 'zmiana', name: 'Pełna zmiana' }];
+    const scs = st.scenarios || [{ id: 'zmiana', name: t('start.fullShift') }];
     scSel.innerHTML = scs.map((sc) => `<option value="${sc.id}">${esc(sc.name)}</option>`).join('');
     if (this.current.scenario && this.current.station === id && scs.some((sc) => sc.id === this.current.scenario)) scSel.value = this.current.scenario;
     else { const first = scs.find((sc) => !sc.tutorial); if (first) scSel.value = first.id; }

@@ -88,6 +88,13 @@ failure, a block failure, a peak with heavy disruptions).
 * Collapsible side panel with notification badges, zoom and pinch, light / dark / system theme, desk position,
   panel position (right / left / bottom). Defaults: system theme, panel at the bottom, symbols at 125 %.
 
+### Interface language
+
+The interface (menus, start screen, settings, report, side panel, tutorial box, manual) is available in Polish, English and
+German: menu ≡ → Settings → Language (automatic = browser language, otherwise Polish). Railway terminology and desk
+abbreviations (semafor, Pz, dPz, Sz, Wbl, Poz, Ko), the Ie-104 command bar, station descriptions, mission steps and the
+simulation log stay in Polish, as in the Polish regulations the simulator follows. Dictionaries live in `src/i18n/`.
+
 ## Getting started
 
 ```bash

@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SETTINGS_CATEGORIES, schemaKeys } from '../src/ui/settingsSchema.js';
+import { settingsCategories, schemaKeys } from '../src/ui/settingsSchema.js';
+import { setLang } from '../src/i18n/index.js';
 import { DEFAULTS } from '../src/ui/Settings.js';
 
 test('schemat ekranu ustawień opisuje każde ustawienie dokładnie raz, z tytułem i opisem; wartości domyślne są wśród wyborów', () => {
   const keys = schemaKeys();
   assert.deepEqual([...keys].sort(), Object.keys(DEFAULTS).filter((k) => k !== 'sideCollapsed').sort(), 'klucze schematu = DEFAULTS (bez sideCollapsed – przycisk „ukryj”)');
   assert.equal(new Set(keys).size, keys.length, 'klucz opisany raz');
+  const SETTINGS_CATEGORIES = settingsCategories();
   for (const c of SETTINGS_CATEGORIES) {
     assert.ok(c.id && c.title && c.kicker && c.intro, `kategoria ${c.id}: brak tytułu/opisu`);
     for (const o of c.options) {
@@ -19,4 +21,10 @@ test('schemat ekranu ustawień opisuje każde ustawienie dokładnie raz, z tytu�
     }
   }
   assert.ok(SETTINGS_CATEGORIES.length >= 4);
+  const lang = SETTINGS_CATEGORIES.flatMap((c) => c.options).find((o) => o.key === 'lang');
+  assert.deepEqual(lang.choices.map((x) => x.value), ['auto', 'pl', 'en', 'de'], 'język: auto + trzy języki');
+  assert.ok(lang.reload, 'zmiana języka przeładowuje widok');
+  // schemat jest funkcją, bo teksty zależą od bieżącego języka
+  setLang('en');
+  try { assert.equal(settingsCategories().find((c) => c.id === 'jezyk').title, 'Interface language'); } finally { setLang('pl'); }
 });

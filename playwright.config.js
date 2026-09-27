@@ -18,6 +18,7 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/__screenshots__/{testFileName}/{arg}{ext}',
   use: {
     baseURL: 'http://127.0.0.1:5174',
+    locale: 'pl-PL', // język interfejsu „auto” = wg przeglądarki; testy zakładają polski (i18n.spec sprawdza inne)
     viewport: { width: 1366, height: 1024 },
     deviceScaleFactor: 1,
     hasTouch: true,

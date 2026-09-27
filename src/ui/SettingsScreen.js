@@ -1,5 +1,6 @@
 import { logoSvg } from './brand.js';
-import { SETTINGS_CATEGORIES } from './settingsSchema.js';
+import { settingsCategories } from './settingsSchema.js';
+import { t } from '../i18n/index.js';
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
@@ -11,23 +12,25 @@ export class SettingsScreen {
   constructor(root, settings) {
     this.root = root;
     this.settings = settings;
+    const cats = settingsCategories();
+    this.cats = cats;
     root.innerHTML = `<div class="settings-screen">
       <header class="st-hero">
         <div class="st-logo">${logoSvg()}</div>
-        <div class="st-tagline">Ustawienia</div>
-        <div class="st-sub">Zmiany działają od razu i są zapamiętywane na tym urządzeniu.</div>
-        <button type="button" class="tb st-close" id="se-close">‹ Wróć do zmiany</button>
+        <div class="st-tagline">${t('set.title')}</div>
+        <div class="st-sub">${t('set.sub')}</div>
+        <button type="button" class="tb st-close" id="se-close">${t('set.back')}</button>
       </header>
       <div class="se-layout">
-        <nav class="se-nav" aria-label="Kategorie ustawień">
-          ${SETTINGS_CATEGORIES.map((c, i) => `<button type="button" class="se-cat${i === 0 ? ' active' : ''}" data-cat="${c.id}"><span class="st-kicker">${esc(c.kicker)}</span>${esc(c.title)}</button>`).join('')}
+        <nav class="se-nav" aria-label="${t('set.nav')}">
+          ${cats.map((c, i) => `<button type="button" class="se-cat${i === 0 ? ' active' : ''}" data-cat="${c.id}"><span class="st-kicker">${esc(c.kicker)}</span>${esc(c.title)}</button>`).join('')}
         </nav>
         <div class="se-content">
-          ${SETTINGS_CATEGORIES.map((c) => `<section class="se-section" id="se-${c.id}" data-cat="${c.id}">
+          ${cats.map((c) => `<section class="se-section" id="se-${c.id}" data-cat="${c.id}">
             <h3><span class="st-kicker">${esc(c.kicker)}</span>${esc(c.title)}</h3>
             <p class="se-intro">${esc(c.intro)}</p>
             ${c.options.map((o) => `<div class="se-option" data-key="${o.key}">
-              <div class="se-otitle">${esc(o.title)}${o.reload ? ' <span class="se-tag">przeładowuje widok</span>' : ''}</div>
+              <div class="se-otitle">${esc(o.title)}${o.reload ? ` <span class="se-tag">${t('set.reload')}</span>` : ''}</div>
               <p class="se-desc">${esc(o.description)}</p>
               ${o.type === 'range'
                 ? `<label class="range se-range"><input type="range" id="${o.key}" name="${o.key}" min="${o.range.min}" max="${o.range.max}" step="${o.range.step}"> <output for="${o.key}">100%</output></label>`
@@ -52,7 +55,7 @@ export class SettingsScreen {
     content.addEventListener('scroll', () => {
       if (Date.now() < (this.pinnedUntil || 0)) return;
       const top = content.scrollTop + 40;
-      let cur = SETTINGS_CATEGORIES[0].id;
+      let cur = cats[0].id;
       for (const s of root.querySelectorAll('.se-section')) if (s.offsetTop - content.offsetTop <= top) cur = s.dataset.cat;
       this.#activate(cur);
     });

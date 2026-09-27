@@ -1,4 +1,5 @@
 import { MissionProgress } from './progress.js';
+import { t } from '../i18n/index.js';
 import { GLOSSARY } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 
@@ -20,11 +21,11 @@ export class Tutorial {
     });
     this.box = document.createElement('div');
     this.box.className = 'tut-box hidden';
-    this.box.innerHTML = `<div class="tut-head"><span class="tut-step"></span><span class="tut-title"></span><button type="button" class="tut-close" title="Zakończ samouczek" aria-label="Zakończ samouczek">×</button></div>
+    this.box.innerHTML = `<div class="tut-head"><span class="tut-step"></span><span class="tut-title"></span><button type="button" class="tut-close" title="${t('tut.close')}" aria-label="${t('tut.close')}">×</button></div>
       <div class="tut-body"></div>
       <div class="tut-feedback hidden"></div>
       <div class="tut-tip hidden"></div>
-      <div class="tut-actions"><button type="button" class="tb tut-show">Pokaż gdzie</button><button type="button" class="tb tut-skip">Pomiń krok</button><button type="button" class="tb primary tut-next">Dalej</button></div>`;
+      <div class="tut-actions"><button type="button" class="tb tut-show">${t('tut.show')}</button><button type="button" class="tb tut-skip">${t('tut.skip')}</button><button type="button" class="tb primary tut-next">${t('tut.next')}</button></div>`;
     document.body.appendChild(this.box);
     this.glossary = document.createElement('div');
     this.glossary.className = 'tut-gloss hidden';
@@ -63,7 +64,7 @@ export class Tutorial {
 
   #render(step, i) {
     const n = this.progress.steps.length;
-    this.box.querySelector('.tut-step').textContent = `Krok ${i + 1}/${n}`;
+    this.box.querySelector('.tut-step').textContent = t('tut.step', { i: i + 1, n });
     this.box.querySelector('.tut-title').textContent = step.title;
     this.box.querySelector('.tut-body').innerHTML = step.text + (step.tip ? `<p class="tut-hint">${step.tip}</p>` : '');
     this.box.querySelector('.tut-next').classList.toggle('hidden', !step.info);

@@ -6,48 +6,32 @@
 import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
 import { getSrk } from './registry.js';
+import { t } from '../i18n/index.js';
 
 const VIEWS = {
   desk: {
     create: (container, sim, handlers, opts) => new DeskRenderer(container, sim, handlers, opts),
     size: (cols, rows) => ({ w: cols * 40 + 44, h: rows * 40 + 44 }),
-    hint: 'kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij',
+    hint: () => t('hint.desk'),
     armHint: {
-      point: (a) => `Zwrotnica ${a.id} uzbrojona – naciśnij Zw (przestawienie) lub Zz (zamknięcie)`,
-      derailer: (a) => `Wykolejnica ${a.id} uzbrojona – naciśnij Zw`,
-      signal: (a) => `${a.color === 'white' ? 'Manewrowy' : 'Pociągowy'} początek przebiegu ${a.id} – naciśnij przycisk końca przebiegu`,
-      group: (a) => ({
-        'group-point': 'Zw – naciśnij przycisk zwrotnicy lub wykolejnicy',
-        'point-lock': 'Zz – naciśnij przycisk zwrotnicy (zamknięcie/otwarcie)',
-        'route-release': 'Pz – naciśnij przycisk sygnałowy przebiegu do zwolnienia',
-        'emergency-release': 'dPz – naciśnij przycisk sygnałowy (zwolnienie doraźne, licznik!)',
-        'substitute': 'Sz – naciśnij zielony przycisk semafora (sygnał zastępczy, licznik!)',
-      })[a.role] || `${a.id} uzbrojony`,
+      point: (a) => t('arm.point', { id: a.id }),
+      derailer: (a) => t('arm.derailer', { id: a.id }),
+      signal: (a) => t('arm.signal', { kind: t(a.color === 'white' ? 'arm.signal.shunt' : 'arm.signal.train'), id: a.id }),
+      group: (a) => (['group-point', 'point-lock', 'route-release', 'emergency-release', 'substitute'].includes(a.role) ? t(`arm.${a.role}`) : t('arm.other', { id: a.id })),
     },
-    help: `<h2>Obsługa pulpitu kostkowego (urządzenia typu E)</h2>
-      <p><b>Naciśnięcie</b> przycisku – kliknięcie / dotknięcie. <b>Wyciągnięcie</b> – przytrzymanie (0,5 s) lub prawy przycisk myszy.
-      Operacje dwuprzyciskowe: naciśnij pierwszy przycisk, a w ciągu 6 s drugi (przycisk „uzbrojony” jest podświetlony).</p>`,
+    help: () => t('help.desk'),
   },
   screen: {
     create: (container, sim, handlers, opts) => new ScreenRenderer(container, sim, handlers, opts),
     size: (cols, rows, o = {}) => ({ w: cols * 40 + 24, h: rows * 40 * (Number(o.rowScale) || 1) + 24 }),
-    hint: 'pasek poleceń lub menu elementu · przebieg: początek, potem koniec · OPS / Esc = odwołaj',
+    hint: () => t('hint.screen'),
     armHint: {
       point: () => '',
       derailer: () => '',
-      signal: (a) => `${a.color === 'white' ? 'Przebieg manewrowy' : 'Przebieg pociągowy'} od ${a.id} – wskaż koniec przebiegu (semafor, tarczę lub szlak)`,
+      signal: (a) => t('arm.screenSignal', { kind: t(a.color === 'white' ? 'arm.screenSignal.shunt' : 'arm.screenSignal.train'), id: a.id }),
       group: () => '',
     },
-    help: `<h2>Obsługa stanowiska komputerowego (zobrazowanie wg Ie-104)</h2>
-      <p>Odcinki toru: <span class="sw g"></span> szary – wolny, <span class="sw grn"></span> zielony – utwierdzony w przebiegu pociągowym,
-      <span class="sw y"></span> żółty – w przebiegu manewrowym, <span class="sw r"></span> czerwony – zajęty, <span class="sw v"></span> fioletowy – zwalnianie czasowe,
-      podwójna szara linia – tor zamknięty. Zwrotnica: pole „Z” pokazuje położenie iglic (kreska przerywana, migająca – brak kontroli), „+” przy ramieniu zasadniczym,
-      <span class="sw p"></span> różowy numer – zamknięcie indywidualne. Semafor: podwójny grot (tarcza manewrowa – pojedynczy) rysowany na linii toru w miejscu, gdzie stoi, grotem w kierunku jazdy (bez masztu); nazwa po prawej stronie toru w kierunku jazdy. Kolory: szary – stan podstawowy,
-      zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – początek lub koniec utwierdzonego przebiegu, biały migający – sygnał zastępczy.
-      Numery pociągów w czerwonych kasetkach. Niebieska ramka – element wybrany do polecenia, czerwona migająca – alarm.</p>
-      <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ PRZEBIEG, ZWROTNICA, STOP …), potem wskaż element(y):
-      przebieg = sygnalizator początkowy, potem końcowy lub szlak. To samo daje menu po kliknięciu elementu. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane,
-      potwierdzane „WYKONAJ” i rejestrowane w licznikach; <b>OPS</b>, Esc lub prawy przycisk odwołuje polecenie. Blokada liniowa: stan przy wyjeździe na szlak – strzałka szlaku (czerwona: odstęp zajęty), strzałka kierunku nad torem, napis „żąd.” / „Wbl” / „Ko”; kliknij strzałkę szlaku, a menu da polecenia (Eap: Wbl, Poz, Ko; samoczynna: Zk; dPo, dKo). Liczniki dPo/dKo – zakładka Stan.</p>`,
+    help: () => t('help.screen'),
   },
 };
 
@@ -65,7 +49,7 @@ export function viewSize(srk, cols, rows, o = {}) {
 }
 
 export function viewHint(srk) {
-  return viewOf(srk).hint;
+  return viewOf(srk).hint();
 }
 
 export function armHint(srk, a) {
@@ -73,7 +57,7 @@ export function armHint(srk, a) {
 }
 
 export function viewHelp(srk) {
-  return viewOf(srk).help;
+  return viewOf(srk).help();
 }
 
 /** Lista strategii do menu ustawień. */
