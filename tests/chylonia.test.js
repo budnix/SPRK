@@ -79,3 +79,27 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3', () =
     assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
   }
 });
+
+test('Chylonia: ruch prawostronny jak w Sopocie i Orłowie – SKM na dole, tor 1 każdej pary (jazda w prawo) pod torem 2; sygnalizatory przy torach, bez nakładania na przyciski', () => {
+  assert.deepEqual(validateStation(chylonia).errors, []);
+  const ex = chylonia.exits;
+  assert.ok(ex.GS1.tile.y > ex.GS2.tile.y && ex.RS1.tile.y > ex.RS2.tile.y, 'SKM: t.1 (jazda w prawo) niżej niż t.2');
+  assert.ok(ex.GG1.tile.y > ex.GG2.tile.y && ex.RG1.tile.y > ex.RG2.tile.y, '202: t.1 niżej niż t.2');
+  assert.ok(ex.GS1.tile.y > ex.GG1.tile.y, 'SKM pod linią 202 (po wschodniej stronie – na dole planu)');
+  assert.equal(ex.GS1.direction, 'in'); assert.equal(ex.RG1.direction, 'out');
+  const cells = new Map();
+  for (const t of chylonia.tiles) {
+    if (t.type === 'label') continue;
+    const k = `${t.x},${t.y}`;
+    assert.ok(!cells.has(k), `kostki nakładają się w ${k}: ${cells.get(k)} i ${t.type}:${t.id || ''}`);
+    cells.set(k, `${t.type}:${t.id || ''}`);
+  }
+  for (const s of chylonia.tiles.filter((t) => t.type === 'signal')) {
+    assert.equal(Math.abs(s.y - s.at.y), 1, `${s.id}: sygnalizator nie przy torze`);
+    assert.ok(s.y >= 0 && s.y < chylonia.desk.rows, `${s.id}: poza pulpitem`);
+    const under = chylonia.tiles.find((t) => t.x === s.at.x && t.y === s.at.y && ['track', 'point', 'crossing', 'buffer'].includes(t.type));
+    assert.ok(under, `${s.id}: pod kotwicą brak toru`);
+  }
+  const sim = new Simulation(chylonia, { disruptions: 'none' });
+  assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, 'urwane porty toru');
+});

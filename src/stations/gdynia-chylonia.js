@@ -2,9 +2,10 @@
  * Gdynia Chylonia – stacja na liniach 202 (Gdańsk – Stargard) i 250 (SKM), z odgałęzieniami
  * 964 (Gdynia Postojowa) i 723 (Gdynia Port). Układ wg planu schematycznego stacji (X 2024).
  *
- * Pulpit 112×20. Rzędy torów: 2 – tor 502 (linia 250 t.1), 4 – tor 22, 6 – tor 21, 8 – tor 501 (250 t.2),
- * 10 – tor 503 (głowica wschodnia), 12 – tor 2 (202 t.1), 14 – tor 1 (202 t.2), 16 – tor 3 / tor 51 / linia 723,
- * 18 – linia 964 Gdynia Postojowa.
+ * Pulpit 112×20. Rzędy torów w definicji (jak na planie): 2 – tor 502 (linia 250 t.1), 4 – tor 22, 6 – tor 21,
+ * 8 – tor 501 (250 t.2), 10 – tor 503 (głowica wschodnia), 12 – tor 2 (202 t.1), 14 – tor 1 (202 t.2), 16 – tor 3 /
+ * tor 51 / linia 723, 18 – linia 964 Gdynia Postojowa. Cały blok torowy jest na końcu odbijany w pionie (ruch
+ * prawostronny, patrz niżej), więc na pulpicie SKM jest na dole, a tor 1 każdej pary pod torem 2.
  *
  * Uproszczenia względem planu: tor 1 wpięty w tor 2 przez rozjazd 30 (bez przejścia 30–31 na tor 501), rozjazd krzyżowy 38
  * jako dwie zwrotnice 38a/38b, pominięto semafor L502 i tarcze T21/T22 przy kozłach torów 21/22.
@@ -22,11 +23,11 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski, opisy ----
 tiles.push({ x: 28, y: 0, type: 'label', text: 'GDYNIA CHYLONIA', size: 12, span: 20 });
-tiles.push({ x: 30, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 31, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 33, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 34, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 36, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
+tiles.push({ x: 50, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
+tiles.push({ x: 51, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
+tiles.push({ x: 53, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
+tiles.push({ x: 54, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
+tiles.push({ x: 56, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 tiles.push({ x: 2, y: 4, type: 'label', text: 'linia 250 SKM', span: 3, size: 7 }, { x: 2, y: 10, type: 'label', text: 'linia 202', span: 2, size: 7 },
   { x: 22, y: 17, type: 'label', text: 'linia 964 · Gdynia Postojowa (manewry)', span: 8, size: 7 },
   { x: 100, y: 17, type: 'label', text: 'linia 723 · Gdynia Port', span: 5, size: 7 });
@@ -178,6 +179,23 @@ const skm = (t, nrE, nrW) => {
   ];
 };
 
+// ---- ruch prawostronny: odbicie całego bloku torowego w pionie ----
+// Plan schematyczny Chylonii jest rysowany od strony przeciwnej niż plany Sopotu, Orłowa i Gdyni Gł. (SKM u góry,
+// tor 1 każdej pary u góry). Żeby wzdłuż linii obraz był ten sam – Gdańsk/Gdynia Gł. po lewej, SKM (po wschodniej
+// stronie linii 202) na dole, tor 1 (jazda w prawo) na dole pary jak w ruchu prawostronnym oglądanym od zachodu –
+// cały blok torowy (rzędy 1–19) jest odbijany: y → 20 − y, porty N↔S. Tytuł (rząd 0) i przyciski (rząd 1) zostają.
+// Po odbiciu: 2 – linia 964, 4 – tor 3 / 51 / linia 723, 6 – tor 1 (202 t.2), 8 – tor 2 (202 t.1), 10 – tor 503,
+// 12 – tor 501 (250 t.2), 14 – tor 21, 16 – tor 22, 18 – tor 502 (250 t.1).
+const FLIP = { N: 'S', S: 'N', NE: 'SE', SE: 'NE', NW: 'SW', SW: 'NW', E: 'E', W: 'W' };
+for (const t of tiles) {
+  if (t.y < 1 || t.y > 19 || t.type === 'button') continue;
+  t.y = 20 - t.y;
+  if (t.ports) t.ports = t.ports.map((p) => FLIP[p]);
+  if (t.pairs) t.pairs = t.pairs.map((pr) => pr.map((p) => FLIP[p]));
+  if (t.type === 'point') { t.toe = FLIP[t.toe]; t.straight = FLIP[t.straight]; t.diverge = FLIP[t.diverge]; }
+  if (t.at) t.at = { ...t.at, y: 20 - t.at.y };
+}
+
 export default {
   schemaVersion: 1,
   id: 'gdynia-chylonia',
@@ -192,15 +210,15 @@ export default {
   desk: { cols: 112, rows: 20 },
 
   exits: {
-    GS1: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 250 t.1', tile: { x: 0, y: 2 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 2600, lineSpeed: 100 },
-    GS2: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 250 t.2', tile: { x: 0, y: 8 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 2600, lineSpeed: 100 },
-    GG1: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 202 t.1', tile: { x: 0, y: 12 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 2800, lineSpeed: 120 },
-    GG2: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 202 t.2', tile: { x: 0, y: 14 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 2800, lineSpeed: 120 },
-    RS1: { name: 'Gdynia Cisowa', label: 'Gdynia Cisowa – 250 t.1', tile: { x: 111, y: 2 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 2900, lineSpeed: 100 },
-    RS2: { name: 'Gdynia Cisowa', label: 'Gdynia Cisowa – 250 t.2', tile: { x: 111, y: 8 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 2900, lineSpeed: 100 },
+    GS1: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 250 t.1', tile: { x: 0, y: 18 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 2600, lineSpeed: 100 },
+    GS2: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 250 t.2', tile: { x: 0, y: 12 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 2600, lineSpeed: 100 },
+    GG1: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 202 t.1', tile: { x: 0, y: 8 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 2800, lineSpeed: 120 },
+    GG2: { name: 'Gdynia Główna', label: 'Gdynia Gł. – 202 t.2', tile: { x: 0, y: 6 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 2800, lineSpeed: 120 },
+    RS1: { name: 'Gdynia Cisowa', label: 'Gdynia Cisowa – 250 t.1', tile: { x: 111, y: 18 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 2900, lineSpeed: 100 },
+    RS2: { name: 'Gdynia Cisowa', label: 'Gdynia Cisowa – 250 t.2', tile: { x: 111, y: 12 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 2900, lineSpeed: 100 },
     RG1: { name: 'Rumia', label: 'Rumia – 202 t.1', tile: { x: 111, y: 10 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 5200, lineSpeed: 120 },
-    RG2: { name: 'Rumia', label: 'Rumia – 202 t.2', tile: { x: 111, y: 12 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 5200, lineSpeed: 120 },
-    PORT: { name: 'Gdynia Port', label: 'Gdynia Port – 723', tile: { x: 111, y: 16 }, dir: 'E', lineLength: 3200, lineSpeed: 40 },
+    RG2: { name: 'Rumia', label: 'Rumia – 202 t.2', tile: { x: 111, y: 8 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 5200, lineSpeed: 120 },
+    PORT: { name: 'Gdynia Port', label: 'Gdynia Port – 723', tile: { x: 111, y: 4 }, dir: 'E', lineLength: 3200, lineSpeed: 40 },
   },
   sections,
   tiles,
