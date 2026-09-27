@@ -152,7 +152,7 @@ export default {
     { nr: 5100, kind: 'os', name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.', from: 'S1', to: 'Z1', arr: '06:45', track: '1', stop: false, length: 260 },
     { nr: 55102, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'S1', to: 'Z1', arr: '06:38', dep: '06:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '06:52', dep: '06:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 88301, kind: 'os', name: 'Skład EZT Baza EZ Sopot – Gdynia Gł. (próżny)', from: null, to: 'Z2', dep: '07:05', track: '6', stop: false, length: 130, vmax: 90, startOn: { section: 'T6', dir: 'E' } },
+    { nr: 88301, kind: 'os', name: 'Skład EZT Baza EZ Sopot – Gdynia Gł. (próżny)', from: null, to: 'Z1', dep: '07:05', track: '6', stop: false, length: 130, vmax: 90, startOn: { section: 'T6', dir: 'E' } },
     { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'Z2', to: 'S2', arr: '07:15', track: '2', stop: false, length: 300 },
     { nr: 55205, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '07:22', dep: '07:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },

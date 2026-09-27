@@ -243,3 +243,20 @@ test('łączność: lista „Do” rozróżnia tory szlakowe do tego samego post
   expect(texts).toContain('Gdynia Główna SKM (posterunek) – 250 t.501');
   expect(texts.at(-1)).toBe('maszynista (radio)');
 });
+
+test('monitor: kasetka z numerem pociągu przy strzałce szlaku, dopóki pociąg jest na torze szlakowym (system śledzenia numerów)', async ({ page }) => {
+  await openShift(page, 'gdynia-orlowo', { settings: { sideCollapsed: true } });
+  // pierwszy pociąg od Sopotu (SKM 92101 na 501) – krokujemy symulację, aż sąsiad go wyprawi
+  const exit = await page.evaluate(() => {
+    const s = window.sim; s.clock.paused = false; s.clock.speed = 1;
+    for (let i = 0; i < 4000; i++) { s.step(0.5); for (const b of s.blocks.values()) if (b.lineTrain != null) { s.clock.paused = true; return { id: b.id, nr: String(b.lineTrain) }; } }
+    return null;
+  });
+  expect(exit).not.toBeNull();
+  const box = page.locator(`.scr-el.exit:has(.hit[data-ref*='"id":"k${exit.id}"']) .line-train`);
+  await expect(box).toBeVisible();
+  await expect(box.locator('.scr-train-nr')).toHaveText(exit.nr);
+  // po zjeździe pociągu w całości na stację kasetka znika
+  await page.evaluate((id) => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && s.blocks.get(id).lineTrain != null; i++) s.step(0.5); s.clock.paused = true; }, exit.id);
+  await expect(box).toBeHidden();
+});

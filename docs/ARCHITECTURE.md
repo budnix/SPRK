@@ -97,7 +97,10 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 `LineBlock` obsługuje trzy warianty jednym modelem: Eap dwukierunkowa (szlak jednotorowy: Wbl/Poz/Ko), Eap
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
-`route:set`). Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
+`route:set`). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
+sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w kasetce przy strzałce szlaku jak system śledzenia
+numerów pociągów w komputerowych srk, pulpit kostkowy – nie (na pulpicie typu E numeru nie ma).
+Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
 (`src/render/blockLayout.js`, bez DOM: strzałki na kostkach toru, przyciski Ko | Poz | Wbl albo Zk w rzędzie obok,
 liczniki dKo | dPo wyżej – jak na pulpitach typu E), bez osobnej kostki `block`.

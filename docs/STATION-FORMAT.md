@@ -82,7 +82,11 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
 * `block: 'sbl'` (wymaga `direction` = kierunek zasadniczy) – blokada samoczynna linii dwutorowej: bez pozwoleń
   i bez Ko, odstęp zwalnia się sam; blokada dwukierunkowa – jazda „pod prąd” po zmianie kierunku (`Zk`,
   na pulpicie kostkowym przycisk Wbl) przy wolnym odstępie; sąsiad zmienia kierunek sam, gdy odstęp jest wolny
-  i nie mamy nastawionego wyjazdu. Przy usterce – zapowiadanie telefoniczne i dPo/dKo jak w Eap.
+  i nie mamy nastawionego wyjazdu (także wtedy, gdy zgłosił pociąg przed naszym `Zk` – odzyskuje kierunek przy
+  wyprawianiu). Przy usterce – zapowiadanie telefoniczne i dPo/dKo jak w Eap; gdy usterka mija, blok początkowy
+  po telefonicznie potwierdzonym przyjeździe zwalnia się sam, a odstęp SBL po zjeździe pociągu sąsiada też.
+  Rozkład musi trzymać się kierunków: `from` nie może wskazywać toru `direction: 'out'`, a `to` toru
+  `direction: 'in'` (walidacja) – jazda po torze lewym po `Zk` jest dozwolona w grze, ale rozkład jej nie wymaga.
   Blokady nie definiuje się kostkami: pulpit kostkowy rysuje ją sam z definicji wyjazdu (`src/render/blockLayout.js`) jako
   kostki przy końcu toru szlakowego – strzałki „wyjazd” (kostka skrajna) i „wjazd” (następna) w kanale toru
   (zamiast paska świetlnego; przy zajętości odcinka pod kostką strzałka świeci na czerwono), w rzędzie nad torem

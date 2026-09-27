@@ -61,6 +61,11 @@ export function validateStation(st) {
     if (tr.nr == null) errors.push(`Rozkład #${i}: brak numeru pociągu`);
     if (tr.from && !(st.exits || {})[tr.from]) errors.push(`Rozkład ${tr.nr}: nieznany wyjazd from='${tr.from}'`);
     if (tr.to && !(st.exits || {})[tr.to]) errors.push(`Rozkład ${tr.nr}: nieznany wyjazd to='${tr.to}'`);
+    const exF = (st.exits || {})[tr.from], exT = (st.exits || {})[tr.to];
+    // Eap jednokierunkowa nie pozwala jechać pod prąd; na SBL jazda po torze lewym po Zk jest możliwa, ale rozkład
+    // nie powinien jej wymagać (ruch prawostronny)
+    if (exF && exF.direction === 'out') errors.push(`Rozkład ${tr.nr}: wjazd od ${exF.name} torem wyjazdowym '${tr.from}' (direction: 'out')`);
+    if (exT && exT.direction === 'in') errors.push(`Rozkład ${tr.nr}: wyjazd do ${exT.name} torem wjazdowym '${tr.to}' (direction: 'in')`);
     if (!tr.arr && !tr.dep) errors.push(`Rozkład ${tr.nr}: brak czasu przyjazdu/odjazdu`);
   });
   return { errors, warnings };

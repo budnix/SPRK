@@ -310,8 +310,11 @@ export class ScreenRenderer {
       refs.dirOut = el('path', { class: 'blk-dir off', d: `M${-dir * 8},-13 L${-dir * 8},-9 L${dir * 1},-9 L${dir * 1},-7 L${dir * 6},-11 L${dir * 1},-15 L${dir * 1},-13 Z` });
       refs.dirIn = el('path', { class: 'blk-dir off', d: `M${dir * 6},-13 L${dir * 6},-9 L${-dir * 3},-9 L${-dir * 3},-7 L${-dir * 8},-11 L${-dir * 3},-15 L${-dir * 3},-13 Z` });
       refs.status = text(-dir * 12, -8, '', { class: 'blk-status', 'text-anchor': dir > 0 ? 'end' : 'start' });
+      // kasetka numeru pociągu na torze szlakowym (system śledzenia numerów) – nad strzałkami kierunku, ku wnętrzu pulpitu
+      refs.lineNr = text(0, 0, '', { class: 'scr-train-nr' });
+      refs.lineTrain = el('g', { class: 'scr-train line-train', style: 'display:none' }, [el('g', { class: 'scr-train-in' }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), refs.lineNr])]);
       // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
-      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status,
+      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status, refs.lineTrain,
         text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
     } else {
       kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
@@ -657,6 +660,12 @@ export class ScreenRenderer {
     const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? ['Wbl', true] : b.koPending ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
     r.status.textContent = st[0];
     r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
+    if (r.lineTrain) {
+      const dir = b.def.dir === 'E' ? 1 : -1;
+      r.lineTrain.style.display = b.lineTrain != null ? '' : 'none';
+      r.lineNr.textContent = b.lineTrain != null ? String(b.lineTrain) : '';
+      r.lineTrain.setAttribute('transform', `translate(${-dir * 12 * this.S},${-27 * this.S}) scale(${this.S})`);
+    }
   }
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */
