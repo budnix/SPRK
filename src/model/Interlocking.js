@@ -747,7 +747,11 @@ export class Interlocking {
     for (const act of [...this.active.values()]) {
       const secs = act.lockedSections;
       const sig = this.signals.get(act.route.start);
-      if (!act.trainEntered && secs.length && this.sections.get(secs[0]).occupied) {
+      // czoło pociągu w przebiegu: najdalszy odcinek zajęty od chwili nastawienia (wasOccupied zeruje się przy
+      // utwierdzeniu, więc tabor stojący wcześniej na torze docelowym się nie liczy); bardzo krótki odcinek (np. sama
+      // zwrotnica) może być przeskoczony między krokami symulacji – dlatego nie wymagamy zajęcia pierwszego
+      const front = secs.reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+      if (!act.trainEntered && front >= 0) {
         act.trainEntered = true;
         act.timedRelease = null;
         const prevAspect = sig.aspect;
@@ -765,9 +769,10 @@ export class Interlocking {
           const sid = secs[i];
           if (act.released.has(sid)) continue;
           const s = this.sections.get(sid);
-          const nextOcc = i + 1 < secs.length ? this.sections.get(secs[i + 1]).occupied : true;
+          // zwalnianie odcinkowe: odcinek za czołem pociągu i wolny (także przeskoczony bez zajęcia); ostatni odcinek
+          // zwalnia się, gdy pociąg go opuścił (wyjazd na szlak) albo wjechał na tor docelowy (gałąź niżej)
           const last = i === secs.length - 1;
-          if (s.wasOccupied && !s.occupied && nextOcc) {
+          if (!s.occupied && (i < front || (last && s.wasOccupied))) {
             act.released.add(sid);
             if (s.route === act.id) s.route = null;
             this.bus.emit('section', s);

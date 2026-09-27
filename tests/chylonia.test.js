@@ -103,3 +103,28 @@ test('Chylonia: ruch prawostronny jak w Sopocie i Orłowie – SKM na dole, tor 
   const sim = new Simulation(chylonia, { disruptions: 'none' });
   assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, 'urwane porty toru');
 });
+
+test('Chylonia: przebiegi równoległe po torach 502 i 501 – wyjazd na Cisową (G502 → A502 → szlak) i wjazd od Cisowej (T → E501) jednocześnie', () => {
+  const sim = new Simulation(chylonia, { disruptions: 'none' });
+  const run = (n) => { for (let i = 0; i < n; i++) sim.step(0.5); };
+  sim.press({ kind: 'signal', id: 'G502', color: 'green' });
+  assert.equal(sim.pressCompound({ kind: 'end', id: 'kRS1' }).ok, true);
+  run(120);
+  sim.press({ kind: 'signal', id: 'T', color: 'green' });
+  const r = sim.press({ kind: 'signal', id: 'E501', color: 'green' });
+  assert.equal(r.ok, true, r.reason);
+  run(120);
+  assert.deepEqual([...sim.ilk.active.keys()].sort(), ['A502-RS1', 'G502-A502', 'T-E501']);
+  assert.notEqual(sim.ilk.signals.get('T').aspect, 'S1');
+  assert.notEqual(sim.ilk.signals.get('G502').aspect, 'S1');
+  // odwrotnie: wjazd od Gdyni na 502 (A → G502 lub dalej) nie koliduje z wyjazdem z 501 na Gdynię (E501 → …)
+  const s2 = new Simulation(chylonia, { disruptions: 'none' });
+  s2.press({ kind: 'signal', id: 'A', color: 'green' });
+  assert.equal(s2.press({ kind: 'signal', id: 'G502', color: 'green' }).ok, true);
+  for (let i = 0; i < 120; i++) s2.step(0.5);
+  s2.press({ kind: 'signal', id: 'E501', color: 'green' });
+  const r2 = s2.pressCompound({ kind: 'end', id: 'kGS2' });
+  assert.equal(r2.ok, true, r2.reason);
+  for (let i = 0; i < 120; i++) s2.step(0.5);
+  assert.ok(s2.ilk.active.has('A-G502') && [...s2.ilk.active.keys()].some((id) => /^E501-/.test(id)), [...s2.ilk.active.keys()].join(','));
+});

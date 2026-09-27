@@ -92,6 +92,15 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 (Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
 (domyślnie 1,25), rzędy ściskane `rowScale`.
 
+## Zwalnianie odcinkowe (`Interlocking.tick`)
+
+Czoło pociągu w przebiegu to najdalszy odcinek zajęty od chwili utwierdzenia (`wasOccupied` zeruje się przy
+utwierdzeniu, więc tabor stojący wcześniej na torze docelowym – jazda manewrowa na Ms2 – nie liczy się). Odcinki za
+czołem zwalniają się, gdy są wolne, także gdy bardzo krótki odcinek (sama zwrotnica po podziale grupy, ~10 m toru)
+został przeskoczony między krokami symulacji bez zajęcia; ostatni odcinek zwalnia się po opuszczeniu (wyjazd na szlak)
+albo po wjeździe na tor docelowy. Wjazd pociągu w przebieg (semafor samoczynnie na „Stój”) rozpoznaje się po zajęciu
+któregokolwiek odcinka od utwierdzenia, nie tylko pierwszego.
+
 ## Przebieg złożony (`Interlocking.routeChains`, `pressCompound`)
 
 Na stanowisku komputerowym koniec przebiegu może leżeć za semaforem pośrednim (Sopot: A → H → O → szlak, Chylonia:

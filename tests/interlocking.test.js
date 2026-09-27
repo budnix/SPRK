@@ -226,3 +226,52 @@ test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośredni
   assert.equal(s3.ilk.pending.length, 0, 'nic nie nastawione');
   assert.equal(s3.ilk.active.size, 0);
 });
+
+test('zwalnianie odcinkowe jest odporne na przeskoczenie krótkiego odcinka między krokami (odcinek nigdy nie zajęty albo zwolniony razem z poprzednim)', async () => {
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const chylonia = (await import('../src/stations/gdynia-chylonia.js')).default;
+  const setup = () => {
+    const sim = new Simulation(chylonia, { disruptions: 'none' });
+    sim.press(G('G502')); sim.press(G('A502'));
+    run(sim, POINT_SWITCH_TIME + 2);
+    const act = sim.ilk.active.get('G502-A502');
+    assert.ok(act, 'przebieg G502-A502 utwierdzony');
+    let t = sim.clock.time;
+    const occ = (ids) => { sim.ilk.updateOccupancy(new Set(ids)); sim.ilk.tick(t += 1); };
+    return { sim, act, secs: [...act.lockedSections], occ };
+  };
+  const { sim, act, secs, occ } = setup();
+  assert.ok(secs.length >= 5, secs.join(','));
+  occ([secs[0]]);
+  assert.equal(act.trainEntered, true);
+  occ([secs[0], secs[1]]);
+  assert.equal(act.released.size, 0, 'nic przed czołem ani pod pociągiem');
+  occ([secs[3]]); // ogon zszedł z 0 i 1 naraz, odcinek 2 (zwrotnica) przeskoczony bez zajęcia – pociąg już na 3
+  assert.deepEqual([...act.released].sort(), [secs[0], secs[1], secs[2]].sort());
+  for (let i = 4; i < secs.length; i++) occ([secs[i]]);
+  assert.ok(!sim.ilk.active.has('G502-A502'), 'przebieg rozwiązany po wjeździe na tor docelowy');
+  // sam pierwszy odcinek przeskoczony: pociąg pojawia się od razu na drugim – wjazd rozpoznany, przebieg się rozwiązuje
+  const b = setup();
+  b.occ([b.secs[1]]);
+  assert.equal(b.act.trainEntered, true, 'wjazd rozpoznany po zajęciu drugiego odcinka');
+  assert.ok(b.act.released.has(b.secs[0]));
+  for (let i = 2; i < b.secs.length; i++) b.occ([b.secs[i]]);
+  assert.ok(!b.sim.ilk.active.has('G502-A502'));
+  // tabor stojący na torze docelowym PRZED nastawieniem (jazda manewrowa na Ms2 na tor zajęty) nie liczy się jako
+  // wjazd pociągu ani nie zwalnia odcinków przed czołem
+  const c = new Simulation(chylonia, { disruptions: 'none' });
+  const dest = c.ilk.routes.get('G502-A502m').sections.at(-1);
+  let ct = c.clock.time;
+  const ctick = (ids) => { c.ilk.updateOccupancy(new Set(ids)); c.ilk.tick(ct += 0.5); };
+  ctick([dest]);
+  c.ilk.press(W('G502')); c.ilk.press(W('A502'));
+  for (let i = 0; i < (POINT_SWITCH_TIME + 2) * 2; i++) ctick([dest]);
+  const cact = c.ilk.active.get('G502-A502m');
+  assert.ok(cact, 'przebieg manewrowy G502-A502m na tor zajęty');
+  assert.equal(cact.trainEntered, false, 'zajętość toru docelowego to nie wjazd pociągu');
+  assert.equal(cact.released.size, 0);
+  const cs = [...cact.lockedSections];
+  ctick([cs[0], dest]); ctick([cs[1], dest]);
+  assert.equal(cact.trainEntered, true);
+  assert.deepEqual([...cact.released], [cs[0]], 'zwolniony tylko odcinek za czołem');
+});

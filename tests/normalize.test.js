@@ -36,7 +36,7 @@ test('łącznica dzieli się na dwa odcinki izolowane – po jednym na zwrotnic�
   for (const st of STATIONS) {
     const x = splitCrossovers(st);
     for (const t of x.tiles) if (t.section) assert.ok(x.sections[t.section], `${st.id}: kostka (${t.x},${t.y}) w nieznanym odcinku ${t.section}`);
-    for (const sid of Object.keys(x.sections)) if (/^Iz/.test(sid)) assert.ok(x.tiles.filter((t) => t.section === sid && t.type === 'point').length <= 2 || st.id === 'gdynia-chylonia', `${st.id}: ${sid}`);
+    for (const sid of Object.keys(x.sections)) if (/^Iz/.test(sid)) assert.ok(x.tiles.filter((t) => t.section === sid && t.type === 'point').length <= 1, `${st.id}: ${sid} ma więcej niż jedną zwrotnicę po podziale`);
   }
 });
 
@@ -63,4 +63,21 @@ test('przebiegi równoległe przez łącznicę utwierdzają się jednocześnie (
   s2.press(G('L502')); s2.press({ kind: 'end', id: 'kGS2' }); run(s2, 10);
   assert.equal(s2.ilk.signals.get('L502').route, 'L502-GS2', 'Sopot: wyjazd z 502 równolegle do wjazdu na 501');
   for (const sid of ['Iz36', 'Iz37', 'Iz38', 'Iz40']) assert.ok(s2.ilk.sections.get(sid), `odcinek ${sid} po podziale łącznic`);
+});
+
+test('grupa zwrotnic ze skrzyżowaniem (Chylonia Iz21, Iz35) dzieli się na odcinek na zwrotnicę i na skrzyżowanie; długości po równo', async () => {
+  const chylonia = (await import('../src/stations/gdynia-chylonia.js')).default;
+  const s = splitCrossovers(chylonia);
+  const secOf = (id) => s.tiles.find((t) => t.id === id).section;
+  assert.equal(secOf('Zw21'), 'Iz21'); assert.equal(secOf('Zw24'), 'Iz24'); assert.equal(secOf('Zw22'), 'Iz22');
+  assert.equal(secOf('Zw26'), 'Iz26'); assert.equal(secOf('Zw25'), 'Iz25'); assert.equal(secOf('Zw23'), 'Iz23');
+  const cross = s.tiles.find((t) => t.type === 'crossing' && t.x === 76);
+  assert.equal(cross.section, 'Iz21x', 'skrzyżowanie ma własny odcinek');
+  assert.equal(s.tiles.find((t) => t.x === 74 && t.y === 13).section, 'Iz24', 'skos przy Zw24 idzie do Zw24');
+  const ids = ['Iz21', 'Iz24', 'Iz22', 'Iz26', 'Iz25', 'Iz23', 'Iz21x'];
+  assert.equal(ids.reduce((a, id) => a + s.sections[id].length, 0), chylonia.sections.Iz21.length, 'suma długości = długość pierwotna');
+  // Iz35: 35, 37, 38a, 36 + skrzyżowanie; Iz38 (Zw38b) istniał wcześniej – nowy odcinek dla Zw38a to Iz38a
+  assert.equal(secOf('Zw38a'), 'Iz38a'); assert.equal(secOf('Zw38b'), 'Iz38'); assert.equal(secOf('Zw36'), 'Iz36');
+  assert.equal(s.tiles.find((t) => t.type === 'crossing' && t.x === 87).section, 'Iz35x');
+  assert.ok(s._split.some((x) => x.from === 'Iz21' && x.to === 'Iz21x'));
 });

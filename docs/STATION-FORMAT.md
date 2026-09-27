@@ -60,8 +60,10 @@ T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
 * Łącznica między torami równoległymi może być w definicji jednym odcinkiem z dwiema zwrotnicami (np. `Iz1`: Zw1, kostka
   skośna, Zw2). Symulacja dzieli go sama (`src/model/normalize.js`) na odcinek na zwrotnicę: zwrotnica o numerze odcinka
   zostaje w `Iz1` razem ze skosem, druga dostaje `Iz2` (prefiks odcinka + numer zwrotnicy) – dzięki temu przebiegi
-  równoległe przez łącznicę (np. wjazd na 501 i wyjazd z 502) utwierdzają się jednocześnie. Odcinki z trzema i więcej
-  zwrotnicami (skrzyżowania) nie są dzielone.
+  równoległe przez łącznicę (np. wjazd na 501 i wyjazd z 502) utwierdzają się jednocześnie. Większa grupa (trzy i więcej
+  zwrotnic albo skrzyżowanie w odcinku, np. Chylonia `Iz21`: 21, 24 na torach 502/501 i 22/26, 25/23 do torów 21/22)
+  dzieli się na odcinek na każdą zwrotnicę (`Iz24`, `Iz22`…) i na skrzyżowanie (`Iz21x`); kostki proste idą do
+  najbliższej zwrotnicy, długość po równo.
 * `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
   (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą, pulpit kostkowy jako obrys; krawędź peronowa od strony
   toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna).
