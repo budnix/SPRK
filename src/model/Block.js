@@ -23,6 +23,8 @@ export class LineBlock {
     this.def = exitDef;
     this.bus = bus;
     this.neighbour = exitDef.name;
+    // tor szlakowy z etykiety wyjazdu („Sopot – 202 t.2” → „202 t.2”) – odróżnia dwa tory do tego samego posterunku
+    this.trackLabel = exitDef.label && exitDef.label !== exitDef.name ? exitDef.label.replace(/^.*?\s[–-]\s/, '') : null;
     this.direction = null;
     this.request = null;      // 'ours' | 'theirs'
     this.requestSince = 0;

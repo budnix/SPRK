@@ -233,3 +233,13 @@ test('komunikat stanu jest nakładką nad paskiem narzędzi: długi tekst nie za
   await expect(status).toContainText('wskaż koniec przebiegu');
   expect(await page.locator('#desk').boundingBox()).toEqual(deskBefore);
 });
+
+test('łączność: lista „Do” rozróżnia tory szlakowe do tego samego posterunku (Orłowo: Sopot – 202 t.1 / t.2), bez powtórzonych wpisów', async ({ page }) => {
+  await openShift(page, 'gdynia-orlowo');
+  const texts = await page.locator('#comms-to option').allTextContents();
+  expect(new Set(texts).size).toBe(texts.length);
+  expect(texts).toContain('Sopot (posterunek) – 202 t.1');
+  expect(texts).toContain('Sopot (posterunek) – 202 t.2');
+  expect(texts).toContain('Gdynia Główna SKM (posterunek) – 250 t.501');
+  expect(texts.at(-1)).toBe('maszynista (radio)');
+});

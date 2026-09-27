@@ -289,3 +289,13 @@ test('ustawienia domyślne: pulpit na środku, motyw wg systemu, panel na dole, 
   assert.equal(Settings.resolveTheme('system', true), 'dark'); assert.equal(Settings.resolveTheme('system', false), 'light');
   assert.equal(Settings.resolveTheme('dark', false), 'dark'); assert.equal(Settings.resolveTheme('light', true), 'light');
 });
+
+test('blokada zna tor szlakowy z etykiety wyjazdu (do listy łączności); bez etykiety – brak', async () => {
+  const orlowo = (await import('../src/stations/gdynia-orlowo.js')).default;
+  const szkolna = (await import('../src/stations/szkolna.js')).default;
+  const so = new Simulation(orlowo, { disruptions: 'none' });
+  assert.equal(so.blocks.get('S2').trackLabel, '202 t.2');
+  assert.equal(so.blocks.get('Z501').trackLabel, '250 t.501');
+  const ss = new Simulation(szkolna, { disruptions: 'none' });
+  assert.equal(ss.blocks.get('W').trackLabel, null);
+});

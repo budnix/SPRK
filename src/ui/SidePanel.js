@@ -194,7 +194,7 @@ export class SidePanel {
     const msg = this.root.querySelector('#comms-msg');
     const logEl = this.root.querySelector('#comms-log');
     const exits = [...this.sim.blocks.values()];
-    toSel.innerHTML = exits.map((b) => `<option value="${b.id}">${b.neighbour} (posterunek)</option>`).join('') + '<option value="driver">maszynista (radio)</option>';
+    toSel.innerHTML = exits.map((b) => `<option value="${b.id}">${b.neighbour} (posterunek)${b.trackLabel ? ` – ${b.trackLabel}` : ''}</option>`).join('') + '<option value="driver">maszynista (radio)</option>';
     const fillFormulas = () => {
       const to = toSel.value === 'driver' ? 'driver' : 'neighbour';
       fSel.innerHTML = this.sim.comms.available().filter((f) => f.to === to).map((f) => `<option value="${f.id}">${f.text({ nr: '…', time: '…' })}</option>`).join('');
