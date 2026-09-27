@@ -234,7 +234,7 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   const bg = await page.locator('.speed-btn.active').evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(['rgb(63, 140, 255)', 'rgb(31, 111, 224)']).toContain(bg); // ciemny / jasny motyw
   // listwa: zakładki panelu (zielona etykieta, bez ramki grupy) na początku, potem szara grupa „ekran” z ekranami, podpisem „wyrównanie” i zoomem
-  const col = (sel) => page.locator(sel).evaluate((el) => getComputedStyle(el).color);
+  const col = (sel) => page.locator(sel).first().evaluate((el) => getComputedStyle(el).color);
   const panelCol = await col('.tg-panel .lbl'), viewCol = await col('.tg-view .lbl');
   await expect(page.locator('.tg-view .lbl').first()).toHaveText('ekran');
   await expect(page.locator('.tg-view .lbl-align')).toHaveText('wyrównanie');
@@ -260,11 +260,21 @@ test('motyw interfejsu: akcent niebieski (aktywna prędkość, zakładki), logo 
   await page.evaluate(() => window.sim.bus.emit('log', { time: window.sim.clock.time, level: 'warn', msg: 'test' }));
   await expect(page.locator('#panel-tabs button[data-tab=log] .badge')).toBeVisible();
   expect(await boxes()).toEqual(before);
-  const heights = await page.locator('.tg-view .tb').evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().height)))]);
+  const heights = await page.locator('.tg-view .tb:not(.hidden)').evaluateAll((els) => [...new Set(els.map((e) => Math.round(e.getBoundingClientRect().height)))]);
   expect(heights).toHaveLength(1);
   await page.click('#btn-menu');
   const border = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopColor);
   expect(border).not.toBe('rgb(68, 68, 68)'); // nie szara ramka – domieszka akcentu
   const radius = await page.locator('#menu').evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
   expect(radius).toBe('4px');
+});
+
+test('grupa „ekran”: etykiety i przyciski w jednej osi, numer ekranu tym samym krojem co podpis', async ({ page }) => {
+  await openShift(page, 'gdynia-chylonia', { settings: { screens: 'auto', sideCollapsed: true } });
+  // wnętrze grupy „ekran” w jednej osi: etykiety i przyciski mają ten sam środek w pionie (±1 px), numer ekranu tym samym krojem co reszta
+  await expect(page.locator('#screen-group')).toBeVisible();
+  const mids = await page.locator('.tg-view .lbl, .tg-view .tb:not(.hidden)').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return r.y + r.height / 2; }));
+  expect(Math.max(...mids) - Math.min(...mids)).toBeLessThanOrEqual(1);
+  const fonts = await page.locator('#screen-tabs .tb, #screen-tabs .tb small').evaluateAll((els) => [...new Set(els.map((e) => `${getComputedStyle(e).fontFamily}|${getComputedStyle(e).fontSize}|${getComputedStyle(e).fontWeight}`))]);
+  expect(fonts).toHaveLength(1);
 });
