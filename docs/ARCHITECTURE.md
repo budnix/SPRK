@@ -17,7 +17,7 @@ src/
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
                Settings (ustawienia, motyw wg systemu), StartScreen (misje i posterunki, odprawa), Report, drag (przeciąganie okienek)
-  stations/    definicje stacji + rejestr (Szkolna, Stare Pustkowie, Wola Pustkowska, Sopot, Gdynia Orłowo, Chylonia, Główna)
+  stations/    definicje stacji + rejestr (Szkolna, Sopot, Gdynia Orłowo, Chylonia, Główna)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
@@ -92,7 +92,8 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   (nastawianie przebiegowe) → utwierdzenie (odcinki białe) → obraz sygnałowy (Ie-1: S1–S5, S10–S13, Ms2, Sz).
 * Jednoczesne wjazdy z obu kierunków są możliwe tylko, gdy drogi ochronne nie są wspólne: w Szkolnej za każdym
   semaforem wyjazdowym jest osobny odcinek (T1w/T2w/T1e/T2e) przed rozjazdem, więc krzyżowanie A→D2 + B→C1 nastawia
-  się od razu; w Starym Pustkowiu droga ochronna za C1 leży na rozjazdzie 1 i drugi wjazd czeka na zwolnienie Iz1.
+  się od razu; na stacji testowej `tests/fixtures/stare-pustkowie.js` droga ochronna za C1 leży na rozjazdzie 1
+  i drugi wjazd czeka na zwolnienie Iz1 (test `interlocking.test.js`).
 * Przejazd: semafor na Stój po zajęciu pierwszego odcinka za nim; zwalnianie odcinkowe; droga ochronna
   zwalnia się po wjeździe na tor docelowy.
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania), dPz (doraźne, licznik).
@@ -239,6 +240,11 @@ posterunków i scenariuszy, kroki misji i słownik – to treść domenowa po po
 Testy e2e działają z `locale: 'pl-PL'` (konfiguracja Playwright), bo „auto” w angielskiej przeglądarce dałoby angielski.
 
 ## Testy
+
+Stacje testowe (`tests/fixtures/`): Stare Pustkowie (mała stacja jednotorowa, typ E, Eap) i Wola Pustkowska (linia
+dwutorowa z blokadą jednokierunkową, odgałęzienie z Eap) – dawne stacje fikcyjne gry, usunięte z rejestru, ale
+zachowane jako siatka bezpieczeństwa: `makeSim()` z `tests/helpers.js`, macierze przebiegów, zakłócenia, blokada,
+rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`).
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openShift, btn, advance } from './helpers.js';
 
 test('zakładka „Pociągi”: pociąg na posterunku ze stanem, torem i czołem; sterowanie trybem jazdy i czołem po zatrzymaniu; „Stan” bez sekcji manewrów', async ({ page }) => {
-  await openShift(page, 'szkolna', { params: { srk: 'E' } });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   const tab = page.locator('#panel-tabs button[data-tab=pociagi]');
   await expect(tab).toHaveText('Pociągi');
   await tab.click();

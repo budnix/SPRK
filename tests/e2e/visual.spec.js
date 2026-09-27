@@ -10,11 +10,11 @@ async function shot(page, selector, width, height) {
   return page.screenshot({ clip: { x: Math.round(r.x), y: Math.round(r.y), width, height } });
 }
 
-test('wygląd pulpitu kostkowego (Stare Pustkowie) po nastawieniu przebiegu', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie', { settings: { sideCollapsed: true } });
+test('wygląd pulpitu kostkowego (Szkolna, typ E) po nastawieniu przebiegu', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-e' } });
   await page.evaluate(() => { window.sim.press({ kind: 'signal', id: 'A', color: 'green' }); window.sim.press({ kind: 'signal', id: 'D1', color: 'green' }); for (let i = 0; i < 20; i++) window.sim.step(0.5); });
   await page.waitForTimeout(200);
-  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-stare-pustkowie.png');
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-szkolna.png');
 });
 
 test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manewrowym', async ({ page }) => {

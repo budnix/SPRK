@@ -1,5 +1,5 @@
 import { Simulation } from '../src/model/Simulation.js';
-import station from '../src/stations/stare-pustkowie.js';
+import station from './fixtures/stare-pustkowie.js'; // stacja testowa typu E (dawne Stare Pustkowie)
 import { Clock } from '../src/core/Clock.js';
 
 export function makeSim(opts = {}) {

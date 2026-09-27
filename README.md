@@ -12,9 +12,9 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ## Screenshots
 
-| Computer workstation (Sopot, screen 1 of 4) | Type E relay desk (Stare Pustkowie) |
+| Computer workstation (Sopot, screen 1 of 4) | Type E relay desk (Szkolna) |
 |---|---|
-| ![Computer workstation, Sopot](docs/screenshots/monitor-sopot.png) | ![Type E desk, Stare Pustkowie](docs/screenshots/desk-stare-pustkowie.png) |
+| ![Computer workstation, Sopot](docs/screenshots/monitor-sopot.png) | ![Type E desk, Szkolna](docs/screenshots/desk-szkolna.png) |
 
 | Guided mission on the training station | Gdynia Orłowo, whole station with SKM and regional traffic |
 |---|---|
@@ -60,8 +60,6 @@ Play it: **https://budnix.github.io/SPRK/**
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
 | **Szkolna** (fictional) | computer | 1/5 | Training station on a single-track line; linear timetable for the guided missions. |
-| **Stare Pustkowie** (fictional) | type E | 2/5 | Single-track line, crossings, a siding, a terminating freight with shunting. |
-| **Wola Pustkowska** (fictional) | type E | 3/5 | Double-track line with one-way blocks plus a branch line with Eap. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |

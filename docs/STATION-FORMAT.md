@@ -7,7 +7,7 @@ Walidacja: `validateStation(def)` w `src/model/validate.js`.
 export default {
   schemaVersion: 1,
   id: 'stare-pustkowie',          // identyfikator (URL: ?stacja=…)
-  name: 'Stare Pustkowie',
+  name: 'Przykładowo',
   description: '…',
   location: '…',                  // gdzie leży posterunek (linia, region) – karta na ekranie startowym
   traffic: '…',                   // krótki opis ruchu – karta na ekranie startowym

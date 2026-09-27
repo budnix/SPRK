@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
-import wola from '../src/stations/wola-pustkowska.js';
+import wola from './fixtures/wola-pustkowska.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
 import { autoDispatch, allArrived } from './helpers.js';

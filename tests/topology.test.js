@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeSim } from './helpers.js';
 import { validateStation } from '../src/model/validate.js';
-import station from '../src/stations/stare-pustkowie.js';
+import station from './fixtures/stare-pustkowie.js';
 
 test('definicja stacji przechodzi walidację', () => {
   const v = validateStation(station);

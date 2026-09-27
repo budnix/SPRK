@@ -74,7 +74,7 @@ Linie 202 (Gdańsk – Gdynia) i 250 (SKM) są dwutorowe z samoczynną blokadą 
 i bez Ko; po modernizacji blokada jest dwukierunkowa (jazda po torze lewym po zmianie kierunku). Dlatego szlaki
 Sopotu, Orłowa, Chyloni i Gdyni Głównej mają `block: 'sbl'` z kierunkiem zasadniczym wg numeracji torów
 (tor 1 / 501 – w stronę Gdyni, tor 2 / 502 – w stronę Gdańska). Linie jednotorowe do Gdyni Port (723) i Wielkiego
-Kacka (201) zostały z blokadą półsamoczynną. Stacje fikcyjne (Stare Pustkowie, Szkolna) mają Eap – celowo, bo uczy
+Kacka (201) zostały z blokadą półsamoczynną. Stacja fikcyjna Szkolna ma Eap – celowo, bo uczy
 pozwoleń.
 
 ## Stanowisko komputerowe – zgodność z Ie-104
@@ -127,7 +127,8 @@ Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego śr
   LCS Gdynia); PKP SKM przebudowała urządzenia toru 250 na komputerowe włączone do systemu zdalnego sterowania
   i kierowania dyspozytorskiego Gdynia Główna SKM. Modernizacja Chylonia–Słupsk (2023–2025) przewiduje komputerowe srk.
   W grze: `komputerowe`.
-* **Stare Pustkowie, Wola Pustkowska** – stacje fikcyjne, urządzenia przekaźnikowe typu E (pulpit kostkowy).
+* **Szkolna** – stacja fikcyjna, treningowa: stanowisko komputerowe albo pulpit kostkowy typu E (misje i dwie pełne zmiany).
+* Dawne stacje fikcyjne Stare Pustkowie i Wola Pustkowska zostały jako stacje testowe w `tests/fixtures/`.
 
 Uproszczenie wspólne: w rzeczywistości tory linii 250 (PKP SKM) i linii 202 (PKP PLK) na tych stacjach obsługują
 różne nastawnie różnych zarządców; w symulatorze jedno stanowisko prowadzi całą stację.

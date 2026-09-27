@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
-import station from '../src/stations/stare-pustkowie.js';
+import station from './fixtures/stare-pustkowie.js';
 import { run, Clock } from './helpers.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 

@@ -110,7 +110,7 @@ test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam
 
 test('walidacja: blokada sbl wymaga stałego kierunku, nieznany rodzaj blokady to błąd', async () => {
   const { validateStation } = await import('../src/model/validate.js');
-  const station = (await import('../src/stations/stare-pustkowie.js')).default;
+  const station = (await import('./fixtures/stare-pustkowie.js')).default;
   const bad = { ...station, exits: { ...station.exits, W: { ...station.exits.W, block: 'sbl' }, E: { ...station.exits.E, block: 'xyz' } } };
   const errs = validateStation(bad).errors;
   assert.ok(errs.some((e) => /sbl.*kierunku/.test(e)), errs.join('\n'));

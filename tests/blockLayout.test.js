@@ -4,7 +4,7 @@ import { blockLayouts } from '../src/render/blockLayout.js';
 import { STATIONS } from '../src/stations/index.js';
 import szkolna from '../src/stations/szkolna.js';
 import sopot from '../src/stations/sopot.js';
-import wola from '../src/stations/wola-pustkowska.js';
+import wola from './fixtures/wola-pustkowska.js';
 import { getTileDef } from '../src/tiles/registry.js';
 
 const straight = (st, x, y) => st.tiles.find((t) => t.x === x && t.y === y && t.type === 'track' && t.ports.every((p) => p === 'W' || p === 'E'));

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openShift } from './helpers.js';
 
 test('zakładka „Zadania”: zadania manewrowe scenariusza z postępem, poza „Stan”; powiadomienie po wykonaniu; brak zakładki bez zadań', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie');
+  await openShift(page, 'szkolna');
   const tab = page.locator('#panel-tabs button[data-tab=zadania]');
   await expect(tab).toBeVisible();
   await expect(tab).toContainText('Zadania');
@@ -10,15 +10,15 @@ test('zakładka „Zadania”: zadania manewrowe scenariusza z postępem, poza �
   const order = await page.locator('#panel-tabs button[data-tab]:not(.hidden)').evaluateAll((els) => els.map((e) => e.dataset.tab));
   expect(order.slice(0, 5)).toEqual(['rj', 'log', 'zadania', 'pociagi', 'stan']);
   await tab.click();
-  await expect(page.locator('#tasks-scenario')).toContainText('Pełna zmiana');
+  await expect(page.locator('#tasks-scenario')).toContainText('Pełna zmiana – stanowisko komputerowe');
   await expect(page.locator('#tasks-progress')).toHaveText('0 / 2 wykonane');
   const cards = page.locator('#tasks .task-card');
   await expect(cards).toHaveCount(2);
-  await expect(cards.nth(0)).toContainText('odstawić na tor 3');
-  await expect(cards.nth(0).locator('.task-meta')).toContainText('skład 90211 · na tor 3 · do 07:52');
+  await expect(cards.nth(0)).toContainText('odstawić manewrami na tor 3');
+  await expect(cards.nth(0).locator('.task-meta')).toContainText('skład 90201 · na tor 3 · do 08:04');
   await expect(cards.nth(0)).toHaveClass(/active/);
-  await expect(cards.nth(1)).toHaveClass(/waiting/); // dopiero od 07:58
-  await expect(cards.nth(1).locator('.task-meta')).toContainText('od 07:58');
+  await expect(cards.nth(1)).toHaveClass(/waiting/); // dopiero po zadaniu 1
+  await expect(cards.nth(1).locator('.task-meta')).toContainText('po zadaniu 1');
   // „Stan” nie ma już sekcji zadań
   await page.click('#panel-tabs button[data-tab=stan]');
   await expect(page.locator('#tab-stan')).not.toContainText('Zadania manewrowe');

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { getSrk, hasSrk, listSrk, registerSrk } from '../src/srk/registry.js';
 import { validateStation } from '../src/model/validate.js';
 import sopot from '../src/stations/sopot.js';
-import starePustkowie from '../src/stations/stare-pustkowie.js';
+import starePustkowie from './fixtures/stare-pustkowie.js';
 import { run } from './helpers.js';
 
 test('rejestr srk: typ E domyślny, komputerowe z dłuższym czasem na drugie wskazanie, nowe strategie rejestrowalne', () => {

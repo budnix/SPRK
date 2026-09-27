@@ -1,4 +1,8 @@
 /**
+ * Stare Pustkowie – dawna stacja fikcyjna gry, od usunięcia z rejestru wyłącznie **stacja testowa** (fixture):
+ * typowa mała stacja linii jednotorowej z urządzeniami typu E, na której działają testy modelu (macierze przebiegów,
+ * blokada Eap, zakłócenia, rozkazy). Nie jest dostępna w grze; zmiany tu tylko pod testy.
+ *
  * Stacja Stare Pustkowie – mała stacja na linii jednotorowej.
  *
  * Układ: tor 1 (główny zasadniczy, peron), tor 2 (główny dodatkowy, peron),

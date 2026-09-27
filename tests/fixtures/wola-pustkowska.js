@@ -1,4 +1,8 @@
 /**
+ * Wola Pustkowska – dawna stacja fikcyjna gry, od usunięcia z rejestru wyłącznie **stacja testowa** (fixture):
+ * linia dwutorowa z blokadą jednokierunkową i odgałęzienie z Eap – testy układu kostek blokady i zapowiadania
+ * telefonicznego (`wola.test.js`, `blockLayout.test.js`). Nie jest dostępna w grze.
+ *
  * Stacja Wola Pustkowska – stacja węzłowa na linii dwutorowej Krasne – Zalesie
  * z odgałęzieniem jednotorowym do Borków.
  *

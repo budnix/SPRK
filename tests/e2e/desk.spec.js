@@ -30,6 +30,12 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   expect(await page.locator('.st-card .st-thumb svg path').count()).toBeGreaterThan(0); // miniatury planów
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-params')).toBeVisible();
+  // Szkolna: w wyborze scenariusza nie ma samouczków (są na liście misji) – dwie pełne zmiany, po jednej na stanowisko
+  await page.click('.st-card[data-id=szkolna]');
+  const opts = await page.locator('#st-scenario option').allTextContents();
+  expect(opts).toEqual(['Pełna zmiana – stanowisko komputerowe (07:00–08:50)', 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)']);
+  expect(opts.some((o) => /samouczek/i.test(o))).toBe(false);
+  await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-briefing')).toHaveClass(/open/);
   await expect(page.locator('.st-card[data-id=sopot]')).toHaveClass(/active/);
   await expect(page.locator('#st-briefing .st-bname')).toHaveText('Sopot');
@@ -41,7 +47,7 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
 });
 
 test('przebieg pociągowy dwoma przyciskami, wyciągnięcie gasi sygnał, Zw + zwrotnica przestawia', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie');
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   const G = (id) => ({ kind: 'signal', id, color: 'green' });
   await btn(page, G('A')).click();
   expect((await simState(page)).armed).toEqual({ kind: 'signal', id: 'A' });
@@ -67,7 +73,7 @@ test('przebieg pociągowy dwoma przyciskami, wyciągnięcie gasi sygnał, Zw + z
 });
 
 test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl obok, liczniki wyżej); Wbl wysyła żądanie, po odpowiedzi sąsiada pozwolenie', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie');
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   // brak osobnego pola blokady; kostki blokady leżą w rzędach 2–3 przy prawym krańcu, strzałki na dwóch skrajnych kostkach toru
   expect(await page.locator('#desk .t-block').count()).toBe(0);
   const cluster = page.locator('#desk .block-cluster[data-exit=E]');
@@ -106,7 +112,7 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
 });
 
 test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasłania przycisków w sąsiednim rzędzie)', async ({ page }) => {
-  await openShift(page, 'szkolna', { params: { srk: 'E' } });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   await advance(page, 30); // Lipno zgłasza 6101
   await btn(page, { kind: 'block', exit: 'W', btn: 'Poz' }).click();
   await btn(page, { kind: 'signal', id: 'A', color: 'green' }).click();
@@ -133,7 +139,7 @@ test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru 
 });
 
 test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu; ukryty panel pokazuje licznik dziennika', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie', { settings: { theme: 'dark', sidePos: 'right' } });
+  await openShift(page, 'szkolna', { settings: { theme: 'dark', sidePos: 'right' }, params: { scenariusz: 'zmiana-e' } });
   await page.click('#btn-menu');
   await page.click('#menu-settings');
   await expect(page.locator('#settings')).toBeVisible();
@@ -157,7 +163,7 @@ test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu;
 });
 
 test('struktura pulpitu: każdy sygnalizator, zwrotnica, wykolejnica, koniec przebiegu i blokada ma przycisk (regresja renderera)', async ({ page }) => {
-  await openShift(page, 'stare-pustkowie');
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   const s = await page.evaluate(() => {
     const st = window.sim.station;
     const refs = [...document.querySelectorAll('#desk .btn')].map((b) => JSON.parse(b.dataset.ref));
