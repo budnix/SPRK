@@ -1,29 +1,35 @@
 /**
- * Ikony SVG zakładki „Pociągi” (tekst SVG, bez DOM – testowane w Node).
- * - `modeIcon(mode)`: czoło pojazdu od przodu z lampami. Jazda pociągowa: sygnał Pc1 – trzy białe światła
- *   (dwa dolne i jedno górne); jazda manewrowa: jedno białe światło (jak na lokomotywie manewrowej wg Ie-1).
- * - `frontIcon(direction)`: sylwetka lokomotywy z boku, zwrócona w stronę jazdy (czoło składu) – `data-dir` E lub W.
+ * Ikony SVG zakładki „Pociągi” (tekst SVG, bez DOM – testowane w Node). Piktogramy liniowe wzorowane na EU07:
+ * pudło o lekko ściętych czołach, pantograf, dwa wózki; z przodu szeroka szyba, zderzaki i lampy.
+ * - `modeIcon(mode)`: czoło od przodu z lampami. Jazda pociągowa: sygnał Pc1 (Ie-1) – trzy białe światła w trójkąt
+ *   (dwa dolne przy zderzakach i górne pod dachem). Jazda manewrowa: sygnał Tb1 – jedno białe światło u dołu od strony
+ *   zajętego stanowiska maszynisty, czyli patrząc na czoło – z lewej.
+ * - `frontIcon(direction)`: lokomotywa z boku ze strzałką w stronę jazdy (czoło składu) – `data-dir` E lub W.
  */
 export function modeIcon(mode) {
-  const lit = mode === 'shunt' ? [false, false, true] : [true, true, true]; // [dolne lewe, dolne prawe, górne]
-  const lamp = (cx, cy, on) => `<circle cx="${cx}" cy="${cy}" r="2" class="lamp ${on ? 'on' : 'off'}"/>`;
-  return `<svg class="ic ic-mode" viewBox="0 0 20 18" width="24" height="22" aria-hidden="true" data-mode="${mode === 'shunt' ? 'shunt' : 'train'}">
-    <path d="M4 3.5h12a2 2 0 0 1 2 2v9.5H2V5.5a2 2 0 0 1 2-2z" class="body"/>
-    <rect x="5" y="5.5" width="10" height="3.5" rx="0.8" class="glass"/>
-    ${lamp(5.5, 12.5, lit[0])}${lamp(14.5, 12.5, lit[1])}${lamp(10, 1.9, lit[2])}
-    <path d="M1 16.5h18" class="body"/>
+  const shunt = mode === 'shunt';
+  const lit = shunt ? [true, false, false] : [true, true, true]; // [dolne lewe, dolne prawe, górne]
+  const lamp = (cx, cy, on) => `<circle cx="${cx}" cy="${cy}" r="1.4" class="lamp ${on ? 'on' : 'off'}"/>`;
+  return `<svg class="ic ic-mode" viewBox="0 0 22 22" width="24" height="24" aria-hidden="true" data-mode="${shunt ? 'shunt' : 'train'}">
+    <path d="M8.5 2.5h5" class="body"/>
+    <path d="M4 18V6.6c0-1.2.8-2.1 2-2.3C7.6 4.1 9.3 4 11 4s3.4.1 5 .3c1.2.2 2 1.1 2 2.3V18z" class="body"/>
+    <path d="M6.2 8.3h9.6v4.2H6.2z" class="glass"/>
+    <path d="M2.5 18h17M3 20.5h3M16 20.5h3" class="body"/>
+    ${lamp(6.4, 15.6, lit[0])}${lamp(15.6, 15.6, lit[1])}${lamp(11, 6.2, lit[2])}
   </svg>`;
 }
 
 export function frontIcon(direction) {
   const east = ['E', 'NE', 'SE'].includes(direction);
-  const flip = east ? '' : ' transform="translate(26 0) scale(-1 1)"';
-  return `<svg class="ic ic-front" viewBox="0 0 26 14" width="30" height="16" aria-hidden="true" data-dir="${east ? 'E' : 'W'}">
+  const flip = east ? '' : ' transform="translate(36 0) scale(-1 1)"';
+  return `<svg class="ic ic-front" viewBox="0 0 36 18" width="36" height="18" aria-hidden="true" data-dir="${east ? 'E' : 'W'}">
     <g${flip}>
-      <path d="M1 11.5V5.5h9l3-3h4v9z" class="body"/>
-      <rect x="11" y="4" width="4.5" height="3" rx="0.6" class="glass"/>
-      <circle cx="4" cy="12" r="1.3" class="wheel"/><circle cx="9" cy="12" r="1.3" class="wheel"/><circle cx="14" cy="12" r="1.3" class="wheel"/>
-      <path d="M19 8.5h6M22.5 5.5l3 3-3 3" class="arrow"/>
+      <path d="M12 5.2l2.5-2.2h4l2.5 2.2" class="body"/>
+      <path d="M3 13.5V7.8c0-.6.3-1.1.8-1.4L5.5 5.2h17l1.7 1.2c.5.3.8.8.8 1.4v5.7z" class="body"/>
+      <path d="M5.5 7.2h2.8M19.7 7.2h2.8M9.5 9.5h9" class="glass"/>
+      <path d="M1.3 10.5H3M25 10.5h1.7" class="body"/>
+      <circle cx="6.5" cy="15" r="1.3" class="wheel"/><circle cx="10.5" cy="15" r="1.3" class="wheel"/><circle cx="17.5" cy="15" r="1.3" class="wheel"/><circle cx="21.5" cy="15" r="1.3" class="wheel"/>
+      <path d="M29 9h5.5M31.8 6.5l2.7 2.5-2.7 2.5" class="arrow"/>
     </g>
   </svg>`;
 }

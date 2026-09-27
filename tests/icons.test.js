@@ -2,10 +2,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { frontIcon, modeIcon } from '../src/ui/icons.js';
 
-test('ikony pociągu: tryb pociągowy = trzy zapalone światła (Pc1), manewrowy = jedno; czoło = sylwetka zwrócona w stronę jazdy', () => {
+test('ikony pociągu: tryb pociągowy = trzy zapalone światła (Pc1), manewrowy = jedno dolne lewe (Tb1); czoło = sylwetka zwrócona w stronę jazdy', () => {
   const on = (s) => (s.match(/class="lamp on"/g) || []).length, off = (s) => (s.match(/class="lamp off"/g) || []).length;
   assert.equal(on(modeIcon('train')), 3); assert.equal(off(modeIcon('train')), 0);
   assert.equal(on(modeIcon('shunt')), 1); assert.equal(off(modeIcon('shunt')), 2);
+  // Tb1: zapalona lampa dolna lewa (mniejsze cx w dolnym rzędzie), pozostałe zgaszone
+  const lamps = [...modeIcon('shunt').matchAll(/<circle cx="([\d.]+)" cy="([\d.]+)" r="[\d.]+" class="lamp (on|off)"/g)].map((m) => ({ x: +m[1], y: +m[2], on: m[3] === 'on' }));
+  const bottom = lamps.filter((l) => l.y === Math.max(...lamps.map((x) => x.y)));
+  assert.equal(bottom.length, 2);
+  assert.ok(bottom.find((l) => l.x === Math.min(...bottom.map((x) => x.x))).on, 'dolna lewa świeci');
+  assert.ok(!bottom.find((l) => l.x === Math.max(...bottom.map((x) => x.x))).on, 'dolna prawa zgaszona');
+  assert.ok(!lamps.find((l) => l.y === Math.min(...lamps.map((x) => x.y))).on, 'górna zgaszona');
   assert.match(modeIcon('shunt'), /data-mode="shunt"/); assert.match(modeIcon('train'), /data-mode="train"/);
   assert.equal(on(modeIcon(undefined)), 3, 'brak trybu = pociągowy');
   for (const d of ['E', 'NE', 'SE']) { assert.match(frontIcon(d), /data-dir="E"/); assert.doesNotMatch(frontIcon(d), /scale\(-1 1\)/); }
