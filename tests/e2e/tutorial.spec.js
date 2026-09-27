@@ -66,9 +66,9 @@ test('misja 1: kroki informacyjne zatrzymują zegar, dymek wskazuje blokadę, Po
 });
 
 test('misja 2: ta sama stacja na pulpicie kostkowym, dymek podświetla przycisk semafora, obsługa dwuprzyciskowa zalicza krok', async ({ page }) => {
-  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-2' }, settings: { srk: 'komputerowe' } });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-2', srk: 'komputerowe' } });
   await page.waitForFunction(() => window.tutorial);
-  await expect(page.locator('#desk svg.desk')).toHaveCount(1); // scenariusz wymusza pulpit mimo ustawienia
+  await expect(page.locator('#desk svg.desk')).toHaveCount(1); // scenariusz wymusza pulpit mimo parametru URL
   const box = page.locator('.tut-box');
   await expect(box.locator('.tut-body')).toContainText('dwuprzyciskowa');
   for (let i = 0; i < 3; i++) await box.locator('.tut-next').click();

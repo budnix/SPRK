@@ -1,5 +1,5 @@
 /** Wspólne narzędzia testów e2e: uruchomienie zmiany z ustawieniami, klikanie elementów pulpitu i monitora. */
-export const DEFAULT_SETTINGS = { deskPos: 'middle', sidePos: 'bottom', theme: 'light', srk: 'auto', sideCollapsed: false, screens: 'off', symScale: '1', rowScale: '1' };
+export const DEFAULT_SETTINGS = { deskPos: 'middle', sidePos: 'bottom', theme: 'light', sideCollapsed: false, screens: 'off', symScale: '1', rowScale: '1' };
 
 export async function openShift(page, station, { settings = {}, params = {} } = {}) {
   const s = { ...DEFAULT_SETTINGS, ...settings };

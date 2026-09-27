@@ -82,7 +82,7 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
 
 test('pulpit kostkowy: pola skrajne z kostkami blokady; naciśnięcie Wbl przez pole wysyła żądanie jak z pulpitu', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 700 });
-  await openShift(page, 'szkolna', { settings: { sideCollapsed: true, srk: 'E', edgePanels: 'on' } });
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true, edgePanels: 'on' }, params: { srk: 'E' } });
   const right = page.locator('.edge-panel.right');
   for (let i = 0; i < 4; i++) await page.click('#zoom-in');
   await expect(right).toBeVisible();

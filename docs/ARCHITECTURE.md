@@ -49,8 +49,8 @@ Stacja deklaruje `srk: 'E' | 'komputerowe'` (domyślnie `E`). Strategia to wpis 
 * Obydwa widoki wysyłają do symulacji te same `press(ref)` / `pull(ref)`; stanowisko komputerowe składa
   polecenia dwuprzyciskowe (Zw+zwrotnica, Pz+semafor) samo, a `AutoOperator` i testy działają identycznie
   niezależnie od strategii.
-* Gracz może wymusić stanowisko w ustawieniach (`srk: auto | E | komputerowe`) – przydatne do porównania
-  obsługi tej samej stacji na pulpicie i na monitorze.
+* Stanowisko nie jest ustawieniem użytkownika – wynika z definicji stacji (`station.srk`) albo scenariusza
+  (`scenario.srk`, misje). Parametr URL `?srk=E|komputerowe` służy tylko testom i porównaniom deweloperskim.
 
 Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR): wpis w `registry.js`
 (parametry) + ewentualny nowy widok w `views.js` / `render/`. Różnice w samych zależnościach (np. brak
@@ -95,7 +95,7 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 ## Ekran ustawień (`src/ui/settingsSchema.js`, `src/ui/SettingsScreen.js`)
 
 Menu ≡ ma tylko akcje (Nowa zmiana…, Ustawienia…, Raport zmiany, Instrukcja obsługi). Ustawienia to osobny pełny ekran
-w motywie ekranu startowego: kategorie po lewej (Stanowisko, Pulpit, Monitor, Motyw, Język, Panel boczny), po prawej opcje
+w motywie ekranu startowego: kategorie po lewej (Pulpit, Monitor, Motyw, Język, Panel boczny), po prawej opcje
 z tytułem, opisem działania i wyborami z podpowiedziami; opcje przeładowujące widok mają znacznik. Treść opisuje
 `settingsCategories()` (bez DOM, funkcja – teksty z `t()` zależą od języka; test pilnuje, że każdy klucz `DEFAULTS` jest
 opisany raz i wartość domyślna jest wśród wyborów), a `SettingsScreen` buduje z niego DOM i podpina kontrolki przez `Settings.bindMenu` – zmiana działa od razu

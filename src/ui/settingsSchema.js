@@ -16,7 +16,6 @@ const opt = (key, values, extra = {}) => ({
 });
 export function settingsCategories() {
   return [
-    cat('stanowisko', [opt('srk', ['auto', 'E', 'komputerowe'], { reload: true })]),
     cat('pulpit', [opt('deskPos', ['top', 'middle', 'bottom']), opt('screens', ['auto', 'off']), opt('edgePanels', ['off', 'on'])]),
     cat('monitor', [
       { key: 'symScale', title: t('set.symScale.title'), description: t('set.symScale.desc'), type: 'range', range: { min: 1, max: 1.5, step: 0.05 } },

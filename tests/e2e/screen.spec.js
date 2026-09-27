@@ -179,9 +179,9 @@ test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapi
   await page.click('#btn-menu'); await page.click('#menu-settings');
   await expect(page.locator('#symScale')).toHaveValue('1.25');
   await expect(page.locator('output[for=symScale]')).toHaveText('125%');
-  // pozostałe domyślne: pulpit na środku, motyw wg systemu, podział na ekrany, odstęp normalny, stanowisko wg stacji, panel na dole
+  // pozostałe domyślne: pulpit na środku, motyw wg systemu, podział na ekrany, odstęp normalny, panel na dole
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');
-  for (const [name, value] of [['deskPos', 'middle'], ['theme', 'system'], ['screens', 'auto'], ['rowScale', '1'], ['srk', 'auto'], ['sidePos', 'bottom']]) {
+  for (const [name, value] of [['deskPos', 'middle'], ['theme', 'system'], ['screens', 'auto'], ['rowScale', '1'], ['sidePos', 'bottom']]) {
     await expect(page.locator(`#settings input[name=${name}][value="${value}"]`), name).toBeChecked();
   }
   // motyw wg systemu: ciemny tryb systemu → ciemny, jasny → jasny (także na żywo, bez przeładowania)
