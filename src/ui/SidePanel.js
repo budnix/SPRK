@@ -1,6 +1,7 @@
 import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
+import { frontIcon, modeIcon } from './icons.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -414,7 +415,7 @@ export class SidePanel {
         : tr.stoppedAt?.kind === 'signal' ? t('sp.trains.atSignal', { signal: tr.stoppedAt.signal })
         : tr.stoppedAt?.kind === 'platform' ? t('sp.trains.atPlatform')
         : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd') : t('sp.trains.stopped');
-      const meta = [t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain'), tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', t('sp.trains.front', { arrow: ['E', 'NE', 'SE'].includes(tr.direction) ? '→' : '←' })].filter(Boolean).join(' · ');
+      const meta = [`${modeIcon(tr.mode)} ${t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(tr.direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
       const canControl = tr.v === 0;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">

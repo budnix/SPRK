@@ -232,7 +232,7 @@ export default {
   'sp.trains.ended': 'zakończył bieg – można przełączyć na manewry',
   'sp.trains.stopped': 'stoi',
   'sp.trains.track': 'tor {track}',
-  'sp.trains.front': 'czoło {arrow}',
+  'sp.trains.front': 'czoło',
   'sp.tab.stan': 'Stan',
   'sp.tab.rozkazy': 'Rozkazy',
   'sp.tab.lacznosc': 'Łączność',

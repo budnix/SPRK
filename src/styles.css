@@ -340,6 +340,14 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .train-card .train-state b { color: var(--text); font-weight: 600; }
 .train-card .train-actions { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 4px; }
 .train-card .delay { color: var(--danger); font-weight: 600; }
+/* ikony: czoło pojazdu z lampami (tryb jazdy) i sylwetka lokomotywy ze strzałką (czoło składu) */
+.train-card .ic { vertical-align: -6px; margin-right: 2px; }
+.train-card .ic .body { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round; }
+.train-card .ic .glass { fill: currentColor; opacity: 0.35; }
+.train-card .ic .wheel { fill: currentColor; opacity: 0.8; }
+.train-card .ic .arrow { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.train-card .ic .lamp.on { fill: #ffe08a; stroke: #b98c1a; stroke-width: 0.6; }
+.train-card .ic .lamp.off { fill: none; stroke: currentColor; stroke-width: 0.8; opacity: 0.45; }
 .shunt-row { font-size: 12px; padding: 3px 0; }
 .shunt-row button, .train-actions button { background: var(--panel2); color: var(--text); border: 1px solid var(--border2); border-radius: 4px; padding: 3px 6px; font-size: 11px; cursor: pointer; }
 

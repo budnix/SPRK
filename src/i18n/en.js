@@ -225,7 +225,7 @@ export default {
   'sp.trains.ended': 'ended its run – can be switched to shunting',
   'sp.trains.stopped': 'standing',
   'sp.trains.track': 'track {track}',
-  'sp.trains.front': 'front {arrow}',
+  'sp.trains.front': 'front',
   'sp.tab.stan': 'State',
   'sp.tab.rozkazy': 'Orders',
   'sp.tab.lacznosc': 'Comms',

@@ -69,7 +69,8 @@ powiększenia), strzałki ← →, przesunięcie palcem.
 Panel boczny ma zakładki: Rozkład, Dziennik, Zadania (tylko gdy scenariusz ma zadania manewrowe – karty z terminem,
 składem, torem docelowym i stanem: do wykonania / czeka na porę lub poprzednie zadanie / wykonane / niewykonane;
 powiadomienie na karcie po zdarzeniu `tasks`), Pociągi (każdy pociąg na posterunku: jedzie / stoi i dlaczego – semafor,
-peron, koniec toru, postój do odjazdu, zakończył bieg; tor, czoło, tryb; po zatrzymaniu przyciski jazda manewrowa /
+peron, koniec toru, postój do odjazdu, zakończył bieg; tor, czoło, tryb – ikony z `src/ui/icons.js`: czoło pojazdu z lampami
+(Pc1: trzy światła = jazda pociągowa, jedno = manewrowa) i sylwetka lokomotywy zwrócona w stronę jazdy; po zatrzymaniu przyciski jazda manewrowa /
 pociągowa i zmiana czoła – dawniej sekcja „Manewry” w Stanie), Stan, Rozkazy, Łączność, Polecenia (okręgi).
 
 Strona nie przewija się i nie odświeża gestem (tablet): `html, body { overflow: hidden; overscroll-behavior: none }`

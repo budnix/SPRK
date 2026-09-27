@@ -225,7 +225,7 @@ export default {
   'sp.trains.ended': 'Lauf beendet – kann auf Rangierfahrt umgestellt werden',
   'sp.trains.stopped': 'steht',
   'sp.trains.track': 'Gleis {track}',
-  'sp.trains.front': 'Spitze {arrow}',
+  'sp.trains.front': 'Spitze',
   'sp.tab.stan': 'Zustand',
   'sp.tab.rozkazy': 'Befehle',
   'sp.tab.lacznosc': 'Kommunikation',

@@ -26,16 +26,20 @@ test('zakładka „Pociągi”: pociąg na posterunku ze stanem, torem i czołem
   await expect(card.locator('.train-state')).toContainText(/postój|stoi/);
   await expect(card.locator('.train-state')).toContainText('tor 1');
   await expect(card.locator('.train-state')).toContainText('pociągowy');
-  await expect(card.locator('.train-state')).toContainText('czoło →');
+  await expect(card.locator('.train-state .ic-front')).toHaveAttribute('data-dir', 'E'); // sylwetka lokomotywy zwrócona w prawo
+  await expect(card.locator('.train-state .ic-mode')).toHaveAttribute('data-mode', 'train');
+  expect(await card.locator('.train-state .ic-mode .lamp.on').count()).toBe(3); // Pc1: trzy światła
   await expect(card.locator('button[data-act=shunt]')).toHaveText('jazda manewrowa');
   // sterowanie: tryb manewrowy, zmiana czoła
   await card.locator('button[data-act=shunt]').click();
   expect(await page.evaluate(() => window.sim.traffic.timetable().find((x) => x.nr === 6101).train.mode)).toBe('shunt');
   await expect(card).toHaveClass(/shunt/);
   await expect(card.locator('.train-state')).toContainText('manewrowy');
+  await expect(card.locator('.train-state .ic-mode')).toHaveAttribute('data-mode', 'shunt');
+  expect(await card.locator('.train-state .ic-mode .lamp.on').count()).toBe(1); // manewry: jedno światło
   await expect(card.locator('button[data-act=train]')).toHaveText('jazda pociągowa');
   await card.locator('button[data-act=rev]').click();
-  await expect(card.locator('.train-state')).toContainText('czoło ←');
+  await expect(card.locator('.train-state .ic-front')).toHaveAttribute('data-dir', 'W');
   // „Stan” nie ma już sekcji Manewry
   await page.click('#panel-tabs button[data-tab=stan]');
   await expect(page.locator('#tab-stan')).not.toContainText('Manewry');
