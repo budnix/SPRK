@@ -238,8 +238,13 @@ export class Topology {
     const flank = [];
     for (const step of path.steps) {
       const t = step.tile;
+      // Kostka startowa: tył (za semaforem początkowym) osłania sam semafor – z tej strony
+      // wjeżdża pociąg, dla którego przebieg jest nastawiany, nie szukamy tam ochrony bocznej.
+      const rear = step.inPort === null && path.startSignal
+        ? new Set(t._def.ports(t).filter((p) => p !== step.outPort && heading(p) !== path.startSignal.dir))
+        : null;
       for (const p of t._def.ports(t)) {
-        if (p === step.inPort || p === step.outPort) continue;
+        if (p === step.inPort || p === step.outPort || rear?.has(p)) continue;
         // Port kostki nieużywany w przebiegu – z niego może „wjechać” coś z boku
         const nb = this.neighbour(t, p);
         if (!nb || routeTiles.has(nb.tile._key)) continue;
@@ -284,8 +289,13 @@ export class Topology {
     const routeTiles = new Set(path.steps.map((s) => s.tile._key));
     for (const step of path.steps) {
       const t = step.tile;
+      // Kostka startowa: tył (za semaforem początkowym) osłania sam semafor – z tej strony
+      // wjeżdża pociąg, dla którego przebieg jest nastawiany, nie szukamy tam ochrony bocznej.
+      const rear = step.inPort === null && path.startSignal
+        ? new Set(t._def.ports(t).filter((p) => p !== step.outPort && heading(p) !== path.startSignal.dir))
+        : null;
       for (const p of t._def.ports(t)) {
-        if (p === step.inPort || p === step.outPort) continue;
+        if (p === step.inPort || p === step.outPort || rear?.has(p)) continue;
         const nb = this.neighbour(t, p);
         if (!nb || routeTiles.has(nb.tile._key)) continue;
         const d = this.#findDerailer(nb.tile, nb.inPort, new Set());

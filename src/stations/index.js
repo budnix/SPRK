@@ -3,9 +3,10 @@ import gdyniaOrlowo from './gdynia-orlowo.js';
 import gdyniaChylonia from './gdynia-chylonia.js';
 import sopot from './sopot.js';
 import szkolna from './szkolna.js';
+import rumia from './rumia.js';
 
 /** Rejestr stacji dostępnych w grze. Przyszły edytor doda tu stacje użytkowników. */
-export const STATIONS = [szkolna, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna];
+export const STATIONS = [szkolna, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna, rumia];
 
 export function getStation(id) {
   return STATIONS.find((s) => s.id === id) || STATIONS[0];

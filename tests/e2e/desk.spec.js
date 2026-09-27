@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openShift, btn, simState, advance } from './helpers.js';
+import { openShift, btn, simState, advance, hit } from './helpers.js';
 
 /* Pulpit kostkowy (urządzenia typu E) – Stare Pustkowie */
 
@@ -310,4 +310,17 @@ test('„Nowa zmiana…” czyści parametry URL (odświeżenie zostaje na wybor
   await page.reload({ waitUntil: 'load' });
   await expect(page.locator('#start')).toBeVisible();
   expect(new URL(page.url()).search).toBe('');
+});
+
+test('Rumia: karta „stanowisko do wyboru” (typ E i komputerowe); pulpit kostkowy rysuje stację z blokadami, stanowisko komputerowe – semafory dwustopniowego wyjazdu', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id=rumia] .st-name')).toHaveText('Rumia');
+  await expect(page.locator('.st-card[data-id=rumia] .st-srk-both')).toHaveText('stanowisko do wyboru');
+  await openShift(page, 'rumia', { settings: { sideCollapsed: true } });
+  await expect(page.locator('#desk svg')).toBeVisible();
+  expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.keys()] }))).toEqual({ srk: 'desk', blocks: ['GC2', 'GC1', 'GS2', 'GS1', 'RD2', 'RD1'] });
+  await expect(page.locator('#desk svg text', { hasText: 'RUMIA' })).toBeVisible();
+  await openShift(page, 'rumia', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-lcs' } });
+  expect(await page.evaluate(() => window.sim.srk.view)).toBe('screen');
+  for (const id of ['C', 'G311', 'E', 'D312']) await expect(hit(page, id)).toBeAttached();
 });

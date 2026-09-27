@@ -102,7 +102,9 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
 Tablica zależności jest wyznaczana **automatycznie** z topologii (`Topology.pathsFrom`):
 od każdego sygnalizatora w jego kierunku do następnego sygnalizatora / szlaku / kozła.
 Dla każdego przebiegu wyznaczane są: odcinki drogi przebiegu, wymagane położenia zwrotnic,
-zwrotnice ochrony bocznej, wykolejnice (na drodze – zdjęte, sąsiadujące – nałożone),
+zwrotnice ochrony bocznej (najbliższa zwrotnica za nieużywanym portem kostki drogi przebiegu; tył kostki startowej
+osłania sam semafor początkowy, więc zwrotnice za nim nie wchodzą w ochronę – ważne dla wyjazdów dwustopniowych,
+np. Rumia C → G311 → szlak), wykolejnice (na drodze – zdjęte, sąsiadujące – nałożone),
 droga ochronna (odcinek za semaforem końcowym) i prędkość (40/60 przez tor zwrotny).
 
 * `routes.disable: ['A-D2']` – usuwa przebieg,
