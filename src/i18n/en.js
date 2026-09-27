@@ -71,7 +71,7 @@ export default {
   'start.scen': '{n} scen.',
   'start.srkScreen': 'computer · monitor',
   'start.srkDesk': 'type E · push-button desk',
-  'start.srkBoth': 'monitor or type E desk · your choice',
+  'start.srkBoth': 'workstation of your choice',
   'start.srkInfo': 'Interlocking: {info}',
   'start.bothDistricts': 'both signal boxes alone (no orders)',
   'start.bothDesc': 'You operate both desks yourself.',

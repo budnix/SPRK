@@ -75,7 +75,7 @@ export default {
   'start.scen': '{n} scen.',
   'start.srkScreen': 'komputerowe · monitor',
   'start.srkDesk': 'typ E · pulpit kostkowy',
-  'start.srkBoth': 'monitor lub pulpit typu E · do wyboru',
+  'start.srkBoth': 'stanowisko do wyboru',
   'start.srkInfo': 'Urządzenia srk: {info}',
   'start.bothDistricts': 'oba okręgi jednoosobowo (bez poleceń)',
   'start.bothDesc': 'Obsługujesz oba pulpity sam.',

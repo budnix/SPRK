@@ -2,6 +2,7 @@ import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.j
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
 import { frontIcon, modeIcon } from './icons.js';
+import { setHtmlIfChanged } from './dom.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -197,7 +198,7 @@ export class SidePanel {
       const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');
       return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${x.done ? '✔' : x.failed ? '✘' : waiting ? '◌' : '☐'}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
     }).join('') : `<div class="muted">${t('sp.tasks.none')}</div>`;
-    if (host.dataset.html !== html) { host.dataset.html = html; host.innerHTML = html; }
+    setHtmlIfChanged(host, html);
   }
 
   #tasksBadge() {
@@ -426,8 +427,7 @@ export class SidePanel {
         <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
-    if (host.dataset.html === html) return; // bez zmian – nie przebudowuj DOM (stabilne przyciski i pomiary)
-    host.dataset.html = html; host.innerHTML = html;
+    if (!setHtmlIfChanged(host, html)) return; // bez zmian – nie przebudowuj DOM (stabilne przyciski)
     for (const b of host.querySelectorAll('button')) {
       b.addEventListener('click', () => {
         if (b.dataset.act === 'shunt') sim.traffic.toShunting(b.dataset.nr);

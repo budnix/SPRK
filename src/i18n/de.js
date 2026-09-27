@@ -71,7 +71,7 @@ export default {
   'start.scen': '{n} Szen.',
   'start.srkScreen': 'Rechner · Monitor',
   'start.srkDesk': 'Typ E · Drucktastenpult',
-  'start.srkBoth': 'Monitor oder Pult Typ E · wählbar',
+  'start.srkBoth': 'Arbeitsplatz wählbar',
   'start.srkInfo': 'Stellwerkstechnik: {info}',
   'start.bothDistricts': 'beide Bezirke allein (ohne Anweisungen)',
   'start.bothDesc': 'Du bedienst beide Pulte selbst.',

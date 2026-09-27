@@ -31,7 +31,10 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-params')).toBeVisible();
   // Szkolna: w wyborze scenariusza nie ma samouczków (są na liście misji) – dwie pełne zmiany, po jednej na stanowisko
-  await expect(page.locator('.st-card[data-id=szkolna] .st-srk-both')).toHaveText('monitor lub pulpit typu E · do wyboru');
+  await expect(page.locator('.st-card[data-id=szkolna] .st-srk-both')).toHaveText('stanowisko do wyboru');
+  // chip jak pozostałe (szary) – to informacja o wyborze, nie inny rodzaj urządzeń
+  const chips = await page.locator('.st-card[data-id=szkolna] .st-srk, .st-card[data-id=sopot] .st-srk').evaluateAll((els) => els.map((e) => getComputedStyle(e).color + '|' + getComputedStyle(e).borderTopColor));
+  expect(new Set(chips).size).toBe(1);
   await expect(page.locator('.st-card[data-id=sopot] .st-srk').first()).toHaveText('komputerowe · monitor');
   await page.click('.st-card[data-id=szkolna]');
   const opts = await page.locator('#st-scenario option').allTextContents();
