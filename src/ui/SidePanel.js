@@ -32,10 +32,13 @@ export class SidePanel {
         <ul id="routes" class="plain"></ul>
         <h4>${t('sp.counters')}</h4>
         <div id="counters"></div>
-        <h4>${t('sp.tasks')}</h4>
-        <div id="tasks" class="muted">${t('sp.none')}</div>
         <h4>${t('sp.shunt')}</h4>
         <div id="shunt"></div>
+      </section>
+      <section class="tab hidden" id="tab-zadania">
+        <div class="tasks-head"><b id="tasks-scenario"></b><span id="tasks-progress" class="muted"></span></div>
+        <p class="muted small" id="tasks-desc"></p>
+        <div id="tasks"></div>
       </section>
       <section class="tab hidden" id="tab-rozkazy">
         <h4>${t('sp.order.title')}</h4>
@@ -82,7 +85,7 @@ export class SidePanel {
     // zakładki panelu żyją w listwie narzędzi (nad panelem); bez hosta – zapasowo w samym panelu
     this.tabs = opts.tabsHost || root.insertBefore(document.createElement('nav'), root.firstChild);
     this.tabs.classList.add('panel-tabs');
-    this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
+    this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['zadania', 'tasks-badge', !(sim.traffic.tasks || []).length], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
       .map(([id, badge, hidden]) => `<button type="button" class="tb${id === 'rj' ? ' active' : ''}${hidden ? ' hidden' : ''}" data-tab="${id}"${id === 'polecenia' ? ' id="tab-btn-polecenia"' : ''}>${t(`sp.tab.${id}`)}${badge ? ` <span id="${badge}" class="badge hidden">0</span>` : ''}</button>`).join('');
     this.tabs.addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-tab]'); if (!b) return;
@@ -101,6 +104,7 @@ export class SidePanel {
     this.#initOrders();
     this.#initComms();
     this.#initCommands();
+    this.#initTasks();
   }
 
   #initCommands() {
@@ -160,6 +164,40 @@ export class SidePanel {
     sim.bus.on('comms', (m) => { if (m.kind === 'order' && !isDispatcher && this.root.querySelector('#tab-polecenia').classList.contains('hidden')) { this.cmdUnread++; this.#cmdBadge(); this.flash('polecenia'); } });
     this.refreshCommandForm = isDispatcher ? fill : () => {};
     fill(); this.renderCommands();
+  }
+
+  /** Zakładka „Zadania”: zadania manewrowe scenariusza (część misji) z postępem; powiadomienie, gdy zadanie zostanie wykonane lub przepadnie. */
+  #initTasks() {
+    const sim = this.sim;
+    this.root.querySelector('#tasks-scenario').textContent = sim.scenario?.name || '';
+    this.root.querySelector('#tasks-desc').textContent = sim.scenario?.description || '';
+    this.tasksUnread = 0;
+    this.renderTasks();
+    sim.bus.on('tasks', () => {
+      this.renderTasks();
+      if (this.root.querySelector('#tab-zadania').classList.contains('hidden')) { this.tasksUnread++; this.#tasksBadge(); this.flash('zadania'); }
+    });
+  }
+
+  renderTasks() {
+    const tasks = this.sim.traffic.tasks || [];
+    const now = this.sim.clock.time;
+    this.root.querySelector('#tasks-progress').textContent = tasks.length ? t('sp.tasks.progress', { done: tasks.filter((x) => x.done).length, n: tasks.length }) : '';
+    this.root.querySelector('#tasks').innerHTML = tasks.length ? tasks.map((x, i) => {
+      const prev = x.afterTask ? tasks.find((y) => y.id === x.afterTask) : null;
+      const waiting = !x.done && !x.failed && ((prev && !prev.done) || (x.afterTime && now < x.afterTime));
+      const state = x.done ? 'done' : x.failed ? 'failed' : waiting ? 'waiting' : 'active';
+      const status = x.done ? t(x.doneAt > x.deadlineTime ? 'sp.tasks.doneLate' : 'sp.tasks.done', { time: Clock.format(x.doneAt) })
+        : x.failed ? t('sp.tasks.failed') : waiting ? t('sp.tasks.waiting') : t('sp.tasks.active');
+      const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');
+      return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${x.done ? '✔' : x.failed ? '✘' : waiting ? '◌' : '☐'}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
+    }).join('') : `<div class="muted">${t('sp.tasks.none')}</div>`;
+  }
+
+  #tasksBadge() {
+    const b = this.tabs.querySelector('#tasks-badge');
+    b.textContent = String(this.tasksUnread);
+    b.classList.toggle('hidden', this.tasksUnread === 0);
   }
 
   #cmdBadge() {
@@ -254,6 +292,7 @@ export class SidePanel {
 
   /** Zwija / rozwija panel; zakładki z licznikami powiadomień zostają w listwie narzędzi. */
   collapse(v) {
+    if (this.collapsed === !!v) return; // bez zmiany stanu (np. kliknięcie zakładki przy rozwiniętym panelu) – nic się nie dzieje
     this.collapsed = !!v;
     document.getElementById('app').dataset.sideCollapsed = String(this.collapsed);
     this.opts.onToggle?.(this.collapsed);
@@ -265,6 +304,7 @@ export class SidePanel {
     if (id === 'log') { this.unread = 0; this.#badge(); }
     if (id === 'lacznosc') { this.commsUnread = 0; this.#commsBadge(); }
     if (id === 'polecenia') { this.cmdUnread = 0; this.#cmdBadge(); this.refreshCommandForm?.(); }
+    if (id === 'zadania') { this.tasksUnread = 0; this.#tasksBadge(); this.renderTasks(); }
     if (id === 'rozkazy') this.refreshOrderTrains?.();
   }
 
@@ -280,6 +320,7 @@ export class SidePanel {
     this.lastRender = now;
     this.renderTimetable();
     this.renderState();
+    if (!this.root.querySelector('#tab-zadania').classList.contains('hidden')) this.renderTasks();
     this.refreshOrderTrains?.();
     if (!this.root.querySelector('#tab-polecenia').classList.contains('hidden')) this.refreshCommandForm?.();
   }
@@ -351,10 +392,6 @@ export class SidePanel {
     const c = this.sim.ilk.counters;
     const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);
     this.root.querySelector('#counters').innerHTML = t('sp.counters.line', { dPz: c.dPz, sz: c.Sz, split: c.rozprucie }) + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : `<div class="muted">${t('sp.counters.blk')}</div>`);
-    const tasks = this.sim.traffic.tasks || [];
-    this.root.querySelector('#tasks').innerHTML = tasks.length
-      ? tasks.map((x) => `<div class="task ${x.done ? 'done' : x.failed ? 'failed' : ''}">${x.done ? '✔' : x.failed ? '✘' : '☐'} ${escapeHtml(x.text)} <span class="muted">${t('sp.task.due', { time: x.deadline })}</span></div>`).join('')
-      : `<span class="muted">${t('sp.none')}</span>`;
     const standing = this.sim.traffic.timetable().filter((e) => e.train && !e.train.finished && e.train.v === 0 && e.train.entered);
     this.root.querySelector('#shunt').innerHTML = standing.length
       ? standing.map((e) => `<div class="shunt-row">${t('sp.shunt.row', { nr: e.nr, mode: t(e.train.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain'), arrow: ['E', 'NE', 'SE'].includes(e.train.direction) ? '→' : '←' })} <button data-nr="${e.nr}" data-act="${e.train.mode === 'shunt' ? 'train' : 'shunt'}">${t(e.train.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button> <button data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button></div>`).join('')

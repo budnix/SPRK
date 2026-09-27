@@ -477,9 +477,23 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .st-go { width: 100%; padding: 12px; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; }
 .st-params .order-actions { margin-top: 10px; }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
-.task { font-size: 12px; padding: 3px 0; }
-.task.done { color: var(--accent); }
-.task.failed { color: var(--danger); }
+/* zakładka „Zadania”: karty zadań manewrowych scenariusza */
+.tasks-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 2px; font-size: 13px; }
+.tasks-head span { margin-left: auto; font-variant-numeric: tabular-nums; }
+#tasks-desc { margin: 0 0 8px; }
+.task-card { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 8px; align-items: start; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: 4px; font-size: 12px; }
+.task-card .task-no { color: var(--muted); font-variant-numeric: tabular-nums; }
+.task-card .task-mark { font-size: 13px; line-height: 1.2; }
+.task-card .task-text { font-weight: 600; }
+.task-card .task-meta { margin-top: 2px; font-size: 11px; }
+.task-card .task-status { margin-top: 2px; font-size: 11px; color: var(--muted); }
+.task-card.active { border-left-color: var(--accent); }
+.task-card.active .task-status { color: var(--accent); }
+.task-card.waiting { opacity: 0.7; }
+.task-card.done { border-left-color: var(--grp-panel); }
+.task-card.done .task-mark, .task-card.done .task-status { color: var(--grp-panel); }
+.task-card.failed { border-left-color: var(--danger); }
+.task-card.failed .task-mark, .task-card.failed .task-status { color: var(--danger); }
 
 /* ---- okręgi nastawcze ---- */
 svg.desk.readonly .btn { cursor: not-allowed; }

@@ -66,6 +66,10 @@ n₀−1, n₀, n₀+1. Renderer ma jedną instancję – ekran to tylko zmiana 
 jednym ekranie kończy się na drugim. Przełączanie: zakładki ekranów w grupie „widok” listwy narzędzi (obok
 powiększenia), strzałki ← →, przesunięcie palcem.
 
+Panel boczny ma zakładki: Rozkład, Dziennik, Zadania (tylko gdy scenariusz ma zadania manewrowe – karty z terminem,
+składem, torem docelowym i stanem: do wykonania / czeka na porę lub poprzednie zadanie / wykonane / niewykonane;
+powiadomienie na karcie po zdarzeniu `tasks`), Stan, Rozkazy, Łączność, Polecenia (okręgi).
+
 Listwa narzędzi (`#desk-tools`): na początku zakładki panelu bocznego (`SidePanel` renderuje je w `tabsHost`,
 w samym panelu zakładek nie ma – liczniki powiadomień i miganie są w listwie; aktywna karta schodzi do panelu pod
 listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i przycisk schowaj/pokaż panel.
