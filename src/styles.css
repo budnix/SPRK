@@ -54,11 +54,15 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #desk-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
 #desk-scroll { flex: 1 1 auto; overflow: auto; padding: 4px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; display: flex; }
 #desk { position: relative; margin: auto; flex: 0 0 auto; }
-#desk-tools { display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
+#desk-tools { position: relative; display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
 #desk-tools .tb { white-space: nowrap; }
 @media (max-width: 1500px) { .hint { display: none; } }
 .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
-.status { font-size: 13px; margin-left: 10px; min-height: 1em; flex: 1 1 auto; }
+/* komunikat stanu – nakładka nad paskiem narzędzi (poza przepływem flex): pojawienie się dłuższego tekstu
+   nie zawija paska i nie przesuwa pulpitu */
+.status { position: absolute; left: 8px; bottom: calc(100% + 6px); max-width: calc(100% - 16px); z-index: 5; pointer-events: none;
+  font-size: 13px; padding: 4px 10px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border2); box-shadow: 0 2px 8px var(--shadow); }
+.status:empty { display: none; }
 .status.lv-armed { color: var(--warn); font-weight: 600; }
 .status.lv-warn { color: var(--warn); }
 .status.lv-alarm { color: var(--danger); font-weight: 700; }

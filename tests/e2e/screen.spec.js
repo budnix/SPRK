@@ -210,3 +210,26 @@ test('monitor: semafor A i tarcza Tm1 w tym samym punkcie toru (Orłowo) są oba
     await page.keyboard.press('Escape');
   }
 });
+
+test('komunikat stanu jest nakładką nad paskiem narzędzi: długi tekst nie zawija paska i nie przesuwa pulpitu', async ({ page }) => {
+  await openShift(page, 'sopot', { settings: { sideCollapsed: true, screens: 'auto' } });
+  const deskBefore = await page.locator('#desk').boundingBox();
+  const toolsBefore = await page.locator('#desk-tools').boundingBox();
+  await expect(page.locator('#status')).toBeHidden(); // pusty komunikat nie rysuje ramki
+  await page.evaluate(() => window.sim.bus.emit('log', { time: 0, level: 'warn', msg: 'Sopot: pociąg 55102 opóźniony ok. 5 min – '.repeat(8) }));
+  const status = page.locator('#status');
+  await expect(status).toBeVisible();
+  await expect(status).toHaveClass(/lv-warn/);
+  const s = await status.boundingBox();
+  const deskAfter = await page.locator('#desk').boundingBox();
+  const toolsAfter = await page.locator('#desk-tools').boundingBox();
+  expect(deskAfter).toEqual(deskBefore); // pulpit stoi w miejscu
+  expect(toolsAfter.height).toBe(toolsBefore.height); // pasek nie urósł o wiersz
+  expect(s.y + s.height).toBeLessThanOrEqual(toolsAfter.y + 1); // komunikat leży nad paskiem, w obszarze pulpitu
+  expect(s.width).toBeLessThanOrEqual(toolsAfter.width);
+  // uzbrojenie przebiegu też nie rusza pulpitu
+  await page.click('.scr-cmdbar button[data-cmd=train]');
+  await tap(page, 'A');
+  await expect(status).toContainText('wskaż koniec przebiegu');
+  expect(await page.locator('#desk').boundingBox()).toEqual(deskBefore);
+});
