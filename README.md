@@ -46,7 +46,8 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ### Traffic
 * Trains run over the real topology and current point positions, brake for stop signals, 40 km/h over diverging points,
-  20 km/h on a substitute signal, platform stops per timetable, non-stop passes, terminating trains, units handed over
+  20 km/h on a substitute signal, train categories with realistic speeds and dynamics (EIP/IC/TLK/Regio/SKM/freight, capped by
+  line speed), full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable, non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, stop 10 m before other stock.
 * Timetable with live status and delays, event log, state tab (blocks, routes, counters, shunting tasks, train
   mode / direction), written orders "S" for passing a signal at Stop, telephone train announcements per Ir-1 formulas

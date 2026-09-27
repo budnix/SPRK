@@ -112,8 +112,8 @@ const skm = (t, nrE, nrW) => {
   const [h, m] = t.split(':').map(Number);
   const f = (mm) => `${String(h + Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
   return [
-    { nr: nrE, kind: 'os', name: 'SKM', from: 'S501', to: 'Z501', arr: t, dep: f(m + 1), track: '501', stop: true, length: 130, vmax: 90, dwell: 30 },
-    { nr: nrW, kind: 'os', name: 'SKM', from: 'Z502', to: 'S502', arr: f(m + 6), dep: f(m + 7), track: '502', stop: true, length: 130, vmax: 90, dwell: 30 },
+    { nr: nrE, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'S501', to: 'Z501', arr: t, dep: f(m + 1), track: '501', stop: true, length: 130, dwell: 30 },
+    { nr: nrW, kind: 'os', name: 'SKM Wejherowo – Gdańsk Śródmieście', from: 'Z502', to: 'S502', arr: f(m + 6), dep: f(m + 7), track: '502', stop: true, length: 130, dwell: 30 },
   ];
 };
 
@@ -147,19 +147,19 @@ export default {
   timetable: [
     ...skm('06:02', 92101, 92102), ...skm('06:17', 92103, 92104), ...skm('06:32', 92105, 92106), ...skm('06:47', 92107, 92108),
     ...skm('07:02', 92109, 92110), ...skm('07:17', 92111, 92112), ...skm('07:32', 92113, 92114), ...skm('07:47', 92115, 92116),
-    { nr: 55100, kind: 'os', name: 'Regio Gdańsk – Słupsk', from: 'S1', to: 'Z1', arr: '06:08', dep: '06:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55201, kind: 'os', name: 'Regio Słupsk – Gdańsk', from: 'Z2', to: 'S2', arr: '06:22', dep: '06:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 5100, kind: 'os', name: 'IC Warszawa – Gdynia', from: 'S1', to: 'Z1', arr: '06:45', track: '1', stop: false, length: 260, vmax: 120 },
-    { nr: 55102, kind: 'os', name: 'Regio Gdańsk – Lębork', from: 'S1', to: 'Z1', arr: '06:38', dep: '06:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk', from: 'Z2', to: 'S2', arr: '06:52', dep: '06:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 88301, kind: 'os', name: 'Skład EZT z Bazy (próżny)', from: null, to: 'Z2', dep: '07:05', track: '6', stop: false, length: 130, vmax: 90, startOn: { section: 'T6', dir: 'E' } },
-    { nr: 55104, kind: 'os', name: 'Regio Gdańsk – Słupsk', from: 'S1', to: 'Z1', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa', from: 'Z2', to: 'S2', arr: '07:15', track: '2', stop: false, length: 300, vmax: 120 },
-    { nr: 55205, kind: 'os', name: 'Regio Lębork – Gdańsk', from: 'Z2', to: 'S2', arr: '07:22', dep: '07:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 44561, kind: 'tow', name: 'Towarowy', from: 'S1', to: 'Z1', arr: '07:30', track: '3', stop: false, length: 520, vmax: 80 },
-    { nr: 55106, kind: 'os', name: 'Regio Gdańsk – Słupsk', from: 'S1', to: 'Z1', arr: '07:38', dep: '07:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 88302, kind: 'os', name: 'Skład EZT do Bazy (próżny)', from: 'Z2', to: null, arr: '07:44', track: '4', stop: true, terminates: true, length: 130, vmax: 90, dwell: 30 },
-    { nr: 55207, kind: 'os', name: 'Regio Lębork – Gdańsk', from: 'Z2', to: 'S2', arr: '07:52', dep: '07:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55100, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '06:08', dep: '06:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55201, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '06:22', dep: '06:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 5100, kind: 'os', name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.', from: 'S1', to: 'Z1', arr: '06:45', track: '1', stop: false, length: 260 },
+    { nr: 55102, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'S1', to: 'Z1', arr: '06:38', dep: '06:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '06:52', dep: '06:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 88301, kind: 'os', name: 'Skład EZT Baza EZ Sopot – Gdynia Gł. (próżny)', from: null, to: 'Z2', dep: '07:05', track: '6', stop: false, length: 130, vmax: 90, startOn: { section: 'T6', dir: 'E' } },
+    { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'Z2', to: 'S2', arr: '07:15', track: '2', stop: false, length: 300 },
+    { nr: 55205, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '07:22', dep: '07:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 44561, kind: 'tow', name: 'Towarowy Gdańsk Port Płn. – Gdynia Port', from: 'S1', to: 'Z1', arr: '07:30', track: '3', stop: false, length: 520, vmax: 80 },
+    { nr: 55106, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '07:38', dep: '07:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 88302, kind: 'os', name: 'Skład EZT Gdynia Gł. – Baza EZ Sopot (próżny)', from: 'Z2', to: null, arr: '07:44', track: '4', stop: true, terminates: true, length: 130, vmax: 90, dwell: 30 },
+    { nr: 55207, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '07:52', dep: '07:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
   ],
 
   tasks: [

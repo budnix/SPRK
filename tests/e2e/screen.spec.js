@@ -197,6 +197,11 @@ test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapi
 
 test('monitor: semafor A i tarcza Tm1 w tym samym punkcie toru (Orłowo) są oba widoczne i klikalne – każdy otwiera własne menu', async ({ page }) => {
   await openShift(page, 'gdynia-orlowo', { settings: { screens: 'off' } });
+  // rozkład: etykieta kategorii (IC/R/SKM…) przy numerze i pełna relacja, sąsiednie posterunki w drugiej linii
+  await expect(page.locator('table.rj td.nr .cat').first()).toBeVisible();
+  const icRow = page.locator('table.rj tr', { hasText: 'Kraków Gł. – Gdynia Gł.' }).first();
+  await expect(icRow.locator('td.nr .cat')).toHaveText('IC');
+  await expect(icRow.locator('td.rel .via')).toContainText('Sopot');
   for (const [id, title] of [['A', 'Semafor A'], ['Tm1', 'Tarcza manewrowa Tm1']]) {
     const box = await hit(page, id).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2); // prawdziwe kliknięcie w środek symbolu, nie zdarzenie na elemencie

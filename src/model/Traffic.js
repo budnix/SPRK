@@ -1,3 +1,4 @@
+import { categoryOf, speedFor, trainLabel } from './categories.js';
 import { Train } from './Train.js';
 import { Clock } from '../core/Clock.js';
 
@@ -129,13 +130,13 @@ export class Traffic {
     const dep = t.dep ? Clock.parse(t.dep) : null;
     const exitFrom = t.from ? this.station.exits[t.from] : null;
     const lineLen = exitFrom?.lineLength ?? 3000;
-    const vline = Math.min(t.vmax ?? 100, exitFrom?.lineSpeed ?? 100) / 3.6;
+    const vline = Math.min(speedFor(t), exitFrom?.lineSpeed ?? 100) / 3.6;
     const lineTravel = lineLen / vline;              // s na szlaku
     const stationRun = 90;                           // s od granicy pulpitu do peronu (ok.)
     const ref = arr ?? dep;
     const neighbourDep = t.from ? ref - lineTravel - stationRun : null;
     return {
-      idx: i, ...t, arrTime: arr, depTime: dep,
+      idx: i, ...t, cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
       neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
       status: t.from ? 'oczekiwany' : (t.unit ? 'oczekuje na skład' : 'na stacji'), requested: false, dispatched: false,
       train: null, actualArr: null, actualDep: null, delay: 0, track: t.track,
@@ -355,7 +356,7 @@ export class Traffic {
       e.attached = true; e.train = tr;
       u.status = `przekazany jako ${e.nr}`; u.train = null;
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
-      tr.vmax = (e.vmax ?? 60) / 3.6; tr.holdUntil = e.depTime; tr.orders = [];
+      tr.vmax = speedFor(e) / 3.6; tr.holdUntil = e.depTime; tr.orders = [];
       tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
       tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
       e.status = 'na stacji';
@@ -428,7 +429,7 @@ export class Traffic {
     if (!e?.train) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'train';
-    e.train.vmax = (e.vmax ?? 60) / 3.6;
+    e.train.vmax = speedFor(e) / 3.6;
     e.train.state = 'stopped';
     return true;
   }

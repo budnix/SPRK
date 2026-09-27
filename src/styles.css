@@ -223,6 +223,15 @@ table.rj tr.active td { background: rgba(111,191,143,0.12); }
 table.rj tr.done td { color: var(--muted); }
 table.rj td.nr { font-weight: 700; font-variant-numeric: tabular-nums; }
 table.rj td.rel { font-size: 11px; }
+table.rj td.rel .via { font-size: 10px; color: var(--muted); }
+table.rj .cat { display: inline-block; min-width: 26px; padding: 0 4px; border-radius: 3px; font-size: 10px; font-weight: 700; text-align: center; color: #fff; background: #5b6570; vertical-align: 1px; }
+table.rj .cat-IC, table.rj .cat-EIC { background: #b3261e; }
+table.rj .cat-EIP { background: #7b1fa2; }
+table.rj .cat-TLK { background: #1e5fb3; }
+table.rj .cat-R { background: #2e7d32; }
+table.rj .cat-SKM { background: #c77700; }
+table.rj .cat-TOW, table.rj .cat-TOWP, table.rj .cat-ZD { background: #5b6570; }
+table.rj .cat-EZT { background: #4a7a8a; }
 table.rj td.st { font-size: 11px; }
 table.rj .act { color: var(--accent); font-size: 10px; }
 .delay { color: var(--danger); font-weight: 700; }

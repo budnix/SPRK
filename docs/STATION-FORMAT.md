@@ -128,7 +128,16 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 * `from`/`to` – szlaki (`null` = pociąg zaczyna/kończy bieg na stacji),
 * `arr`/`dep` – czasy planowe, `stop` – zatrzymanie (przelot: `false`), `terminates` – kończy bieg,
 * `startOn: { section, dir }` – pociąg stojący na stacji od początku zmiany,
-* `kind`: `os` (osobowy), `tow` (towarowy) – wpływa na przyspieszenie/hamowanie.
+* `kind`: `os` (osobowy), `tow` (towarowy),
+* `cat` – kategoria (`EIP`, `EIC`, `IC`, `TLK`, `R`, `SKM`, `TOW`, `TOWP` – towarowy próżny/lekki, `ZD` – zdawczy, `EZT`);
+  bez `cat` kategoria bierze się z nazwy („IC …”, „TLK …”, „Regio …”, „SKM …”, „Zdawczy”, „Skład EZT …”, „próżny”) i z `kind`.
+  Kategoria daje domyślną prędkość maksymalną (EIP 200, IC/EIC 160, TLK 140, R/SKM 120, towarowy 80, próżny 100,
+  zdawczy 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`); `vmax`, `accel`, `brake` wpisu nadpisują.
+  Na szlaku i na stacji obowiązuje mniejsza z prędkości pociągu i szlaku (`lineSpeed` wyjazdu), na rozjazdach –
+  rozjazdu, przy Sz – 20 km/h.
+* `name` – relacja pełna, jak w rozkładzie („Regio Gdańsk Gł. – Słupsk”, „IC „Kaszub” Kraków Gł. – Gdynia Gł.”);
+  przedrostek kategorii i nazwa handlowa w cudzysłowie są z niej wycinane do wyświetlenia (`relationOf`, `brandOf`).
+  Rozkład pokazuje etykietę „IC 5100” i relację; sąsiednie posterunki (`from` → `to`) w drugiej linii.
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
 by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).

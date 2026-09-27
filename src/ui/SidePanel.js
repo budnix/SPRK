@@ -1,3 +1,4 @@
+import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
 import { Clock } from '../core/Clock.js';
 
 /**
@@ -141,7 +142,7 @@ export class SidePanel {
     const fill = () => {
       const c = candidates();
       const cur = trSel.value;
-      trSel.innerHTML = c.map(({ e, kind }) => `<option value="${e.nr}" data-kind="${kind}">${e.nr} ${e.name} – ${kind === 'accept' ? `przyjąć od ${sim.station.exits[e.from].name}` : `wyprawić do ${sim.station.exits[e.to].name}`}</option>`).join('') || '<option value="">brak pociągów do polecenia</option>';
+      trSel.innerHTML = c.map(({ e, kind }) => `<option value="${e.nr}" data-kind="${kind}">${e.label} ${relationOf(e)} – ${kind === 'accept' ? `przyjąć od ${sim.station.exits[e.from].name}` : `wyprawić do ${sim.station.exits[e.to].name}`}</option>`).join('') || '<option value="">brak pociągów do polecenia</option>';
       if ([...trSel.options].some((o) => o.value === cur)) trSel.value = cur;
       upd();
     };
@@ -252,7 +253,7 @@ export class SidePanel {
     this.refreshOrderTrains = () => {
       const standing = this.sim.traffic.standingTrains();
       const cur = sel.value;
-      const opts = standing.map((t) => `<option value="${t.nr}">${t.nr} ${t.name} – przed ${t.signal ?? '–'}</option>`).join('');
+      const opts = standing.map((t) => `<option value="${t.nr}">${t.label ?? t.nr} ${relationOf(t)} – przed ${t.signal ?? '–'}</option>`).join('');
       if (sel.innerHTML !== opts) { sel.innerHTML = opts || '<option value="">brak stojących pociągów</option>'; if ([...sel.options].some((o) => o.value === cur)) sel.value = cur; fill(); }
     };
     this.refreshOrderTrains();
@@ -347,11 +348,12 @@ export class SidePanel {
   renderTimetable() {
     const ex = this.sim.station.exits;
     const rows = this.sim.traffic.timetable().map((e) => {
-      const rel = `${e.from ? ex[e.from].name : this.sim.station.name} → ${e.to ? ex[e.to].name : this.sim.station.name}`;
+      const via = `${e.from ? ex[e.from].name : this.sim.station.name} → ${e.to ? ex[e.to].name : this.sim.station.name}`;
       const cls = e.status === 'odjechał' || e.status === 'zakończył bieg' ? 'done' : (e.train ? 'active' : '');
       const delay = e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : '';
-      return `<tr class="${cls}" title="${e.name} ${e.nr}">
-        <td class="nr">${e.nr}</td><td class="rel">${rel}</td>
+      const cat = CATEGORIES[e.cat], brand = brandOf(e);
+      return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h">
+        <td class="nr"><span class="cat cat-${e.cat}">${cat.label}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
         <td>${e.dep ?? (e.terminates ? 'k.b.' : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>
         <td>${e.track ?? ''}</td><td class="st">${e.status}${delay}</td></tr>`;

@@ -1,3 +1,4 @@
+import { speedFor, dynamicsFor } from './categories.js';
 import { Interlocking } from './Interlocking.js';
 import { OPPOSITE } from '../tiles/directions.js';
 
@@ -18,9 +19,11 @@ export class Train {
     this.ilk = ilk;
     this.length = def.length ?? 100;
     this.blockedBy = opts.blockedBy || (() => false); // odcinek zajęty przez inny tabor (jazda na tor zajęty – stop przed taborem)
-    this.vmax = (def.vmax ?? 100) * KMH;
-    this.accel = def.kind === 'tow' ? 0.15 : 0.35;
-    this.brake = def.kind === 'tow' ? 0.35 : 0.6;
+    // prędkość maksymalna i dynamika wg kategorii pociągu (IC/TLK/R/SKM/towarowy…) – `vmax`/`accel`/`brake` wpisu nadpisują
+    this.vmax = speedFor(def) * KMH;
+    const dyn = dynamicsFor(def);
+    this.accel = dyn.accel;
+    this.brake = dyn.brake;
     this.v = 0;
     this.trail = [];
     this.head = 0;           // odległość czoła wzdłuż śladu
@@ -250,9 +253,11 @@ export class Train {
         this.onEvent('depart', this);
       } else return;
     }
-    const constraints = this.#lookahead(1500);
-    // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s
-    let allowed = Math.min(this.vmax, this.activeLimit);
+    // horyzont skanowania nie krótszy niż droga hamowania z bieżącej prędkości (szybkie pociągi: IC 160 km/h ≈ 1,8 km)
+    const constraints = this.#lookahead(Math.max(1500, (this.v * this.v) / (2 * this.brake) + 300));
+    // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s; na stacji nie szybciej niż prędkość szlaku
+    // (prędkość drogowa) – rozjazdy i sygnały ograniczają dalej
+    let allowed = Math.min(this.vmax, this.activeLimit, this.lineSpeed);
     if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
     let stopC = null;
     for (const c of constraints) {

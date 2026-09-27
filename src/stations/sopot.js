@@ -143,8 +143,8 @@ const skm = (t, nrE, nrW) => {
   const [h, m] = t.split(':').map(Number);
   const f = (mm) => `${String(h + Math.floor(mm / 60)).padStart(2, '0')}:${String(mm % 60).padStart(2, '0')}`;
   return [
-    { nr: nrE, kind: 'os', name: 'SKM Gdańsk – Gdynia', from: 'GS1', to: 'OS1', arr: t, dep: f(m + 1), track: '501', stop: true, length: 130, vmax: 90, dwell: 30 },
-    { nr: nrW, kind: 'os', name: 'SKM Gdynia – Gdańsk', from: 'OS2', to: 'GS2', arr: f(m + 7), dep: f(m + 8), track: '502', stop: true, length: 130, vmax: 90, dwell: 30 },
+    { nr: nrE, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'GS1', to: 'OS1', arr: t, dep: f(m + 1), track: '501', stop: true, length: 130, dwell: 30 },
+    { nr: nrW, kind: 'os', name: 'SKM Wejherowo – Gdańsk Śródmieście', from: 'OS2', to: 'GS2', arr: f(m + 7), dep: f(m + 8), track: '502', stop: true, length: 130, dwell: 30 },
   ];
 };
 
@@ -178,19 +178,19 @@ export default {
   timetable: [
     ...skm('06:02', 91101, 91102), ...skm('06:17', 91103, 91104), ...skm('06:32', 91105, 91106), ...skm('06:47', 91107, 91108),
     ...skm('07:02', 91109, 91110), ...skm('07:17', 91111, 91112), ...skm('07:32', 91113, 91114), ...skm('07:47', 91115, 91116),
-    { nr: 55100, kind: 'os', name: 'Regio Gdańsk – Słupsk', from: 'GD1', to: 'OR1', arr: '06:05', dep: '06:06', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55201, kind: 'os', name: 'Regio Słupsk – Gdańsk', from: 'OR2', to: 'GD2', arr: '06:20', dep: '06:21', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55102, kind: 'os', name: 'Regio Gdańsk – Lębork', from: 'GD1', to: 'OR1', arr: '06:35', dep: '06:36', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 5100, kind: 'os', name: 'IC Warszawa – Gdynia', from: 'GD1', to: 'OR1', arr: '06:42', dep: '06:43', track: '2', stop: true, length: 260, vmax: 120, dwell: 60 },
-    { nr: 91151, kind: 'os', name: 'SKM do Sopotu (kończy bieg)', from: 'GS1', to: null, arr: '06:52', track: '501', stop: true, terminates: true, length: 130, vmax: 90, dwell: 30 },
-    { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk', from: 'OR2', to: 'GD2', arr: '06:57', dep: '06:58', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa', from: 'OR2', to: 'GD2', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 300, vmax: 120, dwell: 60 },
-    { nr: 55104, kind: 'os', name: 'Regio Gdańsk – Słupsk', from: 'GD1', to: 'OR1', arr: '07:12', dep: '07:13', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55152, kind: 'os', name: 'Regio z Lęborka (kończy bieg)', from: 'OR2', to: null, arr: '07:22', track: '1', stop: true, terminates: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 91202, kind: 'os', name: 'SKM Sopot – Gdynia', unit: 91151, from: null, to: 'OS1', dep: '07:25', track: '501', stop: false, length: 130, vmax: 90 },
-    { nr: 55106, kind: 'os', name: 'Regio Gdańsk – Lębork', from: 'GD1', to: 'OR1', arr: '07:40', dep: '07:41', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55205, kind: 'os', name: 'Regio Słupsk – Gdańsk', from: 'OR2', to: 'GD2', arr: '07:44', dep: '07:45', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 55153, kind: 'os', name: 'Regio Sopot – Gdańsk', unit: 55152, from: null, to: 'GD2', dep: '07:58', track: '1', stop: false, length: 160, vmax: 120 },
+    { nr: 55100, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GD1', to: 'OR1', arr: '06:05', dep: '06:06', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55201, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'OR2', to: 'GD2', arr: '06:20', dep: '06:21', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55102, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'GD1', to: 'OR1', arr: '06:35', dep: '06:36', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 5100, kind: 'os', name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.', from: 'GD1', to: 'OR1', arr: '06:42', dep: '06:43', track: '2', stop: true, length: 260, dwell: 60 },
+    { nr: 91151, kind: 'os', name: 'SKM Gdańsk Śródmieście – Sopot (kończy bieg)', from: 'GS1', to: null, arr: '06:52', track: '501', stop: true, terminates: true, length: 130, dwell: 30 },
+    { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'OR2', to: 'GD2', arr: '06:57', dep: '06:58', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'OR2', to: 'GD2', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 300, dwell: 60 },
+    { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GD1', to: 'OR1', arr: '07:12', dep: '07:13', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55152, kind: 'os', name: 'Regio Lębork – Sopot (kończy bieg)', from: 'OR2', to: null, arr: '07:22', track: '1', stop: true, terminates: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 91202, kind: 'os', name: 'SKM Sopot – Wejherowo', unit: 91151, from: null, to: 'OS1', dep: '07:25', track: '501', stop: false, length: 130 },
+    { nr: 55106, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'GD1', to: 'OR1', arr: '07:40', dep: '07:41', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55205, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'OR2', to: 'GD2', arr: '07:44', dep: '07:45', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
+    { nr: 55153, kind: 'os', name: 'Regio Sopot – Gdańsk Gł.', unit: 55152, from: null, to: 'GD2', dep: '07:58', track: '1', stop: false, length: 160, vmax: 120 },
   ],
 
   tasks: [
