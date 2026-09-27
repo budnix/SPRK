@@ -458,6 +458,8 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .scr-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid #1b242c; color: inherit; padding: 8px 10px; font: inherit; cursor: pointer; }
 .scr-menu button:hover { background: #243040; }
 .scr-menu button.special { color: #ffb84d; }
+.scr-menu hr { margin: 0; border: 0; border-top: 1px solid #3a4652; }
+.scr-menu .menu-info { padding: 5px 10px; font-size: 12px; color: #9fb4c6; }   /* pociągi na szlaku – informacja, nie polecenie */
 .scr-confirm { position: fixed; z-index: 81; left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: #3a2a00; color: #ffe2b0; border: 1px solid #ffb84d; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
 .scr-confirm .tb.warn { background: #ffb84d; color: #1c1300; border-color: #ffb84d; font-weight: 600; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }

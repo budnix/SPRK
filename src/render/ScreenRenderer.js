@@ -4,6 +4,7 @@ import { refKey } from './DeskRenderer.js';
 import { tip } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
+import { relationOf } from '../model/categories.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -310,11 +311,8 @@ export class ScreenRenderer {
       refs.dirOut = el('path', { class: 'blk-dir off', d: `M${-dir * 8},-13 L${-dir * 8},-9 L${dir * 1},-9 L${dir * 1},-7 L${dir * 6},-11 L${dir * 1},-15 L${dir * 1},-13 Z` });
       refs.dirIn = el('path', { class: 'blk-dir off', d: `M${dir * 6},-13 L${dir * 6},-9 L${-dir * 3},-9 L${-dir * 3},-7 L${-dir * 8},-11 L${-dir * 3},-15 L${-dir * 3},-13 Z` });
       refs.status = text(-dir * 12, -8, '', { class: 'blk-status', 'text-anchor': dir > 0 ? 'end' : 'start' });
-      // kasetka numeru pociągu na torze szlakowym (system śledzenia numerów) – nad strzałkami kierunku, ku wnętrzu pulpitu
-      refs.lineNr = text(0, 0, '', { class: 'scr-train-nr' });
-      refs.lineTrain = el('g', { class: 'scr-train line-train', style: 'display:none' }, [el('g', { class: 'scr-train-in' }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), refs.lineNr])]);
       // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
-      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status, refs.lineTrain,
+      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status,
         text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
     } else {
       kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
@@ -447,7 +445,7 @@ export class ScreenRenderer {
   /** Polecenie z paska zastosowane do wskazanego elementu. */
   #runMode(ref) {
     const cmd = this.#commands(ref);
-    const find = (re) => cmd?.items.find((it) => re.test(it.label));
+    const find = (re) => cmd?.items.find((it) => !it.info && !it.sep && re.test(it.label));
     const M = {
       train: [/^Nastawienie przebiegu pociągowego/, ['signal']], shunt: [/^Nastawienie przebiegu manewrowego/, ['signal']], pz: [/^Zwolnienie przebiegu/, ['signal']],
       dpz: [/^Doraźne zwolnienie przebiegu/, ['signal']], zw: [/^(Przestawienie|Zdjęcie|Nałożenie)/, ['point', 'derailer']], zz: [/\(Zz\)/, ['point', 'derailer']],
@@ -519,7 +517,26 @@ export class ScreenRenderer {
     }
     items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
     items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });
+    // pod separatorem: kto jest na tym torze szlakowym (jak system śledzenia numerów w komputerowych srk) –
+    // najpierw pociąg na szlaku, potem zgłoszone przez sąsiada i czekające na wyprawienie, w kolejności rozkładu
+    items.push({ sep: true });
+    for (const t of this.lineTrains(exit)) items.push({ info: true, label: t });
     return { title: `Szlak ${b?.def?.label || b?.neighbour || exit} – blokada ${b?.auto ? 'samoczynna' : 'Eap'}`, items };
+  }
+
+  /** Opisy pociągów na torze szlakowym `exit` (i zgłoszonych do wyprawienia na niego), w kolejności. */
+  lineTrains(exit) {
+    const b = this.sim.blocks.get(exit);
+    if (!b) return [];
+    const tt = this.sim.traffic.timetable();
+    const desc = (e, nr) => e ? `${e.label} ${relationOf(e)}` : `pociąg nr ${nr}`;
+    const out = [];
+    if (b.lineTrain != null) {
+      const e = tt.find((x) => String(x.nr) === String(b.lineTrain));
+      out.push(`na szlaku: ${desc(e, b.lineTrain)} – ${b.poBlocked ? `od nas do ${b.neighbour}` : `od ${b.neighbour} do nas`}`);
+    }
+    for (const e of tt.filter((x) => x.from === exit && x.requested && !x.dispatched)) out.push(`zgłoszony przez ${b.neighbour}: ${desc(e)} – czeka na wyprawienie`);
+    return out.length ? out : ['na szlaku: brak pociągów'];
   }
 
   #openMenu(ref, ev) {
@@ -527,6 +544,8 @@ export class ScreenRenderer {
     if (!cmd) return;
     this.menu.innerHTML = `<h5>${cmd.title}</h5>`;
     for (const it of cmd.items) {
+      if (it.sep) { this.menu.appendChild(document.createElement('hr')); continue; }
+      if (it.info) { const d = document.createElement('div'); d.className = 'menu-info'; d.textContent = it.label; this.menu.appendChild(d); continue; }
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = it.label; if (it.special) b.classList.add('special');
       b.addEventListener('click', () => { this.#closeMenu(); if (it.special) this.#confirm(it); else it.run(); });
@@ -660,12 +679,6 @@ export class ScreenRenderer {
     const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? ['Wbl', true] : b.koPending ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
     r.status.textContent = st[0];
     r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
-    if (r.lineTrain) {
-      const dir = b.def.dir === 'E' ? 1 : -1;
-      r.lineTrain.style.display = b.lineTrain != null ? '' : 'none';
-      r.lineNr.textContent = b.lineTrain != null ? String(b.lineTrain) : '';
-      r.lineTrain.setAttribute('transform', `translate(${-dir * 12 * this.S},${-27 * this.S}) scale(${this.S})`);
-    }
   }
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */

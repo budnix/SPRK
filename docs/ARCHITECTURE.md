@@ -98,8 +98,9 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
 `route:set`). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
-sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w kasetce przy strzałce szlaku jak system śledzenia
-numerów pociągów w komputerowych srk, pulpit kostkowy – nie (na pulpicie typu E numeru nie ma).
+sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strzałki szlaku pod separatorem, po
+poleceniach (`lineTrains`: pociąg na szlaku, potem zgłoszone przez sąsiada i czekające) – jak system śledzenia numerów
+w komputerowych srk, tylko na żądanie, bo przy szlakach dwutorowych nie ma miejsca na kasetkę; pulpit kostkowy – nie.
 Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
 (`src/render/blockLayout.js`, bez DOM: strzałki na kostkach toru, przyciski Ko | Poz | Wbl albo Zk w rzędzie obok,
