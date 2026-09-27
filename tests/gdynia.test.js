@@ -52,3 +52,15 @@ test('Gdynia Główna: pełna zmiana – 29 pociągów, SKM co 15 min, składy p
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.ok(sim.ended);
 });
+
+test('Gdynia Główna: ruch prawostronny – tor 1 linii 202 (jazda w prawo) pod torem 2, A1 na torze 1; SKM 501 pod 502', () => {
+  const ex = gdynia.exits;
+  assert.ok(ex.G1.tile.y > ex.G2.tile.y && ex.C1.tile.y > ex.C2.tile.y, '202: t.1 niżej niż t.2');
+  assert.ok(ex.S1.tile.y > ex.S2.tile.y && ex.R1.tile.y > ex.R2.tile.y, 'SKM: 501 niżej niż 502');
+  assert.equal(ex.G1.direction, 'in'); assert.equal(ex.C1.direction, 'out');
+  const a1 = gdynia.tiles.find((t) => t.type === 'signal' && t.id === 'A1');
+  assert.equal(a1.at.y, ex.G1.tile.y, 'A1 stoi na torze szlakowym 1');
+  const sim = new Simulation(gdynia, { disruptions: 'none' });
+  const ends = (id) => new Set(sim.ilk.routeList().filter((r) => r.start === id).map((r) => r.endButton));
+  assert.ok([...ends('A1')].some((e) => /^K\d+$/.test(e)), 'A1 prowadzi na tory peronowe');
+});

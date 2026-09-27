@@ -4,7 +4,9 @@
  * Odwzorowanie na pulpicie kostkowym (schemat, nie mapa):
  *  - tory peronowe 1–10 (perony V: tory 10/9, 4: tory 7/6, 3: tory 5/4, 2: tory 2/1; tory 8 i 3 bez peronu),
  *    tory SKM 501/502 (peron I SKM),
- *  - głowica zachodnia (od Gdańska): linie 202 tor 1/2 (semafory wjazdowe A1, A2), 201 (B1, tor 10),
+ *  - głowica zachodnia (od Gdańska): linie 202 tor 1/2 (semafory wjazdowe A1, A2), 201 (B1, tor 10);
+ *    ruch prawostronny jak na sąsiednich posterunkach (SKM na dole = wschód): tor 1 linii 202 (jazda w prawo,
+ *    na Chylonię) wchodzi w tor 7 (y=8), tor 2 w tor 8 (y=6) – A1 na torze 1, A2 na torze 2,
  *    250 SKM 501/502 (A501, A502); rozjazdy 3, 4, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27,
  *  - głowica wschodnia (do Chyloni / Portu): linia 202 (semafory wjazdowe A, B), 250 SKM (L501, L502),
  *    201 Gdynia Port (S301); rozjazdy 31–36, 40–47, 61–66,
@@ -114,8 +116,8 @@ sections.W501b = { length: 50, kind: 'plain' };
 tiles.push(...H(17, 18, 24, 'W501b'));
 // semafory wjazdowe zachód
 tiles.push(SIG(5, 3, 'B1', 'semafor', { x: 5, y: 2 }, 'E', { entry: true }));
-tiles.push(SIG(5, 5, 'A1', 'semafor', { x: 5, y: 6 }, 'E', { entry: true }));
-tiles.push(SIG(5, 7, 'A2', 'semafor', { x: 5, y: 8 }, 'E', { entry: true }));
+tiles.push(SIG(5, 5, 'A2', 'semafor', { x: 5, y: 6 }, 'E', { entry: true })); // t.2 (wyjazdowy) – wjazd po torze lewym
+tiles.push(SIG(5, 7, 'A1', 'semafor', { x: 5, y: 8 }, 'E', { entry: true })); // t.1 – zasadniczy wjazd od Gdańska
 tiles.push(SIG(5, 21, 'A502', 'semafor', { x: 5, y: 22 }, 'E', { entry: true }));
 tiles.push(SIG(5, 23, 'A501', 'semafor', { x: 5, y: 24 }, 'E', { entry: true }));
 // tarcze manewrowe głowicy zachodniej
@@ -227,12 +229,12 @@ export default {
 
   exits: {
     K: { name: 'Gdynia Wielki Kack', label: 'Wlk. Kack – 201', tile: { x: 0, y: 2 }, dir: 'W', lineLength: 5200, lineSpeed: 80 },
-    G1: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
-    G2: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.2', tile: { x: 0, y: 8 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
+    G1: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.1', tile: { x: 0, y: 8 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
+    G2: { name: 'Gdynia Orłowo', label: 'Gdańsk – 202 t.2', tile: { x: 0, y: 6 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3600, lineSpeed: 120 },
     S2: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.502', tile: { x: 0, y: 22 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 3400, lineSpeed: 100 },
     S1: { name: 'Gdynia Orłowo SKM', label: 'Orłowo – 250 t.501', tile: { x: 0, y: 24 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3400, lineSpeed: 100 },
-    C1: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.1', tile: { x: 99, y: 6 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
-    C2: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.2', tile: { x: 99, y: 8 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
+    C1: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.1', tile: { x: 99, y: 8 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
+    C2: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.2', tile: { x: 99, y: 6 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 4300, lineSpeed: 120 },
     R2: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.502', tile: { x: 99, y: 22 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 4100, lineSpeed: 100 },
     R1: { name: 'Gdynia Chylonia SKM', label: 'Chylonia – 250 t.501', tile: { x: 99, y: 24 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 4100, lineSpeed: 100 },
     P: { name: 'Gdynia Port', label: 'Gdynia Port – 201', tile: { x: 99, y: 20 }, dir: 'E', lineLength: 3000, lineSpeed: 60 },
