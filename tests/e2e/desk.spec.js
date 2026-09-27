@@ -338,3 +338,14 @@ test('Reda: karta „stanowisko do wyboru”; pulpit z blokadą dwukierunkową d
   expect(await page.evaluate(() => window.sim.srk.view)).toBe('screen');
   for (const id of ['R', 'P', 'Szn1', 'S', 'Tm20']) await expect(hit(page, id)).toBeAttached();
 });
+
+test('Tczew: karta „komputerowe”; stanowisko komputerowe z blokadami czterech linii i semaforami wjazdowymi A1, E1, U, S, P, Z', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id=tczew] .st-name')).toHaveText('Tczew');
+  await expect(page.locator('.st-card[data-id=tczew] .st-srk').first()).toHaveText('komputerowe · monitor');
+  await expect(page.locator('.st-card[data-id=tczew] .st-srk-both')).toHaveCount(0);
+  await openShift(page, 'tczew', { settings: { sideCollapsed: true } });
+  expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.values()].map((b) => `${b.id}:${b.auto ? 'sbl' : b.fixed || 'both'}`) })))
+    .toEqual({ srk: 'screen', blocks: ['GK2:sbl', 'GK1:sbl', 'SZ2:sbl', 'SZ1:sbl', 'ML2:in', 'ML1:out', 'PS2:sbl', 'PS1:sbl', 'ZA2:in', 'ZA1:out', 'ZB:both'] });
+  for (const id of ['A1', 'E1', 'U', 'S', 'P', 'Z', 'K1', 'M15']) await expect(hit(page, id)).toBeAttached();
+});
