@@ -268,7 +268,8 @@ test('perony: każdy odcinek peronowy ma nazwę peronu (napis), pociągi osobowe
 
 test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 1–5; sortowanie i lista misji', async () => {
   const { STATIONS } = await import('../src/stations/index.js');
-  const { sortStations, missionList, stars } = await import('../src/ui/StartScreen.js');
+  const { sortStations, missionList } = await import('../src/ui/StartScreen.js');
+  const { difficultyMark, logoSvg } = await import('../src/ui/brand.js');
   for (const st of STATIONS) {
     assert.ok(st.location && st.traffic, `${st.id}: brak location/traffic`);
     assert.ok(Number.isInteger(st.difficulty) && st.difficulty >= 1 && st.difficulty <= 5, `${st.id}: trudność ${st.difficulty}`);
@@ -280,7 +281,17 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.equal(sortStations(STATIONS, 'difficulty')[0].id, 'szkolna', 'najłatwiejsza – stacja szkolna');
   const missions = missionList(STATIONS);
   assert.deepEqual(missions.map((m) => m.scenario.id), ['nauka-1', 'nauka-2']);
-  assert.equal(stars(3), '★★★☆☆');
+  // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
+  const mark = difficultyMark(3, 'trudność');
+  assert.equal((mark.match(/<i class="on">/g) || []).length, 3);
+  assert.equal((mark.match(/<i>/g) || []).length, 2);
+  assert.match(mark, /<b>trudność 3\/5<\/b>/);
+  assert.doesNotMatch(mark, /[★☆]/);
+  assert.equal((difficultyMark(9).match(/<i class="on">/g) || []).length, 5, 'obcięte do 5');
+  const logo = logoSvg();
+  assert.match(logo, /<svg[^>]*aria-label="SPRK"/);
+  assert.deepEqual(logo.match(/class="lg-ch">(\w)</g).map((m) => m.slice(-2, -1)), ['S', 'P', 'R', 'K']);
+  assert.ok(logo.includes('class="lg-lens on"'), 'semafor z zapalonym światłem');
 });
 
 test('ustawienia domyślne: pulpit na środku, motyw wg systemu, panel na dole, ekrany auto, symbole 125 %, odstęp normalny, stanowisko wg stacji, pola skrajne wyłączone', async () => {

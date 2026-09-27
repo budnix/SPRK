@@ -3,7 +3,7 @@ import { openShift } from './helpers.js';
 
 /* Raport zmiany – pełny ekran w motywie ekranu startowego, po końcu zmiany i z menu w trakcie */
 
-test('raport po końcu zmiany: ocena z gwiazdkami, kafelki, tabela pociągów, zadania, zdarzenia; „Nowa zmiana…” otwiera ekran startowy', async ({ page }) => {
+test('raport po końcu zmiany: ocena słowna bez gwiazdek, kafelki, tabela pociągów, zadania, zdarzenia; „Nowa zmiana…” otwiera ekran startowy', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await expect(page.locator('#report')).toBeHidden();
   const n = await page.evaluate(() => { window.sim.endShift('all-done'); return window.sim.traffic.timetable().length; });
@@ -12,7 +12,8 @@ test('raport po końcu zmiany: ocena z gwiazdkami, kafelki, tabela pociągów, z
   await expect(rep.locator('.st-tagline')).toHaveText('Raport zmiany');
   await expect(rep.locator('.st-sub')).toContainText('Szkolna');
   await expect(rep.locator('.rp-gword')).toHaveText(/wzorowo|dobrze|dostatecznie|niedostatecznie/);
-  await expect(rep.locator('.rp-stars')).toHaveText(/★/);
+  await expect(rep.locator('.rp-stars')).toHaveCount(0);
+  await expect(rep.locator('.rp-grade')).not.toContainText('★');
   await expect(rep.locator('.rp-points')).toHaveText(/pkt$/);
   await expect(rep.locator('.rp-end')).toContainText('wszystkie pociągi obsłużone');
   expect(await rep.locator('.rp-tile').count()).toBeGreaterThanOrEqual(6);

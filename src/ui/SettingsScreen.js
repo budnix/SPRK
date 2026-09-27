@@ -1,3 +1,4 @@
+import { logoSvg } from './brand.js';
 import { SETTINGS_CATEGORIES } from './settingsSchema.js';
 
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -12,7 +13,7 @@ export class SettingsScreen {
     this.settings = settings;
     root.innerHTML = `<div class="settings-screen">
       <header class="st-hero">
-        <div class="st-logo">SPRK</div>
+        <div class="st-logo">${logoSvg()}</div>
         <div class="st-tagline">Ustawienia</div>
         <div class="st-sub">Zmiany działają od razu i są zapamiętywane na tym urządzeniu.</div>
         <button type="button" class="tb st-close" id="se-close">‹ Wróć do zmiany</button>

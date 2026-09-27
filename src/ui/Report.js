@@ -1,11 +1,10 @@
 import { Clock } from '../core/Clock.js';
-import { stars } from './StartScreen.js';
+import { logoSvg } from './brand.js';
 
-const GRADE_STARS = { wzorowo: 5, dobrze: 4, dostatecznie: 3, niedostatecznie: 1 };
 const END_REASON = { 'all-done': 'wszystkie pociągi obsłużone', time: 'koniec czasu zmiany', manual: 'zakończona przez samouczek' };
 
 /**
- * Raport zmiany w motywie ekranu startowego: ocena z gwiazdkami i punktami, kafelki statystyk, tabela pociągów
+ * Raport zmiany w motywie ekranu startowego: ocena słowna i punkty, kafelki statystyk, tabela pociągów
  * (plan / rzeczywistość / tor / opóźnienie / wynik), zadania manewrowe, zdarzenia punktowane i ich bilans wg rodzaju.
  * Otwiera się sam po końcu zmiany (`shift-end`) i z menu w trakcie („Stan oceny”). `onNew` – powrót do ekranu startowego.
  */
@@ -62,7 +61,7 @@ export class Report {
     const chips = r.byCode.map((b) => `<span class="rp-chip ${b.points < 0 ? 'neg' : b.points > 0 ? 'pos' : ''}">${esc(b.code)} × ${b.n} <b>${b.points > 0 ? '+' : ''}${b.points}</b></span>`).join('');
     this.root.innerHTML = `<div class="report-screen">
       <header class="st-hero">
-        <div class="st-logo">SPRK</div>
+        <div class="st-logo">${logoSvg()}</div>
         <div class="st-tagline">${ended ? 'Raport zmiany' : 'Stan oceny – zmiana trwa'}</div>
         <div class="st-sub">${esc(r.station)}${r.district ? ` · ${esc(r.district)}` : ''} · ${esc(r.scenario)} · ${hm(r.startTime)}–${hm(ended ? r.endedAt : r.now)} · ${esc(r.srk)} · zakłócenia: ${esc(r.level)}</div>
         <button type="button" class="tb st-close close">‹ Wróć do pulpitu</button>
@@ -71,7 +70,6 @@ export class Report {
         <section class="rp-grade grade-${r.grade}">
           <span class="st-kicker">Ocena służby</span>
           <div class="rp-gword">${esc(r.grade)}</div>
-          <div class="rp-stars">${stars(GRADE_STARS[r.grade] ?? 0)}</div>
           <div class="rp-points">${r.total > 0 ? '+' : ''}${r.total} pkt</div>
           <div class="rp-end">${endLine}</div>
         </section>

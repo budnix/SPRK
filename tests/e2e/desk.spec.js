@@ -15,11 +15,13 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   // domyślnie alfabetycznie
   const names = await page.locator('.st-card .st-name').allTextContents();
   expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pl')));
-  expect(await page.locator('.st-card .st-stars').first()).toBeVisible();
-  // wg trudności: gwiazdki niemalejąco, wybór zapamiętany po przeładowaniu
+  expect(await page.locator('.st-card .st-diff').first()).toBeVisible();
+  expect(await page.locator('#start .st-logo-svg').count()).toBe(1); // logo SVG zamiast napisu
+  // wg trudności: skala 1–5 niemalejąco, wybór zapamiętany po przeładowaniu
   await page.click('.st-sort button[data-sort=difficulty]');
-  const starsList = await page.locator('.st-card .st-stars').allTextContents();
-  const counts = starsList.map((s) => (s.match(/★/g) || []).length);
+  const diffList = await page.locator('.st-card .st-diff b').allTextContents();
+  const counts = diffList.map((s) => Number(s.split('/')[0]));
+  expect(counts.every((c) => c >= 1 && c <= 5)).toBe(true);
   expect(counts).toEqual([...counts].sort((a, b) => a - b));
   await page.reload({ waitUntil: 'load' });
   await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);

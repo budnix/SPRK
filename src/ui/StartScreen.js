@@ -1,12 +1,13 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
+import { difficultyMark, logoSvg } from './brand.js';
 import { getSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
 import { getMission } from '../tutorial/missions.js';
 
 const SORT_KEY = 'sprk.startSort';
 
-/** Posterunki w kolejności: alfabetycznie (domyślnie) lub wg trudności (gwiazdki), potem alfabetycznie. */
+/** Posterunki w kolejności: alfabetycznie (domyślnie) lub wg trudności (skala 1–5), potem alfabetycznie. */
 export function sortStations(stations, by) {
   const byName = (a, b) => a.name.localeCompare(b.name, 'pl');
   return [...stations].sort(by === 'difficulty' ? (a, b) => (a.difficulty || 0) - (b.difficulty || 0) || byName(a, b) : byName);
@@ -24,16 +25,11 @@ export function srkBadge(srkId) {
   return getSrk(srkId).view === 'screen' ? 'komputerowe · monitor' : 'typ E · pulpit kostkowy';
 }
 
-export function stars(d) {
-  const n = Math.max(0, Math.min(5, Number(d) || 0));
-  return '★'.repeat(n) + '☆'.repeat(5 - n);
-}
-
 function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 /**
  * Ekran startowy: misje wprowadzające (liniowe) u góry, niżej lista posterunków z opisem położenia, ruchu
- * i trudnością (gwiazdki), sortowana alfabetycznie lub wg trudności. Kliknięcie posterunku rozwija parametry
+ * i trudnością (skala 1–5), sortowana alfabetycznie lub wg trudności. Kliknięcie posterunku rozwija parametry
  * zmiany (okręg, scenariusz, zakłócenia, ziarno). Uruchamia zmianę przez parametry URL.
  */
 export class StartScreen {
@@ -46,7 +42,7 @@ export class StartScreen {
     const missions = missionList(STATIONS);
     root.innerHTML = `<div class="start-screen">
       <header class="st-hero">
-        <div class="st-logo">SPRK</div>
+        <div class="st-logo">${logoSvg()}</div>
         <div class="st-tagline">Symulator Prowadzenia Ruchu Kolejowego</div>
         <div class="st-sub">1. Wybierz misję albo posterunek z listy · 2. Ustaw zmianę i rozpocznij służbę.</div>
         ${current.scenario ? '<button type="button" class="tb st-close" id="st-close">‹ Wróć do zmiany</button>' : ''}
@@ -70,7 +66,7 @@ export class StartScreen {
           <div class="st-bplaceholder"><div class="st-bpicon">‹</div><div>Wybierz misję albo posterunek z listy.<br>Tu ustawisz zmianę i rozpoczniesz służbę.</div></div>
           <div class="st-bcontent hidden">
             <div class="st-bthumb"></div>
-            <div class="st-btitle"><span class="st-bname"></span><span class="st-bstars"></span></div>
+            <div class="st-btitle"><span class="st-bname"></span><span class="st-bdiff"></span></div>
             <div class="st-bmeta"></div>
             <div id="st-params" class="st-params">
               <p class="muted" id="st-station-desc"></p>
@@ -130,7 +126,7 @@ export class StartScreen {
     this.list.innerHTML = sortStations(STATIONS, this.sort).map((s) => `<div class="st-card" data-id="${s.id}" role="button" tabindex="0">
         <div class="st-thumb">${stationThumbnail(s, { w: 320, h: 100 })}</div>
         <div class="st-body">
-          <div class="st-row"><span class="st-name">${esc(s.name)}</span><span class="st-stars" title="trudność ${s.difficulty || '?'}/5">${stars(s.difficulty)}</span></div>
+          <div class="st-row"><span class="st-name">${esc(s.name)}</span>${difficultyMark(s.difficulty)}</div>
           <div class="st-loc">${esc(s.location || '')}</div>
           <div class="st-chips"><span class="st-srk">${srkBadge(s.srk)}</span>${s.districts ? '<span class="st-srk">dwa okręgi</span>' : ''}<span class="st-srk">${(s.scenarios || []).filter((x) => !x.tutorial).length} scen.</span></div>
           <div class="st-traffic">${esc(s.traffic || '')}</div>
@@ -147,7 +143,7 @@ export class StartScreen {
     const btn = this.root.querySelector(`.st-mission[data-idx="${i}"]`);
     if (window.innerWidth < 900) { btn.after(b); b.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else this.root.querySelector('.st-layout').appendChild(b);
     const steps = getMission(m.scenario.tutorial)?.steps().length;
-    b.querySelector('.st-bstars').innerHTML = `${stars(1)} <small>samouczek${steps ? ` · ${steps} kroków` : ''}</small>`;
+    b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>samouczek${steps ? ` · ${steps} kroków` : ''}</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
     this.root.querySelector('#st-station-desc').textContent = m.scenario.description || '';
     this.root.querySelector('.st-form').classList.add('hidden');
@@ -162,7 +158,7 @@ export class StartScreen {
     this.#mark('.st-card', (el) => el.dataset.id === id);
     const card = this.list.querySelector(`.st-card[data-id="${id}"]`);
     const b = this.#openBriefing(st, st.name);
-    b.querySelector('.st-bstars').innerHTML = `${stars(st.difficulty)} <small>trudność ${st.difficulty || '?'}/5</small>`;
+    b.querySelector('.st-bdiff').innerHTML = difficultyMark(st.difficulty, 'trudność');
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(st.location || '')}</div><div>${esc(st.traffic || '')}</div>`;
     root.querySelector('.st-form').classList.remove('hidden');
     root.querySelector('#st-go').textContent = 'Rozpocznij zmianę';

@@ -59,13 +59,13 @@ Play it: **https://budnix.github.io/SPRK/**
 ### Stations
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
-| **Szkolna** (fictional) | computer | ★ | Training station on a single-track line; linear timetable for the guided missions. |
-| **Stare Pustkowie** (fictional) | type E | ★★ | Single-track line, crossings, a siding, a terminating freight with shunting. |
-| **Wola Pustkowska** (fictional) | type E | ★★★ | Double-track line with one-way blocks plus a branch line with Eap. |
-| **Gdynia Orłowo** | computer | ★★★ | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
-| **Sopot** | computer | ★★★★ | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
-| **Gdynia Chylonia** | computer | ★★★★ | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
-| **Gdynia Główna** | computer | ★★★★★ | 10 platform tracks, SKM 501 / 502, lines 202, 250 and 201; two signal boxes GO and GO2 with dispatcher orders between them. |
+| **Szkolna** (fictional) | computer | 1/5 | Training station on a single-track line; linear timetable for the guided missions. |
+| **Stare Pustkowie** (fictional) | type E | 2/5 | Single-track line, crossings, a siding, a terminating freight with shunting. |
+| **Wola Pustkowska** (fictional) | type E | 3/5 | Double-track line with one-way blocks plus a branch line with Eap. |
+| **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
+| **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
+| **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
+| **Gdynia Główna** | computer | 5/5 | 10 platform tracks, SKM 501 / 502, lines 202, 250 and 201; two signal boxes GO and GO2 with dispatcher orders between them. |
 
 Real stations follow the current station plans (point and signal numbering, platform names, real interlocking:
 Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenarios (full shift, a closed track, a point

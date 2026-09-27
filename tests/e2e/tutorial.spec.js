@@ -9,7 +9,7 @@ test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', 
   await page.click('.st-mission[data-scenario="nauka-1"]');
   // etap 2: odprawa misji po prawej – bez parametrów zmiany, z liczbą kroków i przyciskiem startu
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 1');
-  await expect(page.locator('#st-briefing .st-bstars')).toContainText('kroków');
+  await expect(page.locator('#st-briefing .st-bdiff')).toContainText('kroków');
   await expect(page.locator('.st-form')).toBeHidden();
   await expect(page.locator('#st-go')).toHaveText('Rozpocznij misję');
   await page.click('#st-go');
