@@ -24,7 +24,8 @@ test('schemat ekranu ustawień opisuje każde ustawienie dokładnie raz, z tytu�
   const lang = SETTINGS_CATEGORIES.flatMap((c) => c.options).find((o) => o.key === 'lang');
   assert.deepEqual(lang.choices.map((x) => x.value), ['auto', 'pl', 'en', 'de'], 'język: auto + trzy języki');
   assert.ok(lang.reload, 'zmiana języka przeładowuje widok');
+  assert.equal(lang.type, 'select', 'języki jako lista rozwijana');
   // schemat jest funkcją, bo teksty zależą od bieżącego języka
   setLang('en');
-  try { assert.equal(settingsCategories().find((c) => c.id === 'jezyk').title, 'Interface language'); } finally { setLang('pl'); }
+  try { assert.equal(settingsCategories().find((c) => c.id === 'jezyk').title, 'Language'); } finally { setLang('pl'); }
 });

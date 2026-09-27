@@ -52,11 +52,15 @@ export class Settings {
     document.documentElement.dataset.theme = Settings.resolveTheme(this.values.theme);
   }
 
-  /** Podpina menu (radia) pod ustawienia. */
+  /** Podpina kontrolki ekranu ustawień (radia, listy rozwijane, suwaki) pod ustawienia. */
   bindMenu(menuEl) {
     for (const input of menuEl.querySelectorAll('input[type=radio]')) {
       input.checked = String(this.values[input.name]) === input.value;
       input.addEventListener('change', () => { if (input.checked) this.set(input.name, input.value); });
+    }
+    for (const sel of menuEl.querySelectorAll('select[name]')) {
+      sel.value = String(this.values[sel.name]);
+      sel.addEventListener('change', () => this.set(sel.name, sel.value));
     }
     for (const input of menuEl.querySelectorAll('input[type=range]')) {
       const out = menuEl.querySelector(`output[for="${input.id}"]`);

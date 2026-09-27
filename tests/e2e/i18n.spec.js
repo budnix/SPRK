@@ -6,8 +6,10 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
   await expect(page.locator('#menu-new')).toHaveText('Nowa zmiana…');
   await page.click('#btn-menu'); await page.click('#menu-settings');
-  await expect(page.locator('#se-jezyk .se-otitle')).toContainText('Język');
-  await page.check('#settings input[name=lang][value=en]');
+  await expect(page.locator('#se-jezyk .se-otitle')).toContainText('Język interfejsu');
+  await expect(page.locator('#settings select[name=lang]')).toHaveValue('auto'); // lista rozwijana, nie radia – zbiór języków może rosnąć
+  await expect(page.locator('#settings select[name=lang] option')).toHaveCount(4);
+  await page.selectOption('#settings select[name=lang]', 'en');
   await page.waitForLoadState('load');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('#menu-new')).toHaveText('New shift…');
@@ -29,7 +31,7 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await page.click('#report .st-close');
   // niemiecki
   await page.click('#btn-menu'); await page.click('#menu-settings');
-  await page.check('#settings input[name=lang][value=de]');
+  await page.selectOption('#settings select[name=lang]', 'de');
   await page.waitForLoadState('load');
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
   await expect(page.locator('#menu-settings')).toHaveText('Einstellungen…');
@@ -45,7 +47,7 @@ test.describe('język automatyczny', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'de');
     await expect(page.locator('#menu-new')).toHaveText('Neue Schicht…');
     await page.click('#btn-menu'); await page.click('#menu-settings');
-    await page.check('#settings input[name=lang][value=pl]');
+    await page.selectOption('#settings select[name=lang]', 'pl');
     await page.waitForLoadState('load');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pl');
     await expect(page.locator('#menu-new')).toHaveText('Nowa zmiana…');

@@ -34,6 +34,8 @@ export class SettingsScreen {
               <p class="se-desc">${esc(o.description)}</p>
               ${o.type === 'range'
                 ? `<label class="range se-range"><input type="range" id="${o.key}" name="${o.key}" min="${o.range.min}" max="${o.range.max}" step="${o.range.step}"> <output for="${o.key}">100%</output></label>`
+                : o.type === 'select'
+                ? `<select class="se-select" id="${o.key}" name="${o.key}" aria-label="${esc(o.title)}">${o.choices.map((ch) => `<option value="${esc(ch.value)}">${esc(ch.label)}${ch.hint ? ` – ${esc(ch.hint)}` : ''}</option>`).join('')}</select>`
                 : `<div class="se-choices">${o.choices.map((ch) => `<label class="se-choice"><input type="radio" name="${o.key}" value="${esc(ch.value)}"><span class="se-clabel">${esc(ch.label)}</span>${ch.hint ? `<span class="se-chint">${esc(ch.hint)}</span>` : ''}</label>`).join('')}</div>`}
             </div>`).join('')}
           </section>`).join('')}

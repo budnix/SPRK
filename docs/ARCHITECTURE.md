@@ -95,8 +95,10 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 ## Ekran ustawień (`src/ui/settingsSchema.js`, `src/ui/SettingsScreen.js`)
 
 Menu ≡ ma tylko akcje (Nowa zmiana…, Ustawienia…, Raport zmiany, Instrukcja obsługi). Ustawienia to osobny pełny ekran
-w motywie ekranu startowego: kategorie po lewej (Pulpit, Monitor, Motyw, Język, Panel boczny), po prawej opcje
-z tytułem, opisem działania i wyborami z podpowiedziami; opcje przeładowujące widok mają znacznik. Treść opisuje
+w motywie ekranu startowego: kategorie po lewej w kolejności grup (Ogólne: Język; Widok: Pulpit, Monitor, Panel boczny; Wygląd: Motyw), po prawej
+każda kategoria jako osobna karta: nagłówek (etykieta grupy › tytuł), opis, opcje oddzielone linią z tytułem, opisem
+działania i wyborami (radia przy ≤ 4 stałych wyborach, lista rozwijana gdy zbiór może rosnąć – języki, suwak dla skali);
+opcje przeładowujące widok mają znacznik. Treść opisuje
 `settingsCategories()` (bez DOM, funkcja – teksty z `t()` zależą od języka; test pilnuje, że każdy klucz `DEFAULTS` jest
 opisany raz i wartość domyślna jest wśród wyborów), a `SettingsScreen` buduje z niego DOM i podpina kontrolki przez `Settings.bindMenu` – zmiana działa od razu
 i zapisuje się jak dotąd. Pasek „widok”: „dopasuj” dopasowuje do szerokości okna, „wysokość” (tylko przy włączonych

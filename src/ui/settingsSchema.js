@@ -6,7 +6,8 @@ const DICT_PL = DICTS.pl;
  * Opis ustawień (bez DOM) do ekranu ustawień: kategorie → opcje z tytułem, opisem działania i wyborami.
  * Klucze i wartości odpowiadają `DEFAULTS` z `Settings.js` (test pilnuje kompletności). Teksty z `t()` – funkcja,
  * bo język jest znany dopiero po starcie.
- * type 'radio': `choices` [{ value, label, hint? }]; type 'range': `range` { min, max, step } (wartość jako tekst).
+ * type 'radio' (domyślny, ≤ 4 stałe wybory): `choices` [{ value, label, hint? }]; type 'select': te same `choices` jako
+ * lista rozwijana (zbiór może rosnąć, np. języki); type 'range': `range` { min, max, step } (wartość jako tekst).
  * `reload: true` – zmiana przeładowuje stronę (widok budowany od nowa).
  */
 const cat = (id, options) => ({ id, kicker: t(`set.cat.${id}.kicker`), title: t(`set.cat.${id}.title`), intro: t(`set.cat.${id}.intro`), options });
@@ -16,14 +17,15 @@ const opt = (key, values, extra = {}) => ({
 });
 export function settingsCategories() {
   return [
+    // kolejność wg grup (kicker): Ogólne, Widok (pulpit, monitor, panel), Wygląd
+    cat('jezyk', [opt('lang', ['auto', ...LANGS], { reload: true, type: 'select' })]),
     cat('pulpit', [opt('deskPos', ['top', 'middle', 'bottom']), opt('screens', ['auto', 'off']), opt('edgePanels', ['off', 'on'])]),
     cat('monitor', [
       { key: 'symScale', title: t('set.symScale.title'), description: t('set.symScale.desc'), type: 'range', range: { min: 1, max: 1.5, step: 0.05 } },
       opt('rowScale', ['1', '0.7'], { reload: true }),
     ]),
-    cat('wyglad', [opt('theme', ['system', 'dark', 'light'])]),
-    cat('jezyk', [opt('lang', ['auto', ...LANGS], { reload: true })]),
     cat('panel', [opt('sidePos', ['right', 'left', 'bottom'])]),
+    cat('wyglad', [opt('theme', ['system', 'dark', 'light'])]),
   ];
 }
 
