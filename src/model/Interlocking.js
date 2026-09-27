@@ -454,6 +454,59 @@ export class Interlocking {
     return this.#fail(`Przebieg ${candidates[0].id}: ${firstProblems.join('; ')}`);
   }
 
+  /** Łańcuchy przebiegów `startId` → … → `endId` przez semafory pośrednie (przebieg złożony), od najkrótszego. */
+  routeChains(startId, endId, kind, maxHops = 4) {
+    const out = [];
+    const walk = (sig, chain, seen) => {
+      if (chain.length >= maxHops) return;
+      for (const r of this.routes.values()) {
+        if (r.start !== sig || r.kind !== kind) continue;
+        if (r.endButton === endId) { out.push([...chain, r]); continue; }
+        if (r.end.type === 'signal' && !seen.has(r.end.id)) walk(r.end.id, [...chain, r], new Set([...seen, r.end.id]));
+      }
+    };
+    walk(startId, [], new Set([startId]));
+    return out.sort((a, b) => a.length - b.length);
+  }
+
+  /**
+   * Koniec przebiegu złożonego (stanowisko komputerowe): jak `press(end)` po uzbrojeniu semafora, ale gdy nie ma
+   * przebiegu bezpośredniego, nastawia łańcuch przebiegów przez semafory pośrednie (np. G502 → A502 → szlak).
+   */
+  pressCompound(endRef) {
+    this.bus.emit('button', { ref: endRef, action: 'press' });
+    const armed = this.#takeArmed();
+    if (!armed || armed.kind !== 'signal') return this.#fail('Najpierw wskaż semafor początku przebiegu.');
+    if (armed.id === endRef.id) return this.#fail('Koniec przebiegu musi być inny niż początek.');
+    return this.requestCompoundRoute(armed, endRef);
+  }
+
+  /** Przebieg złożony: wszystkie ogniwa muszą dać się nastawić (ogniwo już nastawione liczy się jako gotowe);
+   *  inaczej nic nie jest nastawiane, a odmowa nazywa ogniwo i powód. */
+  requestCompoundRoute(startRef, endRef) {
+    const kind = startRef.color === 'white' ? 'shunt' : 'train';
+    const endId = endRef.id;
+    if ([...this.routes.values()].some((r) => r.start === startRef.id && r.kind === kind && r.endButton === endId)) return this.requestRoute(startRef, endRef);
+    const chains = this.routeChains(startRef.id, endId, kind);
+    if (!chains.length) return this.#fail(`Brak przebiegu ${kind === 'train' ? 'pociągowego' : 'manewrowego'} ${startRef.id} → ${endId} (także złożonego)`);
+    const isSet = (r) => this.active.has(r.id) || this.pending.some((p) => p.route.id === r.id);
+    let firstFail = null;
+    for (const chain of chains) {
+      const bad = chain.map((r) => [r, isSet(r) ? [] : this.checkRoute(r)]).find(([, p]) => p.length);
+      if (bad) { firstFail ??= bad; continue; }
+      this.#log('info', `Przebieg złożony ${startRef.id} → ${chain.map((r) => r.endButton).join(' → ')}`);
+      const set = [];
+      for (const r of chain) {
+        if (isSet(r)) continue;
+        const res = this.setRoute(r.id);
+        if (!res.ok) return res;
+        set.push(r.id);
+      }
+      return { ok: true, pending: true, chain: chain.map((r) => r.id), set };
+    }
+    return this.#fail(`Przebieg złożony ${startRef.id} → ${endId}: ogniwo ${firstFail[0].id}: ${firstFail[1].join('; ')}`);
+  }
+
   setRoute(routeId) {
     const route = this.routes.get(routeId);
     if (!route) return this.#fail(`Nieznany przebieg ${routeId}`);

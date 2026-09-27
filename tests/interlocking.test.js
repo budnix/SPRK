@@ -179,3 +179,50 @@ test('krzyżowanie: przebieg B→C1 czeka, dopóki zwrotnica 1 (droga ochronna z
   run(sim, 10);
   assert.equal(sim.ilk.signals.get('B').route, 'B-C1');
 });
+
+test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośrednim nastawia łańcuch przebiegów; ogniwo nastawione liczy się jako gotowe; blokada ogniwa odrzuca całość', async () => {
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const chylonia = (await import('../src/stations/gdynia-chylonia.js')).default;
+  const sopot = (await import('../src/stations/sopot.js')).default;
+  const run = (s, n) => { for (let i = 0; i < n; i++) s.step(0.5); };
+  // Chylonia: G502 → szlak na Cisową idzie przez semafor A502 – bezpośredniego przebiegu nie ma
+  const sim = new Simulation(chylonia, { disruptions: 'none' });
+  assert.equal(sim.press({ kind: 'signal', id: 'G502', color: 'green' }).ok, true);
+  const direct = sim.press({ kind: 'end', id: 'kRS1' });
+  assert.equal(direct.ok, false); assert.match(direct.reason, /Brak przebiegu pociągowego G502 → kRS1/);
+  sim.press({ kind: 'signal', id: 'G502', color: 'green' });
+  const r = sim.pressCompound({ kind: 'end', id: 'kRS1' });
+  assert.deepEqual(r.chain, ['G502-A502', 'A502-RS1']);
+  run(sim, 120);
+  assert.deepEqual([...sim.ilk.active.keys()], ['G502-A502', 'A502-RS1']);
+  assert.notEqual(sim.ilk.signals.get('G502').aspect, 'S1'); assert.notEqual(sim.ilk.signals.get('A502').aspect, 'S1');
+  // bez uzbrojonego semafora – odmowa; przebieg bezpośredni przez pressCompound działa jak zwykły
+  assert.equal(sim.pressCompound({ kind: 'end', id: 'kRS1' }).ok, false);
+  const s1 = new Simulation(chylonia, { disruptions: 'none' });
+  s1.press({ kind: 'signal', id: 'G502', color: 'green' });
+  const d = s1.pressCompound({ kind: 'signal', id: 'A502', color: 'green' });
+  assert.equal(d.ok, true); assert.equal(d.chain, undefined, 'bezpośredni przebieg – bez łańcucha');
+  // ogniwo już nastawione: najpierw A502 → szlak, potem G502 → szlak nastawia tylko brakujące G502-A502
+  const s4 = new Simulation(chylonia, { disruptions: 'none' });
+  s4.press({ kind: 'signal', id: 'A502', color: 'green' }); assert.equal(s4.press({ kind: 'end', id: 'kRS1' }).ok, true);
+  run(s4, 120);
+  s4.press({ kind: 'signal', id: 'G502', color: 'green' });
+  const f = s4.pressCompound({ kind: 'end', id: 'kRS1' });
+  assert.equal(f.ok, true, f.reason); assert.deepEqual(f.set, ['G502-A502']);
+  run(s4, 120);
+  assert.deepEqual([...s4.ilk.active.keys()].sort(), ['A502-RS1', 'G502-A502']);
+  // Sopot: trzy ogniwa A → H → O → szlak; potem blokada ogniwa (kierunek SBL na wjazd) odrzuca całość bez nastawienia czegokolwiek
+  const s2 = new Simulation(sopot, { disruptions: 'none' });
+  s2.press({ kind: 'signal', id: 'A', color: 'green' });
+  assert.deepEqual(s2.pressCompound({ kind: 'end', id: 'kOR1' }).chain, ['A-H', 'H-O', 'O-OR1']);
+  run(s2, 120);
+  assert.deepEqual([...s2.ilk.active.keys()], ['A-H', 'H-O', 'O-OR1']);
+  const s3 = new Simulation(sopot, { disruptions: 'none' });
+  assert.equal(s3.blocks.get('OR1').press('Zk').ok, true); // tor 1 na wjazd – wyjazd niemożliwy
+  s3.press({ kind: 'signal', id: 'A', color: 'green' });
+  const bad = s3.pressCompound({ kind: 'end', id: 'kOR1' });
+  assert.equal(bad.ok, false);
+  assert.match(bad.reason, /Przebieg złożony A → kOR1: ogniwo O-OR1: .*blokady samoczynnej/);
+  assert.equal(s3.ilk.pending.length, 0, 'nic nie nastawione');
+  assert.equal(s3.ilk.active.size, 0);
+});

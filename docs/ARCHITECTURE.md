@@ -92,6 +92,16 @@ bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramk
 (Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
 (domyślnie 1,25), rzędy ściskane `rowScale`.
 
+## Przebieg złożony (`Interlocking.routeChains`, `pressCompound`)
+
+Na stanowisku komputerowym koniec przebiegu może leżeć za semaforem pośrednim (Sopot: A → H → O → szlak, Chylonia:
+G502 → A502 → szlak). `ScreenRenderer` przekazuje koniec przez `handlers.onCompound` → `Simulation.pressCompound` →
+`Interlocking.pressCompound`: gdy jest przebieg bezpośredni, działa jak `press`; inaczej `routeChains` szuka łańcuchów
+przebiegów tego rodzaju przez semafory pośrednie (od najkrótszego), `requestCompoundRoute` sprawdza wszystkie ogniwa
+(`checkRoute`; ogniwo już nastawione liczy się jako gotowe) i dopiero wtedy nastawia je po kolei – przy blokadzie
+któregokolwiek ogniwa nic nie jest nastawiane, a odmowa nazywa ogniwo. Pulpit kostkowy zostaje przy `onPress`
+(każdy przebieg osobno, jak na pulpicie typu E).
+
 ## Blokada liniowa (`src/model/Block.js`)
 
 `LineBlock` obsługuje trzy warianty jednym modelem: Eap dwukierunkowa (szlak jednotorowy: Wbl/Poz/Ko), Eap

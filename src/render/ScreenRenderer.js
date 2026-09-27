@@ -432,7 +432,8 @@ export class ScreenRenderer {
     if (this.pending) {
       if (ref.kind === 'signal' || ref.kind === 'end') {
         const endRef = ref.kind === 'signal' ? { kind: 'signal', id: ref.id, color: this.pending.color } : ref;
-        this.handlers.onPress(endRef);
+        // koniec może być za semaforem pośrednim – przebieg złożony (łańcuch przebiegów), jak w komputerowych srk
+        (this.handlers.onCompound || this.handlers.onPress)(endRef);
         this.#endPending();
         return;
       }

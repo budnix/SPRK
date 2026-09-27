@@ -266,6 +266,12 @@ export class Simulation {
     });
   }
 
+  /** Koniec przebiegu złożonego (stanowisko komputerowe): jak press(end), ale z łańcuchem przez semafory pośrednie. */
+  pressCompound(ref) {
+    if (!this.#refAllowed(ref)) return { ok: false, reason: 'Element w okręgu obsługiwanym przez drugą nastawnię' };
+    return this.ilk.pressCompound(ref);
+  }
+
   /** Naciśnięcie przycisku – ref jak w Interlocking.press lub { kind:'block', exit, btn }. */
   press(ref) {
     if (!this.#refAllowed(ref)) return { ok: false, reason: 'Element w okręgu obsługiwanym przez drugą nastawnię' };

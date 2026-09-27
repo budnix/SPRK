@@ -275,3 +275,17 @@ test('monitor: menu strzałki szlaku ma pod separatorem czerwone kasetki numeró
   await open(exit.id);
   await expect(page.locator('.scr-menu .menu-train:not(.queued)')).toHaveCount(0);
 });
+
+test('monitor: przebieg złożony – semafor początkowy i strzałka szlaku za semaforem pośrednim (Chylonia G502 → Cisowa) nastawiają oba przebiegi', async ({ page }) => {
+  await openShift(page, 'gdynia-chylonia', { settings: { sideCollapsed: true } });
+  await page.click('.scr-cmdbar button[data-cmd=train]');
+  await tap(page, 'G502');
+  await expect(page.locator('#status')).toContainText('wskaż koniec przebiegu');
+  await tap(page, 'kRS1');
+  await advance(page, 60);
+  const st = await simState(page);
+  expect(st.active).toContain('G502-A502');
+  expect(st.active).toContain('A502-RS1');
+  expect(st.signals.G502).not.toBe('S1');
+  expect(st.signals.A502).not.toBe('S1');
+});

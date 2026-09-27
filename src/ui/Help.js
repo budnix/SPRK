@@ -13,6 +13,7 @@ export class Help {
       <h3>Przebiegi</h3>
       <ul>
         <li><b>Przebieg pociągowy</b>: zielony przycisk semafora początkowego → zielony przycisk semafora końcowego (lub przycisk końca przebiegu na szlaku <i>kW</i>/<i>kE</i>). Zwrotnice przestawiają się same, odcinki świecą na biało (utwierdzenie), semafor podaje sygnał zezwalający wg Ie-1.</li>
+        <li><b>Przebieg złożony</b> (stanowisko komputerowe): gdy do celu prowadzi kilka kolejnych przebiegów przez semafory pośrednie (np. w Sopocie A → H → O → szlak, w Chyloni G502 → A502 → szlak), wskaż semafor początkowy i od razu odległy koniec – system nastawi wszystkie ogniwa po kolei, jeśli każde jest wolne; inaczej odmówi i nazwie ogniwo. Na pulpicie kostkowym każdy przebieg nastawia się osobno.</li>
         <li><b>Przebieg manewrowy</b>: biały przycisk tarczy manewrowej (lub semafora z Ms2) → biały przycisk sygnalizatora końcowego / przycisk końca toru (<i>kT3</i>).</li>
         <li><b>Wygaszenie sygnału</b>: wyciągnij przycisk sygnałowy. Przebieg pozostaje utwierdzony.</li>
         <li><b>Zwolnienie przebiegu</b>: <b>Pz</b> + przycisk sygnałowy. Gdy odcinek zbliżania jest zajęty – zwalnianie czasowe (90 s).</li>
