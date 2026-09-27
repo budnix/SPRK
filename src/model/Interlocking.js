@@ -89,7 +89,8 @@ export class Interlocking {
         const seen = new Map();
         for (const p of paths) {
           if (p.end.type === 'exit' && kind === 'shunt') continue; // manewry nie wyjeżdżają na szlak
-          if (p.end.type !== 'exit' && p.end.type !== 'signal' && kind === 'train') continue; // przebiegi pociągowe kończą się na semaforze lub szlaku
+          // przebiegi pociągowe kończą się na semaforze, szlaku albo kozle toru stacyjnego (tor peronowy czołowy)
+          if (kind === 'train' && p.end.type !== 'exit' && p.end.type !== 'signal' && !this.#stationBuffer(p.end)) continue;
           const endBtn = this.#endButtonFor(p.end);
           let id = `${sig.id}-${p.end.id}`;
           if (kind === 'shunt' && sig.kind === 'semafor') id += 'm';
@@ -113,6 +114,13 @@ export class Interlocking {
       }
     }
     return routes;
+  }
+
+  /** Kozioł toru stacyjnego (peron czołowy): przebieg pociągowy może się na nim kończyć; kozły bocznic – tylko manewry. */
+  #stationBuffer(end) {
+    if (end.type !== 'buffer') return false;
+    const tile = this.topo.endButtons.get(end.id);
+    return !!tile && this.station.sections[tile.section]?.kind === 'station';
   }
 
   #endButtonFor(end) {

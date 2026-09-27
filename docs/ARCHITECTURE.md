@@ -17,7 +17,7 @@ src/
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
                Settings (ustawienia, motyw wg systemu), StartScreen (misje i posterunki, odprawa), Report, drag (przeciąganie okienek)
-  stations/    definicje stacji + rejestr (Szkolna, Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia)
+  stations/    definicje stacji + rejestr (Szkolna, Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```

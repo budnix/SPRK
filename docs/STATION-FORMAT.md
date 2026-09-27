@@ -100,7 +100,9 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
 ## Przebiegi (`routes`)
 
 Tablica zależności jest wyznaczana **automatycznie** z topologii (`Topology.pathsFrom`):
-od każdego sygnalizatora w jego kierunku do następnego sygnalizatora / szlaku / kozła.
+od każdego sygnalizatora w jego kierunku do następnego sygnalizatora / szlaku / kozła. Przebieg pociągowy może
+kończyć się na kozle tylko toru stacyjnego (`kind: 'station'`, np. peron czołowy – Reda tor 11); kozły bocznic
+kończą wyłącznie przebiegi manewrowe.
 Dla każdego przebiegu wyznaczane są: odcinki drogi przebiegu, wymagane położenia zwrotnic,
 zwrotnice ochrony bocznej (najbliższa zwrotnica za nieużywanym portem kostki drogi przebiegu; tył kostki startowej
 osłania sam semafor początkowy, więc zwrotnice za nim nie wchodzą w ochronę – ważne dla wyjazdów dwustopniowych,

@@ -324,3 +324,17 @@ test('Rumia: karta „stanowisko do wyboru” (typ E i komputerowe); pulpit kost
   expect(await page.evaluate(() => window.sim.srk.view)).toBe('screen');
   for (const id of ['C', 'G311', 'E', 'D312']) await expect(hit(page, id)).toBeAttached();
 });
+
+test('Reda: karta „stanowisko do wyboru”; pulpit z blokadą dwukierunkową do Helu, stanowisko komputerowe – semafory R, P, Szn1, S', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id=reda] .st-name')).toHaveText('Reda');
+  await expect(page.locator('.st-card[data-id=reda] .st-srk-both')).toHaveText('stanowisko do wyboru');
+  await openShift(page, 'reda', { settings: { sideCollapsed: true } });
+  await expect(page.locator('#desk svg')).toBeVisible();
+  expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.values()].map((b) => `${b.id}:${b.fixed || 'both'}`) })))
+    .toEqual({ srk: 'desk', blocks: ['RM2:out', 'RM1:in', 'WJ2:in', 'WJ1:out', 'HL:both'] });
+  await expect(page.locator('#desk svg text', { hasText: 'REDA' })).toBeVisible();
+  await openShift(page, 'reda', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-lcs' } });
+  expect(await page.evaluate(() => window.sim.srk.view)).toBe('screen');
+  for (const id of ['R', 'P', 'Szn1', 'S', 'Tm20']) await expect(hit(page, id)).toBeAttached();
+});
