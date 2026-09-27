@@ -30,6 +30,14 @@ test('zakładka „Pociągi”: pociąg na posterunku ze stanem, torem i czołem
   await expect(card.locator('.train-state .ic-mode')).toHaveAttribute('data-mode', 'train');
   expect(await card.locator('.train-state .ic-mode .lamp.on').count()).toBe(3); // Pc1: trzy światła
   await expect(card.locator('button[data-act=shunt]')).toHaveText('jazda manewrowa');
+  // status rozkładu nie dubluje opisu stanu („postój, odjazd …” już zawiera „postój”); przyciski w standardzie panelu (.tb, 28 px jak „Nadaj”)
+  const stateText = await card.locator('.train-state').textContent();
+  expect((stateText.match(/postój|stoi/g) || []).length).toBe(1);
+  const h = await card.locator('button[data-act=shunt]').evaluate((el) => el.getBoundingClientRect().height);
+  await page.click('#panel-tabs button[data-tab=lacznosc]');
+  const h2 = await page.locator('#comms-form button[type=submit]').evaluate((el) => el.getBoundingClientRect().height);
+  expect(Math.round(h)).toBe(28); expect(Math.round(h2)).toBe(28);
+  await page.click('#panel-tabs button[data-tab=pociagi]');
   // sterowanie: tryb manewrowy, zmiana czoła
   await card.locator('button[data-act=shunt]').click();
   expect(await page.evaluate(() => window.sim.traffic.timetable().find((x) => x.nr === 6101).train.mode)).toBe('shunt');

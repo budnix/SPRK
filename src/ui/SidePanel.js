@@ -50,7 +50,7 @@ export class SidePanel {
           <label>${t('sp.order.signal')} <input name="signal" id="order-signal" readonly></label>
           <label>${t('sp.order.reason')} <input name="reason" id="order-reason" value="${t('sp.order.reasonDefault')}"></label>
           <label>${t('sp.order.text')} <textarea name="text" id="order-text" rows="6"></textarea></label>
-          <div class="order-actions"><button type="submit">${t('sp.order.issue')}</button> <span id="order-msg" class="order-msg"></span></div>
+          <div class="order-actions"><button type="submit" class="tb primary">${t('sp.order.issue')}</button> <span id="order-msg" class="order-msg"></span></div>
         </form>
         <p class="muted small">${t('sp.order.rules')}</p>
         <h4>${t('sp.order.issued')}</h4>
@@ -61,7 +61,7 @@ export class SidePanel {
           <label>${t('sp.comms.to')} <select id="comms-to"></select></label>
           <label>${t('sp.comms.formula')} <select id="comms-formula"></select></label>
           <label>${t('sp.comms.train')} <input id="comms-nr" inputmode="numeric"></label>
-          <div class="order-actions"><button type="submit">${t('sp.comms.send')}</button> <span id="comms-msg" class="order-msg"></span></div>
+          <div class="order-actions"><button type="submit" class="tb primary">${t('sp.comms.send')}</button> <span id="comms-msg" class="order-msg"></span></div>
         </form>
         <p class="muted small">${t('sp.comms.rules')}</p>
         <h4>${t('sp.comms.log')}</h4>
@@ -74,7 +74,7 @@ export class SidePanel {
             <label>${t('sp.cmd.train')} <select id="cmd-train"></select></label>
             <label id="cmd-track-wrap">${t('sp.cmd.track')} <select id="cmd-track"></select></label>
             <label id="cmd-exit-wrap">${t('sp.cmd.to')} <select id="cmd-exit"></select></label>
-            <div class="order-actions"><button type="submit">${t('sp.cmd.issue')}</button> <span id="cmd-msg" class="order-msg"></span></div>
+            <div class="order-actions"><button type="submit" class="tb primary">${t('sp.cmd.issue')}</button> <span id="cmd-msg" class="order-msg"></span></div>
           </form>
         </div>
         <p class="muted small" id="cmd-help"></p>
@@ -420,8 +420,8 @@ export class SidePanel {
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
         <div class="train-head"><span class="cat cat-${e.cat}">${CATEGORIES[e.cat]?.label ?? ''}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
-        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta} · ${escapeHtml(e.status)}</div>
-        <div class="train-actions">${canControl ? `<button type="button" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
+        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>
+        <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
     for (const b of host.querySelectorAll('button')) {

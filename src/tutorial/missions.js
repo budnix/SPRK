@@ -120,7 +120,7 @@ export function missionSteps(view) {
     (sim) => atNeighbour(sim, 6103) && atNeighbour(sim, 6104) && !sim.blocks.get('W').occupied && !sim.blocks.get('E').occupied);
 
   /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
-  info('shunt-intro', 'Pociąg zdawczy', `O 07:52 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Stan</b>.`, { tab: 'stan' });
+  info('shunt-intro', 'Pociąg zdawczy', `O 07:52 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Zadania</b>.`, { tab: 'zadania' });
   act('in-90201', 'Przyjęcie zdawczego', `Gdy ${LIP} zgłosi zdawczy (zamiga ${m ? 'napis' : 'lampka'} „żąd.”): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
     { tip: `${LIP} zażąda pozwolenia dopiero, gdy 6104 tam dojedzie i szlak się zwolni – kilka minut po jego odjeździe. Do tego czasu Poz nie zadziała.`,
