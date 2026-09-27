@@ -10,7 +10,7 @@ export async function openShift(page, station, { settings = {}, params = {} } = 
     localStorage.setItem('sprk.settings', JSON.stringify(v));
   }, s);
   const q = new URLSearchParams({ stacja: station, scenariusz: 'zmiana', zaklocenia: 'none', ...params });
-  await page.goto(`/?${q}`, { waitUntil: 'networkidle' });
+  await page.goto(`/?${q}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   await page.evaluate(() => { window.sim.clock.paused = true; });
 }

@@ -29,11 +29,15 @@ jobs:
       - run: npm test
 
   e2e:
-    name: Testy e2e (Playwright)
+    name: Testy e2e (Playwright, część ${{ matrix.shard }}/2)
     runs-on: ubuntu-latest
     # obraz z gotowym Chromium i czcionkami DejaVu – wzorce zrzutów ekranu są z niego zależne
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -41,15 +45,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run test:e2e
+      # dwie maszyny (shardy) × dwa procesy, strony ze zbudowanej paczki (vite preview) zamiast serwera deweloperskiego
+      - run: npx playwright test --shard=${{ matrix.shard }}/2
         env:
           CI: 1
           HOME: /root
+          SPRK_E2E_PREVIEW: 1
       - name: Wyniki (ślady, zrzuty) przy błędzie
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-wyniki
+          name: playwright-wyniki-${{ matrix.shard }}
           path: |
             test-results/
             playwright-report/
@@ -57,7 +63,6 @@ jobs:
 
   build:
     name: Build
-    needs: [test, e2e]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +85,7 @@ jobs:
 
   deploy:
     name: Deploy na GitHub Pages
-    needs: build
+    needs: [build, test, e2e]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:

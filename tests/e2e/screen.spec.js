@@ -171,9 +171,9 @@ test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd
 });
 
 test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapisane ustawienie ma pierwszeństwo', async ({ page }) => {
-  await page.goto('/?stacja=szkolna&scenariusz=zmiana&zaklocenia=none', { waitUntil: 'networkidle' });
+  await page.goto('/?stacja=szkolna&scenariusz=zmiana&zaklocenia=none', { waitUntil: 'load' });
   await page.evaluate(() => localStorage.removeItem('sprk.settings')); // nowy użytkownik – bez zapisanych ustawień
-  await page.reload({ waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   expect(await page.evaluate(() => document.querySelector('.scr-el.signal').getAttribute('transform'))).toContain('scale(1.25)');
   await page.click('#btn-menu'); await page.click('#menu-settings');

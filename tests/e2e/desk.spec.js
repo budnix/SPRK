@@ -4,7 +4,7 @@ import { openShift, btn, simState, advance } from './helpers.js';
 /* Pulpit kostkowy (urządzenia typu E) – Stare Pustkowie */
 
 test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / wg trudności, wybór posterunku rozwija parametry i startuje zmianę', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('#start')).toBeVisible();
   // lista po lewej: misje przed posterunkami; odprawa (etap 2) po prawej z podpowiedzią
   const order = await page.evaluate(() => [...document.querySelectorAll('.st-left .st-missions, .st-left .st-stations')].map((e) => e.className));
@@ -21,7 +21,7 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   const starsList = await page.locator('.st-card .st-stars').allTextContents();
   const counts = starsList.map((s) => (s.match(/★/g) || []).length);
   expect(counts).toEqual([...counts].sort((a, b) => a - b));
-  await page.reload({ waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'load' });
   await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);
   // wybór posterunku: parametry pod kartą
   await expect(page.locator('#st-params')).toBeHidden();
@@ -139,7 +139,7 @@ test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu;
   await page.check('#settings input[name=sidePos][value=bottom]');
   await page.keyboard.press('Escape');
   await expect(page.locator('#settings')).toBeHidden();
-  await page.reload({ waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'load' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');
   await page.click('#side-toggle');

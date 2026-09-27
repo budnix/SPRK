@@ -4,7 +4,7 @@ import { openShift, tap, advance, pressBtn } from './helpers.js';
 /* Misje wprowadzające (samouczek) – stacja Szkolna */
 
 test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'networkidle' });
+  await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('.st-mission').first()).toContainText('Misja 1');
   await page.click('.st-mission[data-scenario="nauka-1"]');
   // etap 2: odprawa misji po prawej – bez parametrów zmiany, z liczbą kroków i przyciskiem startu
