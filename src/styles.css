@@ -54,11 +54,13 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 #desk-wrap { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
 #desk-scroll { flex: 1 1 auto; overflow: auto; padding: 4px; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; overscroll-behavior: contain; display: flex; }
 #desk { position: relative; margin: auto; flex: 0 0 auto; }
-/* stałe pola skrajne: żywa kopia skrajnych kolumn pulpitu przypięta do krawędzi okna; środek przewija się między nimi */
-.edge-panel { position: sticky; z-index: 3; flex: 0 0 auto; align-self: center; display: none; background: var(--bg); box-shadow: 0 0 14px rgba(0,0,0,0.55); }
-.edge-panel.on { display: block; }
-.edge-panel.left { left: 0; border-right: 1px dashed rgba(140, 150, 160, 0.55); }
-.edge-panel.right { right: 0; border-left: 1px dashed rgba(140, 150, 160, 0.55); }
+/* stałe pola skrajne: nakładka nad obszarem przewijania; żywa kopia skrajnych kolumn pulpitu w tej samej skali */
+#desk-wrap { position: relative; }
+#desk-scroll.edges-on { padding-left: 0; padding-right: 0; }
+.edge-overlay { position: absolute; overflow: hidden; pointer-events: none; z-index: 3; }
+.edge-panel { position: absolute; top: 0; display: block; pointer-events: auto; background: var(--bg); box-shadow: 0 0 14px rgba(0,0,0,0.55); box-sizing: content-box; }
+.edge-panel.left { border-right: 1px dashed rgba(140, 150, 160, 0.55); }
+.edge-panel.right { border-left: 1px dashed rgba(140, 150, 160, 0.55); margin-left: -1px; }
 .edge-panel.screen { background: #000; }
 .edge-panel.desk { background: var(--desk-face); }
 #desk-tools { position: relative; display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
@@ -99,6 +101,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
 .tool-group .tb { padding: 4px 10px; font-size: 12px; min-width: 0; white-space: nowrap; background: var(--panel); }
 .tool-group .tb.tb-icon { padding: 2px 10px; display: inline-flex; align-items: center; height: 26px; }   /* ikony dopasowania: do szerokości ↔, do wysokości ↕ */
 .tool-group .tb.tb-icon svg { display: block; opacity: 0.85; }
+#side-toggle.collapsed svg .side { opacity: 0; }   /* panel ukryty – pusta część ikony */
 .tg-screens { border-color: #3f8cff66; background: color-mix(in srgb, #3f8cff 12%, var(--panel2)); }
 .tg-screens .lbl { color: #3f8cff; }
 .tg-screens .tb.active { background: #3f8cff; color: #fff; border-color: #3f8cff; font-weight: 600; }

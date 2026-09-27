@@ -19,11 +19,28 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
   await expect(left).toBeVisible(); await expect(right).toBeVisible();
   await expect(page.locator('#zoom-fit-h')).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).edgePanels)).toBe('on'); // zapamiętane
-  const scroll = await box(page.locator('#desk-scroll'));
+  const scroll = await page.locator('#desk-scroll').evaluate((s) => { const r = s.getBoundingClientRect(); return { x: r.x + s.clientLeft, y: r.y + s.clientTop, w: s.clientWidth, h: s.clientHeight }; });
   const l = await box(left), r = await box(right);
-  expect(Math.abs(l.x - scroll.x)).toBeLessThan(10); // przy lewej krawędzi okna (padding 4 px)
-  expect(Math.abs(r.x + r.width - (scroll.x + scroll.width - 4))).toBeLessThan(20); // prawa krawędź (minus ewentualny pasek przewijania)
-  expect(l.width).toBeGreaterThan(30); expect(l.width).toBeLessThan(scroll.width * 0.3);
+  expect(Math.abs(l.x - scroll.x)).toBeLessThan(0.5); // dokładnie przy lewej krawędzi widocznego obszaru
+  expect(Math.abs(r.x + r.width - (scroll.x + scroll.w))).toBeLessThan(0.5); // i przy prawej (bez paska przewijania)
+  expect(l.width).toBeGreaterThan(30); expect(l.width).toBeLessThan(scroll.w * 0.3);
+  // pixel perfect: ten sam punkt rysunku (strzałka szlaku GD2) ma na polu i na pulpicie tę samą wysokość,
+  // a przy przewinięciu 0 także tę samą pozycję poziomą (pole zlewa się z pulpitem pod nim)
+  await page.evaluate(() => { document.getElementById('desk-scroll').scrollLeft = 0; });
+  const same = await page.evaluate(() => {
+    const hit = document.querySelector(`#desk .hit[data-ref*='"id":"kGD2"']`);
+    const svg = hit.ownerSVGElement, panel = document.querySelector('.edge-panel.left');
+    const bb = hit.getBBox();
+    const m = svg.getScreenCTM().inverse().multiply(hit.getScreenCTM());
+    const u = new DOMPoint(bb.x + bb.width / 2, bb.y + bb.height / 2).matrixTransform(m);
+    const onDesk = u.matrixTransform(svg.getScreenCTM()), onPanel = u.matrixTransform(panel.getScreenCTM());
+    const d = document.getElementById('desk').getBoundingClientRect(), pr = panel.getBoundingClientRect();
+    return { dx: onPanel.x - onDesk.x, dy: onPanel.y - onDesk.y, top: pr.top - d.top, h: pr.height - d.height };
+  });
+  expect(Math.abs(same.dy)).toBeLessThan(0.5);
+  expect(Math.abs(same.dx)).toBeLessThan(0.5);
+  expect(Math.abs(same.top)).toBeLessThan(0.5);
+  expect(Math.abs(same.h)).toBeLessThan(0.5);
   // żywa kopia pulpitu: <use> wskazuje grupę aktywnego pulpitu; pole ma styl monitora
   const href = await left.locator('use').getAttribute('href');
   expect(href).toMatch(/^#desk-inner-/);

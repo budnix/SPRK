@@ -4,27 +4,31 @@ import { CELL } from '../render/svg.js';
 const NS = 'http://www.w3.org/2000/svg';
 
 /**
- * Stałe pola skrajne pulpitu (DOM): dwa małe SVG przypięte (position: sticky) do lewej i prawej krawędzi okna
- * przewijania, rysujące żywą kopię (`<use>`) skrajnych kolumn aktywnego pulpitu – strzałki szlaku i przyciski blokady
+ * Stałe pola skrajne pulpitu (DOM): dwa małe SVG w nakładce nad obszarem przewijania, przy lewej i prawej krawędzi,
+ * rysujące żywą kopię (`<use>`) skrajnych kolumn aktywnego pulpitu – strzałki szlaku i przyciski blokady
  * są widoczne zawsze, gdy powiększony pulpit nie mieści się na szerokość; środek przewija się między nimi (linia
  * przerywana oddziela pole od środka). Dotknięcia na polu są przekazywane do właściwego elementu pulpitu (przycisk
  * kostki, punkt dotyku monitora), więc blokadę obsługuje się z pola tak samo jak z pulpitu.
  * Geometria: `edgeLayout` (bez DOM). Opcja w menu (`edgePanels`), domyślnie wyłączona.
  */
 export class EdgePanels {
-  constructor(scroll, deskEl, { edgeCells = 3, enabled = false } = {}) {
+  constructor(scroll, deskEl, { edgeCells = 4, enabled = false } = {}) {
     this.scroll = scroll; this.deskEl = deskEl; this.edgeCells = edgeCells; this.enabled = enabled;
-    this.svg = null; this.pad = 0; this.target = null;
+    this.svg = null; this.pad = 0; this.target = null; this.active = false;
+    // nakładka dokładnie nad obszarem przewijania (poza nim – bez „sticky”, które w Safari zostawia szparę na padding)
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'edge-overlay hidden';
     this.left = this.#panel('left'); this.right = this.#panel('right');
-    scroll.insertBefore(this.left, deskEl);
-    scroll.insertBefore(this.right, deskEl.nextSibling);
-    this.active = false;
+    this.overlay.append(this.left, this.right);
+    scroll.parentElement.insertBefore(this.overlay, scroll.nextSibling);
+    scroll.addEventListener('scroll', () => this.#syncTop(), { passive: true });
+    window.addEventListener('resize', () => this.update());
   }
 
   #panel(side) {
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('class', `edge-panel ${side}`);
-    svg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+    svg.setAttribute('preserveAspectRatio', 'none'); // pole ma tę samą skalę co pulpit – bez dopasowywania
     svg.dataset.side = side;
     svg.appendChild(document.createElementNS(NS, 'use'));
     for (const type of ['pointerdown', 'pointerup', 'pointercancel']) svg.addEventListener(type, (ev) => this.#forward(ev));
@@ -53,19 +57,31 @@ export class EdgePanels {
     const desk = this.deskEl.getBoundingClientRect();
     const lay = edgeLayout({
       viewBox: [vb.x, vb.y, vb.width, vb.height], deskPx: { w: desk.width, h: desk.height },
-      clientPx: { w: this.scroll.clientWidth - 8, h: this.scroll.clientHeight - 8 }, edgeUnits: this.edgeCells * CELL + this.pad,
+      clientPx: { w: this.scroll.clientWidth, h: this.scroll.clientHeight }, edgeUnits: this.edgeCells * CELL + this.pad,
     });
     this.active = this.enabled && lay.active;
-    lay.active = this.active;
+    this.overlay.classList.toggle('hidden', !this.active);
+    this.scroll.classList.toggle('edges-on', this.active); // bez poziomego paddingu – pola zlewają się z krańcami pulpitu
+    if (!this.active) return;
+    // nakładka = widoczny obszar przewijania (bez paska przewijania)
+    const s = this.scroll;
+    Object.assign(this.overlay.style, { left: `${s.offsetLeft}px`, top: `${s.offsetTop}px`, width: `${s.clientWidth}px`, height: `${s.clientHeight}px` });
+    const scale = desk.width / vb.width; // px na jednostkę rysunku – identycznie jak pulpit
+    const w = (this.edgeCells * CELL + this.pad) * scale;
     for (const [p, side] of [[this.left, lay.left], [this.right, lay.right]]) {
-      p.classList.toggle('on', lay.active);
-      if (!lay.active) continue;
       p.setAttribute('viewBox', side.viewBox.join(' '));
-      p.setAttribute('width', side.w); p.setAttribute('height', side.h);
-      p.style.width = `${side.w}px`; p.style.height = `${side.h}px`;
-      p.style[p === this.left ? 'marginRight' : 'marginLeft'] = `${-side.w}px`;
+      p.style.width = `${w}px`; p.style.height = `${desk.height}px`;
     }
-    this.left.classList.toggle('hidden', !lay.active); this.right.classList.toggle('hidden', !lay.active);
+    this.left.style.left = '0px';
+    this.right.style.left = `${s.clientWidth - w}px`;
+    this.#syncTop();
+  }
+
+  /** Pola idą w pionie za pulpitem (przewijanie pionowe, położenie góra/środek/dół) – z prostokąta pulpitu, bez zaokrągleń. */
+  #syncTop() {
+    if (!this.active) return;
+    const top = this.deskEl.getBoundingClientRect().top - this.scroll.getBoundingClientRect().top - this.scroll.clientTop;
+    this.left.style.top = `${top}px`; this.right.style.top = `${top}px`;
   }
 
   /** Element pulpitu (przycisk / punkt dotyku) pod punktem pola – w jednostkach rysunku pulpitu. */

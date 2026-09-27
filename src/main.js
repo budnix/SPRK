@@ -128,7 +128,14 @@ const desk = desks[0].renderer;
 const sideToggle = document.getElementById('side-toggle');
 const side = new SidePanel(document.getElementById('side'), sim, {
   miniHost: document.getElementById('mini-tabs'),
-  onToggle: (collapsed) => { settings.set('sideCollapsed', collapsed); sideToggle.textContent = collapsed ? 'pokaż' : 'ukryj'; },
+  onToggle: (collapsed) => {
+    settings.set('sideCollapsed', collapsed);
+    // ikona panelu: wypełniona część = panel widoczny; pusta = panel ukryty (etykieta dla czytników i podpowiedzi)
+    sideToggle.classList.toggle('collapsed', collapsed);
+    sideToggle.setAttribute('aria-pressed', String(!collapsed));
+    sideToggle.setAttribute('aria-label', collapsed ? 'Pokaż panel' : 'Ukryj panel');
+    sideToggle.title = collapsed ? 'Pokaż panel boczny' : 'Ukryj panel boczny';
+  },
 });
 sideToggle.addEventListener('click', () => side.collapse(!side.collapsed));
 if (settings.values.sideCollapsed) side.collapse(true);

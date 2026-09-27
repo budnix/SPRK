@@ -105,11 +105,15 @@ stałych polach skrajnych) wypełnia okno w pionie i ustawia środek pulpitu.
 ## Stałe pola skrajne (`src/render/edges.js`, `src/ui/EdgePanels.js`)
 
 Gdy powiększony pulpit nie mieści się na szerokość okna, skrajne kolumny z blokadą liniową (strzałki szlaku, na pulpicie
-kostkowym także Ko/Poz/Wbl i liczniki) są przypięte do lewej i prawej krawędzi okna (`position: sticky`), a środek
-przewija się między nimi za linią przerywaną – jak stałe pola z blokadą przy krawędziach monitorów w komputerowych srk.
-Pola to dwa małe SVG z `<use>` wskazującym grupę `inner` aktywnego pulpitu (żywa kopia, bez drugiego renderowania) i
-viewBoxem skrajnych kolumn; geometrię liczy `edgeLayout` bez DOM (aktywne tylko przy przepełnieniu i gdy oba pola
-zajmują ≤ 60 % okna). Dotknięcia na polu trafiają do właściwego elementu pulpitu: punkt pola przelicza się na jednostki
+kostkowym także Ko/Poz/Wbl i liczniki) są przypięte do lewej i prawej krawędzi okna, a środek przewija się między nimi
+za linią przerywaną – jak stałe pola z blokadą przy krawędziach monitorów w komputerowych srk. Pola to dwa małe SVG
+w nakładce (`.edge-overlay`, position: absolute dokładnie nad widocznym obszarem przewijania – nie `sticky`, które
+w Safari zostawia szparę na padding) z `<use>` wskazującym grupę `inner` aktywnego pulpitu (żywa kopia, bez drugiego
+renderowania) i viewBoxem skrajnych kolumn, `preserveAspectRatio: none` i szerokością liczoną bez zaokrągleń, więc skala
+pola = skala pulpitu, a wysokość i położenie w pionie biorą się z prostokąta pulpitu (sync przy przewijaniu) – rzędy
+pokrywają się co do piksela; przy aktywnych polach obszar przewijania nie ma poziomego paddingu, więc przy skrajnych
+przewinięciach pole zlewa się z pulpitem pod nim. Geometrię liczy `edgeLayout` bez DOM (aktywne tylko przy przepełnieniu
+i gdy oba pola zajmują ≤ 60 % okna). Dotknięcia na polu trafiają do właściwego elementu pulpitu: punkt pola przelicza się na jednostki
 rysunku, szuka się przycisku (`.btn`) lub punktu dotyku (`.hit`) pod nim i wysyła mu ten sam `pointerdown` /
 `pointerup`, więc blokadę obsługuje się z pola. `main.js` woła `edges.attach(renderer)` przy zmianie pulpitu/ekranu
 i `edges.update()` po każdej zmianie powiększenia. Opcja menu `edgePanels`, domyślnie wyłączona.

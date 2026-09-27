@@ -10,7 +10,7 @@ test('stałe pola skrajne: aktywne tylko, gdy pulpit szerszy niż okno i zostaje
   assert.equal(on.active, true);
   assert.deepEqual(on.left.viewBox, [0, 0, 132, 700]);
   assert.deepEqual(on.right.viewBox, [4504 - 132, 0, 132, 700]);
-  assert.equal(on.left.w, Math.round(132 * 1712 / 4504)); // szerokość pola w px = kolumny × skala pulpitu
+  assert.ok(Math.abs(on.left.w - 132 * 1712 / 4504) < 1e-9); // szerokość pola w px = kolumny × skala pulpitu, bez zaokrągleń
   assert.equal(on.left.h, 266);
   assert.equal(on.right.w, on.left.w);
   // ekran (wycinek kolumn): viewBox z przesunięciem – pola liczą się od jego krawędzi

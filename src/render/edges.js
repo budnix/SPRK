@@ -15,6 +15,6 @@ export function edgeLayout({ viewBox, deskPx, clientPx, edgeUnits }) {
   const scale = w > 0 ? deskPx.w / w : 1;
   const edgePx = edgeUnits * scale;
   const active = deskPx.w > clientPx.w + 1 && w > 3 * edgeUnits && 2 * edgePx <= clientPx.w * 0.6;
-  const box = (vx) => ({ viewBox: [vx, y, edgeUnits, h], w: Math.round(edgePx), h: Math.round(deskPx.h) });
+  const box = (vx) => ({ viewBox: [vx, y, edgeUnits, h], w: edgePx, h: deskPx.h }); // bez zaokrągleń – skala pola = skala pulpitu
   return { active, scale, left: box(x), right: box(x + w - edgeUnits) };
 }

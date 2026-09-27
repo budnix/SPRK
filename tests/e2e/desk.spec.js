@@ -144,7 +144,8 @@ test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu;
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');
   await page.click('#side-toggle');
   await expect(page.locator('#app')).toHaveAttribute('data-side-collapsed', 'true');
-  await expect(page.locator('#side-toggle')).toHaveText('pokaż');
+  await expect(page.locator('#side-toggle')).toHaveAttribute('aria-label', 'Pokaż panel'); // ikona panelu: część boczna pusta
+  await expect(page.locator('#side-toggle')).toHaveClass(/collapsed/);
   await page.evaluate(() => window.sim.bus.emit('log', { time: window.sim.clock.time, level: 'warn', msg: 'Test ostrzeżenia' }));
   await expect(page.locator('#mini-tabs button[data-tab=log] .badge')).toHaveText('1');
   await page.click('#mini-tabs button[data-tab=log]');
