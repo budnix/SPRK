@@ -17,6 +17,9 @@ export class Traffic {
     this.level = opts.level || null;
     const tt = opts.timetable || station.timetable;
     this.entries = tt.map((t, i) => this.#prepare(t, i));
+    // rozkład w kolejności czasu (przyjazd, a dla pociągów zaczynających bieg – odjazd), niezależnie od kolejności
+    // w definicji stacji (tam pociągi bywają pogrupowane liniami, np. SKM osobno od dalekobieżnych)
+    this.entries.sort((a, b) => (a.arrTime ?? a.depTime) - (b.arrTime ?? b.depTime));
     this.#applyDisruptions();
     const taskDefs = opts.tasks || station.tasks || [];
     this.tasks = taskDefs

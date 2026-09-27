@@ -50,3 +50,16 @@ test('sygnał zastępczy prowadzi pociąg po ustawionych zwrotnicach z prędkoś
   assert.ok(e.train.head > 0 && vmax > 5, 'pociąg jedzie');
   assert.ok(vmax <= 21, `prędkość ${vmax.toFixed(1)} km/h`);
 });
+
+test('rozkład jest posortowany po czasie na każdej stacji, niezależnie od kolejności w definicji (SKM i dalekobieżne przemieszane)', async () => {
+  const { STATIONS } = await import('../src/stations/index.js');
+  const { Simulation } = await import('../src/model/Simulation.js');
+  for (const st of STATIONS) {
+    const tt = new Simulation(st, { disruptions: 'none' }).traffic.timetable();
+    const key = (e) => e.arrTime ?? e.depTime;
+    for (let i = 1; i < tt.length; i++) assert.ok(key(tt[i]) >= key(tt[i - 1]), `${st.id}: ${tt[i - 1].nr} (${tt[i - 1].arr || tt[i - 1].dep}) przed ${tt[i].nr} (${tt[i].arr || tt[i].dep})`);
+  }
+  const orl = new Simulation((await import('../src/stations/gdynia-orlowo.js')).default, { disruptions: 'none' }).traffic.timetable();
+  assert.deepEqual(orl.slice(0, 3).map((e) => e.arr), ['06:02', '06:08', '06:08']); // 06:02 SKM, potem Regio 55100 i SKM 92102 o 06:08
+  assert.ok(orl.slice(0, 3).some((e) => e.nr === 55100), 'dalekobieżny między pociągami SKM, nie na końcu listy');
+});
