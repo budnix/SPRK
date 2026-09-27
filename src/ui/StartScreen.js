@@ -224,6 +224,14 @@ export class StartScreen {
     location.search = p.toString();
   }
 
-  show() { this.root.classList.remove('hidden'); }
-  hide() { this.root.classList.add('hidden'); }
+  /** Otwarcie ekranu czyści parametry URL (odświeżenie strony zostaje na wyborze scenariusza); powrót do zmiany je przywraca. */
+  show() {
+    if (location.search) { this.savedSearch = location.search; history.replaceState(null, '', location.pathname); }
+    this.root.classList.remove('hidden');
+  }
+  hide() {
+    if (this.savedSearch && !location.search) history.replaceState(null, '', location.pathname + this.savedSearch);
+    this.savedSearch = null;
+    this.root.classList.add('hidden');
+  }
 }

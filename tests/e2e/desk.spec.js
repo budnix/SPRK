@@ -296,3 +296,18 @@ test('grupa „ekran”: etykiety i przyciski w jednej osi, numer ekranu tym sam
   await expect(page.locator('.tg-view .lbl:not(.lbl-align)')).toBeHidden();
   await expect(page.locator('.tg-view .lbl-align')).toBeVisible();
 });
+
+test('„Nowa zmiana…” czyści parametry URL (odświeżenie zostaje na wyborze scenariusza), „Wróć do zmiany” je przywraca', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
+  expect(new URL(page.url()).search).toContain('stacja=szkolna');
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await expect(page.locator('#start')).toBeVisible();
+  expect(new URL(page.url()).search).toBe('');
+  await page.click('#st-close');
+  await expect(page.locator('#start')).toBeHidden();
+  expect(new URL(page.url()).search).toContain('scenariusz=zmiana-e'); // powrót do tej samej zmiany – odświeżenie ją wczyta
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await page.reload({ waitUntil: 'load' });
+  await expect(page.locator('#start')).toBeVisible();
+  expect(new URL(page.url()).search).toBe('');
+});
