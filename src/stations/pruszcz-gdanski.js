@@ -140,7 +140,7 @@ export default {
     { nr: 55307, kind: 'os', name: 'Regio Gdańsk Gł. – Elbląg', from: 'GD2', to: 'PS2', arr: '07:33', dep: '07:34', track: '2', stop: true, length: 130, vmax: 120, dwell: 40 },
     { nr: 55306, kind: 'os', name: 'Regio Elbląg – Gdańsk Gł.', from: 'PS1', to: 'GD1', arr: '07:42', dep: '07:43', track: '1', stop: true, length: 130, vmax: 120, dwell: 40 },
     { nr: 5312, kind: 'os', name: 'IC Warszawa Wsch. – Gdynia Gł.', from: 'PS1', to: 'GD1', arr: '07:50', track: '1', stop: false, length: 300 },
-    { nr: 44711, kind: 'tow', name: 'Towarowy Gdańsk Port Płn. – Pszczółki', from: 'GP', to: 'PS2', arr: '07:56', track: '7', stop: false, length: 500, vmax: 60 },
+    { nr: 44711, kind: 'tow', name: 'Towarowy Gdańsk Port Płn. – Pszczółki', from: 'GP', to: 'PS2', arr: '07:54', track: '7', stop: false, length: 500, vmax: 60 },
     { nr: 55309, kind: 'os', name: 'Regio Gdańsk Gł. – Tczew', from: 'GD2', to: 'PS2', arr: '08:03', dep: '08:04', track: '2', stop: true, length: 130, vmax: 120, dwell: 40 },
   ],
 

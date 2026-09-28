@@ -44,6 +44,7 @@ export class Train {
     this.fullyIn = false;     // cały pociąg na pulpicie
     this.lineSpeed = (opts.lineSpeed ?? 100) * KMH;
     this.activeLimit = Infinity; // ograniczenie obowiązujące do następnego sygnalizatora (np. Sz – 20 km/h)
+    this.zoneLimit = null;       // ograniczenie z obrazu semafora do końca okręgu zwrotnicowego ({ speed, sections, entered })
     this.orders = [];            // rozkazy pisemne: { signal, used }
   }
 
@@ -257,7 +258,7 @@ export class Train {
     const constraints = this.#lookahead(Math.max(1500, (this.v * this.v) / (2 * this.brake) + 300));
     // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s; na stacji nie szybciej niż prędkość szlaku
     // (prędkość drogowa) – rozjazdy i sygnały ograniczają dalej
-    let allowed = Math.min(this.vmax, this.activeLimit, this.lineSpeed);
+    let allowed = Math.min(this.vmax, this.activeLimit, this.lineSpeed, this.#pointsUnderTrain(), this.#zoneSpeed());
     if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
     let stopC = null;
     for (const c of constraints) {
@@ -267,9 +268,9 @@ export class Train {
       if (c.speed === 0 && (!stopC || c.dist < stopC.dist)) stopC = c;
     }
     if (this.v < allowed) this.v = Math.min(allowed, this.v + this.accel * dt);
+    else this.v = Math.max(allowed, this.v - this.brake * dt);
     // pociąg utworzony ze składu (holdUntil) rusza bez postoju handlowego – odjazd rejestruje się przy pierwszym ruchu
     if (this.holdUntil && this.mode === 'train' && !this.departedAt && this.v > 0) { this.departedAt = time; this.onEvent('depart', this); }
-    else this.v = Math.max(allowed, this.v - this.brake * dt);
     if (this.v < 0.05 && allowed < 0.1) this.v = 0;
 
     let move = this.v * dt;
@@ -305,6 +306,39 @@ export class Train {
     }
   }
 
+  /** Zwrotnice pod pociągiem: kierunek zwrotny ogranicza szybkość, dopóki ostatni wagon nie zjedzie z rozjazdu. */
+  #pointsUnderTrain() {
+    let v = Infinity;
+    for (const seg of this.trail) {
+      if (!seg.tile || !seg.outPort || seg.start >= this.head || seg.start + seg.len <= this.tail) continue;
+      v = Math.min(v, this.#tileLimit(seg.tile, seg.inPort, seg.outPort));
+    }
+    return v;
+  }
+
+  /**
+   * Ograniczenie z obrazu semafora (S10–S13, Sr3: 40 km/h) obowiązuje od semafora do końca okręgu zwrotnicowego
+   * (Ie-1 §3) – do chwili, gdy cały pociąg zjedzie z odcinków zwrotnicowych przebiegu.
+   */
+  #zoneSpeed() {
+    const z = this.zoneLimit;
+    if (!z) return Infinity;
+    const occ = this.occupiedSections();
+    const inside = [...z.sections].some((id) => occ.has(id));
+    if (inside) z.entered = true;
+    else if (z.entered) { this.zoneLimit = null; return Infinity; }
+    return z.speed;
+  }
+
+  /** Okręg zwrotnicowy za semaforem: odcinki zwrotnic przebiegu, na który semafor podaje sygnał. */
+  #zoneOf(sig, speed) {
+    const route = sig.route && this.ilk.active.get(sig.route)?.route;
+    if (!route) return null;
+    const pointSections = new Set([...this.ilk.points.values()].map((p) => p.section));
+    const sections = new Set(route.sections.filter((id) => pointSections.has(id)));
+    return sections.size ? { speed: speed * KMH, sections, entered: false } : null;
+  }
+
   /** Jazda manewrowa dozwolona: tabor stoi w obrębie nastawionego przebiegu manewrowego. */
   #shuntPermitted() {
     const occ = this.occupiedSections();
@@ -335,6 +369,9 @@ export class Train {
           const order = this.orders.find((o) => o.signal === sig.id && !o.used);
           if (order && !Interlocking.isProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
           this.activeLimit = (sig.aspect === 'Sz' || order) ? 20 * KMH : Infinity;
+          const sp = Interlocking.aspectSpeed(sig.aspect);
+          const restricted = this.mode === 'train' && !order && sig.aspect !== 'Sz' && Interlocking.isProceed(sig.aspect) && sp < Infinity;
+          this.zoneLimit = restricted ? this.#zoneOf(sig, sp) : null;
         }
       }
       this.trail.push(next);

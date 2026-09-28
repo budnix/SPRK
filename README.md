@@ -60,8 +60,8 @@ Play it: **https://budnix.github.io/SPRK/**
   arrow and a status label ("żąd.", "Wbl", "Ko", "tel."); dPo / dKo counters live in the *Stan* tab.
 
 ### Traffic
-* Trains run over the real topology and current point positions, brake for stop signals, 40 km/h over diverging points,
-  20 km/h on a substitute signal, train categories with realistic speeds and dynamics (EIP/IC/TLK/Regio/SKM/freight, capped by
+* Trains run over the real topology and current point positions, brake for stop signals, 40 km/h over diverging points
+  (the whole train, and up to the end of the switch zone after a 40 km/h signal aspect), 20 km/h on a substitute signal, train categories with realistic speeds and dynamics (EIP/IC/TLK/Regio/SKM/freight, capped by
   line speed), full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable, non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, stop 10 m before other stock.
 * Timetable with live status and delays, event log, state tab (blocks, routes, counters, shunting tasks, train

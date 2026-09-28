@@ -272,7 +272,10 @@ test('misja 2: usterka napędu zwrotnicy – alarm, zamknięcie zwrotnicy Zz, pr
   await pressBtn(page, { kind: 'signal', id: 'A', color: 'green' }); await pressBtn(page, { kind: 'signal', id: 'E3', color: 'green' });
   await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 4000 && !s.blocks.get('K2').koPending; i++) s.step(0.5); c.paused = true; });
   await pressBtn(page, { kind: 'block', exit: 'K2', btn: 'Ko' });
-  await advance(page, 60);
+  // do zatrzymania przy peronie toru 3 (cały pociąg jedzie przez okręg zwrotnicowy do 40 km/h – nie stały czas)
+  const secs = await page.evaluate(() => { const s = window.sim, c = s.clock, t0 = c.time; c.paused = false; const x = s.traffic.timetable().find((t) => t.nr === 3304); for (let i = 0; i < 2400 && x.actualArr == null; i++) s.step(0.5); c.paused = true; return c.time - t0; });
+  expect(secs).toBeLessThan(600);
+  await advance(page, 2);
   await expect(box.locator('.tut-title')).toContainText('Wyjazd z toru 3');
   const e = await page.evaluate(() => { const x = window.sim.traffic.timetable().find((t) => t.nr === 3304); return { track: String(x.actualTrack), wrong: window.sim.score.items.filter((i) => i.code === 'wrong-track').length }; });
   expect(e).toEqual({ track: '3', wrong: 0 });

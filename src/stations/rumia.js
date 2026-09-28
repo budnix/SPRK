@@ -168,7 +168,7 @@ export default {
     { nr: 55201, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'RD2', to: 'GC2', arr: '06:25', dep: '06:26', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 44560, kind: 'tow', name: 'Towarowy Gdynia Port – Szczecin Port Centralny', from: 'GC1', to: 'RD1', arr: '06:28', track: '3', stop: false, length: 480, vmax: 60 },
     { nr: 55102, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'GC1', to: 'RD1', arr: '06:42', dep: '06:43', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 5100, kind: 'os', name: 'IC Warszawa Wsch. – Słupsk', from: 'GC1', to: 'RD1', arr: '06:52', track: '1', stop: false, length: 260 },
+    { nr: 5100, kind: 'os', name: 'IC Warszawa Wsch. – Słupsk', from: 'GC1', to: 'RD1', arr: '06:53', track: '1', stop: false, length: 260 },
     { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'RD2', to: 'GC2', arr: '06:55', dep: '06:56', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GC1', to: 'RD1', arr: '07:12', dep: '07:13', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 44561, kind: 'tow', name: 'Towarowy Szczecin Port Centralny – Gdańsk Port Płn.', from: 'RD2', to: 'GC2', arr: '07:15', track: '2', stop: false, length: 520, vmax: 60 },

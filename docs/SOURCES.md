@@ -21,6 +21,12 @@ Materiały:
 Kolory lampek na kostkach (za opisami pulpitów typu E): żółte – położenie zwrotnicy,
 białe – utwierdzenie przebiegu, czerwone – zajętość odcinka.
 
+Szybkość pociągu w okręgu zwrotnicowym (Ie-1 §3, wszystkie stanowiska): S10–S13 i Sr3 zezwalają na jazdę do 40 km/h
+„począwszy od semafora do końca okręgu zwrotnicowego osłanianego tym semaforem”. W grze ograniczenie obowiązuje od
+semafora, aż cały pociąg zjedzie z odcinków zwrotnicowych przebiegu (przyjęte: okręg zwrotnicowy = odcinki zwrotnic
+przebiegu). Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
+(`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
+
 ## Urządzenia przekaźnikowe typu IZH-111 (JZH-111)
 
 Źródło: Beskidzka Strona Kolejowa – „Urządzenia typu JZH-111” (bsk.isdr.pl/srk_izh111.php); plany ciemne i półciemne:
@@ -120,7 +126,7 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
   dwuramiennym, dwustawna – przed jednoramiennym; gra rysuje ją na kostce semafora wjazdowego (w rzeczywistości stoi
   w odległości drogi hamowania przed nim) i nie zmienia jazdy pociągu – maszynista i tak hamuje przed semaforem
   na „Stój”;
-* tak jak na innych stanowiskach pociąg przestrzega szybkości z obrazu (Sr3 – 40 km/h) do chwili minięcia semafora;
+* po Sr3 pociąg jedzie do 40 km/h do końca okręgu zwrotnicowego – tak jak po S10–S13 na innych stanowiskach;
 * plan świetlny pokazuje powtarzacze semaforów i tarcz w postaci rysunku ramion i tarcz (przyjęte – w rzeczywistości
   nastawniczy widzi je przez okno albo na powtarzaczach); ruch ramienia i tarczy trwa na rysunku niecałą sekundę,
   przy ustawieniu systemu „ogranicz ruch” – bez animacji;
