@@ -70,9 +70,7 @@ test('monitor: po powiększeniu skrajne kolumny ze strzałkami szlaku są przypi
   const sc = await page.locator('#desk-scroll').evaluate((s) => ({ w: s.clientWidth, h: s.clientHeight }));
   const d1 = await box(page.locator('#desk'));
   expect(Math.abs(d1.width - (sc.w - 8))).toBeLessThan(3);
-  // „wysokość” = wypełnia okno w pionie: pulpit szerszy niż okno, pola przypięte, środek na środku; przyciski są stanowe –
-  // najpierw zwolnić „szerokość” (obie wciśnięte to „całość”)
-  await page.click('#zoom-fit');
+  // „wysokość” = wypełnia okno w pionie: pulpit szerszy niż okno, pola przypięte, środek na środku
   await page.click('#zoom-fit-h');
   const d2 = await box(page.locator('#desk'));
   expect(Math.abs(d2.height - (sc.h - 8))).toBeLessThan(3);

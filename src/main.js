@@ -9,7 +9,7 @@ import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
 import { DeskViewport } from './ui/DeskViewport.js';
 import { SideResizer } from './ui/SideResizer.js';
-import { fitAxes, nextFitMode } from './render/zoom.js';
+import { fitAxes, nextFitMode, startFitMode } from './render/zoom.js';
 import { SettingsScreen } from './ui/SettingsScreen.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
@@ -26,7 +26,7 @@ let resizer = null; // przeciąganie granicy planu i panelu – tworzone niżej,
 const settings = new Settings((key, value) => {
   if (key === 'rowScale' || key === 'lang') location.reload();
   else if (key === 'screens') planAll();
-  else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
+  else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); refit(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale(value); }
   else { resizer?.apply(); requestAnimationFrame(refit); } // zmiana układu (panel, położenie pulpitu): ten sam tryb dopasowania co dotąd
 });
@@ -230,10 +230,15 @@ const deskEl = document.getElementById('desk');
 const scroll = document.getElementById('desk-scroll');
 // stałe pola skrajne z blokadą liniową – widoczne, gdy powiększony pulpit nie mieści się na szerokość
 const edges = new EdgePanels(scroll, deskEl, { enabled: settings.values.edgePanels === 'on' });
-/** Ten sam tryb dopasowania co dotąd (zmiana układu okna, panelu, ekranu). */
-function refit() { viewport.refit(); }
-/** Dopasowanie całości do okna (nowy ekran). */
-function fit() { viewport.fit('whole'); }
+/** Ten sam tryb dopasowania co dotąd (zmiana układu okna, panelu, ekranu). „Całość” jest tylko bez przycisku „wysokość” –
+ *  gdy przycisk jest, zamienia się w przycisk osi, która ogranicza plan (a „wysokość” bez przycisku – w całość). */
+function refit() {
+  const heightButton = settings.values.edgePanels === 'on';
+  if ((viewport.fitMode === 'whole' && heightButton) || (viewport.fitMode === 'height' && !heightButton)) fit();
+  else viewport.refit();
+}
+/** Nowy pulpit / ekran: cały plan w oknie – wciśnięty przycisk osi, która go ogranicza. */
+function fit() { viewport.fit(startFitMode(deskSize(), { w: scroll.clientWidth, h: scroll.clientHeight }, settings.values.edgePanels === 'on')); }
 function deskSize() {
   const s = currentScreen();
   const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
@@ -262,7 +267,7 @@ if (typeof ResizeObserver === 'function') {
     const key = `${scroll.clientWidth}x${scroll.clientHeight}`;
     if (key === last) return;
     last = key;
-    if (viewport.fitMode) viewport.refit();
+    if (viewport.fitMode) refit();
   }).observe(scroll);
 }
 resizer = new SideResizer({ main: document.getElementById('main'), side: document.getElementById('side'), grip: document.getElementById('side-grip'), settings, onEnd: () => onResize() });

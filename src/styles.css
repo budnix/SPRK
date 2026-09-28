@@ -767,7 +767,7 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .desk.mech .bench-title { fill: var(--desk-mech-title); font-size: 7px; font-weight: 700; letter-spacing: 0.8px; }
 .desk.mech .bench-label { fill: var(--desk-mech-label); font-size: 7px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .desk.mech .bench-label.strong { font-weight: 700; }
-.desk.mech .bench-label.target { font-size: 6.5px; }
+.desk.mech .bench-label.target { font-size: 6.5px; text-anchor: start; }
 .desk.mech .hit { fill: transparent; pointer-events: all; }
 .desk.mech .mech-ctl { cursor: pointer; }
 .desk.mech .mech-ctl:focus-visible { outline: 2px solid var(--desk-mech-set); outline-offset: 1px; }

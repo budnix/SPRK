@@ -16,6 +16,11 @@ export function sortStations(stations, by) {
   return [...stations].sort(by === 'difficulty' ? (a, b) => (a.difficulty || 0) - (b.difficulty || 0) || byName(a, b) : byName);
 }
 
+/** Posterunki do służby: bez stacji szkoleniowych (tych, które mają misję) – te są tylko w misjach wprowadzających. */
+export function dutyStations(stations) {
+  return stations.filter((st) => !(st.scenarios || []).some((sc) => sc.tutorial));
+}
+
 /** Misje wprowadzające: scenariusze z polem `tutorial`, w kolejności definicji. */
 export function missionList(stations) {
   const out = [];
@@ -136,7 +141,7 @@ export class StartScreen {
       location.search = p.toString();
     });
     this.renderList();
-    if (current.station && STATIONS.some((s) => s.id === current.station)) this.select(current.station, false);
+    if (current.station && dutyStations(STATIONS).some((s) => s.id === current.station)) this.select(current.station, false);
   }
 
   setSort(by) {
@@ -148,7 +153,7 @@ export class StartScreen {
 
   renderList() {
     for (const b of this.root.querySelectorAll('.st-sort button')) b.classList.toggle('active', b.dataset.sort === this.sort);
-    this.list.innerHTML = sortStations(STATIONS, this.sort).map((s) => `<div class="st-card" data-id="${s.id}" role="button" tabindex="0">
+    this.list.innerHTML = sortStations(dutyStations(STATIONS), this.sort).map((s) => `<div class="st-card" data-id="${s.id}" role="button" tabindex="0">
         <div class="st-thumb">${stationThumbnail(s, { w: 320, h: 100 })}</div>
         <div class="st-body">
           <div class="st-row"><span class="st-name">${esc(s.name)}</span>${difficultyMark(s.difficulty)}</div>

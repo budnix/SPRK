@@ -99,7 +99,7 @@ export function steps() {
     act('out-8406', 'Ostatni pociąg – samodzielnie', `Osobowy <b>8406</b> z Grabowca na tor 1 (przyjazd 08:05, odjazd 08:06 do ${WIE}). Poprowadź go sam: pozwolenie, wjazd, porządek po wjeździe, Ko, Wbl, wyjazd i porządek po odjeździe.`, drazek('B-C1'),
       (sim) => atNeighbour(sim, 8406) && !active(sim, 'C1-W') && !active(sim, 'B-C1')),
 
-    info('end', 'Koniec misji', `To wszystko: dźwignie zwrotnic i wykolejnicy, drążek przebiegowy, blok przebiegowy, dźwignia sygnałowa, powrót po przejeździe, krzyżowanie z wykolejnicą ochronną i zwalniacz przy usterce. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis obsługi jest w instrukcji pod przyciskiem „?”. Pełną zmianę na tej stacji znajdziesz w menu → Nowa zmiana → Olszyny.</p>`, { el: '#btn-menu' }),
+    info('end', 'Koniec misji', `To wszystko: dźwignie zwrotnic i wykolejnicy, drążek przebiegowy, blok przebiegowy, dźwignia sygnałowa, powrót po przejeździe, krzyżowanie z wykolejnicą ochronną i zwalniacz przy usterce. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis obsługi jest w instrukcji pod przyciskiem „?”.</p>`, { el: '#btn-menu' }),
   ];
 }
 

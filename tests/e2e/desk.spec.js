@@ -30,15 +30,16 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   expect(await page.locator('.st-card .st-thumb svg path').count()).toBeGreaterThan(0); // miniatury planów
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-params')).toBeVisible();
-  // Szkolna: w wyborze scenariusza nie ma samouczków (są na liście misji) – dwie pełne zmiany, po jednej na stanowisko
-  await expect(page.locator('.st-card[data-id=szkolna] .st-srk-both')).toHaveText('stanowisko do wyboru');
-  // chip jak pozostałe (szary) – to informacja o wyborze, nie inny rodzaj urządzeń
-  const chips = await page.locator('.st-card[data-id=szkolna] .st-srk, .st-card[data-id=sopot] .st-srk').evaluateAll((els) => els.map((e) => getComputedStyle(e).color + '|' + getComputedStyle(e).borderTopColor));
+  // stacje szkoleniowe są tylko w misjach – wśród posterunków ich nie ma
+  for (const id of ['szkolna', 'jodlowa', 'zacisze', 'olszyny']) await expect(page.locator(`.st-card[data-id=${id}]`)).toHaveCount(0);
+  // Rumia: zmiana na pulpicie typu E i na monitorze – karta „stanowisko do wyboru”, chip jak pozostałe (szary)
+  await expect(page.locator('.st-card[data-id=rumia] .st-srk-both')).toHaveText('stanowisko do wyboru');
+  const chips = await page.locator('.st-card[data-id=rumia] .st-srk, .st-card[data-id=sopot] .st-srk').evaluateAll((els) => els.map((e) => getComputedStyle(e).color + '|' + getComputedStyle(e).borderTopColor));
   expect(new Set(chips).size).toBe(1);
   await expect(page.locator('.st-card[data-id=sopot] .st-srk').first()).toHaveText('komputerowe · monitor');
-  await page.click('.st-card[data-id=szkolna]');
+  await page.click('.st-card[data-id=rumia]');
   const opts = await page.locator('#st-scenario option').allTextContents();
-  expect(opts).toEqual(['Pełna zmiana – stanowisko komputerowe (07:00–08:50)', 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)', 'Pełna zmiana – pulpit typu IZH-111 (07:00–08:50)', 'Pełna zmiana – nastawnia mechaniczna (07:00–08:50)']);
+  expect(opts).toEqual(['Pełna zmiana – pulpit kostkowy typu E (05:55–08:15)', 'Pełna zmiana – stanowisko komputerowe (05:55–08:15)', 'Usterka blokady od Redy', 'Szczyt z zakłóceniami']);
   expect(opts.some((o) => /samouczek/i.test(o))).toBe(false);
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-briefing')).toHaveClass(/open/);

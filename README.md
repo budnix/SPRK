@@ -45,8 +45,7 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
   and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
   route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
-  the route lever go back. Olszyny is a mechanical box with its own mission (4); the other training stations offer
-  a mechanical shift too.
+  the route lever go back. Played in mission 4 at Olszyny.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -71,6 +70,9 @@ Play it: **https://budnix.github.io/SPRK/**
   decision.
 
 ### Stations
+The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny) are used only in the guided missions – they are
+not in the list of stations for a regular shift.
+
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
 | **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical | 1/5 | Training station on a single-track line; mission 1. |

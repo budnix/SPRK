@@ -31,23 +31,29 @@ export function zoomAround(zoom, factor, scroll, point) {
   return { zoom: next, left: (scroll.left + point.x) * k - point.x, top: (scroll.top + point.y) * k - point.y, changed: true };
 }
 
-/** Osie dopasowania trybu: przycisk „do szerokości” (w) i „do wysokości” (h); całość = obie, ręczne = żadna. */
+/**
+ * Który przycisk dopasowania jest wciśnięty: „do szerokości” (w) albo „do wysokości” (h) – najwyżej jeden naraz.
+ * Całość (tylko gdy przycisku „wysokość” nie ma) pokazuje się jako „szerokość”.
+ */
 export function fitAxes(mode) {
-  return { w: mode === 'width' || mode === 'whole', h: mode === 'height' || mode === 'whole' };
+  return { w: mode === 'width' || mode === 'whole', h: mode === 'height' };
 }
 
 /**
- * Tryb po kliknięciu przycisku osi (`'w'` albo `'h'`) – przyciski są stanowe:
- *  - oś wyłączona → dochodzi (sama albo z drugą, wtedy całość),
- *  - obie włączone (całość) → zostaje tylko kliknięta,
- *  - jedyna włączona → wyłączona: powiększenie zostaje, po zmianie okna nic się nie dopasowuje.
+ * Tryb po kliknięciu przycisku (`'w'` albo `'h'`): przyciski wykluczają się – kliknięcie innego zwalnia poprzedni,
+ * kliknięcie wciśniętego go zwalnia (powiększenie zostaje, po zmianie okna nic się nie dopasowuje).
  */
 export function nextFitMode(mode, axis) {
-  const a = fitAxes(mode);
-  const other = axis === 'w' ? 'h' : 'w';
-  let next;
-  if (!a[axis]) next = { ...a, [axis]: true };
-  else if (a[other]) next = { [axis]: true, [other]: false };
-  else next = { w: false, h: false };
-  return next.w && next.h ? 'whole' : next.w ? 'width' : next.h ? 'height' : null;
+  if (fitAxes(mode)[axis]) return null;
+  return axis === 'w' ? 'width' : 'height';
+}
+
+/**
+ * Tryb na starcie (nowy pulpit, ekran): cały plan w oknie, czyli dopasowanie do osi, która go ogranicza – ten
+ * przycisk jest wciśnięty. Bez przycisku „wysokość” (`heightButton: false`) – całość, pokazywana jako „szerokość”.
+ */
+export function startFitMode(desk, client, heightButton = true, margin = FIT_MARGIN) {
+  const kw = (client.w - margin) / desk.w, kh = (client.h - margin) / desk.h;
+  if (kw <= kh) return 'width';
+  return heightButton ? 'height' : 'whole';
 }

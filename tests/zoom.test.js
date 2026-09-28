@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ZOOM_MIN, ZOOM_MAX, clampZoom, fitZoom, zoomAround, fitAxes, nextFitMode } from '../src/render/zoom.js';
+import { ZOOM_MIN, ZOOM_MAX, clampZoom, fitZoom, zoomAround, fitAxes, nextFitMode, startFitMode } from '../src/render/zoom.js';
 import { clampSide, dragSide, SIDE_LIMITS } from '../src/ui/sideSize.js';
 
 const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
@@ -34,23 +34,28 @@ test('powiększanie wokół punktu: punkt pod palcami zostaje w miejscu, na gran
   assert.equal(zoomAround(3.9, 2, { left: 0, top: 0 }, { x: 0, y: 0 }).zoom, ZOOM_MAX);
 });
 
-test('przyciski dopasowania są stanowe: szerokość i wysokość to osie, obie = całość, żadna = ręcznie', () => {
-  assert.deepEqual(fitAxes('whole'), { w: true, h: true });
+test('przyciski dopasowania są stanowe i wykluczają się: wciśnięty najwyżej jeden; klik w wciśnięty – ręcznie', () => {
   assert.deepEqual(fitAxes('width'), { w: true, h: false });
   assert.deepEqual(fitAxes('height'), { w: false, h: true });
   assert.deepEqual(fitAxes(null), { w: false, h: false });
-  // z całości klik wybiera tylko tę oś
-  assert.equal(nextFitMode('whole', 'w'), 'width');
-  assert.equal(nextFitMode('whole', 'h'), 'height');
-  // klik w jedyną wciśniętą – wyłącza (ręczne powiększenie)
-  assert.equal(nextFitMode('width', 'w'), null);
-  assert.equal(nextFitMode('height', 'h'), null);
-  // klik w drugą oś – obie, czyli całość
-  assert.equal(nextFitMode('width', 'h'), 'whole');
-  assert.equal(nextFitMode('height', 'w'), 'whole');
-  // z ręcznego – włącza klikniętą
+  assert.deepEqual(fitAxes('whole'), { w: true, h: false }, 'całość bez przycisku „wysokość” – jak „szerokość”');
   assert.equal(nextFitMode(null, 'w'), 'width');
   assert.equal(nextFitMode(null, 'h'), 'height');
+  assert.equal(nextFitMode('width', 'h'), 'height', 'klik w drugi zwalnia pierwszy');
+  assert.equal(nextFitMode('height', 'w'), 'width');
+  assert.equal(nextFitMode('width', 'w'), null, 'klik w wciśnięty go zwalnia');
+  assert.equal(nextFitMode('height', 'h'), null);
+  assert.equal(nextFitMode('whole', 'w'), null);
+  assert.equal(nextFitMode('whole', 'h'), 'height');
+});
+
+test('na starcie wciśnięty przycisk osi, która ogranicza plan – cały plan mieści się w oknie', () => {
+  const desk = { w: 1000, h: 400 };
+  assert.equal(startFitMode(desk, { w: 808, h: 408 }), 'width', 'ogranicza szerokość');
+  assert.equal(startFitMode(desk, { w: 2008, h: 208 }), 'height', 'ogranicza wysokość');
+  assert.equal(startFitMode(desk, { w: 2008, h: 208 }, false), 'whole', 'bez przycisku „wysokość” – całość');
+  // powiększenie trybu startowego = powiększenie „całości”
+  for (const client of [{ w: 808, h: 408 }, { w: 2008, h: 208 }]) near(fitZoom(startFitMode(desk, client), desk, client), fitZoom('whole', desk, client));
 });
 
 test('rozmiar panelu przy przeciąganiu krawędzi: w górę / w lewo rośnie, w granicach, plan zawsze ma miejsce', () => {

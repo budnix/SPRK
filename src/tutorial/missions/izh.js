@@ -87,7 +87,7 @@ export function steps() {
     act('out-7108', 'Odjazd 7108 z toru 3', `Skład wraca o 08:26 jako <b>7108</b>: <b>zmiana czoła</b>, <b>Wbl</b>, wyjazd <b>B3 → szlak do Modrzewia</b>. Wyjazd nastawi się normalnie – tor, z którego pociąg rusza, może być zajęty.`, adr('B3'),
       (sim) => atNeighbour(sim, 7108)),
 
-    info('end', 'Koniec misji', `To wszystko: przyciski adresowe i rozkazy, zwrotnica rozkazem + i −, STOP, Zw i Zcz, wjazd na tor czołowy, zmiana czoła, odjazd z powrotem i wjazd na sygnał zastępczy przy usterce toru. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis wszystkich rozkazów jest w instrukcji pod przyciskiem „?”. Pełną zmianę na tej stacji znajdziesz w menu → Nowa zmiana → Zacisze.</p>`, { el: '#btn-menu' }),
+    info('end', 'Koniec misji', `To wszystko: przyciski adresowe i rozkazy, zwrotnica rozkazem + i −, STOP, Zw i Zcz, wjazd na tor czołowy, zmiana czoła, odjazd z powrotem i wjazd na sygnał zastępczy przy usterce toru. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis wszystkich rozkazów jest w instrukcji pod przyciskiem „?”.</p><p>Misja 4 pokazuje nastawnię mechaniczną w Olszynach (menu → Nowa zmiana → Misja 4).</p>`, { el: '#btn-menu' }),
   ];
 }
 

@@ -7,7 +7,7 @@ import { FRAME, setLamp, buildDesk, bindDeskButtons, updateBlockLamps, deskTrain
 import { leverFrame, leverStates } from './leverFrame.js';
 
 /** Wysokość ławy (aparat blokowy, drążki, dźwignie) w rzędach kostek – pod planem świetlnym. */
-export const LEVER_ROWS = 6;
+export const LEVER_ROWS = 7;
 /** Skala elementów ławy względem kostek planu – dźwignie i drążki muszą dać się trafić palcem. */
 const K = 1.25;
 /** Odchylenie trzonu dźwigni od pionu w obu skrajnych położeniach (rysunek z boku). */
@@ -68,14 +68,14 @@ export class LeverRenderer extends PanelView {
     const H = (LEVER_ROWS * CELL - 12) / K;
     const bench = el('g', { class: 'lever-bench', transform: `translate(0,${this.rows * CELL + 8}) scale(${K})` });
     bench.appendChild(el('rect', { class: 'bench-bg', x: 0, y: y0, width: W, height: H, rx: 3 }));
-    bench.appendChild(el('rect', { class: 'bench-block', x: 6, y: y0 + 4, width: W - 12, height: 90, rx: 2 }));
+    bench.appendChild(el('rect', { class: 'bench-block', x: 6, y: y0 + 4, width: W - 12, height: 100, rx: 2 }));
     bench.appendChild(text(12, y0 + 12, 'APARAT BLOKOWY · DRĄŻKI PRZEBIEGOWE', { class: 'bench-title', 'text-anchor': 'start' }));
-    bench.appendChild(text(12, y0 + 101, 'DŹWIGNIE NASTAWCZE', { class: 'bench-title', 'text-anchor': 'start' }));
+    bench.appendChild(text(12, y0 + 114, 'DŹWIGNIE NASTAWCZE', { class: 'bench-title', 'text-anchor': 'start' }));
     this.inner.insertBefore(bench, this.layerTrains);
 
     // drążki przebiegowe z blokiem przebiegowym utwierdzającym (przebiegi pociągowe) nad nimi
     const nd = this.frame.drazki.length;
-    const sd = Math.min(64, (W * 0.66) / Math.max(nd, 1));
+    const sd = Math.min(84, (W * 0.66) / Math.max(nd, 1));
     this.frame.drazki.forEach((d, i) => bench.appendChild(this.#drazek(d, 26 + i * sd + sd / 2 - 20, y0)));
 
     // klawisze sygnału zastępczego i liczniki (Sz, zwalniacz) po prawej
@@ -83,16 +83,16 @@ export class LeverRenderer extends PanelView {
     let x = W - 16 - sz.length * 30 - 90;
     for (const s of sz) {
       const g = el('g', { class: 'sz-key' }, [
-        el('rect', { class: 'key', x: x, y: y0 + 24, width: 22, height: 12, rx: 2 }),
-        text(x + 11, y0 + 31, 'Sz', { class: 'key-text' }),
-        text(x + 11, y0 + 45, s.id, { class: 'bench-label' }),
+        el('rect', { class: 'key', x: x, y: y0 + 28, width: 22, height: 12, rx: 2 }),
+        text(x + 11, y0 + 35, 'Sz', { class: 'key-text' }),
+        text(x + 11, y0 + 50, s.id, { class: 'bench-label' }),
       ]);
       bench.appendChild(this.#control(g, { kind: 'sz', id: s.id }, `Sz ${s.id}`, () => ({ type: 'substitute', signal: s.id })));
       x += 30;
     }
     x += 8;
     for (const [id, label] of [['Sz', 'Sz'], ['dPz', 'zwalniacz']]) {
-      const c = counterDevice(x, y0 + 20, 40, 26, label);
+      const c = counterDevice(x, y0 + 24, 40, 26, label);
       bench.appendChild(c.g);
       this.counterRefs.set(id, c.t);
       x += 44;
@@ -101,7 +101,7 @@ export class LeverRenderer extends PanelView {
     // dźwignie nastawcze
     const nl = this.frame.levers.length;
     const sl = Math.min(50, (W * 0.8) / Math.max(nl, 1));
-    this.frame.levers.forEach((l, i) => bench.appendChild(this.#lever(l, 26 + i * sl + sl / 2, y0 + 106)));
+    this.frame.levers.forEach((l, i) => bench.appendChild(this.#lever(l, 26 + i * sl + sl / 2, y0 + 126)));
   }
 
   #drazek(d, cx, y0) {
@@ -111,32 +111,32 @@ export class LeverRenderer extends PanelView {
     const refs = {};
     if (d.kind === 'train') {
       // okienko bloku przebiegowego utwierdzającego, klawisz i zwalniacz (plomba)
-      refs.win = el('rect', { class: 'blk-window', x: cx - 9, y: y0 + 16, width: 18, height: 11, rx: 1.5 });
+      refs.win = el('rect', { class: 'blk-window', x: cx - 9, y: y0 + 22, width: 18, height: 11, rx: 1.5 });
       g.appendChild(refs.win);
       g.appendChild(this.#control(el('g', { class: 'blk-key' }, [
-        el('rect', { class: 'key', x: cx - 8, y: y0 + 29, width: 16, height: 9, rx: 1.5 }),
-        el('rect', { class: 'hit', x: cx - 11, y: y0 + 27, width: 22, height: 13 }),
+        el('rect', { class: 'key', x: cx - 8, y: y0 + 36, width: 16, height: 9, rx: 1.5 }),
+        el('rect', { class: 'hit', x: cx - 11, y: y0 + 34, width: 22, height: 13 }),
       ]), { kind: 'routeblock', id: d.start }, `Blok przebiegowy ${d.start}`, () => ({ type: 'route-block', signal: d.start })));
       g.appendChild(this.#control(el('g', { class: 'zwalniacz' }, [
-        el('circle', { class: 'zw-seal', cx: cx + 14, cy: y0 + 33.5, r: 3 }),
-        el('circle', { class: 'hit', cx: cx + 14, cy: y0 + 33.5, r: 6 }),
+        el('circle', { class: 'zw-seal', cx: cx + 14, cy: y0 + 40.5, r: 3 }),
+        el('circle', { class: 'hit', cx: cx + 14, cy: y0 + 40.5, r: 6 }),
       ]), { kind: 'routerelease', id: d.start }, `Zwalniacz bloku przebiegowego ${d.start}`, () => ({ type: 'release', signal: d.start, emergency: true })));
     }
     // drążek: szczelina, gałka w górze / w środku / w dole; cel przebiegu przy położeniu
-    g.appendChild(el('rect', { class: 'drazek-slot', x: cx - 2.5, y: y0 + 44, width: 5, height: 40, rx: 2.5 }));
+    g.appendChild(el('rect', { class: 'drazek-slot', x: cx - 2.5, y: y0 + 52, width: 5, height: 40, rx: 2.5 }));
     // rączka drążka: płaski uchwyt w poprzek szczeliny
     refs.knob = el('g', { class: 'drazek-knob' }, [
       el('rect', { class: 'drazek-grip', x: cx - 7, y: -2.5, width: 14, height: 5, rx: 2 }),
       el('circle', { class: 'drazek-pin', cx, cy: 0, r: 1.3 }),
     ]);
     g.appendChild(refs.knob);
-    g.appendChild(text(cx, y0 + 91, d.id, { class: 'bench-label strong' }));
-    refs.y = { up: y0 + 47, null: y0 + 64, down: y0 + 81 };
+    g.appendChild(text(cx, y0 + 100, d.id, { class: 'bench-label strong' }));
+    refs.y = { up: y0 + 55, null: y0 + 72, down: y0 + 89 };
     for (const r of d.routes) {
       const up = r.pos === 'up';
       const half = el('g', { class: `drazek-pos drazek-${r.pos}` }, [
-        el('rect', { class: 'hit', x: cx - 12, y: up ? y0 + 41 : y0 + 65, width: 40, height: 22 }),
-        text(cx + 10, up ? y0 + 47 : y0 + 82, r.target, { class: 'bench-label target', 'text-anchor': 'start' }),
+        el('rect', { class: 'hit', x: cx - 12, y: up ? y0 + 49 : y0 + 73, width: 40, height: 22 }),
+        text(cx + 10, up ? y0 + 55 : y0 + 89, r.target, { class: 'bench-label target', 'text-anchor': 'start' }),
       ]);
       refs[r.pos] = half;
       g.appendChild(this.#control(half, { kind: 'route', id: r.id }, `Drążek ${d.id}: ${d.start} → ${r.target}`, () => {
@@ -176,10 +176,10 @@ export class LeverRenderer extends PanelView {
     refs.fault = el('circle', { class: 'lever-fault', cx: cx + 8, cy: py - 3, r: 2 });
     refs.pivot = [cx, py];
     g.append(refs.lock, refs.fault);
-    g.appendChild(el('rect', { class: 'lever-plate', x: cx - 9, y: y1 + 59, width: 18, height: 9, rx: 1 }));
-    g.appendChild(text(cx, y1 + 64, String(l.no), { class: 'plate-text' }));
-    g.appendChild(text(cx, y1 + 73, l.id, { class: 'bench-label strong' }));
-    g.appendChild(el('rect', { class: 'hit', x: cx - 11, y: y1 - 5, width: 22, height: 82 }));
+    g.appendChild(el('rect', { class: 'lever-plate', x: cx - 9, y: y1 + 63, width: 18, height: 9, rx: 1 }));
+    g.appendChild(text(cx, y1 + 67.5, String(l.no), { class: 'plate-text' }));
+    g.appendChild(text(cx, y1 + 80, l.id, { class: 'bench-label strong' }));
+    g.appendChild(el('rect', { class: 'hit', x: cx - 11, y: y1 - 5, width: 22, height: 90 }));
     this.leverEls.set(l.id, refs);
     const name = { point: 'zwrotnicowa', derailer: 'wykolejnicowa', signal: 'semaforowa', shunt: 'tarczy manewrowej' }[l.kind];
     return this.#control(g, { kind: 'lever', id: l.id }, `Dźwignia ${l.no} ${name} ${l.id}`, () => {

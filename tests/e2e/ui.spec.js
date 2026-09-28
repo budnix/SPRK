@@ -139,8 +139,13 @@ test('powiększenie pulpitu: tryb dopasowania wraca po zmianie okna, ręczne pow
   await openShift(page, 'szkolna', { settings: { sideCollapsed: true } });
   const state = () => page.evaluate(() => { const d = document.getElementById('desk').getBoundingClientRect(), s = document.getElementById('desk-scroll'); return { w: d.width, h: d.height, cw: s.clientWidth, ch: s.clientHeight, left: s.scrollLeft, mode: window.viewport.fitMode, zoom: window.viewport.zoom }; });
   let st = await state();
-  expect(st.mode).toBe('whole');
+  // na starcie cały plan w oknie; bez pól skrajnych nie ma przycisku „wysokość” – całość pokazuje wciśnięta „szerokość”
+  expect(['width', 'whole']).toContain(st.mode);
   expect(st.w).toBeLessThanOrEqual(st.cw); expect(st.h).toBeLessThanOrEqual(st.ch);
+  await expect(page.locator('#zoom-fit')).toHaveAttribute('aria-pressed', 'true');
+  // ręcznie, potem „szerokość”: plan na całą szerokość
+  await page.click('#zoom-in');
+  await expect(page.locator('#zoom-fit')).toHaveAttribute('aria-pressed', 'false');
   await page.click('#zoom-fit');
   st = await state();
   expect(st.mode).toBe('width'); expect(Math.abs(st.w - (st.cw - 8))).toBeLessThan(1); expect(st.left).toBe(0);
@@ -224,25 +229,33 @@ test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapa
     await page.mouse.move(x, y); await page.mouse.down();
     await page.mouse.move(x, y + dy, { steps: 8 }); await page.mouse.up();
   };
-  // na starcie całość: oba przyciski wciśnięte; kursor przy granicy i na uchwycie pokazuje przeciąganie w pionie
+  // na starcie cały plan w oknie: wciśnięty dokładnie jeden przycisk – osi, która ogranicza plan; kursor przy granicy
+  // i na uchwycie pokazuje przeciąganie w pionie
   let s = await st();
-  expect([s.mode, s.fw, s.fh]).toEqual(['whole', true, true]);
+  expect(s.fw !== s.fh).toBe(true);
+  expect(s.mode).toBe(s.fw ? 'width' : 'height');
+  expect(s.w).toBeLessThanOrEqual(s.cw); expect(s.h).toBeLessThanOrEqual(s.ch);
   expect(await page.locator('#side .side-edge').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
   expect(await page.locator('#side-grip').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
   // uchwyt w listwie (palec na tablecie): panel wyższy o tyle, o ile przesunięto; plan dopasował się do mniejszego obszaru
   await drag('#side-grip', -120);
   const up = await st();
   expect(Math.abs(up.side - s.side - 120)).toBeLessThan(4);
-  expect(up.h).toBeLessThanOrEqual(up.ch); expect(up.w).toBeLessThanOrEqual(up.cw);
-  expect(up.zoom).toBeLessThan(s.zoom);
+  // wciśnięta oś dopasowała się na żywo do nowego obszaru
+  if (up.mode === 'width') expect(Math.abs(up.w - (up.cw - 8))).toBeLessThan(2);
+  else expect(Math.abs(up.h - (up.ch - 8))).toBeLessThan(2);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).sideSize);
   expect(saved).toBeGreaterThan(0.3); expect(saved).toBeLessThan(0.8);
   await page.reload(); await page.waitForFunction(() => window.viewport);
   await expect.poll(async () => Math.abs((await st()).side - up.side) < 3).toBe(true);
-  // tylko wysokość: z całości klik „szerokość” zostawia ją samą; drugi klik ją wyłącza; „wysokość” – sama wysokość
+  // przyciski się wykluczają: klik w drugi zwalnia pierwszy, klik w wciśnięty go zwalnia
+  await page.click('#zoom-in');
+  expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
   await page.click('#zoom-fit');
   expect(await st()).toMatchObject({ mode: 'width', fw: true, fh: false });
-  await page.click('#zoom-fit');
+  await page.click('#zoom-fit-h');
+  expect(await st()).toMatchObject({ mode: 'height', fw: false, fh: true });
+  await page.click('#zoom-fit-h');
   expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
   await page.click('#zoom-fit-h');
   expect(await st()).toMatchObject({ mode: 'height', fw: false, fh: true });
@@ -256,9 +269,11 @@ test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapa
   await drag('#side-grip', -60);
   await page.waitForTimeout(300);
   expect((await st()).zoom).toBe(manual.zoom);
-  // obie osie znów = całość
-  await page.click('#zoom-fit'); await page.click('#zoom-fit-h');
-  expect(await st()).toMatchObject({ mode: 'whole', fw: true, fh: true });
+  // „−” też zwalnia wciśnięty przycisk
+  await page.click('#zoom-fit');
+  expect(await st()).toMatchObject({ mode: 'width', fw: true, fh: false });
+  await page.click('#zoom-out');
+  expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
 });
 
 test('granica panelu z boku: kursor ↔, przeciągnięcie w lewo poszerza panel po prawej', async ({ page }) => {

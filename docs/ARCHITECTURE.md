@@ -269,7 +269,8 @@ własna kostka opisu zostaje pusta, więc opis nigdy nie leży na obrysie peronu
 
 ## Ekran startowy (`src/ui/StartScreen.js`)
 
-Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków z `location`, `traffic`,
+Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków do służby (`dutyStations` – bez
+stacji szkoleniowych, czyli tych, które mają misję; ich zmiany są tylko do testów i przez adres URL) z `location`, `traffic`,
 `difficulty` (gwiazdki) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
 zapamiętany w localStorage). Układ dwuetapowy: przewijana lista (misje, potem posterunki) po lewej, „tor” ze strzałką i odprawa (briefing) po prawej –
 miniatura, opis i parametry zmiany (scenariusz, zakłócenia, ziarno; okręg tylko dla stacji z `districts`) albo, dla misji, opis i liczba kroków.
