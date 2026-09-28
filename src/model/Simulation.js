@@ -295,14 +295,18 @@ export class Simulation {
         return cmd.compound ? ilk.requestCompoundRoute(cmd.start, cmd.end, cmd.kind) : ilk.requestRoute(cmd.start, cmd.end, cmd.kind);
       case 'stop':
         return this.#allowed('signal', cmd.signal) ? ilk.cancelSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+      case 'clear':
+        return this.#allowed('signal', cmd.signal) ? ilk.clearSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+      case 'route-block':
+        return this.#allowed('signal', cmd.signal) ? ilk.blockRoute(cmd.signal) : refuse(OTHER_DISTRICT);
       case 'release':
         return this.#allowed('signal', cmd.signal) ? ilk.releaseRoute(cmd.signal, !!cmd.emergency) : refuse(OTHER_DISTRICT);
       case 'substitute':
         return this.#allowed('signal', cmd.signal) ? ilk.substituteSignal(cmd.signal) : refuse(OTHER_DISTRICT);
       case 'point':
-        return this.#allowed('point', cmd.id) ? ilk.switchPoint(cmd.id) : refuse(OTHER_DISTRICT);
+        return this.#allowed('point', cmd.id) ? ilk.switchPoint(cmd.id, cmd.position) : refuse(OTHER_DISTRICT);
       case 'derailer':
-        return this.#allowed('derailer', cmd.id) ? ilk.switchDerailer(cmd.id) : refuse(OTHER_DISTRICT);
+        return this.#allowed('derailer', cmd.id) ? ilk.switchDerailer(cmd.id, cmd.position) : refuse(OTHER_DISTRICT);
       case 'lock':
         return this.#allowed(cmd.derailer ? 'derailer' : 'point', cmd.id) ? ilk.toggleIndividualLock(cmd.id, !!cmd.derailer) : refuse(OTHER_DISTRICT);
       case 'block':

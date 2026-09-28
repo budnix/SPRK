@@ -54,12 +54,46 @@ export class AutoOperator {
     this.sim.issueCommand({ kind, nr: e.nr, ...extra, from: this.district, to: this.playerDistrict, text });
   }
 
+  /**
+   * Nastawienie przebiegu. Nastawnia mechaniczna (opcje zależności `manualPoints`, `manualSignal`, `routeBlock`):
+   * najpierw dźwignie zwrotnic i wykolejnic (przebieg w następnym takcie), po zamknięciu przebiegu blok przebiegowy
+   * i dźwignia sygnałowa.
+   */
+  #setRoute(id) {
+    const ilk = this.sim.ilk;
+    const res = ilk.setRoute(id);
+    const levers = new Set(['point-position', 'derailer-position']);
+    if (!res.ok && res.codes?.length && res.codes.every((c) => levers.has(c))) {
+      const r = ilk.routes.get(id);
+      for (const q of [...r.points, ...r.flank]) { const p = ilk.points.get(q.id); if (p.position !== q.position && !p.moving) ilk.switchPoint(q.id, q.position); }
+      for (const q of [...r.derailers.onRoute, ...r.derailers.protect]) { const d = ilk.derailers.get(q.id); if (d && d.position !== q.position && !d.moving) ilk.switchDerailer(q.id, q.position); }
+      return res;
+    }
+    if (res.ok && ilk.manualSignal) {
+      const r = ilk.routes.get(id);
+      if (ilk.routeBlock && r.kind === 'train') ilk.blockRoute(r.start);
+      ilk.clearSignal(r.start);
+    }
+    return res;
+  }
+
+  /** Nastawnia mechaniczna: po przejeździe dźwignia sygnałowa na „Stój” i drążek w położenie zasadnicze. */
+  #releasePassed() {
+    const ilk = this.sim.ilk;
+    for (const act of [...ilk.active.values()]) {
+      if (!act.passed || !this.#inDistrict(act.route.start)) continue;
+      ilk.cancelSignal(act.route.start);
+      ilk.releaseRoute(act.route.start);
+    }
+  }
+
   tick() {
     const sim = this.sim;
     const t = sim.clock.time;
     if (t - this.lastAction < this.delay) return;
     this.lastAction = t;
     const ilk = sim.ilk, topo = ilk.topo;
+    if (ilk.holdRoute) this.#releasePassed();
     const routes = ilk.routeList();
     const trackOf = (tr) => { for (const sid of tr.occupiedSections()) { const tk = ilk.sections.get(sid)?.track; if (tk) return String(tk); } return null; };
     const fullyOn = (tr, track) => { const secs = [...tr.occupiedSections()].map((s) => ilk.sections.get(s)); return secs.length && secs.every((s) => String(s.track) === String(track)); };
@@ -101,7 +135,7 @@ export class AutoOperator {
 
       // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
       if (e._entryPath?.length) {
-        if (ilk.setRoute(e._entryPath[0]).ok) e._entryPath.shift();
+        if (this.#setRoute(e._entryPath[0]).ok) e._entryPath.shift();
         continue;
       }
       // ---- wjazd ----
@@ -131,7 +165,7 @@ export class AutoOperator {
         const order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
         let closed = false;
         for (const pick of order) {
-          const res = ilk.setRoute(pick.id);
+          const res = this.#setRoute(pick.id);
           // inny tor tylko przy torze zamkniętym; chwilowo zajęty/utwierdzony tor planowy – czekać
           if (!res.ok) { if (res.codes?.includes('section-closed')) closed = true; if (closed) continue; break; }
           e.entryRouteSet = true;
@@ -158,7 +192,7 @@ export class AutoOperator {
         const free = usable.filter((x) => !isSet(x) && !x.sections.some((sid) => ilk.sections.get(sid).occupied && !occ.has(sid)));
         const r = free.find((x) => routeTrack(x) === String(task.toTrack))
           || free.filter(leadsTo).sort((a, b) => a.sections.length - b.sections.length)[0];
-        if (r) ilk.setRoute(r.id);
+        if (r) this.#setRoute(r.id);
         else if (!usable.some(isSet)) sim.traffic.reverseTrain(e.nr);
         continue;
       }
@@ -202,11 +236,11 @@ export class AutoOperator {
         else if (b.auto) { if (b.direction !== 'out' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
         if (staged) {
-          for (const r of cands) if (ilk.setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
+          for (const r of cands) if (this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
           continue;
         }
         if (b.gate().ok) {
-          for (const r of cands) if (ilk.setRoute(r.id).ok) {
+          for (const r of cands) if (this.#setRoute(r.id).ok) {
             e.exitRouteSet = true;
             if (cmd) this.#complete(cmd, `Droga przebiegu dla pociągu nr ${e.nr} do ${b.neighbour} przygotowana, semafor ${r.start} otwarty.`);
             break;

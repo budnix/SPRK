@@ -10,8 +10,8 @@
  *                armed }`; bez niego obowiązują przyciski typu E (src/srk/buttons.js).
  *
  * Logika zależności (przebiegi, utwierdzenie, zwalnianie, blokady) jest wspólna – różni się sposób
- * wydawania poleceń i obraz stanu. Nowe systemy (np. mechaniczne z pulpitem kluczowym, EbiScreen,
- * ILTOR) to nowy wpis tutaj + widok w views.js.
+ * wydawania poleceń, obraz stanu i opcje zależności (np. nastawnia mechaniczna: zwrotnice dźwigniami, drążek
+ * przebiegowy, blok przebiegowy, dźwignia sygnałowa). Nowe systemy to nowy wpis tutaj + widok w views.js.
  */
 import { AddressOrderProtocol } from './address.js';
 
@@ -62,4 +62,13 @@ registerSrk({
   view: 'izh',
   model: { armTimeout: 10, timedRelease: 120, shuntTimedRelease: 0, timedReleaseAlways: true },
   input: (ilk, bus, model) => new AddressOrderProtocol(ilk, bus, { armTimeout: model.armTimeout }),
+});
+
+registerSrk({
+  id: 'mech',
+  name: 'Urządzenia mechaniczne scentralizowane (nastawnia mechaniczna)',
+  short: 'mechaniczne',
+  description: 'Ława dźwigniowa: zwrotnice i wykolejnice przestawia się dźwigniami, przebieg zamyka drążek przebiegowy, blok przebiegowy utwierdzający (zwalnia go pociąg), sygnał – dźwignią sygnałową; po przejeździe dźwignia na „Stój” i drążek z powrotem.',
+  view: 'lever',
+  model: { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true },
 });

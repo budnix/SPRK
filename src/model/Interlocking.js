@@ -12,7 +12,19 @@ import { Topology } from './Topology.js';
  *
  * Polecenia zależnościowe (nie znają przycisków): `requestRoute`, `requestCompoundRoute`, `setRoute`,
  * `releaseRoute` (Pz / dPz z licznikiem), `cancelSignal`, `switchPoint`, `switchDerailer`,
- * `toggleIndividualLock` (Zz), `substituteSignal` (Sz z licznikiem).
+ * `toggleIndividualLock` (Zz), `substituteSignal` (Sz z licznikiem); przy opcjach nastawni mechanicznej także
+ * `clearSignal` (dźwignia sygnałowa) i `blockRoute` (blok przebiegowy utwierdzający).
+ *
+ * Opcje nastawni mechanicznej (domyślnie wyłączone – stanowiska przekaźnikowe i komputerowe działają jak dotąd):
+ *  - `manualPoints` – przebieg nie przestawia zwrotnic; zwrotnice i wykolejnice w złym położeniu to przeszkoda
+ *    (`point-position`, `derailer-position`), a przebieg w dobrych położeniach zamyka się od razu (drążek przebiegowy),
+ *  - `manualSignal` – po nastawieniu przebiegu sygnał zostaje „Stój” do `clearSignal` (dźwignia sygnałowa);
+ *    przebiegu nie da się zwolnić, dopóki dźwignia nie wróci na „Stój” (`cancelSignal`); sygnał zezwalający podaje
+ *    się dla jazdy tylko raz,
+ *  - `routeBlock` – przebieg pociągowy wymaga zablokowania bloku przebiegowego utwierdzającego (`blockRoute`) przed
+ *    podaniem sygnału; zablokowany przebieg zwalnia dopiero pociąg (albo zwalniacz – `releaseRoute(id, true)`),
+ *  - `holdRoute` – po przejeździe pociągu przebieg zostaje zamknięty (drążek przełożony, zwrotnice zamknięte),
+ *    aż gracz go zwolni (`releaseRoute`).
  *
  * Sposób wydawania poleceń należy do stanowiska: przyciski pulpitu typu E tłumaczy `src/srk/buttons.js`
  * (podłączany przez `attachInput`); `press` / `pull` / `pressCompound` / `armed` są tu tylko przekazaniem do niego.
@@ -38,6 +50,11 @@ export class Interlocking {
     this.timedRelease = opts.timedRelease ?? TIMED_RELEASE;
     this.shuntTimedRelease = opts.shuntTimedRelease ?? SHUNT_TIMED_RELEASE;
     this.timedReleaseAlways = !!opts.timedReleaseAlways;
+    this.pointSwitchTime = opts.pointSwitchTime ?? POINT_SWITCH_TIME;
+    this.manualPoints = !!opts.manualPoints;
+    this.manualSignal = !!opts.manualSignal;
+    this.routeBlock = !!opts.routeBlock;
+    this.holdRoute = !!opts.holdRoute;
     this.topo = new Topology(station);
     this.time = 0;
     this.log = [];
@@ -235,7 +252,7 @@ export class Interlocking {
     const p = this.points.get(id);
     const to = target ?? (p.position === '+' ? '-' : '+');
     if (to === p.position && p.control && !p.trailed) return { ok: true, noop: true };
-    p.target = to; p.moving = true; p.movingUntil = this.time + POINT_SWITCH_TIME; p.control = false;
+    p.target = to; p.moving = true; p.movingUntil = this.time + this.pointSwitchTime; p.control = false;
     this.bus.emit('point', p);
     return { ok: true };
   }
@@ -257,7 +274,7 @@ export class Interlocking {
     const d = this.derailers.get(id);
     const to = target ?? (d.position === 'on' ? 'off' : 'on');
     if (to === d.position) return { ok: true, noop: true };
-    d.target = to; d.moving = true; d.movingUntil = this.time + POINT_SWITCH_TIME;
+    d.target = to; d.moving = true; d.movingUntil = this.time + this.pointSwitchTime;
     this.bus.emit('derailer', d);
     return { ok: true };
   }
@@ -315,7 +332,8 @@ export class Interlocking {
   /**
    * Przeszkody w nastawieniu przebiegu jako dane: [{ code, msg }]. Kody: `signal-busy`, `setting` (przebieg z tego
    * semafora właśnie się nastawia), `section-closed`, `section-locked`, `section-occupied`, `section-pending`,
-   * `overlap`, `point`, `derailer`, `block`. Logika decyduje po kodzie, komunikat jest dla człowieka.
+   * `overlap`, `point`, `derailer`, `block`, przy `manualPoints` także `point-position` i `derailer-position`
+   * (element trzeba najpierw przestawić dźwignią). Logika decyduje po kodzie, komunikat jest dla człowieka.
    */
   routeProblems(route) {
     const problems = [];
@@ -347,13 +365,17 @@ export class Interlocking {
     for (const act of this.active.values()) {
       if (act.id === route.id || predIds.has(act.id)) continue;
       for (const sid of route.sections) if (act.overlap.includes(sid)) add('overlap', `Odcinek ${sid} w drodze ochronnej przebiegu ${act.id}`);
+      // przebieg po przejeździe pociągu, wciąż zamknięty (holdRoute): jego odcinki wykluczają przebiegi sprzeczne
+      if (act.passed) for (const sid of route.sections) if (act.route.sections.includes(sid)) add('section-locked', `Odcinek ${sid} w zamkniętym przebiegu ${act.id} – zwolnij przebieg`);
     }
     // Zwrotnice w przebiegu i ochrony bocznej
     for (const req of [...route.points, ...route.flank]) {
       const p = this.points.get(req.id);
       if (!p) { add('point', `Brak zwrotnicy ${req.id}`); continue; }
       if (p.trailed) add('point', `Zwrotnica ${req.id} rozpruta`);
-      if (p.position !== req.position || !p.control) {
+      if (this.manualPoints && (p.position !== req.position || p.moving)) {
+        add('point-position', p.moving ? `Zwrotnica ${req.id} w trakcie przestawiania` : `Zwrotnica ${req.id} w położeniu ${p.position} – potrzebne ${req.position}`);
+      } else if (p.position !== req.position || !p.control) {
         if (p.individualLock) add('point', `Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
         const r = this.pointLockedByRoute(req.id, predIds);
         if (r) add('point', `Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
@@ -366,7 +388,9 @@ export class Interlocking {
     for (const req of [...route.derailers.onRoute, ...route.derailers.protect]) {
       const d = this.derailers.get(req.id);
       if (!d) continue;
-      if (d.position !== req.position) {
+      if (this.manualPoints && (d.position !== req.position || d.moving)) {
+        add('derailer-position', `Wykolejnica ${req.id} ${d.moving ? 'w trakcie przestawiania' : `${d.position === 'on' ? 'nałożona' : 'zdjęta'} – potrzebna ${req.position === 'on' ? 'nałożona' : 'zdjęta'}`}`);
+      } else if (d.position !== req.position) {
         if (d.individualLock) add('derailer', `Wykolejnica ${req.id} zamknięta w położeniu ${d.position}`);
         const r = this.derailerLockedByRoute(req.id);
         if (r) add('derailer', `Wykolejnica ${req.id} utwierdzona w przebiegu ${r.id}`);
@@ -484,6 +508,8 @@ export class Interlocking {
     if (!route) return this.#fail(`Nieznany przebieg ${routeId}`);
     const problems = this.routeProblems(route);
     if (problems.length) return { ...this.#fail(`Przebieg ${routeId}: ${problems.map((p) => p.msg).join('; ')}`), codes: [...new Set(problems.map((p) => p.code))] };
+    // nastawnia mechaniczna: zwrotnice już stoją dobrze (inaczej przeszkoda point-position) – przebieg zamyka się od razu
+    if (this.manualPoints) { this.#completeRoute(route); return { ok: true }; }
     for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred);
     // Przestaw zwrotnice i wykolejnice (nastawianie przebiegowe)
     for (const req of [...route.points, ...route.flank]) {
@@ -509,7 +535,8 @@ export class Interlocking {
       overlapPoints: hasCont ? [] : this.#overlapPoints(route),
       lockedPoints: new Set([...route.points, ...route.flank, ...(hasCont ? [] : this.#overlapPoints(route))].map((p) => p.id)),
       lockedDerailers: new Set([...route.derailers.onRoute, ...route.derailers.protect].map((d) => d.id)),
-      overlap: hasCont ? [] : [...route.overlap], signalOff: false, timedRelease: null,
+      overlap: hasCont ? [] : [...route.overlap], signalOff: this.manualSignal, timedRelease: null,
+      lever: false, blocked: false, passed: false, // dźwignia sygnałowa, blok przebiegowy, przejazd przy holdRoute
     };
     for (const sid of route.sections) { const s = this.sections.get(sid); s.route = route.id; s.wasOccupied = false; }
     this.active.set(route.id, act);
@@ -525,9 +552,14 @@ export class Interlocking {
     const sig = this.signals.get(signalId);
     if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
     if (sig.substitute) { sig.substitute = false; this.#refreshSignals(); this.#log('info', `Sygnał zastępczy na ${signalId} wygaszony`); return { ok: true }; }
-    if (!sig.route) return { ok: false };
+    // dźwignię sygnałową zawsze da się przełożyć na „Stój” – także bez przebiegu
+    if (!sig.route) return this.manualSignal ? { ok: true, noop: true } : { ok: false };
     const act = this.active.get(sig.route);
-    if (act.signalOff) return { ok: true, noop: true };
+    if (this.manualSignal) {
+      if (!act.lever) return { ok: true, noop: true };
+      act.lever = false;
+      if (act.signalOff) { this.bus.emit('route', { id: act.id, state: 'lever' }); return { ok: true }; } // pociąg już minął semafor
+    } else if (act.signalOff) return { ok: true, noop: true };
     act.signalOff = true;
     this.#refreshSignals();
     this.#log('info', `Sygnał na ${signalId} wygaszony (przebieg ${sig.route} pozostaje utwierdzony)`);
@@ -536,8 +568,45 @@ export class Interlocking {
   }
 
   /**
+   * Dźwignia sygnałowa (manualSignal): sygnał zezwalający na przebiegu zamkniętym drążkiem. Przy `routeBlock` przebieg
+   * pociągowy wymaga zablokowanego bloku przebiegowego; dla jednej jazdy sygnał podaje się tylko raz.
+   */
+  clearSignal(signalId) {
+    const sig = this.signals.get(signalId);
+    if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
+    if (!this.manualSignal) return this.#fail(`${signalId}: sygnał podaje się przy nastawianiu przebiegu`);
+    if (!sig.route) return this.#fail(`${signalId}: brak nastawionego przebiegu – najpierw drążek przebiegowy`);
+    const act = this.active.get(sig.route);
+    if (act.lever) return { ok: true, noop: true };
+    if (act.trainEntered || act.passed) return this.#fail(`${signalId}: sygnał zezwalający dla tej jazdy już był – zwolnij przebieg i nastaw go od nowa`);
+    if (this.routeBlock && act.route.kind === 'train' && !act.blocked) return this.#fail(`${signalId}: najpierw zablokuj blok przebiegowy utwierdzający przebiegu ${act.id}`);
+    act.lever = true; act.signalOff = false;
+    this.#refreshSignals();
+    this.#log('info', `Dźwignia sygnałowa ${signalId} przełożona – ${sig.kind === 'semafor' ? 'semafor' : 'tarcza'} ${signalId}: ${sig.aspect}`);
+    this.bus.emit('route', { id: act.id, state: 'lever' });
+    return { ok: true };
+  }
+
+  /** Blok przebiegowy utwierdzający (routeBlock): zablokowany przebieg pociągowy zwalnia dopiero pociąg. */
+  blockRoute(signalId) {
+    const sig = this.signals.get(signalId);
+    if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
+    if (!this.routeBlock) return this.#fail('Brak bloku przebiegowego utwierdzającego');
+    if (!sig.route) return this.#fail(`${signalId}: brak nastawionego przebiegu – najpierw drążek przebiegowy`);
+    const act = this.active.get(sig.route);
+    if (act.route.kind !== 'train') return this.#fail(`Przebieg manewrowy ${act.id} nie ma bloku przebiegowego`);
+    if (act.blocked) return { ok: true, noop: true };
+    if (act.passed || act.trainEntered) return this.#fail(`Przebieg ${act.id}: pociąg już wjechał`);
+    act.blocked = true;
+    this.#log('info', `Blok przebiegowy utwierdzający przebiegu ${act.id} zablokowany`);
+    this.bus.emit('route', { id: act.id, state: 'blocked' });
+    return { ok: true };
+  }
+
+  /**
    * Zwolnienie przebiegu przyciskiem Pz (zwalnianie normalne / czasowe)
-   * lub dPz (doraźne, licznikowe).
+   * lub dPz (doraźne, licznikowe). Przy nastawni mechanicznej: cofnięcie drążka przebiegowego (dźwignia sygnałowa
+   * musi stać na „Stój”); zablokowany blok przebiegowy – tylko zwalniacz (`emergency`, licznik jak dPz).
    */
   releaseRoute(signalId, emergency) {
     const sig = this.signals.get(signalId);
@@ -546,6 +615,14 @@ export class Interlocking {
     if (pend >= 0) { this.pending.splice(pend, 1); this.#log('info', `Nastawianie przebiegu z ${signalId} przerwane`); return { ok: true }; }
     if (!sig.route) return this.#fail(`Semafor ${signalId} nie ma nastawionego przebiegu`);
     const act = this.active.get(sig.route);
+    if (this.manualSignal && act.lever && !emergency) return this.#fail(`Przebieg ${act.id}: najpierw przełóż dźwignię sygnałową ${signalId} na „Stój”`);
+    if (act.passed && !emergency) {
+      this.#log('info', `Przebieg ${act.id} zwolniony (drążek przebiegowy w położeniu zasadniczym)`);
+      this.#dissolve(act);
+      return { ok: true };
+    }
+    if (this.routeBlock && act.blocked && !emergency) return this.#fail(`Przebieg ${act.id}: blok przebiegowy utwierdzający zablokowany – zwolni go pociąg (albo zwalniacz)`);
+    act.lever = false;
     act.signalOff = true;
     this.#refreshSignals();
     if (emergency) {
@@ -579,10 +656,19 @@ export class Interlocking {
   }
 
   #tryReleaseShunt(act) {
-    if (!act.signalOff) return;
+    if (!act.signalOff || act.passed) return;
     if (act.lockedSections.some((s) => this.sections.get(s).occupied && !act.released.has(s))) return;
-    this.#log('info', `Przebieg manewrowy ${act.id} zwolniony`);
-    this.#dissolve(act);
+    this.#finish(act, `Przebieg manewrowy ${act.id} zwolniony`);
+  }
+
+  /** Koniec jazdy w przebiegu: rozwiązanie albo (holdRoute) przebieg zostaje zamknięty do zwolnienia przez gracza. */
+  #finish(act, msg) {
+    if (!this.holdRoute) { this.#log('info', msg); this.#dissolve(act); return; }
+    if (act.passed) return;
+    act.passed = true; act.blocked = false; act.signalOff = true;
+    this.#refreshSignals();
+    this.#log('info', `Przebieg ${act.id}: pociąg przejechał${act.route.kind === 'train' && this.routeBlock ? ', blok przebiegowy zwolniony' : ''} – ${this.manualSignal ? 'przełóż dźwignię sygnałową na „Stój” i ' : ''}zwolnij przebieg (drążek)`);
+    this.bus.emit('route', { id: act.id, state: 'passed' });
   }
 
   #dissolve(act) {
@@ -763,21 +849,20 @@ export class Interlocking {
             this.bus.emit('section', s);
           }
         }
-        // Zwrotnice zwalniają się z odcinkami
-        for (const pid of [...act.lockedPoints]) {
-          const p = this.points.get(pid);
-          const inRoute = act.route.points.some((q) => q.id === pid);
-          if (inRoute && act.released.has(p.section)) act.lockedPoints.delete(pid);
+        // Zwrotnice zwalniają się z odcinkami (holdRoute: trzyma je drążek przebiegowy do zwolnienia przebiegu)
+        if (!this.holdRoute) {
+          for (const pid of [...act.lockedPoints]) {
+            const p = this.points.get(pid);
+            const inRoute = act.route.points.some((q) => q.id === pid);
+            if (inRoute && act.released.has(p.section)) act.lockedPoints.delete(pid);
+          }
         }
-        if (act.released.size === secs.length) {
-          this.#log('info', `Przebieg ${act.id} rozwiązany (pociąg przejechał)`);
-          this.#dissolve(act);
-        }
+        if (act.released.size === secs.length) this.#finish(act, `Przebieg ${act.id} rozwiązany (pociąg przejechał)`);
       } else if (act.route.kind === 'shunt' && !secs.length) {
         // przebieg manewrowy w obrębie jednego odcinka: rozwiązuje się, gdy tabor opuści odcinek
         const app = this.sections.get(act.route.approach);
         if (app?.occupied) act.sawTrain = true;
-        else if (act.sawTrain) { this.#log('info', `Przebieg manewrowy ${act.id} rozwiązany (tabor opuścił odcinek)`); this.#dissolve(act); }
+        else if (act.sawTrain) this.#finish(act, `Przebieg manewrowy ${act.id} rozwiązany (tabor opuścił odcinek)`);
       } else if (act.route.kind === 'shunt' && act.signalOff) {
         this.#tryReleaseShunt(act);
       }
