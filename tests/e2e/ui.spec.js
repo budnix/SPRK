@@ -210,3 +210,64 @@ test('przyciski grupowe rysuje stanowisko, nie definicja stacji: pulpit typu E m
   await expect(page.locator('#desk svg.desk [data-control]')).toHaveCount(5);
   await expect(page.locator('#desk svg.desk [data-control] .btn')).toHaveCount(0);
 });
+
+test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapamiętany; wciśnięte dopasowanie działa na żywo, + / − je wyłącza', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { edgePanels: 'on' } });
+  const st = () => page.evaluate(() => {
+    const d = document.getElementById('desk').getBoundingClientRect(), s = document.getElementById('desk-scroll'), side = document.getElementById('side').getBoundingClientRect();
+    const pressed = (id) => document.getElementById(id).getAttribute('aria-pressed') === 'true' && document.getElementById(id).classList.contains('active');
+    return { side: side.height, w: d.width, h: d.height, cw: s.clientWidth, ch: s.clientHeight, zoom: window.viewport.zoom, mode: window.viewport.fitMode, fw: pressed('zoom-fit'), fh: pressed('zoom-fit-h') };
+  });
+  const drag = async (selector, dy) => {
+    const b = await page.locator(selector).boundingBox();
+    const x = b.x + b.width / 2, y = b.y + b.height / 2;
+    await page.mouse.move(x, y); await page.mouse.down();
+    await page.mouse.move(x, y + dy, { steps: 8 }); await page.mouse.up();
+  };
+  // na starcie całość: oba przyciski wciśnięte; kursor przy granicy i na uchwycie pokazuje przeciąganie w pionie
+  let s = await st();
+  expect([s.mode, s.fw, s.fh]).toEqual(['whole', true, true]);
+  expect(await page.locator('#side .side-edge').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
+  expect(await page.locator('#side-grip').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
+  // uchwyt w listwie (palec na tablecie): panel wyższy o tyle, o ile przesunięto; plan dopasował się do mniejszego obszaru
+  await drag('#side-grip', -120);
+  const up = await st();
+  expect(Math.abs(up.side - s.side - 120)).toBeLessThan(4);
+  expect(up.h).toBeLessThanOrEqual(up.ch); expect(up.w).toBeLessThanOrEqual(up.cw);
+  expect(up.zoom).toBeLessThan(s.zoom);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).sideSize);
+  expect(saved).toBeGreaterThan(0.3); expect(saved).toBeLessThan(0.8);
+  await page.reload(); await page.waitForFunction(() => window.viewport);
+  await expect.poll(async () => Math.abs((await st()).side - up.side) < 3).toBe(true);
+  // tylko wysokość: z całości klik „szerokość” zostawia ją samą; drugi klik ją wyłącza; „wysokość” – sama wysokość
+  await page.click('#zoom-fit');
+  expect(await st()).toMatchObject({ mode: 'width', fw: true, fh: false });
+  await page.click('#zoom-fit');
+  expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
+  await page.click('#zoom-fit-h');
+  expect(await st()).toMatchObject({ mode: 'height', fw: false, fh: true });
+  // krawędź panelu (mysz): wysokość planu dopasowuje się na żywo
+  await drag('#side .side-edge', 90);
+  await expect.poll(async () => { const x = await st(); return Math.abs(x.h - (x.ch - 8)) < 2; }).toBe(true);
+  // „+” wyłącza oba przyciski – po zmianie rozmiaru powiększenie zostaje
+  await page.click('#zoom-in');
+  const manual = await st();
+  expect([manual.mode, manual.fw, manual.fh]).toEqual([null, false, false]);
+  await drag('#side-grip', -60);
+  await page.waitForTimeout(300);
+  expect((await st()).zoom).toBe(manual.zoom);
+  // obie osie znów = całość
+  await page.click('#zoom-fit'); await page.click('#zoom-fit-h');
+  expect(await st()).toMatchObject({ mode: 'whole', fw: true, fh: true });
+});
+
+test('granica panelu z boku: kursor ↔, przeciągnięcie w lewo poszerza panel po prawej', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sidePos: 'right' } });
+  expect(await page.locator('#side .side-edge').evaluate((e) => getComputedStyle(e).cursor)).toBe('ew-resize');
+  const w0 = (await page.locator('#side').boundingBox()).width;
+  const b = await page.locator('#side .side-edge').boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + 200); await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2 - 100, b.y + 200, { steps: 6 }); await page.mouse.up();
+  expect(Math.abs((await page.locator('#side').boundingBox()).width - w0 - 100)).toBeLessThan(4);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).sideWidth)).toBeGreaterThan(w0 + 90);
+});

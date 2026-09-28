@@ -186,12 +186,16 @@ test('domyślna skala symboli monitora to 125 % (bez zapisanych ustawień), zapi
   await page.click('#btn-menu'); await page.click('#menu-settings');
   await expect(page.locator('#symScale')).toHaveValue('1.25');
   await expect(page.locator('output[for=symScale]')).toHaveText('125%');
-  // pozostałe domyślne: pulpit na środku, motyw wg systemu, podział na ekrany, odstęp normalny, panel na dole
+  // pozostałe domyślne: pulpit na środku, motyw ciemny, cały pulpit na jednym ekranie, pola skrajne włączone, odstęp normalny, panel na dole
   await expect(page.locator('#app')).toHaveAttribute('data-side-pos', 'bottom');
-  for (const [name, value] of [['deskPos', 'middle'], ['theme', 'system'], ['screens', 'auto'], ['rowScale', '1'], ['sidePos', 'bottom']]) {
+  for (const [name, value] of [['deskPos', 'middle'], ['theme', 'dark'], ['screens', 'off'], ['edgePanels', 'on'], ['rowScale', '1'], ['sidePos', 'bottom']]) {
     await expect(page.locator(`#settings input[name=${name}][value="${value}"]`), name).toBeChecked();
   }
-  // motyw wg systemu: ciemny tryb systemu → ciemny, jasny → jasny (także na żywo, bez przeładowania)
+  // motyw ciemny domyślnie także przy jasnym trybie systemu
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  // motyw wg systemu (do wyboru): ciemny tryb systemu → ciemny, jasny → jasny (także na żywo, bez przeładowania)
+  await page.check('#settings input[name=theme][value=system]');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });

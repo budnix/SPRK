@@ -46,6 +46,8 @@ export default {
   'tools.panelTabs': 'Side panel tabs',
   'tools.hidePanel': 'Hide panel',
   'tools.showPanel': 'Show panel',
+  'tools.resizeSide': 'Drag to resize the panel (on a computer also the panel edge)',
+  'tools.resizeSideShort': 'Panel size',
   'tools.hideSide': 'Hide side panel',
   'tools.showSide': 'Show side panel',
   'status.tutorialDone': 'Tutorial finished',

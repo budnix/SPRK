@@ -113,7 +113,10 @@ failure, a block failure, a peak with heavy disruptions).
 * Wide stations are split into logical screens that fit the browser width (cuts avoid point groups, two-column overlap,
   tabs / arrow keys / swipe); a command may start on one screen and end on another.
 * Collapsible side panel with notification badges, zoom and pinch, light / dark / system theme, desk position,
-  panel position (right / left / bottom). Defaults: system theme, panel at the bottom, symbols at 125 %.
+  panel position (right / left / bottom); drag the edge between the desk and the panel (or the grip next to the panel
+  button on a tablet) to resize it. The fit-to-width and fit-to-height buttons stay pressed and keep the desk fitted
+  while the window or panel changes; + / − switch them off. Defaults: dark theme, panel at the bottom, whole desk on
+  one screen, pinned edge columns on, symbols at 125 %.
 
 ### Interface language
 

@@ -1,5 +1,6 @@
 /** Wspólne narzędzia testów e2e: uruchomienie zmiany z ustawieniami, klikanie elementów pulpitu i monitora. */
-export const DEFAULT_SETTINGS = { deskPos: 'middle', sidePos: 'bottom', theme: 'light', sideCollapsed: false, screens: 'off', symScale: '1', rowScale: '1' };
+// środowisko testów podane jawnie (niezależne od ustawień domyślnych gry): motyw jasny, bez pól skrajnych
+export const DEFAULT_SETTINGS = { deskPos: 'middle', sidePos: 'bottom', theme: 'light', sideCollapsed: false, screens: 'off', symScale: '1', rowScale: '1', edgePanels: 'off' };
 
 export async function openShift(page, station, { settings = {}, params = {} } = {}) {
   const s = { ...DEFAULT_SETTINGS, ...settings };

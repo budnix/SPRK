@@ -9,13 +9,15 @@ export class DeskViewport {
   /**
    * @param scroll element przewijany
    * @param deskEl element pulpitu (jego szerokość i wysokość ustawia powiększenie)
-   * @param opts { size: () => ({ w, h }) – rozmiar rysunku w jednostkach, onChange: () => void }
+   * @param opts { size: () => ({ w, h }) – rozmiar rysunku w jednostkach, onChange: () => void,
+   *               onMode: (tryb) => void – zmiana trybu dopasowania (stan przycisków) }
    */
-  constructor(scroll, deskEl, { size, onChange = () => {} }) {
+  constructor(scroll, deskEl, { size, onChange = () => {}, onMode = () => {} }) {
     this.scroll = scroll;
     this.deskEl = deskEl;
     this.size = size;
     this.onChange = onChange;
+    this.onMode = onMode;
     this.zoom = 1;
     /** Ostatni tryb dopasowania: 'whole' | 'width' | 'height' | null (ręczne) – po zmianie układu okna wraca ten sam. */
     this.fitMode = 'whole';
@@ -31,11 +33,22 @@ export class DeskViewport {
 
   /** Dopasowanie: 'whole' – całość, 'width' – do szerokości (od lewej), 'height' – do wysokości (środek pulpitu). */
   fit(mode = 'whole') {
-    this.fitMode = mode;
+    this.#setMode(mode);
     this.zoom = fitZoom(mode, this.size(), this.#client);
     this.apply();
     if (mode === 'width') this.scroll.scrollLeft = 0;
     if (mode === 'height') this.scroll.scrollLeft = Math.max(0, (this.scroll.scrollWidth - this.scroll.clientWidth) / 2);
+  }
+
+  /** Tryb z przycisków stanowych: dopasowanie w tym trybie albo (null) ręczne – powiększenie zostaje jak jest. */
+  setMode(mode) {
+    if (mode) this.fit(mode); else this.#setMode(null);
+  }
+
+  #setMode(mode) {
+    if (mode === this.fitMode) return;
+    this.fitMode = mode;
+    this.onMode(mode);
   }
 
   apply() {
@@ -47,7 +60,7 @@ export class DeskViewport {
 
   /** Zmiana powiększenia wokół punktu (px, py) w układzie widocznego obszaru pulpitu. */
   zoomAt(factor, px, py) {
-    this.fitMode = null;
+    this.#setMode(null);
     const r = zoomAround(this.zoom, factor, { left: this.scroll.scrollLeft, top: this.scroll.scrollTop }, { x: px, y: py });
     if (!r.changed) return;
     this.zoom = r.zoom;

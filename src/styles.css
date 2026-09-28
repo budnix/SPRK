@@ -157,6 +157,20 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 1500px) { .hint { display: none; } }
 #side { flex: 0 0 360px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
 /* położenie panelu bocznego */
+/* granica planu i panelu: krawędź panelu do przeciągania myszą (kursor ↕ / ↔) i uchwyt w listwie dla palca */
+#side { position: relative; }
+.side-edge { position: absolute; z-index: var(--z-tab); touch-action: none; }
+#app[data-side-placement="bottom"] .side-edge { top: 0; left: 0; right: 0; height: 7px; cursor: ns-resize; }
+#app[data-side-placement="right"] .side-edge { top: 0; bottom: 0; left: 0; width: 7px; cursor: ew-resize; }
+#app[data-side-placement="left"] .side-edge { top: 0; bottom: 0; right: 0; width: 7px; cursor: ew-resize; }
+.side-edge:hover, body[data-side-resizing] .side-edge { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+#side-grip { touch-action: none; cursor: ns-resize; }
+#app[data-side-placement="right"] #side-grip, #app[data-side-placement="left"] #side-grip { cursor: ew-resize; }
+#app[data-side-placement="right"] #side-grip svg, #app[data-side-placement="left"] #side-grip svg { transform: rotate(90deg); }
+#app[data-side-collapsed="true"] #side-grip { display: none; }
+body[data-side-resizing] { user-select: none; -webkit-user-select: none; }
+body[data-side-resizing="v"], body[data-side-resizing="v"] * { cursor: ns-resize !important; }
+body[data-side-resizing="h"], body[data-side-resizing="h"] * { cursor: ew-resize !important; }
 #app[data-side-pos="left"] #main { flex-direction: row-reverse; }
 #app[data-side-pos="left"] #side { border-left: none; border-right: 1px solid var(--border); }
 #app[data-side-pos="bottom"] #main { flex-direction: column; }
@@ -190,6 +204,9 @@ button, input, select, textarea { font-family: inherit; }
 #app[data-side-pos="left"] #side-toggle.collapsed svg { transform: rotate(-90deg); }
 /* grupa „widok”: ekrany pulpitu (gdy jest podział) i powiększenie w jednej szarej ramce */
 .tg-view .tb.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+/* wyrównanie: wciśnięty przycisk dopasowania – płaski szary, jak reszta przycisków (niebieski zostaje dla wybranego ekranu) */
+.tg-view .seg #zoom-fit.active, .tg-view .seg #zoom-fit-h.active { background: color-mix(in srgb, var(--text) 22%, var(--panel)); color: var(--text); border-color: var(--border2); }
+.tg-view .seg #zoom-fit.active svg, .tg-view .seg #zoom-fit-h.active svg { opacity: 1; }
 /* numer ekranu i jego podpis tym samym krojem i rozmiarem (podpis tylko przygaszony), jedna linia bazowa */
 .tg-view .tb small { font: inherit; color: inherit; opacity: 0.7; margin-left: 5px; }
 .tool-group .lbl { line-height: 1; display: inline-flex; align-items: center; height: var(--ctl-h); }

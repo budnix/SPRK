@@ -8,6 +8,8 @@ import { StartScreen } from './ui/StartScreen.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
 import { DeskViewport } from './ui/DeskViewport.js';
+import { SideResizer } from './ui/SideResizer.js';
+import { fitAxes, nextFitMode } from './render/zoom.js';
 import { SettingsScreen } from './ui/SettingsScreen.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
@@ -20,12 +22,13 @@ import { installNoBounce } from './ui/noBounce.js';
 
 const params = new URLSearchParams(location.search);
 const station = getStation(params.get('stacja'));
+let resizer = null; // przeciąganie granicy planu i panelu – tworzone niżej, ustawienia mogą się zmienić wcześniej
 const settings = new Settings((key, value) => {
   if (key === 'rowScale' || key === 'lang') location.reload();
   else if (key === 'screens') planAll();
   else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
   else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale(value); }
-  else requestAnimationFrame(refit); // zmiana układu (panel, położenie pulpitu): ten sam tryb dopasowania co dotąd
+  else { resizer?.apply(); requestAnimationFrame(refit); } // zmiana układu (panel, położenie pulpitu): ten sam tryb dopasowania co dotąd
 });
 // język interfejsu przed zbudowaniem jakiegokolwiek ekranu; 'auto' = wg przeglądarki
 document.documentElement.lang = setLang(detectLang(settings.values.lang === 'auto' ? null : settings.values.lang));
@@ -236,16 +239,36 @@ function deskSize() {
   const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
   return viewSize(sim.srk, cols, station.desk.rows, viewOpts());
 }
-const viewport = new DeskViewport(scroll, deskEl, { size: deskSize, onChange: () => edges.update() });
-function syncFitButtons() { document.getElementById('zoom-fit-h').classList.toggle('hidden', settings.values.edgePanels !== 'on'); }
+const viewport = new DeskViewport(scroll, deskEl, { size: deskSize, onChange: () => edges.update(), onMode: () => syncFitButtons() });
+/** Przyciski dopasowania są stanowe: wciśnięty = plan dopasowuje się na żywo do szerokości / wysokości obszaru. */
+function syncFitButtons() {
+  document.getElementById('zoom-fit-h').classList.toggle('hidden', settings.values.edgePanels !== 'on');
+  const axes = fitAxes(viewport.fitMode);
+  for (const [id, on] of [['zoom-fit', axes.w], ['zoom-fit-h', axes.h]]) {
+    const b = document.getElementById(id);
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  }
+}
 document.getElementById('zoom-in').addEventListener('click', () => viewport.step(1.2));
 document.getElementById('zoom-out').addEventListener('click', () => viewport.step(1 / 1.2));
 // „dopasuj”: do szerokości okna; „wysokość”: wypełnia okno w pionie, środek przewijany, pola skrajne przypięte
-document.getElementById('zoom-fit').addEventListener('click', () => viewport.fit('width'));
-document.getElementById('zoom-fit-h').addEventListener('click', () => viewport.fit('height'));
+document.getElementById('zoom-fit').addEventListener('click', () => viewport.setMode(nextFitMode(viewport.fitMode, 'w')));
+document.getElementById('zoom-fit-h').addEventListener('click', () => viewport.setMode(nextFitMode(viewport.fitMode, 'h')));
+// obszar planu zmienia rozmiar (przeciągnięta granica panelu, zwinięcie panelu, okno): wciśnięte dopasowanie działa na żywo
+if (typeof ResizeObserver === 'function') {
+  let last = '';
+  new ResizeObserver(() => {
+    const key = `${scroll.clientWidth}x${scroll.clientHeight}`;
+    if (key === last) return;
+    last = key;
+    if (viewport.fitMode) viewport.refit();
+  }).observe(scroll);
+}
+resizer = new SideResizer({ main: document.getElementById('main'), side: document.getElementById('side'), grip: document.getElementById('side-grip'), settings, onEnd: () => onResize() });
 syncFitButtons();
 let replanTimer = null;
-function onResize() { clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
+function onResize() { resizer.apply(); clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
 window.addEventListener('resize', onResize);
 window.addEventListener('orientationchange', () => setTimeout(planAll, 300));
 window.addEventListener('load', planAll);

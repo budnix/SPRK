@@ -30,3 +30,24 @@ export function zoomAround(zoom, factor, scroll, point) {
   if (k === 1) return { zoom, left: scroll.left, top: scroll.top, changed: false };
   return { zoom: next, left: (scroll.left + point.x) * k - point.x, top: (scroll.top + point.y) * k - point.y, changed: true };
 }
+
+/** Osie dopasowania trybu: przycisk „do szerokości” (w) i „do wysokości” (h); całość = obie, ręczne = żadna. */
+export function fitAxes(mode) {
+  return { w: mode === 'width' || mode === 'whole', h: mode === 'height' || mode === 'whole' };
+}
+
+/**
+ * Tryb po kliknięciu przycisku osi (`'w'` albo `'h'`) – przyciski są stanowe:
+ *  - oś wyłączona → dochodzi (sama albo z drugą, wtedy całość),
+ *  - obie włączone (całość) → zostaje tylko kliknięta,
+ *  - jedyna włączona → wyłączona: powiększenie zostaje, po zmianie okna nic się nie dopasowuje.
+ */
+export function nextFitMode(mode, axis) {
+  const a = fitAxes(mode);
+  const other = axis === 'w' ? 'h' : 'w';
+  let next;
+  if (!a[axis]) next = { ...a, [axis]: true };
+  else if (a[other]) next = { [axis]: true, [other]: false };
+  else next = { w: false, h: false };
+  return next.w && next.h ? 'whole' : next.w ? 'width' : next.h ? 'height' : null;
+}

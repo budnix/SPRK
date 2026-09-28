@@ -26,12 +26,14 @@ src/
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), placement (miejsce dymka, bez DOM),
                Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
-               dialog (wspólne zachowanie okien pełnoekranowych), DeskViewport (powiększenie i dopasowanie pulpitu),
+               dialog (wspólne zachowanie okien pełnoekranowych), DeskViewport (powiększenie i dopasowanie pulpitu;
+               przyciski dopasowania stanowe – osie w `zoom.js`: `fitAxes`, `nextFitMode`), SideResizer (przeciąganie
+               granicy planu i panelu: krawędź panelu i uchwyt w listwie; rachunki `sideSize.js`, bez DOM),
                Settings (ustawienia, motyw wg systemu), settingsSchema (opis ustawień, bez DOM), SettingsScreen,
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)
   i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
-  stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
+  stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze, Olszyny; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
@@ -218,7 +220,13 @@ przewinięciach pole zlewa się z pulpitem pod nim. Geometrię liczy `edgeLayout
 i gdy oba pola zajmują ≤ 60 % okna). Dotknięcia na polu trafiają do właściwego elementu pulpitu: punkt pola przelicza się na jednostki
 rysunku, szuka się przycisku (`.btn`) lub punktu dotyku (`.hit`) pod nim i wysyła mu ten sam `pointerdown` /
 `pointerup`, więc blokadę obsługuje się z pola. `main.js` woła `edges.attach(renderer)` przy zmianie pulpitu/ekranu
-i `edges.update()` po każdej zmianie powiększenia. Opcja menu `edgePanels`, domyślnie wyłączona.
+i `edges.update()` po każdej zmianie powiększenia. Opcja menu `edgePanels`, domyślnie włączona.
+
+Przyciski dopasowania (↔ szerokość, ↕ wysokość) są stanowe: wciśnięta oś dopasowuje plan na żywo przy każdej zmianie
+obszaru (okno, przeciągnięta granica panelu, zwinięcie panelu – `ResizeObserver` na obszarze przewijania), obie = całość
+(stan na starcie), żadna = powiększenie ręczne; „+”, „−”, szczypnięcie i Ctrl + kółko zwalniają obie. Granicę planu
+i panelu przeciąga się krawędzią panelu (kursor ↕ / ↔) albo uchwytem w listwie obok przycisku panelu (palec); rozmiar
+jest w ustawieniach `sideSize` (panel na dole, ułamek wysokości) i `sideWidth` (z boku, px).
 
 ## Zwalnianie odcinkowe (`Interlocking.tick`)
 
