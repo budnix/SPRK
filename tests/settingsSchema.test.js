@@ -30,3 +30,8 @@ test('schemat ekranu ustawień opisuje każde ustawienie dokładnie raz, z tytu�
   setLang('en');
   try { assert.equal(settingsCategories().find((c) => c.id === 'jezyk').title, 'Language'); } finally { setLang('pl'); }
 });
+
+test('położenie panelu: wybory w kolejności jak na ekranie – po lewej, na dole, po prawej', () => {
+  const o = settingsCategories().flatMap((c) => c.options).find((x) => x.key === 'sidePos');
+  assert.deepEqual(o.choices.map((x) => x.value), ['left', 'bottom', 'right']);
+});

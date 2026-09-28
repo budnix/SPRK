@@ -301,12 +301,14 @@ for (const pos of ['right', 'left']) {
         // na tej samej linii co sekcja „wyrównanie”
         aligned: Math.abs(r(document.querySelector('#side-rail .tg-toggle')).bottom - r(document.querySelector('#desk-tools .tg-view')).bottom) < 1 && Math.abs(r(document.getElementById('side-toggle')).bottom - r(document.getElementById('zoom-in')).bottom) < 1,
         toolsButtons: [...document.querySelectorAll('#desk-tools button')].filter((b) => b.offsetParent).map((b) => b.id || b.dataset.screen),
-        vertical: getComputedStyle(document.querySelector('#panel-tabs .tb')).writingMode,
+        vertical: getComputedStyle(document.querySelector('#panel-tabs .tb .tab-label')).writingMode,
+        upright: getComputedStyle(document.querySelector('#panel-tabs .tb .tab-label')).textOrientation,
         rail: r(document.getElementById('side-rail')), side: r(document.getElementById('side')), tools: r(document.getElementById('desk-tools')), desk: r(document.getElementById('desk-scroll')),
       };
     });
     expect(g.inRail).toBe(true); expect(g.groupHidden).toBe(true); expect(g.stacked).toBe(true);
     expect(g.vertical).toBe('vertical-rl');
+    expect(g.upright).toBe('upright'); // litery stoją prosto – bez przechylania głowy
     // przyciski panelu na dole paska z zakładkami; w listwie na dole samo wyrównanie
     expect(g.buttonsInRail).toBe(true);
     expect(g.buttonsBottom).toBe(true);
@@ -315,8 +317,12 @@ for (const pos of ['right', 'left']) {
     if (pos === 'right') expect(Math.abs(g.rail.right - g.side.left)).toBeLessThan(2);
     else expect(Math.abs(g.rail.left - g.side.right)).toBeLessThan(2);
     expect(g.tools.top).toBeGreaterThan(g.desk.bottom - 1); // wyrównanie i reszta listwy – pod planem
-    // zakładka działa, a przy zwiniętym panelu zakładki zostają i rozwijają panel
-    await page.click('#panel-tabs button[data-tab=log]');
+    // zakładka działa; klikanie zakładek nie zmienia szerokości paska ani panelu (Safari dokładał piksel), zakładka wąska
+    const widths = () => page.evaluate(() => [document.getElementById('side-rail').getBoundingClientRect().width, document.getElementById('side').getBoundingClientRect().width, document.querySelector('#panel-tabs .tb').getBoundingClientRect().width]);
+    const w0 = await widths();
+    for (const tab of ['log', 'pociagi', 'rj', 'rozkazy', 'log']) await page.click(`#panel-tabs button[data-tab=${tab}]`);
+    expect(await widths()).toEqual(w0);
+    expect(w0[2]).toBeLessThanOrEqual(34);
     await expect(page.locator('#tab-log')).toBeVisible();
     await page.click('#side-toggle');
     await expect(page.locator('#side')).toBeHidden();

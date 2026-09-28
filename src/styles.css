@@ -172,13 +172,21 @@ button, input, select, textarea { font-family: inherit; }
    aktywna łączy się z panelem (jak zakładki nad panelem na dole) */
 #side-rail { display: none; }
 #app[data-side-placement="right"] #side-rail, #app[data-side-placement="left"] #side-rail { display: flex; flex: 0 0 auto; flex-direction: column; padding: 8px 0 0; background: var(--bg); }
-#side-rail .panel-tabs { flex-direction: column; flex-wrap: nowrap; align-self: stretch; gap: 2px; }
-#side-rail .panel-tabs .tb { writing-mode: vertical-rl; padding: 12px 6px; border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+#side-rail .panel-tabs { flex-direction: column; flex-wrap: nowrap; gap: 2px; }
+/* przycisk o stałej szerokości, pionowy jest tylko napis w środku – Safari źle liczy szerokość przycisku z pionowym
+   tekstem; aktywna zakładka łączy się z panelem cieniem w kolorze panelu (bez ujemnego marginesu, który w Safari
+   przy każdym kliknięciu poszerzał pasek o piksel) */
+#side-rail .panel-tabs .tb { width: 32px; box-sizing: border-box; padding: 12px 0; display: flex; justify-content: center; border-top: 1px solid var(--border2); border-bottom: 1px solid var(--border2); }
+/* litery jedna pod drugą, każda stoi prosto – czyta się bez przechylania głowy */
+#side-rail .panel-tabs .tab-label { writing-mode: vertical-rl; text-orientation: upright; -webkit-text-orientation: upright; white-space: nowrap; text-transform: uppercase; font-size: 11px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
+/* zakładki przy panelu: po prawej stronie paska przy panelu prawym, po lewej – przy lewym */
+#app[data-side-placement="right"] #side-rail .panel-tabs { align-self: flex-end; }
+#app[data-side-placement="left"] #side-rail .panel-tabs { align-self: flex-start; }
 #app[data-side-placement="right"] #side-rail .panel-tabs .tb { border-radius: var(--radius) 0 0 var(--radius); border-right: none; border-left: 2px solid transparent; }
 #app[data-side-placement="left"] #side-rail .panel-tabs .tb { border-radius: 0 var(--radius) var(--radius) 0; border-left: none; border-right: 2px solid transparent; }
-#app[data-side-placement="right"] #side-rail .panel-tabs .tb.active { border-left-color: var(--grp-panel); margin-right: -1px; position: relative; z-index: var(--z-status); }
-#app[data-side-placement="left"] #side-rail .panel-tabs .tb.active { border-right-color: var(--grp-panel); margin-left: -1px; position: relative; z-index: var(--z-status); }
-#app[data-side-collapsed="true"] #side-rail .panel-tabs .tb.active { margin: 0; }
+#app[data-side-placement="right"] #side-rail .panel-tabs .tb.active { border-left-color: var(--grp-panel); box-shadow: 1px 0 0 var(--panel); position: relative; z-index: var(--z-status); }
+#app[data-side-placement="left"] #side-rail .panel-tabs .tb.active { border-right-color: var(--grp-panel); box-shadow: -1px 0 0 var(--panel); position: relative; z-index: var(--z-status); }
+#app[data-side-collapsed="true"] #side-rail .panel-tabs .tb.active { box-shadow: none; }
 #side-rail .panel-tabs .tb .badge { top: -6px; right: -4px; }
 /* przyciski panelu na dole paska z zakładkami, jeden nad drugim */
 /* dół przycisków na tej samej linii co sekcja „wyrównanie” (listwa: padding 4 px) */

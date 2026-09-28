@@ -90,7 +90,7 @@ export class SidePanel {
     this.tabs = opts.tabsHost || root.insertBefore(document.createElement('nav'), root.firstChild);
     this.tabs.classList.add('panel-tabs');
     this.tabs.innerHTML = [['rj'], ['log', 'log-badge'], ['zadania', 'tasks-badge', !(sim.traffic.tasks || []).length], ['pociagi'], ['stan'], ['rozkazy'], ['lacznosc', 'comms-badge'], ['polecenia', 'cmd-badge', true]]
-      .map(([id, badge, hidden]) => `<button type="button" class="tb${id === 'rj' ? ' active' : ''}${hidden ? ' hidden' : ''}" data-tab="${id}"${id === 'polecenia' ? ' id="tab-btn-polecenia"' : ''}>${t(`sp.tab.${id}`)}${badge ? ` <span id="${badge}" class="badge hidden">0</span>` : ''}</button>`).join('');
+      .map(([id, badge, hidden]) => `<button type="button" class="tb${id === 'rj' ? ' active' : ''}${hidden ? ' hidden' : ''}" data-tab="${id}"${id === 'polecenia' ? ' id="tab-btn-polecenia"' : ''}><span class="tab-label">${t(`sp.tab.${id}`)}</span>${badge ? ` <span id="${badge}" class="badge hidden">0</span>` : ''}</button>`).join('');
     this.tabs.addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-tab]'); if (!b) return;
       this.collapse(false);

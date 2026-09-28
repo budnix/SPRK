@@ -24,7 +24,7 @@ export function settingsCategories() {
       { key: 'symScale', title: t('set.symScale.title'), description: t('set.symScale.desc'), type: 'range', range: { min: 1, max: 1.5, step: 0.05 } },
       opt('rowScale', ['1', '0.7'], { reload: true }),
     ]),
-    cat('panel', [opt('sidePos', ['right', 'left', 'bottom'])]),
+    cat('panel', [opt('sidePos', ['left', 'bottom', 'right'])]), // kolejność jak na ekranie: lewa, dół, prawa
     cat('wyglad', [opt('theme', ['system', 'dark', 'light'])]),
   ];
 }

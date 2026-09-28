@@ -162,7 +162,7 @@ export default {
   'set.cat.panel.title': 'Panel boczny',
   'set.cat.panel.intro': 'Rozkład jazdy, dziennik, zadania, pociągi, urządzenia, rozkazy i łączność. Panel można też zwinąć przyciskiem „ukryj” na pasku narzędzi.',
   'set.sidePos.title': 'Położenie panelu',
-  'set.sidePos.desc': 'Po prawej lub po lewej panel zajmuje kolumnę obok pulpitu; na dole leży pod pulpitem na całą szerokość (wygodne na tablecie w poziomie).',
+  'set.sidePos.desc': 'Po lewej lub po prawej panel zajmuje kolumnę obok pulpitu; na dole leży pod pulpitem na całą szerokość (wygodne na tablecie w poziomie).',
   'set.sidePos.right': 'po prawej',
   'set.sidePos.left': 'po lewej',
   'set.sidePos.bottom': 'na dole',
