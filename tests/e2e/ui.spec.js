@@ -77,6 +77,8 @@ test('ograniczenie ruchu w systemie wyłącza animacje ozdobne, miganie sygnał�
   const hl = page.locator('.tut-hl').first();
   await expect(hl).toHaveCount(1);
   expect(await hl.evaluate((e) => getComputedStyle(e).animationName)).toBe('none');
+  // wskazanie elementu na planie (SVG) ma własną animację poświaty – też wyłączoną
+  expect(await page.evaluate(() => { const g = document.querySelector('svg.screen .scr-el'); g.classList.add('tut-hl'); const a = getComputedStyle(g).animationName; g.classList.remove('tut-hl'); return a; })).toBe('none');
   expect(await page.evaluate(() => { const e = document.createElement('i'); e.className = 'blink'; document.body.appendChild(e); const a = getComputedStyle(e).animationName; e.remove(); return a; })).toBe('blink');
 });
 

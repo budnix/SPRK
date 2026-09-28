@@ -360,3 +360,26 @@ test('pasek polecenia specjalnego mieści się na tablecie: przyciski w jednej l
     expect(m.buttons[0].height).toBe(m.buttons[1].height);
   }
 });
+
+test('napis stanu blokady („żąd.”) jest czytelny: nie mniejszy niż nazwy semaforów, a wskazanie samouczka go nie przygasza', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await page.evaluate(() => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && s.blocks.get('W').request !== 'theirs'; i++) s.step(0.5); s.clock.paused = true; });
+  const status = page.locator('.scr-el.exit .blk-status').first();
+  await expect(status).toHaveText('żąd.');
+  const m = await page.evaluate(() => {
+    const st = document.querySelector('.scr-el.exit .blk-status'), g = st.closest('.scr-el');
+    const c = getComputedStyle(st), sig = getComputedStyle(document.querySelector('svg.screen .sig-label'));
+    // najciemniejsza faza migania napisu
+    const dim = Math.min(...[...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === c.animationName).flatMap((r) => [...r.cssRules]).map((k) => parseFloat(k.style.opacity)).filter((v) => !Number.isNaN(v)));
+    g.classList.add('tut-hl');
+    const hl = getComputedStyle(g);
+    const out = { size: parseFloat(c.fontSize), sig: parseFloat(sig.fontSize), weight: Number(c.fontWeight), dim, hlAnim: hl.animationName, hlKeys: [...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === hl.animationName).flatMap((r) => [...r.cssRules]).some((k) => k.style.opacity !== '') };
+    g.classList.remove('tut-hl');
+    return out;
+  });
+  expect(m.size).toBeGreaterThanOrEqual(m.sig);
+  expect(m.size).toBeGreaterThanOrEqual(8);
+  expect(m.weight).toBeGreaterThanOrEqual(600);
+  expect(m.dim).toBeGreaterThanOrEqual(0.4);
+  expect(m.hlKeys, `animacja wskazania: ${m.hlAnim}`).toBe(false);
+});

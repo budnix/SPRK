@@ -641,8 +641,10 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .blk-fault .exit-arrow { stroke-dasharray: 2 1.5; stroke: #ffd21f; }
 .blk-dir { fill: #e8eef2; stroke: none; }
 .blk-dir.off { display: none; }
-.blk-status { fill: #ffd21f; font-size: 6.5px; }
-.blk-status.blink { animation: blink 0.8s steps(1) infinite; }
+.blk-status { fill: #ffd21f; font-size: 8.5px; font-weight: 700; }
+/* napis stanu miga łagodniej niż lampki: w ciemnej fazie nadal da się go przeczytać */
+.blk-status.blink { animation: blink-text 0.8s steps(1) infinite; }
+@keyframes blink-text { 50% { opacity: 0.45; } }
 .end-mark { fill: #000; stroke: #b5bec7; stroke-width: 1.2; }
 .block-box { fill: #0c1218; stroke: #2f3d4a; stroke-width: 1; }
 .block-title { font-size: 6.5px; fill: #ffd21f; }
@@ -708,7 +710,9 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .tut-gloss { position: fixed; z-index: var(--z-gloss); background: var(--panel); color: var(--text); border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--border2)); border-radius: var(--radius); padding: 8px 10px; font-size: 12px; box-shadow: 0 8px 24px var(--shadow); }
 .tut-gloss p { margin: 4px 0 0; }
 .tut-hl { outline: 3px solid var(--highlight); outline-offset: 2px; border-radius: var(--radius); animation: tutpulse 1s ease-in-out infinite; }
-svg .tut-hl { outline: none; filter: drop-shadow(0 0 4px var(--highlight)) drop-shadow(0 0 8px var(--highlight)); }
+/* na planie pulsuje poświata, nie sam element: napisy i lampki wskazanego elementu zostają w pełni widoczne */
+svg .tut-hl { outline: none; filter: drop-shadow(0 0 4px var(--highlight)) drop-shadow(0 0 8px var(--highlight)); animation-name: tutglow; }
+@keyframes tutglow { 50% { filter: drop-shadow(0 0 2px var(--highlight)); } }
 @keyframes tutpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 dl.gloss dt { font-weight: 600; margin-top: 6px; }
 dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
@@ -723,7 +727,7 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .rp-tasks .ui-ic, .cmd .ui-ic { display: inline-block; vertical-align: -2px; }
 /* miganie lampek i sygnałów (.blink) niesie informację o stanie urządzeń – zostaje; wyłączane są ruchy ozdobne */
 @media (prefers-reduced-motion: reduce) {
-  .tut-hl, .panel-tabs .tb.flash { animation: none; }
+  .tut-hl, svg .tut-hl, .panel-tabs .tb.flash { animation: none; }
   #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card { transition: none; }
   * { scroll-behavior: auto !important; }
 }
