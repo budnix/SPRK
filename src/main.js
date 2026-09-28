@@ -115,16 +115,22 @@ function applyScreen(keepMode = false) {
   if (edges.svg !== d.renderer.svg) edges.attach(d.renderer);
   const n = d.screens.length;
   document.getElementById('screen-group').classList.toggle('hidden', n <= 1);
-  screenTabs.innerHTML = '';
-  if (n > 1) {
-    const mk = (label, idx, sub) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = `tb${d.screen === idx ? ' active' : ''}`;
-      b.innerHTML = sub ? `${label}<small>${sub}</small>` : label;
-      b.addEventListener('click', () => setScreen(idx)); screenTabs.appendChild(b);
-    };
-    mk(t('tools.whole'), -1);
-    d.screens.forEach((sc, i) => mk(String(i + 1), i, screenLabel(station, sc, i, n)));
+  // zakładki buduje się tylko po zmianie podziału – ponowne planowanie (rozmiar okna, start) nie wymienia przycisków
+  const tabsKey = n > 1 ? JSON.stringify([d.id, d.screens]) : '';
+  if (tabsKey !== screenTabs.dataset.key) {
+    screenTabs.dataset.key = tabsKey;
+    screenTabs.innerHTML = '';
+    if (n > 1) {
+      const mk = (label, idx, sub) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'tb'; b.dataset.screen = idx;
+        b.innerHTML = sub ? `${label}<small>${sub}</small>` : label;
+        b.addEventListener('click', () => setScreen(idx)); screenTabs.appendChild(b);
+      };
+      mk(t('tools.whole'), -1);
+      d.screens.forEach((sc, i) => mk(String(i + 1), i, screenLabel(station, sc, i, n)));
+    }
   }
+  for (const b of screenTabs.children) b.classList.toggle('active', Number(b.dataset.screen) === d.screen);
   if (keepMode) refit(); else fit();
 }
 function setScreen(i) {
