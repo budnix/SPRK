@@ -529,7 +529,10 @@ export class ScreenRenderer extends PanelView {
     const no = document.createElement('button'); no.type = 'button'; no.className = 'tb'; no.textContent = 'OPS – odwołaj';
     ok.addEventListener('click', () => { this.confirmBar.classList.add('hidden'); item.run(); });
     no.addEventListener('click', () => this.confirmBar.classList.add('hidden'));
-    this.confirmBar.append(ok, no);
+    // przyciski trzymają się razem: na wąskim ekranie schodzą pod opis jako para
+    const actions = document.createElement('div'); actions.className = 'confirm-actions';
+    actions.append(ok, no);
+    this.confirmBar.append(actions);
     this.confirmBar.classList.remove('hidden');
   }
 

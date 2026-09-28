@@ -678,7 +678,11 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .scr-menu .menu-trains { padding: 6px 10px; font-size: 12px; color: var(--mon-muted); display: flex; flex-wrap: wrap; gap: 6px; }   /* pociągi na szlaku – informacja, nie polecenie */
 .scr-menu .menu-train { display: inline-block; background: var(--mon-train); color: var(--mon-on-train); font-weight: 700; padding: 1px 7px; border-radius: var(--radius-sm); border: 1px solid var(--mon-train-border); }   /* jak kasetka numeru na planie */
 .scr-menu .menu-train.queued { background: none; color: var(--mon-train-border); }   /* zgłoszony u sąsiada, czeka na wyprawienie */
-.scr-confirm { position: fixed; z-index: var(--z-confirm); left: 50%; bottom: 64px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: var(--mon-confirm-bg); color: var(--mon-confirm-text); border: 1px solid var(--mon-special); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; box-shadow: 0 8px 24px var(--mon-shadow); }
+.scr-confirm { position: fixed; z-index: var(--z-confirm); left: 16px; right: 16px; bottom: 64px; margin: 0 auto; width: fit-content; max-width: calc(100vw - 32px); box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; justify-content: flex-end; background: var(--mon-confirm-bg); color: var(--mon-confirm-text); border: 1px solid var(--mon-special); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; line-height: 1.35; box-shadow: 0 8px 24px var(--mon-shadow); }
+/* opis może się zawijać, przyciski nigdy: mają stałą wysokość i własne odstępy (na wąskim ekranie schodzą pod opis) */
+.scr-confirm span { flex: 1 1 220px; min-width: 0; }
+.scr-confirm .confirm-actions { flex: 0 0 auto; display: flex; gap: 8px; margin-left: auto; }
+.scr-confirm .tb { flex: 0 0 auto; height: calc(var(--ctl-h) + 8px); /* cel dla palca */ padding: 0 14px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; line-height: 1; white-space: nowrap; }
 .scr-confirm .tb.warn { background: var(--mon-special); color: var(--mon-on-special); border-color: var(--mon-special); font-weight: 600; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
 

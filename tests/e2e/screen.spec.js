@@ -330,3 +330,33 @@ test('monitor wydaje polecenia wprost: Zw, Zz, Pz i blokada z menu nie naciskaj�
   expect(kinds.filter((k) => k === 'signal').length).toBe(2);
   expect((await simState(page)).armed).toBe(null);
 });
+
+test('pasek polecenia specjalnego mieści się na tablecie: przyciski w jednej linii, napisy w przyciskach, pasek w oknie', async ({ page }) => {
+  for (const size of [{ width: 820, height: 1180 }, { width: 1024, height: 1366 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(size);
+    await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+    await page.click('.scr-cmdbar button[data-cmd=zz]');
+    await tap(page, 'Zw3');
+    const bar = page.locator('.scr-confirm');
+    await expect(bar).toBeVisible();
+    const m = await bar.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const buttons = [...el.querySelectorAll('button')].map((b) => {
+        const q = b.getBoundingClientRect(), range = document.createRange();
+        range.selectNodeContents(b);
+        const tx = range.getBoundingClientRect(), c = getComputedStyle(b);
+        return { text: b.textContent, height: Math.round(q.height), lines: Math.round(tx.height / parseFloat(c.lineHeight) || tx.height / (parseFloat(c.fontSize) * 1.2)), padLeft: Math.round(tx.left - q.left), padRight: Math.round(q.right - tx.right), top: Math.round(q.top) };
+      });
+      return { inWindow: r.left >= 8 && r.right <= innerWidth - 8 && r.bottom <= innerHeight, buttons };
+    });
+    expect(m.inWindow, JSON.stringify(size)).toBe(true);
+    for (const b of m.buttons) {
+      expect(b.lines, `${b.text} @${size.width}`).toBeLessThanOrEqual(1);
+      expect(b.padLeft, `${b.text} @${size.width}`).toBeGreaterThanOrEqual(10);
+      expect(b.padRight, `${b.text} @${size.width}`).toBeGreaterThanOrEqual(10);
+      expect(b.height, `${b.text} @${size.width}`).toBeGreaterThanOrEqual(32); // wygodny cel dla palca
+    }
+    expect(m.buttons[0].top).toBe(m.buttons[1].top);
+    expect(m.buttons[0].height).toBe(m.buttons[1].height);
+  }
+});
