@@ -3,15 +3,12 @@ import { A } from '../phrases.js';
 
 /**
  * Misja 2 – pulpit kostkowy urządzeń przekaźnikowych typu E na stacji Jodłowa (linia dwutorowa z odgałęzieniem).
- * Własny scenariusz i własne kroki: rozgrzewka z przyciskami pulpitu, ruch bez pozwoleń z potwierdzeniem przyjazdu,
+ * Własny scenariusz i własne kroki: ruch bez pozwoleń z potwierdzeniem przyjazdu,
  * wyprzedzanie towarowego, pociąg na odgałęzienie z blokadą Eap.
  */
 const green = (id) => ({ ref: { kind: 'signal', id, color: 'green' } });
 const group = (id, role) => ({ ref: { kind: 'group', id, role } });
-const ZW = group('Zw', 'group-point'), ZZ = group('Zz', 'point-lock'), PZ = group('Pz', 'route-release');
-const POINT = 'Zw7';                     // odgałęzienie toru 4 – w tej misji nic przez nią nie jedzie
-const point = (sim) => sim.ilk.points.get(POINT);
-const TRY = 'B-D1';                      // przebieg do ćwiczeń: wjazd od Zalesia na tor 1
+const ZZ = group('Zz', 'point-lock');   // zamknięcie zwrotnicy – potrzebne przy usterce napędu
 const FAULTY = { ref: { kind: 'point', id: 'Zw3' } };  // zwrotnica z usterką napędu
 const faulty = (sim) => sim.ilk.points.get('Zw3');
 /** Zwrotnica z usterką została przestawiona: nie ma kontroli położenia aż do naprawy. */
@@ -24,8 +21,6 @@ const brokenHint = (sim) => {
 };
 const koDone = (sim, exit, nr) => arrived(sim, nr) && !sim.blocks.get(exit).koPending;
 const two = (a, b) => `naciśnij <b>${a}</b>, a w ciągu 6 s <b>${b}</b>`;
-/** To samo na początku zdania. */
-const Two = (a, b) => `N${two(a, b).slice(1)}`;
 const route = (s, e) => two(`zielony przycisk semafora ${s}`, `zielony przycisk ${e}`);
 
 export function steps() {
@@ -33,21 +28,6 @@ export function steps() {
     /* ---------------- wprowadzenie ---------------- */
     info('intro', 'Witaj na stacji Jodłowa', `Przed Tobą <b>pulpit kostkowy</b> urządzeń przekaźnikowych typu E. Wszystko robi się przyciskami na kostkach: <b>naciśnięcie</b> = kliknięcie, <b>wyciągnięcie</b> = przytrzymanie pół sekundy lub prawy przycisk myszy. Większość operacji jest <b>dwuprzyciskowa</b>: pierwszy przycisk „uzbraja” (podświetla się), drugi wykonuje – masz na to 6 s.<p>Jodłowa leży na <b>linii dwutorowej</b> Krasne – Zalesie. Każdy tor szlakowy ma jeden kierunek ruchu, więc pociągów nie trzeba uzgadniać z sąsiadem tak jak na linii jednotorowej. Od stacji odchodzi też jednotorowe odgałęzienie do Borków.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz. Skróty z kropkowanym podkreśleniem mają wyjaśnienie – kliknij je.</p>`),
     info('layout', 'Plan stacji', `Tor <b>1</b> prowadzi na zachód, do Krasnego, tor <b>2</b> na wschód, do Zalesia – oba przy peronie I. Tor <b>3</b> (peron II) służy do ${A('wyprzedzanie', 'wyprzedzania')} i dla pociągów z i do Borków. Tor <b>4</b> to bocznica.<p>${A('semafor', 'Semafory')} wjazdowe: <b>A</b> (od Krasnego), <b>B</b> (od Zalesia), <b>C</b> (od Borków). Wyjazdowe na zachód: <b>D1, D2, D3</b>, na wschód: <b>E2, E3</b>.</p><p>Lampki na kostkach: <b>białe</b> – odcinek utwierdzony w przebiegu, <b>czerwone</b> – zajęty przez tabor, <b>żółte</b> przy zwrotnicy – jej położenie. Semafor to powtarzacz z zielonym przyciskiem. Przyciski grupowe u góry: Zw, Zz, Pz, dPz, Sz działają razem z drugim przyciskiem.</p>`, { el: '#desk' }),
-
-    /* ---------------- rozgrzewka: przyciski pulpitu ---------------- */
-    info('e-practice', 'Rozgrzewka przed pierwszym pociągiem', `Do pierwszego pociągu jest kilka minut. Przećwicz przyciski grupowe: ${A('Zw')} (zwrotnica), ${A('Zz')} (zamknięcie zwrotnicy), wyciągnięcie przycisku semafora (${A('STOP', 'sygnał „Stój”')}) i ${A('Pz')} (zwolnienie przebiegu).<p>Ćwiczysz na <b>zwrotnicy 7</b> (odgałęzienie toru 4) i na wjeździe od Zalesia. Pierwszy pociąg przyjedzie od Krasnego. Po „Dalej” zegar ruszy.</p>`, ZW),
-    act('e-point', 'Zwrotnica: Zw i przycisk zwrotnicy', `${Two('przycisk grupowy Zw', 'czarny przycisk zwrotnicy 7')}. Żółta lampka pokaże nowe położenie po ok. 4 s. Kolejność może być odwrotna: najpierw zwrotnica, potem Zw.`, ZW,
-      (sim) => point(sim).position === '-' && !point(sim).moving),
-    act('e-lock', 'Zamknięcie zwrotnicy: Zz', `${Two('przycisk grupowy Zz', 'przycisk zwrotnicy 7')}. Przy zwrotnicy zapali się biała lampka zamknięcia. Zamkniętej zwrotnicy nie przestawi ani obsługa, ani przebieg – przydaje się na czas robót.`, ZZ,
-      (sim) => point(sim).individualLock),
-    act('e-unlock', 'Otwarcie i powrót', `Otwórz zamknięcie tak samo: <b>Zz</b> i przycisk zwrotnicy 7. Potem przywróć położenie zasadnicze: <b>Zw</b> i przycisk zwrotnicy 7.`, ZZ,
-      (sim, ctx) => ctx.seen.has(`lock:${POINT}`) && !point(sim).individualLock && point(sim).position === '+' && !point(sim).moving),
-    act('e-route', 'Przebieg do ćwiczenia', `Nastaw ${A('przebieg pociągowy')} wjazdowy od Zalesia na tor 1: ${route('B', 'semafora D1')}. Zwrotnice ustawią się same, odcinki zaświecą na biało, a na powtarzaczu B zapali się sygnał zezwalający.`, green('B'),
-      (sim, ctx) => active(sim, TRY) || ctx.seen.has(`route:${TRY}:released`)),
-    act('e-stop', 'Sygnał „Stój”: wyciągnięcie przycisku', `<b>Wyciągnij</b> zielony przycisk semafora B – przytrzymaj go pół sekundy albo kliknij prawym przyciskiem myszy. Semafor wróci na „Stój”, ale przebieg <b>zostaje utwierdzony</b>: odcinki nadal świecą na biało.`, green('B'),
-      (sim, ctx) => !!sim.ilk.active.get(TRY)?.signalOff || ctx.seen.has(`route:${TRY}:released`)),
-    act('e-pz', 'Zwolnienie przebiegu: Pz', `${Two('przycisk grupowy Pz', 'zielony przycisk semafora B')}. Odcinki zgasną – przebieg jest zwolniony.<p>Gdyby pociąg był już na odcinku zbliżania, zwolnienie trwałoby 90 s. Natychmiast zwalnia tylko ${A('dPz')}, ale ma licznik i kosztuje punkty – to przycisk na wypadek usterki.</p>`, PZ,
-      (sim, ctx) => ctx.seen.has(`route:${TRY}:released`) && !active(sim, TRY)),
 
     /* ---------------- linia dwutorowa: bez pozwoleń ---------------- */
     info('block-intro', 'Blokada na linii dwutorowej', `Kostki przy krańcach torów szlakowych to ${A('blokada jednokierunkowa', 'blokady jednokierunkowe')}. Na torze, którym pociągi <b>przyjeżdżają</b> (od Krasnego tor 2, od Zalesia tor 1), jest tylko przycisk ${A('Ko')} – potwierdzasz nim przyjazd. Na torze, którym <b>odjeżdżają</b>, nie ma żadnego przycisku: wyprawiasz pociąg, gdy tor jest wolny.<p>Sąsiad nie pyta o zgodę – po prostu wyprawia pociąg. Musisz zdążyć z przebiegiem wjazdowym.</p><p>Tylko szlak do Borków jest jednotorowy i ma pełną ${A('Eap', 'blokadę Eap')} z przyciskami Wbl, Poz, Ko.</p>`, { block: 'K2' }),

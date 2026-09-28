@@ -54,7 +54,7 @@ export function lessonSteps(P) {
 
   /* ---------------- pociąg 1: 6101 z Lipna, tor 1, dalej do Dębna ---------------- */
   act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga ${P.indicator} „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
-    (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: `Żądanie przychodzi około 06:58 – ${P.indicator} „żąd.” miga wtedy przy strzałce szlaku. Jeśli jest wcześniej, przyspiesz czas (5×) w nagłówku.` });
+    (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: `Żądanie przychodzi kilka minut przed przyjazdem pociągu – ${P.indicator} „żąd.” miga wtedy przy strzałce szlaku. Jeśli go nie widać, odczekaj chwilę albo przyspiesz czas (5×) w nagłówku.` });
   act('route-6101', 'Przebieg wjazdowy na tor 1', `Pociąg jest w drodze. Nastaw ${A('przebieg pociągowy')} od semafora wjazdowego <b>A</b> na tor 1, czyli do semafora wyjazdowego <b>D1</b>: ${P.trainRoute('A', 'D1')}.<p>Zwrotnica 1 ustawi się sama, odcinki zostaną ${A('utwierdzenie', 'utwierdzone')} i semafor A poda sygnał zezwalający.</p>`, cmd('train', sig('A')),
     (sim) => active(sim, 'A-D1') || arrived(sim, 6101),
     { wrong: (sim) => (active(sim, 'A-D2') ? `To przebieg na tor 2. Pociąg 6101 ma tor 1 – ${P.release('A', 'D2')} i nastaw A → D1.` : null) });

@@ -118,8 +118,7 @@ export default {
   routes: { disable: ['D2-K2', 'D3-K2'], override: {} }, // brak wyjazdów na tor wjazdowy linii dwutorowej
 
   scenarios: [
-    // misja zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z przyciskami pulpitu
-    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', startTime: '06:54', endTime: '08:30',
+    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', endTime: '08:30',
       trains: [3301, 3302, 42801, 5501, 6612, 6611, 3304],
       // zwrotnica 3 stoi wtedy w położeniu na tor 3 (po wyjeździe 6611) – pociąg 3304 trzeba przyjąć na tor 3
       faults: [{ type: 'point-control', target: 'Zw3', at: '08:01', duration: 20 }],

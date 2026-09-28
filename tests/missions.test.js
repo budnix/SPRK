@@ -85,16 +85,16 @@ test('kroki każdej misji są spójne: unikalne id, teksty, warunki, skróty ze 
   for (const s of missionSteps('mech')) assert.ok(!/przycisk adresowy|PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|przycisk grupowy|rozkaz <b>/.test(`${s.text} ${s.tip || ''}`), `mech/${s.id}: tekst innego stanowiska`);
 });
 
-test('każda misja ćwiczy polecenia swojego stanowiska w rozgrzewce przed pierwszym pociągiem', () => {
-  const warmup = (id) => { const ids = missionSteps(id).map((s) => s.id); return ids.slice(ids.indexOf('layout') + 1, ids.indexOf('block-intro')); };
-  assert.deepEqual(warmup('monitor'), ['m-practice', 'm-point', 'm-lock', 'm-ops', 'm-route', 'm-stop', 'm-pz']);
-  assert.deepEqual(warmup('pulpit'), ['e-practice', 'e-point', 'e-lock', 'e-unlock', 'e-route', 'e-stop', 'e-pz']);
-  assert.deepEqual(warmup('izh'), ['izh-practice', 'izh-point-minus', 'izh-point-stop', 'izh-point-zw', 'izh-point-plus', 'izh-zcz-route', 'izh-zcz', 'izh-zcz-wait']);
-  assert.deepEqual(warmup('mech'), ['l-practice', 'l-point', 'l-point-back', 'l-derailer-off', 'l-derailer-on', 'l-route', 'l-return']);
-  // misja 1 = rozgrzewka + wspólne lekcje rozkładu Szkolnej w niezmienionej kolejności
+test('misje bez rozgrzewki: po planie stacji od razu blokada i pierwszy pociąg – polecenia wtedy, gdy są potrzebne', () => {
+  for (const id of MISSION_VIEWS) {
+    const ids = missionSteps(id).map((s) => s.id);
+    assert.equal(ids[ids.indexOf('layout') + 1], 'block-intro', `${id}: po planie stacji ćwiczenia bez potrzeby`);
+    assert.ok(!ids.some((x) => /^(m|e|izh|l)-/.test(x) || /practice/.test(x)), `${id}: krok rozgrzewki`);
+  }
+  // misja 1 = wspólne lekcje rozkładu Szkolnej w niezmienionej kolejności
   const lessons = lessonSteps(MISSIONS.monitor.phrases).map((s) => s.id);
   assert.equal(lessons.length, 40);
-  assert.deepEqual(missionSteps('monitor').map((s) => s.id).filter((x) => !x.startsWith('m-')), lessons);
+  assert.deepEqual(missionSteps('monitor').map((s) => s.id), lessons);
   assert.deepEqual(Object.keys(PHRASES), ['monitor'], 'ze wspólnych lekcji korzysta misja 1');
   for (const k of LESSON_PHRASES) assert.ok(k in PHRASES.monitor, `brak tekstu ${k}`);
   const { sz, ...partial } = PHRASES.monitor;
@@ -144,12 +144,6 @@ function studentE(sim) {
   const pt = (id, role) => { if (!sim.ilk.armed && !p().moving) { group(id, role); press({ kind: 'point', id: 'Zw7' }); } };
   const out = (nr, a, end, exit, id) => { const en = e(nr); if (en?.train && en.actualArr != null && en.status !== 'na następnym posterunku' && B(exit).gate().ok) route(a, K(end), id); };
   return {
-    'e-point': () => { if (p().position === '+') pt('Zw', 'group-point'); },
-    'e-lock': () => { if (!p().individualLock) pt('Zz', 'point-lock'); },
-    'e-unlock': () => { if (p().individualLock) pt('Zz', 'point-lock'); else if (p().position === '-') pt('Zw', 'group-point'); },
-    'e-route': () => route('B', 'D1', 'B-D1'),
-    'e-stop': () => one('stop', () => sim.pull(G('B'))),
-    'e-pz': () => one('pz', () => { group('Pz', 'route-release'); press(G('B')); }),
     'in-3301': () => route('A', 'E2', 'A-E2'),
     'ko-3301': () => ko('K2'),
     'out-3301': () => out(3301, 'E2', 'kZ2', 'Z2', 'E2-Z2'),
@@ -182,12 +176,6 @@ function studentIzh(sim) {
   const arrive = (nr, end, id) => { poz('W'); if (B('W').direction === 'in' && !e(nr).actualArr) route('A', K(end), id); ko('W'); };
   const depart = (nr, sig, id) => { if (!e(nr).train || e(nr).status === 'na następnym posterunku') return; if (B('W').direction === 'out' && B('W').permission) route(sig, K('kW'), id); else wbl('W'); };
   return {
-    'izh-point-minus': () => { if (p().position === '+') pt('-'); },
-    'izh-point-stop': () => { if (!p().individualLock) pt('STOP'); },
-    'izh-point-zw': () => { if (p().individualLock) pt('Zw'); },
-    'izh-point-plus': () => { if (p().position === '-') pt('+'); },
-    'izh-zcz-route': () => route('A', K('kT3'), 'A-kT3'),
-    'izh-zcz': () => one('zcz', () => { press(K('kT3')); order('Zcz'); }),
     'poz-7101': () => poz('W'),
     'route-7101': () => route('A', K('kT1'), 'A-kT1'),
     'ko-7101': () => ko('W'),
@@ -237,12 +225,6 @@ function studentMech(sim) {
   const arrive = (nr, exit, id) => { poz(exit); if (B(exit).direction === 'in' && e(nr).actualArr == null) route(id); back(id); if (e(nr).actualArr != null) ko(exit); };
   const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).status === 'na następnym posterunku') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.active.has(id)) wbl(exit); back(id); };
   return {
-    'l-point': () => set('Zw1', '-'),
-    'l-point-back': () => set('Zw1', '+'),
-    'l-derailer-off': () => wkSet('off'),
-    'l-derailer-on': () => wkSet('on'),
-    'l-route': () => { if (!ilk.active.has('A-D1')) x({ type: 'route', id: 'A-D1' }); },
-    'l-return': () => { if (ilk.active.has('A-D1')) x({ type: 'release', signal: 'A' }); },
     'poz-8401': () => poz('W'),
     'route-8401': () => { if (!ilk.active.has('A-D1')) x({ type: 'route', id: 'A-D1' }); },
     'block-8401': () => x({ type: 'route-block', signal: 'A' }),
@@ -271,18 +253,17 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
   test(`misja „${id}” (${MISSIONS[id].station}): uczeń wykonujący polecenia dymków przechodzi wszystkie kroki po kolei, pociągi jadą o czasie`, () => {
     const { st, sc } = scenarioOf(id);
     const sim = new Simulation(st, { scenario: sc.id, seed: 7 });
-    assert.equal(Clock.format(sim.clock.time), '06:54', 'misja zaczyna się przed pierwszym pociągiem – czas na rozgrzewkę');
+    assert.equal(Clock.format(sim.clock.time), '07:00', 'misja zaczyna się o 07:00 – bez rozgrzewki');
     const steps = missionSteps(id);
     const order = [];
     const progress = new MissionProgress(sim, steps, { onStep: (s) => order.push(s.id) });
     const script = student(sim);
-    for (const s of steps) if (!s.info && !['izh-zcz-wait'].includes(s.id)) assert.ok(script[s.id], `uczeń nie umie kroku ${s.id}`);
+    for (const s of steps) if (!s.info) assert.ok(script[s.id], `uczeń nie umie kroku ${s.id}`);
     progress.start();
     assert.equal(sim.clock.paused, true, 'krok informacyjny zatrzymuje zegar');
     const end = Clock.parse(until);
-    let n = 0, lastIdx = -1, since = sim.clock.time, warmupEnd = null;
+    let n = 0, lastIdx = -1, since = sim.clock.time;
     while (!progress.finished && sim.clock.time < end) {
-      if (progress.step?.id === 'block-intro' && warmupEnd == null) warmupEnd = sim.clock.time;
       if (progress.step?.info) { progress.next(); continue; }
       sim.step(0.5);
       if (n++ % 2 === 0) script[progress.step.id]?.();
@@ -293,7 +274,6 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
     }
     assert.ok(progress.finished, `misja nieukończona – utknęła na kroku ${progress.step?.id} o ${Clock.format(sim.clock.time)}`);
     assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
-    assert.ok(warmupEnd < Clock.parse('06:59'), `rozgrzewka skończona o ${Clock.format(warmupEnd)}`);
     for (const e of sim.traffic.timetable()) {
       assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
       if (e.from && e.stop && e.nr !== fault.nr) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);

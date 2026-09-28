@@ -55,8 +55,8 @@ Uproszczenia i założenia w grze (`src/srk/address.js`, `src/render/IzhRenderer
 * doraźnego zwolnienia przebiegu z licznikiem (dPz) na tym pulpicie nie ma – przebieg, w który pociąg wjechał,
   rozwiązuje się odcinkowo;
 * żadna rzeczywista stacja w grze nie ma tych urządzeń – pulpit jest dostępny na fikcyjnych stacjach treningowych
-  (Zacisze – misja 3, zmiany na Szkolnej i Jodłowej); misja zaczyna się rozgrzewką z rozkazami „−”, „+”, STOP, Zw
-  i Zcz, potem uczy wjazdów na tory czołowe i wyjazdów rozkazem P.
+  (Zacisze – misja 3, zmiany na Szkolnej i Jodłowej); misja uczy wjazdów na tory czołowe i wyjazdów rozkazem P,
+  a rozkazów „−”, STOP i Zw – przy usterce obwodu torowego.
 
 ## Urządzenia mechaniczne scentralizowane (nastawnia mechaniczna)
 

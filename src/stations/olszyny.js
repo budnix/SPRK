@@ -112,8 +112,7 @@ export default {
   routes: { disable: [], override: {} },
 
   scenarios: [
-    // misja zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z dźwigniami i drążkiem
-    { id: 'nauka-4', name: 'Misja 4: nastawnia mechaniczna (samouczek)', tutorial: 'mech', srk: 'mech', disruptions: 'none', startTime: '06:54', endTime: '08:40',
+    { id: 'nauka-4', name: 'Misja 4: nastawnia mechaniczna (samouczek)', tutorial: 'mech', srk: 'mech', disruptions: 'none', endTime: '08:40',
       // urządzenie oddziaływania za semaforem A nie zwalnia bloku przebiegowego – drążek cofa się zwalniaczem
       faults: [{ type: 'route-block', target: 'A', at: '07:45', duration: 25 }],
       description: 'Nastawnia mechaniczna krok po kroku: dźwignie zwrotnic i wykolejnicy, drążek przebiegowy, blok przebiegowy utwierdzający, dźwignia sygnałowa, powrót dźwigni i drążka po przejeździe, krzyżowanie na torach 1 i 2 z wykolejnicą ochronną, zwalniacz przy bloku niezwolnionym przez pociąg.' },

@@ -83,8 +83,7 @@ export default {
   routes: { disable: [], override: {} },
 
   scenarios: [
-    // misja zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z rozkazami pulpitu
-    { id: 'nauka-3', name: 'Misja 3: pulpit typu IZH-111 (samouczek)', tutorial: 'izh', srk: 'izh111', disruptions: 'none', startTime: '06:54', endTime: '08:45',
+    { id: 'nauka-3', name: 'Misja 3: pulpit typu IZH-111 (samouczek)', tutorial: 'izh', srk: 'izh111', disruptions: 'none', endTime: '08:45',
       trains: [7101, 7102, 7103, 7104, 7105, 7106, 7107, 7108],
       // tor 3 pokazuje zajętość bez pociągu – wjazd 7107 na sygnał zastępczy po ręcznym ułożeniu drogi
       faults: [{ type: 'false-occupancy', target: 'T3', at: '08:05', duration: 19 }],

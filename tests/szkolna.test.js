@@ -85,19 +85,6 @@ function studentScript(sim) {
   const once = new Set();
   const one = (k, f) => { if (!once.has(k)) { once.add(k); f(); } };
   return {
-    // rozgrzewka misji 1: polecenia paska na zwrotnicy 3 i przebiegu B → C2
-    ...(() => {
-      const p = () => sim.ilk.points.get('Zw3');
-      const idle = () => !sim.ilk.armed && !p().moving;
-      return {
-        'm-point': () => { if (idle() && p().position === '+') sim.execute({ type: 'point', id: 'Zw3' }); },
-        'm-lock': () => { if (idle() && !p().individualLock) sim.execute({ type: 'lock', id: 'Zw3' }); },
-        'm-ops': () => { if (!idle()) return; if (p().individualLock) sim.execute({ type: 'lock', id: 'Zw3' }); else if (p().position === '-') sim.execute({ type: 'point', id: 'Zw3' }); },
-        'm-route': () => route('B', 'C2', 'B-C2'),
-        'm-stop': () => one('stop', () => sim.execute({ type: 'stop', signal: 'B' })),
-        'm-pz': () => one('pz', () => sim.execute({ type: 'release', signal: 'B' })),
-      };
-    })(),
     'poz-6101': () => poz('W'),
     'route-6101': () => route('A', 'D1', 'A-D1'),
     'ko-6101': () => ko('W'),
@@ -168,12 +155,12 @@ test('Szkolna: krok z warunkiem spełnionym wcześniej jest przeskakiwany, „wr
   const progress = new MissionProgress(sim, steps, { onFeedback: (m) => fb.push(m) });
   progress.start();
   progress.next(); progress.next(); // intro, layout
-  assert.equal(progress.step.id, 'm-practice', 'po planie stacji – rozgrzewka z poleceniami paska');
-  while (progress.step.id !== 'poz-6101') progress.next(); // rozgrzewka pominięta, block-intro
+  assert.equal(progress.step.id, 'block-intro', 'po planie stacji od razu blokada – bez rozgrzewki');
+  progress.next();
   assert.equal(progress.step.id, 'poz-6101');
   assert.equal(sim.clock.paused, false);
   // uczeń wyprzedza samouczek: Poz i przebieg na tor 2 (zły tor)
-  // misja zaczyna się o 06:54 (rozgrzewka) – żądanie od Lipna przychodzi kilka minut później
+  // żądanie od Lipna przychodzi kilka minut przed przyjazdem 6101
   for (let i = 0; i < 1200 && sim.blocks.get('W').request !== 'theirs'; i++) sim.step(0.5);
   sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
   sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });

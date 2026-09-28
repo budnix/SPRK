@@ -117,11 +117,11 @@ export default {
 
   /**
    * Scenariusze. `tutorial` – identyfikator misji (src/tutorial/missions.js); `srk` – stanowisko tej zmiany.
-   * Misja 1 zaczyna się o 06:54: przed pierwszym pociągiem jest rozgrzewka z poleceniami paska. Misje 2 i 3 mają
-   * własne stacje (Jodłowa, Zacisze).
+   * Misje 2, 3 i 4 mają
+   * własne stacje (Jodłowa, Zacisze, Olszyny).
    */
   scenarios: [
-    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', startTime: '06:54', endTime: '08:50',
+    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', endTime: '08:50',
       description: 'Krok po kroku: pozwolenie (Poz), przebieg wjazdowy i wyjazdowy, Ko i Wbl, przelot, krzyżowanie, manewry składem kończącym bieg, sygnał zastępczy przy usterce semafora, zapowiadanie telefoniczne przy usterce blokady. Dymki wyjaśniają każdy skrót.',
       faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
     // zmiany bez samouczka – po jednej na każde stanowisko (samouczki są na liście misji, nie w wyborze scenariusza)

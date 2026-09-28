@@ -2,8 +2,7 @@ import { infoStep as info, actStep as act, entry, atNeighbour, arrived, blockFre
 import { A } from '../phrases.js';
 
 /**
- * Misja 4 – nastawnia mechaniczna na stacji Olszyny. Własny scenariusz i własne kroki: rozgrzewka z dźwigniami
- * i drążkiem, pełna kolejność obsługi (dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia
+ * Misja 4 – nastawnia mechaniczna na stacji Olszyny. Własny scenariusz i własne kroki: pełna kolejność obsługi (dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia
  * sygnałowa, po przejeździe dźwignia i drążek z powrotem), krzyżowanie z wykolejnicą ochronną, zwalniacz przy bloku
  * niezwolnionym przez pociąg (Instrukcja E16 §8–9).
  */
@@ -27,27 +26,12 @@ export function steps() {
     info('intro', 'Witaj w nastawni mechanicznej', `Przed Tobą <b>nastawnia mechaniczna</b> stacji Olszyny. U góry jest ${A('plan świetlny')}: pokazuje zajętość torów (czerwone szczeliny), powtarzacze semaforów i przyciski blokady liniowej. Nie ma na nim przycisków przebiegów.<p>Pod planem jest <b>ława</b>. Na dole ${A('dźwignia nastawcza', 'dźwignie nastawcze')} z numerami: niebieskie przestawiają zwrotnice i wykolejnicę, czerwone podają sygnał na semaforze. Wyżej ${A('drążek przebiegowy', 'drążki przebiegowe')} i okienka ${A('blok przebiegowy', 'bloków przebiegowych')}.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz.</p>`),
     info('layout', 'Stacja i ława', `Olszyny leżą na linii jednotorowej: w lewo do Wierzbna, w prawo do Grabowca. Tor <b>1</b> jest główny zasadniczy, tor <b>2</b> – główny dodatkowy, oba przy peronie. Od zachodu z toru 2 odchodzi bocznica – tor <b>4</b> z ${A('wykolejnica', 'wykolejnicą')} <b>Wk1</b>.<p>Dźwignie: <b>1, 2, 3</b> – zwrotnice 1, 2, 3; <b>4</b> – wykolejnica Wk1; <b>5–10</b> – semafory A, B, C1, C2, D1, D2; <b>11</b> – tarcza Tm1. Dźwignia w górze stoi w położeniu zasadniczym, w dole – przełożona.</p><p>Drążek <b>a</b> należy do semafora A: w górę – przebieg na tor 1 (do D1), w dół – na tor 2 (do D2). Tak samo drążek <b>b</b> semafora B.</p>`, { el: '#desk .lever-bench' }),
 
-    /* ---------------- rozgrzewka: dźwignie i drążek ---------------- */
-    info('l-practice', 'Rozgrzewka przed pierwszym pociągiem', `Do pierwszego pociągu jest kilka minut. Przećwicz dźwignie i drążek. Pierwszy pociąg pojedzie na tor 1, więc na końcu wszystko wróci do położenia zasadniczego. Po „Dalej” zegar ruszy.`, { el: '#desk .lever-bench' }),
-    act('l-point', 'Dźwignia zwrotnicowa', `Kliknij <b>dźwignię 1</b> (zwrotnica 1). Dźwignia przechyli się do przodu – jest <b>przełożona</b>. Zwrotnica przestawi się w ok. 2 s: w tym czasie rękojeść świeci na żółto.<p>Dźwignia zwrotnicowa nie da się przełożyć, gdy na zwrotnicy stoi tabor albo zamyka ją drążek przebiegowy.</p>`, lever('Zw1'),
-      (sim) => settled(pt(sim, 'Zw1'), '-')),
-    act('l-point-back', 'Z powrotem', `Kliknij dźwignię 1 jeszcze raz – wróci do położenia zasadniczego, a zwrotnica na tor zasadniczy (+).`, lever('Zw1'),
-      (sim, ctx) => ctx.seen.has('step:l-point') && settled(pt(sim, 'Zw1'), '+')),
-    act('l-derailer-off', 'Dźwignia wykolejnicy', `Kliknij <b>dźwignię 4</b> – wykolejnica Wk1 zostanie <b>zdjęta</b> z szyny. Tak otwiera się drogę na bocznicę.`, lever('Wk1'),
-      (sim) => settled(wk(sim), 'off')),
-    act('l-derailer-on', 'Wykolejnica nałożona', `Kliknij dźwignię 4 jeszcze raz – wykolejnica wróci na szynę. Nałożona wykolejnica chroni tor 2: wagon, który stoczyłby się z bocznicy, wykolei się na niej (${A('ochrona boczna')}).`, lever('Wk1'),
-      (sim, ctx) => ctx.seen.has('step:l-derailer-off') && settled(wk(sim), 'on')),
-    act('l-route', 'Drążek przebiegowy', `Przełóż <b>drążek a w górę</b> (kliknij górną połowę drążka, przy napisie „D1”) – to ${A('przebieg pociągowy')} od semafora A na tor 1.<p>Drążek przełoży się tylko wtedy, gdy zwrotnice stoją tak, jak wymaga przebieg. Tu zwrotnica 1 stoi na „+”, więc się uda. Pod dźwignią 1 pojawi się ciemna listwa: drążek zamknął zwrotnicę.</p>`, drazek('A-D1'),
-      (sim) => active(sim, 'A-D1')),
-    act('l-return', 'Cofnięcie drążka', `Kliknij drążek a jeszcze raz – wróci do położenia zasadniczego i zwolni zwrotnicę. Dopóki nie zablokujesz bloku przebiegowego, drążek można cofnąć w każdej chwili.`, drazek('A-D1'),
-      (sim, ctx) => ctx.seen.has('route:A-D1:released') && !active(sim, 'A-D1')),
-
     /* ---------------- pierwszy pociąg: pełna kolejność ---------------- */
     info('block-intro', 'Blokada liniowa i blok przebiegowy', `Kostki przy lewym i prawym krańcu planu to ${A('Eap', 'blokada liniowa Eap')}: ${A('Poz')} – pozwolenie dla sąsiada, ${A('Ko')} – potwierdzenie przyjazdu, ${A('Wbl')} – żądanie pozwolenia na wyjazd.<p>Nad każdym drążkiem pociągowym jest okienko <b>bloku przebiegowego</b>: czerwone w położeniu zasadniczym, białe po zablokowaniu. Zablokowany blok zamyka drążek – cofnie go dopiero pociąg, który przejedzie.</p>`, { block: 'W' }),
     act('poz-8401', 'Danie pozwolenia (Poz)', `Wierzbno <b>żąda pozwolenia</b> dla osobowego <b>8401</b> (tor 1, przyjazd 07:05) – miga lampka „żąd.”. Naciśnij przycisk <b>Poz</b> na kostkach blokady przy lewym krańcu.`, { block: 'W' },
       (sim) => B(sim, 'W').direction === 'in' || arrived(sim, 8401),
       { tip: 'Żądanie przychodzi ok. 07:01. Jeśli go nie ma, przyspiesz czas (5×) w nagłówku.' }),
-    act('route-8401', '1. Drążek przebiegowy', `Zwrotnica 1 stoi na „+”, więc od razu przełóż <b>drążek a w górę</b> – przebieg od A na tor 1.`, drazek('A-D1'),
+    act('route-8401', '1. Drążek przebiegowy', `Przełóż <b>drążek a w górę</b> (kliknij górną połowę drążka, przy napisie „D1”) – to ${A('przebieg pociągowy')} od semafora A na tor 1.<p>Drążek przełoży się tylko wtedy, gdy zwrotnice stoją tak, jak wymaga przebieg – tu zwrotnica 1 stoi już na „+”. Przełożony drążek zamyka zwrotnice przebiegu: pod dźwignią 1 pojawi się ciemna listwa. Dopóki nie zablokujesz bloku przebiegowego, drążek można cofnąć (kliknij go jeszcze raz).</p>`, drazek('A-D1'),
       (sim) => active(sim, 'A-D1') || arrived(sim, 8401),
       { wrong: (sim) => (active(sim, 'A-D2') ? 'To tor 2 (drążek w dół). Pociąg 8401 ma tor 1 – cofnij drążek i przełóż go w górę.' : null) }),
     act('block-8401', '2. Blok przebiegowy', `Naciśnij <b>klawisz bloku</b> nad drążkiem a. Okienko zmieni się z czerwonego na <b>białe</b>. Od tej chwili drążka nie cofniesz – zwolni go pociąg po przejeździe.`, block('A'),
@@ -77,7 +61,7 @@ export function steps() {
 
     /* ---------------- krzyżowanie: tor 2 i wykolejnica ochronna ---------------- */
     info('cross-intro', 'Krzyżowanie na torach 1 i 2', `O 07:30 przyjedzie <b>8403</b> z Wierzbna na tor <b>2</b>, a o 07:31 <b>8404</b> z Grabowca na tor <b>1</b> – ${A('krzyżowanie')}.<p>Przebieg na tor 2 wymaga: zwrotnicy 1 na „−” (dźwignia 1 przełożona), zwrotnicy 3 na „+” i <b>nałożonej</b> wykolejnicy Wk1 – ona chroni tor 2 od bocznicy. Drążek a sprawdzi je wszystkie.</p><p>Drogi ochronne za semaforami D2 i C1 kończą się na osobnych odcinkach, więc oba wjazdy mogą być nastawione naraz.</p>`, { el: '#desk' }),
-    act('cross-points', 'Dźwignia dla toru 2', `Przełóż <b>dźwignię 1</b> (zwrotnica 1 na tor 2). Zwrotnica 3 i wykolejnica stoją już dobrze.`, lever('Zw1'),
+    act('cross-points', 'Dźwignia dla toru 2', `Przełóż <b>dźwignię 1</b> (zwrotnica 1 na tor 2): kliknij ją – przechyli się do przodu, jest <b>przełożona</b>. Zwrotnica przestawi się w ok. 2 s, w tym czasie rękojeść świeci na żółto. Zwrotnica 3 i wykolejnica stoją już dobrze.<p>Dźwigni zwrotnicowej nie przełożysz, gdy na zwrotnicy stoi tabor albo zamyka ją drążek przebiegowy.</p>`, lever('Zw1'),
       (sim) => settled(pt(sim, 'Zw1'), '-') || arrived(sim, 8403)),
     act('cross-in', 'Dwa wjazdy', `Gdy sąsiedzi zgłoszą pociągi, daj <b>Poz</b> na obu blokadach i nastaw oba wjazdy: ${full('A', 'a', '<b>w dół</b> (tor 2)')} oraz ${full('B', 'b', 'w górę (tor 1)')}. Kolejność dowolna.`, drazek('A-D2'),
       (sim) => arrived(sim, 8403) && arrived(sim, 8404),

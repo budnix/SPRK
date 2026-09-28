@@ -3,14 +3,10 @@ import { A } from '../phrases.js';
 
 /**
  * Misja 3 – pulpit ciemny urządzeń przekaźnikowych typu IZH-111 na stacji krańcowej Zacisze.
- * Własny scenariusz i własne kroki: rozgrzewka z rozkazami pulpitu (+, −, STOP, Zw, Zcz), wjazd na tor czołowy,
+ * Własny scenariusz i własne kroki: wjazd na tor czołowy,
  * zmiana czoła i odjazd z powrotem, dwa składy na stacji jednocześnie.
  */
 const adr = (id) => ({ ref: { kind: 'signal', id } });
-const end = (id) => ({ ref: { kind: 'end', id } });
-const POINT = 'Zw2';                     // rozjazd torów 2 i 3 – pierwszy pociąg jedzie na tor 1
-const point = (sim) => sim.ilk.points.get(POINT);
-const TRY = 'A-kT3';                     // przebieg do ćwiczenia zwolnienia: wjazd na tor 3
 const W = (sim) => sim.blocks.get('W');
 const consist = (sim, ...nrs) => nrs.map((nr) => entry(sim, nr)?.train).find(Boolean);
 const facingWest = (sim, ...nrs) => { const tr = consist(sim, ...nrs); return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); };
@@ -23,24 +19,6 @@ export function steps() {
     /* ---------------- wprowadzenie ---------------- */
     info('intro', 'Witaj na stacji Zacisze', `Przed Tobą <b>pulpit urządzeń przekaźnikowych typu IZH-111</b>. Każdy element – semafor, zwrotnica, koniec toru – ma jeden czarny ${A('przycisk adresowy')}, a nad planem jest grupa ${A('przycisk rozkazu', 'przycisków rozkazów')}: P, M, +, −, STOP, Zw, ${A('Zcz')}, Sz. Najpierw wskazujesz element przyciskiem adresowym (podświetli się), potem wybierasz rozkaz – masz na to 10 s. Ponowne naciśnięcie tego samego adresu odwołuje wybór.<p>Zacisze to ${A('stacja krańcowa')}: linia z Modrzewia tu się kończy. Każdy pociąg kończy bieg, zmienia czoło i wraca.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz.</p>`),
     info('layout', 'Plan stacji', `Jedyny szlak prowadzi w lewo, do Modrzewia. Tory <b>1</b>, <b>2</b> i <b>3</b> to ${A('tor czołowy', 'tory czołowe')} zakończone kozłami: 1 i 2 przy peronie I, 3 przy peronie II.<p>${A('semafor', 'Semafor')} <b>A</b> jest wjazdowy. <b>B1, B2, B3</b> to semafory wyjazdowe – stoją na zachodnim końcu każdego toru, bo stąd pociągi odjeżdżają tam, skąd przyjechały.</p><p>To ${A('pulpit ciemny')}: w stanie zasadniczym lampki są zgaszone. Szczeliny toru świecą na <b>biało</b>, gdy odcinek jest utwierdzony, i na <b>czerwono</b>, gdy jest zajęty. Powtarzacz semafora ma tylko lampkę zieloną i białą – <b>ciemny powtarzacz oznacza „Stój”</b>.</p>`, { el: '#desk' }),
-
-    /* ---------------- rozgrzewka: rozkazy pulpitu ---------------- */
-    info('izh-practice', 'Rozgrzewka przed pierwszym pociągiem', `Do pierwszego pociągu jest kilka minut. Przećwicz rozkazy: <b>−</b> i <b>+</b> (zwrotnica), <b>STOP</b> i <b>Zw</b> (zamknięcie zwrotnicy) oraz ${A('Zcz')} (zwolnienie przebiegu).<p>Ćwiczysz na <b>zwrotnicy 2</b> i na wjeździe na tor 3. Pierwszy pociąg pojedzie na tor 1. Po „Dalej” zegar ruszy.</p>`, { el: '.izh-orders' }),
-    act('izh-point-minus', 'Zwrotnica: adres i rozkaz „−”', `Naciśnij <b>przycisk adresowy zwrotnicy 2</b> – szczeliny zaświecą i pokażą jej położenie (na pulpicie ciemnym widać je dopiero po wybraniu adresu). Potem naciśnij rozkaz <b>−</b>: zwrotnica przestawi się na tor zwrotny, trwa to ok. 4 s.<p>Rozkaz „+” ustawia położenie zasadnicze, „−” przełożone – podajesz położenie docelowe, a nie „przestaw”.</p>`, { ref: { kind: 'point', id: POINT } },
-      (sim) => point(sim).position === '-' && !point(sim).moving),
-    act('izh-point-stop', 'Zamknięcie zwrotnicy: STOP', `Przycisk adresowy zwrotnicy 2 i rozkaz <b>STOP</b>. Przy przycisku zapali się <b>czerwona lampka</b>, a szczeliny będą świecić na stałe. Zamkniętej zwrotnicy nie przestawi ani obsługa, ani przebieg.`, { cmd: 'STOP' },
-      (sim) => point(sim).individualLock),
-    act('izh-point-zw', 'Odwołanie zamknięcia: Zw', `Przycisk adresowy zwrotnicy 2 i rozkaz <b>Zw</b>. Czerwona lampka zgaśnie, a szczeliny po chwili znów będą ciemne.`, { cmd: 'Zw' },
-      (sim, ctx) => ctx.seen.has(`lock:${POINT}`) && !point(sim).individualLock),
-    act('izh-point-plus', 'Z powrotem: rozkaz „+”', `Przywróć położenie zasadnicze: przycisk adresowy zwrotnicy 2 i rozkaz <b>+</b>.`, { cmd: '+' },
-      (sim, ctx) => ctx.seen.has(`minus:${POINT}`) && point(sim).position === '+' && !point(sim).moving && !point(sim).individualLock),
-    act('izh-zcz-route', 'Przebieg do ćwiczenia', `Teraz zwolnienie przebiegu. Najpierw nastaw ${A('przebieg pociągowy')}, który zaraz zwolnisz – wjazd na tor 3: ${route('A', trackEnd(3))}.<p>Na stacji krańcowej wjazd kończy się na koźle, więc końcem przebiegu jest przycisk przy końcu toru.</p>`, adr('A'),
-      (sim, ctx) => active(sim, TRY) || ctx.seen.has(`route:${TRY}:released`),
-      { wrong: (sim) => (active(sim, 'A-kT1') || active(sim, 'A-kT2') ? 'To nie tor 3. Zwolnij ten przebieg (przycisk adresowy jego końca i rozkaz Zcz) i nastaw wjazd na tor 3.' : null) }),
-    act('izh-zcz', 'Zwolnienie czasowe: Zcz', `Naciśnij przycisk adresowy <b>końca toru 3</b> i rozkaz <b>Zcz</b>. Uwaga: wskazujesz <b>koniec</b> przebiegu, nie początek.<p>Semafor A od razu zgaśnie, ale droga przebiegu zostanie utwierdzona jeszcze przez 120 s – tyle urządzenia dają pociągowi, który mógł już minąć semafor.</p>`, end('kT3'),
-      (sim, ctx) => ctx.seen.has(`route:${TRY}:timed`) || ctx.seen.has(`route:${TRY}:released`)),
-    act('izh-zcz-wait', 'Odliczanie 120 s', `Trwa zwalnianie czasowe: odcinki drogi przebiegu nadal świecą na biało. Poczekaj, aż zgasną; możesz przyspieszyć czas przyciskiem <b>5×</b> w nagłówku.<p>Przebieg manewrowy zwalnia się inaczej: adres końca i rozkaz <b>Zw</b>, od razu.</p>`, { el: '#speed' },
-      (sim, ctx) => ctx.seen.has(`route:${TRY}:released`) && !active(sim, TRY)),
 
     /* ---------------- pierwszy pociąg: przyjazd, zmiana czoła, odjazd ---------------- */
     info('block-intro', 'Blokada liniowa', `Kostki przy lewym krańcu toru to ${A('Eap', 'blokada liniowa Eap')} do Modrzewia. Linia jest jednotorowa, więc każdy pociąg uzgadnia się z sąsiadem: ${A('Poz')} – dajesz pozwolenie na przyjazd, ${A('Ko')} – potwierdzasz przyjazd, ${A('Wbl')} – żądasz pozwolenia na wyjazd.<p>Strzałki na kostkach toru: <b>wjazd</b> – sąsiad ma pozwolenie albo jego pociąg jedzie do nas, <b>wyjazd</b> – mamy pozwolenie albo nasz pociąg jest na szlaku.</p>`, { block: 'W' }),

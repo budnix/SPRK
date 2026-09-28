@@ -99,8 +99,8 @@ failure, a block failure, a peak with heavy disruptions).
   signal, telephone announcements); **Mission 2** – type E desk at Jodłowa (double-track line: traffic without
   permissions, overtaking, a branch with the Eap block); **Mission 3** – type IZH-111 desk at Zacisze (terminus:
   stub tracks, reversing, two consists in the station); **Mission 4** – mechanical signal box at Olszyny (point and
-  derailer levers, route lever, route block, signal lever, crossing with a protecting derailer). Every mission starts with a warm-up of the commands of its
-  workstation and ends with a different equipment fault and how to handle it (dark signal, block without
+  derailer levers, route lever, route block, signal lever, crossing with a protecting derailer). Commands are taught when they are needed – by the traffic
+  or by a fault – and every mission ends with a different equipment fault and how to handle it (dark signal, block without
   communication, point without detection, false track occupancy, route block not released by the train),
   a popup pinned to the element to use, highlighted targets, a clickable glossary of every abbreviation
   (Poz, Wbl, Ko, Pz, dPz, Sz, Zz, Zk…), feedback when you set the wrong route. The timetable walks through permission

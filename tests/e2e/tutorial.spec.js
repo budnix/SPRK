@@ -15,6 +15,30 @@ async function goTo(page, title) {
   throw new Error(`samouczek nie doszedł do kroku „${title}”`);
 }
 
+/**
+ * Zostawia w rozkładzie tylko pociągi `keep` (lekcja usterki): pozostałe nie zgłoszą się ani nie wyjadą; żądania
+ * pozwolenia, które już zgłosiły, są wycofane, a pociągi już na szlaku – zdjęte (misja zaczyna się o 07:00, pierwszy
+ * sąsiad pyta albo wyprawia pociąg od razu).
+ */
+async function onlyTrains(page, keep) {
+  await page.evaluate((nrs) => {
+    const s = window.sim;
+    for (const e of s.traffic.entries) {
+      if (nrs.includes(e.nr)) continue;
+      const b = e.from ? s.blocks.get(e.from) : null;
+      // pociąg już na szlaku (wyjechał od sąsiada przy starcie zmiany) – zdejmij go ze szlaku
+      if (e.dispatched && e.train && !e.train.entered) {
+        s.traffic.trains = s.traffic.trains.filter((t) => t !== e.train);
+        e.train = null; e.dispatched = false;
+        if (b) { b.occupied = false; b.lineTrain = null; }
+      }
+      if (e.dispatched) continue;
+      e.requestAt = Infinity; e.neighbourDep = Infinity;
+      if (e.requested) { e.requested = false; if (b?.request === 'theirs') b.request = null; }
+    }
+  }, keep);
+}
+
 /** Przesuwa symulację, aż sąsiad zażąda pozwolenia na szlaku `exit` (misje zaczynają się kilka minut przed pierwszym pociągiem). */
 async function untilRequest(page, exit) {
   await page.evaluate((x) => { const s = window.sim, c = s.clock, p = c.paused; c.paused = false; for (let i = 0; i < 2400 && s.blocks.get(x).request !== 'theirs'; i++) s.step(0.5); c.paused = p; }, exit);
@@ -51,29 +75,9 @@ test('misja 1: kroki informacyjne zatrzymują zegar, dymek wskazuje blokadę, Po
   await expect(page.locator('.tut-gloss')).toBeHidden();
   await box.locator('.tut-next').click();
   await box.locator('.tut-next').click();
-  // rozgrzewka – własne kroki tej misji: polecenia paska, których rozkład nie wymaga
-  await expect(box.locator('.tut-title')).toContainText('Rozgrzewka');
-  expect(await page.evaluate(() => window.sim.clock.time)).toBe(6 * 3600 + 54 * 60);
-  await box.locator('.tut-next').click();
-  const bar = (cmd) => page.click(`.scr-cmdbar button[data-cmd=${cmd}]`);
-  await expect(box.locator('.tut-title')).toContainText('ZWROTNICA');
-  await expect(page.locator('.scr-cmdbar button[data-cmd=zw]')).toHaveClass(/tut-hl/);
-  await bar('zw'); await tap(page, 'Zw3'); await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('Zz');
-  await bar('zz'); await tap(page, 'Zw3'); await page.click('.scr-confirm button:has-text("WYKONAJ")');
-  await expect(box.locator('.tut-title')).toContainText('OPS');
-  await bar('zz'); await tap(page, 'Zw3'); await page.click('.scr-confirm button:has-text("OPS")');
-  expect(await page.evaluate(() => window.sim.ilk.points.get('Zw3').individualLock)).toBe(true); // odwołane polecenie nic nie zmienia
-  await bar('zz'); await tap(page, 'Zw3'); await page.click('.scr-confirm button:has-text("WYKONAJ")');
-  await bar('zw'); await tap(page, 'Zw3'); await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('Przebieg do ćwiczenia');
-  await bar('train'); await tap(page, 'B'); await tap(page, 'C2'); await advance(page, 6);
-  await expect(box.locator('.tut-title')).toContainText('STOP');
-  await bar('stop'); await tap(page, 'B');
-  await expect(box.locator('.tut-title')).toContainText('Zwolnienie przebiegu');
-  await bar('pz'); await tap(page, 'B');
+  // bez rozgrzewki: po planie stacji od razu blokada i pierwszy pociąg; misja zaczyna się o 07:00
   await expect(box.locator('.tut-title')).toContainText('Blokada liniowa');
-  expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(0);
+  expect(await page.evaluate(() => window.sim.clock.time)).toBe(7 * 3600);
   await expect(page.locator('.tut-hl')).toHaveCount(1); // pole blokady Lipno
   await box.locator('.tut-next').click();
   expect(await page.evaluate(() => window.sim.clock.paused)).toBe(false);
@@ -104,7 +108,7 @@ test('misja 1: kroki informacyjne zatrzymują zegar, dymek wskazuje blokadę, Po
   await expect(page.locator('.tut-hl')).toHaveCount(0);
 });
 
-test('misja 2: inna stacja (Jodłowa, linia dwutorowa) na pulpicie typu E – rozgrzewka z przyciskami grupowymi, wjazd bez pozwolenia i Ko', async ({ page }) => {
+test('misja 2: inna stacja (Jodłowa, linia dwutorowa) na pulpicie typu E – wjazd bez pozwolenia i Ko', async ({ page }) => {
   await openShift(page, 'jodlowa', { params: { scenariusz: 'nauka-2', srk: 'komputerowe' } });
   await page.waitForFunction(() => window.tutorial);
   await expect(page.locator('#desk svg.desk')).toHaveCount(1); // scenariusz wymusza pulpit mimo parametru URL
@@ -112,27 +116,7 @@ test('misja 2: inna stacja (Jodłowa, linia dwutorowa) na pulpicie typu E – ro
   const box = page.locator('.tut-box');
   await expect(box.locator('.tut-body')).toContainText('dwuprzyciskowa');
   await expect(box.locator('.tut-body')).toContainText('linii dwutorowej');
-  await goTo(page, 'Zwrotnica: Zw');
-  await expect(page.locator(`.btn[data-ref='{"kind":"group","id":"Zw","role":"group-point"}']`)).toHaveClass(/tut-hl/);
-  await pressBtn(page, { kind: 'group', id: 'Zw', role: 'group-point' });
-  await pressBtn(page, { kind: 'point', id: 'Zw7' });
-  await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('Zamknięcie zwrotnicy');
-  await pressBtn(page, { kind: 'group', id: 'Zz', role: 'point-lock' }); await pressBtn(page, { kind: 'point', id: 'Zw7' });
-  await expect(box.locator('.tut-title')).toContainText('Otwarcie i powrót');
-  await pressBtn(page, { kind: 'group', id: 'Zz', role: 'point-lock' }); await pressBtn(page, { kind: 'point', id: 'Zw7' });
-  await pressBtn(page, { kind: 'group', id: 'Zw', role: 'group-point' }); await pressBtn(page, { kind: 'point', id: 'Zw7' });
-  await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('Przebieg do ćwiczenia');
-  await pressBtn(page, { kind: 'signal', id: 'B', color: 'green' }); await pressBtn(page, { kind: 'signal', id: 'D1', color: 'green' });
-  await advance(page, 6);
-  await expect(box.locator('.tut-title')).toContainText('wyciągnięcie przycisku');
-  // wyciągnięcie = prawy przycisk myszy
-  await page.locator(`.btn[data-ref='{"kind":"signal","id":"B","color":"green"}']`).dispatchEvent('pointerdown', { bubbles: true, button: 2 });
-  await page.locator(`.btn[data-ref='{"kind":"signal","id":"B","color":"green"}']`).dispatchEvent('pointerup', { bubbles: true, button: 2 });
-  await expect(box.locator('.tut-title')).toContainText('Pz');
-  await pressBtn(page, { kind: 'group', id: 'Pz', role: 'route-release' }); await pressBtn(page, { kind: 'signal', id: 'B', color: 'green' });
-  await expect(box.locator('.tut-title')).toContainText('Blokada na linii dwutorowej');
+  await goTo(page, 'Blokada na linii dwutorowej');
   await box.locator('.tut-next').click();
   // pierwszy pociąg: bez pozwolenia – wjazd, po przyjeździe Ko
   await expect(box.locator('.tut-title')).toContainText('Wjazd bez pozwolenia');
@@ -218,7 +202,7 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
   await expect(page.locator('.tut-box')).toBeHidden();
 });
 
-test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – rozgrzewka z rozkazami, wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
+test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('.st-mission')).toHaveCount(4);
   expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny']);
@@ -242,31 +226,7 @@ test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – r
   await box.locator('.tut-next').click();
   await expect(box.locator('.tut-body')).toContainText('ciemny powtarzacz oznacza');
   await box.locator('.tut-next').click();
-  // rozgrzewka – własne kroki tej misji: zwrotnica 2 rozkazami −, STOP, Zw, + i zwolnienie czasowe Zcz
-  await expect(box.locator('.tut-title')).toContainText('Rozgrzewka');
-  expect(await page.evaluate(() => window.sim.clock.time)).toBe(6 * 3600 + 54 * 60);
-  await expect(page.locator('.izh-orders')).toHaveClass(/tut-hl/);
-  await box.locator('.tut-next').click();
   const order = (o) => page.click(`.izh-orders button[data-order="${o}"]`);
-  const pointOrder = async (o) => { await pressBtn(page, { kind: 'point', id: 'Zw2' }); await order(o); };
-  await expect(box.locator('.tut-title')).toContainText('rozkaz „−”');
-  await expect(page.locator(`.btn[data-ref='{"kind":"point","id":"Zw2"}']`)).toHaveClass(/tut-hl/);
-  await pointOrder('-'); await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('STOP');
-  await expect(page.locator('.izh-orders button[data-order="STOP"]')).toHaveClass(/tut-hl/);
-  await pointOrder('STOP');
-  await expect(box.locator('.tut-title')).toContainText('Odwołanie zamknięcia');
-  await pointOrder('Zw');
-  await expect(box.locator('.tut-title')).toContainText('rozkaz „+”');
-  await pointOrder('+'); await advance(page, 5);
-  await expect(box.locator('.tut-title')).toContainText('Przebieg do ćwiczenia');
-  await pressBtn(page, { kind: 'signal', id: 'A' }); await pressBtn(page, { kind: 'end', id: 'kT3' }); await order('P');
-  await advance(page, 6);
-  await expect(box.locator('.tut-title')).toContainText('Zcz');
-  await expect(page.locator(`.btn[data-ref='{"kind":"end","id":"kT3"}']`)).toHaveClass(/tut-hl/);
-  await pressBtn(page, { kind: 'end', id: 'kT3' }); await order('Zcz');
-  await expect(box.locator('.tut-title')).toContainText('Odliczanie');
-  await advance(page, 122);
   await expect(box.locator('.tut-title')).toContainText('Blokada liniowa');
   expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(0);
   await box.locator('.tut-next').click();
@@ -296,7 +256,8 @@ test('misja 2: usterka napędu zwrotnicy – alarm, zamknięcie zwrotnicy Zz, pr
   await expect(box.locator('.tut-body')).toContainText('zwrotnicy z usterką się nie przestawia');
   await expect(page.locator(`.btn[data-ref='{"kind":"point","id":"Zw3"}']`)).toHaveClass(/tut-hl/);
   // stan jak po lekcjach: zwrotnica 3 na tor 3; zegar do chwili usterki, bez pociągów po drodze
-  await page.evaluate(() => { const s = window.sim; s.traffic.entries.forEach((e) => { if (e.nr !== 3304) { e.requestAt = Infinity; e.neighbourDep = Infinity; } }); s.execute({ type: 'point', id: 'Zw3' }); s.clock.paused = false; while (s.clock.time < 8 * 3600 + 61) s.step(0.5); s.clock.paused = true; });
+  await onlyTrains(page, [3304]);
+  await page.evaluate(() => { const s = window.sim; s.execute({ type: 'point', id: 'Zw3' }); s.clock.paused = false; while (s.clock.time < 8 * 3600 + 61) s.step(0.5); s.clock.paused = true; });
   expect(await page.evaluate(() => window.sim.ilk.points.get('Zw3').position)).toBe('-');
   await box.locator('.tut-next').click();
   await expect(box.locator('.tut-title')).toContainText('Zabezpieczenie zwrotnicy');
@@ -324,7 +285,8 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   const order = (o) => page.click(`.izh-orders button[data-order="${o}"]`);
   await goTo(page, 'Usterka obwodu torowego');
   await expect(box.locator('.tut-body')).toContainText('sam układa drogę');
-  await page.evaluate(() => { const s = window.sim; s.traffic.entries.forEach((e) => { if (e.nr !== 7107 && e.nr !== 7108) { e.requestAt = Infinity; e.neighbourDep = Infinity; } }); s.clock.paused = false; while (s.clock.time < 8 * 3600 + 5 * 60 + 2) s.step(0.5); s.clock.paused = true; });
+  await onlyTrains(page, [7107, 7108]);
+  await page.evaluate(() => { const s = window.sim; s.clock.paused = false; while (s.clock.time < 8 * 3600 + 5 * 60 + 2) s.step(0.5); s.clock.paused = true; });
   await box.locator('.tut-next').click();
   await expect(box.locator('.tut-title')).toContainText('Ręczne ułożenie drogi');
   // pulpit ciemny: szczeliny toru 3 świecą na czerwono, choć pociągu nie ma
@@ -375,7 +337,7 @@ for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'
   });
 }
 
-test('misja 4: nastawnia mechaniczna w Olszynach – rozgrzewka kliknięciami dźwigni i drążka, potem pełna kolejność dla pierwszego pociągu', async ({ page }) => {
+test('misja 4: nastawnia mechaniczna w Olszynach – pełna kolejność kliknięciami dla pierwszego pociągu', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await page.click('.st-mission[data-scenario="nauka-4"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 4: nastawnia mechaniczna');
@@ -388,21 +350,7 @@ test('misja 4: nastawnia mechaniczna w Olszynach – rozgrzewka kliknięciami d�
   const box = page.locator('.tut-box');
   const title = box.locator('.tut-title');
   const ctl = (kind, id) => page.locator(`#desk .mech-ctl[data-ref='${JSON.stringify({ kind, id })}']`);
-  await goTo(page, 'Dźwignia zwrotnicowa');
-  await expect(ctl('lever', 'Zw1')).toHaveClass(/tut-hl/);
-  await ctl('lever', 'Zw1').click(); await advance(page, 3);
-  await expect(title).toContainText('Z powrotem');
-  await ctl('lever', 'Zw1').click(); await advance(page, 3);
-  await expect(title).toContainText('Dźwignia wykolejnicy');
-  await ctl('lever', 'Wk1').click(); await advance(page, 3);
-  await expect(title).toContainText('Wykolejnica nałożona');
-  await ctl('lever', 'Wk1').click(); await advance(page, 3);
-  await expect(title).toContainText('Drążek przebiegowy');
-  await ctl('route', 'A-D1').click();
-  await expect(title).toContainText('Cofnięcie drążka');
-  await ctl('route', 'A-D1').click();
-  await expect(title).toContainText('Blokada liniowa i blok przebiegowy');
-  expect(await page.evaluate(() => window.sim.clock.time < 6 * 3600 + 59 * 60)).toBe(true);
+  await goTo(page, 'Blokada liniowa i blok przebiegowy');
   await box.locator('.tut-next').click();
   await untilRequest(page, 'W');
   await page.evaluate(() => window.sim.press({ kind: 'block', exit: 'W', btn: 'Poz' }));
