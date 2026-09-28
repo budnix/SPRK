@@ -61,6 +61,8 @@
 
 ## Interfejs (wygląd)
 
+- Jedna czcionka w całej aplikacji: Inter z plików w `src/fonts/` (zmienna `--font`). Nie dodawaj innych krojów ani
+  czcionek z zewnętrznych serwerów; pilnuje tego `tests/e2e/font.spec.js`.
 - Kolory, promienie i cienie interfejsu przez zmienne CSS z `:root` w `src/styles.css`; nie wpisuj nowych kolorów na sztywno.
   Wyjątek: barwy pulpitu i monitora wynikające z przepisów (Ie-104) i wyglądu urządzeń.
 - Każdy nowy element interfejsu sprawdź w motywie jasnym i ciemnym.

@@ -252,6 +252,15 @@ ekrany, symbole monitora 125 %, odstęp torów normalny. Stanowisko (srk) nie je
 scenariusza. Zapisane ustawienia (localStorage) mają pierwszeństwo; zmiana `rowScale` / `lang` przeładowuje stronę,
 `symScale` działa na żywo.
 
+## Czcionka (`src/fonts/`, `src/styles.css`)
+
+Cała aplikacja – interfejs, pulpit kostkowy i monitor – używa jednej czcionki: Inter (czcionka zmienna 100–900,
+licencja SIL OFL 1.1 w `src/fonts/OFL.txt`), dołączonej do strony w dwóch plikach woff2 (`latin`, `latin-ext` z polskimi
+znakami) i podanej przez zmienną `--font`. Dzięki temu napisy wyglądają tak samo w każdym systemie, a nie zależą od
+czcionek zainstalowanych u gracza. Kontrolki formularzy dziedziczą czcionkę (`button, input, select, textarea`),
+liczby na monitorze i licznikach mają stałą szerokość cyfr (`tabular-nums`). Znaki spoza czcionki (np. ✔ ☐ ■) bierze
+czcionka systemu. `tests/e2e/font.spec.js` sprawdza, że plik pochodzi ze strony i że czcionka jest w użyciu.
+
 ## Język interfejsu (`src/i18n/`)
 
 Słowniki płaskie `pl.js` (źródłowy), `en.js`, `de.js` – ten sam zbiór kluczy, parametry `{x}` (test `i18n.test.js`

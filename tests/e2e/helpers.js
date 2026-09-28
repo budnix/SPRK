@@ -13,6 +13,7 @@ export async function openShift(page, station, { settings = {}, params = {} } = 
   await page.goto(`/?${q}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   await page.evaluate(() => { window.sim.clock.paused = true; });
+  await page.evaluate(() => document.fonts.ready); // czcionka aplikacji wczytana – stały wygląd zrzutów i pomiarów
 }
 
 /** Element monitora (ScreenRenderer) po id z data-ref. */

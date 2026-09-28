@@ -4,7 +4,8 @@
 station. You work either at a **type E relay interlocking desk** (*pulpit kostkowy*, modelled on the ISDR simulator)
 or at a **computer-based interlocking workstation** (a monitor in the style of EbiScreen / ISKRA, drawn according to
 the PKP PLK Ie-104 guidelines). Real Tricity stations, Polish signalling rules (Ie-1, Ir-1), guided missions for
-beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) and SVG, no frameworks.
+beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) and SVG, no frameworks. One bundled typeface
+(Inter, SIL OFL) so the desk, the monitor and the interface look the same on every system.
 
 Play it: **https://budnix.github.io/SPRK/**
 

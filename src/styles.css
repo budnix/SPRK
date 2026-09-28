@@ -1,4 +1,13 @@
+/* Jedna czcionka w całej aplikacji (interfejs, pulpit kostkowy, monitor): Inter, dołączona do strony – ten sam
+   wygląd w każdym systemie. Pliki: src/fonts (licencja SIL OFL 1.1 – src/fonts/OFL.txt), czcionka zmienna 100–900. */
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("./fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("./fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 :root {
+  --font: "Inter", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* zapas tylko do czasu wczytania pliku */
   --bg: #1c1f22;
   --panel: #24282c;
   --panel2: #2c3136;
@@ -42,7 +51,9 @@
   --shadow: rgba(0,0,0,0.2);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bg); color: var(--text); font: 14px/1.35 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bg); color: var(--text); font: 14px/1.35 var(--font); -webkit-text-size-adjust: 100%; }
+/* kontrolki formularzy domyślnie biorą czcionkę systemu – tu dziedziczą czcionkę aplikacji */
+button, input, select, textarea { font-family: inherit; }
 #app { height: 100%; display: flex; flex-direction: column; }
 #topbar { display: flex; align-items: center; gap: 16px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto; }
 .brand { display: flex; gap: 10px; align-items: center; }
@@ -197,7 +208,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: non
 }
 
 /* ---- pulpit ---- */
-svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; }
+svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: var(--font); }
 .desk-bg { fill: var(--desk-frame); }
 .desk-face-bg { fill: var(--desk-face); }
 .frame-text { fill: #d2d5d7; font-size: 8px; font-weight: 600; }
@@ -286,7 +297,7 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .counter-win { fill: #101112; stroke: #6a6d6f; stroke-width: 0.5; }
 .counter-plate { fill: #e9e2c8; stroke: #7a7462; stroke-width: 0.4; }
 .counter-seal { fill: #9a9d9f; stroke: #2a2c2d; stroke-width: 0.5; }
-.counter-text { fill: #f4f4f4; font-size: 5.5px; font-family: "Courier New", monospace; font-weight: 700; letter-spacing: 0.3px; }
+.counter-text { fill: #f4f4f4; font-size: 5.5px; font-family: var(--font); font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: 0.3px; }
 .counter-label { fill: #3a3a3a; font-size: 4.5px; font-weight: 600; }
 
 /* pociągi */
@@ -526,7 +537,7 @@ svg.desk.readonly .btn { cursor: not-allowed; }
 .cmd .t { color: var(--muted); margin-right: 6px; }
 
 /* ---- stanowisko komputerowe (monitor) – zobrazowanie wg Ie-104, kolory niezależne od motywu ---- */
-svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: "DejaVu Sans Mono", Menlo, Consolas, "Courier New", monospace; }
+svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: var(--font); font-variant-numeric: tabular-nums; }
 .scr-bg { fill: #000000; }
 .scr-banner { fill: #ffb84d; font-size: 8px; }
 /* odcinki: seg = grupa (linia zewnętrzna + wewnętrzna); klasa stanu na grupie */
@@ -608,7 +619,7 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 /* pasek poleceń (układ EbiScreen) */
 #cmd-host { flex: 0 0 auto; }
 .scr-cmdbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; padding: 4px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
-.scr-cmdbar button { background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 3px; padding: 3px 8px; font: 600 11px "DejaVu Sans Mono", Menlo, Consolas, monospace; cursor: pointer; }
+.scr-cmdbar button { background: #10161c; color: #dfe6ec; border: 1px solid #3a4652; border-radius: 3px; padding: 3px 8px; font: 600 11px var(--font); cursor: pointer; }
 .scr-cmdbar button:hover { background: #1b2430; }
 .scr-cmdbar button.active { background: #1f3f7a; border-color: #3f8cff; color: #fff; }
 .scr-cmdbar button.special { color: #ffb84d; }
