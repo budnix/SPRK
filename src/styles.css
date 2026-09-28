@@ -67,8 +67,12 @@
   --desk-mech-blue: #2c5aa0; --desk-mech-red: #b8322a; --desk-mech-knob: #d6dadd; --desk-mech-knob-edge: #53595d;
   --desk-mech-plate: #f1f0ea; --desk-mech-plate-text: #1d1f20; --desk-mech-label: #f4f5f5; --desk-mech-set: #ffd23f;
   --desk-mech-window-red: #c8342b; --desk-mech-window-white: #f6f6f1; --desk-mech-key: #1e1f20; --desk-mech-seal: #a8352c;
-  --desk-mech-go: #3fbf5f; --desk-mech-stop: #e0443a; --desk-mech-ms1: #4d8fe0; --desk-mech-ms2: #f6f6f1;
+  /* semafory kształtowe i tarcze (Ie-1: ramię białe z czerwoną obwódką, tarcza ostrzegawcza pomarańczowa z czarnym
+     pierścieniem, tarcza manewrowa niebieska z białą obwódką) */
+  --desk-mech-arm: #f7f6f0; --desk-mech-arm-edge: #c8342b; --desk-mech-mast: #2d3133;
+  --desk-mech-warn: #f0871e; --desk-mech-warn-ring: #1b1b1b; --desk-mech-shunt: #2c5fc4; --desk-mech-shunt-edge: #f6f6f1;
   --desk-mech-pos: #b89a3a;   /* położenie zwrotnicy na planie świetlnym – przygaszony żółty */
+  --desk-mech-cut: #bfc2c4;   /* przerwa w szczelinie ramienia, w które zwrotnica nie jest ustawiona (barwa kanału toru) */
   /* promienie, wysokość kontrolek, warstwy */
   --radius: 4px; --radius-sm: 3px; --radius-pill: 10px;
   --ctl-h: 28px;
@@ -316,6 +320,7 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .bar.on.lamp-red { stroke: #e8281c; }
 .bar.on.lamp-yellow { stroke: #f2c318; }
 .bar.on.lamp-pos { stroke: var(--desk-mech-pos); }
+.bar.cut { stroke: var(--desk-mech-cut); }
 .screw { fill: #e4e6e7; stroke: #6d7173; stroke-width: 0.6; }
 .screw.lit { fill: #ffffff; stroke: #9a9d9f; }
 .joint { stroke: #1e2021; }
@@ -821,8 +826,22 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .desk.mech .lever-pos { fill: var(--desk-mech-label); font-size: 9px; font-weight: 700; text-anchor: middle; dominant-baseline: central; opacity: 0.35; pointer-events: none; }
 .desk.mech .lever-pos.small { font-size: 5.5px; font-weight: 600; }
 .desk.mech .lever-pos.on { opacity: 1; }
-.desk.mech .lever-pos.dot.stop { fill: var(--desk-mech-stop); } .desk.mech .lever-pos.dot.go { fill: var(--desk-mech-go); }
-.desk.mech .lever-pos.dot.ms1 { fill: var(--desk-mech-ms1); } .desk.mech .lever-pos.dot.ms2 { fill: var(--desk-mech-ms2); }
+/* powtarzacze semaforów kształtowych i tarcz na planie (i małe ramiona / tarcze przy dźwigniach) */
+.desk.mech .sem-mast { stroke: var(--desk-mech-mast); stroke-width: 1.6; fill: none; stroke-linecap: round; }
+.desk.mech .sem-mast.thin { stroke-width: 1.1; }
+.desk.mech .sem-hub { fill: var(--desk-mech-mast); }
+.desk.mech .sem-arm-body { fill: var(--desk-mech-arm); stroke: var(--desk-mech-arm-edge); stroke-width: 0.9; }
+.desk.mech .shunt-disc { fill: var(--desk-mech-shunt); stroke: var(--desk-mech-shunt-edge); stroke-width: 0.9; }
+.desk.mech .warn-face { fill: var(--desk-mech-warn); stroke: var(--desk-mech-arm); stroke-width: 0.8; }
+.desk.mech .warn-ring { fill: none; stroke: var(--desk-mech-warn-ring); stroke-width: 0.8; }
+.desk.mech .sem-arrow { fill: var(--desk-mech-arm); stroke: var(--desk-mech-arm-edge); stroke-width: 0.8; stroke-linejoin: round; }
+.desk.mech .lever-pos.glyph .sem-arm-body { stroke-width: 0.7; }
+/* ruch: dźwignię i drążek przekłada ręka (krótko), ramię semafora i tarcza obracają się pędnią (dłużej) */
+.desk.mech .lever-arm, .desk.mech .drazek-knob { transition: transform .25s ease-out; }
+.desk.mech .sem-arm, .desk.mech .sem-disc, .desk.mech .sem-arrow { transition: transform .9s ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  .desk.mech .lever-arm, .desk.mech .drazek-knob, .desk.mech .sem-arm, .desk.mech .sem-disc, .desk.mech .sem-arrow { transition: none; }
+}
 .desk.mech .lever-fault.on { opacity: 1; }
 .desk.mech .lever-plate { fill: var(--desk-mech-plate); }
 .desk.mech .plate-text { fill: var(--desk-mech-plate-text); font-size: 6.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }

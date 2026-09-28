@@ -1,6 +1,7 @@
 import { categoryOf, speedFor, trainLabel } from './categories.js';
 import { Train } from './Train.js';
 import { Clock } from '../core/Clock.js';
+import { Interlocking } from './Interlocking.js';
 
 /**
  * Ruch pociągów: rozkład jazdy, posterunki sąsiednie (AI), wprowadzanie pociągów
@@ -70,7 +71,7 @@ export class Traffic {
     if (next !== signal) return { ok: false, reason: `Pociąg ${nr} stoi przed ${next ?? 'brakiem semafora'}, nie przed ${signal}` };
     const sig = this.ilk.signals.get(signal);
     if (!sig || sig.kind !== 'semafor') return { ok: false, reason: `${signal} nie jest semaforem` };
-    if (sig.aspect !== 'S1') return { ok: false, reason: `Semafor ${signal} nie wskazuje „Stój” – rozkaz zbędny` };
+    if (!Interlocking.isStop(sig.aspect)) return { ok: false, reason: `Semafor ${signal} nie wskazuje „Stój” – rozkaz zbędny` };
     if (tr.hasOrderFor(signal)) return { ok: false, reason: `Pociąg ${nr} ma już rozkaz na ${signal}` };
     // Droga jazdy za semaforem do następnego semafora
     const problems = [];

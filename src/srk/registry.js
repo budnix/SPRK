@@ -70,5 +70,5 @@ registerSrk({
   short: 'mechaniczne',
   description: 'Ława dźwigniowa: zwrotnice i wykolejnice przestawia się dźwigniami, przebieg zamyka drążek przebiegowy, blok przebiegowy utwierdzający (zwalnia go pociąg), sygnał – dźwignią sygnałową; po przejeździe dźwignia na „Stój” i drążek z powrotem.',
   view: 'lever',
-  model: { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true },
+  model: { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true, shapedSignals: true },
 });

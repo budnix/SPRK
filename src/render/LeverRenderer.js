@@ -5,6 +5,7 @@ import * as art from './leverArt.js';
 import { counterDevice } from './tileArt.js';
 import { FRAME, setLamp, buildDesk, bindDeskButtons, updateBlockLamps, deskTrainLabel, placeDeskTrainLabel } from './deskParts.js';
 import { leverFrame, leverStates } from './leverFrame.js';
+import { Interlocking } from '../model/Interlocking.js';
 
 /** Wysokość ławy (aparat blokowy, drążki, dźwignie) w rzędach kostek – pod planem świetlnym. */
 export const LEVER_ROWS = 7;
@@ -13,16 +14,22 @@ const K = 1.25;
 /** Odchylenie trzonu dźwigni od pionu w obu skrajnych położeniach (rysunek z boku). */
 const LEVER_TILT = 19;
 
-/** Obraz powtarzacza semafora (jak na pulpicie typu E – obrazy dwuświatłowe uproszczone). */
-const REPEATER = {
-  S1: { red: 'red' }, S2: { green: 'green' }, S3: { green: 'green blink' }, S4: { orange: 'orange blink' }, S5: { orange: 'orange' },
-  S10: { orange: 'orange', green: 'green' }, S11: { orange: 'orange', green: 'green blink' }, S12: { orange: 'orange blink', green: 'green' },
-  S13: { orange: 'orange' }, Sz: { red: 'red', white: 'white blink' }, Ms2: { white: 'white' },
-};
+/** Wzniesienie ramienia semafora kształtowego (Ie-1: 45° do poziomu); dolne ramię w spoczynku wisi wzdłuż słupa. */
+const ARM_UP = -45;
+const ARM_HANG = 90;
+/** Spłaszczenie tarczy obróconej do poziomu (widać ją z boku – jako kreskę). */
+const DISC_FLAT = 0.14;
 
 /**
- * Nastawnia mechaniczna scentralizowana (SVG): u góry plan świetlny (zajętość odcinków, powtarzacze sygnałów,
- * przyciski blokady liniowej), pod nim ława: aparat blokowy z okienkami bloków przebiegowych utwierdzających
+ * Położenie elementu jako transformacja CSS wokół punktu (px, py) – zmianę położenia animuje przejście CSS
+ * (`transition: transform`), więc dźwignia, drążek, ramię semafora i tarcza przesuwają się, a nie przeskakują.
+ */
+const turn = (e, [px, py], deg) => { e.style.transform = `translate(${px}px,${py}px) rotate(${deg}deg) translate(${-px}px,${-py}px)`; };
+const tilt = (e, [px, py], flat) => { e.style.transform = `translate(${px}px,${py}px) scale(1,${flat ? DISC_FLAT : 1}) translate(${-px}px,${-py}px)`; };
+
+/**
+ * Nastawnia mechaniczna scentralizowana (SVG): u góry plan świetlny (zajętość odcinków, powtarzacze semaforów
+ * kształtowych i tarcz, przyciski blokady liniowej), pod nim ława: aparat blokowy z okienkami bloków przebiegowych utwierdzających
  * i zwalniaczami, drążki przebiegowe (w górę / w dół – dwa przebiegi) i dźwignie nastawcze – zwrotnicowe
  * i wykolejnicowe (niebieskie), semaforowe (czerwone), tarcz manewrowych (niebieskie z czerwoną obwódką).
  * Każdy element wydaje polecenie wprost (`handlers.onCommand` → `Simulation.execute`).
@@ -173,10 +180,24 @@ export class LeverRenderer extends PanelView {
     g.appendChild(el('circle', { class: 'lever-drum', cx, cy: py, r: 6 }));
     g.appendChild(el('circle', { class: 'lever-axle', cx, cy: py, r: 1.6 }));
     // oznaczenia położeń po obu stronach koziołka: lewo – zasadnicze, prawo – przełożone (świeci to, w którym dźwignia stoi)
-    const mark = (side, what) => (typeof what === 'string'
-      ? text(cx + side * (what.length > 1 ? 17 : 13), py - 1, what, { class: `lever-pos${what.length > 1 ? ' small' : ''}` })
-      : el('circle', { class: `lever-pos dot ${what.dot}`, cx: cx + side * 13, cy: py - 2, r: 2.4 }));
-    const marks = { point: ['+', '−'], derailer: ['nał.', 'zdj.'], signal: [{ dot: 'stop' }, { dot: 'go' }], shunt: [{ dot: 'ms1' }, { dot: 'ms2' }] }[l.kind];
+    // przy semaforze – małe ramię (poziomo: „Stój”, wzniesione: sygnał zezwalający), przy tarczy – tarcza M1 / M2
+    const mark = (side, what) => {
+      if (typeof what === 'string') return text(cx + side * (what.length > 1 ? 17 : 13), py - 1, what, { class: `lever-pos${what.length > 1 ? ' small' : ''}` });
+      const x = cx + side * 15, y = py - 1;
+      if (what.arm != null) {
+        return el('g', { class: `lever-pos glyph ${what.cls}`, transform: `rotate(${what.arm} ${x - 4} ${y})` }, [
+          el('path', { class: 'sem-arm-body', d: `M${x - 4},${y - 0.9} L${x + 1.6},${y - 0.9} L${x + 1.6},${y + 0.9} L${x - 4},${y + 0.9} Z` }),
+          el('circle', { class: 'sem-arm-body', cx: x + 2.6, cy: y, r: 1.6 }),
+        ]);
+      }
+      const h = 3;
+      return el('path', { class: `lever-pos glyph ${what.cls} shunt-disc`, d: `M${x},${y - h * what.k} L${x + h},${y} L${x},${y + h * what.k} L${x - h},${y} Z` });
+    };
+    const marks = {
+      point: ['+', '−'], derailer: ['nał.', 'zdj.'],
+      signal: [{ arm: 0, cls: 'stop' }, { arm: ARM_UP, cls: 'go' }],
+      shunt: [{ k: 1, cls: 'm1' }, { k: DISC_FLAT * 2, cls: 'm2' }],
+    }[l.kind];
     refs.pos = { normal: mark(-1, marks[0]), reversed: mark(1, marks[1]) };
     g.append(refs.pos.normal, refs.pos.reversed);
     refs.lock = el('rect', { class: 'lever-lock', x: cx - 6, y: py + 8, width: 12, height: 3, rx: 1 });
@@ -204,7 +225,7 @@ export class LeverRenderer extends PanelView {
     for (const [id, r] of this.leverEls) {
       const s = st.levers[id];
       const [px, py] = r.pivot;
-      r.arm.setAttribute('transform', `rotate(${s.down ? LEVER_TILT : -LEVER_TILT} ${px} ${py})`);
+      turn(r.arm, [px, py], s.down ? LEVER_TILT : -LEVER_TILT);
       r.arm.parentNode.classList.toggle('down', s.down);
       r.arm.parentNode.classList.toggle('moving', s.moving);
       r.lock.classList.toggle('on', s.locked);
@@ -214,7 +235,7 @@ export class LeverRenderer extends PanelView {
     }
     for (const [id, r] of this.drazekEls) {
       const s = st.drazki[id];
-      r.knob.setAttribute('transform', `translate(0,${r.y[s.pos]})`);
+      r.knob.style.transform = `translate(0px,${r.y[s.pos]}px)`;
       r.up?.classList.toggle('set', s.pos === 'up');
       r.down?.classList.toggle('set', s.pos === 'down');
       if (r.win) r.win.classList.toggle('white', s.blocked);
@@ -246,7 +267,7 @@ export class LeverRenderer extends PanelView {
 
   /**
    * Zwrotnica na planie: zajętość (czerwona), rozprucie, a położenie – przygaszonym żółtym na ramieniu, w które jest
-   * ustawiona (zamiast latarni zwrotnicowej widocznej w rzeczywistości przez okno nastawni – uproszczenie gry).
+   * ustawiona, i przerwą w szczelinie drugiego ramienia (zamiast latarni zwrotnicowej widocznej w rzeczywistości przez okno nastawni – uproszczenie gry).
    */
   updatePoint(id) {
     const p = this.ilk.points.get(id);
@@ -258,6 +279,9 @@ export class LeverRenderer extends PanelView {
     setLamp(r.toe, p.trailed ? 'red blink' : occ ? 'red' : 'off');
     setLamp(r.straight, known && p.position === '+' ? pos : 'off');
     setLamp(r.diverge, known && p.position === '-' ? pos : 'off');
+    // ramię, w które zwrotnica nie jest ustawiona: przerwa w szczelinie – ciemny pasek nie udaje ciągłego toru
+    r.straight.classList.toggle('cut', known && p.position === '-');
+    r.diverge.classList.toggle('cut', known && p.position === '+');
     setLamp(r.lockLamp, 'off');
     this.updateLevers();
   }
@@ -267,17 +291,34 @@ export class LeverRenderer extends PanelView {
     this.updateLevers();
   }
 
+  /**
+   * Powtarzacz semafora kształtowego: ramię górne wzniesione przy Sr2 i Sr3, dolne – przy Sr3; latarnia Sz; tarcza
+   * manewrowa (M2 – obrócona do poziomu); tarcza ostrzegawcza wjazdowego wg `warning` (Od2 / Ot2 – do poziomu, Ot3 –
+   * strzała ukośnie). Obrazy świetlne (bez `shapedSignals`) pokazuje tak samo – według znaczenia obrazu.
+   */
   updateSignal(id) {
     const s = this.ilk.signals.get(id);
     const r = this.signalRefs.get(id);
     if (!s || !r) return;
-    if (s.kind === 'tm') {
-      setLamp(r.lamps.blue, s.aspect === 'Ms2' ? 'off' : 'blue');
-      setLamp(r.lamps.white, s.aspect === 'Ms2' ? 'white' : 'off');
-    } else {
-      const m = REPEATER[s.aspect] || {};
-      for (const [c, e] of Object.entries(r.lamps)) setLamp(e, m[c] || 'off');
+    const a = s.aspect;
+    const shunt = Interlocking.isShuntProceed(a);
+    if (r.disc) tilt(r.disc, r.pivots.disc, shunt);
+    if (s.kind === 'semafor') {
+      const up = Interlocking.isProceed(a) && !shunt && a !== 'Sz';
+      const arms = s.arms ?? 2;
+      r.lower.style.display = arms === 2 ? '' : 'none';
+      turn(r.upper, r.pivots.upper, up ? ARM_UP : 0);
+      turn(r.lower, r.pivots.lower, up && Interlocking.aspectSpeed(a) <= 40 ? ARM_UP : ARM_HANG);
+      if (r.sz) setLamp(r.sz, a === 'Sz' ? 'white blink' : 'off');
+      if (r.warn) {
+        const w = s.warning ?? Interlocking.warningAspect(a, arms);
+        tilt(r.warn, r.pivots.warn, w === 'Od2' || w === 'Ot2');
+        r.warnArrow.style.display = w.startsWith('Ot') ? '' : 'none';
+        turn(r.warnArrow, r.pivots.warnArrow, w === 'Ot3' ? -45 : 0);
+        r.warn.dataset.aspect = w;
+      }
     }
+    r.pic.dataset.aspect = a;
     this.updateLevers();
   }
 

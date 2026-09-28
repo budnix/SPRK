@@ -7,7 +7,7 @@
  * zachodnia), 2 (głowica wschodnia), 3 (bocznica). Za semaforami wyjazdowymi są osobne odcinki przed rozjazdami,
  * więc krzyżowanie (A → tor 2 i B → tor 1 jednocześnie) jest dozwolone.
  * Semafory: A, B (wjazdowe), C1, C2 (wyjazdowe na zachód, C2 z Ms2 na bocznicę), D1, D2 (wyjazdowe na wschód);
- * tarcza Tm1 (wyjazd z bocznicy). Szlaki: Wierzbno (W), Grabowiec (E) – blokada Eap.
+ * tarcza Tm1 (wyjazd z bocznicy); w nastawni mechanicznej – semafory i tarcze kształtowe. Szlaki: Wierzbno (W), Grabowiec (E) – blokada Eap.
  * Kroki samouczka: src/tutorial/missions/mech.js.
  */
 const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
@@ -20,7 +20,7 @@ export default {
   id: 'olszyny',
   name: 'Olszyny',
   srk: 'mech',
-  srkInfo: 'Stacja fikcyjna, treningowa: urządzenia mechaniczne scentralizowane (nastawnia z ławą dźwigniową, drążkami przebiegowymi i blokami przebiegowymi, sygnalizacja świetlna); zmiany także na pulpitach przekaźnikowych i na stanowisku komputerowym.',
+  srkInfo: 'Stacja fikcyjna, treningowa: urządzenia mechaniczne scentralizowane (nastawnia z ławą dźwigniową, drążkami przebiegowymi i blokami przebiegowymi, semafory kształtowe); zmiany także na pulpitach przekaźnikowych i na stanowisku komputerowym.',
   description: 'Stacja pośrednia linii jednotorowej Wierzbno – Grabowiec w nastawni mechanicznej. Dwa tory przy peronie, bocznica ładunkowa z wykolejnicą, blokada liniowa Eap.',
   location: 'Stacja fikcyjna na linii jednotorowej Wierzbno – Grabowiec (poligon szkoleniowy).',
   traffic: 'Osobowe w obu kierunkach, krzyżowanie na torach 1 i 2.',

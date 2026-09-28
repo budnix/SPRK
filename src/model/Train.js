@@ -185,7 +185,7 @@ export class Train {
           if (!relevant) continue;
           // skład manewrowy jedzie obok semafora tylko na sygnał manewrowy Ms2 – sygnał pociągowy (przebieg na szlak)
           // go nie dotyczy, więc nie wyjedzie ze stacji jako manewr
-          const proceed = this.mode === 'shunt' && sig.kind === 'semafor' ? sig.aspect === 'Ms2' : Interlocking.isProceed(sig.aspect);
+          const proceed = this.mode === 'shunt' && sig.kind === 'semafor' ? Interlocking.isShuntProceed(sig.aspect) : Interlocking.isProceed(sig.aspect);
           if (!proceed) {
             if (this.hasOrderFor(sig.id)) {
               // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 20 km/h

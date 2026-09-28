@@ -27,13 +27,15 @@ function wrongPoint(sim, routeId) {
 test('nastawnia mechaniczna w rejestrze: widok ława dźwigniowa, opcje zależności; inne stanowiska bez zmian', () => {
   const srk = getSrk('mech');
   assert.equal(srk.view, 'lever');
-  assert.deepEqual(srk.model, { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true });
+  assert.deepEqual(srk.model, { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true, shapedSignals: true });
   const sim = mech();
-  assert.equal(sim.ilk.manualPoints && sim.ilk.manualSignal && sim.ilk.routeBlock && sim.ilk.holdRoute, true);
+  assert.equal(sim.ilk.manualPoints && sim.ilk.manualSignal && sim.ilk.routeBlock && sim.ilk.holdRoute && sim.ilk.shapedSignals, true);
   // domyślnie (typ E, monitor, IZH-111) przebieg sam przestawia zwrotnice i podaje sygnał
   for (const sc of ['zmiana', 'zmiana-e', 'zmiana-izh']) {
     const e = new Simulation(szkolna, { scenario: sc, disruptions: 'none' });
-    assert.equal(e.ilk.manualPoints || e.ilk.manualSignal || e.ilk.routeBlock || e.ilk.holdRoute, false, sc);
+    assert.equal(e.ilk.manualPoints || e.ilk.manualSignal || e.ilk.routeBlock || e.ilk.holdRoute || e.ilk.shapedSignals, false, sc);
+    assert.equal(e.ilk.signals.get('A').aspect, 'S1', `${sc}: semafory świetlne`);
+    assert.equal(e.ilk.signals.get('A').warning, undefined, sc);
     const q = wrongPoint(e, 'A-D2');
     assert.ok(e.ilk.setRoute('A-D2').pending, sc);
     run(e, 6);
@@ -65,7 +67,7 @@ test('mechaniczna: sygnał dopiero dźwignią, po zablokowaniu bloku przebiegowe
   const sim = mech();
   throwLevers(sim, 'A-D1'); run(sim, 3);
   assert.ok(sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' }).ok);
-  assert.equal(sim.ilk.signals.get('A').aspect, 'S1', 'drążek sam nie podaje sygnału');
+  assert.equal(sim.ilk.signals.get('A').aspect, 'Sr1', 'drążek sam nie podaje sygnału');
   const early = sim.execute({ type: 'clear', signal: 'A' });
   assert.equal(early.ok, false);
   assert.match(early.reason, /blok przebiegowy/);
@@ -81,7 +83,7 @@ test('mechaniczna: sygnał dopiero dźwignią, po zablokowaniu bloku przebiegowe
   // zablokowany blok: drążka nie cofnie ani dźwignia na „Stój” – tylko pociąg albo zwalniacz (licznik)
   assert.match(sim.execute({ type: 'release', signal: 'A' }).reason, /dźwignię sygnałową/);
   assert.ok(sim.execute({ type: 'stop', signal: 'A' }).ok);
-  assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
+  assert.equal(sim.ilk.signals.get('A').aspect, 'Sr1');
   assert.match(sim.execute({ type: 'release', signal: 'A' }).reason, /blok przebiegowy utwierdzający zablokowany/);
   assert.ok(sim.execute({ type: 'release', signal: 'A', emergency: true }).ok);
   assert.equal(sim.ilk.counters.dPz, 1);
@@ -105,7 +107,7 @@ test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięc
   const act = sim.ilk.active.get('A-D1');
   assert.ok(act?.passed, 'przebieg czeka na zwolnienie drążkiem');
   assert.equal(act.blocked, false, 'blok przebiegowy zwolnił pociąg');
-  assert.equal(sim.ilk.signals.get('A').aspect, 'S1', 'semafor na „Stój” po minięciu');
+  assert.equal(sim.ilk.signals.get('A').aspect, 'Sr1', 'semafor na „Stój” po minięciu');
   // sygnał zezwalający dla tej jazdy już był (zawórka przeciwwtórna), drążek trzyma zwrotnice i semafor
   sim.execute({ type: 'stop', signal: 'A' });
   assert.match(sim.execute({ type: 'clear', signal: 'A' }).reason, /już był/);
@@ -199,3 +201,91 @@ test('mechaniczna – automat dyżurnego przy usterce bloku przebiegowego używa
   assert.ok(sim.ilk.counters.dPz >= 1, 'zwalniacz użyty');
   assert.deepEqual(sim.score.items.filter((i) => i.points < 0).map((i) => i.msg), []);
 });
+
+/* Semafory kształtowe (Ie-1 §3, §5, §7): Sr1 / Sr2 / Sr3, tarcze ostrzegawcze kształtowe przy wjazdowych, tarcze
+   manewrowe kształtowe M1 / M2 */
+
+/** Drążek, blok (pociągowy) i dźwignia sygnałowa dla przebiegu – zwrotnice już ustawione. */
+function setAndClear(sim, routeId) {
+  const r = sim.ilk.routes.get(routeId);
+  throwLevers(sim, routeId); run(sim, 3);
+  assert.ok(sim.execute({ type: 'route', id: routeId }).ok, routeId);
+  if (r.kind === 'train') assert.ok(sim.execute({ type: 'route-block', signal: r.start }).ok, routeId);
+  assert.ok(sim.execute({ type: 'clear', signal: r.start }).ok, routeId);
+  return sim.ilk.signals.get(r.start);
+}
+
+test('semafory kształtowe: Sr1 w zasadniczym, Sr2 na tor prosty, Sr3 (do 40 km/h) na zwrotny; dwa ramiona tylko gdy trzeba', () => {
+  const sim = mech();
+  for (const s of sim.ilk.signals.values()) assert.equal(s.aspect, s.kind === 'semafor' ? 'Sr1' : 'M1', s.id);
+  // dwa ramiona ma semafor, z którego wychodzi przebieg pociągowy ze zmniejszoną szybkością
+  for (const s of [...sim.ilk.signals.values()].filter((x) => x.kind === 'semafor')) {
+    const slow = [...sim.ilk.routes.values()].some((r) => r.start === s.id && r.kind === 'train' && r.speed <= 60);
+    assert.equal(s.arms, slow ? 2 : 1, s.id);
+  }
+  assert.equal(sim.ilk.signals.get('A').arms, 2);
+  assert.ok([...sim.ilk.signals.values()].some((s) => s.arms === 1), 'są też semafory jednoramienne');
+  assert.equal(setAndClear(sim, 'A-D1').aspect, 'Sr2');
+  assert.equal(Interlocking.aspectSpeed('Sr2'), Infinity);
+  sim.execute({ type: 'stop', signal: 'A' });
+  sim.execute({ type: 'release', signal: 'A', emergency: true });
+  assert.equal(setAndClear(sim, 'A-D2').aspect, 'Sr3');
+  assert.equal(Interlocking.aspectSpeed('Sr3'), 40);
+  assert.ok(Interlocking.isProceed('Sr3') && !Interlocking.isProceed('Sr1') && Interlocking.isStop('Sr1'));
+});
+
+test('tarcza ostrzegawcza kształtowa przy semaforze wjazdowym: Ot1 / Ot2 / Ot3 (dwa ramiona), Od1 / Od2 (jedno)', () => {
+  const sim = mech();
+  const A = sim.ilk.signals.get('A');
+  assert.equal(A.warning, 'Ot1');
+  for (const s of sim.ilk.signals.values()) assert.equal(s.warning !== undefined, s.kind === 'semafor' && !!s.tile.entry, s.id);
+  setAndClear(sim, 'A-D1');
+  assert.equal(A.warning, 'Ot2');
+  sim.execute({ type: 'stop', signal: 'A' });
+  assert.equal(A.warning, 'Ot1');
+  sim.execute({ type: 'release', signal: 'A', emergency: true });
+  setAndClear(sim, 'A-D2');
+  assert.equal(A.warning, 'Ot3');
+  // dwustawna – semafor jednoramienny: tylko „Stój” albo „zezwalający”
+  assert.deepEqual(['Sr1', 'Sr2', 'Sr3', 'Sz'].map((a) => Interlocking.warningAspect(a, 1)), ['Od1', 'Od2', 'Od2', 'Od1']);
+  assert.deepEqual(['Sr1', 'Sr2', 'Sr3', 'Sz'].map((a) => Interlocking.warningAspect(a, 2)), ['Ot1', 'Ot2', 'Ot3', 'Ot1']);
+});
+
+test('tarcza manewrowa kształtowa: M1 → M2 po przebiegu manewrowym; semafor z sygnałem manewrowym też M2; Sz przy Sr1', () => {
+  const sim = mech();
+  const shunt = [...sim.ilk.routes.values()].find((r) => r.kind === 'shunt' && sim.ilk.signals.get(r.start).kind === 'tm');
+  assert.equal(setAndClear(sim, shunt.id).aspect, 'M2');
+  assert.equal(Interlocking.aspectSpeed('M2'), 25);
+  assert.ok(Interlocking.isShuntProceed('M2') && !Interlocking.isProceed('M1'));
+  const semShunt = [...sim.ilk.routes.values()].find((r) => r.kind === 'shunt' && sim.ilk.signals.get(r.start).kind === 'semafor' && !r.sections.some((x) => shunt.sections.includes(x)));
+  assert.equal(setAndClear(sim, semShunt.id).aspect, 'M2', semShunt.id);
+  const sz = mech();
+  assert.ok(sz.execute({ type: 'substitute', signal: 'B' }).ok);
+  assert.equal(sz.ilk.signals.get('B').aspect, 'Sz');
+  assert.equal(sz.ilk.signals.get('B').warning, sz.ilk.signals.get('B').arms === 2 ? 'Ot1' : 'Od1');
+});
+
+test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; przed Sr1 rozkaz pisemny nie jest „zbędny”', () => {
+  const sim = mech();
+  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  setAndClear(sim, 'A-D2');
+  // szybkość w chwili wjazdu czoła za semafor A (na pierwszy odcinek przebiegu)
+  const first = sim.ilk.routes.get('A-D2').sections[0];
+  let v = null;
+  for (let i = 0; i < 4000 && v == null; i++) {
+    sim.step(0.5);
+    if (e.train && [...e.train.occupiedSections()].includes(first)) v = e.train.v * 3.6;
+  }
+  assert.ok(v > 0, 'pociąg minął semafor');
+  assert.ok(v <= 40.5, `przy semaforze ${v.toFixed(1)} km/h`);
+  // następny pociąg z Wierzbna staje przed A na „Stój” (Sr1) – rozkaz pisemny nie jest „zbędny”
+  const sim2 = mech();
+  run(sim2, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  for (let i = 0; i < 4000 && !(e2(sim2)?.train?.entered && e2(sim2).train.v === 0 && e2(sim2).train.nextSignal() === 'A'); i++) sim2.step(0.5);
+  assert.equal(sim2.ilk.signals.get('A').aspect, 'Sr1');
+  const res = sim2.traffic.issueOrder({ nr: 6101, signal: 'A', text: 'S', reason: 'test' });
+  assert.doesNotMatch(res.reason || '', /zbędny/); // dalej sprawdza drogę jazdy (tu: zwrotnica niezamknięta)
+  assert.match(res.reason, /Zw1/);
+});
+const e2 = (sim) => sim.traffic.timetable().find((x) => x.nr === 6101);

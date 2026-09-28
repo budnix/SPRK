@@ -55,7 +55,7 @@ test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek,
     for (let i = 0; i < 4; i++) s.step(0.5);
     s.clock.paused = true;
     return { route: !!s.ilk.active.get('A-D2')?.lever, aspect: s.ilk.signals.get('A').aspect };
-  }).then((st) => expect(st.route && st.aspect !== 'S1').toBe(true));
+  }).then((st) => expect(st.route && st.aspect === 'Sr3').toBe(true));
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mech-szkolna.png');
 });

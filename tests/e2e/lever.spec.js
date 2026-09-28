@@ -48,6 +48,9 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   await advance(page, 3);
   const bars = () => page.evaluate((id) => { const r = window.desk.pointRefs.get(id); return ['straight', 'diverge'].map((k) => [...r[k].classList].find((c) => c.startsWith('lamp-')) || 'off'); }, need);
   expect(await bars()).toEqual(['off', 'lamp-pos']);
+  // drugie ramię z przerwą w szczelinie – ciemny pasek nie wygląda jak tor, którym idzie jazda
+  const cut = () => page.evaluate((id) => { const r = window.desk.pointRefs.get(id); return ['straight', 'diverge'].map((k) => r[k].classList.contains('cut')); }, need);
+  expect(await cut()).toEqual([true, false]);
   await advance(page, 3);
   expect((await simState(page)).points[need]).toBe('-');
   await ctl(page, 'route', 'A-D2').click();
@@ -56,16 +59,16 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   await expect(page.locator(`#desk .lever[data-lever="${need}"] .lever-lock`)).toHaveClass(/on/);
   // dźwignia sygnałowa przed blokiem – odmowa; klawisz bloku – okienko białe; dźwignia – sygnał zezwalający
   await ctl(page, 'lever', 'A').click();
-  expect((await simState(page)).signals.A).toBe('S1');
+  expect((await simState(page)).signals.A).toBe('Sr1');
   await ctl(page, 'routeblock', 'A').click();
   await expect(page.locator('#desk .drazek[data-drazek="a"] .blk-window')).toHaveClass(/white/);
   await ctl(page, 'lever', 'A').click();
-  expect((await simState(page)).signals.A).not.toBe('S1');
+  expect((await simState(page)).signals.A).not.toBe('Sr1');
   await expect(page.locator('#desk .lever[data-lever="A"]')).toHaveClass(/down/);
   // z klawiatury: dźwignia na „Stój”
   await ctl(page, 'lever', 'A').focus();
   await page.keyboard.press('Enter');
-  expect((await simState(page)).signals.A).toBe('S1');
+  expect((await simState(page)).signals.A).toBe('Sr1');
   // drążek zamknięty blokiem – tylko zwalniacz (licznik)
   await ctl(page, 'route', 'A-D2').click();
   expect(await route(page, 'A-D2')).not.toBe(null);
@@ -73,4 +76,42 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   expect(await route(page, 'A-D2')).toBe(null);
   await expect(page.locator('#desk .counter-text').last()).toHaveText('00001');
   await expect(page.locator('#desk .drazek[data-drazek="a"] .blk-window')).not.toHaveClass(/white/);
+});
+
+test('semafory kształtowe na planie: ramiona Sr1 / Sr2 / Sr3, tarcza ostrzegawcza, tarcza manewrowa; ruch animowany', async ({ page }) => {
+  await open(page);
+  const sem = (id) => page.evaluate((i) => {
+    const r = window.desk.signalRefs.get(i);
+    const ang = (e) => { const m = new DOMMatrix(getComputedStyle(e).transform); return Math.round((Math.atan2(m.b, m.a) * 180) / Math.PI); };
+    return { aspect: r.pic.dataset.aspect, upper: ang(r.upper), lower: ang(r.lower), lowerShown: getComputedStyle(r.lower).display !== 'none', warn: r.warn?.dataset.aspect ?? null };
+  }, id);
+  await page.evaluate(() => document.querySelectorAll('#desk .sem-arm, #desk .sem-disc, #desk .sem-arrow').forEach((e) => { e.style.transition = 'none'; }));
+  // zasadniczo: ramię poziomo, dolne (semafor dwuramienny A) wzdłuż słupa; tarcza ostrzegawcza trzystawna Ot1
+  expect(await sem('A')).toEqual({ aspect: 'Sr1', upper: 0, lower: 90, lowerShown: true, warn: 'Ot1' });
+  const one = await page.evaluate(() => [...window.sim.ilk.signals.values()].find((s) => s.arms === 1).id);
+  expect((await sem(one)).lowerShown).toBe(false);
+  const setRoute = async (id) => {
+    await page.evaluate((rid) => { const s = window.sim; const r = s.ilk.routes.get(rid); for (const q of [...r.points, ...r.flank]) s.execute({ type: 'point', id: q.id, position: q.position }); }, id);
+    await advance(page, 3);
+    await page.evaluate((rid) => { const s = window.sim; const r = s.ilk.routes.get(rid); s.execute({ type: 'route', id: rid }); if (r.kind === 'train') s.execute({ type: 'route-block', signal: r.start }); s.execute({ type: 'clear', signal: r.start }); }, id);
+  };
+  await setRoute('A-D1');
+  expect(await sem('A')).toEqual({ aspect: 'Sr2', upper: -45, lower: 90, lowerShown: true, warn: 'Ot2' });
+  // przy dźwigni świeci małe ramię wzniesione
+  await expect(page.locator('#desk .lever[data-lever="A"] .lever-pos.go')).toHaveClass(/on/);
+  await ctl(page, 'lever', 'A').click();
+  await ctl(page, 'routerelease', 'A').click();
+  await setRoute('A-D2');
+  expect(await sem('A')).toEqual({ aspect: 'Sr3', upper: -45, lower: -45, lowerShown: true, warn: 'Ot3' });
+  // tarcza manewrowa kształtowa: M2 – tarcza obrócona do poziomu (spłaszczona)
+  const tm = await page.evaluate(() => [...window.sim.ilk.routes.values()].find((r) => r.kind === 'shunt' && window.sim.ilk.signals.get(r.start).kind === 'tm').id);
+  await setRoute(tm);
+  const flat = await page.evaluate((rid) => new DOMMatrix(getComputedStyle(window.desk.signalRefs.get(window.sim.ilk.routes.get(rid).start).disc).transform).d, tm);
+  expect(flat).toBeLessThan(0.3);
+  // ramiona i tarcze obracają się (przejście CSS), przy „ogranicz ruch” – od razu
+  await page.evaluate(() => document.querySelectorAll('#desk .sem-arm').forEach((e) => { e.style.transition = ''; }));
+  const dur = () => page.evaluate(() => ['.sem-arm', '.lever-arm', '.drazek-knob'].map((c) => parseFloat(getComputedStyle(document.querySelector(`#desk ${c}`)).transitionDuration)));
+  expect((await dur()).every((d) => d > 0)).toBe(true);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(await dur()).toEqual([0, 0, 0]);
 });

@@ -88,10 +88,42 @@ za kolej.krb.com.pl; transportszynowy.pl – „Urządzenia mechaniczne scentral
 * urządzenia mechaniczne współpracują z półsamoczynną blokadą liniową przekaźnikową, obsługiwaną przyciskami
   (E16 §7 ust. 7, §9 ust. 7).
 
+Semafory i tarcze kształtowe – Instrukcja Ie-1 (E1) §3, §5, §7, tekst za kolej.krb.com.pl/e1 (sem.htm, ostrzeg.htm,
+man.htm). Z opisu wzięto:
+
+* semafor kształtowy: słup z ruchomymi ramionami białymi z czerwoną obwódką; **Sr1 „Stój”** – ramię poziomo na prawo
+  od słupa, **Sr2 „Wolna droga”** – ramię wzniesione pod kątem 45° (największa dozwolona szybkość), **Sr3 „Wolna
+  droga ze zmniejszoną szybkością”** – dwa ramiona wzniesione pod kątem 45°, do 40 km/h od semafora do końca okręgu
+  zwrotnicowego; semafory jedno- i dwuramienne; nocą światła (czerwone, zielone, zielone nad pomarańczowym);
+* sygnał zastępczy Sz – białe światło migające na słupie semafora wskazującego Sr1;
+* tarcza ostrzegawcza kształtowa stoi przed semaforem kształtowym: **dwustawna** – okrągła tarcza pomarańczowa
+  z czarnym pierścieniem i białą obwódką, **Od1** ustawiona pionowo (semafor wskazuje Sr1), **Od2** w położeniu
+  poziomym (semafor wskazuje Sr2 albo Sr3); **trzystawna** – ta sama tarcza i biała strzała z czerwoną obwódką pod nią:
+  **Ot1** tarcza pionowo, strzała w dół (Sr1), **Ot2** tarcza poziomo, strzała w dół (Sr2), **Ot3** tarcza pionowo,
+  strzała ukośnie 45° w dół na prawo od słupa (Sr3);
+* tarcza manewrowa kształtowa ruchoma: **M1 „Jazda manewrowa zabroniona”** – kwadratowa tarcza niebieska z białą
+  obwódką, jedną przekątną pionowo; **M2 „Jazda manewrowa dozwolona”** – tarcza w położeniu poziomym.
+
 Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo gra upraszcza obsługę):
 
 * jedna nastawnia dysponująca prowadzi całą stację – bez bloków nakazu i zgody między nastawniami;
-* sygnalizacja świetlna (obrazy jak na innych stanowiskach), nie semafory kształtowe;
+* semafory kształtowe na całej stacji (także wyjazdowe i tarcze manewrowe); semafor ma dwa ramiona, gdy wychodzi
+  z niego przebieg pociągowy o szybkości do 60 km/h (przez zwrotnicę w kierunku zwrotnym) – na ten przebieg podaje
+  Sr3, na pozostałe Sr2; w rzeczywistości liczba ramion wynika z projektu stacji;
+* dźwignia sygnałowa jest jedna dla semafora – Sr2 albo Sr3 wynika z przebiegu zamkniętego drążkiem (uproszczenie
+  gry; w rzeczywistości semafor dwuramienny ma osobne dźwignie albo dźwignię dwukierunkową);
+* dolne ramię semafora dwuramiennego w położeniu spoczynkowym (Sr1, Sr2) jest pionowo wzdłuż słupa – jak na rysunkach
+  semaforów kształtowych; tego Ie-1 w cytowanym tekście nie opisuje;
+* semafor z sygnałem manewrowym (np. C2 w Olszynach) ma na słupie tarczę manewrową kształtową (M1 / M2) – przyjęte,
+  bo semafor kształtowy nie ma obrazu Ms2; jazda manewrowa obok niego – na M2 jak na tarczy manewrowej;
+* tarcza ostrzegawcza kształtowa jest tylko przy semaforach wjazdowych (pole `entry`): trzystawna przed semaforem
+  dwuramiennym, dwustawna – przed jednoramiennym; gra rysuje ją na kostce semafora wjazdowego (w rzeczywistości stoi
+  w odległości drogi hamowania przed nim) i nie zmienia jazdy pociągu – maszynista i tak hamuje przed semaforem
+  na „Stój”;
+* tak jak na innych stanowiskach pociąg przestrzega szybkości z obrazu (Sr3 – 40 km/h) do chwili minięcia semafora;
+* plan świetlny pokazuje powtarzacze semaforów i tarcz w postaci rysunku ramion i tarcz (przyjęte – w rzeczywistości
+  nastawniczy widzi je przez okno albo na powtarzaczach); ruch ramienia i tarczy trwa na rysunku niecałą sekundę,
+  przy ustawieniu systemu „ogranicz ruch” – bez animacji;
 * drążek przebiegowy należy do jednego sygnalizatora początkowego i obsługuje najwyżej dwa przebiegi (położenia
   „w górę” i „w dół”, jak drążek z dwoma przebiegami sprzecznymi); sygnalizator z większą liczbą przebiegów ma
   kolejne drążki;
@@ -102,8 +134,9 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
 * sygnał zastępczy – klawisz przy aparacie blokowym z licznikiem, jak na innych stanowiskach;
 * plan świetlny pokazuje zajętość odcinków, powtarzacze sygnałów i blokadę liniową (Ie-8 §11 ust. 4); położenie
   zwrotnic Ie-8 na planie nie wymienia – w rzeczywistości widać je na dźwigni i na latarniach zwrotnicowych przez
-  okno nastawni. Gra nie ma widoku z okna, więc plan pokazuje położenie przygaszonym żółtym na ramieniu zwrotnicy
-  (uproszczenie gry); przy dźwigniach są oznaczenia położeń („+” / „−”, „nał.” / „zdj.”, kropki semaforów).
+  okno nastawni. Gra nie ma widoku z okna, więc plan pokazuje położenie przygaszonym żółtym na ramieniu zwrotnicy,
+  a w szczelinie drugiego ramienia – przerwę (uproszczenie gry); przy dźwigniach są oznaczenia położeń („+” / „−”,
+  „nał.” / „zdj.”, małe ramię semafora poziomo / wzniesione, tarcza manewrowa M1 / M2).
 * ława leży pod całym planem i nie dzieli się na ekrany – przy podziale szerokiego pulpitu na ekrany (ustawienie
   „ekrany”) byłaby przycięta; stacje z nastawnią mechaniczną są wąskie, więc podziału nie potrzebują.
 

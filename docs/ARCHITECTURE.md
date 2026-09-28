@@ -72,7 +72,7 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111' | 'mech'` (domyślnie `E`)
   rozkaz” (`src/srk/address.js`). Opcje zależności tej strategii: `timedRelease`, `shuntTimedRelease`,
   `timedReleaseAlways` (IZH-111: Zcz zwalnia po 120 s, przebieg manewrowy bezzwłocznie). Nastawnia mechaniczna (`mech`)
   nie ma protokołu – ława wydaje polecenia wprost – i włącza opcje `manualPoints`, `manualSignal`, `routeBlock`,
-  `holdRoute`, `pointSwitchTime` (opis w nagłówku `Interlocking.js`).
+  `holdRoute`, `shapedSignals`, `pointSwitchTime` (opis w nagłówku `Interlocking.js`).
 * `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe), `izh` (IzhRenderer: pulpit ciemny,
   przyciski adresowe i grupa rozkazów), `lever` (LeverRenderer: plan świetlny i ława dźwigniowa) lub `screen`
   (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
@@ -128,15 +128,22 @@ Czwarte stanowisko – pierwsze, w którym zmienia się **kolejność obsługi**
 Różnice są opcjami `Interlocking` (domyślnie wyłączonymi): przebieg nie przestawia zwrotnic (`manualPoints`,
 przeszkoda `point-position`), sygnał podaje dźwignia (`manualSignal`: `clearSignal`, tylko raz na jazdę), przebieg
 pociągowy wymaga bloku przebiegowego utwierdzającego (`routeBlock`: `blockRoute`, zwalnia go pociąg albo zwalniacz
-z licznikiem jak dPz), a po przejeździe przebieg zostaje zamknięty do cofnięcia drążka (`holdRoute`). Polecenia
+z licznikiem jak dPz), a po przejeździe przebieg zostaje zamknięty do cofnięcia drążka (`holdRoute`). Semafory są
+kształtowe (`shapedSignals`): obrazy Sr1 / Sr2 / Sr3 i M1 / M2 zamiast świetlnych, semafor ma `arms` (1 albo 2 – dwa,
+gdy wychodzi z niego przebieg pociągowy ≤ 60 km/h), wjazdowy – `warning` (tarcza ostrzegawcza Od / Ot). Prędkość
+i znaczenie obrazu dają statyczne `Interlocking.aspectSpeed`, `isProceed`, `isStop`, `isShuntProceed`,
+`warningAspect` – model i widoki nie porównują nazw obrazów wprost. Polecenia
 idą przez `Simulation.execute`: `point` / `derailer` z położeniem, `route` z `id` (drążek wskazuje konkretny
 przebieg), `route-block`, `clear`, `stop`, `release`. Automat dyżurnego (`Operator.js`) umie tę kolejność.
 
 `leverFrame(ilk)` (bez DOM, test w Node) numeruje dźwignie (zwrotnicowe, wykolejnicowe, semaforowe, tarcz) i dzieli
 przebiegi na drążki: drążek należy do sygnalizatora i rodzaju przebiegu, najwyżej dwa przebiegi (w górę i w dół);
 `leverStates` mówi, jak narysować stan. Widok rysuje plan świetlny częściami pulpitów (`deskParts.js`, grafika
-`leverArt.js` – kostki bez przycisków, zostają przyciski blokady) i ławę pod planem (`static size` dodaje jej
-wysokość). `elementFor` dla semafora, zwrotnicy i wykolejnicy zwraca dźwignię. Źródła i założenia – `docs/SOURCES.md`.
+`leverArt.js` – kostki bez przycisków, zostają przyciski blokady; zamiast lampek sygnałów rysunek semafora
+kształtowego z ramionami, tarczą manewrową i ostrzegawczą) i ławę pod planem (`static size` dodaje jej wysokość).
+Położenia ramion, tarcz, dźwigni i drążków to transformacje CSS (`style.transform`), więc zmianę stanu animuje
+`transition` w `styles.css` (wyłączana przy `prefers-reduced-motion`). Zwrotnica na planie: przygaszone żółte ramię,
+w które jest ustawiona, i przerwa w szczelinie drugiego. `elementFor` dla semafora, zwrotnicy i wykolejnicy zwraca dźwignię. Źródła i założenia – `docs/SOURCES.md`.
 
 ## Ekrany pulpitu
 

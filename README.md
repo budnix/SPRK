@@ -45,7 +45,9 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
   and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
   route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
-  the route lever go back. Played in mission 4 at Olszyny.
+  the route lever go back. Semaphore signals with moving arms (Sr1 / Sr2 / Sr3), distant discs at entry signals and
+  shunting discs; arms, discs and levers move with a short animation (off when the system asks for reduced motion).
+  Played in mission 4 at Olszyny.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,

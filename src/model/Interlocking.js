@@ -24,7 +24,10 @@ import { Topology } from './Topology.js';
  *  - `routeBlock` – przebieg pociągowy wymaga zablokowania bloku przebiegowego utwierdzającego (`blockRoute`) przed
  *    podaniem sygnału; zablokowany przebieg zwalnia dopiero pociąg (albo zwalniacz – `releaseRoute(id, true)`),
  *  - `holdRoute` – po przejeździe pociągu przebieg zostaje zamknięty (drążek przełożony, zwrotnice zamknięte),
- *    aż gracz go zwolni (`releaseRoute`).
+ *    aż gracz go zwolni (`releaseRoute`),
+ *  - `shapedSignals` – semafory kształtowe (Ie-1 §3): obrazy Sr1 / Sr2 / Sr3 zamiast świetlnych, tarcze manewrowe
+ *    kształtowe M1 / M2; semafor z przebiegiem pociągowym ≤ 60 km/h ma dwa ramiona (`arms`), a semafor wjazdowy –
+ *    tarczę ostrzegawczą kształtową (`warning`: Od1 / Od2 przy jednym ramieniu, Ot1 / Ot2 / Ot3 przy dwóch).
  *
  * Sposób wydawania poleceń należy do stanowiska: przyciski pulpitu typu E tłumaczy `src/srk/buttons.js`
  * (podłączany przez `attachInput`); `press` / `pull` / `pressCompound` / `armed` są tu tylko przekazaniem do niego.
@@ -55,6 +58,7 @@ export class Interlocking {
     this.manualSignal = !!opts.manualSignal;
     this.routeBlock = !!opts.routeBlock;
     this.holdRoute = !!opts.holdRoute;
+    this.shapedSignals = !!opts.shapedSignals;
     this.topo = new Topology(station);
     this.time = 0;
     this.log = [];
@@ -81,12 +85,19 @@ export class Interlocking {
     this.signals = new Map();
     for (const [id, t] of this.topo.signals) {
       this.signals.set(id, {
-        id, tile: t, kind: t.kind, dir: t.dir, aspect: t.kind === 'semafor' ? 'S1' : 'Ms1',
+        id, tile: t, kind: t.kind, dir: t.dir, aspect: this.#stopAspect(t.kind),
         route: null, substitute: false, substituteUntil: 0, shunting: !!t.shunting,
         canSubstitute: t.substitute !== false, overlap: t.overlap !== false,
       });
     }
     this.routes = this.#deriveRoutes();
+    if (this.shapedSignals) {
+      for (const sig of this.signals.values()) {
+        if (sig.kind !== 'semafor') continue;
+        sig.arms = [...this.routes.values()].some((r) => r.start === sig.id && r.kind === 'train' && r.speed <= 60) ? 2 : 1;
+        if (sig.tile.entry) sig.warning = sig.arms === 2 ? 'Ot1' : 'Od1';
+      }
+    }
     this.active = new Map();     // routeId -> aktywny przebieg
     this.pending = [];           // przebiegi w trakcie nastawiania (zwrotnice się przestawiają)
     this.counters = { dPz: 0, Sz: 0, rozprucie: 0 };
@@ -715,16 +726,37 @@ export class Interlocking {
   /** Prędkość dopuszczona obrazem sygnałowym (Infinity = największa dozwolona). */
   static aspectSpeed(aspect) {
     switch (aspect) {
-      case 'S1': case 'Ms1': return 0;
+      case 'S1': case 'Sr1': case 'Ms1': case 'M1': return 0;
       case 'Sz': return 20;
-      case 'Ms2': return 25;
-      case 'S10': case 'S11': case 'S12': case 'S13': return 40;
+      case 'Ms2': case 'M2': return 25;
+      case 'S10': case 'S11': case 'S12': case 'S13': case 'Sr3': return 40;
       default: return Infinity;
     }
   }
 
   static isProceed(aspect) {
-    return aspect !== 'S1' && aspect !== 'Ms1';
+    return !['S1', 'Sr1', 'Ms1', 'M1'].includes(aspect);
+  }
+
+  /** „Stój” na semaforze (świetlnym S1 albo kształtowym Sr1). */
+  static isStop(aspect) {
+    return aspect === 'S1' || aspect === 'Sr1';
+  }
+
+  /** Jazda manewrowa dozwolona (Ms2 na tarczy świetlnej albo semaforze, M2 na tarczy kształtowej). */
+  static isShuntProceed(aspect) {
+    return aspect === 'Ms2' || aspect === 'M2';
+  }
+
+  /** Obraz tarczy ostrzegawczej kształtowej (Ie-1 §5) dla obrazu semafora: dwustawna Od, trzystawna Ot. */
+  static warningAspect(aspect, arms) {
+    if (arms === 2) return aspect === 'Sr2' ? 'Ot2' : aspect === 'Sr3' ? 'Ot3' : 'Ot1';
+    return aspect === 'Sr2' || aspect === 'Sr3' ? 'Od2' : 'Od1';
+  }
+
+  #stopAspect(kind) {
+    if (kind === 'semafor') return this.shapedSignals ? 'Sr1' : 'S1';
+    return this.shapedSignals ? 'M1' : 'Ms1';
   }
 
   refreshSignals() { this.#refreshSignals(); }
@@ -735,6 +767,7 @@ export class Interlocking {
       for (const sig of this.signals.values()) {
         const prev = sig.aspect;
         sig.aspect = this.#computeAspect(sig);
+        if (sig.warning) sig.warning = Interlocking.warningAspect(sig.aspect, sig.arms);
         if (prev !== sig.aspect && i === 1) this.bus.emit('signal', sig);
       }
     }
@@ -743,12 +776,15 @@ export class Interlocking {
 
   #computeAspect(sig) {
     if (sig.substitute) return 'Sz';
-    if (sig.failed) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
-    if (!sig.route) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
+    const stop = this.#stopAspect(sig.kind);
+    if (sig.failed) return stop;
+    if (!sig.route) return stop;
     const act = this.active.get(sig.route);
-    if (!act || act.signalOff) return sig.kind === 'semafor' ? 'S1' : 'Ms1';
-    if (act.route.kind === 'shunt') return 'Ms2';
+    if (!act || act.signalOff) return stop;
+    if (act.route.kind === 'shunt') return this.shapedSignals ? 'M2' : 'Ms2';
     const restricted = act.route.speed <= 60;
+    // semafor kształtowy nie zapowiada następnego: Sr3 – do 40 km/h przez okręg zwrotnicowy, Sr2 – największa dozwolona
+    if (this.shapedSignals) return restricted ? 'Sr3' : 'Sr2';
     let next = null;
     if (act.route.end.type === 'signal') next = this.signals.get(act.route.end.id)?.aspect || 'S1';
     const nextStop = !next || next === 'S1' || next === 'Sz';
