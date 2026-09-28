@@ -1,6 +1,7 @@
 import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './refKey.js';
+import { deskControls } from '../tiles/controls.js';
 import { PanelView } from './PanelView.js';
 import { t } from '../i18n/index.js';
 import { tip } from '../data/glossary.js';
@@ -170,9 +171,25 @@ export class ScreenRenderer extends PanelView {
     }
   }
 
+  /** Liczniki poleceń specjalnych (dPz, Sz) – na polach przycisków grupowych układu stanowiska. */
+  #counterBoxes() {
+    for (const c of deskControls(this.station)) {
+      if (!c.counter || !this.inWindow(c.x)) continue;
+      const g = el('g', { class: 'scr-counter' }, [
+        el('rect', { x: 2, y: 8, width: CELL - 4, height: 22, rx: 2 }),
+        text(C, 15, c.label, { class: 'scr-text small' }),
+        text(C, 25, '00000', { class: 'scr-text counter' }),
+      ]);
+      g.setAttribute('transform', `translate(${(c.x - this.x0) * CELL},${c.y * CELL * this.ry})`);
+      this.layerMarks.appendChild(g);
+      this.counterRefs.set(c.id, g.querySelector('.counter'));
+    }
+  }
+
   #build() {
     this.#platforms();
     this.#trackNumbers();
+    this.#counterBoxes();
     const addSec = (sid, e) => { if (!this.sectionRefs.has(sid)) this.sectionRefs.set(sid, []); this.sectionRefs.get(sid).push(e); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
@@ -232,18 +249,6 @@ export class ScreenRenderer extends PanelView {
           break;
         }
         case 'signal': this.#signal(tile); break;
-        case 'button': {
-          if (!tile.counter) break;
-          const g = el('g', { class: 'scr-counter' }, [
-            el('rect', { x: 2, y: 8, width: CELL - 4, height: 22, rx: 2 }),
-            text(C, 15, tile.label, { class: 'scr-text small' }),
-            text(C, 25, '00000', { class: 'scr-text counter' }),
-          ]);
-          g.setAttribute('transform', `translate(${(tile.x - this.x0) * CELL},${tile.y * CELL * this.ry})`);
-          this.layerMarks.appendChild(g);
-          this.counterRefs.set(tile.id, g.querySelector('.counter'));
-          break;
-        }
         case 'label': {
           const span = tile.span || 1;
           const txt = ScreenRenderer.labelText(tile.text);

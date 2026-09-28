@@ -41,11 +41,6 @@ const UP = ['SW', 'NE'], DOWN = ['NW', 'SE']; // ukos: z lewej-dołu do prawej-g
 
 // ---- tytuł, przyciski ----
 tiles.push({ x: 48, y: 0, type: 'label', text: 'GDAŃSK GŁÓWNY', size: 13, span: 20 });
-tiles.push({ x: 54, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 55, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 57, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 58, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 60, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 
 // ---- tory stacyjne (x 34–80) ----
 const TRACKS = [

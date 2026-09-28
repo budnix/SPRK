@@ -4,7 +4,8 @@
 src/
   core/        EventBus (zdarzenia), Clock (czas symulacji), Random (ziarno, poziomy zakłóceń)
   data/        glossary (słownik skrótów Ie-1 / Ir-1 – dymki samouczka, instrukcja, podpowiedzi przycisków)
-  tiles/       directions (porty), registry (rejestr typów kostek + schemat pól)
+  tiles/       directions (porty), registry (rejestr typów kostek + schemat pól), controls (pola przycisków
+               grupowych stanowiska – miejsce na pulpicie, bez DOM)
   model/       categories (kategorie pociągów: prędkość, dynamika, etykieta), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek), Interlocking (zależności), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
@@ -42,6 +43,9 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 * **Zależności nie znają stanowiska.** `Interlocking` przyjmuje polecenia zależnościowe (przebieg z jawnym rodzajem,
   zwolnienie, „Stój”, zwrotnica, zamknięcie, Sz). Przyciski, kolory i uzbrojenie to sprawa protokołu obsługi
   (`src/srk/buttons.js`); widok nie zmienia stanu modelu wprost.
+* **Stacja opisuje tor, stanowisko – swoje przyciski.** Definicja stacji nie zawiera przycisków grupowych pulpitu.
+  Ich pola podaje `src/tiles/controls.js` (`deskControls(station)`: miejsce domyślne albo wskazówka
+  `desk.controls`), a rysuje je widok stanowiska – tak samo jak kostki blokady liniowej (`blockLayout.js`).
 * **Kostki są danymi.** Typ kostki = wpis w rejestrze (`registerTile`): porty, wyjścia, schemat pól.
   Renderer dobiera grafikę po `type`. Edytor będzie iterował `listTileDefs()`.
 * **Tablica zależności z topologii.** Autor stacji nie wpisuje przebiegów ręcznie – wystarczą kostki,
@@ -107,7 +111,7 @@ stanu, samouczek i testy czytają to samo pole co przy typie E. Rozkaz działa n
 zamknięcie w podany stan, „Zcz” i „Zw” znajdują przebieg po adresie jego końca (`Interlocking.routeEndingAt`).
 
 Widok korzysta z części wspólnych pulpitów (`deskParts.js`) i własnej grafiki kostek sygnalizatorów (`izhArt.js`).
-Kostki przycisków grupowych typu E z definicji stacji (Zw, Zz, Pz, dPz, Sz) rysuje jako puste – rozkazy są w grupie
+Pola przycisków grupowych typu E (Zw, Zz, Pz, dPz, Sz) zostawia puste – rozkazy są w grupie
 nad planem (`.izh-orders`, element DOM jak pasek poleceń monitora, więc nie przycina go podział na ekrany).
 Lampki są wygaszone w stanie zasadniczym; co świeci i kiedy – opis klasy `IzhRenderer`, źródła i założenia –
 `docs/SOURCES.md`.

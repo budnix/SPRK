@@ -36,11 +36,6 @@ const sections = {};
 
 // ---------------- blokady i przyciski ----------------
 tiles.push({ x: 38, y: 0, type: 'label', text: 'GDYNIA GŁÓWNA', size: 13, span: 24 });
-tiles.push({ x: 45, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 46, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 48, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 49, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 51, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 
 // ---------------- tory peronowe ----------------
 for (const [nr, y, len, peron, x0] of TRACKS) {
@@ -216,7 +211,7 @@ export default {
   traffic: 'Największy ruch: 10 torów peronowych, SKM, dalekobieżne, towarowe; cała stacja z jednego stanowiska (ekrany).',
   difficulty: 5,
   startTime: '05:55',
-  desk: { cols: 100, rows: 28 },
+  desk: { cols: 100, rows: 28, controls: { x: 45, y: 1 } },
 
   exits: {
     K: { name: 'Gdynia Wielki Kack', label: 'Wlk. Kack – 201', tile: { x: 0, y: 2 }, dir: 'W', lineLength: 5200, lineSpeed: 80 },

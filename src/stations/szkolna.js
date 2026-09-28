@@ -61,11 +61,6 @@ export default {
   tiles: [
 
     { x: 12, y: 0, type: 'label', text: 'SZKOLNA', size: 12, span: 8 },
-    { x: 10, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' },
-    { x: 11, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' },
-    { x: 13, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' },
-    { x: 14, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true },
-    { x: 16, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true },
 
     // tor 1 (y = 4)
     ...H(1, 3, 4, 'ZbA'),

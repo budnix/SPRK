@@ -178,3 +178,33 @@ test('ekran startowy: kartę posterunku wybiera się także z klawiatury (Enter,
   await expect(other).toHaveClass(/active/);
   await expect(card).not.toHaveClass(/active/);
 });
+
+test('przyciski grupowe rysuje stanowisko, nie definicja stacji: pulpit typu E ma Zw, Zz, Pz, dPz, Sz; monitor – liczniki; pulpit IZH-111 – puste pola', async ({ page }) => {
+  await openShift(page, 'rumia', { settings: { sideCollapsed: true } });
+  expect(await page.evaluate(() => window.sim.station.tiles.filter((t) => t.type === 'button').length)).toBe(0);
+  const groups = await page.locator('#desk svg.desk .btn').evaluateAll((els) => els.map((e) => JSON.parse(e.dataset.ref)).filter((r) => r.kind === 'group'));
+  expect(groups).toEqual([
+    { kind: 'group', id: 'Zw', role: 'group-point' }, { kind: 'group', id: 'Zz', role: 'point-lock' }, { kind: 'group', id: 'Pz', role: 'route-release' },
+    { kind: 'group', id: 'dPz', role: 'emergency-release' }, { kind: 'group', id: 'Sz', role: 'substitute' },
+  ]);
+  // miejsce wskazane przez stację: kolumna 44, drugi rząd
+  const at = await page.locator('#desk svg.desk [data-control="Zw"]').getAttribute('transform');
+  expect(at).toBe('translate(1760,40)');
+  // przyciski działają: Zw + zwrotnica przestawia, dPz liczy
+  const point = await page.evaluate(() => [...window.sim.ilk.points.keys()][0]);
+  await page.locator(`.btn[data-ref='{"kind":"group","id":"Zw","role":"group-point"}']`).dispatchEvent('pointerdown', { bubbles: true, button: 0 });
+  await page.locator(`.btn[data-ref='{"kind":"group","id":"Zw","role":"group-point"}']`).dispatchEvent('pointerup', { bubbles: true, button: 0 });
+  await page.locator(`.btn[data-ref='{"kind":"point","id":"${point}"}']`).dispatchEvent('pointerdown', { bubbles: true, button: 0 });
+  await page.locator(`.btn[data-ref='{"kind":"point","id":"${point}"}']`).dispatchEvent('pointerup', { bubbles: true, button: 0 });
+  expect(await page.evaluate((id) => window.sim.ilk.points.get(id).moving, point)).toBe(true);
+  await expect(page.locator('#desk svg.desk [data-control="dPz"] .counter-text')).toHaveText('00000');
+
+  await openShift(page, 'rumia', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-lcs' } });
+  await expect(page.locator('#desk svg.screen .scr-counter')).toHaveCount(2);
+  await page.evaluate(() => { window.sim.execute({ type: 'substitute', signal: [...window.sim.ilk.signals.values()].find((s) => s.kind === 'semafor').id }); window.sim.step(0.5); });
+  expect(await page.locator('#desk svg.screen .scr-counter .counter').allTextContents()).toEqual(['00000', '00001']);
+
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-izh' } });
+  await expect(page.locator('#desk svg.desk [data-control]')).toHaveCount(5);
+  await expect(page.locator('#desk svg.desk [data-control] .btn')).toHaveCount(0);
+});

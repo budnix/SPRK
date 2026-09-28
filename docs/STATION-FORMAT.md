@@ -13,7 +13,7 @@ export default {
   traffic: '…',                   // krótki opis ruchu – karta na ekranie startowym
   difficulty: 2,                  // trudność 1–5 (gwiazdki; sortowanie „wg trudności”)
   startTime: '05:52',             // początek zmiany
-  desk: { cols: 32, rows: 10 },   // wymiary pulpitu w kostkach (40×40 px)
+  desk: { cols: 32, rows: 10 },   // wymiary pulpitu w kostkach (40×40 px); opcjonalnie controls: { x, y }
   exits: { … },                   // szlaki (wyjazdy ze stacji)
   sections: { … },                // odcinki izolowane
   points: { … },                  // parametry zwrotnic (opcjonalne)
@@ -39,7 +39,7 @@ port `SE` łączy się z `(6,5)` posiadającą port `NW`.
 | `point` | torowa | `id`, `toe`, `straight`, `diverge`, `section`, `label?`, `speedDiverging?` | zwrotnica: ostrze, tor zasadniczy (+), tor zwrotny (−) |
 | `crossing` | torowa | `pairs:[[a,b],[c,d]]`, `section` | skrzyżowanie torów |
 | `signal` | sygnał | `id`, `kind:'semafor'|'tm'`, `at:{x,y}`, `dir:'E'|'W'`, `shunting?`, `substitute?`, `overlap?`, `entry?` | powtarzacz sygnalizatora z przyciskami; stoi na granicy wyjścia z kostki `at` w kierunku `dir` |
-| `button` | sterownicza | `id`, `label`, `role`, `color?`, `counter?` | przycisk grupowy: `group-point` (Zw), `point-lock` (Zz), `route-release` (Pz), `emergency-release` (dPz), `substitute` (Sz) |
+| `button` | sterownicza | `id`, `label`, `role`, `color?`, `counter?` | **przestarzała w definicji stacji** – przyciski grupowe rysuje stanowisko (niżej „Przyciski stanowiska”); stary plik z tymi kostkami działa i dostaje ostrzeżenie walidacji |
 | `label` | opis | `text`, `size?`, `span?` | napis; na monitorze z opisu „tor N · …” zostaje tylko reszta (numery torów są rysowane w ramkach na linii toru, perony na prostokącie) |
 | `blank` | – | – | pusta kostka (uzupełniana automatycznie) |
 
@@ -48,6 +48,17 @@ Dodatki na kostce torowej:
 * `derailer: 'Wk1'` – wykolejnica (położenia `on` = nałożona, `off` = zdjęta),
 * `endButton: { id, color }` – przycisk końca przebiegu (na kostce wyjazdu na szlak – zielony; na kozłach – biały),
 * `text` – opis (np. nazwa sąsiedniego posterunku).
+
+## Przyciski stanowiska (`desk.controls`, opcjonalne)
+
+Przyciski grupowe (Zw, Zz, Pz, dPz, Sz) są wyposażeniem pulpitu typu E, a nie cechą stacji – definicja stacji ich nie
+zawiera. Stanowisko rysuje je samo (`src/tiles/controls.js`): pulpit typu E – przyciski i liczniki, monitor – same
+liczniki dPz i Sz, pulpit IZH-111 zostawia pola puste, bo ma własną grupę rozkazów.
+
+Grupa zajmuje siedem kolumn jednego rzędu (pola 0, 1, 3, 4, 6 – między parami odstęp). Domyślnie leży w drugim
+rzędzie pulpitu, na środku (`x = cols / 2 − 6`); gdy tam jest zajęte – w najbliższym wolnym miejscu. Stacja może
+wskazać inne wolne miejsce: `desk: { cols, rows, controls: { x, y } }`. Wskazówka na zajętym polu albo poza pulpitem
+jest błędem walidacji.
 
 ## Odcinki izolowane (`sections`)
 
@@ -207,9 +218,7 @@ Pole opcjonalne na najwyższym poziomie definicji: `srk: 'E'` (urządzenia przek
 domyślnie), `srk: 'izh111'` (urządzenia przekaźnikowe typu IZH-111, pulpit ciemny z przyciskami adresowymi
 i rozkazów) lub `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
 polecenia specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla wszystkich
-stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Kostki `button` (przyciski grupowe Zw, Zz, Pz, dPz,
-Sz) to wyposażenie pulpitu typu E: monitor bierze z nich tylko liczniki, a pulpit IZH-111 zostawia je puste, bo ma
-własną grupę rozkazów. Docelowo przyciski stanowiska nie powinny być częścią definicji stacji. Nieznana wartość jest błędem walidacji.
+stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Przyciski grupowe (Zw, Zz, Pz, dPz, Sz) nie są częścią definicji stacji – patrz „Przyciski stanowiska”. Nieznana wartość jest błędem walidacji.
 
 ## Ekrany pulpitu (`screens`, opcjonalne)
 

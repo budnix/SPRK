@@ -5,13 +5,16 @@
  * żeby tor „kontynuował się” na sąsiednim ekranie. Bez DOM – testowalne w Node.
  */
 
+import { deskControls } from '../tiles/controls.js';
+
 const DIAG = ['NE', 'NW', 'SE', 'SW'];
 
 /** Koszt „zajętości” kolumny: co byśmy przecięli, tnąc obok niej. */
 function columnCost(station, win) {
   const cost = new Map();
   const add = (x, v) => { if (x >= win[0] && x <= win[1]) cost.set(x, (cost.get(x) || 0) + v); };
-  for (const t of station.tiles) {
+  // przyciski grupowe nie są kostkami stacji – ich pola podaje układ stanowiska
+  for (const t of [...station.tiles.filter((x) => x.type !== 'button'), ...deskControls(station)]) {
     switch (t.type) {
       case 'point': add(t.x, 6); break;
       case 'crossing': add(t.x, 6); break;

@@ -1,4 +1,5 @@
 import { getTileDef } from '../tiles/registry.js';
+import { deskControls } from '../tiles/controls.js';
 
 /**
  * Geometria peronów z definicji stacji (bez DOM) – wspólna dla monitora i pulpitu kostkowego.
@@ -23,7 +24,8 @@ export function platformSpans(station, win, labelText = (t) => t) {
     spans.push({ sid, y: ys[0], x0: Math.min(...tiles.map((t) => t.x)), x1: Math.max(...tiles.map((t) => t.x)), done: false });
   }
   const TRACKY = new Set(['track', 'point', 'buffer', 'crossing', 'block', 'button']);
-  const rowBusy = (y, x0, x1) => station.tiles.some((t) => t.y === y && t.x >= x0 && t.x <= x1 && TRACKY.has(t.type));
+  const busy = [...station.tiles.filter((t) => t.type !== 'button'), ...deskControls(station)];
+  const rowBusy = (y, x0, x1) => busy.some((t) => t.y === y && t.x >= x0 && t.x <= x1 && TRACKY.has(t.type));
   const clip = (y, x0, x1) => {
     const mid = (x0 + x1) / 2;
     const sig = station.tiles.filter((t) => t.type === 'signal' && t.y === y && t.x >= x0 && t.x <= x1);

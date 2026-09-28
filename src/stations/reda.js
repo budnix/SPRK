@@ -31,11 +31,6 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- tytuł, przyciski, opisy ----
 tiles.push({ x: 24, y: 0, type: 'label', text: 'REDA', size: 12, span: 16 });
-tiles.push({ x: 28, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 29, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 31, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 32, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 34, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 tiles.push({ x: 1, y: 10, type: 'label', text: 'linia 202 · Rumia', span: 4, size: 7 }, { x: 91, y: 3, type: 'label', text: 'linia 202 · Wejherowo', span: 5, size: 7 },
   { x: 90, y: 11, type: 'label', text: 'linia 213 · Hel', span: 4, size: 7 },
   { x: 48, y: 1, type: 'label', text: 'tor 106 · 108', span: 4, size: 7 });
@@ -146,7 +141,7 @@ export default {
   traffic: 'Regionalne i dalekobieżne na peronie II, pociągi z Helu na peronie I i Ia, towarowe przelotem torem 3 i zdawcze na tory ładunkowe.',
   difficulty: 4,
   startTime: '05:55',
-  desk: { cols: 100, rows: 16 },
+  desk: { cols: 100, rows: 16, controls: { x: 28, y: 1 } },
 
   exits: {
     RM2: { name: 'Rumia', label: 'Rumia – 202 t.2', tile: { x: 0, y: 6 }, dir: 'W', direction: 'out', lineLength: 6400, lineSpeed: 120 },

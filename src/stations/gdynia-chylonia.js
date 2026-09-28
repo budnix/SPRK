@@ -23,11 +23,6 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski, opisy ----
 tiles.push({ x: 28, y: 0, type: 'label', text: 'GDYNIA CHYLONIA', size: 12, span: 20 });
-tiles.push({ x: 50, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 51, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 53, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 54, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 56, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 tiles.push({ x: 2, y: 4, type: 'label', text: 'linia 250 SKM', span: 3, size: 7 }, { x: 2, y: 10, type: 'label', text: 'linia 202', span: 2, size: 7 },
   { x: 22, y: 17, type: 'label', text: 'linia 964 · Gdynia Postojowa (manewry)', span: 8, size: 7 },
   { x: 100, y: 17, type: 'label', text: 'linia 723 · Gdynia Port', span: 5, size: 7 });

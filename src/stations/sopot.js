@@ -25,11 +25,6 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski, opisy ----
 tiles.push({ x: 30, y: 0, type: 'label', text: 'SOPOT', size: 12, span: 18 });
-tiles.push({ x: 32, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 33, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 35, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 36, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 38, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 tiles.push({ x: 1, y: 6, type: 'label', text: 'linia 202', span: 2, size: 7 }, { x: 12, y: 11, type: 'label', text: 'p.o. Sopot Wyścigi · linia 250 SKM', span: 8, size: 7 });
 
 // ---- zachód: odcinki zbliżania ----
@@ -175,7 +170,7 @@ export default {
   traffic: 'SKM co 15 min, regionalne i dalekobieżne z postojem przy peronie II, odstawianie składów; przejazd to trzy przebiegi.',
   difficulty: 4,
   startTime: '05:55',
-  desk: { cols: 112, rows: 16 },
+  desk: { cols: 112, rows: 16, controls: { x: 32, y: 1 } },
 
   exits: {
     GD1: { name: 'Gdańsk Oliwa', label: 'Gdańsk Oliwa – 202 t.1', tile: { x: 0, y: 6 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 4200, lineSpeed: 120 },

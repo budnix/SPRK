@@ -32,11 +32,6 @@ const plain = (id, x1, x2, y, len) => { sec(id, { length: len ?? (x2 - x1 + 1) *
 
 // ---- tytuł, przyciski ----
 tiles.push({ x: 50, y: 0, type: 'label', text: 'TCZEW', size: 13, span: 16 });
-tiles.push({ x: 54, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 55, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 57, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 58, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 60, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 
 // ---- tory peronowe (x 34–80), semafory K (zachód) i M (wschód) ----
 const TRACKS = [

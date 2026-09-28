@@ -58,11 +58,6 @@ export default {
 
   tiles: [
     { x: 14, y: 0, type: 'label', text: 'WOLA PUSTKOWSKA', size: 12, span: 8 },
-    { x: 12, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' },
-    { x: 13, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' },
-    { x: 15, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' },
-    { x: 16, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true },
-    { x: 18, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true },
 
     // ---- tor 1 (y = 4) – kierunek zachodni ----
     { ...T(0, 4, ['W', 'E'], 'ZbW1'), endButton: { id: 'kK1', color: 'green' }, text: 'Krasne' },

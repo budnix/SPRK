@@ -4,6 +4,7 @@ import { el, text, CELL } from './svg.js';
 import { refKey } from './refKey.js';
 import { PanelView } from './PanelView.js';
 import { getTileDef } from '../tiles/registry.js';
+import { deskControls } from '../tiles/controls.js';
 import { VEC, OPPOSITE } from '../tiles/directions.js';
 import { t } from '../i18n/index.js';
 
@@ -79,7 +80,7 @@ function buildTiles(view, art) {
   for (const L of plan.values()) for (const a of L.arrows) arrowAt.set(`${a.x},${a.y}`, { exit: L.exit, kind: a.kind, toWest: L.dir === 'W' });
   const blockRef = (exit) => { if (!view.blockRefs.has(exit)) view.blockRefs.set(exit, { btns: {} }); return view.blockRefs.get(exit); };
   for (const tile of view.station.tiles) {
-    if (!view.inWindow(tile.x)) continue;
+    if (!view.inWindow(tile.x) || tile.type === 'button') continue; // przyciski grupowe rysuje stanowisko – niżej
     let out;
     // opis „tor N” rysuje się nad opisywanym torem, na kostce toru; jego własna kostka zostaje pusta
     const pos = tile.type === 'label' && trackLabelText(tile.text) ? trackLabelPlace(view.station, tile) : { x: tile.x, y: tile.y, side: null };
@@ -100,7 +101,6 @@ function buildTiles(view, art) {
       case 'point': out = art.pointArt(tile, ctx); break;
       case 'crossing': out = art.crossingArt(tile, ctx); break;
       case 'signal': out = art.signalArt(tile); break;
-      case 'button': out = art.buttonTileArt(tile); break;
       case 'label': out = art.labelArt(tile, pos.side ?? null); break;
       default: out = art.blankArt();
     }
@@ -120,9 +120,19 @@ function buildTiles(view, art) {
     if (tile.type === 'point') view.pointRefs.set(tile.id, out.refs);
     if (tile.derailer) view.derailerRefs.set(tile.derailer, out.refs);
     if (tile.type === 'signal') view.signalRefs.set(tile.id, out.refs);
-    if (tile.type === 'button' && out.refs.counter) view.counterRefs.set(tile.id, out.refs.counter);
   }
   for (const g of deferred) view.layerTiles.appendChild(g);
+  // Przyciski grupowe stanowiska (typ E: Zw, Zz, Pz, dPz, Sz) – nie pochodzą z definicji stacji
+  for (const c of deskControls(view.station)) {
+    if (!view.inWindow(c.x)) continue;
+    const out = art.buttonTileArt(c);
+    out.g.setAttribute('transform', `translate(${(c.x - view.x0) * CELL},${c.y * CELL})`);
+    out.g.dataset.control = c.id;
+    view.layerTiles.appendChild(out.g);
+    view.tileRefs.set(`control:${c.id}`, out.refs);
+    filled.add(`${c.x},${c.y}`);
+    if (out.refs.counter) view.counterRefs.set(c.id, out.refs.counter);
+  }
   // Kostki urządzeń blokady (Wbl / Poz / Ko / Zk, liczniki dKo / dPo) – grupa na wyjazd, do wskazywania w samouczku
   for (const L of plan.values()) {
     const cluster = el('g', { class: 'block-cluster', 'data-exit': L.exit });

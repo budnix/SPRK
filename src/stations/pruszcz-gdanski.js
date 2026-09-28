@@ -38,11 +38,6 @@ const crossover = (xa, ya, idA, toeA, divA, xb, yb, idB, toeB, divB, diagPorts) 
 
 // ---- tytuł, przyciski ----
 tiles.push({ x: 48, y: 0, type: 'label', text: 'PRUSZCZ GDAŃSKI', size: 13, span: 20 });
-tiles.push({ x: 54, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 55, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 57, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 58, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 60, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 
 // ---- tory stacyjne (x 34–80), semafory E (zachód) i G (wschód) ----
 const TRACKS = [['6', 4, 576, null], ['4', 6, 791, 'Peron I'], ['2', 8, 1113, 'Peron I'], ['1', 10, 1355, 'Peron II'], ['3', 12, 969, 'Peron II'], ['5', 14, 776, null], ['7', 16, 776, null]];

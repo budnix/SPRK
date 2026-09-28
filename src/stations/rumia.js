@@ -30,11 +30,6 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- tytuł, przyciski, opisy ----
 tiles.push({ x: 40, y: 0, type: 'label', text: 'RUMIA', size: 12, span: 16 });
-tiles.push({ x: 44, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 45, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 47, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 48, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 50, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 tiles.push({ x: 1, y: 7, type: 'label', text: 'linia 202', span: 2, size: 7 }, { x: 2, y: 13, type: 'label', text: 'linia 250 SKM', span: 3, size: 7 },
   { x: 85, y: 11, type: 'label', text: 'linia 202 · Reda', span: 4, size: 7 }, { x: 38, y: 1, type: 'label', text: 'tor 8 · plac ładunkowy', span: 5, size: 7 });
 
@@ -150,7 +145,7 @@ export default {
   traffic: 'SKM co 15 min w obu kierunkach na peronie 1, regionalne i dalekobieżne na peronie 2, towarowe przelotem torem 3 i do toru 6.',
   difficulty: 4,
   startTime: '05:55',
-  desk: { cols: 96, rows: 16 },
+  desk: { cols: 96, rows: 16, controls: { x: 44, y: 1 } },
 
   exits: {
     GC2: { name: 'Gdynia Chylonia', label: 'Chylonia – 202 t.2', tile: { x: 0, y: 8 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 5200, lineSpeed: 120 },

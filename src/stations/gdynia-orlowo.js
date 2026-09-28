@@ -21,11 +21,6 @@ const sec = (id, def) => { sections[id] = def; return id; };
 
 // ---- blokady, przyciski ----
 tiles.push({ x: 26, y: 0, type: 'label', text: 'GDYNIA ORŁOWO', size: 12, span: 18 });
-tiles.push({ x: 30, y: 1, type: 'button', id: 'Zw', label: 'Zw', role: 'group-point', color: 'black' });
-tiles.push({ x: 31, y: 1, type: 'button', id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue' });
-tiles.push({ x: 33, y: 1, type: 'button', id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey' });
-tiles.push({ x: 34, y: 1, type: 'button', id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true });
-tiles.push({ x: 36, y: 1, type: 'button', id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true });
 
 // ---- tory stacyjne ----
 sec('T6', { length: 394, kind: 'station', track: '6' });   tiles.push(...H(15, 49, 2, 'T6'));
@@ -128,7 +123,7 @@ export default {
   traffic: 'SKM co 15 min, regionalne z postojem, IC/TLK przelotem, towarowy torem 3, skład EZT z Bazy Sopot.',
   difficulty: 3,
   startTime: '05:55',
-  desk: { cols: 70, rows: 16 },
+  desk: { cols: 70, rows: 16, controls: { x: 30, y: 1 } },
 
   exits: {
     S1: { name: 'Sopot', label: 'Sopot – 202 t.1', tile: { x: 0, y: 8 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 3900, lineSpeed: 120 },

@@ -1,6 +1,7 @@
 import { hasTileDef, getTileDef } from '../tiles/registry.js';
 import { isDir } from '../tiles/directions.js';
 import { hasSrk } from '../srk/registry.js';
+import { controlsFit, legacyButtons, controlAnchor } from '../tiles/controls.js';
 
 /**
  * Walidacja definicji stacji (schemat v1). Zwraca { errors: [], warnings: [] }.
@@ -42,6 +43,10 @@ export function validateStation(st) {
     if (t.id) { if (ids.has(t.id)) errors.push(`${where}: powtórzony id '${t.id}'`); ids.add(t.id); }
     if (t.type === 'point' && new Set([t.toe, t.straight, t.diverge]).size !== 3) errors.push(`${where}: porty zwrotnicy muszą być różne`);
   });
+  // Przyciski grupowe należą do stanowiska, nie do stacji: stacja może tylko wskazać wolne miejsce
+  if (legacyButtons(st).length) warnings.push('Kostki `button` w definicji stacji są przestarzałe – przyciski grupowe rysuje stanowisko (opcjonalnie desk.controls: { x, y })');
+  else if (st.desk?.controls && !controlsFit(st, st.desk.controls.x, st.desk.controls.y)) errors.push(`desk.controls (${st.desk.controls.x},${st.desk.controls.y}): brak wolnego miejsca na grupę przycisków`);
+  else if (st.desk && !controlAnchor(st)) warnings.push('Pulpit nie ma wolnego miejsca na grupę przycisków');
   // Sygnalizatory muszą wskazywać kostkę torową
   for (const t of st.tiles) {
     if (t.type === 'signal') {

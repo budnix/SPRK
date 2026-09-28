@@ -1,4 +1,5 @@
 import { getTileDef } from '../tiles/registry.js';
+import { deskControls } from '../tiles/controls.js';
 
 /**
  * Układ kostek blokady liniowej na pulpicie kostkowym (bez DOM) – jak na pulpitach typu E (ISDR / AC-20):
@@ -17,7 +18,7 @@ export function blockLayouts(station) {
   const out = new Map();
   const rows = station.desk?.rows ?? Infinity, cols = station.desk?.cols ?? Infinity;
   const used = new Set();
-  for (const t of station.tiles) {
+  for (const t of [...station.tiles.filter((x) => x.type !== 'button'), ...deskControls(station)]) {
     const sp = t.type === 'label' ? { w: t.span || 1, h: 1 } : getTileDef(t.type).span;
     for (let dx = 0; dx < sp.w; dx++) for (let dy = 0; dy < sp.h; dy++) used.add(`${t.x + dx},${t.y + dy}`);
   }
