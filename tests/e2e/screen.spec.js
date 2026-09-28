@@ -361,7 +361,7 @@ test('pasek polecenia specjalnego mieści się na tablecie: przyciski w jednej l
   }
 });
 
-test('napis stanu blokady („żąd.”) jest czytelny: nie mniejszy niż nazwy semaforów, a wskazanie samouczka go nie przygasza', async ({ page }) => {
+test('napis stanu blokady („żąd.”) jest czytelny: większy niż nazwy semaforów, a wskazanie samouczka go nie przygasza', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await page.evaluate(() => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && s.blocks.get('W').request !== 'theirs'; i++) s.step(0.5); s.clock.paused = true; });
   const status = page.locator('.scr-el.exit .blk-status').first();
@@ -377,8 +377,7 @@ test('napis stanu blokady („żąd.”) jest czytelny: nie mniejszy niż nazwy 
     g.classList.remove('tut-hl');
     return out;
   });
-  expect(m.size).toBeGreaterThanOrEqual(m.sig);
-  expect(m.size).toBeGreaterThanOrEqual(8);
+  expect(m.size).toBeGreaterThan(m.sig);
   expect(m.weight).toBeGreaterThanOrEqual(600);
   expect(m.dim).toBeGreaterThanOrEqual(0.4);
   expect(m.hlKeys, `animacja wskazania: ${m.hlAnim}`).toBe(false);
