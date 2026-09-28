@@ -386,3 +386,35 @@ test('napis stanu blokady („żąd.”) jest czytelny: większy niż nazwy sema
   expect(m.dim).toBeGreaterThanOrEqual(0.4);
   expect(m.hlKeys, `animacja wskazania: ${m.hlAnim}`).toBe(false);
 });
+
+test('monitor: symbole i napisy nie nachodzą na siebie na żadnej stacji – przy 100 % i przy 150 % (wykolejnica przy tarczy, dwa sygnalizatory w punkcie, „+” zwrotnicy, numer toru)', async ({ page }) => {
+  test.setTimeout(120_000);
+  const { STATIONS } = await import('../../src/stations/index.js');
+  const found = [];
+  for (const st of STATIONS) {
+    const sc = st.scenarios.find((x) => !x.tutorial && x.srk === 'komputerowe') || st.scenarios.find((x) => !x.tutorial && !x.srk && st.srk === 'komputerowe');
+    if (!sc) continue;
+    for (const scale of ['1', '1.25', '1.5']) {
+      await openShift(page, st.id, { params: { scenariusz: sc.id }, settings: { symScale: scale, sideCollapsed: true } });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      found.push(...await page.evaluate((where) => {
+        const items = [];
+        for (const g of document.querySelectorAll('#desk svg.screen .scr-el, #desk svg.screen .scr-label')) {
+          const owner = g.closest('.scr-el') || g;
+          const parts = g.classList.contains('scr-label') ? [g] : [...g.querySelectorAll('path, text, circle, rect')].filter((e) => !/sel-frame|hit/.test(e.getAttribute('class') || ''));
+          const name = (owner.querySelector?.('.sig-label, .pt-label, .scr-text')?.textContent || g.textContent || '').trim();
+          for (const p of parts) { const r = p.getBoundingClientRect(); if (r.width > 0.5 && r.height > 0.5) items.push({ owner, r, name, back: /sig-back/.test(p.getAttribute('class') || '') }); }
+        }
+        const out = new Set();
+        for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
+          const a = items[i], b = items[j];
+          if (a.owner === b.owner || (a.back && b.back)) continue; // tła pod dwoma sygnalizatorami w jednym punkcie mogą się stykać
+          const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left), h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+          if (w > 1 && h > 1) out.add(`${where}: ${a.name} × ${b.name}`);
+        }
+        return [...out];
+      }, `${st.id} ${scale}`));
+    }
+  }
+  expect(found).toEqual([]);
+});

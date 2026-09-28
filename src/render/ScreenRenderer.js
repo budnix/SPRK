@@ -66,6 +66,9 @@ export class ScreenRenderer extends PanelView {
     if (!this.readonly) this.#buildCmdBar(opts.cmdHost || container);
 
     this.#build();
+    // porządki po narysowaniu (geometria z rysunku; także po ułożeniu strony)
+    this.#declutter();
+    requestAnimationFrame(() => this.#declutter());
     this.#bind();
     this.bindModel();
     this.refreshAll();
@@ -90,17 +93,67 @@ export class ScreenRenderer extends PanelView {
     this.S = Number(S) || 1;
     this.svg.style.setProperty('--sym', String(this.S));
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
-    for (const { g, cx, cy } of this.symbols) g.setAttribute('transform', `translate(${cx},${cy}) scale(${this.S})`);
+    for (const sym of this.symbols) this.#place(sym);
     for (const { label } of this.trainLabels.values()) label.firstChild.setAttribute('transform', `scale(${this.S})`);
+    this.#declutter();
+  }
+
+  /** Położenie symbolu: środek + przesunięcie w jednostkach symbolu (`sx`, rośnie ze skalą) + przesunięcie porządkujące (`off`). */
+  #place(sym) {
+    sym.g.setAttribute('transform', `translate(${sym.cx + (sym.sx || 0) * this.S + (sym.off || 0)},${sym.cy}) scale(${this.S})`);
+  }
+
+  /** Widoczny prostokąt symbolu w jednostkach rysunku – bez ramki wyboru i pola dotyku (tło pod sygnalizatorem się liczy: zasłania). */
+  #box(sym, only = null) {
+    let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+    for (const e of only ? [only] : sym.g.querySelectorAll('path, text, circle, rect')) {
+      if (/sel-frame|hit/.test(e.getAttribute('class') || '')) continue;
+      let q; try { q = e.getBBox(); } catch { continue; }
+      if (!q.width && !q.height) continue;
+      l = Math.min(l, q.x); t = Math.min(t, q.y); r = Math.max(r, q.x + q.width); b = Math.max(b, q.y + q.height);
+    }
+    if (l === Infinity) return null;
+    const x0 = sym.cx + (sym.sx || 0) * this.S + (sym.off || 0), S = this.S;
+    return { l: x0 + l * S, r: x0 + r * S, t: sym.cy + t * S, b: sym.cy + b * S };
+  }
+
+  /**
+   * Porządki po skalowaniu: symbole rosną, odstępy między nimi nie. Wykolejnicę i numer toru przesuwa się wzdłuż toru,
+   * a „+” zwrotnicy – na drugą stronę toru, gdy nachodzą na inny symbol lub napis (np. tarczę manewrową obok
+   * wykolejnicy przy symbolach 150 %). Geometria z rysunku (getBBox), więc tylko w przeglądarce.
+   */
+  #declutter() {
+    const hit = (a, b) => a && b && Math.min(a.r, b.r) - Math.max(a.l, b.l) > 1 && Math.min(a.b, b.b) - Math.max(a.t, b.t) > 1;
+    const movable = (s) => s.g.classList.contains('derailer') || s.g.classList.contains('trk-no');
+    for (const s of this.symbols) if (s.off) { s.off = 0; this.#place(s); }
+    for (const s of this.symbols) if (s.plus) { s.plus.setAttribute('x', s.plusXY[0]); s.plus.setAttribute('y', s.plusXY[1]); }
+    const placed = this.symbols.filter((s) => !movable(s)).map((s) => ({ s, box: this.#box(s) }));
+    for (const s of this.symbols.filter(movable)) {
+      for (const off of [0, 6, -6, 12, -12, 18, -18, 24, -24, 32, -32]) {
+        s.off = off; this.#place(s);
+        const box = this.#box(s);
+        if (!placed.some((p) => p.s !== s && hit(box, p.box))) break;
+      }
+      placed.push({ s, box: this.#box(s) });
+    }
+    // „+” zwrotnicy: to samo miejsce, dalej od toru, bliżej albo dalej od środka, na koniec po drugiej stronie toru
+    const spots = ([x, y]) => [1, -1].flatMap((side) => [1, 1.4].flatMap((k) => [1, 0.55, 1.35].map((f) => [x * f, side * y * k])));
+    for (const s of this.symbols.filter((x) => x.plus)) {
+      for (const [px, py] of spots(s.plusXY)) {
+        s.plus.setAttribute('x', px); s.plus.setAttribute('y', py);
+        const box = this.#box(s, s.plus);
+        if (!placed.some((p) => p.s !== s && hit(box, p.box))) break;
+      }
+    }
   }
 
   /* ---------------- geometria ---------------- */
   #pt(tile, port) { const [px, py] = PORT_XY[port]; return [(tile.x - this.x0) * CELL + px, (tile.y * CELL + py) * this.ry]; }
   #ctr(tile) { return [(tile.x - this.x0) * CELL + C, (tile.y * CELL + C) * this.ry]; }
   /** Grupa symbolu we współrzędnych lokalnych (0,0 = środek), skalowana ustawieniem. */
-  #sym(cx, cy, cls, children = []) {
-    const g = el('g', { class: cls, transform: `translate(${cx},${cy}) scale(${this.S})` }, children);
-    this.symbols.push({ g, cx, cy });
+  #sym(cx, cy, cls, children = [], sx = 0) {
+    const g = el('g', { class: cls, transform: `translate(${cx + sx * this.S},${cy}) scale(${this.S})` }, children);
+    this.symbols.push({ g, cx, cy, sx });
     return g;
   }
   #leg(tile, port, t0 = 0, t1 = 1) {
@@ -236,6 +289,7 @@ export class ScreenRenderer extends PanelView {
           const [sx, sy] = PORT_XY[tile.straight];
           const plus = text((sx - C) * 0.62, (sy - C) * 0.62 * this.ry + (below ? -7 : 8), '+', { class: 'scr-text pt-plus' });
           const g = this.#sym(cx, cy, 'scr-el point', [this.#frame(0, 0, 24, 24), lbl, plus, this.#hit({ kind: 'point', id: tile.id }, 0, 0, 10)]);
+          Object.assign(this.symbols.at(-1), { plus, plusXY: [Number(plus.getAttribute('x')), Number(plus.getAttribute('y'))] });
           this.layerMarks.appendChild(g);
           this.pointRefs.set(tile.id, { toe, straight, diverge, zField, lbl, plus, g, tile });
           this.controlEls.set(refKey({ kind: 'point', id: tile.id }), g);
@@ -252,7 +306,8 @@ export class ScreenRenderer extends PanelView {
         case 'label': {
           const span = tile.span || 1;
           const txt = ScreenRenderer.labelText(tile.text);
-          if (!txt) break;
+          // opis dla pulpitu kostkowego („Wk1” przy wykolejnicy) – na monitorze element ma własny podpis
+          if (!txt || this.ilk.derailers.has(txt) || this.topo.signals.has(txt)) break;
           const t = text((tile.x - this.x0) * CELL + span * CELL / 2, cy, txt, { class: `scr-label${tile.size >= 11 ? ' title' : ''}`, 'font-size': Math.max(7, (tile.size || 8) * 0.95) });
           this.layerMarks.appendChild(t);
           break;
@@ -318,7 +373,8 @@ export class ScreenRenderer extends PanelView {
     // dwa sygnalizatory w tym samym punkcie (np. semafor A na kostce 5 w kierunku E i tarcza Tm1 na kostce 6
     // w kierunku W – oba na wspólnej krawędzi): każdy cofa się o kawałek na swoją kostkę, żeby oba były widoczne i klikalne
     const twin = this.station.tiles.some((t) => t.type === 'signal' && t !== tile && t.at && this.#signalAnchor(t).every((v, i) => Math.abs(v - [cx, cy][i]) < 0.5));
-    if (twin) cx -= dir * 8;
+    // rozsunięcie w jednostkach symbolu (rośnie ze skalą): tło jednego (15) nie zasłania trójkąta drugiego (13)
+    const sx = twin ? -dir * 14 : 0;
     const side = dir; // prawa strona toru w kierunku jazdy: E → pod torem (+y), W → nad torem (−y)
     const chevron = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4 Z`;
     const body = el('g', { class: 'sig-body' });
@@ -332,7 +388,7 @@ export class ScreenRenderer extends PanelView {
       body, endTri,
       text(-dir * 2, side > 0 ? 18 : -12, tile.id, { class: 'scr-text sig-label' }),
       this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 10),
-    ]);
+    ], sx);
     this.layerSignals.appendChild(g);
     this.signalRefs.set(tile.id, { body, endTri, g, tile });
     this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
