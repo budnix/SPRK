@@ -6,6 +6,7 @@
 import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
 import { IzhRenderer } from '../render/IzhRenderer.js';
+import { LeverRenderer } from '../render/LeverRenderer.js';
 import { getSrk } from './registry.js';
 import { t } from '../i18n/index.js';
 
@@ -58,6 +59,13 @@ registerView('izh', {
   hint: () => t('hint.izh'),
   armHint: { signal: izhHint, end: izhHint, point: izhHint, derailer: izhHint },
   help: () => t('help.izh'),
+});
+
+/** Nastawnia mechaniczna: dźwignie i drążki wydają polecenia wprost – bez uzbrajania przycisków. */
+registerView('lever', {
+  View: LeverRenderer,
+  hint: () => t('hint.lever'),
+  help: () => t('help.lever'),
 });
 
 function viewOf(srk) {

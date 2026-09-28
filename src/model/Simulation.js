@@ -291,6 +291,8 @@ export class Simulation {
     const ilk = this.ilk;
     switch (cmd?.type) {
       case 'route':
+        // przebieg wskazany wprost (drążek przebiegowy nastawni mechanicznej)
+        if (cmd.id) { const r = ilk.routes.get(cmd.id); return !r ? refuse(`Nieznany przebieg ${cmd.id}`) : this.#allowed('signal', r.start) ? ilk.setRoute(cmd.id) : refuse(OTHER_DISTRICT); }
         if (!this.#allowed('signal', cmd.start) || !this.#allowed(ilk.topo.signals.has(cmd.end) ? 'signal' : 'end', cmd.end)) return refuse(OTHER_DISTRICT);
         return cmd.compound ? ilk.requestCompoundRoute(cmd.start, cmd.end, cmd.kind) : ilk.requestRoute(cmd.start, cmd.end, cmd.kind);
       case 'stop':

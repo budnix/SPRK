@@ -42,3 +42,20 @@ test('wygląd pulpitu typu IZH-111 (Szkolna): przebieg utwierdzony, wybrany adre
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-izh-szkolna.png');
   expect(await shot(page, '.izh-orders', 1000, 38)).toMatchSnapshot('izh-orders.png');
 });
+
+test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek, blok zablokowany, sygnał zezwalający', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-mech' } });
+  await page.evaluate(() => {
+    const s = window.sim;
+    s.clock.paused = false; // kroki symulacji idą tylko przy puszczonym zegarze
+    const r = s.ilk.routes.get('A-D2');
+    for (const q of [...r.points, ...r.flank]) s.execute({ type: 'point', id: q.id, position: q.position });
+    for (let i = 0; i < 6; i++) s.step(0.5);
+    s.execute({ type: 'route', id: 'A-D2' }); s.execute({ type: 'route-block', signal: 'A' }); s.execute({ type: 'clear', signal: 'A' });
+    for (let i = 0; i < 4; i++) s.step(0.5);
+    s.clock.paused = true;
+    return { route: !!s.ilk.active.get('A-D2')?.lever, aspect: s.ilk.signals.get('A').aspect };
+  }).then((st) => expect(st.route && st.aspect !== 'S1').toBe(true));
+  await page.waitForTimeout(200);
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mech-szkolna.png');
+});

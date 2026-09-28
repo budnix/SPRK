@@ -15,7 +15,8 @@ src/
                address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
-               DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), ScreenRenderer
+               DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), LeverRenderer
+               (nastawnia mechaniczna: plan świetlny i ława dźwigniowa), leverFrame (dźwignie i drążki ławy, bez DOM), ScreenRenderer
                (monitor stanowiska komputerowego wg Ie-104), deskParts (części wspólne pulpitów kostkowych: rama,
                kostki z planu, perony, blokada, przyciski pod palcem), tileArt / izhArt (grafika kostek),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
@@ -58,7 +59,7 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 
 ## Strategie systemów srk (`src/srk/`)
 
-Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111'` (domyślnie `E`). Strategia to wpis w rejestrze
+Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111' | 'mech'` (domyślnie `E`). Strategia to wpis w rejestrze
 (`registerSrk({ id, name, description, view, model, input? })`):
 
 * `model` – parametry przekazywane do `Interlocking` (np. `armTimeout`: 6 s na drugi przycisk pulpitu,
@@ -67,9 +68,11 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111'` (domyślnie `E`). Strateg
 * `input` – protokół obsługi stanowiska (bez DOM): `(ilk, bus, model) => { press, pull, pressCompound, cancel,
   tick, armed }`. Bez niego obowiązują przyciski typu E (`src/srk/buttons.js`); `izh111` ma protokół „adres +
   rozkaz” (`src/srk/address.js`). Opcje zależności tej strategii: `timedRelease`, `shuntTimedRelease`,
-  `timedReleaseAlways` (IZH-111: Zcz zwalnia po 120 s, przebieg manewrowy bezzwłocznie).
+  `timedReleaseAlways` (IZH-111: Zcz zwalnia po 120 s, przebieg manewrowy bezzwłocznie). Nastawnia mechaniczna (`mech`)
+  nie ma protokołu – ława wydaje polecenia wprost – i włącza opcje `manualPoints`, `manualSignal`, `routeBlock`,
+  `holdRoute`, `pointSwitchTime` (opis w nagłówku `Interlocking.js`).
 * `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe), `izh` (IzhRenderer: pulpit ciemny,
-  przyciski adresowe i grupa rozkazów) lub `screen`
+  przyciski adresowe i grupa rozkazów), `lever` (LeverRenderer: plan świetlny i ława dźwigniowa) lub `screen`
   (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
   Widoki są w rejestrze `src/srk/views.js` (`registerView`, `createView`, `viewSize`, `armHint`, `viewHelp`);
   model ich nie importuje.
@@ -116,6 +119,22 @@ Pola przycisków grupowych typu E (Zw, Zz, Pz, dPz, Sz) zostawia puste – rozka
 nad planem (`.izh-orders`, element DOM jak pasek poleceń monitora, więc nie przycina go podział na ekrany).
 Lampki są wygaszone w stanie zasadniczym; co świeci i kiedy – opis klasy `IzhRenderer`, źródła i założenia –
 `docs/SOURCES.md`.
+
+## Nastawnia mechaniczna (`src/render/LeverRenderer.js`, `src/render/leverFrame.js`)
+
+Czwarte stanowisko – pierwsze, w którym zmienia się **kolejność obsługi**, a nie tylko sposób wydawania poleceń.
+Różnice są opcjami `Interlocking` (domyślnie wyłączonymi): przebieg nie przestawia zwrotnic (`manualPoints`,
+przeszkoda `point-position`), sygnał podaje dźwignia (`manualSignal`: `clearSignal`, tylko raz na jazdę), przebieg
+pociągowy wymaga bloku przebiegowego utwierdzającego (`routeBlock`: `blockRoute`, zwalnia go pociąg albo zwalniacz
+z licznikiem jak dPz), a po przejeździe przebieg zostaje zamknięty do cofnięcia drążka (`holdRoute`). Polecenia
+idą przez `Simulation.execute`: `point` / `derailer` z położeniem, `route` z `id` (drążek wskazuje konkretny
+przebieg), `route-block`, `clear`, `stop`, `release`. Automat dyżurnego (`Operator.js`) umie tę kolejność.
+
+`leverFrame(ilk)` (bez DOM, test w Node) numeruje dźwignie (zwrotnicowe, wykolejnicowe, semaforowe, tarcz) i dzieli
+przebiegi na drążki: drążek należy do sygnalizatora i rodzaju przebiegu, najwyżej dwa przebiegi (w górę i w dół);
+`leverStates` mówi, jak narysować stan. Widok rysuje plan świetlny częściami pulpitów (`deskParts.js`, grafika
+`leverArt.js` – kostki bez przycisków, zostają przyciski blokady) i ławę pod planem (`static size` dodaje jej
+wysokość). `elementFor` dla semafora, zwrotnicy i wykolejnicy zwraca dźwignię. Źródła i założenia – `docs/SOURCES.md`.
 
 ## Ekrany pulpitu
 

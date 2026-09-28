@@ -42,6 +42,10 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Type IZH-111 relay desk** – a dark desk (lamps are off in the normal state): one address button per element and
   a separate group of order buttons (P, M, +, −, STOP, Zw, Zcz, Sz). A route is the start address, the end address and
   an order; Zcz releases a train route after 120 s. Available as a shift on the training station.
+* **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
+  and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
+  route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
+  the route lever go back. Available as a shift on all three training stations.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -68,9 +72,9 @@ Play it: **https://budnix.github.io/SPRK/**
 ### Stations
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
-| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 | 1/5 | Training station on a single-track line; mission 1. |
-| **Jodłowa** (fictional) | relay type E / IZH-111 / computer | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
-| **Zacisze** (fictional) | relay type IZH-111 / type E / computer | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
+| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical | 1/5 | Training station on a single-track line; mission 1. |
+| **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
+| **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |

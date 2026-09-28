@@ -127,6 +127,7 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–09:00)', srk: 'E', description: 'Ruch na linii dwutorowej, wyprzedzanie, pociągi do i z Borków. Poziom zakłóceń do wyboru.', endTime: '09:00' },
     { id: 'zmiana-izh', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–09:00)', srk: 'izh111', description: 'Ten sam rozkład na pulpicie ciemnym urządzeń typu IZH-111.', endTime: '09:00' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (07:00–09:00)', srk: 'komputerowe', description: 'Ten sam rozkład na monitorze (zobrazowanie wg Ie-104).', endTime: '09:00' },
+    { id: 'zmiana-mech', name: 'Pełna zmiana – nastawnia mechaniczna (07:00–09:00)', srk: 'mech', description: 'Ten sam rozkład w nastawni mechanicznej: zwrotnice dźwigniami, przebieg drążkiem przebiegowym, blok przebiegowy utwierdzający i dźwignia sygnałowa; po przejeździe dźwignia na „Stój” i drążek z powrotem. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '09:00' },
   ],
 
   timetable: [

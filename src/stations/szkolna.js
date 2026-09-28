@@ -128,6 +128,7 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:50)', srk: 'komputerowe', description: 'Ten sam rozkład bez podpowiedzi, na monitorze (zobrazowanie wg Ie-104). Poziom zakłóceń do wyboru.', endTime: '08:50' },
     { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)', srk: 'E', description: 'Ten sam rozkład bez podpowiedzi, na pulpicie kostkowym urządzeń przekaźnikowych typu E. Poziom zakłóceń do wyboru.', endTime: '08:50' },
     { id: 'zmiana-izh', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–08:50)', srk: 'izh111', description: 'Ten sam rozkład na pulpicie ciemnym urządzeń przekaźnikowych typu IZH-111: przycisk adresowy elementu i przycisk rozkazu (P, M, +, −, STOP, Zw, Zcz, Sz). Instrukcja obsługi jest pod przyciskiem „?”. Poziom zakłóceń do wyboru.', endTime: '08:50' },
+    { id: 'zmiana-mech', name: 'Pełna zmiana – nastawnia mechaniczna (07:00–08:50)', srk: 'mech', description: 'Ten sam rozkład w nastawni mechanicznej: zwrotnice dźwigniami, przebieg drążkiem przebiegowym, blok przebiegowy utwierdzający i dźwignia sygnałowa; po przejeździe dźwignia na „Stój” i drążek z powrotem. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:50' },
   ],
 
   timetable: [

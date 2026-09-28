@@ -62,6 +62,11 @@
   /* grupa przycisków rozkazów pulpitu IZH-111 – barwy urządzenia, niezależne od motywu */
   --desk-izh-bar: #3b3d3f; --desk-izh-key: #1e1f20; --desk-izh-key-edge: #6f7578; --desk-izh-key-text: #f4f4f4; --desk-izh-ready: #ffd23f;
   --desk-izh-counter: #101112; --desk-izh-counter-text: #f4f4f4;
+  /* ława nastawni mechanicznej (Ie-8 §6: nastawnica szara, trzony dźwigni niebieskie / czerwone) – barwy urządzenia */
+  --desk-mech-bench: #7d8388; --desk-mech-block: #5d6367; --desk-mech-slot: #25282a; --desk-mech-title: #eceeef;
+  --desk-mech-blue: #2c5aa0; --desk-mech-red: #b8322a; --desk-mech-knob: #d6dadd; --desk-mech-knob-edge: #53595d;
+  --desk-mech-plate: #f1f0ea; --desk-mech-plate-text: #1d1f20; --desk-mech-label: #f4f5f5; --desk-mech-set: #ffd23f;
+  --desk-mech-window-red: #c8342b; --desk-mech-window-white: #f6f6f1; --desk-mech-key: #1e1f20; --desk-mech-seal: #a8352c;
   /* promienie, wysokość kontrolek, warstwy */
   --radius: 4px; --radius-sm: 3px; --radius-pill: 10px;
   --ctl-h: 28px;
@@ -738,4 +743,39 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .izh-orders button { min-width: 44px; height: var(--ctl-h); padding: 0 10px; background: var(--desk-izh-key); color: var(--desk-izh-key-text); border: 1px solid var(--desk-izh-key-edge); border-radius: var(--radius-pill); font: 600 12px var(--font); cursor: pointer; }
 .izh-orders button:active { filter: brightness(1.4); }
 .izh-orders.ready button { border-color: var(--desk-izh-ready); }
+
+/* ---- nastawnia mechaniczna: ława pod planem świetlnym (aparat blokowy, drążki przebiegowe, dźwignie) ---- */
+.desk.mech .bench-bg { fill: var(--desk-mech-bench); }
+.desk.mech .bench-block { fill: var(--desk-mech-block); }
+.desk.mech .bench-title { fill: var(--desk-mech-title); font-size: 7px; font-weight: 700; letter-spacing: 0.8px; }
+.desk.mech .bench-label { fill: var(--desk-mech-label); font-size: 7px; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.desk.mech .bench-label.strong { font-weight: 700; }
+.desk.mech .bench-label.target { font-size: 6.5px; }
+.desk.mech .hit { fill: transparent; pointer-events: all; }
+.desk.mech .mech-ctl { cursor: pointer; }
+.desk.mech .mech-ctl:focus-visible { outline: 2px solid var(--desk-mech-set); outline-offset: 1px; }
+.desk.mech .key { fill: var(--desk-mech-key); stroke: var(--desk-mech-knob-edge); stroke-width: 0.8; }
+.desk.mech .key-text { fill: var(--desk-mech-label); font-size: 6.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.desk.mech .mech-ctl:active .key { fill: var(--desk-mech-knob-edge); }
+.desk.mech .blk-window { fill: var(--desk-mech-window-red); stroke: var(--desk-mech-slot); stroke-width: 1; }
+.desk.mech .blk-window.white { fill: var(--desk-mech-window-white); }
+.desk.mech .zw-seal { fill: var(--desk-mech-seal); stroke: var(--desk-mech-slot); stroke-width: 0.8; }
+.desk.mech .drazek-slot { fill: var(--desk-mech-slot); }
+.desk.mech .drazek-grip, .desk.mech .lever-grip, .desk.mech .lever-catch, .desk.mech .lever-axle { fill: var(--desk-mech-knob); stroke: var(--desk-mech-knob-edge); stroke-width: 0.8; }
+.desk.mech .drazek-pin { fill: var(--desk-mech-knob-edge); }
+.desk.mech .lever-catch-rod { stroke: var(--desk-mech-knob); stroke-width: 1.1; fill: none; }
+.desk.mech .lever-sector { fill: var(--desk-mech-slot); }
+.desk.mech .lever-notch { fill: var(--desk-mech-bench); }
+.desk.mech .lever-drum { fill: var(--desk-mech-knob-edge); stroke: var(--desk-mech-slot); stroke-width: 1; }
+.desk.mech .drazek-pos.set .target { fill: var(--desk-mech-set); font-weight: 700; }
+.desk.mech .lever-rod { fill: var(--desk-mech-blue); }
+.desk.mech .lever-signal .lever-rod { fill: var(--desk-mech-red); }
+.desk.mech .lever-shunt .lever-rod { fill: var(--desk-mech-blue); stroke: var(--desk-mech-red); stroke-width: 1.2; }
+.desk.mech .lever.moving .lever-grip { fill: var(--desk-mech-set); }
+.desk.mech .lever-lock { fill: var(--desk-mech-slot); opacity: 0; }
+.desk.mech .lever-lock.on { opacity: 1; }
+.desk.mech .lever-fault { fill: var(--desk-mech-red); opacity: 0; }
+.desk.mech .lever-fault.on { opacity: 1; }
+.desk.mech .lever-plate { fill: var(--desk-mech-plate); }
+.desk.mech .plate-text { fill: var(--desk-mech-plate-text); font-size: 6.5px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .izh-counter { background: var(--desk-izh-counter); color: var(--desk-izh-counter-text); border: 1px solid var(--desk-izh-key-edge); border-radius: var(--radius-sm); padding: 2px 6px; font: 700 11px var(--font); font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }
