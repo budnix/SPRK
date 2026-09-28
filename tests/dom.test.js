@@ -12,3 +12,9 @@ test('setHtmlIfChanged: ta sama treść nie rusza DOM (przyciski zostają), inna
   assert.equal(setHtmlIfChanged(host, '<b>b</b>'), true);
   assert.equal(writes, 2); assert.equal(host.innerHTML, '<b>b</b>');
 });
+
+test('escapeHtml: znaki HTML i cudzysłów zamienione, null i liczby bezpieczne', async () => {
+  const { escapeHtml } = await import('../src/ui/dom.js');
+  assert.equal(escapeHtml('<b a="1">Tom & Jerry</b>'), '&lt;b a=&quot;1&quot;&gt;Tom &amp; Jerry&lt;/b&gt;');
+  assert.equal(escapeHtml(null), ''); assert.equal(escapeHtml(undefined), ''); assert.equal(escapeHtml(5), '5');
+});

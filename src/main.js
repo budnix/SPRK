@@ -14,6 +14,7 @@ import { Tutorial } from './tutorial/Tutorial.js';
 import { getMission } from './tutorial/missions.js';
 import { applyDom, detectLang, setLang, t } from './i18n/index.js';
 import { logoSvg } from './ui/brand.js';
+import { uiIcon } from './ui/icons.js';
 import { installNoBounce } from './ui/noBounce.js';
 
 const params = new URLSearchParams(location.search);
@@ -31,6 +32,7 @@ document.title = t('app.title');
 applyDom(document.body);
 installNoBounce(document); // bez przesuwania strony i „pull to refresh” na tablecie
 document.querySelector('#topbar .logo').innerHTML = logoSvg(22);
+document.getElementById('btn-menu').innerHTML = uiIcon('menu', 14);
 const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
@@ -72,7 +74,7 @@ if (station.districts) {
     const r = createView(sim.srk, wrap, sim, handlers, { window: d.cols, readonly: !mine, title: d.short || id, cmdHost: document.getElementById('cmd-host'), ...viewOpts() });
     desks.push({ id, renderer: r, cols: d.cols[1] - d.cols[0] + 1, x0: d.cols[0], x1: d.cols[1], el: wrap, screens: [], screen: -1 });
     const b = document.createElement('button');
-    b.innerHTML = `${d.short || id}${mine ? '' : '<span class="ai">automat</span>'}`;
+    b.innerHTML = `${d.short || id}${mine ? '' : `<span class="ai">${t('desk.auto')}</span>`}`;
     b.title = d.name;
     b.addEventListener('click', () => showDesk(id));
     tabs.appendChild(b);
@@ -208,7 +210,9 @@ pauseBtn.addEventListener('click', () => { sim.clock.paused = !sim.clock.paused;
 function updateSpeed() {
   for (const b of speedEl.querySelectorAll('.speed-btn')) b.classList.toggle('active', +b.dataset.speed === sim.clock.speed && !sim.clock.paused);
   pauseBtn.classList.toggle('active', sim.clock.paused);
-  pauseBtn.textContent = sim.clock.paused ? '▶' : '❚❚';
+  // ikona pokazuje, co zrobi przycisk: wznowienie (zegar stoi) albo pauza (zegar idzie)
+  pauseBtn.innerHTML = uiIcon(sim.clock.paused ? 'play' : 'pause', 14);
+  pauseBtn.setAttribute('aria-pressed', String(sim.clock.paused));
 }
 updateSpeed();
 document.addEventListener('keydown', (e) => {

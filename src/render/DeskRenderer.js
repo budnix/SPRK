@@ -2,6 +2,7 @@ import { platformSpans, trackLabelText, trackLabelPlace, platformEdgeLines } fro
 import { blockLayouts } from './blockLayout.js';
 import { el, text, CELL } from './svg.js';
 import { refKey } from './refKey.js';
+import { t } from '../i18n/index.js';
 
 const FRAME = 22;
 import * as art from './tileArt.js';
@@ -57,7 +58,7 @@ export class DeskRenderer {
     if (this.readonly) {
       const banner = el('g', { class: 'readonly-banner' }, [
         el('rect', { x: FRAME + 4, y: 2, width: 260, height: 16, rx: 3 }),
-        text(FRAME + 134, 11, `${this.title || 'okręg'} – obsługuje druga nastawnia (podgląd)`, { class: 'readonly-text' }),
+        text(FRAME + 134, 11, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'readonly-text' }),
       ]);
       this.svg.appendChild(banner);
     }

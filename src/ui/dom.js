@@ -11,3 +11,8 @@ export function setHtmlIfChanged(host, html) {
   host.innerHTML = html;
   return true;
 }
+
+/** Tekst bezpieczny do wstawienia w HTML (treść i wartości atrybutów). */
+export function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}

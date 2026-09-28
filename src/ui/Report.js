@@ -1,6 +1,9 @@
 import { Clock } from '../core/Clock.js';
 import { logoSvg } from './brand.js';
 import { t } from '../i18n/index.js';
+import { escapeHtml as esc } from './dom.js';
+import { uiIcon } from './icons.js';
+import { initDialog, openDialog, closeDialog } from './dialog.js';
 
 const tr = t;
 
@@ -14,6 +17,7 @@ export class Report {
     this.root = root;
     this.sim = sim;
     this.onNew = onNew;
+    initDialog(root, t('rp.title'));
     root.addEventListener('click', (e) => {
       if (e.target === root || e.target.closest('.close')) this.hide();
       else if (e.target.closest('#rp-new')) { this.hide(); this.onNew?.(); }
@@ -55,7 +59,7 @@ export class Report {
         <td class="${res[1]}">${res[0]}${t.delayIn ? `<div class="act">${tr('rp.fromNeighbour', { n: t.delayIn })}</div>` : ''}</td>
         <td class="st">${esc(t.status)}</td></tr>`;
     }).join('');
-    const tasks = r.tasks.length ? `<ul class="rp-tasks">${r.tasks.map((t) => `<li class="${t.done ? 'rp-ok' : t.failed ? 'rp-bad' : ''}">${t.done ? '✔' : t.failed ? '✘' : '☐'} ${esc(t.text)} <span class="act">${t.done ? tr('rp.task.done', { time: hm(t.doneAt) }) : t.failed ? tr('rp.task.failed') : tr('rp.task.due', { time: esc(t.deadline) })}</span></li>`).join('')}</ul>` : '';
+    const tasks = r.tasks.length ? `<ul class="rp-tasks">${r.tasks.map((t) => `<li class="${t.done ? 'rp-ok' : t.failed ? 'rp-bad' : ''}">${uiIcon(t.done ? 'check' : t.failed ? 'cross' : 'todo', 13)} ${esc(t.text)} <span class="act">${t.done ? tr('rp.task.done', { time: hm(t.doneAt) }) : t.failed ? tr('rp.task.failed') : tr('rp.task.due', { time: esc(t.deadline) })}</span></li>`).join('')}</ul>` : '';
     const items = r.items.length
       ? r.items.map((i) => `<tr class="${i.points < 0 ? 'neg' : i.points > 0 ? 'pos' : ''}"><td>${hm(i.time)}</td><td>${esc(i.msg)}</td><td class="pts">${i.points > 0 ? '+' : ''}${i.points}</td></tr>`).join('')
       : `<tr><td colspan="3" class="muted">${t('rp.noItems')}</td></tr>`;
@@ -95,10 +99,6 @@ export class Report {
     </div>`;
   }
 
-  show() { this.render(); this.root.classList.remove('hidden'); }
-  hide() { this.root.classList.add('hidden'); }
-}
-
-function esc(s) {
-  return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  show() { this.render(); openDialog(this.root); }
+  hide() { closeDialog(this.root); }
 }

@@ -3,6 +3,83 @@ import { openShift } from './helpers.js';
 
 /* Spójność interfejsu: ekrany pełne w obu motywach, wspólny układ okien, ikony SVG, dostępność */
 
+/** Jasność barwy tła elementu (0 = czerń, 1 = biel). */
+const lightness = (page, selector, prop = 'backgroundColor') => page.evaluate(([sel, p]) => {
+  const c = getComputedStyle(document.querySelector(sel))[p].match(/[\d.]+/g).map(Number);
+  return (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) / 255;
+}, [selector, prop]);
+
+const SCREENS = [['#help', '#menu-help'], ['#settings', '#menu-settings'], ['#report', '#menu-report'], ['#start', '#menu-new']];
+
+for (const theme of ['light', 'dark']) {
+  test(`ekrany pełne (instrukcja, ustawienia, raport, start) są w motywie interfejsu: ${theme}`, async ({ page }) => {
+    await openShift(page, 'szkolna', { settings: { theme } });
+    const app = await lightness(page, '#topbar');
+    for (const [screen, item] of SCREENS) {
+      await page.click('#btn-menu'); await page.click(item);
+      await expect(page.locator(screen)).toBeVisible();
+      const bg = await lightness(page, screen), text = await lightness(page, `${screen} .st-tagline`, 'color');
+      if (theme === 'light') { expect(bg, screen).toBeGreaterThan(0.8); expect(text, screen).toBeLessThan(0.3); expect(app).toBeGreaterThan(0.8); }
+      else { expect(bg, screen).toBeLessThan(0.2); expect(text, screen).toBeGreaterThan(0.7); expect(app).toBeLessThan(0.3); }
+      await page.keyboard.press('Escape');
+      await expect(page.locator(screen)).toBeHidden();
+    }
+  });
+}
+
+test('okna mają wspólny układ (nagłówek z logo, przycisk powrotu), role okna dialogowego i fokus', async ({ page }) => {
+  await openShift(page, 'szkolna');
+  for (const [screen, item] of SCREENS) {
+    await page.click('#btn-menu'); await page.click(item);
+    const s = page.locator(screen);
+    await expect(s).toHaveAttribute('role', 'dialog');
+    await expect(s).toHaveAttribute('aria-modal', 'true');
+    expect((await s.getAttribute('aria-label')).length).toBeGreaterThan(3);
+    await expect(s.locator('.st-hero .st-logo-svg')).toHaveCount(1);
+    await expect(s.locator('.st-hero .st-tagline')).not.toBeEmpty();
+    await expect(s.locator('.st-hero button.st-close')).toHaveCount(1);
+    expect(await page.evaluate((sel) => document.querySelector(sel).contains(document.activeElement), screen), `${screen}: fokus w oknie`).toBe(true);
+    await s.locator('.st-hero button.st-close').click();
+    await expect(s).toBeHidden();
+  }
+  // raport leży nad rozwijanym menu
+  const z = await page.evaluate(() => ['#menu', '#report', '#help', '#settings', '#start'].map((q) => Number(getComputedStyle(document.querySelector(q)).zIndex)));
+  expect(new Set(z).size).toBe(z.length);
+  for (const v of z.slice(1)) expect(v).toBeGreaterThan(z[0]);
+});
+
+test('przyciski paska i okien mają ikony SVG z opisem zamiast znaków tekstowych; pauza zmienia ikonę', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-1' } });
+  for (const sel of ['#btn-pause', '#btn-menu', '.tut-close']) {
+    const b = page.locator(sel).first();
+    await expect(b.locator('svg')).toHaveCount(1);
+    expect((await b.textContent()).trim(), sel).toBe('');
+    expect(((await b.getAttribute('aria-label')) || '').length, sel).toBeGreaterThan(2);
+  }
+  await page.locator('.tut-close').click();
+  const pause = page.locator('#btn-pause');
+  const before = await pause.locator('svg').getAttribute('data-icon');
+  await pause.click();
+  const after = await pause.locator('svg').getAttribute('data-icon');
+  expect(new Set([before, after])).toEqual(new Set(['play', 'pause']));
+  await expect(pause).toHaveAttribute('aria-pressed', after === 'play' ? 'true' : 'false');
+  // przyciski listwy i panelu mają tę samą wysokość
+  await page.click('#panel-tabs button[data-tab=rozkazy]');
+  const h = await page.evaluate(() => ['#zoom-in', '#side-toggle', '#btn-pause', '#btn-menu', '#tab-rozkazy .tb'].map((q) => document.querySelector(q).getBoundingClientRect().height));
+  expect(h.every((v) => v > 0)).toBe(true);
+  expect(new Set(h).size).toBe(1);
+});
+
+test('ograniczenie ruchu w systemie wyłącza animacje ozdobne, miganie sygnałów zostaje', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-1' } });
+  await page.locator('.tut-next').click(); await page.locator('.tut-next').click();
+  const hl = page.locator('.tut-hl').first();
+  await expect(hl).toHaveCount(1);
+  expect(await hl.evaluate((e) => getComputedStyle(e).animationName)).toBe('none');
+  expect(await page.evaluate(() => { const e = document.createElement('i'); e.className = 'blink'; document.body.appendChild(e); const a = getComputedStyle(e).animationName; e.remove(); return a; })).toBe('blink');
+});
+
 test('zakładki ekranów nie są wymieniane przy ponownym planowaniu (start, zmiana rozmiaru okna) – przyciski zostają te same', async ({ page }) => {
   await openShift(page, 'gdynia-chylonia', { settings: { screens: 'auto', sideCollapsed: true } });
   const tabs = page.locator('#screen-tabs button');

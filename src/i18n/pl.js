@@ -12,6 +12,9 @@ export default {
   'menu.settings': 'Ustawienia…',
   'menu.report': 'Raport zmiany',
   'menu.help': 'Instrukcja obsługi',
+  'desk.auto': 'automat',
+  'desk.readonly': '{name} – obsługuje druga nastawnia (podgląd)',
+  'desk.district': 'okręg',
   'top.bothDistricts': 'oba okręgi',
   // pasek narzędzi pulpitu
   'tools.screens': 'Ekrany pulpitu',

@@ -1,8 +1,8 @@
 import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
-import { frontIcon, modeIcon } from './icons.js';
-import { setHtmlIfChanged } from './dom.js';
+import { frontIcon, modeIcon, uiIcon } from './icons.js';
+import { setHtmlIfChanged, escapeHtml } from './dom.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -196,7 +196,7 @@ export class SidePanel {
       const status = x.done ? t(x.doneAt > x.deadlineTime ? 'sp.tasks.doneLate' : 'sp.tasks.done', { time: Clock.format(x.doneAt) })
         : x.failed ? t('sp.tasks.failed') : waiting ? t('sp.tasks.waiting') : t('sp.tasks.active');
       const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');
-      return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${x.done ? '✔' : x.failed ? '✘' : waiting ? '◌' : '☐'}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
+      return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${uiIcon(x.done ? 'check' : x.failed ? 'cross' : waiting ? 'wait' : 'todo', 13)}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
     }).join('') : `<div class="muted">${t('sp.tasks.none')}</div>`;
     setHtmlIfChanged(host, html);
   }
@@ -217,7 +217,7 @@ export class SidePanel {
     const list = this.root.querySelector('#cmd-list');
     if (!list) return;
     const cmds = [...this.sim.commands].reverse();
-    list.innerHTML = cmds.length ? cmds.map((c) => `<div class="cmd ${c.status}"><span class="t">${Clock.format(c.time)}</span> nr ${c.id} · ${c.from} → ${c.to}: ${escapeHtml(c.text)} ${c.status === 'done' ? '✔' : '☐'}</div>`).join('') : `<div class="muted">${t('sp.none')}</div>`;
+    list.innerHTML = cmds.length ? cmds.map((c) => `<div class="cmd ${c.status}"><span class="t">${Clock.format(c.time)}</span> nr ${c.id} · ${c.from} → ${c.to}: ${escapeHtml(c.text)} ${uiIcon(c.status === 'done' ? 'check' : 'todo', 12)}</div>`).join('') : `<div class="muted">${t('sp.none')}</div>`;
   }
 
   #initComms() {
@@ -437,8 +437,4 @@ export class SidePanel {
       });
     }
   }
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 }

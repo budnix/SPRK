@@ -63,10 +63,15 @@
 
 - Jedna czcionka w całej aplikacji: Inter z plików w `src/fonts/` (zmienna `--font`). Nie dodawaj innych krojów ani
   czcionek z zewnętrznych serwerów; pilnuje tego `tests/e2e/font.spec.js`.
-- Kolory, promienie i cienie interfejsu przez zmienne CSS z `:root` w `src/styles.css`; nie wpisuj nowych kolorów na sztywno.
-  Wyjątek: barwy pulpitu i monitora wynikające z przepisów (Ie-104) i wyglądu urządzeń.
-- Każdy nowy element interfejsu sprawdź w motywie jasnym i ciemnym.
-- Przyciski interfejsu używają klasy `.tb` (akcja główna: `.tb.primary`); przyciski-ikony mają `aria-label`.
+- Kolory, promienie (`--radius*`) i warstwy (`--z-*`) interfejsu tylko przez zmienne CSS z `:root` w `src/styles.css`;
+  nowa barwa = zmienna w `:root` **i** w `:root[data-theme="light"]`. Pilnuje tego `tests/styles.test.js`.
+  Wyjątek: barwy pulpitu i monitora wynikające z przepisów (Ie-104) i wyglądu urządzeń (`--desk-*`, `--mon-*`).
+- Każdy ekran działa w motywie jasnym i ciemnym (`tests/e2e/ui.spec.js`).
+- Okna pełnoekranowe mają wspólny układ: nagłówek `.st-hero` (logo, tytuł, podtytuł, przycisk powrotu `.st-close`),
+  treść na kartach, zmienne `--sc-*`; otwieranie i zamykanie przez `src/ui/dialog.js` (rola okna, fokus).
+- Przyciski interfejsu używają klasy `.tb` (akcja główna: `.tb.primary`, wysokość `--ctl-h`); przyciski-ikony mają `aria-label`.
+- Ikony to SVG z `src/ui/icons.js` (`uiIcon`), nie znaki tekstowe (✔ ☰ ×) – te każdy system rysuje inaczej.
+- HTML z danych zawsze przez `escapeHtml` z `src/ui/dom.js`.
 
 ## Projekt
 

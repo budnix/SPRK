@@ -2,6 +2,7 @@ import { MissionProgress } from './progress.js';
 import { t } from '../i18n/index.js';
 import { GLOSSARY } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
+import { uiIcon } from '../ui/icons.js';
 
 /**
  * Samouczek (UI): dymek z bieżącym krokiem misji przypięty do wskazywanego elementu (semafor, kostki blokady,
@@ -21,7 +22,7 @@ export class Tutorial {
     });
     this.box = document.createElement('div');
     this.box.className = 'tut-box hidden';
-    this.box.innerHTML = `<div class="tut-head"><span class="tut-step"></span><span class="tut-title"></span><button type="button" class="tut-close" title="${t('tut.close')}" aria-label="${t('tut.close')}">×</button></div>
+    this.box.innerHTML = `<div class="tut-head"><span class="tut-step"></span><span class="tut-title"></span><button type="button" class="tut-close" title="${t('tut.close')}" aria-label="${t('tut.close')}">${uiIcon('close', 14)}</button></div>
       <div class="tut-body"></div>
       <div class="tut-feedback hidden"></div>
       <div class="tut-tip hidden"></div>

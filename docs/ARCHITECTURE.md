@@ -19,6 +19,7 @@ src/
                tileArt (grafika kostek), svg (helpery)
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
+               dialog (wspólne zachowanie okien pełnoekranowych),
                Settings (ustawienia, motyw wg systemu), settingsSchema (opis ustawień, bez DOM), SettingsScreen,
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)
@@ -251,6 +252,23 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 ekrany, symbole monitora 125 %, odstęp torów normalny. Stanowisko (srk) nie jest ustawieniem – wynika ze stacji lub
 scenariusza. Zapisane ustawienia (localStorage) mają pierwszeństwo; zmiana `rowScale` / `lang` przeładowuje stronę,
 `symScale` działa na żywo.
+
+## Wygląd interfejsu (`src/styles.css`, `src/ui/dialog.js`, `src/ui/icons.js`)
+
+* **Zmienne.** Barwy, promienie (`--radius`, `--radius-sm`, `--radius-pill`), wysokość kontrolek (`--ctl-h`) i warstwy
+  (`--z-*`, każda z własną wartością) są w `:root`; motyw jasny (`:root[data-theme="light"]`) nadpisuje komplet barw
+  interfejsu. Grupy: interfejs gry (`--bg`, `--panel`, `--accent`…), ekrany pełne (`--sc-*`), kategorie pociągów
+  (`--cat-*`), barwy urządzeń niezależne od motywu – pulpit (`--desk-*`) i paski / menu monitora (`--mon-*`).
+  `tests/styles.test.js` pilnuje, że reguły interfejsu nie mają barw, promieni ani warstw wpisanych na sztywno.
+* **Ekrany pełne** (start, ustawienia, raport, instrukcja) mają jeden układ – nagłówek `.st-hero` z logo, tytułem
+  i przyciskiem powrotu, treść na kartach – i idą za motywem interfejsu. `dialog.js` nadaje im rolę okna dialogowego,
+  przenosi fokus do okna po otwarciu i oddaje go po zamknięciu. Kolejność warstw: menu < instrukcja < raport <
+  ustawienia < ekran startowy.
+* **Ikony.** `uiIcon(name)` zwraca SVG na siatce 16×16 w kolorze tekstu (pauza, wznowienie, menu, zamknij, stan
+  zadania). Znaki tekstowe zostały tylko w treści (słowniki, opisy), nie na przyciskach.
+* **Dostępność.** Widoczny fokus z klawiatury (`:focus-visible`), opisy przycisków-ikon (`aria-label`), przy
+  ustawieniu systemu „ogranicz ruch” wyłączone animacje ozdobne; miganie lampek i sygnałów zostaje, bo niesie
+  informację o stanie urządzeń.
 
 ## Czcionka (`src/fonts/`, `src/styles.css`)
 

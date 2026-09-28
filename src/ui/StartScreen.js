@@ -5,6 +5,8 @@ import { getSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
 import { getMission } from '../tutorial/missions.js';
 import { t } from '../i18n/index.js';
+import { escapeHtml as esc } from './dom.js';
+import { initDialog, openDialog, closeDialog } from './dialog.js';
 
 const SORT_KEY = 'sprk.startSort';
 
@@ -34,8 +36,6 @@ export function srkBadge(station) {
   return t(views[0] === 'screen' ? 'start.srkScreen' : 'start.srkDesk');
 }
 
-function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-
 /**
  * Ekran startowy: misje wprowadzające (liniowe) u góry, niżej lista posterunków z opisem położenia, ruchu
  * i trudnością (skala 1–5), sortowana alfabetycznie lub wg trudności. Kliknięcie posterunku rozwija parametry
@@ -45,6 +45,7 @@ export class StartScreen {
   constructor(root, current = {}) {
     this.root = root;
     this.current = current;
+    initDialog(root, t('app.tagline'));
     let sort = 'name';
     try { sort = localStorage.getItem(SORT_KEY) || 'name'; } catch { /* prywatny tryb */ }
     this.sort = sort === 'difficulty' ? 'difficulty' : 'name';
@@ -227,11 +228,11 @@ export class StartScreen {
   /** Otwarcie ekranu czyści parametry URL (odświeżenie strony zostaje na wyborze scenariusza); powrót do zmiany je przywraca. */
   show() {
     if (location.search) { this.savedSearch = location.search; history.replaceState(null, '', location.pathname); }
-    this.root.classList.remove('hidden');
+    openDialog(this.root);
   }
   hide() {
     if (this.savedSearch && !location.search) history.replaceState(null, '', location.pathname + this.savedSearch);
     this.savedSearch = null;
-    this.root.classList.add('hidden');
+    closeDialog(this.root);
   }
 }

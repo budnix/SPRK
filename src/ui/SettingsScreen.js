@@ -1,8 +1,8 @@
 import { logoSvg } from './brand.js';
 import { settingsCategories } from './settingsSchema.js';
 import { t } from '../i18n/index.js';
-
-function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+import { escapeHtml as esc } from './dom.js';
+import { initDialog, openDialog, closeDialog, isOpen } from './dialog.js';
 
 /**
  * Ekran ustawień (pełny ekran w motywie ekranu startowego): kategorie po lewej, po prawej opcje z opisem działania.
@@ -14,6 +14,7 @@ export class SettingsScreen {
     this.settings = settings;
     const cats = settingsCategories();
     this.cats = cats;
+    initDialog(root, t('set.title'));
     root.innerHTML = `<div class="settings-screen">
       <header class="st-hero">
         <div class="st-logo">${logoSvg()}</div>
@@ -66,7 +67,7 @@ export class SettingsScreen {
 
   #activate(id) { for (const b of this.root.querySelectorAll('.se-cat')) b.classList.toggle('active', b.dataset.cat === id); }
 
-  show() { this.root.classList.remove('hidden'); }
-  hide() { this.root.classList.add('hidden'); }
-  toggle() { this.root.classList.toggle('hidden'); }
+  show() { openDialog(this.root); }
+  hide() { closeDialog(this.root); }
+  toggle() { if (isOpen(this.root)) this.hide(); else this.show(); }
 }

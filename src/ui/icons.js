@@ -33,3 +33,29 @@ export function frontIcon(direction) {
     </g>
   </svg>`;
 }
+
+/**
+ * Ikony interfejsu (tekst SVG, bez DOM): jedna siatka 16×16 i jedna grubość kreski, kolor z tekstu przycisku
+ * (`currentColor`). Zastępują znaki tekstowe, które każdy system rysuje inaczej.
+ * `pause`, `play`, `menu`, `close` – przyciski; `check`, `cross`, `wait`, `todo` – stan zadania / polecenia.
+ */
+const UI_ICONS = {
+  pause: '<rect x="3.5" y="2.5" width="3" height="11" rx="0.8" class="solid"/><rect x="9.5" y="2.5" width="3" height="11" rx="0.8" class="solid"/>',
+  play: '<path d="M4.5 2.6v10.8c0 .5.5.8.9.5l8-5.4c.4-.2.4-.8 0-1l-8-5.4c-.4-.3-.9 0-.9.5z" class="solid"/>',
+  menu: '<path d="M2.5 4h11M2.5 8h11M2.5 12h11"/>',
+  close: '<path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/>',
+  check: '<path d="M2.8 8.6l3.4 3.4 7-7.6"/>',
+  cross: '<path d="M4 4l8 8M12 4l-8 8"/>',
+  wait: '<circle cx="8" cy="8" r="5.2" stroke-dasharray="2.2 2.2"/>',
+  todo: '<rect x="3" y="3" width="10" height="10" rx="1.5"/>',
+};
+
+export function uiIcon(name, size = 16) {
+  const body = UI_ICONS[name];
+  if (!body) throw new Error(`Nieznana ikona: ${name}`);
+  return `<svg class="ui-ic" data-icon="${name}" viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
+}
+
+export function uiIconNames() {
+  return Object.keys(UI_ICONS);
+}

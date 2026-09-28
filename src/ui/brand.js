@@ -3,6 +3,8 @@
  * Logo: cztery kostki pulpitu z literami S P R K, przez które biegnie tor, zakończony semaforem wskazującym
  * „wolna droga”. Kolory z motywu (`--sc-*`), żeby logo dziedziczyło paletę ekranu.
  */
+import { t } from '../i18n/index.js';
+
 export function logoSvg(height = 46) {
   const tiles = ['S', 'P', 'R', 'K'].map((ch, i) => {
     const x = i * 42;
@@ -25,5 +27,5 @@ export function difficultyMark(d, label = '') {
   const n = Math.max(0, Math.min(5, Number(d) || 0));
   const segs = Array.from({ length: 5 }, (_, i) => `<i${i < n ? ' class="on"' : ''}></i>`).join('');
   const text = `${label ? `${label} ` : ''}${n}/5`;
-  return `<span class="st-diff" title="trudność ${n}/5" aria-label="trudność ${n}/5">${segs}<b>${text}</b></span>`;
+  return `<span class="st-diff" title="${t('start.difficulty')} ${n}/5" aria-label="${t('start.difficulty')} ${n}/5">${segs}<b>${text}</b></span>`;
 }

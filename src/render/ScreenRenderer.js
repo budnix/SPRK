@@ -1,6 +1,7 @@
 import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './refKey.js';
+import { t } from '../i18n/index.js';
 import { tip } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
@@ -67,7 +68,7 @@ export class ScreenRenderer {
       ]),
     ]));
     this.svg.appendChild(el('rect', { class: 'scr-bg', x: 0, y: 0, width: W, height: H }));
-    if (this.readonly) this.svg.appendChild(text(W / 2, 8, `${this.title || 'okręg'} – obsługuje druga nastawnia (podgląd)`, { class: 'scr-banner' }));
+    if (this.readonly) this.svg.appendChild(text(W / 2, 8, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'scr-banner' }));
     this.inner = el('g', { transform: `translate(${PAD},${PAD})` });
     this.layerTracks = el('g', { class: 'layer-tracks' });
     this.layerMarks = el('g', { class: 'layer-marks' });
