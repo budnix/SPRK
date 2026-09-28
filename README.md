@@ -13,13 +13,17 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ## Screenshots
 
-| Computer workstation (Sopot, screen 1 of 4) | Type E relay desk (Szkolna) |
+| Computer workstation (Sopot, screen 1 of 3) | Type E relay desk (Szkolna) |
 |---|---|
 | ![Computer workstation, Sopot](docs/screenshots/monitor-sopot.png) | ![Type E desk, Szkolna](docs/screenshots/desk-szkolna.png) |
 
 | Guided mission on the training station | Gdynia Orłowo, whole station with SKM and regional traffic |
 |---|---|
 | ![Guided mission with a glossary popup](docs/screenshots/tutorial-szkolna.png) | ![Gdynia Orłowo on the monitor](docs/screenshots/monitor-orlowo.png) |
+
+| Type IZH-111 dark relay desk (Zacisze, mission 3) | Type E relay desk on a double-track line (Jodłowa, mission 2) |
+|---|---|
+| ![Type IZH-111 desk, Zacisze](docs/screenshots/izh-zacisze.png) | ![Type E desk, Jodłowa](docs/screenshots/desk-jodlowa.png) |
 
 ## Features
 
