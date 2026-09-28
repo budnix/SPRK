@@ -286,3 +286,66 @@ test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – r
   await expect(box.locator('.tut-title')).toContainText('Potwierdzenie przyjazdu');
   await expect(box.locator('.tut-feedback')).toBeHidden();
 });
+
+test('misja 2: usterka napędu zwrotnicy – alarm, zamknięcie zwrotnicy Zz, przyjęcie na inny tor bez punktów ujemnych', async ({ page }) => {
+  await openShift(page, 'jodlowa', { params: { scenariusz: 'nauka-2' } });
+  await page.waitForFunction(() => window.tutorial);
+  const box = page.locator('.tut-box');
+  await goTo(page, 'Usterka napędu zwrotnicy');
+  await expect(box.locator('.tut-body')).toContainText('zwrotnicy z usterką się nie przestawia');
+  await expect(page.locator(`.btn[data-ref='{"kind":"point","id":"Zw3"}']`)).toHaveClass(/tut-hl/);
+  // stan jak po lekcjach: zwrotnica 3 na tor 3; zegar do chwili usterki, bez pociągów po drodze
+  await page.evaluate(() => { const s = window.sim; s.traffic.entries.forEach((e) => { if (e.nr !== 3304) { e.requestAt = Infinity; e.neighbourDep = Infinity; } }); s.execute({ type: 'point', id: 'Zw3' }); s.clock.paused = false; while (s.clock.time < 8 * 3600 + 61) s.step(0.5); s.clock.paused = true; });
+  expect(await page.evaluate(() => window.sim.ilk.points.get('Zw3').position)).toBe('-');
+  await box.locator('.tut-next').click();
+  await expect(box.locator('.tut-title')).toContainText('Zabezpieczenie zwrotnicy');
+  // alarm jest w dzienniku, a usterka na liście w zakładce Urządzenia (dymek może zasłaniać zakładki – czytamy treść)
+  await expect(page.locator('#log')).toContainText('USTERKA: zwrotnica Zw3');
+  await expect(page.locator('#faults')).toContainText('Zw3');
+  await pressBtn(page, { kind: 'group', id: 'Zz', role: 'point-lock' }); await pressBtn(page, { kind: 'point', id: 'Zw3' });
+  await expect(box.locator('.tut-title')).toContainText('Przyjęcie na inny tor');
+  // tor planowy wymaga przestawienia zamkniętej zwrotnicy – urządzenia odmawiają
+  await pressBtn(page, { kind: 'signal', id: 'A', color: 'green' }); await pressBtn(page, { kind: 'signal', id: 'E2', color: 'green' });
+  await expect(page.locator('#status')).toContainText('Zw3 zamknięta');
+  await pressBtn(page, { kind: 'signal', id: 'A', color: 'green' }); await pressBtn(page, { kind: 'signal', id: 'E3', color: 'green' });
+  await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 4000 && !s.blocks.get('K2').koPending; i++) s.step(0.5); c.paused = true; });
+  await pressBtn(page, { kind: 'block', exit: 'K2', btn: 'Ko' });
+  await advance(page, 60);
+  await expect(box.locator('.tut-title')).toContainText('Wyjazd z toru 3');
+  const e = await page.evaluate(() => { const x = window.sim.traffic.timetable().find((t) => t.nr === 3304); return { track: String(x.actualTrack), wrong: window.sim.score.items.filter((i) => i.code === 'wrong-track').length }; });
+  expect(e).toEqual({ track: '3', wrong: 0 });
+});
+
+test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu, droga ułożona ręcznie i zamknięta, wjazd na Sz', async ({ page }) => {
+  await openShift(page, 'zacisze', { params: { scenariusz: 'nauka-3' } });
+  await page.waitForFunction(() => window.tutorial);
+  const box = page.locator('.tut-box');
+  const order = (o) => page.click(`.izh-orders button[data-order="${o}"]`);
+  await goTo(page, 'Usterka obwodu torowego');
+  await expect(box.locator('.tut-body')).toContainText('sam układa drogę');
+  await page.evaluate(() => { const s = window.sim; s.traffic.entries.forEach((e) => { if (e.nr !== 7107 && e.nr !== 7108) { e.requestAt = Infinity; e.neighbourDep = Infinity; } }); s.clock.paused = false; while (s.clock.time < 8 * 3600 + 5 * 60 + 2) s.step(0.5); s.clock.paused = true; });
+  await box.locator('.tut-next').click();
+  await expect(box.locator('.tut-title')).toContainText('Ręczne ułożenie drogi');
+  // pulpit ciemny: szczeliny toru 3 świecą na czerwono, choć pociągu nie ma
+  expect(await page.evaluate(() => ({ forced: window.sim.ilk.sections.get('T3').forced, trains: window.sim.traffic.trains.length, red: window.desk.sectionRefs.get('T3').every((r) => r.el.classList.contains('lamp-red')) }))).toEqual({ forced: true, trains: 0, red: true });
+  // przebieg na „zajęty” tor nie nastawi się
+  await pressBtn(page, { kind: 'signal', id: 'A' }); await pressBtn(page, { kind: 'end', id: 'kT3' }); await order('P');
+  await expect(page.locator('#status')).toContainText('T3 zajęty');
+  for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('-'); }
+  await advance(page, 5);
+  for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('STOP'); }
+  await expect(box.locator('.tut-title')).toContainText('Wjazd na sygnał zastępczy');
+  await expect(page.locator('.izh-orders button[data-order="Sz"]')).toHaveClass(/tut-hl/);
+  await untilRequest(page, 'W');
+  await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Poz' });
+  await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 4000 && s.traffic.timetable().find((t) => t.nr === 7107).train?.stoppedAt?.signal !== 'A'; i++) s.step(0.5); c.paused = true; });
+  await pressBtn(page, { kind: 'signal', id: 'A' }); await order('Sz');
+  await expect(box.locator('.tut-title')).toContainText('Po przyjeździe');
+  await expect(page.locator('.izh-counter')).toHaveText('00001');
+  await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 1200 && s.traffic.timetable().find((t) => t.nr === 7107).actualArr == null; i++) s.step(0.5); c.paused = true; });
+  const e = await page.evaluate(() => { const x = window.sim.traffic.timetable().find((t) => t.nr === 7107); return { track: String(x.actualTrack), status: x.status, negative: window.sim.score.items.filter((i) => i.points < 0).map((i) => i.msg) }; });
+  expect(e).toEqual({ track: '3', status: 'zakończył bieg', negative: [] });
+  await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Ko' });
+  for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('Zw'); }
+  await expect(box.locator('.tut-title')).toContainText('Odjazd 7108');
+});

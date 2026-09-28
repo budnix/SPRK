@@ -87,7 +87,8 @@ failure, a block failure, a peak with heavy disruptions).
   signal, telephone announcements); **Mission 2** – type E desk at Jodłowa (double-track line: traffic without
   permissions, overtaking, a branch with the Eap block); **Mission 3** – type IZH-111 desk at Zacisze (terminus:
   stub tracks, reversing, two consists in the station). Every mission starts with a warm-up of the commands of its
-  workstation,
+  workstation and ends with a different equipment fault and how to handle it (dark signal, block without
+  communication, point without detection, false track occupancy),
   a popup pinned to the element to use, highlighted targets, a clickable glossary of every abbreviation
   (Poz, Wbl, Ko, Pz, dPz, Sz, Zz, Zk…), feedback when you set the wrong route. The timetable walks through permission
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a

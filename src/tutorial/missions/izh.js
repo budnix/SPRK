@@ -74,7 +74,20 @@ export function steps() {
     act('out-7106', 'Odjazd 7106 z toru 1 – samodzielnie', `Został skład na torze 1. Odjeżdża o 08:02 jako <b>7106</b>: <b>zmiana czoła</b>, <b>Wbl</b>, wyjazd <b>B1 → szlak do Modrzewia</b>.`, adr('B1'),
       (sim) => atNeighbour(sim, 7106)),
 
-    info('end', 'Koniec misji', `To wszystko: przyciski adresowe i rozkazy, zwrotnica rozkazem + i −, STOP, Zw i Zcz, wjazd na tor czołowy, zmiana czoła i odjazd z powrotem. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis wszystkich rozkazów jest w instrukcji pod przyciskiem „?”. Pełną zmianę na tej stacji znajdziesz w menu → Nowa zmiana → Zacisze.</p>`, { el: '#btn-menu' }),
+    /* ---------------- usterka: odcinek pokazuje zajętość bez pociągu ---------------- */
+    info('fault-intro', 'Usterka obwodu torowego', `O 08:05 <b>tor 3</b> zacznie pokazywać zajętość, choć nic na nim nie stoi – szczeliny toru zaświecą na czerwono, w dzienniku będzie alarm. To usterka obwodu torowego.<p>Urządzenia wierzą lampce: na „zajęty” tor <b>nie nastawią przebiegu</b>. Tymczasem o 08:14 ma tu wjechać <b>7107</b>, a tory 1 i 2 zostawiamy wolne dla innych pociągów.</p><p>W takiej sytuacji dyżurny najpierw upewnia się, że tor jest naprawdę wolny, potem <b>sam układa drogę</b>: ustawia zwrotnice, zamyka je i podaje ${A('Sz', 'sygnał zastępczy Sz')}. Pociąg wjeżdża z prędkością do 20 km/h.</p>`, { el: '#desk' }),
+    act('fault-points', 'Ręczne ułożenie drogi', `Poczekaj na alarm. Potem ustaw drogę na tor 3: <b>zwrotnica 1</b> rozkazem <b>−</b> i <b>zwrotnica 2</b> rozkazem <b>−</b>. Gdy obie się przestawią, zamknij każdą rozkazem <b>STOP</b>.<p>Zamknięcie zastępuje utwierdzenie, którego normalnie pilnuje przebieg: nikt nie przestawi zwrotnicy pod pociągiem.</p>`, { ref: { kind: 'point', id: 'Zw1' } },
+      (sim) => !!sim.ilk.sections.get('T3').forced && ['Zw1', 'Zw2'].every((id) => { const p = sim.ilk.points.get(id); return p.position === '-' && !p.moving && p.individualLock; }),
+      { tip: 'Przycisk adresowy zwrotnicy, potem rozkaz. Najpierw „−”, po ok. 4 s STOP.' }),
+    act('fault-sz', 'Wjazd na sygnał zastępczy', `Gdy Modrzew zgłosi 7107, daj <b>Poz</b>. Pociąg zatrzyma się przed semaforem A, bo przebiegu nie ma. Wtedy: przycisk adresowy semafora <b>A</b> i rozkaz <b>Sz</b>. Lampka biała na powtarzaczu zamiga, a pociąg wjedzie na tor 3.<p>Każde użycie Sz liczy licznik obok rozkazu. Uzasadnione usterką nie kosztuje punktów.</p>`, { cmd: 'Sz' },
+      (sim, ctx) => ctx.seen.has('sz:A') || arrived(sim, 7107),
+      { wrong: (sim) => (active(sim, 'A-kT1') || active(sim, 'A-kT2') ? 'Można też przyjąć pociąg na inny tor, ale tory 1 i 2 mają zostać wolne. Zwolnij przebieg (adres końca i Zcz) i podaj Sz.' : null) }),
+    act('fault-ko', 'Po przyjeździe', `Gdy 7107 stanie przy peronie: <b>Ko</b> na blokadzie. Potem odwołaj zamknięcia obu zwrotnic rozkazem <b>Zw</b> – droga jest już niepotrzebna.`, { cmd: 'Zw' },
+      (sim) => arrived(sim, 7107) && blockFree(W(sim)) && ['Zw1', 'Zw2'].every((id) => !sim.ilk.points.get(id).individualLock)),
+    act('out-7108', 'Odjazd 7108 z toru 3', `Skład wraca o 08:26 jako <b>7108</b>: <b>zmiana czoła</b>, <b>Wbl</b>, wyjazd <b>B3 → szlak do Modrzewia</b>. Wyjazd nastawi się normalnie – tor, z którego pociąg rusza, może być zajęty.`, adr('B3'),
+      (sim) => atNeighbour(sim, 7108)),
+
+    info('end', 'Koniec misji', `To wszystko: przyciski adresowe i rozkazy, zwrotnica rozkazem + i −, STOP, Zw i Zcz, wjazd na tor czołowy, zmiana czoła, odjazd z powrotem i wjazd na sygnał zastępczy przy usterce toru. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Opis wszystkich rozkazów jest w instrukcji pod przyciskiem „?”. Pełną zmianę na tej stacji znajdziesz w menu → Nowa zmiana → Zacisze.</p>`, { el: '#btn-menu' }),
   ];
 }
 

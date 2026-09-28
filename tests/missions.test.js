@@ -158,6 +158,10 @@ function studentE(sim) {
     'wbl-6612': () => wbl('B'),
     'out-6612': () => { if (B('B').direction === 'out' && B('B').permission) route('E3', K('kB'), 'E3-B'); },
     'train-6611': () => { poz('B'); if (B('B').direction === 'in' && !e(6611).actualArr) route('C', 'D3', 'C-D3'); ko('B'); out(6611, 'D3', 'kK1', 'K1', 'D3-K1'); },
+    // usterka napędu zwrotnicy 3: zamknięcie, przyjęcie na tor 3 zamiast planowego 2
+    'fault-lock': () => { const z = sim.ilk.points.get('Zw3'); if (z.faultUntil > sim.clock.time && !z.individualLock && !sim.ilk.armed) { group('Zz', 'point-lock'); press({ kind: 'point', id: 'Zw3' }); } },
+    'fault-in': () => { if (!e(3304).actualArr) route('A', 'E3', 'A-E3'); ko('K2'); },
+    'fault-out': () => out(3304, 'E3', 'kZ2', 'Z2', 'E3-Z2'),
   };
 }
 
@@ -190,10 +194,23 @@ function studentIzh(sim) {
     'in-7105': () => arrive(7105, 'kT1', 'A-kT1'),
     'out-7104': () => depart(7104, 'B2', 'B2-W'),
     'out-7106': () => { reverse(7105, 7106); depart(7106, 'B1', 'B1-W'); },
+    // fałszywa zajętość toru 3: droga ułożona ręcznie i zamknięta, wjazd na Sz
+    'fault-points': () => {
+      if (!sim.ilk.sections.get('T3').forced || sim.ilk.armed) return;
+      for (const id of ['Zw1', 'Zw2']) {
+        const z = sim.ilk.points.get(id);
+        if (z.moving) return;
+        if (z.position !== '-') { press({ kind: 'point', id }); order('-'); return; }
+        if (!z.individualLock) { press({ kind: 'point', id }); order('STOP'); return; }
+      }
+    },
+    'fault-sz': () => { poz('W'); const tr = e(7107).train; if (tr && tr.v === 0 && tr.stoppedAt?.signal === 'A' && sim.ilk.signals.get('A').aspect !== 'Sz' && !sim.ilk.armed) { press(S('A')); order('Sz'); } },
+    'fault-ko': () => { ko('W'); if (e(7107).actualArr != null && !sim.ilk.armed) for (const id of ['Zw1', 'Zw2']) if (sim.ilk.points.get(id).individualLock) { press({ kind: 'point', id }); order('Zw'); return; } },
+    'out-7108': () => { reverse(7107, 7108); depart(7108, 'B3', 'B3-W'); },
   };
 }
 
-for (const [id, student, firstTrain, until] of [['pulpit', studentE, 3301, '08:20'], ['izh', studentIzh, 7101, '08:30']]) {
+for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301, '08:40', { nr: 3304, track: '3', planned: '2', sz: 0 }], ['izh', studentIzh, 7101, '08:50', { nr: 7107, track: '3', planned: '3', sz: 1 }]]) {
   test(`misja „${id}” (${MISSIONS[id].station}): uczeń wykonujący polecenia dymków przechodzi wszystkie kroki po kolei, pociągi jadą o czasie`, () => {
     const { st, sc } = scenarioOf(id);
     const sim = new Simulation(st, { scenario: sc.id, seed: 7 });
@@ -222,9 +239,15 @@ for (const [id, student, firstTrain, until] of [['pulpit', studentE, 3301, '08:2
     assert.ok(warmupEnd < Clock.parse('06:59'), `rozgrzewka skończona o ${Clock.format(warmupEnd)}`);
     for (const e of sim.traffic.timetable()) {
       assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
-      if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
+      if (e.from && e.stop && e.nr !== fault.nr) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
       assert.ok(e.delay <= 2, `${e.nr}: opóźnienie ${e.delay} min`);
     }
+    // pociąg prowadzony przy usterce: tor wg lekcji, sygnał zastępczy tylko tam, gdzie lekcja go wymaga
+    const hit = sim.traffic.timetable().find((e) => e.nr === fault.nr);
+    assert.equal(String(hit.track), fault.planned); assert.equal(String(hit.actualTrack), fault.track);
+    assert.equal(sim.ilk.counters.Sz, fault.sz);
+    assert.equal(sim.faults.list.filter((f) => f.scripted).length, 1, 'misja ma jedną usterkę ze scenariusza');
+    assert.ok([...sim.ilk.points.values()].every((p) => p.control && !p.trailed), 'zwrotnice z kontrolą położenia');
     assert.equal(sim.traffic.timetable()[0].nr, firstTrain);
     assert.equal(sim.ilk.counters.rozprucie, 0);
     assert.equal(sim.ilk.counters.dPz, 0);
@@ -260,4 +283,32 @@ test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku �
   // Jodłowa: tory szlakowe linii dwutorowej bez pozwoleń, odgałęzienie z Eap
   const j = new Simulation(STATIONS.find((s) => s.id === 'jodlowa'), { disruptions: 'none' });
   assert.equal(j.blocks.get('K1').gate().ok, true); assert.equal(j.blocks.get('K2').gate().ok, false); assert.equal(j.blocks.get('B').gate().ok, false);
+});
+
+test('każda misja uczy radzenia sobie z inną usterką', () => {
+  const faults = MISSION_VIEWS.map((id) => scenarioOf(id).sc.faults.map((f) => f.type));
+  assert.deepEqual(faults, [['signal-fail', 'block-fail'], ['point-control'], ['false-occupancy']]);
+  assert.equal(new Set(faults.flat()).size, 4, 'cztery rodzaje usterek, żadna się nie powtarza');
+  for (const id of MISSION_VIEWS) {
+    const ids = missionSteps(id).map((s) => s.id);
+    assert.ok(ids.includes('fault-intro'), `${id}: krok wprowadzający usterkę`);
+    assert.ok(ids.indexOf('fault-intro') > ids.indexOf('block-intro'), `${id}: usterka po lekcjach zwykłego ruchu`);
+  }
+});
+
+test('zmiana toru wymuszona usterką urządzeń nie kosztuje punktów; bez usterki kosztuje', () => {
+  const st = STATIONS.find((s) => s.id === 'jodlowa');
+  const run = (faults) => {
+    const sim = new Simulation(st, { scenario: { id: 't', name: 't', trains: [3301], endTime: '07:30', faults }, disruptions: 'none', seed: 1 });
+    for (let i = 0; i < 2 * 60 * 20 && sim.traffic.timetable()[0].actualArr == null; i++) {
+      sim.step(0.5);
+      if (!sim.ilk.active.has('A-E3') && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'E3', kind: 'train' });
+    }
+    const e = sim.traffic.timetable()[0];
+    assert.equal(String(e.actualTrack), '3'); assert.equal(String(e.track), '2');
+    return sim.score.items.filter((i) => i.code === 'wrong-track').length;
+  };
+  assert.equal(run([]), 1, 'bez usterki: tor inny niż planowy jest błędem');
+  assert.equal(run([{ type: 'point-control', target: 'Zw5', at: '07:00', duration: 30 }]), 0, 'usterka zwrotnicy');
+  assert.equal(run([{ type: 'false-occupancy', target: 'T2', at: '07:00', duration: 30 }]), 0, 'fałszywa zajętość toru planowego');
 });

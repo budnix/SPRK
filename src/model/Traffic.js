@@ -253,7 +253,10 @@ export class Traffic {
         if (track && e.track && String(track) !== String(e.track)) {
           this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
           const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
-          if (!plannedClosed && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
+          // usterka urządzeń (zwrotnica bez kontroli, odcinek z fałszywą zajętością) uzasadnia inny tor – jak przy Sz
+          const fault = [...this.ilk.sections.values()].some((s) => s.forced) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
+          if (fault) this.bus.emit('log', { time: t, level: 'info', msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
+          if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }
         break;
       }

@@ -12,6 +12,16 @@ const ZW = group('Zw', 'group-point'), ZZ = group('Zz', 'point-lock'), PZ = grou
 const POINT = 'Zw7';                     // odgałęzienie toru 4 – w tej misji nic przez nią nie jedzie
 const point = (sim) => sim.ilk.points.get(POINT);
 const TRY = 'B-D1';                      // przebieg do ćwiczeń: wjazd od Zalesia na tor 1
+const FAULTY = { ref: { kind: 'point', id: 'Zw3' } };  // zwrotnica z usterką napędu
+const faulty = (sim) => sim.ilk.points.get('Zw3');
+/** Zwrotnica z usterką została przestawiona: nie ma kontroli położenia aż do naprawy. */
+const brokenHint = (sim) => {
+  const p = faulty(sim);
+  if (!(p.faultUntil > sim.clock.time)) return null;
+  if (p.moving || !p.control) return 'Zwrotnica 3 została przestawiona i nie ma kontroli położenia. Nie da się tego cofnąć przed naprawą (ok. 08:21) – pociąg poczeka przed semaforem. Następnym razem zamknij ją od razu.';
+  if (p.position === '+') return 'Zwrotnica 3 stoi w położeniu na tor 2 – nie przestawiaj jej i przyjmij pociąg na tor 2 (A → E2).';
+  return null;
+};
 const koDone = (sim, exit, nr) => arrived(sim, nr) && !sim.blocks.get(exit).koPending;
 const two = (a, b) => `naciśnij <b>${a}</b>, a w ciągu 6 s <b>${b}</b>`;
 /** To samo na początku zdania. */
@@ -78,7 +88,18 @@ export function steps() {
       (sim) => atNeighbour(sim, 6611) && !sim.blocks.get('B').koPending,
       { tip: 'Żądanie od Borków przyjdzie kilka minut przed przyjazdem. Do tego czasu Poz nie zadziała.' }),
 
-    info('end', 'Koniec misji', `To wszystko: obsługa dwuprzyciskowa, Zw, Zz, „Stój” i Pz, ruch na linii dwutorowej z samym Ko, wyprzedzanie i pociągi na odgałęzienie z blokadą Eap. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Misja 3 pokazuje stację krańcową na pulpicie typu IZH-111 (menu → Nowa zmiana → Misja 3).</p>`, { el: '#btn-menu' }),
+    /* ---------------- usterka: zwrotnica bez kontroli położenia ---------------- */
+    info('fault-intro', 'Usterka napędu zwrotnicy', `O 08:01 <b>zwrotnica 3</b> zgłosi usterkę napędu – w dzienniku pojawi się alarm. Zwrotnica stoi teraz w położeniu <b>na tor 3</b> i w tym położeniu jest sprawna. Gdyby ją przestawić, nie odzyska <b>kontroli położenia</b>, a bez kontroli żaden przebieg przez nią się nie nastawi.<p>Zasada jest prosta: <b>zwrotnicy z usterką się nie przestawia</b>. Ruch prowadzi się tak, żeby została tam, gdzie stoi.</p><p>O 08:10 przyjedzie osobowy <b>3304</b>, planowo na tor 2. Do toru 2 zwrotnica 3 musiałaby się przestawić – dlatego przyjmiesz go na tor <b>3</b>. Zmiana toru z powodu usterki nie kosztuje punktów.</p>`, FAULTY),
+    act('fault-lock', 'Zabezpieczenie zwrotnicy', `Poczekaj na alarm o usterce, a potem zamknij zwrotnicę 3, żeby nikt jej przypadkiem nie przestawił – także przebieg: ${two('przycisk grupowy Zz', 'przycisk zwrotnicy 3')}.`, ZZ,
+      (sim) => faulty(sim).faultUntil > sim.clock.time && faulty(sim).individualLock && faulty(sim).control && !faulty(sim).moving,
+      { wrong: (sim) => brokenHint(sim), tip: 'Alarm pojawi się o 08:01. Usterki widać też w zakładce Urządzenia.' }),
+    act('fault-in', 'Przyjęcie na inny tor', `Nastaw wjazd 3304 na tor 3: ${route('A', 'semafora E3')}. Przebieg nastawi się normalnie, bo zwrotnica 3 już stoi we właściwym położeniu. Po przyjeździe naciśnij <b>Ko</b> na blokadzie od Krasnego.<p>Spróbuj dla porównania A → E2: urządzenia odmówią, bo zwrotnica jest zamknięta.</p>`, green('A'),
+      (sim) => koDone(sim, 'K2', 3304),
+      { wrong: (sim) => brokenHint(sim) }),
+    act('fault-out', 'Wyjazd z toru 3', `3304 odjeżdża o 08:11 do Zalesia: ${route('E3', 'końca przebiegu do Zalesia (tor 2)')}. Zwrotnicę 3 zostaw zamkniętą do czasu naprawy.`, green('E3'),
+      (sim) => atNeighbour(sim, 3304)),
+
+    info('end', 'Koniec misji', `To wszystko: obsługa dwuprzyciskowa, Zw, Zz, „Stój” i Pz, ruch na linii dwutorowej z samym Ko, wyprzedzanie, pociągi na odgałęzienie z blokadą Eap i prowadzenie ruchu przy usterce zwrotnicy. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Misja 3 pokazuje stację krańcową na pulpicie typu IZH-111 (menu → Nowa zmiana → Misja 3).</p>`, { el: '#btn-menu' }),
   ];
 }
 

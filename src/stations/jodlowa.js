@@ -119,9 +119,11 @@ export default {
 
   scenarios: [
     // misja zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z przyciskami pulpitu
-    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', startTime: '06:54', endTime: '08:10',
-      trains: [3301, 3302, 42801, 5501, 6612, 6611],
-      description: 'Linia dwutorowa na pulpicie kostkowym typu E: obsługa dwuprzyciskowa i przyciski grupowe, ruch bez pozwoleń z potwierdzeniem przyjazdu (Ko), wyprzedzanie towarowego na torze 3, pociąg do Borków z pozwoleniem (Wbl).' },
+    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', startTime: '06:54', endTime: '08:30',
+      trains: [3301, 3302, 42801, 5501, 6612, 6611, 3304],
+      // zwrotnica 3 stoi wtedy w położeniu na tor 3 (po wyjeździe 6611) – pociąg 3304 trzeba przyjąć na tor 3
+      faults: [{ type: 'point-control', target: 'Zw3', at: '08:01', duration: 20 }],
+      description: 'Linia dwutorowa na pulpicie kostkowym typu E: obsługa dwuprzyciskowa i przyciski grupowe, ruch bez pozwoleń z potwierdzeniem przyjazdu (Ko), wyprzedzanie towarowego na torze 3, pociąg do Borków z pozwoleniem (Wbl), usterka napędu zwrotnicy.' },
     { id: 'zmiana', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–09:00)', srk: 'E', description: 'Ruch na linii dwutorowej, wyprzedzanie, pociągi do i z Borków. Poziom zakłóceń do wyboru.', endTime: '09:00' },
     { id: 'zmiana-izh', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–09:00)', srk: 'izh111', description: 'Ten sam rozkład na pulpicie ciemnym urządzeń typu IZH-111.', endTime: '09:00' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (07:00–09:00)', srk: 'komputerowe', description: 'Ten sam rozkład na monitorze (zobrazowanie wg Ie-104).', endTime: '09:00' },

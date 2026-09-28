@@ -268,9 +268,12 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 
   | misja | stanowisko | stacja | czego uczy |
   |---|---|---|---|
-  | 1 `monitor` | stanowisko komputerowe | Szkolna – linia jednotorowa | pozwolenia, krzyżowanie, manewry, Sz, zapowiadanie telefoniczne |
-  | 2 `pulpit` | pulpit kostkowy typu E | Jodłowa – linia dwutorowa z odgałęzieniem | ruch bez pozwoleń z Ko, wyprzedzanie, odgałęzienie z Eap |
-  | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji |
+  | 1 `monitor` | stanowisko komputerowe | Szkolna – linia jednotorowa | pozwolenia, krzyżowanie, manewry; usterki: semafor bez sygnału (Sz), blokada bez łączności (zapowiadanie telefoniczne) |
+  | 2 `pulpit` | pulpit kostkowy typu E | Jodłowa – linia dwutorowa z odgałęzieniem | ruch bez pozwoleń z Ko, wyprzedzanie, odgałęzienie z Eap; usterka: zwrotnica bez kontroli położenia (zamknąć, przyjąć na inny tor) |
+  | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji; usterka: odcinek z fałszywą zajętością (droga ułożona ręcznie i zamknięta, wjazd na Sz) |
+
+  Każda misja uczy innej usterki – razem wszystkie cztery rodzaje (`src/model/Faults.js`). Przyjęcie pociągu na tor
+  inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka (tak jak uzasadnione Sz).
 
   Każda misja zaczyna się o 06:54 rozgrzewką z poleceniami swojego stanowiska, których rozkład nie wymaga
   (monitor: ZWROTNICA, Zz, OPS, STOP, zwolnienie przebiegu; typ E: Zw, Zz, wyciągnięcie przycisku, Pz; IZH-111:

@@ -84,9 +84,11 @@ export default {
 
   scenarios: [
     // misja zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z rozkazami pulpitu
-    { id: 'nauka-3', name: 'Misja 3: pulpit typu IZH-111 (samouczek)', tutorial: 'izh', srk: 'izh111', disruptions: 'none', startTime: '06:54', endTime: '08:20',
-      trains: [7101, 7102, 7103, 7104, 7105, 7106],
-      description: 'Stacja krańcowa na pulpicie ciemnym typu IZH-111: przycisk adresowy i rozkaz, wjazd na tor czołowy, zmiana czoła i odjazd z powrotem, dwa składy na stacji, zwolnienie czasowe Zcz.' },
+    { id: 'nauka-3', name: 'Misja 3: pulpit typu IZH-111 (samouczek)', tutorial: 'izh', srk: 'izh111', disruptions: 'none', startTime: '06:54', endTime: '08:45',
+      trains: [7101, 7102, 7103, 7104, 7105, 7106, 7107, 7108],
+      // tor 3 pokazuje zajętość bez pociągu – wjazd 7107 na sygnał zastępczy po ręcznym ułożeniu drogi
+      faults: [{ type: 'false-occupancy', target: 'T3', at: '08:05', duration: 19 }],
+      description: 'Stacja krańcowa na pulpicie ciemnym typu IZH-111: przycisk adresowy i rozkaz, wjazd na tor czołowy, zmiana czoła i odjazd z powrotem, dwa składy na stacji, zwolnienie czasowe Zcz, wjazd na sygnał zastępczy przy usterce obwodu torowego.' },
     { id: 'zmiana', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–09:00)', srk: 'izh111', description: 'Wahadła z Modrzewia kończą bieg i wracają; w szczycie dwa składy na stacji. Poziom zakłóceń do wyboru.', endTime: '09:00' },
     { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–09:00)', srk: 'E', description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E.', endTime: '09:00' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (07:00–09:00)', srk: 'komputerowe', description: 'Ten sam rozkład na monitorze (zobrazowanie wg Ie-104).', endTime: '09:00' },
