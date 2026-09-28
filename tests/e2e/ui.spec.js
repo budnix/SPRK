@@ -131,3 +131,35 @@ for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pul
     expect(labels.dom).toBe(labels.onPlan); expect(labels.map).toBe(labels.onPlan);
   });
 }
+
+test('powiększenie pulpitu: tryb dopasowania wraca po zmianie okna, ręczne powiększenie zostaje; Ctrl + kółko trzyma punkt pod kursorem', async ({ page }) => {
+  // mała stacja – dopasowanie do szerokości nie dochodzi do granic powiększenia
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true } });
+  const state = () => page.evaluate(() => { const d = document.getElementById('desk').getBoundingClientRect(), s = document.getElementById('desk-scroll'); return { w: d.width, h: d.height, cw: s.clientWidth, ch: s.clientHeight, left: s.scrollLeft, mode: window.viewport.fitMode, zoom: window.viewport.zoom }; });
+  let st = await state();
+  expect(st.mode).toBe('whole');
+  expect(st.w).toBeLessThanOrEqual(st.cw); expect(st.h).toBeLessThanOrEqual(st.ch);
+  await page.click('#zoom-fit');
+  st = await state();
+  expect(st.mode).toBe('width'); expect(Math.abs(st.w - (st.cw - 8))).toBeLessThan(1); expect(st.left).toBe(0);
+  // zmiana okna: ten sam tryb, nowe powiększenie
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await expect.poll(async () => { const s = await state(); return Math.abs(s.w - (s.cw - 8)) < 1 && s.cw < st.cw; }).toBe(true);
+  expect((await state()).mode).toBe('width');
+  // ręczne powiększenie: tryb dopasowania znika i nie wraca po zmianie okna
+  await page.click('#zoom-in');
+  const manual = await state();
+  expect(manual.mode).toBe(null); expect(manual.zoom).toBeGreaterThan(st.zoom * 0.9);
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.waitForTimeout(400);
+  expect((await state()).zoom).toBe(manual.zoom);
+  // Ctrl + kółko: punkt rysunku pod kursorem zostaje pod kursorem
+  const at = { x: 300, y: 200 };
+  const point = () => page.evaluate(([x, y]) => { const s = document.getElementById('desk-scroll'), v = window.viewport; return [(s.scrollLeft + x) / v.zoom, (s.scrollTop + y) / v.zoom]; }, [at.x, at.y]);
+  await page.evaluate(() => { document.getElementById('desk-scroll').scrollLeft = 400; });
+  const before = await point();
+  await page.evaluate(([x, y]) => { const s = document.getElementById('desk-scroll'), r = s.getBoundingClientRect(); s.dispatchEvent(new WheelEvent('wheel', { deltaY: -40, ctrlKey: true, clientX: r.left + x, clientY: r.top + y, bubbles: true, cancelable: true })); }, [at.x, at.y]);
+  const after = await point();
+  expect((await state()).zoom).toBeGreaterThan(manual.zoom);
+  expect(Math.abs(after[0] - before[0])).toBeLessThan(1.5);
+});

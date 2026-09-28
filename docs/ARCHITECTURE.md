@@ -16,11 +16,11 @@ src/
                DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
                platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
-               edges (geometria stałych pól skrajnych, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
+               edges (geometria stałych pól skrajnych, bez DOM), zoom (rachunki powiększenia, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
                tileArt (grafika kostek), svg (helpery)
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
-               dialog (wspólne zachowanie okien pełnoekranowych),
+               dialog (wspólne zachowanie okien pełnoekranowych), DeskViewport (powiększenie i dopasowanie pulpitu),
                Settings (ustawienia, motyw wg systemu), settingsSchema (opis ustawień, bez DOM), SettingsScreen,
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)

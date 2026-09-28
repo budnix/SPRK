@@ -7,6 +7,7 @@ import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
+import { DeskViewport } from './ui/DeskViewport.js';
 import { SettingsScreen } from './ui/SettingsScreen.js';
 import { Clock } from './core/Clock.js';
 import { getStation } from './stations/index.js';
@@ -226,97 +227,22 @@ const deskEl = document.getElementById('desk');
 const scroll = document.getElementById('desk-scroll');
 // stałe pola skrajne z blokadą liniową – widoczne, gdy powiększony pulpit nie mieści się na szerokość
 const edges = new EdgePanels(scroll, deskEl, { enabled: settings.values.edgePanels === 'on' });
-let zoom = 1;
+/** Ten sam tryb dopasowania co dotąd (zmiana układu okna, panelu, ekranu). */
+function refit() { viewport.refit(); }
+/** Dopasowanie całości do okna (nowy ekran). */
+function fit() { viewport.fit('whole'); }
 function deskSize() {
   const s = currentScreen();
   const cols = s ? s.x1 - s.x0 + 1 : (activeDesk?.cols ?? station.desk.cols);
   return viewSize(sim.srk, cols, station.desk.rows, viewOpts());
 }
-const clampZoom = (z) => Math.max(0.3, Math.min(4, z));
-/** Dopasowanie całości do okna (po zmianie ekranu / rozmiaru okna). */
-/** Ostatni tryb dopasowania: 'whole' | 'width' | 'height' | null (ręczne powiększenie) – po zmianie układu okna wraca ten sam tryb. */
-let fitMode = 'whole';
-function refit() {
-  if (fitMode === 'width') fitWidth(); else if (fitMode === 'height') fitHeight(); else if (fitMode === 'whole') fit(); else applyZoom();
-}
-function fit() {
-  fitMode = 'whole';
-  const { w: dw, h: dh } = deskSize();
-  const w = scroll.clientWidth - 8, h = scroll.clientHeight - 8;
-  zoom = Math.max(0.3, Math.min(w / dw, h / dh));
-  applyZoom();
-}
-/** Przycisk „dopasuj”: do szerokości okna (wysokość może wymagać przewijania). */
-function fitWidth() {
-  fitMode = 'width';
-  const { w: dw } = deskSize();
-  zoom = clampZoom((scroll.clientWidth - 8) / dw);
-  applyZoom();
-  scroll.scrollLeft = 0;
-}
-/** Przycisk „wysokość”: wypełnia okno w pionie – pulpit zwykle szerszy niż okno, środek przewijany, a przy włączonych
- *  stałych polach skrajnych blokada z obu krańców jest przypięta do krawędzi. */
-function fitHeight() {
-  fitMode = 'height';
-  const { h: dh } = deskSize();
-  zoom = clampZoom((scroll.clientHeight - 8) / dh);
-  applyZoom();
-  scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
-}
+const viewport = new DeskViewport(scroll, deskEl, { size: deskSize, onChange: () => edges.update() });
 function syncFitButtons() { document.getElementById('zoom-fit-h').classList.toggle('hidden', settings.values.edgePanels !== 'on'); }
-function applyZoom() {
-  const { w, h } = deskSize();
-  deskEl.style.width = `${w * zoom}px`;
-  deskEl.style.height = `${h * zoom}px`;
-  edges.update();
-}
-/** Zmiana powiększenia wokół punktu (px, py) w układzie widocznego obszaru pulpitu. */
-function zoomAt(factor, px, py) {
-  fitMode = null;
-  const prev = zoom;
-  zoom = Math.max(0.3, Math.min(4, zoom * factor));
-  const k = zoom / prev;
-  if (k === 1) return;
-  const sx = scroll.scrollLeft, sy = scroll.scrollTop;
-  applyZoom();
-  // punkt pod palcami ma zostać w miejscu
-  scroll.scrollLeft = (sx + px) * k - px;
-  scroll.scrollTop = (sy + py) * k - py;
-}
-document.getElementById('zoom-in').addEventListener('click', () => zoomAt(1.2, scroll.clientWidth / 2, scroll.clientHeight / 2));
-document.getElementById('zoom-out').addEventListener('click', () => zoomAt(1 / 1.2, scroll.clientWidth / 2, scroll.clientHeight / 2));
-
-/* Pinch (dwa palce) – iPad/Android; jeden palec dalej przewija natywnie. */
-let pinch = null;
-scroll.addEventListener('touchstart', (e) => {
-  if (e.touches.length !== 2) return;
-  e.preventDefault();
-  pinch = { d: dist(e.touches), zoom };
-}, { passive: false });
-scroll.addEventListener('touchmove', (e) => {
-  if (!pinch || e.touches.length !== 2) return;
-  e.preventDefault();
-  const r = scroll.getBoundingClientRect();
-  const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
-  const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
-  const target = pinch.zoom * (dist(e.touches) / pinch.d);
-  zoomAt(target / zoom, mx, my);
-}, { passive: false });
-const endPinch = (e) => { if (e.touches.length < 2) pinch = null; };
-scroll.addEventListener('touchend', endPinch);
-scroll.addEventListener('touchcancel', endPinch);
-function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
-// Safari wysyła też zdarzenia gesture* – blokujemy powiększanie strony, obsługa jest w touch*
-for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
-// Trackpad / ctrl+kółko na komputerze
-scroll.addEventListener('wheel', (e) => {
-  if (!e.ctrlKey && !e.metaKey) return;
-  e.preventDefault();
-  const r = scroll.getBoundingClientRect();
-  zoomAt(Math.exp(-e.deltaY * 0.01), e.clientX - r.left, e.clientY - r.top);
-}, { passive: false });
-document.getElementById('zoom-fit').addEventListener('click', fitWidth);
-document.getElementById('zoom-fit-h').addEventListener('click', fitHeight);
+document.getElementById('zoom-in').addEventListener('click', () => viewport.step(1.2));
+document.getElementById('zoom-out').addEventListener('click', () => viewport.step(1 / 1.2));
+// „dopasuj”: do szerokości okna; „wysokość”: wypełnia okno w pionie, środek przewijany, pola skrajne przypięte
+document.getElementById('zoom-fit').addEventListener('click', () => viewport.fit('width'));
+document.getElementById('zoom-fit-h').addEventListener('click', () => viewport.fit('height'));
 syncFitButtons();
 let replanTimer = null;
 function onResize() { clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
@@ -371,4 +297,4 @@ if (mission && params.get('scenariusz')) {
 }
 
 // Dla debugowania w konsoli
-window.sim = sim; window.desk = desk; window.side = side; window.tutorial = tutorial;
+window.sim = sim; window.desk = desk; window.side = side; window.tutorial = tutorial; window.viewport = viewport;
