@@ -1,51 +1,64 @@
 /**
- * Warstwa UI strategii srk: dla każdego rodzaju stanowiska (`view` w rejestrze) – fabryka widoku,
- * rozmiar obrazu, podpowiedzi i fragment instrukcji. Rejestr (registry.js) nie zna DOM, więc
- * widoki są tu, a nie tam.
+ * Warstwa UI strategii srk: rejestr widoków stanowisk. Dla każdego rodzaju stanowiska (`view` w rejestrze srk) –
+ * klasa widoku (rozszerza `PanelView`), podpowiedzi i fragment instrukcji. Rejestr srk (registry.js) nie zna DOM,
+ * więc widoki są tu, a nie tam. Nowy panel: `registerView('<rodzaj>', { View, hint, armHint, help })`.
  */
 import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
 import { getSrk } from './registry.js';
 import { t } from '../i18n/index.js';
 
-const VIEWS = {
-  desk: {
-    create: (container, sim, handlers, opts) => new DeskRenderer(container, sim, handlers, opts),
-    size: (cols, rows) => ({ w: cols * 40 + 44, h: rows * 40 + 44 }),
-    hint: () => t('hint.desk'),
-    armHint: {
-      point: (a) => t('arm.point', { id: a.id }),
-      derailer: (a) => t('arm.derailer', { id: a.id }),
-      signal: (a) => t('arm.signal', { kind: t(a.color === 'white' ? 'arm.signal.shunt' : 'arm.signal.train'), id: a.id }),
-      group: (a) => (['group-point', 'point-lock', 'route-release', 'emergency-release', 'substitute'].includes(a.role) ? t(`arm.${a.role}`) : t('arm.other', { id: a.id })),
-    },
-    help: () => t('help.desk'),
-  },
-  screen: {
-    create: (container, sim, handlers, opts) => new ScreenRenderer(container, sim, handlers, opts),
-    size: (cols, rows, o = {}) => ({ w: cols * 40 + 24, h: rows * 40 * (Number(o.rowScale) || 1) + 24 }),
-    hint: () => t('hint.screen'),
-    armHint: {
-      point: () => '',
-      derailer: () => '',
-      signal: (a) => t('arm.screenSignal', { kind: t(a.color === 'white' ? 'arm.screenSignal.shunt' : 'arm.screenSignal.train'), id: a.id }),
-      group: () => '',
-    },
-    help: () => t('help.screen'),
-  },
-};
+const VIEWS = new Map();
+const DEFAULT_VIEW = 'desk';
 
-function viewOf(srk) {
-  return VIEWS[srk?.view] || VIEWS.desk;
+/**
+ * @param id rodzaj stanowiska (`view` strategii srk)
+ * @param def { View – klasa widoku, hint() – podpowiedź obsługi, armHint – { kind: (armed) => tekst },
+ *              help() – HTML instrukcji stanowiska }
+ */
+export function registerView(id, def) {
+  if (!id || typeof def?.View !== 'function') throw new Error('Widok stanowiska wymaga id i klasy View');
+  VIEWS.set(id, { hint: () => '', armHint: {}, help: () => '', ...def });
+  return def;
 }
 
-/** Tworzy widok stanowiska dla strategii (pulpit kostkowy lub monitor). */
+export function hasView(id) {
+  return VIEWS.has(id);
+}
+
+registerView('desk', {
+  View: DeskRenderer,
+  hint: () => t('hint.desk'),
+  armHint: {
+    point: (a) => t('arm.point', { id: a.id }),
+    derailer: (a) => t('arm.derailer', { id: a.id }),
+    signal: (a) => t('arm.signal', { kind: t(a.color === 'white' ? 'arm.signal.shunt' : 'arm.signal.train'), id: a.id }),
+    group: (a) => (['group-point', 'point-lock', 'route-release', 'emergency-release', 'substitute'].includes(a.role) ? t(`arm.${a.role}`) : t('arm.other', { id: a.id })),
+  },
+  help: () => t('help.desk'),
+});
+
+registerView('screen', {
+  View: ScreenRenderer,
+  hint: () => t('hint.screen'),
+  armHint: {
+    signal: (a) => t('arm.screenSignal', { kind: t(a.color === 'white' ? 'arm.screenSignal.shunt' : 'arm.screenSignal.train'), id: a.id }),
+  },
+  help: () => t('help.screen'),
+});
+
+function viewOf(srk) {
+  return VIEWS.get(srk?.view) || VIEWS.get(DEFAULT_VIEW);
+}
+
+/** Tworzy widok stanowiska dla strategii (pulpit kostkowy, monitor, …). */
 export function createView(srk, container, sim, handlers, opts = {}) {
-  return viewOf(srk).create(container, sim, handlers, opts);
+  const { View } = viewOf(srk);
+  return new View(container, sim, handlers, opts);
 }
 
 export function viewSize(srk, cols, rows, o = {}) {
-  return viewOf(srk).size(cols, rows, o);
+  return viewOf(srk).View.size(cols, rows, o);
 }
 
 export function viewHint(srk) {

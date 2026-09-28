@@ -2,6 +2,7 @@ import { platformSpans, trackLabelText, trackLabelPlace, platformEdgeLines } fro
 import { blockLayouts } from './blockLayout.js';
 import { el, text, CELL } from './svg.js';
 import { refKey } from './refKey.js';
+import { PanelView } from './PanelView.js';
 import { t } from '../i18n/index.js';
 
 const FRAME = 22;
@@ -13,77 +14,42 @@ import { VEC, OPPOSITE } from '../tiles/directions.js';
  * Renderer pulpitu kostkowego (SVG). Buduje grafikę raz, potem aktualizuje
  * tylko lampki i przyciski na podstawie zdarzeń z symulacji.
  */
-export class DeskRenderer {
+export class DeskRenderer extends PanelView {
+  static PAD = FRAME;
+
   /**
    * @param container element DOM
    * @param sim Simulation
    * @param handlers { onPress(ref), onPull(ref) }
    */
   constructor(container, sim, handlers, opts = {}) {
-    this.sim = sim;
-    this.station = sim.station;
-    this.ilk = sim.ilk;
-    this.topo = sim.ilk.topo;
-    this.handlers = handlers;
-    // Okno kolumn (okręg nastawczy) i tryb tylko do podglądu (okręg obsługiwany przez drugą nastawnię)
-    this.x0 = opts.window?.[0] ?? 0;
-    this.x1 = opts.window?.[1] ?? this.station.desk.cols - 1;
-    this.readonly = !!opts.readonly;
-    this.title = opts.title || null;
+    super(container, sim, handlers, opts, { className: 'desk' });
     this.tileRefs = new Map();     // tileKey -> refs
-    this.sectionSlits = new Map(); // sectionId -> [{el, tile}]
-    this.pointRefs = new Map();
-    this.derailerRefs = new Map();
-    this.signalRefs = new Map();
-    this.buttonEls = new Map();    // refKey -> element
-    this.blockRefs = new Map();
-    this.counterRefs = new Map();
-    this.trainLabels = new Map();
-
-    const cols = this.x1 - this.x0 + 1, rows = this.station.desk.rows;
-    this.cols = cols; this.rows = rows;
     this.FRAME = FRAME;
-    this.svg = el('svg', {
-      class: `desk${this.readonly ? ' readonly' : ''}`, viewBox: `0 0 ${cols * CELL + 2 * FRAME} ${rows * CELL + 2 * FRAME}`,
-      preserveAspectRatio: 'xMidYMid meet',
-    });
-    this.svg.appendChild(el('defs', {}, [
-      el('filter', { id: 'glow', x: '-50%', y: '-50%', width: '200%', height: '200%' }, [
-        el('feGaussianBlur', { stdDeviation: 1.2, result: 'b' }),
-        el('feMerge', {}, [el('feMergeNode', { in: 'b' }), el('feMergeNode', { in: 'SourceGraphic' })]),
-      ]),
-    ]));
-    this.svg.appendChild(el('rect', { class: 'desk-bg', x: 0, y: 0, width: cols * CELL + 2 * FRAME, height: rows * CELL + 2 * FRAME, rx: 4 }));
-    this.svg.appendChild(el('rect', { class: 'desk-face-bg', x: FRAME, y: FRAME, width: cols * CELL, height: rows * CELL }));
+    const { cols, rows } = this;
+    this.addBackdrop(
+      el('rect', { class: 'desk-bg', x: 0, y: 0, width: this.width, height: this.height, rx: 4 }),
+      el('rect', { class: 'desk-face-bg', x: FRAME, y: FRAME, width: cols * CELL, height: rows * CELL }),
+    );
     if (this.readonly) {
-      const banner = el('g', { class: 'readonly-banner' }, [
+      this.addBackdrop(el('g', { class: 'readonly-banner' }, [
         el('rect', { x: FRAME + 4, y: 2, width: 260, height: 16, rx: 3 }),
         text(FRAME + 134, 11, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'readonly-text' }),
-      ]);
-      this.svg.appendChild(banner);
+      ]));
     }
-    this.inner = el('g', { transform: `translate(${FRAME},${FRAME})` });
     this.layerTiles = el('g', { class: 'layer-tiles' });
     this.layerGrid = el('g', { class: 'layer-grid' });
     this.layerTrains = el('g', { class: 'layer-trains' });
     this.inner.append(this.layerTiles, this.layerGrid, this.layerTrains);
-    this.svg.appendChild(this.inner);
-    container.appendChild(this.svg);
 
     this.#buildFrame();
     this.#buildTiles();
     this.#buildPlatforms();
     this.#buildGrid();
     this.#bindEvents();
+    this.bindModel();
     this.refreshAll();
   }
-
-  /** Widoczny wycinek kolumn (ekran) – zmiana viewBox, bez przebudowy grafiki. */
-  setView(x0, x1) {
-    const H = this.rows * CELL + 2 * FRAME;
-    this.svg.setAttribute('viewBox', `${(x0 - this.x0) * CELL} 0 ${(x1 - x0 + 1) * CELL + 2 * FRAME} ${H}`);
-  }
-  resetView() { this.setView(this.x0, this.x1); }
 
   #ctx() {
     return {
@@ -143,8 +109,8 @@ export class DeskRenderer {
       if (pos.side !== 'top') for (let dx = 0; dx < span.w; dx++) for (let dy = 0; dy < span.h; dy++) filled.add(`${tile.x + dx},${tile.y + dy}`);
 
       if (def.category === 'track' && tile.type !== 'point') {
-        if (!this.sectionSlits.has(tile.section)) this.sectionSlits.set(tile.section, []);
-        for (const s of out.refs.slits) this.sectionSlits.get(tile.section).push({ el: s, tile });
+        if (!this.sectionRefs.has(tile.section)) this.sectionRefs.set(tile.section, []);
+        for (const s of out.refs.slits) this.sectionRefs.get(tile.section).push({ el: s, tile });
       }
       if (tile.type === 'point') this.pointRefs.set(tile.id, out.refs);
       if (tile.derailer) this.derailerRefs.set(tile.derailer, out.refs);
@@ -180,14 +146,13 @@ export class DeskRenderer {
     }
     for (const b of this.svg.querySelectorAll('.btn')) {
       const ref = JSON.parse(b.dataset.ref);
-      this.buttonEls.set(refKey(ref), b);
+      this.controlEls.set(refKey(ref), b);
     }
   }
 
-  /** Przycisk pulpitu odpowiadający ref (do podświetlania w samouczku). */
-  elementFor(ref) {
-    if (ref.kind === 'blockpanel') return this.layerTiles.querySelector(`.block-cluster[data-exit="${ref.exit}"]`) || null;
-    return this.buttonEls.get(refKey(ref)) || (ref.kind === 'signal' && !ref.color ? this.buttonEls.get(refKey({ ...ref, color: 'green' })) || this.buttonEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
+  /** Kostki blokady liniowej szlaku – grupa do wskazania w samouczku. */
+  blockPanelElement(exit) {
+    return this.layerTiles.querySelector(`.block-cluster[data-exit="${exit}"]`) || null;
   }
 
   /** Perony: przerywany obrys z nazwą (Peron I, II…) w rzędzie między torami peronowymi lub obok toru. */
@@ -271,26 +236,6 @@ export class DeskRenderer {
       if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); this.handlers.onPress(JSON.parse(b.dataset.ref)); }
       if (ev.key === 'Backspace' || ev.key === 'Delete') { ev.preventDefault(); this.handlers.onPull(JSON.parse(b.dataset.ref)); }
     });
-
-    const bus = this.sim.bus;
-    bus.on('section', (s) => this.updateSection(s.id));
-    bus.on('point', (p) => this.updatePoint(p.id));
-    bus.on('derailer', (d) => this.updateDerailer(d.id));
-    bus.on('signal', (s) => this.updateSignal(s.id));
-    bus.on('route', () => this.refreshAll());
-    bus.on('block', (b) => this.updateBlock(b.id));
-    bus.on('armed', (a) => this.updateArmed(a));
-    bus.on('tick', () => this.updateTrains());
-  }
-
-  refreshAll() {
-    for (const id of this.sectionSlits.keys()) this.updateSection(id);
-    for (const id of this.pointRefs.keys()) this.updatePoint(id);
-    for (const id of this.derailerRefs.keys()) this.updateDerailer(id);
-    for (const id of this.signalRefs.keys()) this.updateSignal(id);
-    for (const id of this.blockRefs.keys()) this.updateBlock(id);
-    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(5, '0');
-    this.updateArmed(this.ilk.armed);
   }
 
   #sectionState(sec) {
@@ -304,7 +249,7 @@ export class DeskRenderer {
     const sec = this.ilk.sections.get(id);
     if (!sec) return;
     const st = this.#sectionState(sec);
-    for (const { el: e, tile } of this.sectionSlits.get(id) || []) {
+    for (const { el: e, tile } of this.sectionRefs.get(id) || []) {
       setLamp(e, st);
       for (const sc of this.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', st !== 'off');
     }
@@ -380,44 +325,28 @@ export class DeskRenderer {
     setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
     setLamp(r.wbl, b.request === 'ours' ? 'white blink' : 'off');
     setLamp(r.ko, b.koPending ? 'white blink' : 'off');
-    if (r.cntPo) r.cntPo.textContent = String(b.counters.dPo).padStart(5, '0');
-    if (r.cntKo) r.cntKo.textContent = String(b.counters.dKo).padStart(5, '0');
+    if (r.cntPo) r.cntPo.textContent = PanelView.counterText(b.counters.dPo);
+    if (r.cntKo) r.cntKo.textContent = PanelView.counterText(b.counters.dKo);
   }
 
   updateArmed(a) {
-    for (const e of this.buttonEls.values()) e.classList.remove('armed');
+    for (const e of this.controlEls.values()) e.classList.remove('armed');
     if (!a) return;
-    const e = this.buttonEls.get(refKey(a));
+    const e = this.controlEls.get(refKey(a));
     e?.classList.add('armed');
   }
 
-  updateTrains() {
-    const seen = new Set();
-    for (const tr of this.sim.traffic.trains) {
-      const tiles = tr.occupiedTiles();
-      if (!tiles.length) continue;
-      const headTile = tiles[tiles.length - 1];
-      seen.add(tr.nr);
-      let lbl = this.trainLabels.get(tr.nr);
-      if (!lbl) {
-        lbl = el('g', { class: 'train-label' }, [
-          el('rect', { x: -16, y: -7, width: 32, height: 13, rx: 2 }),
-          text(0, 0, String(tr.nr), { class: 'train-nr' }),
-        ]);
-        this.layerTrains.appendChild(lbl);
-        this.trainLabels.set(tr.nr, lbl);
-      }
-      // etykieta wewnątrz kostki czoła pociągu (nad albo pod kanałem toru) – nie wchodzi na sąsiedni rząd,
-      // gdzie zasłaniałaby przyciski semaforów
-      const above = headTile.y >= 6 || headTile.y === 4;
-      const ty = headTile.y * CELL + (above ? 8 : CELL - 6);
-      const visible = headTile.x >= this.x0 && headTile.x <= this.x1;
-      lbl.style.display = visible ? '' : 'none';
-      lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + CELL / 2},${ty})`);
-      lbl.querySelector('.train-nr').textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
-    }
-    for (const [nr, lbl] of this.trainLabels) if (!seen.has(nr)) { lbl.remove(); this.trainLabels.delete(nr); }
-    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(5, '0');
+  createTrainLabel(tr) {
+    const nr = text(0, 0, String(tr.nr), { class: 'train-nr' });
+    return { label: el('g', { class: 'train-label' }, [el('rect', { x: -16, y: -7, width: 32, height: 13, rx: 2 }), nr]), text: nr };
+  }
+
+  /** Etykieta wewnątrz kostki czoła pociągu (nad albo pod kanałem toru) – nie wchodzi na sąsiedni rząd,
+   *  gdzie zasłaniałaby przyciski semaforów. */
+  placeTrainLabel(label, headTile) {
+    const above = headTile.y >= 6 || headTile.y === 4;
+    const ty = headTile.y * CELL + (above ? 8 : CELL - 6);
+    label.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + CELL / 2},${ty})`);
   }
 }
 
@@ -430,4 +359,3 @@ function setLamp(e, state) {
   if (blink) e.classList.add('blink');
 }
 
-export { refKey };

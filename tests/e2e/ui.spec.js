@@ -98,3 +98,36 @@ test('zakładki ekranów nie są wymieniane przy ponownym planowaniu (start, zmi
   await page.setViewportSize({ width: 900, height: 1024 });
   await expect.poll(() => page.evaluate(() => window.__tabs.some((b) => !b.isConnected))).toBe(true);
 });
+
+for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk']]) {
+  test(`widok stanowiska (${name}) spełnia kontrakt PanelView: rysunek, margines, wycinek, elementy obsługi, etykiety pociągów`, async ({ page }) => {
+    await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
+    const v = await page.evaluate(() => {
+      // klasa widoku i jej baza (nazwy klas znikają w zbudowanej paczce – liczy się, gdzie leżą metody)
+      const d = window.desk; const view = Object.getPrototypeOf(d), base = Object.getPrototypeOf(view);
+      const own = (o, list) => list.filter((m) => Object.prototype.hasOwnProperty.call(o, m));
+      const chain = { depth: Object.getPrototypeOf(base) === Object.prototype ? 2 : 0, base: own(base, ['bindModel', 'refreshAll', 'updateTrains', 'setView']), view: own(view, ['updateSection', 'updateSignal', 'createTrainLabel', 'bindModel', 'refreshAll']) };
+      const methods = ['setView', 'resetView', 'elementFor', 'refreshAll', 'cmdButton', 'setSymbolScale', 'updateTrains', 'bindModel'];
+      const full = d.svg.getAttribute('viewBox');
+      d.setView(2, 5); const part = d.svg.getAttribute('viewBox'); d.resetView();
+      const pad = d.inner.transform.baseVal.getItem(0).matrix.e;
+      return { chain, svgClass: d.svg.getAttribute('class'), missing: methods.filter((m) => typeof d[m] !== 'function'), full, part, back: d.svg.getAttribute('viewBox'), pad, ownPad: d.pad,
+        size: d.constructor.size(d.cols, d.rows, { rowScale: d.ry }), signal: !!d.elementFor({ kind: 'signal', id: 'A' }), block: !!d.elementFor({ kind: 'blockpanel', exit: 'W' }),
+        none: d.elementFor({ kind: 'point', id: 'nie-ma' }), cmd: !!d.cmdButton('train') };
+    });
+    expect(v.chain).toEqual({ depth: 2, base: ['bindModel', 'refreshAll', 'updateTrains', 'setView'], view: ['updateSection', 'updateSignal', 'createTrainLabel'] });
+    expect(v.svgClass).toBe(svgClass);
+    expect(v.missing).toEqual([]);
+    expect(v.pad).toBe(v.ownPad);
+    expect(v.full).toBe(`0 0 ${v.size.w} ${v.size.h}`);
+    expect(v.part).toBe(`80 0 ${4 * 40 + 2 * v.pad} ${v.size.h}`);
+    expect(v.back).toBe(v.full);
+    expect(v.signal).toBe(true); expect(v.block).toBe(true); expect(v.none).toBe(null);
+    expect(v.cmd).toBe(svgClass === 'screen');
+    // etykieta pociągu pojawia się z pociągiem na planie i znika razem z nim
+    await page.evaluate(() => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && !s.traffic.trains.some((t) => t.occupiedTiles().length); i++) { window.sim.press({ kind: 'block', exit: 'W', btn: 'Poz' }); s.step(0.5); } s.clock.paused = true; });
+    const labels = await page.evaluate(() => ({ dom: document.querySelectorAll('#desk .layer-trains > g').length, map: window.desk.trainLabels.size, onPlan: window.sim.traffic.trains.filter((t) => t.occupiedTiles().length).length }));
+    expect(labels.onPlan).toBeGreaterThan(0);
+    expect(labels.dom).toBe(labels.onPlan); expect(labels.map).toBe(labels.onPlan);
+  });
+}

@@ -1,6 +1,7 @@
 import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
 import { refKey } from './refKey.js';
+import { PanelView } from './PanelView.js';
 import { t } from '../i18n/index.js';
 import { tip } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
@@ -31,52 +32,28 @@ const PAD = 12;
  *  Sz, STOP, OPS – odwołanie polecenia) + menu elementu. Polecenie = rodzaj → element początkowy → element
  *  końcowy. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane, potwierdzane „WYKONAJ” i rejestrowane.
  */
-export class ScreenRenderer {
+export class ScreenRenderer extends PanelView {
+  static PAD = PAD;
+
+  /** Ściśnięcie rzędów (0,7 = symbole bliżej toru). */
+  static rowScale(opts) { return Number(opts.rowScale) || 1; }
+
   constructor(container, sim, handlers, opts = {}) {
-    this.sim = sim;
-    this.station = sim.station;
-    this.ilk = sim.ilk;
-    this.topo = sim.ilk.topo;
-    this.handlers = handlers;
-    this.x0 = opts.window?.[0] ?? 0;
-    this.x1 = opts.window?.[1] ?? this.station.desk.cols - 1;
-    this.readonly = !!opts.readonly;
-    this.title = opts.title || null;
-    this.cols = this.x1 - this.x0 + 1; this.rows = this.station.desk.rows;
-    this.ry = Number(opts.rowScale) || 1;      // ściśnięcie rzędów (0,7 = symbole bliżej toru)
+    super(container, sim, handlers, opts, { className: 'screen' });
     this.S = Number(opts.symScale) || 1;       // skala symboli i napisów (1–1,5)
     this.symbols = [];                          // grupy symboli do przeskalowania na żywo
-    this.sectionEls = new Map();  // sectionId -> [segment group]
-    this.pointRefs = new Map();
-    this.derailerRefs = new Map();
-    this.signalRefs = new Map();
-    this.blockRefs = new Map();
-    this.counterRefs = new Map();
-    this.hitEls = new Map();      // refKey -> grupa elementu (ramka selekcji)
-    this.trainLabels = new Map();
     this.pending = null;          // trwający przebieg: { id, color }
     this.mode = null;             // wybrane polecenie z paska: 'train'|'shunt'|'pz'|'dpz'|'zw'|'zz'|'sz'|'stop'
 
-    const W = this.cols * CELL + 2 * PAD, H = this.rows * CELL * this.ry + 2 * PAD;
-    this.svg = el('svg', { class: `screen${this.readonly ? ' readonly' : ''}`, viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'xMidYMid meet' });
     this.svg.style.setProperty('--sym', String(this.S));
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
-    this.svg.appendChild(el('defs', {}, [
-      el('filter', { id: 'glow', x: '-50%', y: '-50%', width: '200%', height: '200%' }, [
-        el('feGaussianBlur', { stdDeviation: 1.2, result: 'b' }),
-        el('feMerge', {}, [el('feMergeNode', { in: 'b' }), el('feMergeNode', { in: 'SourceGraphic' })]),
-      ]),
-    ]));
-    this.svg.appendChild(el('rect', { class: 'scr-bg', x: 0, y: 0, width: W, height: H }));
-    if (this.readonly) this.svg.appendChild(text(W / 2, 8, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'scr-banner' }));
-    this.inner = el('g', { transform: `translate(${PAD},${PAD})` });
+    this.addBackdrop(el('rect', { class: 'scr-bg', x: 0, y: 0, width: this.width, height: this.height }));
+    if (this.readonly) this.addBackdrop(text(this.width / 2, 8, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'scr-banner' }));
     this.layerTracks = el('g', { class: 'layer-tracks' });
     this.layerMarks = el('g', { class: 'layer-marks' });
     this.layerSignals = el('g', { class: 'layer-signals' });
     this.layerTrains = el('g', { class: 'layer-trains' });
     this.inner.append(this.layerTracks, this.layerMarks, this.layerSignals, this.layerTrains);
-    this.svg.appendChild(this.inner);
-    container.appendChild(this.svg);
 
     this.menu = document.createElement('div');
     this.menu.className = 'scr-menu hidden';
@@ -89,13 +66,8 @@ export class ScreenRenderer {
 
     this.#build();
     this.#bind();
+    this.bindModel();
     this.refreshAll();
-  }
-
-  /** Element graficzny odpowiadający przyciskowi/elementowi (do podświetlania w samouczku). */
-  elementFor(ref) {
-    if (ref.kind === 'blockpanel') return this.hitEls.get(refKey({ kind: 'block', exit: ref.exit, btn: 'Wbl' })) || null;
-    return this.hitEls.get(refKey(ref)) || (ref.kind === 'signal' ? this.hitEls.get(refKey({ ...ref, color: 'green' })) || this.hitEls.get(refKey({ ...ref, color: 'white' })) : null) || null;
   }
 
   /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
@@ -112,19 +84,13 @@ export class ScreenRenderer {
     return rest || null;
   }
 
-  /** Widoczny wycinek kolumn (ekran monitora) – zmiana viewBox, bez przebudowy grafiki. */
-  setView(x0, x1) {
-    const H = this.rows * CELL * this.ry + 2 * PAD;
-    this.svg.setAttribute('viewBox', `${(x0 - this.x0) * CELL} 0 ${(x1 - x0 + 1) * CELL + 2 * PAD} ${H}`);
-  }
-  resetView() { this.setView(this.x0, this.x1); }
-
   /** Skala symboli i napisów na żywo (ustawienie „wielkość symboli”). */
   setSymbolScale(S) {
     this.S = Number(S) || 1;
     this.svg.style.setProperty('--sym', String(this.S));
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
     for (const { g, cx, cy } of this.symbols) g.setAttribute('transform', `translate(${cx},${cy}) scale(${this.S})`);
+    for (const { label } of this.trainLabels.values()) label.firstChild.setAttribute('transform', `scale(${this.S})`);
   }
 
   /* ---------------- geometria ---------------- */
@@ -207,7 +173,7 @@ export class ScreenRenderer {
   #build() {
     this.#platforms();
     this.#trackNumbers();
-    const addSec = (sid, e) => { if (!this.sectionEls.has(sid)) this.sectionEls.set(sid, []); this.sectionEls.get(sid).push(e); };
+    const addSec = (sid, e) => { if (!this.sectionRefs.has(sid)) this.sectionRefs.set(sid, []); this.sectionRefs.get(sid).push(e); };
     for (const tile of this.station.tiles) {
       if (tile.x < this.x0 || tile.x > this.x1) continue;
       const [cx, cy] = this.#ctr(tile);
@@ -225,7 +191,7 @@ export class ScreenRenderer {
             ]);
             this.layerMarks.appendChild(g);
             this.derailerRefs.set(tile.derailer, { mark: g.querySelector('.wk-mark'), g });
-            this.hitEls.set(refKey({ kind: 'derailer', id: tile.derailer }), g);
+            this.controlEls.set(refKey({ kind: 'derailer', id: tile.derailer }), g);
           }
           if (tile.endButton) this.#exitMark(tile);
           break;
@@ -246,7 +212,7 @@ export class ScreenRenderer {
           const diverge = this.#segment(this.#leg(tile, tile.diverge, 0.3, 1));
           const zField = el('path', { class: 'z-field', d: '' });
           this.layerTracks.append(diverge, straight, toe, zField);
-          const [dx, dy] = PORT_XY[tile.diverge];
+          const [, dy] = PORT_XY[tile.diverge];
           const below = dy > C;
           const lbl = text(0, below ? -9 : 12, tile.label || tile.id, { class: 'scr-text pt-label' });
           // „+” przy ramieniu zasadniczym
@@ -255,7 +221,7 @@ export class ScreenRenderer {
           const g = this.#sym(cx, cy, 'scr-el point', [this.#frame(0, 0, 24, 24), lbl, plus, this.#hit({ kind: 'point', id: tile.id }, 0, 0, 10)]);
           this.layerMarks.appendChild(g);
           this.pointRefs.set(tile.id, { toe, straight, diverge, zField, lbl, plus, g, tile });
-          this.hitEls.set(refKey({ kind: 'point', id: tile.id }), g);
+          this.controlEls.set(refKey({ kind: 'point', id: tile.id }), g);
           break;
         }
         case 'crossing': {
@@ -321,11 +287,11 @@ export class ScreenRenderer {
     kids.push(this.#hit(ref, 0, 0, 10));
     const g = this.#sym(cx, cy, `scr-el end${ex ? ' exit' : ''}`, kids);
     this.layerMarks.appendChild(g);
-    this.hitEls.set(refKey(ref), g);
+    this.controlEls.set(refKey(ref), g);
     if (ex) {
       refs.g = g;
       this.blockRefs.set(ex[0], refs);
-      for (const btn of ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo', 'Zk']) this.hitEls.set(refKey({ kind: 'block', exit: ex[0], btn }), g);
+      for (const btn of ['Wbl', 'Poz', 'Ko', 'dPo', 'dKo', 'Zk']) this.controlEls.set(refKey({ kind: 'block', exit: ex[0], btn }), g);
     }
   }
 
@@ -364,8 +330,8 @@ export class ScreenRenderer {
     ]);
     this.layerSignals.appendChild(g);
     this.signalRefs.set(tile.id, { body, endTri, g, tile });
-    this.hitEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
-    this.hitEls.set(refKey({ kind: 'signal', id: tile.id, color: 'white' }), g);
+    this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
+    this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'white' }), g);
   }
 
   /** Pasek poleceń (układ EbiScreen): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
@@ -417,16 +383,6 @@ export class ScreenRenderer {
     this.svg.addEventListener('contextmenu', (ev) => { ev.preventDefault(); this.#setMode(null, true); this.#closeMenu(); });
     document.addEventListener('pointerdown', (ev) => { if (!this.menu.contains(ev.target) && !this.svg.contains(ev.target)) this.#closeMenu(); });
     document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { this.#setMode(null, true); this.#closeMenu(); } });
-
-    const bus = this.sim.bus;
-    bus.on('section', (s) => this.updateSection(s.id));
-    bus.on('point', (p) => this.updatePoint(p.id));
-    bus.on('derailer', (d) => this.updateDerailer(d.id));
-    bus.on('signal', (s) => this.updateSignal(s.id));
-    bus.on('route', () => this.refreshAll());
-    bus.on('block', (b) => this.updateBlock(b.id));
-    bus.on('armed', (a) => this.updateArmed(a));
-    bus.on('tick', () => this.updateTrains());
   }
 
   #click(ref, ev) {
@@ -584,16 +540,6 @@ export class ScreenRenderer {
   }
 
   /* ---------------- aktualizacja stanu ---------------- */
-  refreshAll() {
-    for (const id of this.sectionEls.keys()) this.updateSection(id);
-    for (const id of this.pointRefs.keys()) this.updatePoint(id);
-    for (const id of this.derailerRefs.keys()) this.updateDerailer(id);
-    for (const id of this.signalRefs.keys()) this.updateSignal(id);
-    for (const id of this.blockRefs.keys()) this.updateBlock(id);
-    this.#counters();
-    this.updateArmed(this.ilk.armed);
-  }
-
   /** Stan odcinka wg tab. 8 Ie-104. */
   #sectionClass(sec) {
     if (!sec) return 'free';
@@ -610,7 +556,7 @@ export class ScreenRenderer {
   updateSection(id) {
     const sec = this.ilk.sections.get(id);
     const cls = this.#sectionClass(sec);
-    for (const e of this.sectionEls.get(id) || []) setSeg(e, cls);
+    for (const e of this.sectionRefs.get(id) || []) setSeg(e, cls);
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);
   }
@@ -685,37 +631,20 @@ export class ScreenRenderer {
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */
   updateArmed(a) {
-    for (const e of this.hitEls.values()) e.classList.remove('selected');
+    for (const e of this.controlEls.values()) e.classList.remove('selected');
     if (!a) { if (this.pending) this.#endPending(); return; }
     if (a.kind === 'group') return;
-    this.hitEls.get(refKey(a))?.classList.add('selected');
+    this.controlEls.get(refKey(a))?.classList.add('selected');
   }
 
-  #counters() {
-    for (const [id, t] of this.counterRefs) t.textContent = String(this.ilk.counters[id] ?? 0).padStart(5, '0');
+  createTrainLabel(tr) {
+    const nr = text(0, 0, String(tr.nr), { class: 'scr-train-nr' });
+    const inside = el('g', { class: 'scr-train-in', transform: `scale(${this.S})` }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), nr]);
+    return { label: el('g', { class: 'scr-train' }, [inside]), text: nr };
   }
 
-  updateTrains() {
-    const seen = new Set();
-    for (const tr of this.sim.traffic.trains) {
-      const tiles = tr.occupiedTiles();
-      if (!tiles.length) continue;
-      const headTile = tiles[tiles.length - 1];
-      seen.add(tr.nr);
-      let lbl = this.trainLabels.get(tr.nr);
-      if (!lbl) {
-        lbl = el('g', { class: 'scr-train' }, [el('g', { class: 'scr-train-in', transform: `scale(${this.S})` }, [el('rect', { x: -17, y: -7, width: 34, height: 13, rx: 1 }), text(0, 0, String(tr.nr), { class: 'scr-train-nr' })])]);
-        this.layerTrains.appendChild(lbl);
-        this.trainLabels.set(tr.nr, lbl);
-      }
-      const visible = headTile.x >= this.x0 && headTile.x <= this.x1;
-      lbl.style.display = visible ? '' : 'none';
-      lbl.querySelector('.scr-train-in').setAttribute('transform', `scale(${this.S})`);
-      lbl.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry - 13 * this.S})`);
-      lbl.querySelector('.scr-train-nr').textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
-    }
-    for (const [nr, lbl] of this.trainLabels) if (!seen.has(nr)) { lbl.remove(); this.trainLabels.delete(nr); }
-    this.#counters();
+  placeTrainLabel(label, headTile) {
+    label.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry - 13 * this.S})`);
   }
 }
 

@@ -52,9 +52,10 @@
 1. Wpis w `src/srk/registry.js` (`id`, `name`, `view`, parametry `model`) + test w `tests/srk.test.js`.
 2. Sposób wydawania poleceń: `Simulation.execute` albo własny protokół obsługi w `src/srk/` (bez DOM, test w Node,
    wzór: `buttons.js` i `tests/commands.test.js`). Nowe reguły zależności to opcje `Interlocking`, nie kopia logiki.
-3. Widok: klasa w `src/render/` + wpis w `VIEWS` w `src/srk/views.js` (fabryka, rozmiar, podpowiedzi, instrukcja).
-   Widok implementuje: `svg`, `inner`, `setView(x0, x1)`, `resetView()`, `elementFor(ref)`, `refreshAll()`;
-   opcjonalnie `cmdBar`, `cmdButton(id)`, `setSymbolScale(s)`.
+3. Widok: klasa w `src/render/` rozszerzająca `PanelView` (`src/render/PanelView.js` – tam jest opis kontraktu)
+   + `registerView('<rodzaj>', { View, hint, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
+   wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
+   i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
 4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`; misje – teksty dla nowego widoku w `missions.js`.
 5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/` i zrzut w `visual.spec.js`.
 6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.

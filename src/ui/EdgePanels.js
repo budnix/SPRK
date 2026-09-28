@@ -36,12 +36,11 @@ export class EdgePanels {
     return svg;
   }
 
-  /** Aktywny pulpit: SVG renderera z grupą `inner` (translate o margines) – kopiowaną do pól. */
+  /** Aktywny widok stanowiska (PanelView): rysunek `svg`, grupa planu `inner` kopiowana do pól, margines `pad`. */
   attach(renderer) {
     this.svg = renderer.svg;
     if (!renderer.inner.id) renderer.inner.id = `desk-inner-${Math.random().toString(36).slice(2, 8)}`;
-    const m = renderer.inner.transform?.baseVal?.numberOfItems ? renderer.inner.transform.baseVal.getItem(0).matrix : null;
-    this.pad = m ? m.e : 0;
+    this.pad = renderer.pad;
     for (const p of [this.left, this.right]) {
       p.querySelector('use').setAttribute('href', `#${renderer.inner.id}`);
       p.setAttribute('class', `edge-panel ${p.dataset.side} ${this.svg.getAttribute('class') || ''}`); // style monitora / pulpitu

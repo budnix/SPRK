@@ -23,7 +23,7 @@ const settings = new Settings((key, value) => {
   if (key === 'rowScale' || key === 'lang') location.reload();
   else if (key === 'screens') planAll();
   else if (key === 'edgePanels') { edges.enabled = value === 'on'; edges.update(); syncFitButtons(); }
-  else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale?.(value); }
+  else if (key === 'symScale') { for (const d of desks) d.renderer.setSymbolScale(value); }
   else requestAnimationFrame(refit); // zmiana układu (panel, położenie pulpitu): ten sam tryb dopasowania co dotąd
 });
 // język interfejsu przed zbudowaniem jakiegokolwiek ekranu; 'auto' = wg przeglądarki
@@ -85,7 +85,7 @@ if (station.districts) {
 }
 activeDesk = desks[0];
 function showDesk(id) {
-  for (const d of desks) { d.el.classList.toggle('hidden', d.id !== id); d.renderer.cmdBar?.classList.toggle('hidden', d.id !== id); }
+  for (const d of desks) { d.el.classList.toggle('hidden', d.id !== id); d.renderer.cmdBar && d.renderer.cmdBar.classList.toggle('hidden', d.id !== id); }
   for (const b of document.querySelectorAll('#desk-tabs button')) b.classList.toggle('active', b.textContent.startsWith(station.districts?.[id]?.short || id));
   activeDesk = desks.find((d) => d.id === id) || desks[0];
   requestAnimationFrame(() => planAll());
@@ -358,12 +358,12 @@ let tutorial = null;
 const mission = sim.scenario.tutorial ? getMission(sim.scenario.tutorial) : null;
 if (mission && params.get('scenariusz')) {
   const anchorEl = (a) => {
-    const r = activeDesk?.renderer;
+    const r = (activeDesk || desks[0]).renderer;
     if (a.el) return document.querySelector(a.el);
     if (a.tab) { side.collapse(false); return document.querySelector(`#panel-tabs button[data-tab="${a.tab}"]`); }
-    if (a.cmd) return r?.cmdButton?.(a.cmd) || null;
-    if (a.block) return r?.elementFor?.({ kind: 'blockpanel', exit: a.block }) || null;
-    if (a.ref) return r?.elementFor?.(a.ref) || null;
+    if (a.cmd) return r.cmdButton(a.cmd);
+    if (a.block) return r.elementFor({ kind: 'blockpanel', exit: a.block });
+    if (a.ref) return r.elementFor(a.ref);
     return null;
   };
   tutorial = new Tutorial(sim, { steps: mission.steps(), anchorEl, showTab: (id) => { side.collapse(false); side.showTab(id); }, onFinish: () => setStatus(t('status.tutorialDone'), 'info') });

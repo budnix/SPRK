@@ -12,7 +12,8 @@ src/
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
-  render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
+  render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
+               DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
                platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
                edges (geometria stałych pól skrajnych, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
@@ -57,7 +58,15 @@ Stacja deklaruje `srk: 'E' | 'komputerowe'` (domyślnie `E`). Strategia to wpis 
   ochrona boczna, liczniki, blokady) jest **wspólna** – to cechy ruchu kolejowego, nie stanowiska.
 * `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe) lub `screen`
   (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
-  Widoki dobiera `src/srk/views.js` (`createView`, `viewSize`, `armHint`, `viewHelp`); model ich nie importuje.
+  Widoki są w rejestrze `src/srk/views.js` (`registerView`, `createView`, `viewSize`, `armHint`, `viewHelp`);
+  model ich nie importuje.
+* Każdy widok rozszerza `PanelView` (`src/render/PanelView.js`). Baza trzyma to, co wspólne: okno kolumn i tryb
+  podglądu, rysunek `svg` z grupą planu `inner` i marginesem `pad`, wycinek (`setView` / `resetView`), subskrypcje
+  zdarzeń symulacji (`bindModel`), `refreshAll`, liczniki, prowadzenie etykiet pociągów, `elementFor(ref)` oraz puste
+  odpowiedzi dla opcji (`cmdBar`, `cmdButton`, `setSymbolScale`). Widok dostarcza margines (`static PAD`), skalę rzędów
+  i metody obrazu stanu (`updateSection`, `updatePoint`, `updateDerailer`, `updateSignal`, `updateBlock`,
+  `updateArmed`, `createTrainLabel`, `placeTrainLabel`). Rozmiar rysunku liczy klasa widoku (`View.size`), więc
+  `main.js` i `EdgePanels` nie znają marginesów poszczególnych stanowisk. Kontraktu pilnuje `tests/views.test.js`.
 * Dwa wejścia do symulacji, te same polecenia zależnościowe pod spodem:
   * **przyciski** – `sim.press(ref)` / `sim.pull(ref)` / `sim.pressCompound(ref)` → `ButtonProtocol`
     (`src/srk/buttons.js`): obsługa dwuprzyciskowa pulpitu typu E, uzbrojenie na `armTimeout` s, rodzaj przebiegu
