@@ -11,6 +11,9 @@ import { Score } from './Score.js';
 import { AutoOperator } from './Operator.js';
 import { validateStation } from './validate.js';
 import { getSrk } from '../srk/registry.js';
+import { ButtonProtocol } from '../srk/buttons.js';
+
+const OTHER_DISTRICT = 'Element w okręgu obsługiwanym przez drugą nastawnię';
 
 /**
  * Symulacja: spina zegar, zależności (Interlocking), blokady liniowe, ruch, usterki,
@@ -24,7 +27,7 @@ export class Simulation {
     if (v.errors.length) throw new Error(`Definicja stacji niepoprawna:\n${v.errors.join('\n')}`);
     this.station = normalizeStation(station); // łącznice: osobny odcinek izolowany na każdą zwrotnicę
     this.scenario = Simulation.resolveScenario(station, opts.scenario);
-    // System sterowania ruchem (strategia): wymuszony przez scenariusz (samouczek), z ustawień gracza lub ze stacji
+    // System sterowania ruchem (strategia): wg scenariusza, parametru `srk` (testy, porównania) albo stacji
     this.srk = getSrk(this.scenario.srk || opts.srk || station.srk);
     this.bus = new EventBus();
     this.seed = opts.seed ?? Math.floor(Math.random() * 1e9);
@@ -41,6 +44,8 @@ export class Simulation {
       blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
       ...this.srk.model,
     });
+    // obsługa przyciskami (press / pull): protokół typu E; czas na drugi przycisk / wskazanie końca wg systemu srk
+    this.buttons = this.ilk.attachInput(new ButtonProtocol(this.ilk, this.bus, { armTimeout: this.srk.model.armTimeout }));
     // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
     this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
     const timetable = this.scenario.timetable
@@ -266,32 +271,81 @@ export class Simulation {
     });
   }
 
-  /** Koniec przebiegu złożonego (stanowisko komputerowe): jak press(end), ale z łańcuchem przez semafory pośrednie. */
-  pressCompound(ref) {
-    if (!this.#refAllowed(ref)) return { ok: false, reason: 'Element w okręgu obsługiwanym przez drugą nastawnię' };
-    return this.ilk.pressCompound(ref);
+  /**
+   * Polecenie nastawcze wydane wprost (bez przycisków) – wspólne wejście dla stanowisk, które nie są pulpitem
+   * typu E (monitor, przyszłe panele). Zwraca { ok, reason? }.
+   *
+   *  { type: 'route', start, end, kind: 'train'|'shunt', compound? } – nastawienie przebiegu; `end` to semafor końcowy
+   *      albo przycisk końca przebiegu (szlak, kozioł); `compound` – także łańcuch przez semafory pośrednie
+   *  { type: 'stop', signal }                 – sygnał „Stój”, przebieg pozostaje utwierdzony
+   *  { type: 'release', signal, emergency? }  – zwolnienie przebiegu (Pz) / doraźne (dPz, licznik)
+   *  { type: 'substitute', signal }           – sygnał zastępczy (Sz, licznik)
+   *  { type: 'point', id } | { type: 'derailer', id } – przestawienie
+   *  { type: 'lock', id, derailer? }          – zamknięcie indywidualne (Zz) – założenie / zdjęcie
+   *  { type: 'block', exit, btn }             – blokada liniowa (Wbl, Poz, Ko, Zk, dPo, dKo)
+   */
+  execute(cmd) {
+    const refuse = (reason) => ({ ok: false, reason });
+    const ilk = this.ilk;
+    switch (cmd?.type) {
+      case 'route':
+        if (!this.#allowed('signal', cmd.start) || !this.#allowed(ilk.topo.signals.has(cmd.end) ? 'signal' : 'end', cmd.end)) return refuse(OTHER_DISTRICT);
+        return cmd.compound ? ilk.requestCompoundRoute(cmd.start, cmd.end, cmd.kind) : ilk.requestRoute(cmd.start, cmd.end, cmd.kind);
+      case 'stop':
+        return this.#allowed('signal', cmd.signal) ? ilk.cancelSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+      case 'release':
+        return this.#allowed('signal', cmd.signal) ? ilk.releaseRoute(cmd.signal, !!cmd.emergency) : refuse(OTHER_DISTRICT);
+      case 'substitute':
+        return this.#allowed('signal', cmd.signal) ? ilk.substituteSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+      case 'point':
+        return this.#allowed('point', cmd.id) ? ilk.switchPoint(cmd.id) : refuse(OTHER_DISTRICT);
+      case 'derailer':
+        return this.#allowed('derailer', cmd.id) ? ilk.switchDerailer(cmd.id) : refuse(OTHER_DISTRICT);
+      case 'lock':
+        return this.#allowed(cmd.derailer ? 'derailer' : 'point', cmd.id) ? ilk.toggleIndividualLock(cmd.id, !!cmd.derailer) : refuse(OTHER_DISTRICT);
+      case 'block':
+        if (!this.#allowed('block', cmd.exit)) return refuse(OTHER_DISTRICT);
+        return this.blocks.get(cmd.exit)?.press(cmd.btn) ?? refuse(`Brak blokady liniowej ${cmd.exit}`);
+      default:
+        return refuse(`Nieznane polecenie: ${cmd?.type}`);
+    }
   }
 
-  /** Naciśnięcie przycisku – ref jak w Interlocking.press lub { kind:'block', exit, btn }. */
+  /** Odwołanie wskazanego początku polecenia / uzbrojonego przycisku (OPS na monitorze). */
+  cancelSelection() {
+    this.buttons.cancel();
+  }
+
+  /** Koniec przebiegu złożonego (stanowisko komputerowe): jak press(end), ale z łańcuchem przez semafory pośrednie. */
+  pressCompound(ref) {
+    if (!this.#refAllowed(ref)) return { ok: false, reason: OTHER_DISTRICT };
+    return this.buttons.pressCompound(ref);
+  }
+
+  /** Naciśnięcie przycisku – ref jak w ButtonProtocol.press lub { kind:'block', exit, btn }. */
   press(ref) {
-    if (!this.#refAllowed(ref)) return { ok: false, reason: 'Element w okręgu obsługiwanym przez drugą nastawnię' };
+    if (!this.#refAllowed(ref)) return { ok: false, reason: OTHER_DISTRICT };
     if (ref.kind === 'block') return this.blocks.get(ref.exit)?.press(ref.btn) ?? { ok: false };
-    return this.ilk.press(ref);
+    return this.buttons.press(ref);
   }
 
   #refAllowed(ref) {
+    return this.#allowed(ref.kind, ref.kind === 'block' ? ref.exit : ref.id);
+  }
+
+  /** Czy gracz może obsługiwać element: 'signal' | 'point' | 'derailer' | 'end' (przycisk końca przebiegu) | 'block' (szlak). */
+  #allowed(kind, id) {
     if (!this.districts || this.playerDistrict === 'both') return true;
-    if (ref.kind === 'block') return this.playerControls(this.exitDistrict(ref.exit));
-    if (ref.kind === 'signal') return this.playerControls(this.districtOf(ref.id));
-    if (ref.kind === 'point') { const t = this.ilk.topo.points.get(ref.id); return this.playerControls(this.#districtAtX(t.x)); }
-    if (ref.kind === 'derailer') { const t = this.ilk.topo.derailers.get(ref.id); return this.playerControls(this.#districtAtX(t.x)); }
-    if (ref.kind === 'end') { const t = this.ilk.topo.endButtons.get(ref.id); return t ? this.playerControls(this.#districtAtX(t.x)) : true; }
-    return true;
+    if (kind === 'block') return this.playerControls(this.exitDistrict(id));
+    if (kind === 'signal') return this.playerControls(this.districtOf(id));
+    const topo = this.ilk.topo;
+    const tile = kind === 'point' ? topo.points.get(id) : kind === 'derailer' ? topo.derailers.get(id) : kind === 'end' ? topo.endButtons.get(id) : null;
+    return tile ? this.playerControls(this.#districtAtX(tile.x)) : true;
   }
 
   pull(ref) {
     if (ref.kind === 'block') return { ok: false };
-    return this.ilk.pull(ref);
+    return this.buttons.pull(ref);
   }
 
   snapshot() {

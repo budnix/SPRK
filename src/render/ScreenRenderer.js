@@ -1,6 +1,6 @@
 import { el, text, CELL } from './svg.js';
 import { PORT_XY } from '../tiles/directions.js';
-import { refKey } from './DeskRenderer.js';
+import { refKey } from './refKey.js';
 import { tip } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
@@ -446,14 +446,10 @@ export class ScreenRenderer {
   /** Polecenie z paska zastosowane do wskazanego elementu. */
   #runMode(ref) {
     const cmd = this.#commands(ref);
-    const find = (re) => cmd?.items.find((it) => it.label && re.test(it.label));
-    const M = {
-      train: [/^Nastawienie przebiegu pociągowego/, ['signal']], shunt: [/^Nastawienie przebiegu manewrowego/, ['signal']], pz: [/^Zwolnienie przebiegu/, ['signal']],
-      dpz: [/^Doraźne zwolnienie przebiegu/, ['signal']], zw: [/^(Przestawienie|Zdjęcie|Nałożenie)/, ['point', 'derailer']], zz: [/\(Zz\)/, ['point', 'derailer']],
-      sz: [/^Podanie sygnału zastępczego/, ['signal']], stop: [/^Wygaszenie/, ['signal']],
-    }[this.mode];
-    if (!M || !M[1].includes(ref.kind)) { this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: 'Polecenie nie dotyczy wskazanego elementu' }); return; }
-    const item = find(M[0]);
+    // polecenie paska → rodzaje elementów, których dotyczy; pozycję menu elementu wskazuje jej `mode`
+    const kinds = { train: ['signal'], shunt: ['signal'], pz: ['signal'], dpz: ['signal'], zw: ['point', 'derailer'], zz: ['point', 'derailer'], sz: ['signal'], stop: ['signal'] }[this.mode];
+    if (!kinds || !kinds.includes(ref.kind)) { this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: 'Polecenie nie dotyczy wskazanego elementu' }); return; }
+    const item = cmd?.items.find((it) => it.mode === this.mode);
     if (!item) return;
     const keep = this.mode === 'train' || this.mode === 'shunt';
     if (item.special) this.#confirm(item); else item.run();
@@ -464,7 +460,8 @@ export class ScreenRenderer {
   /** Lista poleceń dla elementu (menu). */
   #commands(ref) {
     const H = this.handlers;
-    const two = (group, role, target) => () => { H.onPress({ kind: 'group', id: group, role }); return H.onPress(target); };
+    // polecenia wydawane wprost (Simulation.execute) – monitor nie ma przycisków grupowych
+    const exec = (cmd) => () => H.onCommand(cmd);
     if (ref.kind === 'signal') {
       const s = this.ilk.signals.get(ref.id);
       const sigRef = (color) => ({ kind: 'signal', id: ref.id, color });
@@ -474,26 +471,26 @@ export class ScreenRenderer {
         return res;
       };
       const items = [];
-      if (s.kind === 'semafor') items.push({ label: `Nastawienie przebiegu pociągowego od ${ref.id} …`, run: startRoute('green') });
-      if (s.kind === 'tm' || s.shunting) items.push({ label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
-      items.push({ label: 'Wygaszenie sygnału – STOP (przebieg pozostaje utwierdzony)', run: () => H.onPull(sigRef(s.kind === 'tm' ? 'white' : 'green')) });
-      items.push({ label: 'Zwolnienie przebiegu (Pz)', run: two('Pz', 'route-release', sigRef('green')) });
-      items.push({ label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, run: two('dPz', 'emergency-release', sigRef('green')) });
-      if (s.kind === 'semafor') items.push({ label: 'Podanie sygnału zastępczego (Sz)', special: true, run: two('Sz', 'substitute', sigRef('green')) });
+      if (s.kind === 'semafor') items.push({ mode: 'train', label: `Nastawienie przebiegu pociągowego od ${ref.id} …`, run: startRoute('green') });
+      if (s.kind === 'tm' || s.shunting) items.push({ mode: 'shunt', label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
+      items.push({ mode: 'stop', label: 'Wygaszenie sygnału – STOP (przebieg pozostaje utwierdzony)', run: exec({ type: 'stop', signal: ref.id }) });
+      items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (Pz)', run: exec({ type: 'release', signal: ref.id }) });
+      items.push({ mode: 'dpz', label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, run: exec({ type: 'release', signal: ref.id, emergency: true }) });
+      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Podanie sygnału zastępczego (Sz)', special: true, run: exec({ type: 'substitute', signal: ref.id }) });
       return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };
     }
     if (ref.kind === 'point') {
       const p = this.ilk.points.get(ref.id);
       return { title: `Zwrotnica ${p?.label || ref.id}`, items: [
-        { label: 'Przestawienie zwrotnicy (Zw)', run: two('Zw', 'group-point', { kind: 'point', id: ref.id }) },
-        { label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'point', id: ref.id }) },
+        { mode: 'zw', label: 'Przestawienie zwrotnicy (Zw)', run: exec({ type: 'point', id: ref.id }) },
+        { mode: 'zz', label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, run: exec({ type: 'lock', id: ref.id }) },
       ] };
     }
     if (ref.kind === 'derailer') {
       const d = this.ilk.derailers.get(ref.id);
       return { title: `Wykolejnica ${ref.id}`, items: [
-        { label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Zw)' : 'Nałożenie wykolejnicy (Zw)', run: two('Zw', 'group-point', { kind: 'derailer', id: ref.id }) },
-        { label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, run: two('Zz', 'point-lock', { kind: 'derailer', id: ref.id }) },
+        { mode: 'zw', label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Zw)' : 'Nałożenie wykolejnicy (Zw)', run: exec({ type: 'derailer', id: ref.id }) },
+        { mode: 'zz', label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, run: exec({ type: 'lock', id: ref.id, derailer: true }) },
       ] };
     }
     if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);
@@ -509,7 +506,7 @@ export class ScreenRenderer {
   /** Polecenia blokady liniowej szlaku: Eap (Wbl, Poz, Ko), samoczynna (Zk), doraźne dPo / dKo. */
   #blockMenu(exit) {
     const b = this.sim.blocks.get(exit);
-    const press = (btn) => () => this.handlers.onPress({ kind: 'block', exit, btn });
+    const press = (btn) => () => this.handlers.onCommand({ type: 'block', exit, btn });
     const items = [];
     if (b?.auto) items.push({ label: `Zmiana kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
     else {
@@ -581,7 +578,7 @@ export class ScreenRenderer {
   #endPending() { this.pending = null; this.svg.classList.toggle('picking', !!this.mode); this.#setMode(null); }
   #cancelPending() {
     if (!this.pending) return;
-    if (this.ilk.armed) { this.ilk.armed = null; this.sim.bus.emit('armed', null); }
+    this.handlers.onCancel();
     this.#endPending();
   }
 

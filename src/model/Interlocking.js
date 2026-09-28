@@ -1,22 +1,22 @@
 import { Topology } from './Topology.js';
-import { heading } from '../tiles/directions.js';
 
 /**
- * Model urządzeń przekaźnikowych typu E (pulpit kostkowy) – zależności.
+ * Zależności stacyjne – wspólne dla wszystkich stanowisk obsługi (pulpit kostkowy, monitor, …).
  *
  * Elementy:
  *  - zwrotnice (położenie +/−, przestawianie w czasie, utwierdzenie, zamknięcie indywidualne, kontrola, rozprucie)
  *  - wykolejnice (nałożona 'on' / zdjęta 'off')
  *  - odcinki izolowane (zajętość, utwierdzenie w przebiegu, zwalnianie odcinkowe)
  *  - sygnalizatory (semafory z obrazami wg Ie-1, tarcze manewrowe Ms1/Ms2, sygnał zastępczy Sz)
- *  - przebiegi pociągowe i manewrowe (nastawianie dwuprzyciskowe, ochrona boczna, droga ochronna)
- *  - przyciski grupowe: Zw (zwrotnice), Zz (zamknięcie zwrotnicy), Pz (zwolnienie przebiegu),
- *    dPz (doraźne zwolnienie, licznik), Sz (sygnał zastępczy, licznik)
+ *  - przebiegi pociągowe i manewrowe (ochrona boczna, droga ochronna)
  *
- * Obsługa: `press(ref)` – naciśnięcie przycisku, `pull(ref)` – wyciągnięcie przycisku.
- * Operacje dwuprzyciskowe: pierwszy przycisk „uzbraja” (ARM_TIMEOUT s), drugi wykonuje.
+ * Polecenia zależnościowe (nie znają przycisków): `requestRoute`, `requestCompoundRoute`, `setRoute`,
+ * `releaseRoute` (Pz / dPz z licznikiem), `cancelSignal`, `switchPoint`, `switchDerailer`,
+ * `toggleIndividualLock` (Zz), `substituteSignal` (Sz z licznikiem).
+ *
+ * Sposób wydawania poleceń należy do stanowiska: przyciski pulpitu typu E tłumaczy `src/srk/buttons.js`
+ * (podłączany przez `attachInput`); `press` / `pull` / `pressCompound` / `armed` są tu tylko przekazaniem do niego.
  */
-export const ARM_TIMEOUT = 6;          // s – czas na naciśnięcie drugiego przycisku
 export const POINT_SWITCH_TIME = 4;    // s – czas przestawiania zwrotnicy
 export const TIMED_RELEASE = 90;       // s – zwalnianie czasowe przebiegu pociągowego przy zajętym odcinku zbliżania
 export const SHUNT_TIMED_RELEASE = 30; // s – zwalnianie czasowe przebiegu manewrowego
@@ -32,7 +32,7 @@ export class Interlocking {
     this.station = station;
     this.bus = bus;
     this.opts = opts;
-    this.armTimeout = opts.armTimeout ?? ARM_TIMEOUT; // czas na drugi przycisk / wskazanie końca (zależny od systemu srk)
+    this.input = null; // protokół obsługi stanowiska (np. przyciski typu E) – attachInput
     this.topo = new Topology(station);
     this.time = 0;
     this.log = [];
@@ -67,7 +67,6 @@ export class Interlocking {
     this.routes = this.#deriveRoutes();
     this.active = new Map();     // routeId -> aktywny przebieg
     this.pending = [];           // przebiegi w trakcie nastawiania (zwrotnice się przestawiają)
-    this.armed = null;           // { ref, until }
     this.counters = { dPz: 0, Sz: 0, rozprucie: 0 };
     this.alarms = new Set();
     this.#refreshSignals();
@@ -149,83 +148,31 @@ export class Interlocking {
   }
 
   /* ------------------------------------------------------------------ */
-  /* Obsługa przycisków                                                    */
+  /* Protokół obsługi stanowiska (przyciski) – przekazanie               */
   /* ------------------------------------------------------------------ */
 
-  /**
-   * ref: { kind: 'signal', id, color: 'green'|'white' }
-   *      { kind: 'point', id } | { kind: 'derailer', id } | { kind: 'end', id }
-   *      { kind: 'group', id, role }
-   */
-  press(ref) {
-    this.bus.emit('button', { ref, action: 'press' });
-    const armed = this.#takeArmed();
-    if (ref.kind === 'group') {
-      if (armed && armed.kind !== 'group') {
-        // Kolejność odwrotna (najpierw przycisk elementu, potem grupowy) też działa
-        return this.#twoButton(ref, armed);
-      }
-      this.#arm(ref);
-      return { ok: true, armed: true };
-    }
-    if (armed?.kind === 'group') return this.#twoButton(armed, ref);
-    if (ref.kind === 'signal' || ref.kind === 'end') {
-      if (armed && (armed.kind === 'signal') && armed.id !== ref.id) {
-        return this.requestRoute(armed, ref);
-      }
-      if (ref.kind === 'signal') { this.#arm(ref); return { ok: true, armed: true }; }
-      return this.#fail('Najpierw naciśnij przycisk sygnałowy początku przebiegu.');
-    }
-    if (ref.kind === 'point' || ref.kind === 'derailer') {
-      // Bez przycisku grupowego – uzbrój (dopuszczalna kolejność odwrotna)
-      this.#arm(ref);
-      return { ok: true, armed: true };
-    }
-    return this.#fail('Nieznany przycisk');
+  /** Podłącza protokół obsługi stanowiska: { press, pull, pressCompound, cancel, tick, armed }. */
+  attachInput(input) {
+    this.input = input;
+    return input;
   }
 
-  pull(ref) {
-    this.bus.emit('button', { ref, action: 'pull' });
-    if (this.armed) { this.armed = null; this.bus.emit('armed', null); } // wyciągnięcie odwołuje uzbrojenie
-    if (ref.kind === 'signal') return this.cancelSignal(ref.id);
-    return { ok: false };
+  /** Uzbrojony przycisk / wskazany początek polecenia (stan protokołu obsługi) albo null. */
+  get armed() {
+    return this.input?.armed ?? null;
   }
 
-  #arm(ref) {
-    this.armed = { ...ref, until: this.time + this.armTimeout };
-    this.bus.emit('armed', this.armed);
+  press(ref) { return this.input ? this.input.press(ref) : this.#noInput(); }
+  pull(ref) { return this.input ? this.input.pull(ref) : this.#noInput(); }
+  pressCompound(ref) { return this.input ? this.input.pressCompound(ref) : this.#noInput(); }
+
+  #noInput() {
+    return this.#fail('Brak protokołu obsługi stanowiska');
   }
 
-  #takeArmed() {
-    const a = this.armed;
-    this.armed = null;
-    if (a && a.until >= this.time) { this.bus.emit('armed', null); return a; }
-    if (a) this.bus.emit('armed', null);
-    return null;
-  }
-
-  #twoButton(group, target) {
-    switch (group.role) {
-      case 'group-point':
-        if (target.kind === 'point') return this.switchPoint(target.id);
-        if (target.kind === 'derailer') return this.switchDerailer(target.id);
-        return this.#fail('Przycisk Zw działa z przyciskiem zwrotnicy lub wykolejnicy.');
-      case 'point-lock':
-        if (target.kind === 'point') return this.toggleIndividualLock(target.id);
-        if (target.kind === 'derailer') return this.toggleIndividualLock(target.id, true);
-        return this.#fail('Przycisk Zz działa z przyciskiem zwrotnicy.');
-      case 'route-release':
-        if (target.kind === 'signal') return this.releaseRoute(target.id, false);
-        return this.#fail('Przycisk Pz działa z przyciskiem sygnałowym początku przebiegu.');
-      case 'emergency-release':
-        if (target.kind === 'signal') return this.releaseRoute(target.id, true);
-        return this.#fail('Przycisk dPz działa z przyciskiem sygnałowym początku przebiegu.');
-      case 'substitute':
-        if (target.kind === 'signal') return this.substituteSignal(target.id);
-        return this.#fail('Przycisk Sz działa z przyciskiem sygnałowym semafora.');
-      default:
-        return this.#fail(`Przycisk ${group.id}: brak funkcji`);
-    }
+  /** Odmowa wykonania polecenia: wpis do dziennika i wynik { ok: false, reason }. */
+  refuse(msg) {
+    return this.#fail(msg);
   }
 
   #fail(msg) {
@@ -446,12 +393,25 @@ export class Interlocking {
     this.bus.emit('route', { id: act.id, state: 'overlap-released' });
   }
 
-  /** Nastawienie przebiegu przyciskami: start (sygnałowy) i koniec. */
-  requestRoute(startRef, endRef) {
-    const kind = startRef.color === 'white' ? 'shunt' : 'train';
-    const endId = endRef.id;
-    const candidates = [...this.routes.values()].filter((r) => r.start === startRef.id && r.kind === kind && r.endButton === endId);
-    if (!candidates.length) return this.#fail(`Brak przebiegu ${kind === 'train' ? 'pociągowego' : 'manewrowego'} ${startRef.id} → ${endId}`);
+  /**
+   * Początek, koniec i rodzaj przebiegu z polecenia. Zgodność wstecz: początek i koniec mogą być elementami obsługi
+   * pulpitu ({ id, color }) – wtedy rodzaj wynika z koloru przycisku początkowego (biały = manewrowy).
+   */
+  static #routeArgs(start, end, kind) {
+    const fromRef = start !== null && typeof start === 'object';
+    return {
+      startId: fromRef ? start.id : start,
+      endId: end !== null && typeof end === 'object' ? end.id : end,
+      kind: kind ?? (fromRef ? (start.color === 'white' ? 'shunt' : 'train') : null),
+    };
+  }
+
+  /** Nastawienie przebiegu: semafor początkowy, koniec (semafor / przycisk końca przebiegu), rodzaj 'train' | 'shunt'. */
+  requestRoute(start, end, routeKind) {
+    const { startId, endId, kind } = Interlocking.#routeArgs(start, end, routeKind);
+    if (kind !== 'train' && kind !== 'shunt') return this.#fail(`Przebieg ${startId} → ${endId}: nie podano rodzaju przebiegu`);
+    const candidates = [...this.routes.values()].filter((r) => r.start === startId && r.kind === kind && r.endButton === endId);
+    if (!candidates.length) return this.#fail(`Brak przebiegu ${kind === 'train' ? 'pociągowego' : 'manewrowego'} ${startId} → ${endId}`);
     // Wybierz pierwszy możliwy do nastawienia (gdy kilka dróg do tego samego celu)
     let firstProblems = null;
     for (const r of candidates) {
@@ -477,32 +437,21 @@ export class Interlocking {
     return out.sort((a, b) => a.length - b.length);
   }
 
-  /**
-   * Koniec przebiegu złożonego (stanowisko komputerowe): jak `press(end)` po uzbrojeniu semafora, ale gdy nie ma
-   * przebiegu bezpośredniego, nastawia łańcuch przebiegów przez semafory pośrednie (np. G502 → A502 → szlak).
-   */
-  pressCompound(endRef) {
-    this.bus.emit('button', { ref: endRef, action: 'press' });
-    const armed = this.#takeArmed();
-    if (!armed || armed.kind !== 'signal') return this.#fail('Najpierw wskaż semafor początku przebiegu.');
-    if (armed.id === endRef.id) return this.#fail('Koniec przebiegu musi być inny niż początek.');
-    return this.requestCompoundRoute(armed, endRef);
-  }
-
-  /** Przebieg złożony: wszystkie ogniwa muszą dać się nastawić (ogniwo już nastawione liczy się jako gotowe);
+  /** Przebieg złożony (gdy nie ma bezpośredniego – łańcuch przez semafory pośrednie, np. G502 → A502 → szlak):
+   *  wszystkie ogniwa muszą dać się nastawić (ogniwo już nastawione liczy się jako gotowe);
    *  inaczej nic nie jest nastawiane, a odmowa nazywa ogniwo i powód. */
-  requestCompoundRoute(startRef, endRef) {
-    const kind = startRef.color === 'white' ? 'shunt' : 'train';
-    const endId = endRef.id;
-    if ([...this.routes.values()].some((r) => r.start === startRef.id && r.kind === kind && r.endButton === endId)) return this.requestRoute(startRef, endRef);
-    const chains = this.routeChains(startRef.id, endId, kind);
-    if (!chains.length) return this.#fail(`Brak przebiegu ${kind === 'train' ? 'pociągowego' : 'manewrowego'} ${startRef.id} → ${endId} (także złożonego)`);
+  requestCompoundRoute(start, end, routeKind) {
+    const { startId, endId, kind } = Interlocking.#routeArgs(start, end, routeKind);
+    if (kind !== 'train' && kind !== 'shunt') return this.#fail(`Przebieg ${startId} → ${endId}: nie podano rodzaju przebiegu`);
+    if ([...this.routes.values()].some((r) => r.start === startId && r.kind === kind && r.endButton === endId)) return this.requestRoute(startId, endId, kind);
+    const chains = this.routeChains(startId, endId, kind);
+    if (!chains.length) return this.#fail(`Brak przebiegu ${kind === 'train' ? 'pociągowego' : 'manewrowego'} ${startId} → ${endId} (także złożonego)`);
     const isSet = (r) => this.active.has(r.id) || this.pending.some((p) => p.route.id === r.id);
     let firstFail = null;
     for (const chain of chains) {
       const bad = chain.map((r) => [r, isSet(r) ? [] : this.checkRoute(r)]).find(([, p]) => p.length);
       if (bad) { firstFail ??= bad; continue; }
-      this.#log('info', `Przebieg złożony ${startRef.id} → ${chain.map((r) => r.endButton).join(' → ')}`);
+      this.#log('info', `Przebieg złożony ${startId} → ${chain.map((r) => r.endButton).join(' → ')}`);
       const set = [];
       for (const r of chain) {
         if (isSet(r)) continue;
@@ -512,7 +461,7 @@ export class Interlocking {
       }
       return { ok: true, pending: true, chain: chain.map((r) => r.id), set };
     }
-    return this.#fail(`Przebieg złożony ${startRef.id} → ${endId}: ogniwo ${firstFail[0].id}: ${firstFail[1].join('; ')}`);
+    return this.#fail(`Przebieg złożony ${startId} → ${endId}: ogniwo ${firstFail[0].id}: ${firstFail[1].join('; ')}`);
   }
 
   setRoute(routeId) {
@@ -714,7 +663,7 @@ export class Interlocking {
 
   tick(time) {
     this.time = time;
-    if (this.armed && this.armed.until < time) { this.armed = null; this.bus.emit('armed', null); }
+    this.input?.tick(time); // uzbrojenie przycisku wygasa w protokole obsługi
 
     // Zwrotnice i wykolejnice kończą przestawianie
     for (const p of this.points.values()) {

@@ -53,7 +53,11 @@ const report = new Report(document.getElementById('report'), sim, { onNew: () =>
 sim.bus.on('shift-end', () => report.show());
 
 /* ---- pulpity: jeden lub po jednym na okręg nastawczy ---- */
-const handlers = { onPress: (ref) => sim.press(ref), onPull: (ref) => sim.pull(ref), onCompound: (ref) => sim.pressCompound(ref) };
+// przyciski pulpitu (onPress / onPull / onCompound – protokół typu E) i polecenia wydawane wprost (onCommand, onCancel)
+const handlers = {
+  onPress: (ref) => sim.press(ref), onPull: (ref) => sim.pull(ref), onCompound: (ref) => sim.pressCompound(ref),
+  onCommand: (cmd) => sim.execute(cmd), onCancel: () => sim.cancelSelection(),
+};
 const deskRoot = document.getElementById('desk');
 const desks = [];
 let activeDesk = null;

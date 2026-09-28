@@ -31,8 +31,8 @@ Play it: **https://budnix.github.io/SPRK/**
   platforms, point fields with "+" at the normal leg, pink individual locks, blue selection frames, red train-number
   boxes. Commands from the command bar (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIENIE PRZEBIEGU, dPz, ZWROTNICA,
   Zz, Sz, STOP, OPS) or from the element menu; special commands are confirmed with WYKONAJ and registered.
-* Each station declares its real interlocking type; the *Stanowisko obsługi* setting lets you run any station on either
-  workstation. Symbol size (100–150 %) and track spacing are adjustable.
+* Each station declares its real interlocking type; stations that exist in both forms offer a shift for each
+  workstation (pick the scenario on the start screen). Symbol size (100–150 %) and track spacing are adjustable.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -131,7 +131,7 @@ Polish railway rules and terminology).
 
 * `src/model/` – simulation (interlocking, line block, trains, traffic, faults, communication, scoring); no DOM,
 * `src/render/` – desk and monitor renderers, screen split, station thumbnails,
-* `src/srk/` – control-system strategies (type E desk, computer workstation),
+* `src/srk/` – control-system strategies (type E desk, computer workstation) and the type E button protocol,
 * `src/tutorial/` – guided missions (steps, progress engine, popups),
 * `src/stations/` – station definitions (`docs/STATION-FORMAT.md`),
 * `tests/` – Node tests (route matrices, full shifts, missions) and Playwright e2e tests with screenshot baselines,

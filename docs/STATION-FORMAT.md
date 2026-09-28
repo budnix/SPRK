@@ -117,16 +117,26 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 ## Scenariusze (`scenarios`)
 
 ```js
-{ id: 'nauka-1', name: 'Misja 1…', description: '…', trains: [5311, 5310], startTime: '07:10', endTime: '09:10',
-  faults: [{ type: 'signal-fail', target: 'A', at: '08:33', duration: 10 }], closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
-  disruptions: 'none', timetable: [ … ], tasks: [ … ], tutorial: 'monitor', srk: 'komputerowe' }
+{ id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: '…',
+  trains: [5314, 5315, 90211],          // podzbiór rozkładu stacji (domyślnie cały)
+  timetable: [ … ],                     // albo własny rozkład scenariusza
+  startTime: '07:10', endTime: '08:30',  // koniec zmiany – raport
+  faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }],
+  closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
+  disruptions: 'none',                  // wymuszony poziom zakłóceń (inaczej wybór gracza)
+  tasks: [ … ], tutorial: 'monitor', srk: 'komputerowe' }
 ```
 
 * `trains` – podzbiór rozkładu stacji (numery), `timetable` – własny rozkład scenariusza,
-* `faults` – usterki zadane (`signal-fail`, `point-control`, `false-occupancy`, `block-fail`), `closedSections` – zamknięcia torów,
-* `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz,
+* `faults` – usterki zadane, `duration` w minutach: `signal-fail` (semafor bez sygnału zezwalającego), `point-control`
+  (brak kontroli po przestawieniu), `false-occupancy` (zajętość bez pociągu), `block-fail` (blokada bez łączności –
+  zapowiadanie telefoniczne); `closedSections` – zamknięcia torów,
+* `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz; poziomy dodają losowe
+  opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,
+* `tasks` – zadania manewrowe (niżej),
 * `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`); gra pokazuje dymki krok po kroku,
-* `srk` – wymuszone stanowisko obsługi (`E` / `komputerowe`) niezależnie od stacji i ustawień gracza (misja 2 uczy pulpitu kostkowego).
+* `srk` – stanowisko obsługi tej zmiany (`E` / `komputerowe`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
+  Rumia i Reda mają zmianę na pulpicie i na monitorze). Nieznana wartość jest błędem walidacji.
 
 ## Rozkład jazdy (`timetable`)
 
@@ -173,22 +183,6 @@ Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po godzi
 `afterTask: 'odstaw-90211'`, jeśli podane – tak zadanie „podstawić z powrotem” nie zalicza się przed odstawieniem).
 Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt.
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
-
-## Scenariusze (`scenarios`)
-
-```js
-{ id: 'awaria-zw3', name: 'Awaria zwrotnicy 3', description: '…',
-  trains: [5314, 5315, 90211],          // podzbiór rozkładu (domyślnie cały)
-  startTime: '07:10', endTime: '08:30',  // koniec zmiany – raport
-  faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }],
-  closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
-  disruptions: 'none' }                  // wymuszony poziom zakłóceń (inaczej wybór gracza)
-```
-
-Typy usterek: `signal-fail` (semafor bez sygnału zezwalającego), `point-control` (brak kontroli po przestawieniu),
-`false-occupancy` (zajętość bez pociągu), `block-fail` (blokada bez łączności – zapowiadanie telefoniczne).
-`duration` w minutach. Poziomy zakłóceń (`none`/`low`/`high`) dodają losowe opóźnienia, usterki i pociągi nadzwyczajne;
-ziarno losowe (`seed`) daje powtarzalną zmianę.
 
 ## Okręgi nastawcze (`districts`) – opcjonalne
 

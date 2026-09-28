@@ -1,6 +1,7 @@
 import { platformSpans, trackLabelText, trackLabelPlace, platformEdgeLines } from './platforms.js';
 import { blockLayouts } from './blockLayout.js';
 import { el, text, CELL } from './svg.js';
+import { refKey } from './refKey.js';
 
 const FRAME = 22;
 import * as art from './tileArt.js';
@@ -428,8 +429,4 @@ function setLamp(e, state) {
   if (blink) e.classList.add('blink');
 }
 
-export function refKey(ref) {
-  if (ref.kind === 'signal') return `signal:${ref.id}:${ref.color}`;
-  if (ref.kind === 'block') return `block:${ref.exit}:${ref.btn}`;
-  return `${ref.kind}:${ref.id}`;
-}
+export { refKey };

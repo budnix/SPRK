@@ -297,3 +297,36 @@ test('monitor: przebieg złożony – semafor początkowy i strzałka szlaku za 
   expect(st.signals.G502).not.toBe('S1');
   expect(st.signals.A502).not.toBe('S1');
 });
+
+test('monitor wydaje polecenia wprost: Zw, Zz, Pz i blokada z menu nie naciskają przycisków grupowych pulpitu typu E', async ({ page }) => {
+  await openShift(page, 'szkolna');
+  await page.evaluate(() => { window.__buttons = []; window.sim.bus.on('button', (e) => window.__buttons.push(e.ref.kind)); });
+  // przebieg z menu elementu, potem zwolnienie (Pz) z paska poleceń
+  await tap(page, 'A');
+  await page.click('.scr-menu button:has-text("przebiegu pociągowego")');
+  await tap(page, 'D1');
+  await advance(page, 8);
+  expect((await simState(page)).active).toContain('A-D1');
+  await page.click('.scr-cmdbar button[data-cmd=pz]');
+  await tap(page, 'A');
+  expect((await simState(page)).active).not.toContain('A-D1');
+  // zwrotnica: przestawienie (Zw) z paska, zamknięcie indywidualne (Zz) z menu z potwierdzeniem
+  const before = (await simState(page)).points.Zw1;
+  await page.click('.scr-cmdbar button[data-cmd=zw]');
+  await tap(page, 'Zw1');
+  await advance(page, 6);
+  expect((await simState(page)).points.Zw1).not.toBe(before);
+  await tap(page, 'Zw1');
+  await page.click('.scr-menu button:has-text("(Zz)")');
+  await page.click('.scr-confirm button:has-text("WYKONAJ")');
+  expect(await page.evaluate(() => window.sim.ilk.points.get('Zw1').individualLock)).toBe(true);
+  // blokada liniowa z menu strzałki szlaku
+  await tap(page, 'kE');
+  await page.click('.scr-menu button:has-text("(Wbl)")');
+  expect(await page.evaluate(() => window.sim.blocks.get('E').request)).toBe('ours');
+  // jedyne „przyciski” to wskazanie początku i końca przebiegu (semafory) – żadnego grupowego
+  const kinds = await page.evaluate(() => window.__buttons);
+  expect(kinds).not.toContain('group');
+  expect(kinds.filter((k) => k === 'signal').length).toBe(2);
+  expect((await simState(page)).armed).toBe(null);
+});

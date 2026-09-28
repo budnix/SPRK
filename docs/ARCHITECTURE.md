@@ -10,13 +10,19 @@ src/
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
+               buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
-               screens (podział szerokiego pulpitu na ekrany), platforms (geometria peronów, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
+               refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
+               platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
+               edges (geometria stałych pól skrajnych, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
                tileArt (grafika kostek), svg (helpery)
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), Tutorial (dymki, podświetlenie, słownik)
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
-               Settings (ustawienia, motyw wg systemu), StartScreen (misje i posterunki, odprawa), Report, drag (przeciąganie okienek)
+               Settings (ustawienia, motyw wg systemu), settingsSchema (opis ustawień, bez DOM), SettingsScreen,
+               StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
+               trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)
+  i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
   stations/    definicje stacji + rejestr (Szkolna, Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
@@ -26,6 +32,11 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 
 * **Model nie zna DOM.** `Simulation` działa w Node (testy) i w przeglądarce. Renderer i panel boczny
   subskrybują zdarzenia (`section`, `point`, `signal`, `route`, `block`, `log`, `tick`, `armed`, `alarm`).
+  Granic warstw pilnuje `tests/layers.test.js`: logika (`model`, `core`, `tiles`, `srk` poza `views.js`) importuje
+  tylko logikę i nie używa obiektów przeglądarki; widoki stanowisk nie importują się nawzajem.
+* **Zależności nie znają stanowiska.** `Interlocking` przyjmuje polecenia zależnościowe (przebieg z jawnym rodzajem,
+  zwolnienie, „Stój”, zwrotnica, zamknięcie, Sz). Przyciski, kolory i uzbrojenie to sprawa protokołu obsługi
+  (`src/srk/buttons.js`); widok nie zmienia stanu modelu wprost.
 * **Kostki są danymi.** Typ kostki = wpis w rejestrze (`registerTile`): porty, wyjścia, schemat pól.
   Renderer dobiera grafikę po `type`. Edytor będzie iterował `listTileDefs()`.
 * **Tablica zależności z topologii.** Autor stacji nie wpisuje przebiegów ręcznie – wystarczą kostki,
@@ -46,14 +57,26 @@ Stacja deklaruje `srk: 'E' | 'komputerowe'` (domyślnie `E`). Strategia to wpis 
 * `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe) lub `screen`
   (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
   Widoki dobiera `src/srk/views.js` (`createView`, `viewSize`, `armHint`, `viewHelp`); model ich nie importuje.
-* Obydwa widoki wysyłają do symulacji te same `press(ref)` / `pull(ref)`; stanowisko komputerowe składa
-  polecenia dwuprzyciskowe (Zw+zwrotnica, Pz+semafor) samo, a `AutoOperator` i testy działają identycznie
-  niezależnie od strategii.
+* Dwa wejścia do symulacji, te same polecenia zależnościowe pod spodem:
+  * **przyciski** – `sim.press(ref)` / `sim.pull(ref)` / `sim.pressCompound(ref)` → `ButtonProtocol`
+    (`src/srk/buttons.js`): obsługa dwuprzyciskowa pulpitu typu E, uzbrojenie na `armTimeout` s, rodzaj przebiegu
+    z koloru przycisku (zielony / biały), funkcja przycisku grupowego z roli (Zw, Zz, Pz, dPz, Sz);
+  * **polecenia wprost** – `sim.execute({ type, … })`: `route` (`start`, `end`, `kind`, `compound?`), `stop`,
+    `release` (`emergency?`), `substitute`, `point`, `derailer`, `lock`, `block` – bez przycisków i bez uzbrojenia.
+    Oba wejścia pilnują okręgu nastawczego gracza.
+* Pulpit kostkowy używa tylko przycisków. Monitor wydaje polecenia wprost (Pz, dPz, Sz, Zw, Zz, STOP, blokada);
+  przez protokół przycisków przechodzi u niego tylko wskazanie początku i końca przebiegu, bo wskazany początek
+  (`armed`, 60 s) jest stanem, z którego korzystają ramka selekcji, pasek stanu i samouczek. Odwołanie wskazania:
+  `sim.cancelSelection()`. `AutoOperator` woła `ilk.setRoute` i przyciski blokady – działa identycznie niezależnie
+  od strategii.
+* `Interlocking.press` / `pull` / `pressCompound` i `Interlocking.armed` to przekazanie do podłączonego protokołu
+  (`attachInput`) – zostają dla zgodności testów i narzędzi.
 * Stanowisko nie jest ustawieniem użytkownika – wynika z definicji stacji (`station.srk`) albo scenariusza
   (`scenario.srk`, misje). Parametr URL `?srk=E|komputerowe` służy tylko testom i porównaniom deweloperskim.
 
 Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR): wpis w `registry.js`
-(parametry) + ewentualny nowy widok w `views.js` / `render/`. Różnice w samych zależnościach (np. brak
+(parametry) + ewentualny nowy widok w `views.js` / `render/` + sposób wydawania poleceń (`sim.execute` albo własny
+protokół obsługi w `src/srk/`, bez DOM); lista kroków jest w `CLAUDE.md`. Różnice w samych zależnościach (np. brak
 liczników, inne zwalnianie) należy dodawać jako opcje `Interlocking` sterowane przez `model`, nie jako
 osobne kopie logiki.
 
@@ -154,7 +177,8 @@ któregokolwiek odcinka od utwierdzenia, nie tylko pierwszego.
 
 Na stanowisku komputerowym koniec przebiegu może leżeć za semaforem pośrednim (Sopot: A → H → O → szlak, Chylonia:
 G502 → A502 → szlak). `ScreenRenderer` przekazuje koniec przez `handlers.onCompound` → `Simulation.pressCompound` →
-`Interlocking.pressCompound`: gdy jest przebieg bezpośredni, działa jak `press`; inaczej `routeChains` szuka łańcuchów
+`ButtonProtocol.pressCompound` → `Interlocking.requestCompoundRoute` (to samo daje polecenie wprost
+`{ type: 'route', compound: true }`): gdy jest przebieg bezpośredni, działa jak `press`; inaczej `routeChains` szuka łańcuchów
 przebiegów tego rodzaju przez semafory pośrednie (od najkrótszego), `requestCompoundRoute` sprawdza wszystkie ogniwa
 (`checkRoute`; ogniwo już nastawione liczy się jako gotowe) i dopiero wtedy nastawia je po kolei – przy blokadzie
 któregokolwiek ogniwa nic nie jest nastawiane, a odmowa nazywa ogniwo. Pulpit kostkowy zostaje przy `onPress`
@@ -224,8 +248,9 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 
 `DEFAULTS` dla nowego użytkownika: pulpit na środku, panel boczny na dole, motyw wg systemu operacyjnego
 (`prefers-color-scheme`, zmiana na żywo; skrypt w `index.html` ustawia motyw przed załadowaniem aplikacji), podział na
-ekrany, symbole monitora 125 %, odstęp torów normalny, stanowisko wg stacji. Zapisane ustawienia (localStorage) mają
-pierwszeństwo; zmiana `srk` / `rowScale` / `lang` przeładowuje stronę, `symScale` działa na żywo.
+ekrany, symbole monitora 125 %, odstęp torów normalny. Stanowisko (srk) nie jest ustawieniem – wynika ze stacji lub
+scenariusza. Zapisane ustawienia (localStorage) mają pierwszeństwo; zmiana `rowScale` / `lang` przeładowuje stronę,
+`symScale` działa na żywo.
 
 ## Język interfejsu (`src/i18n/`)
 
@@ -247,7 +272,8 @@ dwutorowa z blokadą jednokierunkową, odgałęzienie z Eap) – dawne stacje fi
 zachowane jako siatka bezpieczeństwa: `makeSim()` z `tests/helpers.js`, macierze przebiegów, zakłócenia, blokada,
 rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
-* `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`).
+* `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`),
+  polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
   ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
   skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
