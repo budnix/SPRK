@@ -302,66 +302,76 @@ export class Interlocking {
     return !!(endSig?.route && this.active.has(endSig.route));
   }
 
-  /** Sprawdzenie warunków nastawienia przebiegu (bez zmiany stanu). */
+  /** Sprawdzenie warunków nastawienia przebiegu (bez zmiany stanu) – komunikaty przeszkód. */
   checkRoute(route) {
+    return this.routeProblems(route).map((p) => p.msg);
+  }
+
+  /**
+   * Przeszkody w nastawieniu przebiegu jako dane: [{ code, msg }]. Kody: `signal-busy`, `setting` (przebieg z tego
+   * semafora właśnie się nastawia), `section-closed`, `section-locked`, `section-occupied`, `section-pending`,
+   * `overlap`, `point`, `derailer`, `block`. Logika decyduje po kodzie, komunikat jest dla człowieka.
+   */
+  routeProblems(route) {
     const problems = [];
+    const add = (code, msg) => problems.push({ code, msg });
     const sig = this.signals.get(route.start);
     const predecessors = this.#continuedBy(route);           // przebiegi, których jesteśmy kontynuacją
     const predIds = new Set(predecessors.map((a) => a.id));
     const overlapNeeded = !this.#hasContinuation(route);
-    if (sig.route) problems.push(`Semafor ${sig.id} ma już nastawiony przebieg ${sig.route}`);
-    if (this.pending.some((p) => p.route.start === route.start)) problems.push(`Przebieg z ${route.start} w trakcie nastawiania`);
+    if (sig.route) add('signal-busy', `Semafor ${sig.id} ma już nastawiony przebieg ${sig.route}`);
+    if (this.pending.some((p) => p.route.start === route.start)) add('setting', `Przebieg z ${route.start} w trakcie nastawiania`);
     // Odcinki drogi przebiegu
     route.sections.forEach((sid, i) => {
       const s = this.sections.get(sid);
       const last = i === route.sections.length - 1;
-      if (s.closed) problems.push(`Odcinek ${sid} zamknięty dla ruchu`);
-      if (s.route && s.route !== route.id) problems.push(`Odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
-      if (s.occupied && !(route.kind === 'shunt' && last)) problems.push(`Odcinek ${sid} zajęty`);
-      for (const pr of this.pending) if (pr.route.sections.includes(sid)) problems.push(`Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
+      if (s.closed) add('section-closed', `Odcinek ${sid} zamknięty dla ruchu`);
+      if (s.route && s.route !== route.id) add('section-locked', `Odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+      if (s.occupied && !(route.kind === 'shunt' && last)) add('section-occupied', `Odcinek ${sid} zajęty`);
+      for (const pr of this.pending) if (pr.route.sections.includes(sid)) add('section-pending', `Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
     });
     // Droga ochronna (zbędna, gdy semafor końcowy ma nastawiony przebieg – kontynuacja)
     if (overlapNeeded) {
       for (const sid of route.overlap) {
         const s = this.sections.get(sid);
-        if (s.occupied) problems.push(`Droga ochronna: odcinek ${sid} zajęty`);
-        if (s.route && s.route !== route.id) problems.push(`Droga ochronna: odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+        if (s.occupied) add('overlap', `Droga ochronna: odcinek ${sid} zajęty`);
+        if (s.route && s.route !== route.id) add('overlap', `Droga ochronna: odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
       }
     }
     // Odcinki przebiegu nie mogą leżeć w drodze ochronnej innego przebiegu (poza przebiegami, których jesteśmy kontynuacją)
     for (const act of this.active.values()) {
       if (act.id === route.id || predIds.has(act.id)) continue;
-      for (const sid of route.sections) if (act.overlap.includes(sid)) problems.push(`Odcinek ${sid} w drodze ochronnej przebiegu ${act.id}`);
+      for (const sid of route.sections) if (act.overlap.includes(sid)) add('overlap', `Odcinek ${sid} w drodze ochronnej przebiegu ${act.id}`);
     }
     // Zwrotnice w przebiegu i ochrony bocznej
     for (const req of [...route.points, ...route.flank]) {
       const p = this.points.get(req.id);
-      if (!p) { problems.push(`Brak zwrotnicy ${req.id}`); continue; }
-      if (p.trailed) problems.push(`Zwrotnica ${req.id} rozpruta`);
+      if (!p) { add('point', `Brak zwrotnicy ${req.id}`); continue; }
+      if (p.trailed) add('point', `Zwrotnica ${req.id} rozpruta`);
       if (p.position !== req.position || !p.control) {
-        if (p.individualLock) problems.push(`Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
+        if (p.individualLock) add('point', `Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
         const r = this.pointLockedByRoute(req.id, predIds);
-        if (r) problems.push(`Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
-        if (this.sections.get(p.section).occupied) problems.push(`Zwrotnica ${req.id}: odcinek zajęty – nie można przestawić`);
+        if (r) add('point', `Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
+        if (this.sections.get(p.section).occupied) add('point', `Zwrotnica ${req.id}: odcinek zajęty – nie można przestawić`);
       } else {
         const r = this.pointLockedByRoute(req.id, predIds);
-        if (r && this.#lockedPosition(req.id, predIds) !== req.position) problems.push(`Zwrotnica ${req.id} utwierdzona w innym położeniu`);
+        if (r && this.#lockedPosition(req.id, predIds) !== req.position) add('point', `Zwrotnica ${req.id} utwierdzona w innym położeniu`);
       }
     }
     for (const req of [...route.derailers.onRoute, ...route.derailers.protect]) {
       const d = this.derailers.get(req.id);
       if (!d) continue;
       if (d.position !== req.position) {
-        if (d.individualLock) problems.push(`Wykolejnica ${req.id} zamknięta w położeniu ${d.position}`);
+        if (d.individualLock) add('derailer', `Wykolejnica ${req.id} zamknięta w położeniu ${d.position}`);
         const r = this.derailerLockedByRoute(req.id);
-        if (r) problems.push(`Wykolejnica ${req.id} utwierdzona w przebiegu ${r.id}`);
-        if (this.sections.get(d.section).occupied) problems.push(`Wykolejnica ${req.id}: odcinek zajęty`);
+        if (r) add('derailer', `Wykolejnica ${req.id} utwierdzona w przebiegu ${r.id}`);
+        if (this.sections.get(d.section).occupied) add('derailer', `Wykolejnica ${req.id}: odcinek zajęty`);
       }
     }
     // Blokada liniowa dla wyjazdu
     if (route.exit && this.opts.blockGate) {
       const g = this.opts.blockGate(route.exit);
-      if (!g.ok) problems.push(g.reason);
+      if (!g.ok) add('block', g.reason);
     }
     return problems;
   }
@@ -467,8 +477,8 @@ export class Interlocking {
   setRoute(routeId) {
     const route = this.routes.get(routeId);
     if (!route) return this.#fail(`Nieznany przebieg ${routeId}`);
-    const problems = this.checkRoute(route);
-    if (problems.length) return this.#fail(`Przebieg ${routeId}: ${problems.join('; ')}`);
+    const problems = this.routeProblems(route);
+    if (problems.length) return { ...this.#fail(`Przebieg ${routeId}: ${problems.map((p) => p.msg).join('; ')}`), codes: [...new Set(problems.map((p) => p.code))] };
     for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred);
     // Przestaw zwrotnice i wykolejnice (nastawianie przebiegowe)
     for (const req of [...route.points, ...route.flank]) {
@@ -686,7 +696,7 @@ export class Interlocking {
         && [...r.derailers.onRoute, ...r.derailers.protect].every((q) => { const d = this.derailers.get(q.id); return !d || (d.position === q.position && !d.moving); });
       if (ready) {
         this.pending.splice(this.pending.indexOf(pr), 1);
-        const problems = this.checkRoute(r).filter((m) => !m.includes('w trakcie nastawiania'));
+        const problems = this.routeProblems(r).filter((p) => p.code !== 'setting').map((p) => p.msg);
         if (problems.length) this.#log('warn', `Przebieg ${r.id} nie nastawiony: ${problems.join('; ')}`);
         else this.#completeRoute(r);
       } else if (time - pr.since > 20) {

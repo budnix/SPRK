@@ -133,7 +133,7 @@ export class AutoOperator {
         for (const pick of order) {
           const res = ilk.setRoute(pick.id);
           // inny tor tylko przy torze zamkniętym; chwilowo zajęty/utwierdzony tor planowy – czekać
-          if (!res.ok) { if (/zamknięty/.test(res.reason || '')) closed = true; if (closed) continue; break; }
+          if (!res.ok) { if (res.codes?.includes('section-closed')) closed = true; if (closed) continue; break; }
           e.entryRouteSet = true;
           if (path && pick === path[0] && path.length > 1) e._entryPath = path.slice(1).map((r) => r.id);
           if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);

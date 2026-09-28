@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { makeSim, run } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { ButtonProtocol, ARM_TIMEOUT } from '../src/srk/buttons.js';
@@ -163,4 +164,29 @@ test('walidacja: nieznany system srk w scenariuszu jest błędem', () => {
   assert.deepEqual(validateStation(ok).errors, []);
   const bad = { ...starePustkowie, scenarios: [{ id: 'a', name: 'a', srk: 'iltor-x' }] };
   assert.ok(validateStation(bad).errors.some((e) => /Scenariusz a.*srk.*iltor-x/.test(e)));
+});
+
+test('odmowa nastawienia przebiegu podaje kody przeszkód – logika nie czyta komunikatów', () => {
+  const sim = new Simulation(starePustkowie, { disruptions: 'none', scenario: { id: 't', name: 't', closedSections: [{ section: 'T1', from: '00:00', to: '23:59' }] } });
+  run(sim, 1);
+  assert.equal(sim.ilk.sections.get('T1').closed, true);
+  const closed = sim.ilk.setRoute('A-D1');
+  assert.equal(closed.ok, false);
+  assert.deepEqual(closed.codes, ['section-closed']);
+  assert.match(closed.reason, /T1 zamknięty dla ruchu/);
+  // zajęty odcinek i utwierdzenie w innym przebiegu to inne kody niż zamknięcie
+  assert.ok(sim.ilk.setRoute('A-D2').ok);
+  run(sim, POINT_SWITCH_TIME + 1);
+  const busy = sim.ilk.setRoute('A-D2');
+  assert.equal(busy.ok, false);
+  assert.ok(busy.codes.includes('signal-busy') && !busy.codes.includes('section-closed'), busy.codes.join());
+  const route = sim.ilk.routes.get('A-D1');
+  const problems = sim.ilk.routeProblems(route);
+  assert.deepEqual(problems.map((p) => p.msg), sim.ilk.checkRoute(route), 'checkRoute to te same przeszkody jako tekst');
+  assert.ok(problems.every((p) => p.code && p.msg));
+  // kod źródła: automat i zależności nie dopasowują wyrażeń do komunikatów
+  for (const f of ['Operator.js', 'Interlocking.js']) {
+    const src = readFileSync(new URL(`../src/model/${f}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /\.test\(res\.reason|\.includes\('w trakcie/, f);
+  }
 });
