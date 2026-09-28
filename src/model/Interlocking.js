@@ -26,13 +26,18 @@ export class Interlocking {
   /**
    * @param station definicja stacji
    * @param bus EventBus
-   * @param opts { blockGate: (exitId) => {ok, reason}, onDeparture: (exitId, route) => void }
+   * @param opts { blockGate: (exitId) => {ok, reason}, onDeparture: (exitId, route) => void,
+   *               timedRelease, shuntTimedRelease – czasy zwalniania czasowego [s] (0 = bezzwłocznie),
+   *               timedReleaseAlways – przebieg pociągowy zwalnia się zawsze czasowo (IZH-111: Zcz) }
    */
   constructor(station, bus, opts = {}) {
     this.station = station;
     this.bus = bus;
     this.opts = opts;
     this.input = null; // protokół obsługi stanowiska (np. przyciski typu E) – attachInput
+    this.timedRelease = opts.timedRelease ?? TIMED_RELEASE;
+    this.shuntTimedRelease = opts.shuntTimedRelease ?? SHUNT_TIMED_RELEASE;
+    this.timedReleaseAlways = !!opts.timedReleaseAlways;
     this.topo = new Topology(station);
     this.time = 0;
     this.log = [];
@@ -552,17 +557,25 @@ export class Interlocking {
     }
     if (act.trainEntered) return this.#fail(`Przebieg ${act.id}: pociąg już wjechał – zwalnianie odcinkowe (lub dPz)`);
     const approach = this.sections.get(act.route.approach);
-    const delay = act.route.kind === 'train' ? TIMED_RELEASE : SHUNT_TIMED_RELEASE;
-    if (approach?.occupied || act.route.kind === 'shunt' && act.lockedSections.some((s) => this.sections.get(s).occupied)) {
+    const train = act.route.kind === 'train';
+    const delay = train ? this.timedRelease : this.shuntTimedRelease;
+    const occupied = approach?.occupied || (!train && act.lockedSections.some((s) => this.sections.get(s).occupied));
+    if (delay > 0 && (occupied || (train && this.timedReleaseAlways))) {
       if (act.timedRelease) return { ok: true, noop: true };
       act.timedRelease = this.time + delay;
-      this.#log('info', `Przebieg ${act.id}: odcinek zbliżania zajęty – zwalnianie czasowe (${delay} s)`);
+      this.#log('info', `Przebieg ${act.id}: ${occupied ? 'odcinek zbliżania zajęty – ' : ''}zwalnianie czasowe (${delay} s)`);
       this.bus.emit('route', { id: act.id, state: 'timed' });
       return { ok: true, timed: true };
     }
     this.#log('info', `Przebieg ${act.id} zwolniony`);
     this.#dissolve(act);
     return { ok: true };
+  }
+
+  /** Przebieg (nastawiony lub nastawiany), który kończy się na elemencie `endId` – semaforze albo przycisku końca. */
+  routeEndingAt(endId) {
+    for (const act of this.active.values()) if (act.route.endButton === endId) return act.route;
+    return this.pending.find((p) => p.route.endButton === endId)?.route ?? null;
   }
 
   #tryReleaseShunt(act) {

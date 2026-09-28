@@ -3,13 +3,18 @@
  *
  * Każda stacja deklaruje `srk: '<id>'` (domyślnie 'E'). Strategia opisuje:
  *  - `model`   – parametry zależności przekazywane do Interlocking (czasy, liczniki),
- *  - `view`    – rodzaj stanowiska obsługi ('desk' = pulpit kostkowy, 'screen' = monitor komputerowy);
- *                same widoki rejestruje warstwa UI (src/srk/views.js), model nie zna DOM.
+ *  - `view`    – rodzaj stanowiska obsługi ('desk' = pulpit kostkowy typu E, 'izh' = pulpit ciemny IZH-111,
+ *                'screen' = monitor komputerowy); same widoki rejestruje warstwa UI (src/srk/views.js),
+ *                model nie zna DOM,
+ *  - `input`   – opcjonalnie: protokół obsługi `(ilk, bus, model) => { press, pull, pressCompound, cancel, tick,
+ *                armed }`; bez niego obowiązują przyciski typu E (src/srk/buttons.js).
  *
  * Logika zależności (przebiegi, utwierdzenie, zwalnianie, blokady) jest wspólna – różni się sposób
  * wydawania poleceń i obraz stanu. Nowe systemy (np. mechaniczne z pulpitem kluczowym, EbiScreen,
  * ILTOR) to nowy wpis tutaj + widok w views.js.
  */
+import { AddressOrderProtocol } from './address.js';
+
 const SRK = new Map();
 
 export function registerSrk(def) {
@@ -47,4 +52,14 @@ registerSrk({
   description: 'Obraz stanu na monitorze (ciemne tło, tor szary/zielony/czerwony), polecenia z menu elementu: przebieg = wskazanie początku i końca, polecenia specjalne (dPz, Sz, Zz, dPo, dKo) z potwierdzeniem i rejestracją.',
   view: 'screen',
   model: { armTimeout: 60 },
+});
+
+registerSrk({
+  id: 'izh111',
+  name: 'Urządzenia przekaźnikowe typu IZH-111',
+  short: 'przekaźnikowe IZH-111',
+  description: 'Pulpit ciemny: przyciski adresowe przy elementach i przyciski rozkazów (P, M, +, −, STOP, Zw, Zcz, Sz); przebieg = adres początku, adres końca i rozkaz; zwolnienie czasowe Zcz po 120 s.',
+  view: 'izh',
+  model: { armTimeout: 10, timedRelease: 120, shuntTimedRelease: 0, timedReleaseAlways: true },
+  input: (ilk, bus, model) => new AddressOrderProtocol(ilk, bus, { armTimeout: model.armTimeout }),
 });

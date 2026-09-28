@@ -44,8 +44,10 @@ export class Simulation {
       blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
       ...this.srk.model,
     });
-    // obsługa przyciskami (press / pull): protokół typu E; czas na drugi przycisk / wskazanie końca wg systemu srk
-    this.buttons = this.ilk.attachInput(new ButtonProtocol(this.ilk, this.bus, { armTimeout: this.srk.model.armTimeout }));
+    // obsługa przyciskami (press / pull): protokół systemu srk, domyślnie przyciski typu E
+    this.buttons = this.ilk.attachInput(this.srk.input
+      ? this.srk.input(this.ilk, this.bus, this.srk.model)
+      : new ButtonProtocol(this.ilk, this.bus, { armTimeout: this.srk.model.armTimeout }));
     // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
     this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
     const timetable = this.scenario.timetable
