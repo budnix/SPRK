@@ -286,3 +286,46 @@ test('granica panelu z boku: kursor ↔, przeciągnięcie w lewo poszerza panel 
   expect(Math.abs((await page.locator('#side').boundingBox()).width - w0 - 100)).toBeLessThan(4);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).sideWidth)).toBeGreaterThan(w0 + 90);
 });
+
+for (const pos of ['right', 'left']) {
+  test(`panel ${pos === 'right' ? 'po prawej' : 'po lewej'}: zakładki pionowo, jedna pod drugą, na granicy planu i panelu; listwa narzędzi zostaje na dole`, async ({ page }) => {
+    await openShift(page, 'szkolna', { settings: { sidePos: pos } });
+    const g = await page.evaluate(() => {
+      const r = (el) => el.getBoundingClientRect();
+      const tabs = [...document.querySelectorAll('#panel-tabs button:not(.hidden)')].map(r);
+      return {
+        inRail: !!document.querySelector('#side-rail #panel-tabs'), groupHidden: document.querySelector('#desk-tools .tg-panel').classList.contains('hidden'),
+        stacked: tabs.every((t, i) => i === 0 || t.top >= tabs[i - 1].bottom - 1) && tabs.every((t) => Math.abs(t.left - tabs[0].left) < 2), // aktywna o 1 px przy panelu
+        buttonsInRail: !!document.querySelector('#side-rail #side-toggle') && !!document.querySelector('#side-rail #side-grip'),
+        buttonsBottom: r(document.getElementById('side-grip')).top > r(document.querySelector('#panel-tabs')).bottom && r(document.getElementById('side-grip')).bottom <= r(document.getElementById('side-toggle')).top,
+        // na tej samej linii co sekcja „wyrównanie”
+        aligned: Math.abs(r(document.querySelector('#side-rail .tg-toggle')).bottom - r(document.querySelector('#desk-tools .tg-view')).bottom) < 1 && Math.abs(r(document.getElementById('side-toggle')).bottom - r(document.getElementById('zoom-in')).bottom) < 1,
+        toolsButtons: [...document.querySelectorAll('#desk-tools button')].filter((b) => b.offsetParent).map((b) => b.id || b.dataset.screen),
+        vertical: getComputedStyle(document.querySelector('#panel-tabs .tb')).writingMode,
+        rail: r(document.getElementById('side-rail')), side: r(document.getElementById('side')), tools: r(document.getElementById('desk-tools')), desk: r(document.getElementById('desk-scroll')),
+      };
+    });
+    expect(g.inRail).toBe(true); expect(g.groupHidden).toBe(true); expect(g.stacked).toBe(true);
+    expect(g.vertical).toBe('vertical-rl');
+    // przyciski panelu na dole paska z zakładkami; w listwie na dole samo wyrównanie
+    expect(g.buttonsInRail).toBe(true);
+    expect(g.buttonsBottom).toBe(true);
+    expect(g.aligned).toBe(true);
+    expect(g.toolsButtons).toEqual(['zoom-out', 'zoom-fit', 'zoom-in']);
+    if (pos === 'right') expect(Math.abs(g.rail.right - g.side.left)).toBeLessThan(2);
+    else expect(Math.abs(g.rail.left - g.side.right)).toBeLessThan(2);
+    expect(g.tools.top).toBeGreaterThan(g.desk.bottom - 1); // wyrównanie i reszta listwy – pod planem
+    // zakładka działa, a przy zwiniętym panelu zakładki zostają i rozwijają panel
+    await page.click('#panel-tabs button[data-tab=log]');
+    await expect(page.locator('#tab-log')).toBeVisible();
+    await page.click('#side-toggle');
+    await expect(page.locator('#side')).toBeHidden();
+    await expect(page.locator('#side-rail #panel-tabs')).toBeVisible();
+    await page.click('#panel-tabs button[data-tab=rj]');
+    await expect(page.locator('#side')).toBeVisible();
+    // powrót panelu na dół – zakładki wracają do listwy
+    await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('sprk.settings')); s.sidePos = 'bottom'; localStorage.setItem('sprk.settings', JSON.stringify(s)); });
+    await page.reload(); await page.waitForFunction(() => window.viewport);
+    expect(await page.evaluate(() => !!document.querySelector('#desk-tools .tg-panel #panel-tabs') && !!document.querySelector('#desk-tools #side-toggle'))).toBe(true);
+  });
+}

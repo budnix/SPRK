@@ -226,7 +226,9 @@ Przyciski dopasowania (↔ szerokość, ↕ wysokość) są stanowe: wciśnięta
 obszaru (okno, przeciągnięta granica panelu, zwinięcie panelu – `ResizeObserver` na obszarze przewijania), obie = całość
 (stan na starcie), żadna = powiększenie ręczne; „+”, „−”, szczypnięcie i Ctrl + kółko zwalniają obie. Granicę planu
 i panelu przeciąga się krawędzią panelu (kursor ↕ / ↔) albo uchwytem w listwie obok przycisku panelu (palec); rozmiar
-jest w ustawieniach `sideSize` (panel na dole, ułamek wysokości) i `sideWidth` (z boku, px).
+jest w ustawieniach `sideSize` (panel na dole, ułamek wysokości) i `sideWidth` (z boku, px). Zakładki panelu stoją przy panelu na
+dole w listwie narzędzi, a przy panelu z boku – w pionowym pasku `#side-rail` na granicy planu i panelu (`placeTabs`
+w `main.js`, woła go `SideResizer` po ustaleniu, gdzie faktycznie jest panel); listwa narzędzi zostaje na dole.
 
 ## Zwalnianie odcinkowe (`Interlocking.tick`)
 

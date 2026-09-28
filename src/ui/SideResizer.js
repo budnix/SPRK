@@ -9,10 +9,10 @@ import { clampSide, dragSide, SIDE_LIMITS } from './sideSize.js';
 export class SideResizer {
   /**
    * @param opts { main, side, grip, settings, onResize – w trakcie przeciągania (plan dopasowuje się na żywo),
-   *               onEnd – po puszczeniu }
+   *               onEnd – po puszczeniu, onPlacement(gdzie) – po ustaleniu, gdzie jest panel }
    */
-  constructor({ main, side, grip, settings, onResize = () => {}, onEnd = () => {} }) {
-    Object.assign(this, { main, side, grip, settings, onResize, onEnd });
+  constructor({ main, side, grip, settings, onResize = () => {}, onEnd = () => {}, onPlacement = () => {} }) {
+    Object.assign(this, { main, side, grip, settings, onResize, onEnd, onPlacement });
     this.edge = document.createElement('div');
     this.edge.className = 'side-edge';
     this.edge.setAttribute('aria-hidden', 'true');
@@ -45,7 +45,8 @@ export class SideResizer {
   /** Zapamiętany rozmiar (albo domyślny z CSS) dla bieżącego układu; wołać po zmianie okna i położenia panelu. */
   apply() {
     const where = this.placement();
-    document.getElementById('app').dataset.sidePlacement = where;
+    const app = document.getElementById('app');
+    if (app.dataset.sidePlacement !== where) { app.dataset.sidePlacement = where; this.onPlacement(where); }
     const { sideSize, sideWidth } = this.settings.values;
     const total = this.#total();
     const size = where === 'bottom' ? (sideSize != null ? sideSize * total : null) : sideWidth;

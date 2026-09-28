@@ -270,7 +270,26 @@ if (typeof ResizeObserver === 'function') {
     if (viewport.fitMode) refit();
   }).observe(scroll);
 }
-resizer = new SideResizer({ main: document.getElementById('main'), side: document.getElementById('side'), grip: document.getElementById('side-grip'), settings, onEnd: () => onResize() });
+/**
+ * Zakładki panelu: przy panelu na dole – w listwie narzędzi; z boku – w pionowym pasku na granicy planu i panelu.
+ * Przyciski panelu (uchwyt rozmiaru, schowaj / pokaż): przy panelu na dole – w listwie po prawej; z boku – na dole
+ * pionowego paska z zakładkami. W listwie zostaje wtedy samo wyrównanie.
+ */
+const toolsRight = document.querySelector('#desk-tools .tg-right');
+const panelButtons = document.querySelector('#desk-tools .tg-toggle');
+function placeTabs(where) {
+  const tabs = document.getElementById('panel-tabs'), group = document.querySelector('#desk-tools .tg-panel');
+  const rail = document.getElementById('side-rail');
+  if (where === 'bottom') {
+    if (tabs.parentNode !== group) group.appendChild(tabs);
+    if (panelButtons.parentNode !== toolsRight) toolsRight.appendChild(panelButtons);
+  } else {
+    if (tabs.parentNode !== rail) rail.prepend(tabs);
+    if (panelButtons.parentNode !== rail) rail.appendChild(panelButtons);
+  }
+  group.classList.toggle('hidden', where !== 'bottom');
+}
+resizer = new SideResizer({ main: document.getElementById('main'), side: document.getElementById('side'), grip: document.getElementById('side-grip'), settings, onEnd: () => onResize(), onPlacement: placeTabs });
 syncFitButtons();
 let replanTimer = null;
 function onResize() { resizer.apply(); clearTimeout(replanTimer); replanTimer = setTimeout(planAll, 150); }
