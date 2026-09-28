@@ -23,6 +23,11 @@ export function missionList(stations) {
   return out;
 }
 
+/** Nazwa misji bez numeru („Misja 1:”) i dopisku „(samouczek)” – numer dodaje ekran startowy. */
+export function missionName(scenario) {
+  return scenario.name.replace(/\s*\(samouczek\)/, '').replace(/^Misja\s+\d+:\s*/, '');
+}
+
 /** Stanowiska posterunku wg zmian bez samouczka (scenariusz może wymuszać swoje); pusta lista scenariuszy = stanowisko stacji. */
 export function stationViews(station) {
   const scs = (station.scenarios || []).filter((sc) => !sc.tutorial);
@@ -66,7 +71,7 @@ export class StartScreen {
             <h3><span class="st-kicker">${t('start.training')}</span>${t('start.missions')}</h3>
             <div class="st-mission-list">${missions.map((m, i) => `<button type="button" class="st-mission" data-station="${m.station.id}" data-scenario="${m.scenario.id}" data-idx="${i}">
                 <span class="st-mthumb">${stationThumbnail(m.station, { w: 240, h: 90 })}<span class="st-no">${i + 1}</span></span>
-                <span class="st-mbody"><span class="st-mtitle">${esc(m.scenario.name.replace(/\s*\(samouczek\)/, ''))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span></span></button>`).join('')}</div>
+                <span class="st-mbody"><span class="st-mtitle">${esc(t('start.mission', { n: i + 1, name: missionName(m.scenario) }))}</span><span class="st-mdesc">${esc(m.scenario.description || '')}</span></span></button>`).join('')}</div>
           </section>
           <section class="st-stations">
             <div class="st-head"><h3><span class="st-kicker">${t('start.duty')}</span>${t('start.stations')}</h3>
@@ -159,7 +164,7 @@ export class StartScreen {
     const m = this.missions[i]; if (!m) return;
     this.mission = m; this.selected = null;
     this.#mark('.st-mission', (el) => Number(el.dataset.idx) === i);
-    const b = this.#openBriefing(m.station, t('start.mission', { n: i + 1, name: m.scenario.name.replace(/\s*\(samouczek\)/, '') }));
+    const b = this.#openBriefing(m.station, t('start.mission', { n: i + 1, name: missionName(m.scenario) }));
     const btn = this.root.querySelector(`.st-mission[data-idx="${i}"]`);
     if (window.innerWidth < 900) { btn.after(b); b.scrollIntoView({ block: 'start', behavior: 'smooth' }); } else this.root.querySelector('.st-layout').appendChild(b);
     const steps = getMission(m.scenario.tutorial)?.steps().length;

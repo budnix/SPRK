@@ -268,7 +268,7 @@ test('perony: każdy odcinek peronowy ma nazwę peronu (napis), pociągi osobowe
 
 test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 1–5; sortowanie i lista misji', async () => {
   const { STATIONS } = await import('../src/stations/index.js');
-  const { sortStations, missionList } = await import('../src/ui/StartScreen.js');
+  const { sortStations, missionList, missionName } = await import('../src/ui/StartScreen.js');
   const { difficultyMark, logoSvg } = await import('../src/ui/brand.js');
   for (const st of STATIONS) {
     assert.ok(st.location && st.traffic, `${st.id}: brak location/traffic`);
@@ -281,6 +281,9 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.equal(sortStations(STATIONS, 'difficulty')[0].id, 'szkolna', 'najłatwiejsza – stacja szkolna');
   const missions = missionList(STATIONS);
   assert.deepEqual(missions.map((m) => `${m.station.id}/${m.scenario.id}`), ['szkolna/nauka-1', 'jodlowa/nauka-2', 'zacisze/nauka-3']);
+  // nazwa misji bez numeru i dopisku „(samouczek)” – numer dodaje ekran startowy („Misja 1: Misja 1: …” był błędem)
+  assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111']);
+  assert.equal(missionName({ name: 'Nauka obsługi' }), 'Nauka obsługi');
   // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
   const mark = difficultyMark(3, 'trudność');
   assert.equal((mark.match(/<i class="on">/g) || []).length, 3);
