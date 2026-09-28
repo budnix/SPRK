@@ -108,6 +108,8 @@ function buildTiles(view, art) {
     out.g.dataset.tile = tile._key;
     if (pos.side === 'top') deferred.push(out.g); // sam napis, ponad płytką kostki toru
     else view.layerTiles.appendChild(out.g);
+    // nazwa szlaku na kostce skrajnej blokady bywa dłuższa niż kostka – rysowana ponad sąsiednimi kostkami
+    if (out.refs.edgeText) deferred.push(el('g', { class: 'tile-over', transform: out.g.getAttribute('transform') }, [out.refs.edgeText]));
     view.tileRefs.set(tile._key, out.refs);
     const def = getTileDef(tile.type);
     const span = tile.type === 'label' ? { w: trackLabelText(tile.text) ? 1 : tile.span || 1, h: 1 } : def.span;

@@ -89,8 +89,8 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   expect(arrows).toBe(4); // dwa krańce × (wjazd + wyjazd)
   const labelsByCol = await page.locator('#desk .t-track:has(.blk-arrow-label)').evaluateAll((els) => Object.fromEntries(els.map((g) => [+/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40, g.querySelector('.blk-arrow-label').textContent])));
   expect(labelsByCol).toEqual({ 0: 'wyjazd', 1: 'wjazd', 30: 'wjazd', 31: 'wyjazd' }); // strzałka „wyjazd” na kostce skrajnej (grot ku krawędzi), „wjazd” na następnej (grot ku stacji)
-  // nazwa sąsiedniego posterunku zostaje na kostce skrajnej (nad torem)
-  const names = await page.locator('#desk .t-track:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
+  // nazwa sąsiedniego posterunku zostaje na kostce skrajnej (nad torem); rysowana w warstwie ponad kostkami (.tile-over)
+  const names = await page.locator('#desk .t-track:has(text.small), #desk .tile-over:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
   const exits = await page.evaluate(() => { const st = window.sim.station; const txt = (id) => st.tiles.find((t) => t.x === st.exits[id].tile.x && t.y === st.exits[id].tile.y).text; return { W: txt('W'), E: txt('E') }; }); // napis z kostki wyjazdu (może być skrócony)
   expect(names[exits.W]).toBe(0);
   expect(names[exits.E]).toBe(31);
@@ -370,4 +370,21 @@ test('Gdańsk Główny: karta „komputerowe”; monitor z blokadami SBL (9, Śr
   expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.values()].map((b) => `${b.id}:${b.auto ? 'sbl' : b.fixed || 'both'}`) })))
     .toEqual({ srk: 'screen', blocks: ['GP2:sbl', 'GP1:sbl', 'SR2:sbl', 'SR1:sbl', 'ZT:both', 'WR2:sbl', 'WR1:sbl', 'SK2:sbl', 'SK1:sbl', 'BR:both'] });
   for (const id of ['B', 'A501', 'G', 'N', 'H', 'M', 'F7', 'E502']) await expect(hit(page, id)).toBeAttached();
+});
+
+test('nazwy szlaków na pulpitach nie są zakryte przez sąsiednią kostkę (dłuższe nazwy wychodzą poza swoją kostkę)', async ({ page }) => {
+  const covered = [];
+  for (const [station, scenario] of [['szkolna', 'zmiana-e'], ['jodlowa', 'zmiana'], ['zacisze', 'zmiana'], ['zacisze', 'zmiana-e'], ['reda', 'zmiana'], ['rumia', 'zmiana']]) {
+    await openShift(page, station, { params: { scenariusz: scenario } });
+    covered.push(...await page.evaluate((where) => {
+      const faces = [...document.querySelectorAll('#desk rect.face')];
+      const overlap = (p, q) => Math.min(p.right, q.right) - Math.max(p.left, q.left) > 1 && Math.min(p.bottom, q.bottom) - Math.max(p.top, q.top) > 1;
+      // płytka kostki narysowana później (wyżej w SVG) i nachodząca na napis zakrywa go
+      return [...document.querySelectorAll('#desk .tile-text.small')].flatMap((t) => {
+        const b = t.getBoundingClientRect();
+        return faces.filter((f) => t.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING && overlap(b, f.getBoundingClientRect())).map(() => `${where}: „${t.textContent}”`);
+      });
+    }, `${station}/${scenario}`));
+  }
+  expect(covered).toEqual([]);
 });

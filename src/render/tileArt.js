@@ -129,7 +129,8 @@ export function trackArt(tile, ctx) {
     const above = tile.ports.every((p) => !p.includes('N'));
     const y = tile.endButton && !tile.blockEdge ? (above ? 34 : 8) : (above ? 8 : 34);
     // kostka skrajna blokady: nazwa nad torem obok przycisku końca przebiegu (przycisk od strony krawędzi pulpitu)
-    if (tile.blockEdge) g.appendChild(text(tile.blockEdge === 'W' ? 14 : CELL - 14, 8, tile.text, { class: 'tile-text small', 'text-anchor': tile.blockEdge === 'W' ? 'start' : 'end' }));
+    // dłuższa nazwa wychodzi poza kostkę – widok przenosi ją nad sąsiednie kostki (refs.edgeText)
+    if (tile.blockEdge) g.appendChild(refs.edgeText = text(tile.blockEdge === 'W' ? 14 : CELL - 14, 8, tile.text, { class: 'tile-text small', 'text-anchor': tile.blockEdge === 'W' ? 'start' : 'end' }));
     else g.appendChild(text(C, y, tile.text, { class: 'tile-text small' }));
   }
   if (tile.derailer) {
