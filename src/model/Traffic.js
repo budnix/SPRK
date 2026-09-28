@@ -358,6 +358,8 @@ export class Traffic {
       const tr = u?.train;
       // przekazanie dopiero, gdy skład stoi w trybie jazdy pociągowej – nie w trakcie manewrów (nie wymuszamy trybu)
       if (!tr || tr.finished || !tr.entered || tr.v > 0 || tr.mode !== 'train') continue;
+      // pociąg, który przyjeżdża ze szlaku, musi najpierw dojechać – postój przed semaforem wjazdowym to nie przyjazd
+      if (u.from && u.actualArr == null) continue;
       e.attached = true; e.train = tr;
       u.status = `przekazany jako ${e.nr}`; u.train = null;
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
