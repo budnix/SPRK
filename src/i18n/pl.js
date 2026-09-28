@@ -321,6 +321,7 @@ export default {
   'sp.fault.point-control': 'zwrotnica (napęd)',
   'sp.fault.false-occupancy': 'fałszywa zajętość',
   'sp.fault.block-fail': 'blokada bez łączności',
+  'sp.fault.route-block': 'blok przebiegowy (urządzenie oddziaływania)',
   'sp.route.train': 'pociągowy',
   'sp.route.shunt': 'manewrowy',
   'sp.route.timed': ' – zwalnianie czasowe',
@@ -341,6 +342,7 @@ export default {
   'sp.alarm.fault.point': 'zwrotnica {id}',
   'sp.alarm.fault.section': 'odcinek {id}',
   'sp.alarm.fault.block': 'blokada {name}',
+  'sp.alarm.fault.routeBlock': 'blok przebiegowy za semaforem {id} – zwolnij zwalniaczem',
   'sp.alarm.phone': 'Telefon od {name} – odpowiedz w zakładce Łączność.',
   'sp.alarm.radio': 'Radio: maszynista pociągu {nr} melduje – zakładka Łączność.',
   // samouczek

@@ -1,4 +1,5 @@
 import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
+import { faultAlarm, faultListText } from './faultText.js';
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
 import { frontIcon, modeIcon, uiIcon } from './icons.js';
@@ -350,7 +351,7 @@ export class SidePanel {
     const texts = {
       request: () => t('sp.alarm.request', { name: this.sim.blocks.get(a.exit).neighbour }),
       rozprucie: () => t('sp.alarm.split', { id: a.id }),
-      fault: () => t('sp.alarm.fault', { what: a.fault.type === 'signal-fail' ? t('sp.alarm.fault.signal', { id: a.fault.target }) : a.fault.type === 'point-control' ? t('sp.alarm.fault.point', { id: a.fault.target }) : a.fault.type === 'false-occupancy' ? t('sp.alarm.fault.section', { id: a.fault.target }) : t('sp.alarm.fault.block', { name: this.sim.blocks.get(a.fault.target)?.neighbour }) }),
+      fault: () => faultAlarm(a.fault, this.sim),
       phone: () => t('sp.alarm.phone', { name: this.sim.blocks.get(a.exit).neighbour }),
       radio: () => t('sp.alarm.radio', { nr: a.nr }),
     };
@@ -394,7 +395,7 @@ export class SidePanel {
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
-    this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${t(`sp.fault.${f.type}`)} ${f.type === 'block-fail' ? this.sim.blocks.get(f.target)?.neighbour : f.target}</div>`).join('') : `<span class="muted">${t('sp.none')}</span>`;
+    this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${faultListText(f, this.sim)}</div>`).join('') : `<span class="muted">${t('sp.none')}</span>`;
     const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${t(a.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${a.timedRelease ? t('sp.route.timed') : ''}${a.trainEntered ? t('sp.route.entered') : ''}</li>`)
       .concat(this.sim.ilk.pending.map((p) => `<li>${t('sp.route.setting', { id: p.route.id })}</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || `<li class="muted">${t('sp.none')}</li>`;
