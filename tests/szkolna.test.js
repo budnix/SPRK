@@ -301,3 +301,28 @@ test('Szkolna: karta posterunku oznacza stanowisko „do wyboru” (zmiany na mo
   assert.equal(srkBadge(sopot), 'komputerowe · monitor');
   assert.deepEqual(stationViews({ srk: 'E' }), ['desk'], 'bez scenariuszy – stanowisko stacji');
 });
+
+test('misje: słownik tekstów ma te same klucze i rodzaje wartości dla każdego widoku; nieznany widok to błąd', async () => {
+  const { PHRASES, MISSION_VIEWS } = await import('../src/tutorial/missions.js');
+  assert.deepEqual(MISSION_VIEWS, ['monitor', 'pulpit']);
+  const shape = (d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, typeof v === 'function' ? `function/${v.length}` : typeof v]));
+  const base = shape(PHRASES[MISSION_VIEWS[0]]);
+  assert.ok(Object.keys(base).length > 15);
+  for (const view of MISSION_VIEWS) {
+    assert.deepEqual(Object.keys(PHRASES[view]).sort(), Object.keys(base).sort(), `${view}: klucze`);
+    for (const [k, kind] of Object.entries(shape(PHRASES[view]))) assert.equal(kind.split('/')[0], base[k].split('/')[0], `${view}/${k}: rodzaj wartości`);
+    assert.equal(PHRASES[view].view, view);
+    // każdy krok misji powstaje wyłącznie ze słownika – teksty drugiego widoku nie przeciekają
+    assert.equal(missionSteps(view).length, missionSteps(MISSION_VIEWS[0]).length, `${view}: ta sama lista kroków`);
+  }
+  // kotwica: pasek poleceń tylko tam, gdzie widok go ma
+  const ref = { ref: { kind: 'signal', id: 'A', color: 'green' } };
+  assert.deepEqual(PHRASES.monitor.anchor('train', ref), { cmd: 'train' });
+  assert.equal(PHRASES.pulpit.anchor('train', ref), ref);
+  assert.throws(() => missionSteps('kluczowy'), /Brak tekstów misji dla widoku 'kluczowy'/);
+  // kroki nie rozgałęziają się po widoku poza słownikiem
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/tutorial/missions.js', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('export function missionSteps'));
+  assert.doesNotMatch(body, /view === |\bm \? /, 'rozgałęzienie po widoku w krokach misji');
+});

@@ -241,7 +241,9 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   W misji (`scenario.tutorial`) zmiana nie kończy się sama po ostatnim pociągu (`sim.autoEnd = false`) – kończy ją
   „Dalej” na ostatnim kroku (`sim.endShift()` → raport); zamknięcie samouczka przywraca automatyczny koniec.
   Jedna lista `missionSteps(view)` obsługuje monitor (`'monitor'`) i pulpit kostkowy (`'pulpit'`) – różnią się teksty
-  i wskazywane miejsca (`anchor`: `{ ref }`, `{ block }`, `{ cmd }`, `{ el }`, `{ tab }`).
+  i wskazywane miejsca (`anchor`: `{ ref }`, `{ block }`, `{ cmd }`, `{ el }`, `{ tab }`). Wszystko, co zależy od
+  stanowiska, jest w słowniku `PHRASES[view]` (te same klucze dla każdego widoku – pilnuje tego test); kroki misji nie
+  rozgałęziają się po widoku, więc nowy panel to nowy wpis w słowniku.
 * `progress.js` – `MissionProgress`: kolejność kroków, warunki na stanie symulacji i zdarzeniach szyny
   (`ctx.seen`: `route:A-D1:set`, `lock:Zw3`, `sz:A`, `cancel:B` …), wstrzymanie zegara na krokach informacyjnych,
   komunikaty `wrong` (np. przebieg na zły tor). Testowany w Node skryptem „ucznia” (`tests/szkolna.test.js`).

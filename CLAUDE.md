@@ -56,7 +56,8 @@
    + `registerView('<rodzaj>', { View, hint, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
    wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
    i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
-4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`; misje – teksty dla nowego widoku w `missions.js`.
+4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`; misje – wpis dla nowego widoku w słowniku
+   `PHRASES` w `src/tutorial/missions.js` (komplet kluczy; kroków misji się nie zmienia).
 5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/` i zrzut w `visual.spec.js`.
 6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
 
