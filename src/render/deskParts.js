@@ -18,7 +18,7 @@ export const FRAME = 22; // szerokość ramy pulpitu (margines rysunku)
 /** Stan lampki: 'off' albo '<kolor>' / '<kolor> blink'. */
 export function setLamp(e, state) {
   if (!e) return;
-  e.classList.remove('on', 'lamp-red', 'lamp-white', 'lamp-yellow', 'lamp-green', 'lamp-orange', 'lamp-blue', 'blink');
+  e.classList.remove('on', 'lamp-red', 'lamp-white', 'lamp-yellow', 'lamp-green', 'lamp-orange', 'lamp-blue', 'lamp-pos', 'blink');
   if (state === 'off') return;
   const [color, blink] = state.split(' ');
   e.classList.add('on', `lamp-${color}`);

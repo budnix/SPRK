@@ -100,8 +100,10 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
 * ręczne zwolnienie bloku (zwalniacz, plomba) liczy licznik jak dPz i kosztuje punkty jak dPz – bez kary, gdy blok
   nie zwolnił się przez usterkę urządzenia oddziaływania pociągu (usterka `route-block`, misja 4; E16 §8 ust. 19);
 * sygnał zastępczy – klawisz przy aparacie blokowym z licznikiem, jak na innych stanowiskach;
-* plan świetlny pokazuje zajętość odcinków, powtarzacze sygnałów i blokadę liniową; położenie zwrotnic widać
-  na dźwigniach (na planie świetlnym go nie ma).
+* plan świetlny pokazuje zajętość odcinków, powtarzacze sygnałów i blokadę liniową (Ie-8 §11 ust. 4); położenie
+  zwrotnic Ie-8 na planie nie wymienia – w rzeczywistości widać je na dźwigni i na latarniach zwrotnicowych przez
+  okno nastawni. Gra nie ma widoku z okna, więc plan pokazuje położenie przygaszonym żółtym na ramieniu zwrotnicy
+  (uproszczenie gry); przy dźwigniach są oznaczenia położeń („+” / „−”, „nał.” / „zdj.”, kropki semaforów).
 * ława leży pod całym planem i nie dzieli się na ekrany – przy podziale szerokiego pulpitu na ekrany (ustawienie
   „ekrany”) byłaby przycięta; stacje z nastawnią mechaniczną są wąskie, więc podziału nie potrzebują.
 

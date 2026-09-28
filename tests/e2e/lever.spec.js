@@ -36,6 +36,7 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   expect(await route(page, 'A-D2')).toBe(null);
   await expect(page.locator('#status')).toContainText(need);
   // dźwignia zwrotnicowa: przełożona od razu, zwrotnica po 2 s
+  expect(await page.evaluate((id) => { const r = window.desk.pointRefs.get(id); return [...r.straight.classList].includes('lamp-pos'); }, need)).toBe(true); // na planie: położenie zasadnicze
   await ctl(page, 'lever', need).click();
   await expect(page.locator(`#desk .lever[data-lever="${need}"]`)).toHaveClass(/down/);
   // oznaczenia położeń: przy dźwigni zwrotnicowej „+” po lewej, „−” po prawej; świeci bieżące
@@ -43,6 +44,10 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   expect(pos.map((p) => p.t)).toEqual(['+', '−']);
   expect(pos[0].x).toBeLessThan(pos[1].x);
   expect(pos.map((p) => p.on)).toEqual([false, true]);
+  // plan świetlny: położenie zwrotnicy przygaszonym żółtym na ramieniu zwrotnym (po dojechaniu)
+  await advance(page, 3);
+  const bars = () => page.evaluate((id) => { const r = window.desk.pointRefs.get(id); return ['straight', 'diverge'].map((k) => [...r[k].classList].find((c) => c.startsWith('lamp-')) || 'off'); }, need);
+  expect(await bars()).toEqual(['off', 'lamp-pos']);
   await advance(page, 3);
   expect((await simState(page)).points[need]).toBe('-');
   await ctl(page, 'route', 'A-D2').click();

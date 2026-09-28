@@ -68,6 +68,7 @@
   --desk-mech-plate: #f1f0ea; --desk-mech-plate-text: #1d1f20; --desk-mech-label: #f4f5f5; --desk-mech-set: #ffd23f;
   --desk-mech-window-red: #c8342b; --desk-mech-window-white: #f6f6f1; --desk-mech-key: #1e1f20; --desk-mech-seal: #a8352c;
   --desk-mech-go: #3fbf5f; --desk-mech-stop: #e0443a; --desk-mech-ms1: #4d8fe0; --desk-mech-ms2: #f6f6f1;
+  --desk-mech-pos: #b89a3a;   /* położenie zwrotnicy na planie świetlnym – przygaszony żółty */
   /* promienie, wysokość kontrolek, warstwy */
   --radius: 4px; --radius-sm: 3px; --radius-pill: 10px;
   --ctl-h: 28px;
@@ -314,6 +315,7 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .bar.on.lamp-white { stroke: #f7ebcf; }
 .bar.on.lamp-red { stroke: #e8281c; }
 .bar.on.lamp-yellow { stroke: #f2c318; }
+.bar.on.lamp-pos { stroke: var(--desk-mech-pos); }
 .screw { fill: #e4e6e7; stroke: #6d7173; stroke-width: 0.6; }
 .screw.lit { fill: #ffffff; stroke: #9a9d9f; }
 .joint { stroke: #1e2021; }

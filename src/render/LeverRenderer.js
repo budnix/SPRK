@@ -244,15 +244,20 @@ export class LeverRenderer extends PanelView {
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
   }
 
-  /** Zwrotnica na planie: zajętość i rozprucie; położenie pokazuje dźwignia. */
+  /**
+   * Zwrotnica na planie: zajętość (czerwona), rozprucie, a położenie – przygaszonym żółtym na ramieniu, w które jest
+   * ustawiona (zamiast latarni zwrotnicowej widocznej w rzeczywistości przez okno nastawni – uproszczenie gry).
+   */
   updatePoint(id) {
     const p = this.ilk.points.get(id);
     const r = this.pointRefs.get(id);
     if (!p || !r) return;
     const occ = this.ilk.sections.get(p.section)?.occupied;
+    const pos = occ ? 'red' : 'pos';
+    const known = p.control && !p.moving;
     setLamp(r.toe, p.trailed ? 'red blink' : occ ? 'red' : 'off');
-    setLamp(r.straight, occ && p.position === '+' ? 'red' : 'off');
-    setLamp(r.diverge, occ && p.position === '-' ? 'red' : 'off');
+    setLamp(r.straight, known && p.position === '+' ? pos : 'off');
+    setLamp(r.diverge, known && p.position === '-' ? pos : 'off');
     setLamp(r.lockLamp, 'off');
     this.updateLevers();
   }
