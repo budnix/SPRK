@@ -163,3 +163,18 @@ test('powiększenie pulpitu: tryb dopasowania wraca po zmianie okna, ręczne pow
   expect((await state()).zoom).toBeGreaterThan(manual.zoom);
   expect(Math.abs(after[0] - before[0])).toBeLessThan(1.5);
 });
+
+test('ekran startowy: kartę posterunku wybiera się także z klawiatury (Enter, spacja)', async ({ page }) => {
+  await openShift(page, 'szkolna');
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  const card = page.locator('.st-card[data-id="sopot"]');
+  await card.focus();
+  await page.keyboard.press('Enter');
+  await expect(card).toHaveClass(/active/);
+  await expect(page.locator('#st-briefing .st-bname')).toHaveText('Sopot');
+  const other = page.locator('.st-card[data-id="reda"]');
+  await other.focus();
+  await page.keyboard.press(' ');
+  await expect(other).toHaveClass(/active/);
+  await expect(card).not.toHaveClass(/active/);
+});

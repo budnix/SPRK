@@ -106,6 +106,13 @@ export class StartScreen {
       const b = ev.target.closest('.st-mission'); if (!b) return;
       this.selectMission(Number(b.dataset.idx));
     });
+    // karta posterunku ma rolę przycisku – działa też z klawiatury (Enter, spacja)
+    this.list.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter' && ev.key !== ' ') return;
+      const card = ev.target.closest('.st-card'); if (!card) return;
+      ev.preventDefault();
+      this.select(card.dataset.id);
+    });
     for (const b of root.querySelectorAll('.st-sort button')) b.addEventListener('click', () => this.setSort(b.dataset.sort));
     this.list.addEventListener('click', (ev) => {
       const card = ev.target.closest('.st-card'); if (!card) return;
