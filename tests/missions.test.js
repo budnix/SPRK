@@ -17,7 +17,7 @@ import { autoDispatch, allArrived } from './helpers.js';
 const scenarioOf = (id) => { const st = getStation(MISSIONS[id].station); return { st, sc: st.scenarios.find((x) => x.tutorial === id) }; };
 
 test('każda misja ma własny plik, własną stację i własny rozkład – samouczki nie powtarzają scenariusza', async () => {
-  assert.deepEqual(MISSION_VIEWS, ['monitor', 'pulpit', 'izh']);
+  assert.deepEqual(MISSION_VIEWS, ['monitor', 'pulpit', 'izh', 'mech']);
   const stations = new Set(), layouts = new Set(), timetables = new Set();
   for (const id of MISSION_VIEWS) {
     const mod = await import(`../src/tutorial/missions/${id}.js`);
@@ -34,11 +34,11 @@ test('każda misja ma własny plik, własną stację i własny rozkład – samo
     timetables.add(sim.traffic.timetable().map((e) => e.nr).join());
     assert.equal(sim.autoEnd, false, `${id}: misja kończy się ostatnim krokiem`);
   }
-  assert.equal(stations.size, 3, 'trzy różne stacje');
-  assert.equal(layouts.size, 3, 'trzy różne układy torów i semaforów');
-  assert.equal(timetables.size, 3, 'trzy różne rozkłady');
+  assert.equal(stations.size, 4, 'cztery różne stacje');
+  assert.equal(layouts.size, 4, 'cztery różne układy torów i semaforów');
+  assert.equal(timetables.size, 4, 'cztery różne rozkłady');
   // stanowisko misji wynika ze scenariusza
-  assert.deepEqual(MISSION_VIEWS.map((id) => new Simulation(scenarioOf(id).st, { scenario: scenarioOf(id).sc.id }).srk.id), ['komputerowe', 'E', 'izh111']);
+  assert.deepEqual(MISSION_VIEWS.map((id) => new Simulation(scenarioOf(id).st, { scenario: scenarioOf(id).sc.id }).srk.id), ['komputerowe', 'E', 'izh111', 'mech']);
   assert.throws(() => missionSteps('kluczowy'), /Brak tekstów misji dla widoku 'kluczowy'/);
   assert.equal(getMission('kluczowy'), null);
 });
@@ -67,7 +67,9 @@ test('kroki każdej misji są spójne: unikalne id, teksty, warunki, skróty ze 
       if (a.cmd && id === 'pulpit') assert.fail(`${where}: pulpit typu E nie ma paska poleceń`);
       if (a.ref) {
         const r = a.ref, topo = sim.ilk.topo;
-        const exists = r.kind === 'signal' ? topo.signals.has(r.id) : r.kind === 'point' ? topo.points.has(r.id) : r.kind === 'end' ? topo.endButtons.has(r.id) : r.kind === 'group';
+        // nastawnia mechaniczna: dźwignia (zwrotnica, wykolejnica, sygnalizator), drążek (przebieg), klawisz bloku i zwalniacz (semafor)
+        const exists = r.kind === 'signal' || r.kind === 'routeblock' || r.kind === 'routerelease' ? topo.signals.has(r.id) : r.kind === 'point' ? topo.points.has(r.id) : r.kind === 'end' ? topo.endButtons.has(r.id)
+          : r.kind === 'lever' ? topo.points.has(r.id) || topo.derailers.has(r.id) || topo.signals.has(r.id) : r.kind === 'route' ? sim.ilk.routes.has(r.id) : r.kind === 'group';
         assert.ok(exists, `${where}: nie ma elementu ${r.kind} ${r.id}`);
         if (r.kind === 'signal') assert.equal(r.color === undefined, id === 'izh', `${where}: kolor ma tylko przycisk sygnałowy typu E i monitora`);
       }
@@ -80,6 +82,7 @@ test('kroki każdej misji są spójne: unikalne id, teksty, warunki, skróty ze 
   for (const s of missionSteps('pulpit')) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ|przycisk adresowy|rozkaz <b>/.test(s.text), `pulpit/${s.id}: tekst innego stanowiska`);
   for (const s of missionSteps('izh')) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|biały przycisk|przycisk grupowy|\bPz\b|dwuprzyciskow/.test(`${s.text} ${s.tip || ''}`), `izh/${s.id}: tekst innego stanowiska`);
   for (const s of missionSteps('monitor')) assert.ok(!/przycisk adresowy|zielony przycisk|przycisk grupowy/.test(s.text), `monitor/${s.id}: tekst innego stanowiska`);
+  for (const s of missionSteps('mech')) assert.ok(!/przycisk adresowy|PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|przycisk grupowy|rozkaz <b>/.test(`${s.text} ${s.tip || ''}`), `mech/${s.id}: tekst innego stanowiska`);
 });
 
 test('każda misja ćwiczy polecenia swojego stanowiska w rozgrzewce przed pierwszym pociągiem', () => {
@@ -87,6 +90,7 @@ test('każda misja ćwiczy polecenia swojego stanowiska w rozgrzewce przed pierw
   assert.deepEqual(warmup('monitor'), ['m-practice', 'm-point', 'm-lock', 'm-ops', 'm-route', 'm-stop', 'm-pz']);
   assert.deepEqual(warmup('pulpit'), ['e-practice', 'e-point', 'e-lock', 'e-unlock', 'e-route', 'e-stop', 'e-pz']);
   assert.deepEqual(warmup('izh'), ['izh-practice', 'izh-point-minus', 'izh-point-stop', 'izh-point-zw', 'izh-point-plus', 'izh-zcz-route', 'izh-zcz', 'izh-zcz-wait']);
+  assert.deepEqual(warmup('mech'), ['l-practice', 'l-point', 'l-point-back', 'l-derailer-off', 'l-derailer-on', 'l-route', 'l-return']);
   // misja 1 = rozgrzewka + wspólne lekcje rozkładu Szkolnej w niezmienionej kolejności
   const lessons = lessonSteps(MISSIONS.monitor.phrases).map((s) => s.id);
   assert.equal(lessons.length, 40);
@@ -210,7 +214,60 @@ function studentIzh(sim) {
   };
 }
 
-for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301, '08:40', { nr: 3304, track: '3', planned: '2', sz: 0 }], ['izh', studentIzh, 7101, '08:50', { nr: 7107, track: '3', planned: '3', sz: 1 }]]) {
+/** Misja 4 – nastawnia mechaniczna (Olszyny): dźwignie, drążki, bloki przebiegowe, zwalniacz. */
+function studentMech(sim) {
+  const c = common(sim), { B, e, poz, ko, wbl } = c;
+  const x = (cmd) => sim.execute(cmd);
+  const ilk = sim.ilk;
+  const P = (id) => ilk.points.get(id), W = () => ilk.derailers.get('Wk1');
+  const set = (id, pos) => { const p = P(id); if (p.target !== pos && !p.moving) x({ type: 'point', id, position: pos }); };
+  const wkSet = (pos) => { if (W().target !== pos && !W().moving) x({ type: 'derailer', id: 'Wk1', position: pos }); };
+  /** Pełna kolejność: dźwignie zwrotnic i wykolejnicy → drążek → blok → dźwignia sygnałowa. */
+  const route = (id) => {
+    const r = ilk.routes.get(id);
+    const a = ilk.active.get(id);
+    if (a) { if (a.passed) return; if (r.kind === 'train' && !a.blocked) x({ type: 'route-block', signal: r.start }); if (!a.lever) x({ type: 'clear', signal: r.start }); return; }
+    if (ilk.signals.get(r.start).route) return;
+    for (const q of [...r.points, ...r.flank]) set(q.id, q.position);
+    for (const q of [...r.derailers.onRoute, ...r.derailers.protect]) wkSet(q.position);
+    x({ type: 'route', id });
+  };
+  /** Po przejeździe: dźwignia sygnałowa na „Stój” i drążek z powrotem. */
+  const back = (id) => { const a = ilk.active.get(id); if (a?.passed && !a.stuck) { x({ type: 'stop', signal: a.route.start }); x({ type: 'release', signal: a.route.start }); } };
+  const arrive = (nr, exit, id) => { poz(exit); if (B(exit).direction === 'in' && e(nr).actualArr == null) route(id); back(id); if (e(nr).actualArr != null) ko(exit); };
+  const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).status === 'na następnym posterunku') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.active.has(id)) wbl(exit); back(id); };
+  return {
+    'l-point': () => set('Zw1', '-'),
+    'l-point-back': () => set('Zw1', '+'),
+    'l-derailer-off': () => wkSet('off'),
+    'l-derailer-on': () => wkSet('on'),
+    'l-route': () => { if (!ilk.active.has('A-D1')) x({ type: 'route', id: 'A-D1' }); },
+    'l-return': () => { if (ilk.active.has('A-D1')) x({ type: 'release', signal: 'A' }); },
+    'poz-8401': () => poz('W'),
+    'route-8401': () => { if (!ilk.active.has('A-D1')) x({ type: 'route', id: 'A-D1' }); },
+    'block-8401': () => x({ type: 'route-block', signal: 'A' }),
+    'signal-8401': () => x({ type: 'clear', signal: 'A' }),
+    'watch-8401': () => {},
+    'back-8401': () => back('A-D1'),
+    'ko-8401': () => ko('W'),
+    'out-8401': () => depart(8401, 'E', 'D1-E'),
+    'back-8401-out': () => back('D1-E'),
+    'in-8402': () => arrive(8402, 'E', 'B-C1'),
+    'after-8402': () => { back('B-C1'); ko('E'); },
+    'out-8402': () => depart(8402, 'W', 'C1-W'),
+    'cross-points': () => set('Zw1', '-'),
+    'cross-in': () => { arrive(8403, 'W', 'A-D2'); arrive(8404, 'E', 'B-C1'); },
+    'cross-back': () => { back('A-D2'); back('B-C1'); ko('W'); ko('E'); },
+    'cross-out': () => { depart(8403, 'E', 'D2-E'); depart(8404, 'W', 'C1-W'); },
+    'fault-in': () => arrive(8405, 'W', 'A-D1'),
+    // blok niezwolniony przez pociąg: dźwignia na „Stój”, potem zwalniacz
+    'fault-release': () => { const a = ilk.active.get('A-D1'); if (a?.passed) { x({ type: 'stop', signal: 'A' }); x({ type: 'release', signal: 'A', emergency: true }); } },
+    'out-8405': () => { ko('W'); depart(8405, 'E', 'D1-E'); },
+    'out-8406': () => { arrive(8406, 'E', 'B-C1'); depart(8406, 'W', 'C1-W'); },
+  };
+}
+
+for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301, '08:40', { nr: 3304, track: '3', planned: '2', sz: 0 }], ['izh', studentIzh, 7101, '08:50', { nr: 7107, track: '3', planned: '3', sz: 1 }], ['mech', studentMech, 8401, '08:40', { nr: 8405, track: '1', planned: '1', sz: 0, dPz: 1 }]]) {
   test(`misja „${id}” (${MISSIONS[id].station}): uczeń wykonujący polecenia dymków przechodzi wszystkie kroki po kolei, pociągi jadą o czasie`, () => {
     const { st, sc } = scenarioOf(id);
     const sim = new Simulation(st, { scenario: sc.id, seed: 7 });
@@ -250,13 +307,13 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
     assert.ok([...sim.ilk.points.values()].every((p) => p.control && !p.trailed), 'zwrotnice z kontrolą położenia');
     assert.equal(sim.traffic.timetable()[0].nr, firstTrain);
     assert.equal(sim.ilk.counters.rozprucie, 0);
-    assert.equal(sim.ilk.counters.dPz, 0);
+    assert.equal(sim.ilk.counters.dPz, fault.dPz ?? 0, 'zwalniacz / dPz tylko tam, gdzie lekcja usterki go wymaga');
     assert.equal(sim.score.items.filter((i) => i.points < 0).length, 0, sim.score.items.filter((i) => i.points < 0).map((i) => i.msg).join('; '));
   });
 }
 
 test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku – pociągi o czasie, bez kolizji', () => {
-  for (const id of ['jodlowa', 'zacisze']) {
+  for (const id of ['jodlowa', 'zacisze', 'olszyny']) {
     const st = STATIONS.find((s) => s.id === id);
     assert.deepEqual(st.scenarios.filter((s) => !s.tutorial).map((s) => s.srk).sort(), ['E', 'izh111', 'komputerowe', 'mech'], `${id}: zmiana na każdym stanowisku`);
     for (const sc of st.scenarios.filter((s) => !s.tutorial)) {
@@ -287,8 +344,8 @@ test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku �
 
 test('każda misja uczy radzenia sobie z inną usterką', () => {
   const faults = MISSION_VIEWS.map((id) => scenarioOf(id).sc.faults.map((f) => f.type));
-  assert.deepEqual(faults, [['signal-fail', 'block-fail'], ['point-control'], ['false-occupancy']]);
-  assert.equal(new Set(faults.flat()).size, 4, 'cztery rodzaje usterek, żadna się nie powtarza');
+  assert.deepEqual(faults, [['signal-fail', 'block-fail'], ['point-control'], ['false-occupancy'], ['route-block']]);
+  assert.equal(new Set(faults.flat()).size, 5, 'pięć rodzajów usterek, żadna się nie powtarza');
   for (const id of MISSION_VIEWS) {
     const ids = missionSteps(id).map((s) => s.id);
     assert.ok(ids.includes('fault-intro'), `${id}: krok wprowadzający usterkę`);

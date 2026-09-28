@@ -280,9 +280,9 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.deepEqual(byDiff, [...byDiff].sort((a, b) => a - b));
   assert.equal(sortStations(STATIONS, 'difficulty')[0].id, 'szkolna', 'najłatwiejsza – stacja szkolna');
   const missions = missionList(STATIONS);
-  assert.deepEqual(missions.map((m) => `${m.station.id}/${m.scenario.id}`), ['szkolna/nauka-1', 'jodlowa/nauka-2', 'zacisze/nauka-3']);
+  assert.deepEqual(missions.map((m) => `${m.station.id}/${m.scenario.id}`), ['szkolna/nauka-1', 'jodlowa/nauka-2', 'zacisze/nauka-3', 'olszyny/nauka-4']);
   // nazwa misji bez numeru i dopisku „(samouczek)” – numer dodaje ekran startowy („Misja 1: Misja 1: …” był błędem)
-  assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111']);
+  assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111', 'nastawnia mechaniczna']);
   assert.equal(missionName({ name: 'Nauka obsługi' }), 'Nauka obsługi');
   // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
   const mark = difficultyMark(3, 'trudność');

@@ -291,13 +291,15 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   | 1 `monitor` | stanowisko komputerowe | Szkolna – linia jednotorowa | pozwolenia, krzyżowanie, manewry; usterki: semafor bez sygnału (Sz), blokada bez łączności (zapowiadanie telefoniczne) |
   | 2 `pulpit` | pulpit kostkowy typu E | Jodłowa – linia dwutorowa z odgałęzieniem | ruch bez pozwoleń z Ko, wyprzedzanie, odgałęzienie z Eap; usterka: zwrotnica bez kontroli położenia (zamknąć, przyjąć na inny tor) |
   | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji; usterka: odcinek z fałszywą zajętością (droga ułożona ręcznie i zamknięta, wjazd na Sz) |
+  | 4 `mech` | nastawnia mechaniczna | Olszyny – linia jednotorowa z bocznicą | dźwignie, drążek, blok przebiegowy, dźwignia sygnałowa, powrót po przejeździe, krzyżowanie z wykolejnicą ochronną; usterka: pociąg nie zwolnił bloku przebiegowego (zwalniacz) |
 
-  Każda misja uczy innej usterki – razem wszystkie cztery rodzaje (`src/model/Faults.js`). Przyjęcie pociągu na tor
+  Każda misja uczy innej usterki – razem wszystkie pięć rodzajów (`src/model/Faults.js`; `route-block` tylko na
+  nastawni mechanicznej, także w losowaniu). Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
   inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka (tak jak uzasadnione Sz).
 
   Każda misja zaczyna się o 06:54 rozgrzewką z poleceniami swojego stanowiska, których rozkład nie wymaga
   (monitor: ZWROTNICA, Zz, OPS, STOP, zwolnienie przebiegu; typ E: Zw, Zz, wyciągnięcie przycisku, Pz; IZH-111:
-  „−”, „+”, STOP, Zw, Zcz). Rozgrzewka używa zwrotnicy i przebiegu, które nie kolidują z pierwszym pociągiem;
+  „−”, „+”, STOP, Zw, Zcz; mechaniczna: dźwignia zwrotnicy i wykolejnicy, drążek i jego cofnięcie). Rozgrzewka używa zwrotnicy i przebiegu, które nie kolidują z pierwszym pociągiem;
   testy „ucznia” pilnują, że pociągi jadą o czasie. Lekcje rozkładu Szkolnej są w `lessons.js`
   (`lessonSteps(phrases)`); `withSteps(base, { after, before, replace, omit })` składa samouczek z listy kroków
   i zmian. `phrases.js` – cegiełki tekstów, `missions.js` – rejestr (`MISSIONS`, `getMission`, `missionSteps`).

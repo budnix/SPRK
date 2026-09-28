@@ -10,8 +10,10 @@ import { Clock } from '../core/Clock.js';
  *  - point-control   – po przestawieniu zwrotnica nie odzyskuje kontroli przez pewien czas
  *  - false-occupancy – odcinek wskazuje zajętość bez pociągu (pozostaje Sz po potwierdzeniu)
  *  - block-fail      – blokada liniowa bez łączności elektrycznej: zapowiadanie telefoniczne
+ *  - route-block     – nastawnia mechaniczna: pociąg nie zwalnia bloku przebiegowego utwierdzającego (urządzenie
+ *                      oddziaływania) – drążek przebiegu od semafora `target` cofa się tylko zwalniaczem
  */
-export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail'];
+export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block'];
 
 export class Faults {
   constructor(sim, rng, level, scripted = []) {
@@ -44,8 +46,9 @@ export class Faults {
     const sections = [...sim.ilk.sections.values()].filter((s) => s.kind !== 'approach').map((s) => s.id);
     const exits = [...sim.blocks.keys()];
     for (let i = 0; i < n; i++) {
-      const type = this.rng.pick(FAULT_TYPES);
-      const pool = { 'signal-fail': semafory, 'point-control': points, 'false-occupancy': sections, 'block-fail': exits }[type];
+      // usterka bloku przebiegowego tylko tam, gdzie jest blok (nastawnia mechaniczna); na innych stanowiskach losowanie bez zmian
+      const type = this.rng.pick(sim.ilk.routeBlock ? FAULT_TYPES : FAULT_TYPES.filter((t) => t !== 'route-block'));
+      const pool = { 'signal-fail': semafory, 'point-control': points, 'false-occupancy': sections, 'block-fail': exits, 'route-block': semafory }[type];
       if (!pool.length) continue;
       this.list.push({
         type, target: this.rng.pick(pool),
@@ -107,6 +110,14 @@ export class Faults {
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
       }
+      case 'route-block': {
+        const s = sim.ilk.signals.get(f.target);
+        if (!s) return;
+        s.blockStuck = true;
+        this.#log('alarm', `USTERKA: urządzenie oddziaływania pociągu za semaforem ${f.target} – blok przebiegowy nie zwolni się sam. Po przejeździe sprawdź, że pociąg minął miejsce końca pociągu, i użyj zwalniacza.`);
+        sim.bus.emit('alarm', { type: 'fault', fault: f });
+        break;
+      }
       default:
     }
   }
@@ -136,6 +147,12 @@ export class Faults {
         const b = sim.blocks.get(f.target);
         if (b) b.setFault(false);
         this.#log('info', `Blokada liniowa do ${b?.neighbour} – łączność przywrócona.`);
+        break;
+      }
+      case 'route-block': {
+        const s = sim.ilk.signals.get(f.target);
+        if (s) s.blockStuck = false;
+        this.#log('info', `Urządzenie oddziaływania pociągu za semaforem ${f.target} naprawione.`);
         break;
       }
       default:

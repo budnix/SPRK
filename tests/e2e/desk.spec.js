@@ -374,7 +374,7 @@ test('Gdańsk Główny: karta „komputerowe”; monitor z blokadami SBL (9, Śr
 
 test('nazwy szlaków na pulpitach nie są zakryte przez sąsiednią kostkę (dłuższe nazwy wychodzą poza swoją kostkę)', async ({ page }) => {
   const covered = [];
-  for (const [station, scenario] of [['szkolna', 'zmiana-e'], ['jodlowa', 'zmiana'], ['zacisze', 'zmiana'], ['zacisze', 'zmiana-e'], ['reda', 'zmiana'], ['rumia', 'zmiana']]) {
+  for (const [station, scenario] of [['szkolna', 'zmiana-e'], ['jodlowa', 'zmiana'], ['zacisze', 'zmiana'], ['zacisze', 'zmiana-e'], ['reda', 'zmiana'], ['rumia', 'zmiana'], ['olszyny', 'zmiana-e'], ['olszyny', 'zmiana']]) {
     await openShift(page, station, { params: { scenariusz: scenario } });
     covered.push(...await page.evaluate((where) => {
       const faces = [...document.querySelectorAll('#desk rect.face')];

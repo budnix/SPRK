@@ -147,3 +147,55 @@ test('mechaniczna: pełna zmiana na Szkolnej z automatem – dźwignie, drążki
   assert.equal(sim.ilk.counters.dPz, 0);
   assert.deepEqual(sim.score.items.filter((i) => i.points < 0).map((i) => i.msg), []);
 });
+
+test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe; drążek tylko zwalniaczem, bez kary', () => {
+  const sim = new Simulation(szkolna, { disruptions: 'none', srk: 'mech', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'route-block', target: 'A', at: '07:00', duration: 120 }] } });
+  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  throwLevers(sim, 'A-D1'); run(sim, 3);
+  sim.execute({ type: 'route', id: 'A-D1' });
+  sim.execute({ type: 'route-block', signal: 'A' });
+  sim.execute({ type: 'clear', signal: 'A' });
+  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  for (let i = 0; i < 4000 && e.actualArr == null; i++) sim.step(0.5);
+  run(sim, 60);
+  const act = sim.ilk.active.get('A-D1');
+  assert.ok(act.passed, 'pociąg przejechał');
+  assert.equal(act.blocked, true, 'blok nie zwolnił się');
+  sim.execute({ type: 'stop', signal: 'A' });
+  const r = sim.execute({ type: 'release', signal: 'A' });
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /blok przebiegowy utwierdzający zablokowany/);
+  assert.ok(sim.execute({ type: 'release', signal: 'A', emergency: true }).ok);
+  assert.equal(sim.ilk.active.size, 0);
+  assert.equal(sim.ilk.counters.dPz, 1);
+  assert.deepEqual(sim.score.items.filter((i) => i.code === 'dPz').map((i) => i.points), [0], 'zwalniacz przy usterce nie kosztuje punktów');
+  // bez usterki zwalniacz kosztuje
+  const plain = mech();
+  throwLevers(plain, 'A-D1'); run(plain, 3);
+  plain.execute({ type: 'route', id: 'A-D1' }); plain.execute({ type: 'route-block', signal: 'A' });
+  plain.execute({ type: 'release', signal: 'A', emergency: true });
+  assert.deepEqual(plain.score.items.filter((i) => i.code === 'dPz').map((i) => i.points), [-20]);
+});
+
+test('mechaniczna – usterka bloku przebiegowego trafia do losowania tylko na nastawni mechanicznej', async () => {
+  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  assert.ok(FAULT_TYPES.includes('route-block'));
+  for (let seed = 1; seed < 30; seed++) {
+    const s = new Simulation(szkolna, { scenario: { id: 't', name: 't', endTime: '12:00', srk: 'E' }, disruptions: 'high', seed });
+    assert.ok(!s.faults.list.some((f) => f.type === 'route-block'), `seed ${seed}: blok przebiegowy na pulpicie typu E`);
+  }
+  const drawn = (seed) => new Simulation(szkolna, { scenario: { id: 't', name: 't', endTime: '12:00', srk: 'mech' }, disruptions: 'high', seed }).faults.list;
+  const hit = Array.from({ length: 60 }, (_, i) => drawn(i + 1)).flat().find((f) => f.type === 'route-block');
+  assert.ok(hit, 'na nastawni mechanicznej usterka bloku bywa losowana');
+  assert.ok(szkolna.tiles.some((t) => t.type === 'signal' && t.kind === 'semafor' && t.id === hit.target), 'cel – semafor');
+});
+
+test('mechaniczna – automat dyżurnego przy usterce bloku przebiegowego używa zwalniacza; pociągi o czasie', () => {
+  const sc = { ...szkolna.scenarios.find((x) => x.id === 'zmiana'), srk: 'mech', faults: [{ type: 'route-block', target: 'A', at: '07:00', duration: 120 }] };
+  const sim = new Simulation(szkolna, { scenario: sc, disruptions: 'none', seed: 5 });
+  let n = 0;
+  while (sim.clock.time < Clock.parse('09:10') && !allArrived(sim) && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  for (const e of sim.traffic.timetable()) assert.ok(e.delay <= 2 && /na następnym posterunku|odjechał|przekazany|zakończył bieg/.test(e.status), `${e.nr}: ${e.status}, ${e.delay} min`);
+  assert.ok(sim.ilk.counters.dPz >= 1, 'zwalniacz użyty');
+  assert.deepEqual(sim.score.items.filter((i) => i.points < 0).map((i) => i.msg), []);
+});

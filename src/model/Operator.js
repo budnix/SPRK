@@ -83,7 +83,8 @@ export class AutoOperator {
     for (const act of [...ilk.active.values()]) {
       if (!act.passed || !this.#inDistrict(act.route.start)) continue;
       ilk.cancelSignal(act.route.start);
-      ilk.releaseRoute(act.route.start);
+      // blok niezwolniony przez pociąg (usterka) – zwalniacz
+      if (!ilk.releaseRoute(act.route.start).ok && act.blocked) ilk.releaseRoute(act.route.start, true);
     }
   }
 

@@ -97,10 +97,13 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
   kolejne drążki;
 * dźwignia zwrotnicowa przestawia zwrotnicę w 2 s (czas przyjęty – pędnia drutowa działa od razu);
 * przebieg manewrowy nie ma bloku przebiegowego utwierdzającego: drążek i dźwignia tarczy;
-* ręczne zwolnienie bloku (zwalniacz, plomba) liczy licznik jak dPz i kosztuje punkty jak dPz;
+* ręczne zwolnienie bloku (zwalniacz, plomba) liczy licznik jak dPz i kosztuje punkty jak dPz – bez kary, gdy blok
+  nie zwolnił się przez usterkę urządzenia oddziaływania pociągu (usterka `route-block`, misja 4; E16 §8 ust. 19);
 * sygnał zastępczy – klawisz przy aparacie blokowym z licznikiem, jak na innych stanowiskach;
 * plan świetlny pokazuje zajętość odcinków, powtarzacze sygnałów i blokadę liniową; położenie zwrotnic widać
   na dźwigniach (na planie świetlnym go nie ma).
+* ława leży pod całym planem i nie dzieli się na ekrany – przy podziale szerokiego pulpitu na ekrany (ustawienie
+  „ekrany”) byłaby przycięta; stacje z nastawnią mechaniczną są wąskie, więc podziału nie potrzebują.
 
 ## Gdynia Główna
 
@@ -287,8 +290,8 @@ Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego śr
   z LCS Gdańsk urządzeniami komputerowymi. W grze: `komputerowe` (tylko stanowisko komputerowe).
 * **Gdańsk Główny** – od modernizacji E65 (LCS Gdańsk, nastawnia „G”) urządzenia komputerowe; tory SKM prowadzi
   nastawnia „G-SKM” (PKP SKM). W grze: `komputerowe`, jedno stanowisko na całą część pasażerską.
-* **Szkolna**, **Jodłowa**, **Zacisze** – stacje fikcyjne, treningowe (misje 1–3); każda ma zmiany na wszystkich
-  trzech stanowiskach. Układ torów Jodłowej jest taki jak stacji testowej Wola Pustkowska.
+* **Szkolna**, **Jodłowa**, **Zacisze**, **Olszyny** – stacje fikcyjne, treningowe (misje 1–4); każda ma zmiany na
+  wszystkich czterech stanowiskach. Układ torów Jodłowej jest taki jak stacji testowej Wola Pustkowska.
 * Dawne stacje fikcyjne Stare Pustkowie i Wola Pustkowska zostały jako stacje testowe w `tests/fixtures/`.
 
 Uproszczenie wspólne: w rzeczywistości tory linii 250 (PKP SKM) i linii 202 (PKP PLK) na tych stacjach obsługują

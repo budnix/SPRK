@@ -145,7 +145,7 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 * `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz; poziomy dodają losowe
   opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,
 * `tasks` – zadania manewrowe (niżej),
-* `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`, `izh`); gra pokazuje dymki krok po kroku,
+* `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`, `izh`, `mech`); gra pokazuje dymki krok po kroku,
 * `srk` – stanowisko obsługi tej zmiany (`E` / `izh111` / `komputerowe` / `mech`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
   Rumia i Reda mają zmianę na pulpicie i na monitorze). Nieznana wartość jest błędem walidacji.
 

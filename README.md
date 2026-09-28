@@ -45,7 +45,8 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
   and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
   route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
-  the route lever go back. Available as a shift on all three training stations.
+  the route lever go back. Olszyny is a mechanical box with its own mission (4); the other training stations offer
+  a mechanical shift too.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -75,6 +76,7 @@ Play it: **https://budnix.github.io/SPRK/**
 | **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical | 1/5 | Training station on a single-track line; mission 1. |
 | **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
 | **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
+| **Olszyny** (fictional) | mechanical / relay type E / IZH-111 / computer | 2/5 | Training station on a single-track line with a goods siding and a protecting derailer; mission 4. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
@@ -90,13 +92,14 @@ Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenario
 failure, a block failure, a peak with heavy disruptions).
 
 ### Guided missions and the start screen
-* Three missions, each on **its own training station** with a different track layout and timetable:
+* Four missions, each on **its own training station** with a different track layout and timetable:
   **Mission 1** – computer workstation at Szkolna (single-track line: permissions, crossing, shunting, substitute
   signal, telephone announcements); **Mission 2** – type E desk at Jodłowa (double-track line: traffic without
   permissions, overtaking, a branch with the Eap block); **Mission 3** – type IZH-111 desk at Zacisze (terminus:
-  stub tracks, reversing, two consists in the station). Every mission starts with a warm-up of the commands of its
+  stub tracks, reversing, two consists in the station); **Mission 4** – mechanical signal box at Olszyny (point and
+  derailer levers, route lever, route block, signal lever, crossing with a protecting derailer). Every mission starts with a warm-up of the commands of its
   workstation and ends with a different equipment fault and how to handle it (dark signal, block without
-  communication, point without detection, false track occupancy),
+  communication, point without detection, false track occupancy, route block not released by the train),
   a popup pinned to the element to use, highlighted targets, a clickable glossary of every abbreviation
   (Poz, Wbl, Ko, Pz, dPz, Sz, Zz, Zk…), feedback when you set the wrong route. The timetable walks through permission
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a

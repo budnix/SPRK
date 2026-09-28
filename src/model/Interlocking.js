@@ -616,19 +616,21 @@ export class Interlocking {
     if (!sig.route) return this.#fail(`Semafor ${signalId} nie ma nastawionego przebiegu`);
     const act = this.active.get(sig.route);
     if (this.manualSignal && act.lever && !emergency) return this.#fail(`Przebieg ${act.id}: najpierw przełóż dźwignię sygnałową ${signalId} na „Stój”`);
+    // zablokowany blok przebiegowy (także niezwolniony przez pociąg przy usterce) – tylko zwalniacz
+    if (this.routeBlock && act.blocked && !emergency) return this.#fail(`Przebieg ${act.id}: blok przebiegowy utwierdzający zablokowany – ${act.stuck ? 'pociąg go nie zwolnił (usterka), użyj zwalniacza' : 'zwolni go pociąg (albo zwalniacz)'}`);
     if (act.passed && !emergency) {
       this.#log('info', `Przebieg ${act.id} zwolniony (drążek przebiegowy w położeniu zasadniczym)`);
       this.#dissolve(act);
       return { ok: true };
     }
-    if (this.routeBlock && act.blocked && !emergency) return this.#fail(`Przebieg ${act.id}: blok przebiegowy utwierdzający zablokowany – zwolni go pociąg (albo zwalniacz)`);
     act.lever = false;
     act.signalOff = true;
     this.#refreshSignals();
     if (emergency) {
       this.counters.dPz++;
       this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (dPz, licznik ${this.counters.dPz})`);
-      this.bus.emit('score', { time: this.time, code: 'dPz', points: -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (dPz)` });
+      // zwalniacz przy bloku, którego nie zwolnił pociąg (usterka urządzenia oddziaływania) jest uzasadniony
+      this.bus.emit('score', { time: this.time, code: 'dPz', points: act.stuck ? 0 : -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (dPz)${act.stuck ? ' – uzasadnione usterką' : ''}` });
       this.#dissolve(act);
       return { ok: true };
     }
@@ -665,7 +667,10 @@ export class Interlocking {
   #finish(act, msg) {
     if (!this.holdRoute) { this.#log('info', msg); this.#dissolve(act); return; }
     if (act.passed) return;
-    act.passed = true; act.blocked = false; act.signalOff = true;
+    // usterka urządzenia oddziaływania: pociąg przejechał, ale blok przebiegowy zostaje zablokowany
+    act.stuck = !!(this.routeBlock && act.blocked && this.signals.get(act.route.start)?.blockStuck);
+    act.passed = true; act.blocked = act.stuck; act.signalOff = true;
+    if (act.stuck) this.#log('alarm', `Przebieg ${act.id}: blok przebiegowy nie zwolnił się po przejeździe – sprawdź, że pociąg minął miejsce końca pociągu, i użyj zwalniacza`);
     this.#refreshSignals();
     this.#log('info', `Przebieg ${act.id}: pociąg przejechał${act.route.kind === 'train' && this.routeBlock ? ', blok przebiegowy zwolniony' : ''} – ${this.manualSignal ? 'przełóż dźwignię sygnałową na „Stój” i ' : ''}zwolnij przebieg (drążek)`);
     this.bus.emit('route', { id: act.id, state: 'passed' });

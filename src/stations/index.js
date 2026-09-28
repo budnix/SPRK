@@ -5,6 +5,7 @@ import sopot from './sopot.js';
 import szkolna from './szkolna.js';
 import jodlowa from './jodlowa.js';
 import zacisze from './zacisze.js';
+import olszyny from './olszyny.js';
 import rumia from './rumia.js';
 import reda from './reda.js';
 import tczew from './tczew.js';
@@ -12,7 +13,7 @@ import pruszczGdanski from './pruszcz-gdanski.js';
 import gdanskGlowny from './gdansk-glowny.js';
 
 /** Rejestr stacji dostępnych w grze. Przyszły edytor doda tu stacje użytkowników. */
-export const STATIONS = [szkolna, jodlowa, zacisze, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna, rumia, reda, tczew, pruszczGdanski, gdanskGlowny];
+export const STATIONS = [szkolna, jodlowa, zacisze, olszyny, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna, rumia, reda, tczew, pruszczGdanski, gdanskGlowny];
 
 export function getStation(id) {
   return STATIONS.find((s) => s.id === id) || STATIONS[0];

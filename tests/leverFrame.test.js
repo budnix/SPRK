@@ -4,6 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { leverFrame, leverStates } from '../src/render/leverFrame.js';
 import szkolna from '../src/stations/szkolna.js';
 import zacisze from '../src/stations/zacisze.js';
+import olszyny from '../src/stations/olszyny.js';
 import { run } from './helpers.js';
 
 /* Układ nastawnicy mechanicznej: dźwignie (zwrotnicowe, wykolejnicowe, semaforowe, tarcz) i drążki przebiegowe */
@@ -53,4 +54,10 @@ test('stan nastawnicy: dźwignia zwrotnicowa wg przełożenia, drążek, okienko
   assert.equal(s.drazki.a.blocked, true);
   assert.equal(s.levers.A.down, true);
   assert.deepEqual(s.drazki.b, { pos: null, route: null, blocked: false, passed: false });
+});
+
+test('ława Olszyn: numery dźwigni i nazwy drążków, na które powołują się dymki misji 4', () => {
+  const f = leverFrame(mech(olszyny).ilk);
+  assert.deepEqual(f.levers.map((l) => `${l.no}:${l.id}`), ['1:Zw1', '2:Zw2', '3:Zw3', '4:Wk1', '5:A', '6:B', '7:C1', '8:C2', '9:D1', '10:D2', '11:Tm1']);
+  assert.deepEqual(f.drazki.map((d) => `${d.id}:${d.routes.map((r) => r.id).join('/')}`), ['a:A-D1/A-D2', 'b:B-C1/B-C2', 'c1:C1-W', 'c2:C2-W', 'd1:D1-E', 'd2:D2-E', 'c2m:C2-kT4m', 'tm1m:Tm1-D2']);
 });

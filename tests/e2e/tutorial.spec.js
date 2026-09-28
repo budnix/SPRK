@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { openShift, tap, advance, pressBtn } from './helpers.js';
 
-/* Misje wprowadzające (samouczki): każda na własnej stacji – Szkolna (monitor), Jodłowa (typ E), Zacisze (IZH-111) */
+/* Misje wprowadzające (samouczki): każda na własnej stacji – Szkolna (monitor), Jodłowa (typ E), Zacisze (IZH-111),
+   Olszyny (nastawnia mechaniczna) */
 
 /** Przechodzi samouczek do kroku o podanym tytule: „Dalej” na krokach z opisem, „Pomiń krok” na zadaniach. */
 async function goTo(page, title) {
@@ -219,8 +220,8 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
 
 test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – rozgrzewka z rozkazami, wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
-  await expect(page.locator('.st-mission')).toHaveCount(3);
-  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze']);
+  await expect(page.locator('.st-mission')).toHaveCount(4);
+  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny']);
   await page.click('.st-mission[data-scenario="nauka-3"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 3');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Zacisze');
@@ -350,7 +351,7 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   await expect(box.locator('.tut-title')).toContainText('Odjazd 7108');
 });
 
-for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3']]) {
+for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3'], ['olszyny', 'nauka-4']]) {
   test(`dymek samouczka nie zasłania zakładek panelu, paska poleceń ani wskazywanego elementu (${station}, każdy krok misji)`, async ({ page }) => {
     await openShift(page, station, { params: { scenariusz: scenario } });
     await page.waitForFunction(() => window.tutorial);
@@ -373,3 +374,45 @@ for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'
     expect(covered).toEqual([]);
   });
 }
+
+test('misja 4: nastawnia mechaniczna w Olszynach – rozgrzewka kliknięciami dźwigni i drążka, potem pełna kolejność dla pierwszego pociągu', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await page.click('.st-mission[data-scenario="nauka-4"]');
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 4: nastawnia mechaniczna');
+  await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Olszyny');
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=olszyny.*scenariusz=nauka-4/);
+  await page.waitForFunction(() => window.tutorial && window.sim);
+  await page.evaluate(() => { window.sim.clock.paused = true; return document.fonts.ready; });
+  await expect(page.locator('#desk svg.desk.mech')).toHaveCount(1);
+  const box = page.locator('.tut-box');
+  const title = box.locator('.tut-title');
+  const ctl = (kind, id) => page.locator(`#desk .mech-ctl[data-ref='${JSON.stringify({ kind, id })}']`);
+  await goTo(page, 'Dźwignia zwrotnicowa');
+  await expect(ctl('lever', 'Zw1')).toHaveClass(/tut-hl/);
+  await ctl('lever', 'Zw1').click(); await advance(page, 3);
+  await expect(title).toContainText('Z powrotem');
+  await ctl('lever', 'Zw1').click(); await advance(page, 3);
+  await expect(title).toContainText('Dźwignia wykolejnicy');
+  await ctl('lever', 'Wk1').click(); await advance(page, 3);
+  await expect(title).toContainText('Wykolejnica nałożona');
+  await ctl('lever', 'Wk1').click(); await advance(page, 3);
+  await expect(title).toContainText('Drążek przebiegowy');
+  await ctl('route', 'A-D1').click();
+  await expect(title).toContainText('Cofnięcie drążka');
+  await ctl('route', 'A-D1').click();
+  await expect(title).toContainText('Blokada liniowa i blok przebiegowy');
+  expect(await page.evaluate(() => window.sim.clock.time < 6 * 3600 + 59 * 60)).toBe(true);
+  await box.locator('.tut-next').click();
+  await untilRequest(page, 'W');
+  await page.evaluate(() => window.sim.press({ kind: 'block', exit: 'W', btn: 'Poz' }));
+  await expect(title).toContainText('1. Drążek przebiegowy');
+  await ctl('route', 'A-D1').click();
+  await expect(title).toContainText('2. Blok przebiegowy');
+  await expect(ctl('routeblock', 'A')).toHaveClass(/tut-hl/);
+  await ctl('routeblock', 'A').click();
+  await expect(title).toContainText('3. Dźwignia sygnałowa');
+  await ctl('lever', 'A').click();
+  await expect(title).toContainText('Pociąg wjeżdża');
+  expect(await page.evaluate(() => window.sim.ilk.signals.get('A').aspect)).not.toBe('S1');
+});
