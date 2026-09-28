@@ -280,7 +280,7 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.deepEqual(byDiff, [...byDiff].sort((a, b) => a - b));
   assert.equal(sortStations(STATIONS, 'difficulty')[0].id, 'szkolna', 'najłatwiejsza – stacja szkolna');
   const missions = missionList(STATIONS);
-  assert.deepEqual(missions.map((m) => m.scenario.id), ['nauka-1', 'nauka-2']);
+  assert.deepEqual(missions.map((m) => m.scenario.id), ['nauka-1', 'nauka-2', 'nauka-3']);
   // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
   const mark = difficultyMark(3, 'trudność');
   assert.equal((mark.match(/<i class="on">/g) || []).length, 3);

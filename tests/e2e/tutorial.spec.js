@@ -152,3 +152,49 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
   expect(await page.evaluate(() => window.sim.autoEnd)).toBe(true);
   await expect(page.locator('.tut-box')).toBeHidden();
 });
+
+test('misja 3: pulpit typu IZH-111 – dymek wskazuje przycisk adresowy semafora, adres + adres + rozkaz P zalicza krok, zły tor daje podpowiedź z Zcz', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('.st-mission')).toHaveCount(3);
+  await page.click('.st-mission[data-scenario="nauka-3"]');
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 3');
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=szkolna.*scenariusz=nauka-3/);
+  await page.waitForFunction(() => window.tutorial && window.sim);
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator('#desk svg.desk.izh')).toHaveCount(1);
+  const box = page.locator('.tut-box');
+  await expect(box.locator('.tut-body')).toContainText('IZH-111');
+  // słownik zna pojęcia tego pulpitu
+  await box.locator('abbr[data-term="przycisk adresowy"]').click();
+  await expect(page.locator('.tut-gloss')).toContainText('wybiera ten element');
+  await page.locator('.tut-gloss').click();
+  await box.locator('.tut-next').click();
+  await expect(box.locator('.tut-body')).toContainText('ciemny powtarzacz oznacza');
+  for (let i = 0; i < 2; i++) await box.locator('.tut-next').click();
+  await advance(page, 3);
+  await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Poz' });
+  await expect(box.locator('.tut-title')).toContainText('Przebieg wjazdowy');
+  await expect(box.locator('.tut-body')).toContainText('rozkaz P');
+  await expect(page.locator(`.btn[data-ref='{"kind":"signal","id":"A"}']`)).toHaveClass(/tut-hl/);
+  // zły tor: podpowiedź mówi, jak zwolnić przebieg na tym pulpicie
+  await pressBtn(page, { kind: 'signal', id: 'A' });
+  await pressBtn(page, { kind: 'signal', id: 'D2' });
+  await page.click('.izh-orders button[data-order="P"]');
+  await advance(page, 6);
+  await expect(box.locator('.tut-feedback')).toContainText('rozkaz Zcz');
+  await pressBtn(page, { kind: 'signal', id: 'D2' });
+  await page.click('.izh-orders button[data-order="Zcz"]');
+  await advance(page, 122);
+  expect(await page.evaluate(() => window.sim.ilk.active.has('A-D2'))).toBe(false);
+  await pressBtn(page, { kind: 'signal', id: 'A' });
+  await pressBtn(page, { kind: 'signal', id: 'D1' });
+  await page.click('.izh-orders button[data-order="P"]');
+  await advance(page, 6);
+  await expect(box.locator('.tut-title')).toContainText('Pociąg wjeżdża');
+  await expect(box.locator('.tut-feedback')).toBeHidden();
+  // krok z sygnałem zastępczym wskazuje rozkaz Sz w grupie rozkazów
+  const anchor = await page.evaluate(() => window.tutorial.progress.steps.find((s) => s.id === 'sz-6105').anchor);
+  expect(anchor).toEqual({ cmd: 'Sz' });
+  expect(await page.evaluate(() => window.desk.cmdButton('Sz')?.dataset.order)).toBe('Sz');
+});

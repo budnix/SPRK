@@ -13,7 +13,9 @@
  */
 
 const A = (term, label = term) => `<abbr data-term="${term}">${label}</abbr>`;
-const sig = (id, color = 'green') => ({ ref: { kind: 'signal', id, color } });
+/** Przycisk sygnałowy pulpitu typu E i element monitora: sygnalizator z kolorem przycisku (rodzajem przebiegu). */
+const colouredSignal = (id, color) => ({ ref: { kind: 'signal', id, color } });
+const RELEASE_E = (start) => `zwolnij przebieg (ZWOLNIJ PRZEBIEG / Pz + ${start})`;
 
 function entry(sim, nr) { return sim.traffic.timetable().find((e) => String(e.nr) === String(nr)); }
 function atNeighbour(sim, nr) { return entry(sim, nr)?.status === 'na następnym posterunku'; }
@@ -25,12 +27,33 @@ function active(sim, id) { return sim.ilk.active.has(id); }
  * Teksty i kotwice zależne od stanowiska: jeden słownik na widok, te same klucze w każdym (pilnuje tego test).
  * Nowy panel = nowy wpis tutaj; kroków misji nie trzeba ruszać.
  *  - `name` sąsiada w dopełniaczu („Lipna”, „Dębna”), `n` – nazwy posterunków sąsiednich,
- *  - `anchor(cmdId, ref)` – co wskazać dymkiem: przycisk paska poleceń albo element obsługi na planie.
+ *  - `anchor(cmdId, ref)` – co wskazać dymkiem: przycisk paska poleceń albo element obsługi na planie,
+ *  - `signal(id, color)` – kotwica sygnalizatora (przycisk sygnałowy z kolorem albo przycisk adresowy),
+ *  - `release(start, end)` – jak zwolnić błędnie nastawiony przebieg.
  */
+/** Kostki blokady liniowej i wskazania wspólne dla pulpitów kostkowych (typ E, IZH-111). */
+const DESK_BLOCK = {
+  indicator: 'lampka',
+  blockPress: (exit, name, btn) => `naciśnij przycisk <b>${btn}</b> na kostkach blokady przy końcu toru szlakowego do <b>${name}</b> (lewy / prawy kraniec pulpitu)`,
+  dpo: (name) => `naciśnij <b>dPo</b> na kostce licznika blokady do <b>${name}</b>`,
+  permissionGiven: () => 'pole <b>wyjazd</b> zaświeci',
+  lineOccupied: 'strzałka „wyjazd” czerwona',
+  blockIntro: (n) => `Kostki przy obu krańcach toru szlakowego to ${A('Eap', 'blokada liniowa Eap')} do ${n.LIPa} i do ${n.DEBa}. Na kostkach toru są strzałki z lampkami: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas. Nad torem kostki przycisków z lampkami: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić; wyżej liczniki doraźne.`,
+  blockCommands: 'Przyciski na kostkach obok toru',
+  blockSpecial: '',
+  sectionsLocked: 'zaświecą',
+  shuntEndTrack3: 'końca toru 3 (kT3 przy koźle)',
+  shuntEndTm2: 'tarczy Tm2',
+  shuntEndC2: 'semafora C2',
+};
+
 export const PHRASES = {
   monitor: {
     view: 'monitor',
     anchor: (cmdId) => ({ cmd: cmdId }),
+    signal: colouredSignal,
+    release: RELEASE_E,
+    releaseNames: 'STOP i Pz',
     indicator: 'napis',
     blockPress: (exit, name, btn) => `kliknij <b>strzałkę szlaku do ${name}</b> na krańcu toru i wybierz <b>${btn}</b>`,
     trainRoute: (s, e, what) => `na pasku poleceń wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>${s}</b>, a potem ${what || `semafor <b>${e}</b>`}`,
@@ -55,30 +78,41 @@ export const PHRASES = {
     next: 'Misja 2 pokazuje tę samą stację na <b>pulpicie kostkowym</b> urządzeń typu E (menu ☰ → Nowa zmiana → Szkolna → Misja 2).',
   },
   pulpit: {
+    ...DESK_BLOCK,
     view: 'pulpit',
     anchor: (cmdId, ref) => ref,
-    indicator: 'lampka',
-    blockPress: (exit, name, btn) => `naciśnij przycisk <b>${btn}</b> na kostkach blokady przy końcu toru szlakowego do <b>${name}</b> (lewy / prawy kraniec pulpitu)`,
+    signal: colouredSignal,
+    release: RELEASE_E,
+    releaseNames: 'STOP i Pz',
     trainRoute: (s, e, what) => `naciśnij <b>zielony przycisk</b> semafora <b>${s}</b>, a w ciągu 6 s ${what || `zielony przycisk semafora <b>${e}</b>`}`,
     trainRouteMenu: (s, e) => `naciśnij zielony przycisk semafora <b>${s}</b>, potem zielony przycisk semafora <b>${e}</b>`,
     trainRouteMenuTitle: 'Przebieg wjazdowy od B',
     trainRouteMenuLead: '',
     exitEnd: (name) => `<b>zielony przycisk końca przebiegu</b> na kostce wyjazdu na szlak do ${name}`,
     shuntRoute: (s, e) => `naciśnij <b>biały przycisk</b> semafora <b>${s}</b>, potem <b>biały przycisk</b> ${e}`,
-    shuntEndTrack3: 'końca toru 3 (kT3 przy koźle)',
-    shuntEndTm2: 'tarczy Tm2',
-    shuntEndC2: 'semafora C2',
-    sectionsLocked: 'zaświecą',
     sz: (s) => `naciśnij przycisk grupowy <b>Sz</b>, a potem zielony przycisk semafora <b>${s}</b>`,
-    dpo: (name) => `naciśnij <b>dPo</b> na kostce licznika blokady do <b>${name}</b>`,
-    permissionGiven: () => 'pole <b>wyjazd</b> zaświeci',
-    lineOccupied: 'strzałka „wyjazd” czerwona',
-    blockIntro: (n) => `Kostki przy obu krańcach toru szlakowego to ${A('Eap', 'blokada liniowa Eap')} do ${n.LIPa} i do ${n.DEBa}. Na kostkach toru są strzałki z lampkami: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas. Nad torem kostki przycisków z lampkami: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić; wyżej liczniki doraźne.`,
-    blockCommands: 'Przyciski na kostkach obok toru',
-    blockSpecial: '',
     colours: `Lampki na kostkach: <b>białe</b> – odcinek utwierdzony w przebiegu, <b>czerwone</b> – zajęty przez tabor, <b>żółte</b> przy zwrotnicy – jej położenie. Semafor to powtarzacz z przyciskiem zielonym (przebieg pociągowy) i białym (manewrowy). Przyciski grupowe u góry: Zw, Zz, Pz, dPz, Sz działają razem z drugim przyciskiem (obsługa dwuprzyciskowa).`,
     intro: `Przed Tobą <b>pulpit kostkowy</b> urządzeń przekaźnikowych typu E. Wszystko robi się przyciskami na kostkach: <b>naciśnięcie</b> = kliknięcie, <b>wyciągnięcie</b> = przytrzymanie pół sekundy lub prawy przycisk myszy. Większość operacji jest <b>dwuprzyciskowa</b>: pierwszy przycisk „uzbraja” (podświetla się), drugi wykonuje – masz na to 6 s.`,
     next: 'Teraz spróbuj prawdziwych stacji: Stare Pustkowie (typ E) albo Sopot i Gdynia (stanowiska komputerowe) – menu ☰ → Nowa zmiana.',
+  },
+  izh: {
+    ...DESK_BLOCK,
+    view: 'izh',
+    // rozkaz Sz jest w grupie rozkazów; przebieg zaczyna się od przycisku adresowego na planie
+    anchor: (cmdId, ref) => (cmdId === 'sz' ? { cmd: 'Sz' } : ref),
+    signal: (id) => ({ ref: { kind: 'signal', id } }),
+    release: (start, end) => `zwolnij przebieg (przycisk adresowy ${end} i rozkaz Zcz – zwolnienie trwa 120 s)`,
+    releaseNames: 'STOP i Zcz',
+    trainRoute: (s, e, what) => `naciśnij <b>przycisk adresowy</b> semafora <b>${s}</b>, potem ${what || `przycisk adresowy semafora <b>${e}</b>`}, a na końcu rozkaz <b>P</b> w grupie rozkazów nad planem – masz na to 10 s`,
+    trainRouteMenu: (s, e) => `przycisk adresowy semafora <b>${s}</b>, przycisk adresowy semafora <b>${e}</b> i rozkaz <b>P</b>`,
+    trainRouteMenuTitle: 'Przebieg wjazdowy od B',
+    trainRouteMenuLead: '',
+    exitEnd: (name) => `<b>przycisk adresowy końca toru</b> na kostce wyjazdu na szlak do ${name}`,
+    shuntRoute: (s, e) => `naciśnij przycisk adresowy <b>${s}</b>, potem przycisk adresowy ${e}, a na końcu rozkaz <b>M</b>`,
+    sz: (s) => `naciśnij przycisk adresowy semafora <b>${s}</b>, a potem rozkaz <b>Sz</b>`,
+    colours: `To ${A('pulpit ciemny')}: w stanie zasadniczym lampki są zgaszone. Szczeliny toru świecą na <b>biało</b>, gdy odcinek jest utwierdzony w przebiegu, i na <b>czerwono</b>, gdy jest zajęty przez tabor. Położenie zwrotnicy widać po naciśnięciu jej przycisku adresowego. Powtarzacz semafora ma tylko lampkę zieloną i białą – <b>ciemny powtarzacz oznacza „Stój”</b>.`,
+    intro: `Przed Tobą <b>pulpit urządzeń przekaźnikowych typu IZH-111</b>. Każdy element – semafor, tarcza, zwrotnica, koniec toru – ma jeden czarny ${A('przycisk adresowy')}, a nad planem jest grupa ${A('przycisk rozkazu', 'przycisków rozkazów')}: P, M, +, −, STOP, Zw, ${A('Zcz')}, Sz. Najpierw wskazujesz element przyciskiem adresowym (podświetli się), potem wybierasz rozkaz – masz na to 10 s. Ponowne naciśnięcie tego samego adresu odwołuje wybór.`,
+    next: 'Teraz spróbuj pełnej zmiany na tym pulpicie: menu ☰ → Nowa zmiana → Szkolna → „Pełna zmiana – pulpit typu IZH-111”. Pozostałe rozkazy (+, −, STOP, Zw, Zcz) opisuje instrukcja pod przyciskiem „?”.',
   },
 };
 
@@ -86,12 +120,13 @@ export const PHRASES = {
 export const MISSION_VIEWS = Object.keys(PHRASES);
 
 /**
- * Kroki misji dla stacji Szkolna. `view`: 'monitor' (misja 1) lub 'pulpit' (misja 2).
+ * Kroki misji dla stacji Szkolna. `view`: 'monitor' (misja 1), 'pulpit' (misja 2) lub 'izh' (misja 3).
  */
 export function missionSteps(view) {
   const P = PHRASES[view];
   if (!P) throw new Error(`Brak tekstów misji dla widoku '${view}'`);
   const cmd = (id, ref) => P.anchor(id, ref);
+  const sig = (id, color = 'green') => P.signal(id, color);
   const req = (name) => `gdy ${name} zgłosi pociąg – zamiga ${P.indicator} „żąd.”`;
   const LIP = 'Lipno', DEB = 'Dębno';            // mianownik: „Lipno żąda…”
   const LIPa = 'Lipna', DEBa = 'Dębna';           // dopełniacz: „od Lipna”, „do Dębna”, „z Lipna”, „dla Dębna”
@@ -111,7 +146,7 @@ export function missionSteps(view) {
     (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: 'Żądanie pojawia się chwilę po starcie zegara. Jeśli go nie widać – odczekaj kilka sekund.' });
   act('route-6101', 'Przebieg wjazdowy na tor 1', `Pociąg jest w drodze. Nastaw ${A('przebieg pociągowy')} od semafora wjazdowego <b>A</b> na tor 1, czyli do semafora wyjazdowego <b>D1</b>: ${P.trainRoute('A', 'D1')}.<p>Zwrotnica 1 ustawi się sama, odcinki zostaną ${A('utwierdzenie', 'utwierdzone')} i semafor A poda sygnał zezwalający.</p>`, cmd('train', sig('A')),
     (sim) => active(sim, 'A-D1') || arrived(sim, 6101),
-    { wrong: (sim) => (active(sim, 'A-D2') ? 'To przebieg na tor 2. Pociąg 6101 ma tor 1 – zwolnij przebieg (ZWOLNIJ PRZEBIEG / Pz + A) i nastaw A → D1.' : null) });
+    { wrong: (sim) => (active(sim, 'A-D2') ? `To przebieg na tor 2. Pociąg 6101 ma tor 1 – ${P.release('A', 'D2')} i nastaw A → D1.` : null) });
   act('watch-6101', 'Pociąg wjeżdża', `Obserwuj: zajęte odcinki są <b>czerwone</b>, a za pociągiem przebieg rozwiązuje się odcinkowo. Pociąg zatrzyma się przy peronie toru 1 (przyjazd planowy 07:06). Możesz przyspieszyć czas przyciskami <b>2×</b>, <b>5×</b> w nagłówku.`, { el: '#speed' },
     (sim) => arrived(sim, 6101));
   act('ko-6101', 'Zwolnienie bloku końcowego (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIPa} miga ${P.indicator} <b>Ko</b>. Zwolnij blok końcowy, potwierdzając sąsiadowi przyjazd: ${P.blockPress('W', LIPa, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIPa} jest znów wolny dla następnych pociągów.</p>`, blockW,
@@ -197,7 +232,7 @@ export function missionSteps(view) {
     (sim) => sim.blocks.get('W').counters.dPo >= 1 && !sim.blocks.get('W').poBlocked,
     { wrong: (sim) => { const b = sim.blocks.get('W'); return b.poBlocked && String(b.phone.arrivalConfirmed) !== '6106' ? 'Poczekaj na telefoniczne potwierdzenie przyjazdu 6106 – dPo przed nim to −15 pkt.' : null; } });
 
-  info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, STOP i Pz, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b> (później: menu ☰ → Raport zmiany).<p>${P.next}</p>`, { el: '#btn-menu' });
+  info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, ${P.releaseNames}, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b> (później: menu ☰ → Raport zmiany).<p>${P.next}</p>`, { el: '#btn-menu' });
   return steps;
 }
 
@@ -205,6 +240,7 @@ export function missionSteps(view) {
 export const MISSIONS = {
   monitor: { id: 'monitor', name: 'Misja 1 – stanowisko komputerowe', view: 'monitor', steps: () => missionSteps('monitor') },
   pulpit: { id: 'pulpit', name: 'Misja 2 – pulpit kostkowy', view: 'pulpit', steps: () => missionSteps('pulpit') },
+  izh: { id: 'izh', name: 'Misja 3 – pulpit typu IZH-111', view: 'izh', steps: () => missionSteps('izh') },
 };
 
 export function getMission(id) {

@@ -80,7 +80,8 @@ Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenario
 failure, a block failure, a peak with heavy disruptions).
 
 ### Guided missions and the start screen
-* **Mission 1** (computer workstation) and **Mission 2** (type E desk) on the training station: 47 steps each,
+* **Mission 1** (computer workstation), **Mission 2** (type E desk) and **Mission 3** (type IZH-111 desk) on the
+  training station: 40 steps each,
   a popup pinned to the element to use, highlighted targets, a clickable glossary of every abbreviation
   (Poz, Wbl, Ko, Pz, dPz, Sz, Zz, Zk…), feedback when you set the wrong route. The timetable walks through permission
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a

@@ -54,7 +54,8 @@ Uproszczenia i założenia w grze (`src/srk/address.js`, `src/render/IzhRenderer
   odpowiednie do danego typu blokady” – bez szczegółów); kostki toru, rama i perony wspólne z pulpitem typu E;
 * doraźnego zwolnienia przebiegu z licznikiem (dPz) na tym pulpicie nie ma – przebieg, w który pociąg wjechał,
   rozwiązuje się odcinkowo;
-* żadna stacja w grze nie ma tych urządzeń w rzeczywistości – pulpit jest dostępny jako zmiana na stacji Szkolna.
+* żadna stacja w grze nie ma tych urządzeń w rzeczywistości – pulpit jest dostępny jako zmiana i misja 3 na stacji
+  Szkolna; misja uczy przebiegów (P, M) i sygnału zastępczego (Sz), pozostałe rozkazy opisuje instrukcja.
 
 ## Gdynia Główna
 

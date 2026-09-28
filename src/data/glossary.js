@@ -40,6 +40,10 @@ export const GLOSSARY = {
   Ie104: { name: 'Ie-104', text: 'Wytyczne PKP PLK dotyczące zobrazowania na komputerowych stanowiskach obsługi srk – kolory odcinków, symbole semaforów i zwrotnic użyte na monitorze w grze.' },
   srk: { name: 'srk', text: 'Sterowanie ruchem kolejowym – urządzenia (przekaźnikowe typu E, komputerowe) zapewniające bezpieczne nastawianie przebiegów.' },
   'pociąg zdawczy': { name: 'Pociąg zdawczy', text: 'Pociąg towarowy obsługujący stację: przywozi wagony i kończy bieg; jego skład po manewrach wraca jako nowy pociąg.' },
+  'przycisk adresowy': { name: 'Przycisk adresowy (IZH-111)', text: 'Przycisk przy elemencie – semaforze, tarczy, zwrotnicy, końcu toru – który wybiera ten element do sterowania, także jako początek albo koniec przebiegu. Sam niczego nie nastawia: działa razem z przyciskiem rozkazu.' },
+  'przycisk rozkazu': { name: 'Przycisk rozkazu (IZH-111)', text: 'Przycisk w grupie poza planem stacji, który mówi, co zrobić z elementem wskazanym przyciskiem adresowym: P i M – przebieg pociągowy i manewrowy, + i − – położenie zwrotnicy, STOP – zamknięcie zwrotnicy albo sygnał „Stój”, Zw – odwołanie zamknięcia i zwolnienie przebiegu manewrowego, Zcz – zwolnienie czasowe, Sz – sygnał zastępczy.' },
+  Zcz: { name: 'Zcz – zwolnienie czasowe (IZH-111)', text: 'Zwolnienie utwierdzonego przebiegu pociągowego: przycisk adresowy semafora końcowego i rozkaz Zcz. Sygnał gaśnie od razu, a droga przebiegu rozwiązuje się po 120 s – do tego czasu lampka przy przycisku semafora końcowego miga na biało.' },
+  'pulpit ciemny': { name: 'Pulpit ciemny', text: 'Pulpit, na którym lampki kontrolne w stanie zasadniczym są zgaszone (urządzenia typu IZH-111). Świeci tylko to, co odbiega od stanu zasadniczego: utwierdzony lub zajęty odcinek, sygnał zezwalający, wybrany element. Pulpit typu E jest półciemny – żółte szczeliny zawsze pokazują położenie zwrotnic.' },
   'zmiana czoła': { name: 'Zmiana czoła', text: 'Odwrócenie kierunku jazdy stojącego składu (lokomotywa objeżdża lub prowadzi z drugiej strony). W grze: zakładka Stan → „zmiana czoła”.' },
 };
 

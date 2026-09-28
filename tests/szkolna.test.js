@@ -26,7 +26,7 @@ test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scen
 });
 
 test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty ze słownika', () => {
-  for (const view of ['monitor', 'pulpit']) {
+  for (const view of ['monitor', 'pulpit', 'izh']) {
     const steps = missionSteps(view);
     assert.ok(steps.length > 30, `${view}: za mało kroków`);
     assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
@@ -43,7 +43,19 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
       assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
       for (const [, term] of s.text.matchAll(/data-term="([^"]+)"/g)) assert.ok(GLOSSARY[term], `${view}/${s.id}: brak w słowniku: ${term}`);
       assert.doesNotMatch(`${s.title} ${s.text} ${s.tip || ''}`, /\b(od|do|z|dla|szlak) (Lipno|Dębno)\b/, `${view}/${s.id}: nieodmieniona nazwa sąsiada`);
-      if (s.anchor?.cmd) assert.equal(view, 'monitor', `${view}/${s.id}: kotwica paska poleceń tylko na monitorze`);
+      // pasek poleceń ma monitor; pulpit IZH-111 ma grupę rozkazów – w misji wskazywany jest tylko rozkaz Sz
+      if (s.anchor?.cmd && view === 'izh') assert.equal(s.anchor.cmd, 'Sz', `${view}/${s.id}: kotwica rozkazu`);
+      else if (s.anchor?.cmd) assert.equal(view, 'monitor', `${view}/${s.id}: kotwica paska poleceń tylko na monitorze`);
+      // przycisk sygnałowy ma kolor tylko tam, gdzie kolor wybiera rodzaj przebiegu (typ E, monitor)
+      if (s.anchor?.ref?.kind === 'signal') assert.equal(s.anchor.ref.color === undefined, view === 'izh', `${view}/${s.id}: kolor przycisku sygnałowego`);
+    }
+    // misja 3 nie odsyła do przycisków typu E ani do poleceń monitora
+    if (view === 'izh') {
+      for (const s of steps) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|biały przycisk|przycisk grupowy|\bPz\b|dwuprzyciskow/.test(`${s.text} ${s.tip || ''}`), `${s.id}: tekst innego stanowiska w misji IZH-111`);
+      assert.match(steps.find((s) => s.id === 'route-6101').text, /przycisk adresowy.*rozkaz <b>P<\/b>/);
+      assert.match(steps.find((s) => s.id === 'shunt-route').text, /rozkaz <b>M<\/b>/);
+      assert.match(steps.find((s) => s.id === 'intro').text, /IZH-111/);
+      assert.match(steps.find((s) => s.id === 'route-6101').wrong({ ilk: { active: new Set(['A-D2']) } }), /przycisk adresowy D2 i rozkaz Zcz/);
     }
     // teksty misji 2 nie odsyłają do paska poleceń monitora; misja 1 nie mówi o przyciskach blokady, których na monitorze nie ma
     if (view === 'pulpit') for (const s of steps) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ/.test(s.text), `${s.id}: tekst z monitora na pulpicie`);
@@ -53,18 +65,41 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
   }
 });
 
-/** Skrypt „ucznia”: dla każdego kroku – co zrobić na modelu (jak kliknięcia na stanowisku). */
-function studentScript(sim) {
+/**
+ * Obsługa stanowiska przez „ucznia”: przebieg pociągowy / manewrowy i sygnał zastępczy tak, jak każe dymek.
+ * Pulpit typu E i monitor – przyciski sygnałowe z kolorem; pulpit IZH-111 – przyciski adresowe i rozkaz.
+ */
+function operate(sim, view) {
   const press = (ref) => sim.press(ref);
+  if (view === 'izh') {
+    const adr = (x) => (x.kind ? x : { kind: 'signal', id: x });
+    const order = (id) => press({ kind: 'order', id });
+    return {
+      train: (a, b) => { press(adr(a)); press(adr(b)); order('P'); },
+      shunt: (a, b) => { press(adr(a)); press(adr(b)); order('M'); },
+      sz: (a) => { press(adr(a)); order('Sz'); },
+    };
+  }
   const G = (id) => ({ kind: 'signal', id, color: 'green' });
   const Wt = (id) => ({ kind: 'signal', id, color: 'white' });
+  return {
+    train: (a, b) => { press(G(a)); press(b.kind ? b : G(b)); },
+    shunt: (a, b) => { press(Wt(a)); press(b.kind ? b : Wt(b)); },
+    sz: (a) => { press({ kind: 'group', id: 'Sz', role: 'substitute' }); press(G(a)); },
+  };
+}
+
+/** Skrypt „ucznia”: dla każdego kroku – co zrobić na modelu (jak kliknięcia na stanowisku). */
+function studentScript(sim, view) {
+  const press = (ref) => sim.press(ref);
+  const op = operate(sim, view);
   const blk = (exit, btn) => ({ kind: 'block', exit, btn });
   const B = (exit) => sim.blocks.get(exit);
   const act = (id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
   const e = (nr) => sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
   const poz = (exit) => { if (B(exit).request === 'theirs') press(blk(exit, 'Poz')); };
   const ko = (exit) => { if (B(exit).koPending) press(blk(exit, 'Ko')); };
-  const route = (a, b, id) => { if (!act(id) && !sim.ilk.armed) { press(G(a)); press(b.kind ? b : G(b)); } };
+  const route = (a, b, id) => { if (!act(id) && !sim.ilk.armed) op.train(a, b); };
   const wbl = (exit) => { const b = B(exit); if (!b.direction && !b.request && !b.occupied && !b.koPending) press(blk(exit, 'Wbl')); };
   const out = (nr, sigId, endId, exit, id) => {
     const en = e(nr); const b = B(exit);
@@ -91,13 +126,13 @@ function studentScript(sim) {
     'cross-out': () => { ko('W'); ko('E'); out(6103, 'D2', 'kE', 'E', 'D2-E'); out(6104, 'C1', 'kW', 'W', 'C1-W'); },
     'in-90201': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); ko('W'); },
     'shunt-mode': () => { const tr = e(90201).train; if (tr && tr.v === 0 && tr.mode !== 'shunt') sim.traffic.toShunting(90201); },
-    'shunt-route': () => { if (!act('D2-kT3m') && !sim.ilk.armed) { press(Wt('D2')); press({ kind: 'end', id: 'kT3' }); } },
+    'shunt-route': () => { if (!act('D2-kT3m') && !sim.ilk.armed) op.shunt('D2', { kind: 'end', id: 'kT3' }); },
     'shunt-reverse': () => { const tr = e(90201).train; if (tr && tr.v === 0 && !['W', 'NW', 'SW'].includes(tr.direction)) sim.traffic.reverseTrain(90201); },
-    'shunt-back': () => { if (sim.ilk.armed) return; if (!act('Tm1-Tm2') && !once.has('tm1')) { once.add('tm1'); press(Wt('Tm1')); press(Wt('Tm2')); } else if (!act('Tm2-C2')) { press(Wt('Tm2')); press(Wt('C2')); } },
+    'shunt-back': () => { if (sim.ilk.armed) return; if (!act('Tm1-Tm2') && !once.has('tm1')) { once.add('tm1'); op.shunt('Tm1', 'Tm2'); } else if (!act('Tm2-C2')) op.shunt('Tm2', 'C2'); },
     'shunt-task2': () => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = e(90201).train || e(90202).train; if (t?.done && tr && tr.mode === 'shunt' && tr.v === 0) sim.traffic.toTrainMode(tr.nr); },
     'out-90202': () => { if (!e(90202).train) return; const b = B('W'); if (b.direction === 'out' && b.permission) route('C2', { kind: 'end', id: 'kW' }, 'C2-W'); else wbl('W'); },
     'in-6105-route': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); },
-    'sz-6105': () => { if (stoppedBefore(6105, 'A') && !sim.ilk.armed && sim.ilk.signals.get('A').aspect !== 'Sz') { press({ kind: 'group', id: 'Sz', role: 'substitute' }); press(G('A')); } },
+    'sz-6105': () => { if (stoppedBefore(6105, 'A') && !sim.ilk.armed && sim.ilk.signals.get('A').aspect !== 'Sz') op.sz('A'); },
     'out-6105': () => { ko('W'); out(6105, 'D1', 'kE', 'E', 'D1-E'); },
     'in-6106': () => { poz('E'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); ko('E'); },
     'phone-ask': () => one('ask', () => sim.comms.send('ask-free', { exit: 'W', nr: '6106' })),
@@ -107,13 +142,13 @@ function studentScript(sim) {
   };
 }
 
-for (const [scenario, mission] of [['nauka-1', 'monitor'], ['nauka-2', 'pulpit']]) {
+for (const [scenario, mission] of [['nauka-1', 'monitor'], ['nauka-2', 'pulpit'], ['nauka-3', 'izh']]) {
   test(`Szkolna: misja „${mission}” (${scenario}) – uczeń wykonujący polecenia dymków przechodzi wszystkie kroki po kolei`, () => {
     const sim = new Simulation(szkolna, { scenario, seed: 7 });
     const steps = missionSteps(mission);
     const order = [];
     const progress = new MissionProgress(sim, steps, { onStep: (s) => order.push(s.id) });
-    const script = studentScript(sim);
+    const script = studentScript(sim, mission);
     progress.start();
     assert.equal(sim.clock.paused, true, 'krok informacyjny zatrzymuje zegar');
     const end = Clock.parse('09:10');
@@ -306,7 +341,7 @@ test('Szkolna: karta posterunku oznacza stanowisko „do wyboru” (zmiany na mo
 
 test('misje: słownik tekstów ma te same klucze i rodzaje wartości dla każdego widoku; nieznany widok to błąd', async () => {
   const { PHRASES, MISSION_VIEWS } = await import('../src/tutorial/missions.js');
-  assert.deepEqual(MISSION_VIEWS, ['monitor', 'pulpit']);
+  assert.deepEqual(MISSION_VIEWS, ['monitor', 'pulpit', 'izh']);
   const shape = (d) => Object.fromEntries(Object.entries(d).map(([k, v]) => [k, typeof v === 'function' ? `function/${v.length}` : typeof v]));
   const base = shape(PHRASES[MISSION_VIEWS[0]]);
   assert.ok(Object.keys(base).length > 15);
@@ -321,6 +356,15 @@ test('misje: słownik tekstów ma te same klucze i rodzaje wartości dla każdeg
   const ref = { ref: { kind: 'signal', id: 'A', color: 'green' } };
   assert.deepEqual(PHRASES.monitor.anchor('train', ref), { cmd: 'train' });
   assert.equal(PHRASES.pulpit.anchor('train', ref), ref);
+  // pulpit IZH-111: przebieg zaczyna się od przycisku adresowego na planie, Sz to rozkaz z grupy rozkazów
+  const address = PHRASES.izh.signal('A', 'green');
+  assert.deepEqual(address, { ref: { kind: 'signal', id: 'A' } });
+  assert.equal(PHRASES.izh.anchor('train', address), address);
+  assert.deepEqual(PHRASES.izh.anchor('sz', ref), { cmd: 'Sz' });
+  assert.deepEqual(PHRASES.pulpit.signal('A', 'white'), { ref: { kind: 'signal', id: 'A', color: 'white' } });
+  // misja 3 na stacji: scenariusz wymusza pulpit IZH-111
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-3' }).srk.id, 'izh111');
+  assert.equal(MISSIONS.izh.view, 'izh');
   assert.throws(() => missionSteps('kluczowy'), /Brak tekstów misji dla widoku 'kluczowy'/);
   // kroki nie rozgałęziają się po widoku poza słownikiem
   const { readFileSync } = await import('node:fs');
