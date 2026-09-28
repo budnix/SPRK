@@ -3,6 +3,7 @@ import { t } from '../i18n/index.js';
 import { GLOSSARY } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 import { uiIcon } from '../ui/icons.js';
+import { placeBox } from './placement.js';
 
 /**
  * Samouczek (UI): dymek z bieżącym krokiem misji przypięty do wskazywanego elementu (semafor, kostki blokady,
@@ -106,51 +107,32 @@ export class Tutorial {
   }
 
   /**
-   * Położenie dymku: przy wskazywanym elemencie, ale tak, by nie zasłaniać planu stacji – kandydaci (pod, nad,
-   * obok elementu; pas nad planem i pod planem) oceniani wg pola zasłoniętego planu i odległości od elementu.
-   * Po ręcznym przesunięciu (uchwyt = nagłówek) dymek zostaje na miejscu do następnego kroku.
+   * Położenie dymku: przy wskazywanym elemencie, tak by nie zasłaniać jego, pasków sterowania (zakładki panelu,
+   * pasek poleceń) ani planu stacji – wybór miejsca: `placement.js`. Po ręcznym przesunięciu (uchwyt = nagłówek)
+   * dymek zostaje na miejscu do następnego kroku.
    */
   #reposition() {
     this.lastPos = performance.now();
     const box = this.box;
     if (box.classList.contains('hidden') || this.dragged) return;
-    const W = Math.min(360, window.innerWidth - 16), M = 10;
+    const W = Math.min(360, window.innerWidth - 16);
     box.style.width = `${W}px`;
     box.style.transform = 'none'; box.style.bottom = 'auto'; box.style.right = 'auto';
-    const bh = box.offsetHeight || 200;
-    const vw = window.innerWidth, vh = window.innerHeight;
+    const rectOf = (el) => { const q = el?.getBoundingClientRect?.(); return q && (q.width || q.height) ? q : null; };
     const t = this.target;
-    const r = t?.getBoundingClientRect?.();
-    const place = (left, top, side) => { box.style.left = `${Math.max(M, Math.min(vw - W - M, left))}px`; box.style.top = `${Math.max(M, Math.min(vh - bh - M, top))}px`; box.dataset.side = side; };
-    if (!r || (r.width === 0 && r.height === 0)) { place(vw - W - M, vh - bh - 52, 'none'); return; }
-    if (t.closest?.('#side') && r.left - M - W >= 0) { place(r.left - M - W, r.top, 'left'); return; }
-    // obszar rysunku planu (suma warstw SVG) – tego dymek ma nie zasłaniać, gdy wskazuje element planu
-    const layers = [...document.querySelectorAll('#desk-scroll svg > g')].map((g) => g.getBoundingClientRect()).filter((q) => q.width && q.height);
+    // obszar rysunku planu (suma warstw SVG)
+    const layers = [...document.querySelectorAll('#desk-scroll svg > g')].map(rectOf).filter(Boolean);
     const desk = layers.length ? layers.reduce((a, q) => ({ left: Math.min(a.left, q.left), top: Math.min(a.top, q.top), right: Math.max(a.right, q.right), bottom: Math.max(a.bottom, q.bottom) })) : null;
-    const onDesk = !!(desk && t.closest?.('#desk-scroll'));
-    const cx = r.left + r.width / 2;
-    const clampT = (tp) => Math.max(M, Math.min(vh - bh - M, tp));
-    const cands = [
-      ['below', cx - W / 2, r.bottom + M], ['above', cx - W / 2, r.top - M - bh],
-      ['right', r.right + M, r.top], ['left', r.left - M - W, r.top],
-    ];
-    // pas nad planem i pod planem (docięty do okna – częściowe zasłonięcie planu liczy się w ocenie)
-    if (desk) cands.push(['top-strip', cx - W / 2, clampT(desk.top - M - bh)], ['bottom-strip', cx - W / 2, clampT(desk.bottom + M)]);
-    const fits = (l, tp) => l >= M - 0.5 && tp >= M - 0.5 && l + W <= vw - M + 0.5 && tp + bh <= vh - M + 0.5;
-    const overlap = (l, tp, q) => Math.max(0, Math.min(l + W, q.right) - Math.max(l, q.left)) * Math.max(0, Math.min(tp + bh, q.bottom) - Math.max(tp, q.top));
-    // paski sterowania (nagłówek, pasek poleceń, listwa narzędzi) też lepiej zostawić odsłonięte
-    const bars = ['#topbar', '#cmd-host', '#desk-tools'].map((q) => document.querySelector(q)?.getBoundingClientRect()).filter((q) => q && q.height);
-    let best = null;
-    for (const [side, l0, tp] of cands) {
-      const l = Math.max(M, Math.min(vw - W - M, l0));
-      if (!fits(l, tp)) continue;
-      // nie zasłaniać elementu ani (gdy element leży na planie) rysunku planu; bliżej elementu = lepiej
-      const dist = Math.hypot(l + W / 2 - cx, tp + bh / 2 - (r.top + r.height / 2));
-      const score = overlap(l, tp, r) * 1000 + (onDesk ? overlap(l, tp, desk) : 0) + bars.reduce((a, q) => a + overlap(l, tp, q) * 0.7, 0) + dist * 0.5;
-      if (!best || score < best.score) best = { side, l, tp, score };
-    }
-    if (best) place(best.l, best.tp, best.side);
-    else place(cx - W / 2, r.bottom + M <= vh - bh - M ? r.bottom + M : r.top - M - bh, 'beside');
+    const p = placeBox({
+      box: { w: W, h: box.offsetHeight || 200 },
+      viewport: { w: window.innerWidth, h: window.innerHeight },
+      target: rectOf(t),
+      desk,
+      bars: ['#topbar', '#cmd-host', '#desk-tools'].map((q) => rectOf(document.querySelector(q))).filter(Boolean),
+      panel: rectOf(document.getElementById('side')),
+      onDesk: !!(desk && t?.closest?.('#desk-scroll')),
+    });
+    box.style.left = `${p.left}px`; box.style.top = `${p.top}px`; box.dataset.side = p.side;
   }
 
   #showTerm(term, at) {

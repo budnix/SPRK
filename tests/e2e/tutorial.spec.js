@@ -349,3 +349,27 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('Zw'); }
   await expect(box.locator('.tut-title')).toContainText('Odjazd 7108');
 });
+
+for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3']]) {
+  test(`dymek samouczka nie zasłania zakładek panelu, paska poleceń ani wskazywanego elementu (${station}, każdy krok misji)`, async ({ page }) => {
+    await openShift(page, station, { params: { scenariusz: scenario } });
+    await page.waitForFunction(() => window.tutorial);
+    const box = page.locator('.tut-box');
+    const steps = await page.evaluate(() => window.tutorial.progress.steps.length);
+    const covered = [];
+    // zakładkę panelu da się kliknąć przy otwartym dymku (na początku misji: ostatni krok kończy zmianę i otwiera raport)
+    await page.click('#panel-tabs button[data-tab=log]');
+    await expect(page.locator('#tab-log')).toBeVisible();
+    for (let i = 0; i < steps; i++) {
+      const found = await page.evaluate(() => {
+        const b = document.querySelector('.tut-box').getBoundingClientRect();
+        const hits = (el) => { const q = el.getBoundingClientRect(); return q.width > 0 && q.height > 0 && Math.min(b.right, q.right) - Math.max(b.left, q.left) > 1 && Math.min(b.bottom, q.bottom) - Math.max(b.top, q.top) > 1; };
+        const controls = [...document.querySelectorAll('#panel-tabs button:not(.hidden), #cmd-host button, #desk-tools .tb:not(.hidden), #topbar .tb, .tut-hl')];
+        return { step: window.tutorial.progress.step?.id, box: [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)], over: controls.filter(hits).map((e) => e.id || e.dataset.tab || e.dataset.cmd || e.dataset.order || e.className.baseVal || e.className), inWindow: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight };
+      });
+      if (found.over.length || !found.inWindow) covered.push(found);
+      if (i < steps - 1) { const next = box.locator('.tut-next'); await (await next.isVisible() ? next : box.locator('.tut-skip')).click(); }
+    }
+    expect(covered).toEqual([]);
+  });
+}
