@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { placeBox, overlapArea, freeBands } from '../src/tutorial/placement.js';
+import { placeBox, overlapArea, freeBands, maxBoxHeight } from '../src/tutorial/placement.js';
 
 /* Położenie dymku samouczka: nie zasłania wskazywanego elementu ani pasków sterowania (zakładki panelu, pasek poleceń) */
 
@@ -68,4 +68,14 @@ test('wysoki dymek: gdy nie mieści się przy elemencie ani w panelu, staje w wo
   // krok bez elementu i dymek wyższy niż panel
   const none = placeBox({ box: { w: 360, h: 400 }, viewport, target: null, desk, bars, panel, onDesk: false });
   for (const b of bars) assert.equal(overlapArea(rect(none.left, none.top, 360, 400), b), 0, JSON.stringify(none));
+});
+
+test('dymek dłuższy niż największy wolny pas okna dostaje wysokość pasa (tekst przewija się w środku)', () => {
+  assert.equal(maxBoxHeight(bars, 1024), 586 - 78 - 20, 'najwyższy wolny pas: między nagłówkiem a listwą narzędzi');
+  assert.equal(maxBoxHeight([], 500), 480);
+  assert.equal(maxBoxHeight([{ top: 0, bottom: 480 }], 500), 160, 'nie mniej niż 160 px');
+  // dymek o tej wysokości ma miejsce bez nachodzenia na paski
+  const h = maxBoxHeight(bars, 1024);
+  const p = placeBox({ box: { w: 360, h }, viewport, target: null, desk, bars, panel, onDesk: false });
+  for (const b of bars) assert.equal(overlapArea(rect(p.left, p.top, 360, h), b), 0, JSON.stringify(p));
 });

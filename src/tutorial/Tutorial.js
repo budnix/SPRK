@@ -3,7 +3,7 @@ import { t } from '../i18n/index.js';
 import { GLOSSARY } from '../data/glossary.js';
 import { makeDraggable } from '../ui/drag.js';
 import { uiIcon } from '../ui/icons.js';
-import { placeBox } from './placement.js';
+import { placeBox, maxBoxHeight } from './placement.js';
 
 /**
  * Samouczek (UI): dymek z bieżącym krokiem misji przypięty do wskazywanego elementu (semafor, kostki blokady,
@@ -49,6 +49,13 @@ export class Tutorial {
     const repos = () => this.#reposition();
     window.addEventListener('resize', repos);
     document.getElementById('desk-scroll')?.addEventListener('scroll', repos, { passive: true });
+    // układ strony i sam dymek zmieniają się także bez zmiany okna (dopasowanie planu, panel boczny, doczytana czcionka);
+    // na krokach z opisem zegar stoi, więc przestawianie w takcie symulacji tego nie złapie
+    if (typeof ResizeObserver === 'function') {
+      const ro = new ResizeObserver(repos);
+      for (const id of ['desk-scroll', 'desk-tools', 'side']) { const el = document.getElementById(id); if (el) ro.observe(el); }
+      ro.observe(this.box); // wysokość dymka zmienia się też po doczytaniu czcionki
+    }
     sim.bus.on('tick', () => { if (!this.box.classList.contains('hidden') && performance.now() - (this.lastPos || 0) > 400) this.#reposition(); });
   }
 
@@ -120,6 +127,9 @@ export class Tutorial {
     box.style.transform = 'none'; box.style.bottom = 'auto'; box.style.right = 'auto';
     const rectOf = (el) => { const q = el?.getBoundingClientRect?.(); return q && (q.width || q.height) ? q : null; };
     const t = this.target;
+    const bars = ['#topbar', '#cmd-host', '#desk-tools'].map((q) => rectOf(document.querySelector(q))).filter(Boolean);
+    // dymek nie wyższy niż największy wolny pas okna – długi tekst przewija się w środku
+    box.style.maxHeight = `${Math.min(window.innerHeight * 0.6, maxBoxHeight(bars, window.innerHeight))}px`;
     // obszar rysunku planu (suma warstw SVG)
     const layers = [...document.querySelectorAll('#desk-scroll svg > g')].map(rectOf).filter(Boolean);
     const desk = layers.length ? layers.reduce((a, q) => ({ left: Math.min(a.left, q.left), top: Math.min(a.top, q.top), right: Math.max(a.right, q.right), bottom: Math.max(a.bottom, q.bottom) })) : null;
@@ -128,7 +138,7 @@ export class Tutorial {
       viewport: { w: window.innerWidth, h: window.innerHeight },
       target: rectOf(t),
       desk,
-      bars: ['#topbar', '#cmd-host', '#desk-tools'].map((q) => rectOf(document.querySelector(q))).filter(Boolean),
+      bars,
       panel: rectOf(document.getElementById('side')),
       onDesk: !!(desk && t?.closest?.('#desk-scroll')),
     });

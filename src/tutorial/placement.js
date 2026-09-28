@@ -80,3 +80,12 @@ export function freeBands(bars, height) {
   if (height > top) out.push({ top, bottom: height });
   return out;
 }
+
+/**
+ * Największa wysokość dymka, przy której mieści się w całości w jednym wolnym pasie okna (między paskami sterowania):
+ * dłuższy tekst przewija się w dymku zamiast zasłaniać paski. Nie mniej niż `min`.
+ */
+export function maxBoxHeight(bars, height, margin = 10, min = 160) {
+  const tallest = Math.max(0, ...freeBands(bars, height).map((b) => b.bottom - b.top));
+  return Math.max(min, Math.floor(tallest - 2 * margin));
+}
