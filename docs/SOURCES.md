@@ -55,7 +55,8 @@ Uproszczenia i założenia w grze (`src/srk/address.js`, `src/render/IzhRenderer
 * doraźnego zwolnienia przebiegu z licznikiem (dPz) na tym pulpicie nie ma – przebieg, w który pociąg wjechał,
   rozwiązuje się odcinkowo;
 * żadna stacja w grze nie ma tych urządzeń w rzeczywistości – pulpit jest dostępny jako zmiana i misja 3 na stacji
-  Szkolna; misja uczy przebiegów (P, M) i sygnału zastępczego (Sz), pozostałe rozkazy opisuje instrukcja.
+  Szkolna; misja zaczyna się rozgrzewką z rozkazami „−”, „+”, STOP, Zw i Zcz, potem uczy przebiegów (P, M)
+  i sygnału zastępczego (Sz).
 
 ## Gdynia Główna
 

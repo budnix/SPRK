@@ -43,8 +43,8 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
       assert.ok(s.info || typeof s.done === 'function', `${view}/${s.id}: krok bez warunku`);
       for (const [, term] of s.text.matchAll(/data-term="([^"]+)"/g)) assert.ok(GLOSSARY[term], `${view}/${s.id}: brak w słowniku: ${term}`);
       assert.doesNotMatch(`${s.title} ${s.text} ${s.tip || ''}`, /\b(od|do|z|dla|szlak) (Lipno|Dębno)\b/, `${view}/${s.id}: nieodmieniona nazwa sąsiada`);
-      // pasek poleceń ma monitor; pulpit IZH-111 ma grupę rozkazów – w misji wskazywany jest tylko rozkaz Sz
-      if (s.anchor?.cmd && view === 'izh') assert.equal(s.anchor.cmd, 'Sz', `${view}/${s.id}: kotwica rozkazu`);
+      // pasek poleceń ma monitor; pulpit IZH-111 ma grupę rozkazów – kotwica musi wskazywać istniejący rozkaz
+      if (s.anchor?.cmd && view === 'izh') assert.ok(['P', 'M', '+', '-', 'STOP', 'Zw', 'Zcz', 'Sz'].includes(s.anchor.cmd), `${view}/${s.id}: kotwica rozkazu ${s.anchor.cmd}`);
       else if (s.anchor?.cmd) assert.equal(view, 'monitor', `${view}/${s.id}: kotwica paska poleceń tylko na monitorze`);
       // przycisk sygnałowy ma kolor tylko tam, gdzie kolor wybiera rodzaj przebiegu (typ E, monitor)
       if (s.anchor?.ref?.kind === 'signal') assert.equal(s.anchor.ref.color === undefined, view === 'izh', `${view}/${s.id}: kolor przycisku sygnałowego`);
@@ -110,6 +110,19 @@ function studentScript(sim, view) {
   const once = new Set();
   const one = (k, f) => { if (!once.has(k)) { once.add(k); f(); } };
   return {
+    // misja 3: rozgrzewka z rozkazami pulpitu IZH-111 na zwrotnicy 3 i przebiegu B → C2
+    ...(view === 'izh' ? (() => {
+      const p = () => sim.ilk.points.get('Zw3');
+      const pt = (o) => { if (!sim.ilk.armed && !p().moving) { press({ kind: 'point', id: 'Zw3' }); press({ kind: 'order', id: o }); } };
+      return {
+        'izh-point-minus': () => { if (p().position === '+') pt('-'); },
+        'izh-point-stop': () => { if (!p().individualLock) pt('STOP'); },
+        'izh-point-zw': () => { if (p().individualLock) pt('Zw'); },
+        'izh-point-plus': () => { if (p().position === '-') pt('+'); },
+        'izh-zcz-route': () => route('B', 'C2', 'B-C2'),
+        'izh-zcz': () => one('zcz', () => { press({ kind: 'signal', id: 'C2' }); press({ kind: 'order', id: 'Zcz' }); }),
+      };
+    })() : {}),
     'poz-6101': () => poz('W'),
     'route-6101': () => route('A', 'D1', 'A-D1'),
     'ko-6101': () => ko('W'),
@@ -349,8 +362,9 @@ test('misje: słownik tekstów ma te same klucze i rodzaje wartości dla każdeg
     assert.deepEqual(Object.keys(PHRASES[view]).sort(), Object.keys(base).sort(), `${view}: klucze`);
     for (const [k, kind] of Object.entries(shape(PHRASES[view]))) assert.equal(kind.split('/')[0], base[k].split('/')[0], `${view}/${k}: rodzaj wartości`);
     assert.equal(PHRASES[view].view, view);
-    // każdy krok misji powstaje wyłącznie ze słownika – teksty drugiego widoku nie przeciekają
-    assert.equal(missionSteps(view).length, missionSteps(MISSION_VIEWS[0]).length, `${view}: ta sama lista kroków`);
+    // każda misja ma własną listę kroków, ale zawiera wszystkie lekcje rozkładu (misja 1 to same lekcje)
+    const ids = new Set(missionSteps(view).map((s) => s.id));
+    for (const s of missionSteps(MISSION_VIEWS[0])) assert.ok(ids.has(s.id), `${view}: brak lekcji ${s.id}`);
   }
   // kotwica: pasek poleceń tylko tam, gdzie widok go ma
   const ref = { ref: { kind: 'signal', id: 'A', color: 'green' } };
@@ -368,7 +382,67 @@ test('misje: słownik tekstów ma te same klucze i rodzaje wartości dla każdeg
   assert.throws(() => missionSteps('kluczowy'), /Brak tekstów misji dla widoku 'kluczowy'/);
   // kroki nie rozgałęziają się po widoku poza słownikiem
   const { readFileSync } = await import('node:fs');
-  const src = readFileSync(new URL('../src/tutorial/missions.js', import.meta.url), 'utf8');
-  const body = src.slice(src.indexOf('export function missionSteps'));
+  const src = readFileSync(new URL('../src/tutorial/lessons.js', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('export function lessonSteps'));
+  assert.ok(body.length > 5000, 'wspólne lekcje są w lessons.js');
   assert.doesNotMatch(body, /view === |\bm \? /, 'rozgałęzienie po widoku w krokach misji');
+});
+
+test('misje: każdy samouczek ma własny plik, własny słownik i własną listę kroków; misja może dołożyć, podmienić i pominąć krok', async () => {
+  const { lessonSteps, withSteps, infoStep, actStep, LESSON_PHRASES } = await import('../src/tutorial/lessons.js');
+  const files = { monitor: 'monitor', pulpit: 'pulpit', izh: 'izh' };
+  for (const [id, file] of Object.entries(files)) {
+    const mod = await import(`../src/tutorial/missions/${file}.js`);
+    assert.equal(mod.default, MISSIONS[id], `${id}: misja z własnego pliku`);
+    assert.equal(mod.default.phrases, mod.phrases);
+    for (const k of LESSON_PHRASES) assert.ok(k in mod.phrases, `${id}: brak tekstu ${k}`);
+    assert.equal(typeof mod.default.steps, 'function');
+  }
+  // wspólne lekcje to 40 kroków; misja 3 dokłada rozgrzewkę po planie stacji, misje 1 i 2 zostają bez zmian
+  const common = lessonSteps(MISSIONS.monitor.phrases).map((s) => s.id);
+  assert.equal(common.length, 40);
+  assert.deepEqual(missionSteps('monitor').map((s) => s.id), common);
+  assert.deepEqual(missionSteps('pulpit').map((s) => s.id), common);
+  const izh = missionSteps('izh').map((s) => s.id);
+  const own = izh.filter((id) => !common.includes(id));
+  assert.deepEqual(own, ['izh-practice', 'izh-point-minus', 'izh-point-stop', 'izh-point-zw', 'izh-point-plus', 'izh-zcz-route', 'izh-zcz', 'izh-zcz-wait']);
+  assert.deepEqual(izh.filter((id) => common.includes(id)), common, 'lekcje rozkładu w tej samej kolejności');
+  assert.equal(izh.indexOf('izh-practice'), izh.indexOf('layout') + 1);
+  assert.equal(izh.indexOf('block-intro'), izh.indexOf('izh-zcz-wait') + 1);
+  // brak tekstu wymaganego przez lekcje to błąd z nazwą klucza
+  const { sz, ...partial } = MISSIONS.pulpit.phrases;
+  assert.throws(() => lessonSteps(partial), /brak sz/);
+  // składanie samouczka
+  const base = [infoStep('a', 'A', 'a'), actStep('b', 'B', 'b', null, () => true), infoStep('c', 'C', 'c')];
+  const x = infoStep('x', 'X', 'x'), y = infoStep('y', 'Y', 'y'), b2 = infoStep('b', 'B2', 'b2');
+  assert.deepEqual(withSteps(base, { before: { a: [x] }, after: { b: [y] }, replace: { b: b2 }, omit: ['c'] }).map((s) => s.title), ['X', 'A', 'B2', 'Y']);
+  assert.deepEqual(withSteps(base).map((s) => s.id), ['a', 'b', 'c']);
+  assert.throws(() => withSteps(base, { after: { nie: [x] } }), /nie ma kroku 'nie'/);
+  assert.throws(() => withSteps(base, { after: { a: [infoStep('c', 'C', 'c')] } }), /powtórzony krok 'c'/);
+  assert.equal(base.length, 3, 'lista bazowa bez zmian');
+});
+
+test('misja 3: rozgrzewka mieści się przed pierwszym pociągiem – zmiana zaczyna się o 06:54, a 6101 przyjeżdża o czasie', () => {
+  const sim = new Simulation(szkolna, { scenario: 'nauka-3', seed: 7 });
+  assert.equal(Clock.format(sim.clock.time), '06:54');
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).clock.time, Clock.parse('07:00'));
+  const steps = missionSteps('izh');
+  const progress = new MissionProgress(sim, steps, {});
+  const script = studentScript(sim, 'izh');
+  progress.start();
+  let n = 0;
+  while (progress.step?.id !== 'route-6101' && sim.clock.time < Clock.parse('07:20')) {
+    if (progress.step?.info) { progress.next(); continue; }
+    sim.step(0.5);
+    if (n++ % 2 === 0) script[progress.step.id]?.();
+    if (progress.step?.id === 'block-intro') assert.ok(sim.clock.time < Clock.parse('06:59'), `rozgrzewka skończona o ${Clock.format(sim.clock.time)}`);
+  }
+  assert.equal(progress.step.id, 'route-6101');
+  assert.equal(sim.ilk.points.get('Zw3').position, '+');
+  assert.equal(sim.ilk.points.get('Zw3').individualLock, false);
+  assert.equal(sim.ilk.active.size, 0, 'przebieg z rozgrzewki zwolniony');
+  while (!sim.traffic.timetable()[0].actualArr && sim.clock.time < Clock.parse('07:20')) { sim.step(0.5); if (n++ % 2 === 0) script[progress.step.id]?.(); }
+  const first = sim.traffic.timetable()[0];
+  assert.equal(first.nr, 6101);
+  assert.ok(first.delay <= 1, `6101 opóźniony o ${first.delay} min`);
 });

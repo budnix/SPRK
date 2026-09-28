@@ -259,7 +259,14 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 
 ## Misje wprowadzające (`src/tutorial/`)
 
-* `missions.js` – kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
+* Każdy samouczek ma własny plik w `src/tutorial/missions/` (`monitor.js`, `pulpit.js`, `izh.js`) z własnym
+  słownikiem tekstów (`phrases`) i własną listą kroków (`steps()`), więc każda misja może pokazywać obsługę po
+  swojemu. Wspólne lekcje rozkładu Szkolnej są w `lessons.js` (`lessonSteps(phrases)`); misja składa z nich swój
+  samouczek funkcją `withSteps(base, { after, before, replace, omit })` – dokłada własne kroki, podmienia albo
+  pomija lekcję. Misja 3 ma przed lekcjami rozgrzewkę z rozkazami pulpitu IZH-111 (zwrotnica „−” / „+”, STOP, Zw,
+  Zcz) i zaczyna się o 06:54, żeby zmieścić ją przed pierwszym pociągiem. `phrases.js` – cegiełki wspólne dla
+  kilku misji, `missions.js` – rejestr (`MISSIONS`, `getMission`, `missionSteps`).
+* Kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
   W misji (`scenario.tutorial`) zmiana nie kończy się sama po ostatnim pociągu (`sim.autoEnd = false`) – kończy ją
   „Dalej” na ostatnim kroku (`sim.endShift()` → raport); zamknięcie samouczka przywraca automatyczny koniec.
   Jedna lista `missionSteps(view)` obsługuje monitor (`'monitor'`), pulpit kostkowy typu E (`'pulpit'`) i pulpit

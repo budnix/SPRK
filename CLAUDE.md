@@ -62,8 +62,10 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
    + `registerView('<rodzaj>', { View, hint, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
    wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
    i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
-4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`; misje – wpis dla nowego widoku w słowniku
-   `PHRASES` w `src/tutorial/missions.js` (komplet kluczy; kroków misji się nie zmienia).
+4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`. Samouczek: własny plik misji
+   w `src/tutorial/missions/` (słownik `phrases` z kluczami `LESSON_PHRASES` + własne kroki przez `withSteps`),
+   wpis w `src/tutorial/missions.js` i scenariusz stacji z polem `tutorial`. Własne kroki misji nie mogą psuć
+   rozkładu: sprawdź testem, że pierwszy pociąg przyjeżdża o czasie.
 5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/`, zrzut w `visual.spec.js` i wpis widoku
    w teście kontraktu w `tests/e2e/ui.spec.js`. Wybieraj elementy przez `#desk …` – stałe pola skrajne kopiują
    klasy rysunku.

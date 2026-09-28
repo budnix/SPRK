@@ -153,7 +153,7 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
   await expect(page.locator('.tut-box')).toBeHidden();
 });
 
-test('misja 3: pulpit typu IZH-111 – dymek wskazuje przycisk adresowy semafora, adres + adres + rozkaz P zalicza krok, zły tor daje podpowiedź z Zcz', async ({ page }) => {
+test('misja 3: pulpit typu IZH-111 – własna rozgrzewka (zwrotnica, STOP, Zw, Zcz), potem lekcje rozkładu: adres + adres + rozkaz P, zły tor daje podpowiedź z Zcz', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('.st-mission')).toHaveCount(3);
   await page.click('.st-mission[data-scenario="nauka-3"]');
@@ -171,8 +171,37 @@ test('misja 3: pulpit typu IZH-111 – dymek wskazuje przycisk adresowy semafora
   await page.locator('.tut-gloss').click();
   await box.locator('.tut-next').click();
   await expect(box.locator('.tut-body')).toContainText('ciemny powtarzacz oznacza');
-  for (let i = 0; i < 2; i++) await box.locator('.tut-next').click();
-  await advance(page, 3);
+  // rozgrzewka – własne kroki tej misji: zwrotnica 3 rozkazami −, STOP, Zw, + i zwolnienie czasowe Zcz
+  await box.locator('.tut-next').click();
+  await expect(box.locator('.tut-title')).toContainText('Rozgrzewka');
+  expect(await page.evaluate(() => window.sim.clock.time)).toBe(6 * 3600 + 54 * 60);
+  await expect(page.locator('.izh-orders')).toHaveClass(/tut-hl/);
+  await box.locator('.tut-next').click();
+  const pointOrder = async (o) => { await pressBtn(page, { kind: 'point', id: 'Zw3' }); await page.click(`.izh-orders button[data-order="${o}"]`); };
+  await expect(box.locator('.tut-title')).toContainText('rozkaz „−”');
+  await expect(page.locator(`.btn[data-ref='{"kind":"point","id":"Zw3"}']`)).toHaveClass(/tut-hl/);
+  await pointOrder('-'); await advance(page, 5);
+  await expect(box.locator('.tut-title')).toContainText('STOP');
+  await expect(page.locator('.izh-orders button[data-order="STOP"]')).toHaveClass(/tut-hl/);
+  await pointOrder('STOP');
+  await expect(box.locator('.tut-title')).toContainText('Odwołanie zamknięcia');
+  await pointOrder('Zw');
+  await expect(box.locator('.tut-title')).toContainText('rozkaz „+”');
+  await pointOrder('+'); await advance(page, 5);
+  await expect(box.locator('.tut-title')).toContainText('Przebieg do ćwiczenia');
+  await pressBtn(page, { kind: 'signal', id: 'B' }); await pressBtn(page, { kind: 'signal', id: 'C2' });
+  await page.click('.izh-orders button[data-order="P"]');
+  await advance(page, 6);
+  await expect(box.locator('.tut-title')).toContainText('Zcz');
+  await expect(page.locator(`.btn[data-ref='{"kind":"signal","id":"C2"}']`)).toHaveClass(/tut-hl/);
+  await pressBtn(page, { kind: 'signal', id: 'C2' });
+  await page.click('.izh-orders button[data-order="Zcz"]');
+  await expect(box.locator('.tut-title')).toContainText('Odliczanie');
+  await advance(page, 122);
+  await expect(box.locator('.tut-title')).toContainText('Blokada liniowa');
+  expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(0);
+  await box.locator('.tut-next').click();
+  await advance(page, 120);
   await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Poz' });
   await expect(box.locator('.tut-title')).toContainText('Przebieg wjazdowy');
   await expect(box.locator('.tut-body')).toContainText('rozkaz P');
