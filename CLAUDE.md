@@ -64,8 +64,9 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
    i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
 4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`. Samouczek: własny plik misji
    w `src/tutorial/missions/` (słownik `phrases` z kluczami `LESSON_PHRASES` + własne kroki przez `withSteps`),
-   wpis w `src/tutorial/missions.js` i scenariusz stacji z polem `tutorial`. Własne kroki misji nie mogą psuć
-   rozkładu: sprawdź testem, że pierwszy pociąg przyjeżdża o czasie.
+   wpis w `src/tutorial/missions.js` i scenariusz stacji z polem `tutorial`. Nowa misja ma własny scenariusz
+   (stacja, układ torów, rozkład) – nie powtarza istniejącej. Test „ucznia” w `tests/missions.test.js` musi
+   przejść wszystkie kroki z pociągami o czasie.
 5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/`, zrzut w `visual.spec.js` i wpis widoku
    w teście kontraktu w `tests/e2e/ui.spec.js`. Wybieraj elementy przez `#desk …` – stałe pola skrajne kopiują
    klasy rysunku.

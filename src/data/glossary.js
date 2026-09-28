@@ -36,7 +36,7 @@ export const GLOSSARY = {
   'tor szlakowy': { name: 'Tor szlakowy (szlak)', text: 'Tor między dwiema stacjami. Na linii jednotorowej może na nim być tylko jeden pociąg – pilnuje tego blokada liniowa.' },
   przelot: { name: 'Przelot', text: 'Przejazd pociągu przez stację bez zatrzymania. Nastaw wcześniej przebieg wjazdowy i wyjazdowy – semafor wjazdowy pokaże wtedy sygnał zezwalający bez ograniczenia.' },
   krzyżowanie: { name: 'Krzyżowanie', text: 'Mijanie się dwóch pociągów jadących w przeciwnych kierunkach na stacji linii jednotorowej – każdy na innym torze.' },
-  'jazda manewrowa': { name: 'Jazda manewrowa', text: 'Tryb, w którym skład porusza się po stacji za sygnałami Ms2 (z prędkością do 25 km/h), np. odstawienie składu na tor boczny. Przełącza się w zakładce Stan.' },
+  'jazda manewrowa': { name: 'Jazda manewrowa', text: 'Tryb, w którym skład porusza się po stacji za sygnałami Ms2 (z prędkością do 25 km/h), np. odstawienie składu na tor boczny. Przełącza się w zakładce Pociągi.' },
   Ie104: { name: 'Ie-104', text: 'Wytyczne PKP PLK dotyczące zobrazowania na komputerowych stanowiskach obsługi srk – kolory odcinków, symbole semaforów i zwrotnic użyte na monitorze w grze.' },
   srk: { name: 'srk', text: 'Sterowanie ruchem kolejowym – urządzenia (przekaźnikowe typu E, komputerowe) zapewniające bezpieczne nastawianie przebiegów.' },
   'pociąg zdawczy': { name: 'Pociąg zdawczy', text: 'Pociąg towarowy obsługujący stację: przywozi wagony i kończy bieg; jego skład po manewrach wraca jako nowy pociąg.' },
@@ -44,7 +44,11 @@ export const GLOSSARY = {
   'przycisk rozkazu': { name: 'Przycisk rozkazu (IZH-111)', text: 'Przycisk w grupie poza planem stacji, który mówi, co zrobić z elementem wskazanym przyciskiem adresowym: P i M – przebieg pociągowy i manewrowy, + i − – położenie zwrotnicy, STOP – zamknięcie zwrotnicy albo sygnał „Stój”, Zw – odwołanie zamknięcia i zwolnienie przebiegu manewrowego, Zcz – zwolnienie czasowe, Sz – sygnał zastępczy.' },
   Zcz: { name: 'Zcz – zwolnienie czasowe (IZH-111)', text: 'Zwolnienie utwierdzonego przebiegu pociągowego: przycisk adresowy semafora końcowego i rozkaz Zcz. Sygnał gaśnie od razu, a droga przebiegu rozwiązuje się po 120 s – do tego czasu lampka przy przycisku semafora końcowego miga na biało.' },
   'pulpit ciemny': { name: 'Pulpit ciemny', text: 'Pulpit, na którym lampki kontrolne w stanie zasadniczym są zgaszone (urządzenia typu IZH-111). Świeci tylko to, co odbiega od stanu zasadniczego: utwierdzony lub zajęty odcinek, sygnał zezwalający, wybrany element. Pulpit typu E jest półciemny – żółte szczeliny zawsze pokazują położenie zwrotnic.' },
-  'zmiana czoła': { name: 'Zmiana czoła', text: 'Odwrócenie kierunku jazdy stojącego składu (lokomotywa objeżdża lub prowadzi z drugiej strony). W grze: zakładka Stan → „zmiana czoła”.' },
+  wyprzedzanie: { name: 'Wyprzedzanie', text: 'Wolniejszy pociąg zjeżdża na tor boczny i przepuszcza szybszy, który jedzie za nim w tym samym kierunku. Potem rusza za nim. Na linii dwutorowej to zwykły sposób, by pospieszny nie czekał za towarowym.' },
+  'blokada jednokierunkowa': { name: 'Blokada jednokierunkowa', text: 'Blokada liniowa toru szlakowego linii dwutorowej: tor ma jeden kierunek ruchu, więc nie ma pozwoleń (Wbl, Poz). Sąsiad wyprawia pociąg sam, a po przyjeździe pociągu w całości potwierdza się przyjazd przyciskiem Ko.' },
+  'stacja krańcowa': { name: 'Stacja krańcowa', text: 'Stacja, na której linia się kończy. Pociągi kończą tu bieg, zmieniają czoło i wracają tam, skąd przyjechały. Semafory wyjazdowe stoją po tej samej stronie torów co semafor wjazdowy.' },
+  'tor czołowy': { name: 'Tor czołowy', text: 'Tor zakończony kozłem oporowym. Przebieg wjazdowy kończy się na koźle, a nie na następnym semaforze; skład odjeżdża z niego po zmianie czoła.' },
+  'zmiana czoła': { name: 'Zmiana czoła', text: 'Odwrócenie kierunku jazdy stojącego składu (lokomotywa objeżdża lub prowadzi z drugiej strony). W grze: zakładka Pociągi → „zmiana czoła”.' },
 };
 
 /** Krótka podpowiedź (title) dla przycisku / polecenia. */

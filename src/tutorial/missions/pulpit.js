@@ -1,36 +1,85 @@
-import { lessonSteps } from '../lessons.js';
-import { colouredSignal, RELEASE_E, DESK_BLOCK } from '../phrases.js';
+import { infoStep as info, actStep as act, atNeighbour, arrived, active } from '../lessons.js';
+import { A } from '../phrases.js';
 
 /**
- * Misja 2 – pulpit kostkowy urządzeń przekaźnikowych typu E: obsługa dwuprzyciskowa, przyciski grupowe.
- * Własny słownik tekstów i własna lista kroków – zmiana tutaj nie dotyka innych misji.
+ * Misja 2 – pulpit kostkowy urządzeń przekaźnikowych typu E na stacji Jodłowa (linia dwutorowa z odgałęzieniem).
+ * Własny scenariusz i własne kroki: rozgrzewka z przyciskami pulpitu, ruch bez pozwoleń z potwierdzeniem przyjazdu,
+ * wyprzedzanie towarowego, pociąg na odgałęzienie z blokadą Eap.
  */
-export const phrases = {
-  ...DESK_BLOCK,
-  view: 'pulpit',
-  anchor: (cmdId, ref) => ref,
-  signal: colouredSignal,
-  release: RELEASE_E,
-  releaseNames: 'STOP i Pz',
-  trainRoute: (s, e, what) => `naciśnij <b>zielony przycisk</b> semafora <b>${s}</b>, a w ciągu 6 s ${what || `zielony przycisk semafora <b>${e}</b>`}`,
-  trainRouteMenu: (s, e) => `naciśnij zielony przycisk semafora <b>${s}</b>, potem zielony przycisk semafora <b>${e}</b>`,
-  trainRouteMenuTitle: 'Przebieg wjazdowy od B',
-  trainRouteMenuLead: '',
-  exitEnd: (name) => `<b>zielony przycisk końca przebiegu</b> na kostce wyjazdu na szlak do ${name}`,
-  shuntRoute: (s, e) => `naciśnij <b>biały przycisk</b> semafora <b>${s}</b>, potem <b>biały przycisk</b> ${e}`,
-  sz: (s) => `naciśnij przycisk grupowy <b>Sz</b>, a potem zielony przycisk semafora <b>${s}</b>`,
-  colours: `Lampki na kostkach: <b>białe</b> – odcinek utwierdzony w przebiegu, <b>czerwone</b> – zajęty przez tabor, <b>żółte</b> przy zwrotnicy – jej położenie. Semafor to powtarzacz z przyciskiem zielonym (przebieg pociągowy) i białym (manewrowy). Przyciski grupowe u góry: Zw, Zz, Pz, dPz, Sz działają razem z drugim przyciskiem (obsługa dwuprzyciskowa).`,
-  intro: `Przed Tobą <b>pulpit kostkowy</b> urządzeń przekaźnikowych typu E. Wszystko robi się przyciskami na kostkach: <b>naciśnięcie</b> = kliknięcie, <b>wyciągnięcie</b> = przytrzymanie pół sekundy lub prawy przycisk myszy. Większość operacji jest <b>dwuprzyciskowa</b>: pierwszy przycisk „uzbraja” (podświetla się), drugi wykonuje – masz na to 6 s.`,
-  next: 'Teraz spróbuj prawdziwych stacji: Stare Pustkowie (typ E) albo Sopot i Gdynia (stanowiska komputerowe) – menu ☰ → Nowa zmiana.',
-};
+const green = (id) => ({ ref: { kind: 'signal', id, color: 'green' } });
+const group = (id, role) => ({ ref: { kind: 'group', id, role } });
+const ZW = group('Zw', 'group-point'), ZZ = group('Zz', 'point-lock'), PZ = group('Pz', 'route-release');
+const POINT = 'Zw7';                     // odgałęzienie toru 4 – w tej misji nic przez nią nie jedzie
+const point = (sim) => sim.ilk.points.get(POINT);
+const TRY = 'B-D1';                      // przebieg do ćwiczeń: wjazd od Zalesia na tor 1
+const koDone = (sim, exit, nr) => arrived(sim, nr) && !sim.blocks.get(exit).koPending;
+const two = (a, b) => `naciśnij <b>${a}</b>, a w ciągu 6 s <b>${b}</b>`;
+/** To samo na początku zdania. */
+const Two = (a, b) => `N${two(a, b).slice(1)}`;
+const route = (s, e) => two(`zielony przycisk semafora ${s}`, `zielony przycisk ${e}`);
 
-export default {
-  id: 'pulpit',
-  name: 'Misja 2 – pulpit kostkowy',
-  view: 'pulpit',
-  phrases,
-  /** Kroki tej misji – własny zestaw: wspólne lekcje rozkładu i to, co misja dokłada lub zmienia. */
-  steps() {
-    return lessonSteps(phrases);
-  },
-};
+export function steps() {
+  return [
+    /* ---------------- wprowadzenie ---------------- */
+    info('intro', 'Witaj na stacji Jodłowa', `Przed Tobą <b>pulpit kostkowy</b> urządzeń przekaźnikowych typu E. Wszystko robi się przyciskami na kostkach: <b>naciśnięcie</b> = kliknięcie, <b>wyciągnięcie</b> = przytrzymanie pół sekundy lub prawy przycisk myszy. Większość operacji jest <b>dwuprzyciskowa</b>: pierwszy przycisk „uzbraja” (podświetla się), drugi wykonuje – masz na to 6 s.<p>Jodłowa leży na <b>linii dwutorowej</b> Krasne – Zalesie. Każdy tor szlakowy ma jeden kierunek ruchu, więc pociągów nie trzeba uzgadniać z sąsiadem tak jak na linii jednotorowej. Od stacji odchodzi też jednotorowe odgałęzienie do Borków.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz. Skróty z kropkowanym podkreśleniem mają wyjaśnienie – kliknij je.</p>`),
+    info('layout', 'Plan stacji', `Tor <b>1</b> prowadzi na zachód, do Krasnego, tor <b>2</b> na wschód, do Zalesia – oba przy peronie I. Tor <b>3</b> (peron II) służy do ${A('wyprzedzanie', 'wyprzedzania')} i dla pociągów z i do Borków. Tor <b>4</b> to bocznica.<p>${A('semafor', 'Semafory')} wjazdowe: <b>A</b> (od Krasnego), <b>B</b> (od Zalesia), <b>C</b> (od Borków). Wyjazdowe na zachód: <b>D1, D2, D3</b>, na wschód: <b>E2, E3</b>.</p><p>Lampki na kostkach: <b>białe</b> – odcinek utwierdzony w przebiegu, <b>czerwone</b> – zajęty przez tabor, <b>żółte</b> przy zwrotnicy – jej położenie. Semafor to powtarzacz z zielonym przyciskiem. Przyciski grupowe u góry: Zw, Zz, Pz, dPz, Sz działają razem z drugim przyciskiem.</p>`, { el: '#desk' }),
+
+    /* ---------------- rozgrzewka: przyciski pulpitu ---------------- */
+    info('e-practice', 'Rozgrzewka przed pierwszym pociągiem', `Do pierwszego pociągu jest kilka minut. Przećwicz przyciski grupowe: ${A('Zw')} (zwrotnica), ${A('Zz')} (zamknięcie zwrotnicy), wyciągnięcie przycisku semafora (${A('STOP', 'sygnał „Stój”')}) i ${A('Pz')} (zwolnienie przebiegu).<p>Ćwiczysz na <b>zwrotnicy 7</b> (odgałęzienie toru 4) i na wjeździe od Zalesia. Pierwszy pociąg przyjedzie od Krasnego. Po „Dalej” zegar ruszy.</p>`, ZW),
+    act('e-point', 'Zwrotnica: Zw i przycisk zwrotnicy', `${Two('przycisk grupowy Zw', 'czarny przycisk zwrotnicy 7')}. Żółta lampka pokaże nowe położenie po ok. 4 s. Kolejność może być odwrotna: najpierw zwrotnica, potem Zw.`, ZW,
+      (sim) => point(sim).position === '-' && !point(sim).moving),
+    act('e-lock', 'Zamknięcie zwrotnicy: Zz', `${Two('przycisk grupowy Zz', 'przycisk zwrotnicy 7')}. Przy zwrotnicy zapali się biała lampka zamknięcia. Zamkniętej zwrotnicy nie przestawi ani obsługa, ani przebieg – przydaje się na czas robót.`, ZZ,
+      (sim) => point(sim).individualLock),
+    act('e-unlock', 'Otwarcie i powrót', `Otwórz zamknięcie tak samo: <b>Zz</b> i przycisk zwrotnicy 7. Potem przywróć położenie zasadnicze: <b>Zw</b> i przycisk zwrotnicy 7.`, ZZ,
+      (sim, ctx) => ctx.seen.has(`lock:${POINT}`) && !point(sim).individualLock && point(sim).position === '+' && !point(sim).moving),
+    act('e-route', 'Przebieg do ćwiczenia', `Nastaw ${A('przebieg pociągowy')} wjazdowy od Zalesia na tor 1: ${route('B', 'semafora D1')}. Zwrotnice ustawią się same, odcinki zaświecą na biało, a na powtarzaczu B zapali się sygnał zezwalający.`, green('B'),
+      (sim, ctx) => active(sim, TRY) || ctx.seen.has(`route:${TRY}:released`)),
+    act('e-stop', 'Sygnał „Stój”: wyciągnięcie przycisku', `<b>Wyciągnij</b> zielony przycisk semafora B – przytrzymaj go pół sekundy albo kliknij prawym przyciskiem myszy. Semafor wróci na „Stój”, ale przebieg <b>zostaje utwierdzony</b>: odcinki nadal świecą na biało.`, green('B'),
+      (sim, ctx) => !!sim.ilk.active.get(TRY)?.signalOff || ctx.seen.has(`route:${TRY}:released`)),
+    act('e-pz', 'Zwolnienie przebiegu: Pz', `${Two('przycisk grupowy Pz', 'zielony przycisk semafora B')}. Odcinki zgasną – przebieg jest zwolniony.<p>Gdyby pociąg był już na odcinku zbliżania, zwolnienie trwałoby 90 s. Natychmiast zwalnia tylko ${A('dPz')}, ale ma licznik i kosztuje punkty – to przycisk na wypadek usterki.</p>`, PZ,
+      (sim, ctx) => ctx.seen.has(`route:${TRY}:released`) && !active(sim, TRY)),
+
+    /* ---------------- linia dwutorowa: bez pozwoleń ---------------- */
+    info('block-intro', 'Blokada na linii dwutorowej', `Kostki przy krańcach torów szlakowych to ${A('blokada jednokierunkowa', 'blokady jednokierunkowe')}. Na torze, którym pociągi <b>przyjeżdżają</b> (od Krasnego tor 2, od Zalesia tor 1), jest tylko przycisk ${A('Ko')} – potwierdzasz nim przyjazd. Na torze, którym <b>odjeżdżają</b>, nie ma żadnego przycisku: wyprawiasz pociąg, gdy tor jest wolny.<p>Sąsiad nie pyta o zgodę – po prostu wyprawia pociąg. Musisz zdążyć z przebiegiem wjazdowym.</p><p>Tylko szlak do Borków jest jednotorowy i ma pełną ${A('Eap', 'blokadę Eap')} z przyciskami Wbl, Poz, Ko.</p>`, { block: 'K2' }),
+    act('in-3301', 'Wjazd bez pozwolenia', `Od Krasnego jedzie osobowy <b>3301</b> (tor 2, przyjazd 07:05). Nikt nie pytał o pozwolenie – strzałka „wjazd” przy torze od Krasnego zaświeci na czerwono, gdy pociąg będzie na szlaku. Nastaw wjazd na tor 2: ${route('A', 'semafora E2')}.`, green('A'),
+      (sim) => active(sim, 'A-E2') || arrived(sim, 3301),
+      { wrong: (sim) => (active(sim, 'A-E3') ? 'To przebieg na tor 3. Pociąg 3301 ma tor 2 – zwolnij przebieg (Pz + A) i nastaw A → E2.' : null) }),
+    act('ko-3301', 'Potwierdzenie przyjazdu (Ko)', `Gdy 3301 stanie w całości na torze 2, zamiga lampka <b>Ko</b> na kostce blokady od Krasnego. Naciśnij przycisk <b>Ko</b>. Dopóki tego nie zrobisz, Krasne nie wyprawi następnego pociągu.`, { block: 'K2' },
+      (sim) => koDone(sim, 'K2', 3301)),
+    act('out-3301', 'Wyjazd bez pozwolenia', `3301 odjeżdża o 07:06 do Zalesia. Tor szlakowy jest wolny, więc od razu nastaw wyjazd: ${route('E2', 'końca przebiegu na kostce wyjazdu do Zalesia (tor 2)')}. Po wyjeździe strzałka „wyjazd” zaświeci na czerwono, aż pociąg dojedzie do Zalesia.`, green('E2'),
+      (sim) => active(sim, 'E2-Z2') || atNeighbour(sim, 3301)),
+    act('train-3302', 'Pociąg w drugą stronę – samodzielnie', `Od Zalesia jedzie osobowy <b>3302</b> (tor 1, przyjazd 07:12, odjazd 07:13 do Krasnego). Zrób to samo w drugim kierunku: wjazd <b>B → D1</b>, po przyjeździe <b>Ko</b> na blokadzie od Zalesia, wyjazd <b>D1 → szlak do Krasnego</b>.`, green('B'),
+      (sim) => atNeighbour(sim, 3302) && !sim.blocks.get('Z1').koPending,
+      { tip: 'Przycisk końca przebiegu do Krasnego jest na skrajnej lewej kostce toru 1.' }),
+
+    /* ---------------- wyprzedzanie ---------------- */
+    info('overtake-intro', 'Wyprzedzanie', `Towarowy <b>42801</b> jedzie wolno i ma za sobą pospieszny <b>IC 5501</b>. Żeby pospieszny nie czekał, towarowy zjedzie na tor <b>3</b> (przyjazd 07:21), przepuści IC przelatujący torem 2 o 07:29 i odjedzie za nim o 07:33. To jest ${A('wyprzedzanie')}.`, { el: '#desk' }),
+    act('in-42801', 'Towarowy na tor 3', `Nastaw wjazd towarowego na tor 3: ${route('A', 'semafora E3')}. Zwrotnica 3 ustawi się na tor zwrotny – pociąg wjedzie z prędkością 40 km/h.`, green('A'),
+      (sim) => active(sim, 'A-E3') || arrived(sim, 42801),
+      { wrong: (sim) => (active(sim, 'A-E2') && !arrived(sim, 42801) ? 'To tor 2 – będzie potrzebny dla IC. Zwolnij przebieg (Pz + A) i nastaw A → E3.' : null) }),
+    act('ko-42801', 'Ko, żeby IC mógł jechać', `Gdy towarowy stanie na torze 3, potwierdź przyjazd: <b>Ko</b> na blokadzie od Krasnego. Dopiero wtedy Krasne wyprawi IC.`, { block: 'K2' },
+      (sim) => koDone(sim, 'K2', 42801)),
+    act('pass-5501', 'Przelot IC torem 2', `IC <b>5501</b> jedzie bez zatrzymania (${A('przelot')}, 07:29). Przygotuj całą drogę zawczasu: wjazd <b>A → E2</b> i wyjazd <b>E2 → szlak do Zalesia</b>. Gdy oba przebiegi są nastawione, semafor A pokaże sygnał bez ograniczeń i pociąg nie zwolni.`, green('A'),
+      (sim, ctx) => (active(sim, 'A-E2') && active(sim, 'E2-Z2')) || atNeighbour(sim, 5501) || ctx.seen.has('step:pass-5501')),
+    act('after-5501', 'Towarowy rusza za pospiesznym', `Po przejeździe IC: <b>Ko</b> na blokadzie od Krasnego. Gdy IC dojedzie do Zalesia i tor szlakowy się zwolni, wypraw towarowy: ${route('E3', 'końca przebiegu do Zalesia (tor 2)')}. Odjazd 07:33.`, green('E3'),
+      (sim) => atNeighbour(sim, 42801) && !sim.blocks.get('K2').koPending,
+      { tip: 'Przebieg wyjazdowy nie nastawi się, dopóki tor szlakowy do Zalesia jest zajęty przez IC – strzałka „wyjazd” świeci wtedy na czerwono.' }),
+
+    /* ---------------- odgałęzienie do Borków: Eap ---------------- */
+    info('branch-intro', 'Odgałęzienie do Borków', `Szlak do Borków jest <b>jednotorowy</b>, więc pociągi uzgadnia się z sąsiadem: ${A('Wbl')} – żądasz pozwolenia dla swojego pociągu, ${A('Poz')} – dajesz pozwolenie sąsiadowi, ${A('Ko')} – potwierdzasz przyjazd. Kostki tej blokady są przy torze 3, z prawej strony pulpitu.`, { block: 'B' }),
+    act('in-6612', 'Osobowy do Borków: wjazd', `Osobowy <b>6612</b> z Krasnego do Borków (tor 3, przyjazd 07:42). Nastaw wjazd <b>A → E3</b>, a po przyjeździe naciśnij <b>Ko</b> na blokadzie od Krasnego.`, green('A'),
+      (sim) => koDone(sim, 'K2', 6612)),
+    act('wbl-6612', 'Żądanie pozwolenia (Wbl)', `Przed wyjazdem do Borków potrzebujesz pozwolenia: naciśnij <b>Wbl</b> na kostkach blokady do Borków. Borki odpowiedzą po kilkunastu sekundach – strzałka „wyjazd” zaświeci na biało.`, { block: 'B' },
+      (sim) => { const b = sim.blocks.get('B'); return (b.direction === 'out' && b.permission) || atNeighbour(sim, 6612); },
+      { wrong: (sim) => (sim.blocks.get('B').request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Borków.' : null) }),
+    act('out-6612', 'Wyjazd do Borków', `Masz pozwolenie. Nastaw wyjazd: ${route('E3', 'końca przebiegu na kostce wyjazdu do Borków')}. Odjazd 07:44. Poczekaj, aż pociąg dojedzie do Borków.`, green('E3'),
+      (sim) => atNeighbour(sim, 6612) && !sim.blocks.get('B').occupied),
+    act('train-6611', 'Pociąg z Borków – samodzielnie', `Borki zgłoszą osobowy <b>6611</b> do Krasnego (tor 3, przyjazd 07:56, odjazd 07:59) – zamiga lampka „żąd.”. Daj <b>Poz</b>, nastaw wjazd <b>C → D3</b>, po przyjeździe <b>Ko</b> na blokadzie do Borków, potem wyjazd <b>D3 → szlak do Krasnego</b> (bez pozwolenia – to linia dwutorowa).`, { block: 'B' },
+      (sim) => atNeighbour(sim, 6611) && !sim.blocks.get('B').koPending,
+      { tip: 'Żądanie od Borków przyjdzie kilka minut przed przyjazdem. Do tego czasu Poz nie zadziała.' }),
+
+    info('end', 'Koniec misji', `To wszystko: obsługa dwuprzyciskowa, Zw, Zz, „Stój” i Pz, ruch na linii dwutorowej z samym Ko, wyprzedzanie i pociągi na odgałęzienie z blokadą Eap. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>Misja 3 pokazuje stację krańcową na pulpicie typu IZH-111 (menu → Nowa zmiana → Misja 3).</p>`, { el: '#btn-menu' }),
+  ];
+}
+
+export default { id: 'pulpit', name: 'Misja 2 – pulpit kostkowy typu E', view: 'pulpit', station: 'jodlowa', steps };

@@ -29,7 +29,7 @@ src/
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)
   i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
-  stations/    definicje stacji + rejestr (Szkolna, Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
+  stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
@@ -263,18 +263,25 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 
 ## Misje wprowadzające (`src/tutorial/`)
 
-* Każdy samouczek ma własny plik w `src/tutorial/missions/` (`monitor.js`, `pulpit.js`, `izh.js`) z własnym
-  słownikiem tekstów (`phrases`) i własną listą kroków (`steps()`), więc każda misja może pokazywać obsługę po
-  swojemu. Wspólne lekcje rozkładu Szkolnej są w `lessons.js` (`lessonSteps(phrases)`); misja składa z nich swój
-  samouczek funkcją `withSteps(base, { after, before, replace, omit })` – dokłada własne kroki, podmienia albo
-  pomija lekcję. Misja 3 ma przed lekcjami rozgrzewkę z rozkazami pulpitu IZH-111 (zwrotnica „−” / „+”, STOP, Zw,
-  Zcz) i zaczyna się o 06:54, żeby zmieścić ją przed pierwszym pociągiem. `phrases.js` – cegiełki wspólne dla
-  kilku misji, `missions.js` – rejestr (`MISSIONS`, `getMission`, `missionSteps`).
+* Każdy samouczek ma własny plik w `src/tutorial/missions/` z własną listą kroków (`steps()`) i **własnym
+  scenariuszem** – inną stacją, innym układem torów i innym rozkładem, żeby każda misja była czymś nowym:
+
+  | misja | stanowisko | stacja | czego uczy |
+  |---|---|---|---|
+  | 1 `monitor` | stanowisko komputerowe | Szkolna – linia jednotorowa | pozwolenia, krzyżowanie, manewry, Sz, zapowiadanie telefoniczne |
+  | 2 `pulpit` | pulpit kostkowy typu E | Jodłowa – linia dwutorowa z odgałęzieniem | ruch bez pozwoleń z Ko, wyprzedzanie, odgałęzienie z Eap |
+  | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji |
+
+  Każda misja zaczyna się o 06:54 rozgrzewką z poleceniami swojego stanowiska, których rozkład nie wymaga
+  (monitor: ZWROTNICA, Zz, OPS, STOP, zwolnienie przebiegu; typ E: Zw, Zz, wyciągnięcie przycisku, Pz; IZH-111:
+  „−”, „+”, STOP, Zw, Zcz). Rozgrzewka używa zwrotnicy i przebiegu, które nie kolidują z pierwszym pociągiem;
+  testy „ucznia” pilnują, że pociągi jadą o czasie. Lekcje rozkładu Szkolnej są w `lessons.js`
+  (`lessonSteps(phrases)`); `withSteps(base, { after, before, replace, omit })` składa samouczek z listy kroków
+  i zmian. `phrases.js` – cegiełki tekstów, `missions.js` – rejestr (`MISSIONS`, `getMission`, `missionSteps`).
 * Kroki misji bez DOM: `{ id, title, text, anchor, info?, done(sim, ctx), wrong?(sim, ctx), tip? }`.
   W misji (`scenario.tutorial`) zmiana nie kończy się sama po ostatnim pociągu (`sim.autoEnd = false`) – kończy ją
   „Dalej” na ostatnim kroku (`sim.endShift()` → raport); zamknięcie samouczka przywraca automatyczny koniec.
-  Jedna lista `missionSteps(view)` obsługuje monitor (`'monitor'`), pulpit kostkowy typu E (`'pulpit'`) i pulpit
-  typu IZH-111 (`'izh'`, misja 3) – różnią się teksty
+  Kotwice kroków (`anchor`) – różnią się teksty
   i wskazywane miejsca (`anchor`: `{ ref }`, `{ block }`, `{ cmd }`, `{ el }`, `{ tab }`). Wszystko, co zależy od
   stanowiska, jest w słowniku `PHRASES[view]` (te same klucze dla każdego widoku – pilnuje tego test); kroki misji nie
   rozgałęziają się po widoku, więc nowy panel to nowy wpis w słowniku.

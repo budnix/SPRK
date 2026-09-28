@@ -54,9 +54,9 @@ Uproszczenia i założenia w grze (`src/srk/address.js`, `src/render/IzhRenderer
   odpowiednie do danego typu blokady” – bez szczegółów); kostki toru, rama i perony wspólne z pulpitem typu E;
 * doraźnego zwolnienia przebiegu z licznikiem (dPz) na tym pulpicie nie ma – przebieg, w który pociąg wjechał,
   rozwiązuje się odcinkowo;
-* żadna stacja w grze nie ma tych urządzeń w rzeczywistości – pulpit jest dostępny jako zmiana i misja 3 na stacji
-  Szkolna; misja zaczyna się rozgrzewką z rozkazami „−”, „+”, STOP, Zw i Zcz, potem uczy przebiegów (P, M)
-  i sygnału zastępczego (Sz).
+* żadna rzeczywista stacja w grze nie ma tych urządzeń – pulpit jest dostępny na fikcyjnych stacjach treningowych
+  (Zacisze – misja 3, zmiany na Szkolnej i Jodłowej); misja zaczyna się rozgrzewką z rozkazami „−”, „+”, STOP, Zw
+  i Zcz, potem uczy wjazdów na tory czołowe i wyjazdów rozkazem P.
 
 ## Gdynia Główna
 
@@ -243,7 +243,8 @@ Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego śr
   z LCS Gdańsk urządzeniami komputerowymi. W grze: `komputerowe` (tylko stanowisko komputerowe).
 * **Gdańsk Główny** – od modernizacji E65 (LCS Gdańsk, nastawnia „G”) urządzenia komputerowe; tory SKM prowadzi
   nastawnia „G-SKM” (PKP SKM). W grze: `komputerowe`, jedno stanowisko na całą część pasażerską.
-* **Szkolna** – stacja fikcyjna, treningowa: stanowisko komputerowe albo pulpit kostkowy typu E (misje i dwie pełne zmiany).
+* **Szkolna**, **Jodłowa**, **Zacisze** – stacje fikcyjne, treningowe (misje 1–3); każda ma zmiany na wszystkich
+  trzech stanowiskach. Układ torów Jodłowej jest taki jak stacji testowej Wola Pustkowska.
 * Dawne stacje fikcyjne Stare Pustkowie i Wola Pustkowska zostały jako stacje testowe w `tests/fixtures/`.
 
 Uproszczenie wspólne: w rzeczywistości tory linii 250 (PKP SKM) i linii 202 (PKP PLK) na tych stacjach obsługują

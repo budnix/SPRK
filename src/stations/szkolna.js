@@ -22,7 +22,7 @@ export default {
   id: 'szkolna',
   name: 'Szkolna',
   srk: 'komputerowe',
-  srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; ta sama stacja w misji 2 ma pulpit kostkowy typu E, a osobna zmiana – pulpit typu IZH-111.',
+  srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; osobne zmiany na pulpicie kostkowym typu E i na pulpicie typu IZH-111.',
   description: 'Stacja treningowa na linii jednotorowej Lipno – Dębno. Dwa tory peronowe, bocznica z kozłem, blokada liniowa Eap. Misje wprowadzające prowadzą krok po kroku.',
   location: 'Stacja fikcyjna na linii jednotorowej Lipno – Dębno (poligon szkoleniowy).',
   traffic: 'Kilka osobowych, towarowy przelotem, zdawczy z manewrami; rozkład liniowy pod samouczek.',
@@ -116,19 +116,13 @@ export default {
   routes: { disable: [], override: {} },
 
   /**
-   * Scenariusze. `tutorial` – identyfikator misji (src/tutorial/missions.js); `srk` – wymuszone stanowisko
-   * (misja 2 uczy pulpitu kostkowego na tej samej stacji).
+   * Scenariusze. `tutorial` – identyfikator misji (src/tutorial/missions.js); `srk` – stanowisko tej zmiany.
+   * Misja 1 zaczyna się o 06:54: przed pierwszym pociągiem jest rozgrzewka z poleceniami paska. Misje 2 i 3 mają
+   * własne stacje (Jodłowa, Zacisze).
    */
   scenarios: [
-    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', endTime: '08:50',
+    { id: 'nauka-1', name: 'Misja 1: stanowisko komputerowe (samouczek)', tutorial: 'monitor', srk: 'komputerowe', disruptions: 'none', startTime: '06:54', endTime: '08:50',
       description: 'Krok po kroku: pozwolenie (Poz), przebieg wjazdowy i wyjazdowy, Ko i Wbl, przelot, krzyżowanie, manewry składem kończącym bieg, sygnał zastępczy przy usterce semafora, zapowiadanie telefoniczne przy usterce blokady. Dymki wyjaśniają każdy skrót.',
-      faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
-    { id: 'nauka-2', name: 'Misja 2: pulpit kostkowy typu E (samouczek)', tutorial: 'pulpit', srk: 'E', disruptions: 'none', endTime: '08:50',
-      description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E: obsługa dwuprzyciskowa, wyciąganie przycisków, przyciski grupowe Zw, Zz, Pz, Sz i kostki blokady Eap przy końcach toru.',
-      faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
-    // misja 3 zaczyna się wcześniej: przed pierwszym pociągiem jest rozgrzewka z rozkazami pulpitu
-    { id: 'nauka-3', name: 'Misja 3: pulpit typu IZH-111 (samouczek)', tutorial: 'izh', srk: 'izh111', disruptions: 'none', startTime: '06:54', endTime: '08:50',
-      description: 'Ten sam rozkład na pulpicie ciemnym urządzeń przekaźnikowych typu IZH-111: przycisk adresowy elementu i przycisk rozkazu, przebieg rozkazem P lub M, sygnał zastępczy rozkazem Sz, kostki blokady Eap przy końcach toru. Na początku rozgrzewka: zwrotnica rozkazami + i −, zamknięcie STOP i Zw, zwolnienie czasowe Zcz.',
       faults: [{ type: 'signal-fail', target: 'A', at: '08:15', duration: 10 }, { type: 'block-fail', target: 'W', at: '08:26', duration: 22 }] },
     // zmiany bez samouczka – po jednej na każde stanowisko (samouczki są na liście misji, nie w wyborze scenariusza)
     { id: 'zmiana', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:50)', srk: 'komputerowe', description: 'Ten sam rozkład bez podpowiedzi, na monitorze (zobrazowanie wg Ie-104). Poziom zakłóceń do wyboru.', endTime: '08:50' },

@@ -1,8 +1,9 @@
 /**
  * Rejestr misji wprowadzających (samouczków), bez DOM. Każda misja jest osobnym plikiem w `src/tutorial/missions/`
- * z własnym słownikiem tekstów i własną listą kroków, więc każdy samouczek może pokazywać obsługę po swojemu.
- * Wspólne lekcje rozkładu stacji Szkolna są w `lessons.js` – misja bierze je, dokłada swoje kroki, podmienia albo
- * pomija (`withSteps`).
+ * z własną listą kroków i własnym scenariuszem: inna stacja, inny układ torów, inny rozkład.
+ *  - misja 1 (monitor): Szkolna – linia jednotorowa, krzyżowanie, manewry, usterki; lekcje w `lessons.js`,
+ *  - misja 2 (pulpit typu E): Jodłowa – linia dwutorowa, wyprzedzanie, odgałęzienie,
+ *  - misja 3 (pulpit IZH-111): Zacisze – stacja krańcowa, tory czołowe, zmiana czoła.
  *
  * Nowy samouczek: plik misji (`id`, `name`, `view`, `phrases`, `steps()`), wpis tutaj i scenariusz stacji z polem
  * `tutorial: '<id>'`.
@@ -18,11 +19,11 @@ export function getMission(id) {
   return MISSIONS[id] || null;
 }
 
-/** Słowniki tekstów misji (klucz: id misji). Klucze wymagane przez wspólne lekcje: `LESSON_PHRASES`. */
-export const PHRASES = Object.fromEntries(Object.values(MISSIONS).map((m) => [m.id, m.phrases]));
+/** Słowniki tekstów misji, które korzystają ze wspólnych lekcji (klucze: `LESSON_PHRASES`). */
+export const PHRASES = Object.fromEntries(Object.values(MISSIONS).filter((m) => m.phrases).map((m) => [m.id, m.phrases]));
 
-/** Misje, dla których są teksty. */
-export const MISSION_VIEWS = Object.keys(PHRASES);
+/** Identyfikatory misji w kolejności nauki. */
+export const MISSION_VIEWS = Object.keys(MISSIONS);
 
 /** Kroki misji `id` – własny zestaw tej misji. */
 export function missionSteps(id) {
