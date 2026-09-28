@@ -38,6 +38,11 @@ test('nastawnia mechaniczna: dźwignia zwrotnicy → drążek → blok → dźwi
   // dźwignia zwrotnicowa: przełożona od razu, zwrotnica po 2 s
   await ctl(page, 'lever', need).click();
   await expect(page.locator(`#desk .lever[data-lever="${need}"]`)).toHaveClass(/down/);
+  // oznaczenia położeń: przy dźwigni zwrotnicowej „+” po lewej, „−” po prawej; świeci bieżące
+  const pos = await page.locator(`#desk .lever[data-lever="${need}"] .lever-pos`).evaluateAll((els) => els.map((e) => ({ t: e.textContent, on: e.classList.contains('on'), x: e.getBoundingClientRect().x })));
+  expect(pos.map((p) => p.t)).toEqual(['+', '−']);
+  expect(pos[0].x).toBeLessThan(pos[1].x);
+  expect(pos.map((p) => p.on)).toEqual([false, true]);
   await advance(page, 3);
   expect((await simState(page)).points[need]).toBe('-');
   await ctl(page, 'route', 'A-D2').click();

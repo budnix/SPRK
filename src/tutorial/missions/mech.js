@@ -36,7 +36,7 @@ export function steps() {
       { wrong: (sim) => (active(sim, 'A-D2') ? 'To tor 2 (drążek w dół). Pociąg 8401 ma tor 1 – cofnij drążek i przełóż go w górę.' : null) }),
     act('block-8401', '2. Blok przebiegowy', `Naciśnij <b>klawisz bloku</b> nad drążkiem a. Okienko zmieni się z czerwonego na <b>białe</b>. Od tej chwili drążka nie cofniesz – zwolni go pociąg po przejeździe.`, block('A'),
       (sim) => !!route(sim, 'A-D1')?.blocked || arrived(sim, 8401)),
-    act('signal-8401', '3. Dźwignia sygnałowa', `Przełóż <b>dźwignię 5</b> (semafor A, czerwona). Powtarzacz A na planie pokaże sygnał zezwalający. Bez zablokowanego bloku dźwignia sygnałowa by się nie przełożyła.`, lever('A'),
+    act('signal-8401', '3. Dźwignia sygnałowa', `Przełóż <b>dźwignię 5</b> (semafor A, czerwona) – odchyli się w prawo, a obok niej zamiast czerwonej kropki („Stój”) zaświeci zielona. Powtarzacz A na planie pokaże sygnał zezwalający. Bez zablokowanego bloku dźwignia sygnałowa by się nie przełożyła.`, lever('A'),
       (sim) => !!route(sim, 'A-D1')?.lever || arrived(sim, 8401)),
     act('watch-8401', 'Pociąg wjeżdża', `Obserwuj plan: zajęte odcinki są czerwone. Za pociągiem semafor A sam pokaże „Stój”, a gdy pociąg wjedzie w całości na tor 1 – okienko bloku wróci na <b>czerwone</b>: pociąg zwolnił blok.`, { el: '#speed' },
       (sim) => !!route(sim, 'A-D1')?.passed || (arrived(sim, 8401) && !active(sim, 'A-D1'))),
@@ -64,7 +64,7 @@ export function steps() {
 
     /* ---------------- krzyżowanie: tor 2 i wykolejnica ochronna ---------------- */
     info('cross-intro', 'Krzyżowanie na torach 1 i 2', `O 07:30 przyjedzie <b>8403</b> z Wierzbna na tor <b>2</b>, a o 07:31 <b>8404</b> z Grabowca na tor <b>1</b> – ${A('krzyżowanie')}.<p>Przebieg na tor 2 wymaga: zwrotnicy 1 na „−” (dźwignia 1 przełożona), zwrotnicy 3 na „+” i <b>nałożonej</b> wykolejnicy Wk1 – ona chroni tor 2 od bocznicy. Drążek a sprawdzi je wszystkie.</p><p>Drogi ochronne za semaforami D2 i C1 kończą się na osobnych odcinkach, więc oba wjazdy mogą być nastawione naraz.</p>`, { el: '#desk' }),
-    act('cross-points', 'Dźwignia dla toru 2', `Przełóż <b>dźwignię 1</b> (zwrotnica 1 na tor 2): kliknij ją – odchyli się w prawo, jest <b>przełożona</b>. Zwrotnica przestawi się w ok. 2 s, w tym czasie rękojeść świeci na żółto. Zwrotnica 3 i wykolejnica stoją już dobrze.<p>Dźwigni zwrotnicowej nie przełożysz, gdy na zwrotnicy stoi tabor albo zamyka ją drążek przebiegowy.</p>`, lever('Zw1'),
+    act('cross-points', 'Dźwignia dla toru 2', `Przełóż <b>dźwignię 1</b> (zwrotnica 1 na tor 2): kliknij ją – odchyli się w prawo, jest <b>przełożona</b>. Obok dźwigni po lewej jest <b>+</b>, po prawej <b>−</b>: jasno świeci położenie, w które przestawiasz zwrotnicę. Zwrotnica przestawi się w ok. 2 s, w tym czasie rękojeść świeci na żółto. Zwrotnica 3 i wykolejnica stoją już dobrze.<p>Dźwigni zwrotnicowej nie przełożysz, gdy na zwrotnicy stoi tabor albo zamyka ją drążek przebiegowy.</p>`, lever('Zw1'),
       (sim) => settled(pt(sim, 'Zw1'), '-') || arrived(sim, 8403)),
     act('cross-in', 'Dwa wjazdy', `Gdy sąsiedzi zgłoszą pociągi, daj <b>Poz</b> na obu blokadach i nastaw oba wjazdy: ${full('A', 'a', '<b>w dół</b> (tor 2)')} oraz ${full('B', 'b', 'w górę (tor 1)')}. Kolejność dowolna.`, drazek('A-D2'),
       (sim) => arrived(sim, 8403) && arrived(sim, 8404),

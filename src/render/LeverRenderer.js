@@ -172,6 +172,13 @@ export class LeverRenderer extends PanelView {
     g.appendChild(refs.arm);
     g.appendChild(el('circle', { class: 'lever-drum', cx, cy: py, r: 6 }));
     g.appendChild(el('circle', { class: 'lever-axle', cx, cy: py, r: 1.6 }));
+    // oznaczenia położeń po obu stronach koziołka: lewo – zasadnicze, prawo – przełożone (świeci to, w którym dźwignia stoi)
+    const mark = (side, what) => (typeof what === 'string'
+      ? text(cx + side * (what.length > 1 ? 17 : 13), py - 1, what, { class: `lever-pos${what.length > 1 ? ' small' : ''}` })
+      : el('circle', { class: `lever-pos dot ${what.dot}`, cx: cx + side * 13, cy: py - 2, r: 2.4 }));
+    const marks = { point: ['+', '−'], derailer: ['nał.', 'zdj.'], signal: [{ dot: 'stop' }, { dot: 'go' }], shunt: [{ dot: 'ms1' }, { dot: 'ms2' }] }[l.kind];
+    refs.pos = { normal: mark(-1, marks[0]), reversed: mark(1, marks[1]) };
+    g.append(refs.pos.normal, refs.pos.reversed);
     refs.lock = el('rect', { class: 'lever-lock', x: cx - 6, y: py + 8, width: 12, height: 3, rx: 1 });
     refs.fault = el('circle', { class: 'lever-fault', cx: cx + 8, cy: py - 3, r: 2 });
     refs.pivot = [cx, py];
@@ -202,6 +209,8 @@ export class LeverRenderer extends PanelView {
       r.arm.parentNode.classList.toggle('moving', s.moving);
       r.lock.classList.toggle('on', s.locked);
       r.fault.classList.toggle('on', s.fault);
+      r.pos.normal.classList.toggle('on', !s.down);
+      r.pos.reversed.classList.toggle('on', s.down);
     }
     for (const [id, r] of this.drazekEls) {
       const s = st.drazki[id];
