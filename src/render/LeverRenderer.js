@@ -151,7 +151,7 @@ export class LeverRenderer extends PanelView {
   /**
    * Dźwignia nastawcza z boku (Ie-8 §6 ust. 3): koziołek z dwoma wycięciami (położenie zasadnicze i przełożone),
    * tarcza linkowa na osi, trzon w barwie rodzaju dźwigni, u góry rękojeść i uchwyt pręta zapadkowego. W położeniu
-   * zasadniczym trzon odchyla się do tyłu, przełożony – do przodu.
+   * zasadniczym trzon odchyla się w lewo (do tyłu), przełożony – w prawo (do przodu).
    */
   #lever(l, cx, y1) {
     const g = el('g', { class: `lever lever-${l.kind}`, 'data-lever': l.id });

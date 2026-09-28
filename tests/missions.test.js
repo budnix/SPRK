@@ -83,6 +83,8 @@ test('kroki każdej misji są spójne: unikalne id, teksty, warunki, skróty ze 
   for (const s of missionSteps('izh')) assert.ok(!/PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|biały przycisk|przycisk grupowy|\bPz\b|dwuprzyciskow/.test(`${s.text} ${s.tip || ''}`), `izh/${s.id}: tekst innego stanowiska`);
   for (const s of missionSteps('monitor')) assert.ok(!/przycisk adresowy|zielony przycisk|przycisk grupowy/.test(s.text), `monitor/${s.id}: tekst innego stanowiska`);
   for (const s of missionSteps('mech')) assert.ok(!/przycisk adresowy|PRZEBIEG POCIĄGOWY|WYKONAJ|zielony przycisk|przycisk grupowy|rozkaz <b>/.test(`${s.text} ${s.tip || ''}`), `mech/${s.id}: tekst innego stanowiska`);
+  // dźwignie rysowane z boku: zasadnicza odchylona w lewo, przełożona w prawo – nie „w górze” / „w dole” (to drążki)
+  for (const s of missionSteps('mech')) assert.doesNotMatch(`${s.text} ${s.tip || ''} ${s.wrong?.toString() || ''}`, /dźwigni\S*\s+(?:<b>)?\d*(?:<\/b>)?[^.;,]{0,25}\b(w górze|w dole|w górę|w dół)/i, `mech/${s.id}: położenie dźwigni`);
 });
 
 test('misje bez rozgrzewki: po planie stacji od razu blokada i pierwszy pociąg – polecenia wtedy, gdy są potrzebne', () => {
