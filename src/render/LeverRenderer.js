@@ -68,9 +68,9 @@ export class LeverRenderer extends PanelView {
     const H = (LEVER_ROWS * CELL - 12) / K;
     const bench = el('g', { class: 'lever-bench', transform: `translate(0,${this.rows * CELL + 8}) scale(${K})` });
     bench.appendChild(el('rect', { class: 'bench-bg', x: 0, y: y0, width: W, height: H, rx: 3 }));
-    bench.appendChild(el('rect', { class: 'bench-block', x: 6, y: y0 + 4, width: W - 12, height: 100, rx: 2 }));
+    bench.appendChild(el('rect', { class: 'bench-block', x: 6, y: y0 + 4, width: W - 12, height: 108, rx: 2 }));
     bench.appendChild(text(12, y0 + 12, 'APARAT BLOKOWY · DRĄŻKI PRZEBIEGOWE', { class: 'bench-title', 'text-anchor': 'start' }));
-    bench.appendChild(text(12, y0 + 114, 'DŹWIGNIE NASTAWCZE', { class: 'bench-title', 'text-anchor': 'start' }));
+    bench.appendChild(text(12, y0 + 122, 'DŹWIGNIE NASTAWCZE', { class: 'bench-title', 'text-anchor': 'start' }));
     this.inner.insertBefore(bench, this.layerTrains);
 
     // drążki przebiegowe z blokiem przebiegowym utwierdzającym (przebiegi pociągowe) nad nimi
@@ -101,7 +101,7 @@ export class LeverRenderer extends PanelView {
     // dźwignie nastawcze
     const nl = this.frame.levers.length;
     const sl = Math.min(50, (W * 0.8) / Math.max(nl, 1));
-    this.frame.levers.forEach((l, i) => bench.appendChild(this.#lever(l, 26 + i * sl + sl / 2, y0 + 126)));
+    this.frame.levers.forEach((l, i) => bench.appendChild(this.#lever(l, 26 + i * sl + sl / 2, y0 + 131)));
   }
 
   #drazek(d, cx, y0) {
@@ -123,20 +123,20 @@ export class LeverRenderer extends PanelView {
       ]), { kind: 'routerelease', id: d.start }, `Zwalniacz bloku przebiegowego ${d.start}`, () => ({ type: 'release', signal: d.start, emergency: true })));
     }
     // drążek: szczelina, gałka w górze / w środku / w dole; cel przebiegu przy położeniu
-    g.appendChild(el('rect', { class: 'drazek-slot', x: cx - 2.5, y: y0 + 52, width: 5, height: 40, rx: 2.5 }));
+    g.appendChild(el('rect', { class: 'drazek-slot', x: cx - 2.5, y: y0 + 50, width: 5, height: 38, rx: 2.5 }));
     // rączka drążka: płaski uchwyt w poprzek szczeliny
     refs.knob = el('g', { class: 'drazek-knob' }, [
       el('rect', { class: 'drazek-grip', x: cx - 7, y: -2.5, width: 14, height: 5, rx: 2 }),
       el('circle', { class: 'drazek-pin', cx, cy: 0, r: 1.3 }),
     ]);
     g.appendChild(refs.knob);
-    g.appendChild(text(cx, y0 + 100, d.id, { class: 'bench-label strong' }));
-    refs.y = { up: y0 + 55, null: y0 + 72, down: y0 + 89 };
+    g.appendChild(text(cx, y0 + 97, d.id, { class: 'bench-label strong' }));
+    refs.y = { up: y0 + 53, null: y0 + 69, down: y0 + 85 };
     for (const r of d.routes) {
       const up = r.pos === 'up';
       const half = el('g', { class: `drazek-pos drazek-${r.pos}` }, [
-        el('rect', { class: 'hit', x: cx - 12, y: up ? y0 + 49 : y0 + 73, width: 40, height: 22 }),
-        text(cx + 10, up ? y0 + 55 : y0 + 89, r.target, { class: 'bench-label target', 'text-anchor': 'start' }),
+        el('rect', { class: 'hit', x: cx - 12, y: up ? y0 + 47 : y0 + 70, width: 40, height: 22 }),
+        text(cx + 10, up ? y0 + 53 : y0 + 86, r.target, { class: 'bench-label target', 'text-anchor': 'start' }),
       ]);
       refs[r.pos] = half;
       g.appendChild(this.#control(half, { kind: 'route', id: r.id }, `Drążek ${d.id}: ${d.start} → ${r.target}`, () => {
@@ -178,8 +178,8 @@ export class LeverRenderer extends PanelView {
     g.append(refs.lock, refs.fault);
     g.appendChild(el('rect', { class: 'lever-plate', x: cx - 9, y: y1 + 63, width: 18, height: 9, rx: 1 }));
     g.appendChild(text(cx, y1 + 67.5, String(l.no), { class: 'plate-text' }));
-    g.appendChild(text(cx, y1 + 80, l.id, { class: 'bench-label strong' }));
-    g.appendChild(el('rect', { class: 'hit', x: cx - 11, y: y1 - 5, width: 22, height: 90 }));
+    g.appendChild(text(cx, y1 + 78, l.id, { class: 'bench-label strong' }));
+    g.appendChild(el('rect', { class: 'hit', x: cx - 11, y: y1 - 5, width: 22, height: 87 }));
     this.leverEls.set(l.id, refs);
     const name = { point: 'zwrotnicowa', derailer: 'wykolejnicowa', signal: 'semaforowa', shunt: 'tarczy manewrowej' }[l.kind];
     return this.#control(g, { kind: 'lever', id: l.id }, `Dźwignia ${l.no} ${name} ${l.id}`, () => {
