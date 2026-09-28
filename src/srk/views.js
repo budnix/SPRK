@@ -5,6 +5,7 @@
  */
 import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
+import { IzhRenderer } from '../render/IzhRenderer.js';
 import { getSrk } from './registry.js';
 import { t } from '../i18n/index.js';
 
@@ -45,6 +46,18 @@ registerView('screen', {
     signal: (a) => t('arm.screenSignal', { kind: t(a.color === 'white' ? 'arm.screenSignal.shunt' : 'arm.screenSignal.train'), id: a.id }),
   },
   help: () => t('help.screen'),
+});
+
+/** Pulpit IZH-111: podpowiedź zależy od tego, ile adresów wybrano (jeden element albo początek i koniec przebiegu). */
+const izhHint = (a) => (a.selection?.length === 2
+  ? t('arm.izh.route', { from: a.selection[0].id, to: a.selection[1].id })
+  : t(`arm.izh.${a.kind}`, { id: a.id }));
+
+registerView('izh', {
+  View: IzhRenderer,
+  hint: () => t('hint.izh'),
+  armHint: { signal: izhHint, end: izhHint, point: izhHint, derailer: izhHint },
+  help: () => t('help.izh'),
 });
 
 function viewOf(srk) {

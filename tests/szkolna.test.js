@@ -20,7 +20,8 @@ test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scen
   assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).srk.view, 'screen');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana' }).srk.view, 'screen', 'pełna zmiana – monitor');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana-e' }).srk.view, 'desk', 'pełna zmiana – pulpit typu E');
-  assert.deepEqual(szkolna.scenarios.filter((x) => !x.tutorial).map((x) => x.id), ['zmiana', 'zmiana-e'], 'w wyborze scenariusza dwie zmiany bez samouczka');
+  assert.deepEqual(szkolna.scenarios.filter((x) => !x.tutorial).map((x) => x.id), ['zmiana', 'zmiana-e', 'zmiana-izh'], 'w wyborze scenariusza po jednej zmianie na każde stanowisko');
+  assert.equal(new Simulation(szkolna, { scenario: 'zmiana-izh' }).srk.view, 'izh', 'pełna zmiana – pulpit typu IZH-111');
   assert.equal(new Simulation(szkolna, { scenario: 'nauka-2', srk: 'komputerowe' }).srk.view, 'desk', 'scenariusz misji 2 wygrywa z ustawieniem gracza');
 });
 
@@ -295,7 +296,8 @@ test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocze
 test('Szkolna: karta posterunku oznacza stanowisko „do wyboru” (zmiany na monitorze i na pulpicie typu E); Sopot – tylko monitor', async () => {
   const { srkBadge, stationViews } = await import('../src/ui/StartScreen.js');
   const sopot = (await import('../src/stations/sopot.js')).default;
-  assert.deepEqual(stationViews(szkolna).sort(), ['desk', 'screen']);
+  assert.deepEqual(stationViews(szkolna).sort(), ['desk', 'izh', 'screen']);
+  assert.equal(srkBadge({ srk: 'izh111' }), 'IZH-111 · pulpit ciemny');
   assert.match(srkBadge(szkolna), /do wyboru/);
   assert.deepEqual(stationViews(sopot), ['screen']);
   assert.equal(srkBadge(sopot), 'komputerowe · monitor');

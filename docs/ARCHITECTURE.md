@@ -11,9 +11,12 @@ src/
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
+               address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
-               DeskRenderer (SVG pulpitu kostkowego), ScreenRenderer (monitor stanowiska komputerowego wg Ie-104),
+               DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), ScreenRenderer
+               (monitor stanowiska komputerowego wg Ie-104), deskParts (części wspólne pulpitów kostkowych: rama,
+               kostki z planu, perony, blokada, przyciski pod palcem), tileArt / izhArt (grafika kostek),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
                platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
                edges (geometria stałych pól skrajnych, bez DOM), zoom (rachunki powiększenia, bez DOM), thumbnail (miniatury planów – SVG jako tekst, bez DOM),
@@ -50,13 +53,18 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 
 ## Strategie systemów srk (`src/srk/`)
 
-Stacja deklaruje `srk: 'E' | 'komputerowe'` (domyślnie `E`). Strategia to wpis w rejestrze
-(`registerSrk({ id, name, description, view, model })`):
+Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111'` (domyślnie `E`). Strategia to wpis w rejestrze
+(`registerSrk({ id, name, description, view, model, input? })`):
 
 * `model` – parametry przekazywane do `Interlocking` (np. `armTimeout`: 6 s na drugi przycisk pulpitu,
   60 s na wskazanie końca przebiegu na monitorze). Logika zależności (utwierdzenie, zwalnianie odcinkowe,
   ochrona boczna, liczniki, blokady) jest **wspólna** – to cechy ruchu kolejowego, nie stanowiska.
-* `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe) lub `screen`
+* `input` – protokół obsługi stanowiska (bez DOM): `(ilk, bus, model) => { press, pull, pressCompound, cancel,
+  tick, armed }`. Bez niego obowiązują przyciski typu E (`src/srk/buttons.js`); `izh111` ma protokół „adres +
+  rozkaz” (`src/srk/address.js`). Opcje zależności tej strategii: `timedRelease`, `shuntTimedRelease`,
+  `timedReleaseAlways` (IZH-111: Zcz zwalnia po 120 s, przebieg manewrowy bezzwłocznie).
+* `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe), `izh` (IzhRenderer: pulpit ciemny,
+  przyciski adresowe i grupa rozkazów) lub `screen`
   (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
   Widoki są w rejestrze `src/srk/views.js` (`registerView`, `createView`, `viewSize`, `armHint`, `viewHelp`);
   model ich nie importuje.
@@ -89,6 +97,20 @@ Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR
 protokół obsługi w `src/srk/`, bez DOM); lista kroków jest w `CLAUDE.md`. Różnice w samych zależnościach (np. brak
 liczników, inne zwalnianie) należy dodawać jako opcje `Interlocking` sterowane przez `model`, nie jako
 osobne kopie logiki.
+
+## Pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`)
+
+Trzecie stanowisko – sprawdzian struktury: nowy protokół obsługi i nowy widok bez zmian w zależnościach poza
+opcjami. Protokół trzyma wybór adresów (`selection`, najwyżej dwa) i wystawia pierwszy jako `armed`, więc pasek
+stanu, samouczek i testy czytają to samo pole co przy typie E. Rozkaz działa na wyborze: „P” / „M” wołają
+`requestCompoundRoute(start, koniec, rodzaj)`, „+” / „−” – `switchPoint(id, położenie)`, „STOP” i „Zw” ustawiają
+zamknięcie w podany stan, „Zcz” i „Zw” znajdują przebieg po adresie jego końca (`Interlocking.routeEndingAt`).
+
+Widok korzysta z części wspólnych pulpitów (`deskParts.js`) i własnej grafiki kostek sygnalizatorów (`izhArt.js`).
+Kostki przycisków grupowych typu E z definicji stacji (Zw, Zz, Pz, dPz, Sz) rysuje jako puste – rozkazy są w grupie
+nad planem (`.izh-orders`, element DOM jak pasek poleceń monitora, więc nie przycina go podział na ekrany).
+Lampki są wygaszone w stanie zasadniczym; co świeci i kiedy – opis klasy `IzhRenderer`, źródła i założenia –
+`docs/SOURCES.md`.
 
 ## Ekrany pulpitu
 

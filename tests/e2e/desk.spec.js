@@ -38,7 +38,7 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   await expect(page.locator('.st-card[data-id=sopot] .st-srk').first()).toHaveText('komputerowe · monitor');
   await page.click('.st-card[data-id=szkolna]');
   const opts = await page.locator('#st-scenario option').allTextContents();
-  expect(opts).toEqual(['Pełna zmiana – stanowisko komputerowe (07:00–08:50)', 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)']);
+  expect(opts).toEqual(['Pełna zmiana – stanowisko komputerowe (07:00–08:50)', 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)', 'Pełna zmiana – pulpit typu IZH-111 (07:00–08:50)']);
   expect(opts.some((o) => /samouczek/i.test(o))).toBe(false);
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-briefing')).toHaveClass(/open/);

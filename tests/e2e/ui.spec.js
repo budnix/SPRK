@@ -99,7 +99,7 @@ test('zakładki ekranów nie są wymieniane przy ponownym planowaniu (start, zmi
   await expect.poll(() => page.evaluate(() => window.__tabs.some((b) => !b.isConnected))).toBe(true);
 });
 
-for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk']]) {
+for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk'], ['pulpit IZH-111', 'zmiana-izh', 'desk izh']]) {
   test(`widok stanowiska (${name}) spełnia kontrakt PanelView: rysunek, margines, wycinek, elementy obsługi, etykiety pociągów`, async ({ page }) => {
     await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
     const v = await page.evaluate(() => {

@@ -22,7 +22,7 @@ export default {
   id: 'szkolna',
   name: 'Szkolna',
   srk: 'komputerowe',
-  srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; ta sama stacja w misji 2 ma pulpit kostkowy typu E.',
+  srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; ta sama stacja w misji 2 ma pulpit kostkowy typu E, a osobna zmiana – pulpit typu IZH-111.',
   description: 'Stacja treningowa na linii jednotorowej Lipno – Dębno. Dwa tory peronowe, bocznica z kozłem, blokada liniowa Eap. Misje wprowadzające prowadzą krok po kroku.',
   location: 'Stacja fikcyjna na linii jednotorowej Lipno – Dębno (poligon szkoleniowy).',
   traffic: 'Kilka osobowych, towarowy przelotem, zdawczy z manewrami; rozkład liniowy pod samouczek.',
@@ -134,6 +134,7 @@ export default {
     // zmiany bez samouczka – po jednej na każde stanowisko (samouczki są na liście misji, nie w wyborze scenariusza)
     { id: 'zmiana', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:50)', srk: 'komputerowe', description: 'Ten sam rozkład bez podpowiedzi, na monitorze (zobrazowanie wg Ie-104). Poziom zakłóceń do wyboru.', endTime: '08:50' },
     { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:50)', srk: 'E', description: 'Ten sam rozkład bez podpowiedzi, na pulpicie kostkowym urządzeń przekaźnikowych typu E. Poziom zakłóceń do wyboru.', endTime: '08:50' },
+    { id: 'zmiana-izh', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–08:50)', srk: 'izh111', description: 'Ten sam rozkład na pulpicie ciemnym urządzeń przekaźnikowych typu IZH-111: przycisk adresowy elementu i przycisk rozkazu (P, M, +, −, STOP, Zw, Zcz, Sz). Instrukcja obsługi jest pod przyciskiem „?”. Poziom zakłóceń do wyboru.', endTime: '08:50' },
   ],
 
   timetable: [

@@ -49,16 +49,27 @@
 
 ## Nowe stanowisko obsługi (system srk, panel)
 
-1. Wpis w `src/srk/registry.js` (`id`, `name`, `view`, parametry `model`) + test w `tests/srk.test.js`.
-2. Sposób wydawania poleceń: `Simulation.execute` albo własny protokół obsługi w `src/srk/` (bez DOM, test w Node,
-   wzór: `buttons.js` i `tests/commands.test.js`). Nowe reguły zależności to opcje `Interlocking`, nie kopia logiki.
+Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `tests/izh111.test.js`,
+`tests/e2e/izh.spec.js`).
+
+0. Źródła: opis obsługi urządzeń z podaniem, co jest faktem ze źródła, a co założeniem – `docs/SOURCES.md`.
+   Nie wymyślaj zasad kolejowych; czego źródło nie podaje, oznacz jako przyjęte.
+1. Wpis w `src/srk/registry.js` (`id`, `name`, `view`, parametry `model`, opcjonalnie `input`) + test.
+2. Sposób wydawania poleceń: `Simulation.execute` albo własny protokół obsługi w `src/srk/` (bez DOM, test w Node)
+   podany w polu `input` strategii. Protokół wystawia `armed` (pierwszy wybrany element). Nowe reguły zależności to
+   opcje `Interlocking` z wartościami domyślnymi zachowującymi dotychczasowe stanowiska, nie kopia logiki.
 3. Widok: klasa w `src/render/` rozszerzająca `PanelView` (`src/render/PanelView.js` – tam jest opis kontraktu)
    + `registerView('<rodzaj>', { View, hint, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
    wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
    i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
 4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`; misje – wpis dla nowego widoku w słowniku
    `PHRASES` w `src/tutorial/missions.js` (komplet kluczy; kroków misji się nie zmienia).
-5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/` i zrzut w `visual.spec.js`.
+5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/`, zrzut w `visual.spec.js` i wpis widoku
+   w teście kontraktu w `tests/e2e/ui.spec.js`. Wybieraj elementy przez `#desk …` – stałe pola skrajne kopiują
+   klasy rysunku.
+5a. Dostępność w grze: scenariusz z polem `srk` na stacji, etykieta karty w `VIEW_BADGE` (`src/ui/StartScreen.js`)
+   i klucz `start.srk*`. Testy treści stacji (lista scenariuszy) trzeba wtedy rozszerzyć – uzasadnij w commicie.
+5b. Barwy urządzenia jako zmienne `--desk-*` / `--mon-*` (są poza wymogiem motywu jasnego).
 6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
 
 ## Interfejs (wygląd)

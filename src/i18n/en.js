@@ -11,6 +11,17 @@ export default {
   'menu.settings': 'Settings…',
   'menu.report': 'Shift report',
   'menu.help': 'User manual',
+  'hint.izh': 'element address button, then an order button · route: start, end, P or M',
+  'arm.izh.signal': 'Signal {id} selected – pick the route end or an order: STOP, Sz, Zcz, Zw',
+  'arm.izh.end': 'Track end {id} selected – order Zcz or Zw releases the route that ends here',
+  'arm.izh.point': 'Point {id} selected – order: + / − (throw), STOP (lock), Zw (cancel the lock)',
+  'arm.izh.derailer': 'Derailer {id} selected – order: + (put on), − (take off), STOP, Zw',
+  'arm.izh.route': 'Route {from} → {to} – press order P (train) or M (shunting)',
+  'start.srkIzh': 'IZH-111 · dark desk',
+  'help.izh': `<h2>Operating the type IZH-111 desk</h2>
+      <p>Every element has one <b>address button</b>: a signal has it in the middle of its tile, a point, a derailer and a track end next to them. The <b>order buttons</b> form a separate group above the plan. Press the address button first (it lights up), then the order – you have 10 s. Pressing the same address again cancels the selection.</p>
+      <p><b>Route</b>: address of the start signal, address of the end (a signal or a track end) and order <b>P</b> (train) or <b>M</b> (shunting). Intermediate signals clear by themselves. <b>Point</b>: address and <b>+</b> or <b>−</b>; <b>STOP</b> locks the point (red lamp), <b>Zw</b> cancels the lock. <b>STOP</b> with a signal address puts the signal to stop. <b>Zcz</b> with the address of the route end releases a train route after 120 s, <b>Zw</b> releases a shunting route at once. <b>Sz</b> shows the substitute signal (counted).</p>
+      <p>This is a <b>dark desk</b>: in the normal state the lamps are off. A dark repeater means the signal is at stop. Point slits light up when the point address is selected, when the point is locked and when the section is locked in a route (white) or occupied (red). The line block is operated with the buttons on the tiles at the end of the track.</p>`,
   'desk.auto': 'automatic',
   'desk.readonly': '{name} – operated by the other signal box (view only)',
   'desk.district': 'district',

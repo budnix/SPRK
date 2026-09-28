@@ -135,7 +135,7 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,
 * `tasks` – zadania manewrowe (niżej),
 * `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`); gra pokazuje dymki krok po kroku,
-* `srk` – stanowisko obsługi tej zmiany (`E` / `komputerowe`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
+* `srk` – stanowisko obsługi tej zmiany (`E` / `izh111` / `komputerowe`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
   Rumia i Reda mają zmianę na pulpicie i na monitorze). Nieznana wartość jest błędem walidacji.
 
 ## Rozkład jazdy (`timetable`)
@@ -204,9 +204,12 @@ graczowi-nastawniczemu. Przyciski obcego okręgu są zablokowane, jego pulpit je
 ## System srk stacji (`srk`)
 
 Pole opcjonalne na najwyższym poziomie definicji: `srk: 'E'` (urządzenia przekaźnikowe typu E, pulpit kostkowy –
-domyślnie) lub `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
-polecenia specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla obu
-stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Nieznana wartość jest błędem walidacji.
+domyślnie), `srk: 'izh111'` (urządzenia przekaźnikowe typu IZH-111, pulpit ciemny z przyciskami adresowymi
+i rozkazów) lub `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
+polecenia specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla wszystkich
+stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Kostki `button` (przyciski grupowe Zw, Zz, Pz, dPz,
+Sz) to wyposażenie pulpitu typu E: monitor bierze z nich tylko liczniki, a pulpit IZH-111 zostawia je puste, bo ma
+własną grupę rozkazów. Docelowo przyciski stanowiska nie powinny być częścią definicji stacji. Nieznana wartość jest błędem walidacji.
 
 ## Ekrany pulpitu (`screens`, opcjonalne)
 

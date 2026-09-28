@@ -23,7 +23,7 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ## Features
 
-### Two workstations, one interlocking model
+### Three workstations, one interlocking model
 * **Type E relay desk** – cube tiles, two-button operation (press the first button, then the second within 6 s),
   pull a button to put a signal to stop, group buttons Zw / Zz / Pz / dPz / Sz with sealed counters, Eap line-block
   panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow).
@@ -34,6 +34,10 @@ Play it: **https://budnix.github.io/SPRK/**
   Zz, Sz, STOP, OPS) or from the element menu; special commands are confirmed with WYKONAJ and registered.
 * Each station declares its real interlocking type; stations that exist in both forms offer a shift for each
   workstation (pick the scenario on the start screen). Symbol size (100–150 %) and track spacing are adjustable.
+
+* **Type IZH-111 relay desk** – a dark desk (lamps are off in the normal state): one address button per element and
+  a separate group of order buttons (P, M, +, −, STOP, Zw, Zcz, Sz). A route is the start address, the end address and
+  an order; Zcz releases a train route after 120 s. Available as a shift on the training station.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -60,7 +64,7 @@ Play it: **https://budnix.github.io/SPRK/**
 ### Stations
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
-| **Szkolna** (fictional) | computer | 1/5 | Training station on a single-track line; linear timetable for the guided missions. |
+| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 | 1/5 | Training station on a single-track line; linear timetable for the guided missions. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |

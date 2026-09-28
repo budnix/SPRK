@@ -172,3 +172,14 @@ test('typ E i stanowisko komputerowe: zwalnianie jak dotąd (opcje zależności 
   assert.ok(r.ok && !r.timed, 'wolny odcinek zbliżania – zwolnienie od razu');
   assert.ok(!sim.ilk.active.has('A-D1'));
 });
+
+test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie pociągi obsłużone, bez rozpruć', async () => {
+  const { autoDispatch, allArrived } = await import('./helpers.js');
+  const sim = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana-izh' });
+  assert.equal(sim.srk.id, 'izh111');
+  for (let i = 0; i < 2 * 60 * 120 && !allArrived(sim) && !sim.ended; i++) { sim.step(0.5); if (i % 4 === 0) autoDispatch(sim); }
+  const left = sim.traffic.timetable().filter((e) => !/na następnym posterunku|zakończył bieg|przekazany|odjechał/.test(e.status)).map((e) => `${e.nr}: ${e.status}`);
+  assert.deepEqual(left, []);
+  assert.equal(sim.ilk.counters.rozprucie, 0);
+  assert.equal(sim.ilk.counters.dPz, 0);
+});

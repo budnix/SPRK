@@ -29,3 +29,16 @@ test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manew
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('screen-sopot-zachod.png');
   expect(await shot(page, '#desk-tools', 1000, 40)).toMatchSnapshot('toolbar.png');
 });
+
+test('wygląd pulpitu typu IZH-111 (Szkolna): przebieg utwierdzony, wybrany adres zwrotnicy, grupa rozkazów', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-izh' } });
+  await page.evaluate(() => {
+    const s = window.sim;
+    s.press({ kind: 'signal', id: 'A' }); s.press({ kind: 'signal', id: 'D2' }); s.press({ kind: 'order', id: 'P' });
+    for (let i = 0; i < 20; i++) s.step(0.5);
+    s.press({ kind: 'point', id: 'Zw4' });
+  });
+  await page.waitForTimeout(200);
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-izh-szkolna.png');
+  expect(await shot(page, '.izh-orders', 1000, 38)).toMatchSnapshot('izh-orders.png');
+});

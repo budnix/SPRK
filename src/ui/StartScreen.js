@@ -29,11 +29,14 @@ export function stationViews(station) {
   return [...new Set((scs.length ? scs.map((sc) => sc.srk || station.srk) : [station.srk]).map((id) => getSrk(id).view))];
 }
 
+/** Etykieta karty posterunku dla rodzaju stanowiska (`view` strategii srk). */
+const VIEW_BADGE = { screen: 'start.srkScreen', desk: 'start.srkDesk', izh: 'start.srkIzh' };
+
 /** Krótka etykieta stanowiska na karcie posterunku; przy różnych stanowiskach w zmianach – „do wyboru”. */
 export function srkBadge(station) {
   const views = stationViews(station);
   if (views.length > 1) return t('start.srkBoth');
-  return t(views[0] === 'screen' ? 'start.srkScreen' : 'start.srkDesk');
+  return t(VIEW_BADGE[views[0]] || VIEW_BADGE.desk);
 }
 
 /**

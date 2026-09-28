@@ -59,6 +59,9 @@
   --mon-train: #c81e14; --mon-train-border: #ff6a60; --mon-on-train: #fff;
   --mon-confirm-bg: #3a2a00; --mon-confirm-text: #ffe2b0; --mon-on-special: #1c1300; --mon-shadow: rgba(0,0,0,0.6);
   --mon-screen: #000;
+  /* grupa przycisków rozkazów pulpitu IZH-111 – barwy urządzenia, niezależne od motywu */
+  --desk-izh-bar: #3b3d3f; --desk-izh-key: #1e1f20; --desk-izh-key-edge: #6f7578; --desk-izh-key-text: #f4f4f4; --desk-izh-ready: #ffd23f;
+  --desk-izh-counter: #101112; --desk-izh-counter-text: #f4f4f4;
   /* promienie, wysokość kontrolek, warstwy */
   --radius: 4px; --radius-sm: 3px; --radius-pill: 10px;
   --ctl-h: 28px;
@@ -720,3 +723,10 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
   #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card { transition: none; }
   * { scroll-behavior: auto !important; }
 }
+
+/* ---- pulpit typu IZH-111: grupa przycisków rozkazów nad planem (poza obrazem układu torowego) ---- */
+.izh-orders { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; padding: 5px 8px; background: var(--desk-izh-bar); border-bottom: 1px solid var(--border); }
+.izh-orders button { min-width: 44px; height: var(--ctl-h); padding: 0 10px; background: var(--desk-izh-key); color: var(--desk-izh-key-text); border: 1px solid var(--desk-izh-key-edge); border-radius: var(--radius-pill); font: 600 12px var(--font); cursor: pointer; }
+.izh-orders button:active { filter: brightness(1.4); }
+.izh-orders.ready button { border-color: var(--desk-izh-ready); }
+.izh-counter { background: var(--desk-izh-counter); color: var(--desk-izh-counter-text); border: 1px solid var(--desk-izh-key-edge); border-radius: var(--radius-sm); padding: 2px 6px; font: 700 11px var(--font); font-variant-numeric: tabular-nums; letter-spacing: 0.5px; }

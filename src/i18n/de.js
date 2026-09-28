@@ -11,6 +11,17 @@ export default {
   'menu.settings': 'Einstellungen…',
   'menu.report': 'Schichtbericht',
   'menu.help': 'Bedienungsanleitung',
+  'hint.izh': 'Adresstaste des Elements, dann Befehlstaste · Fahrstraße: Start, Ziel, P oder M',
+  'arm.izh.signal': 'Signal {id} gewählt – Ziel der Fahrstraße oder Befehl wählen: STOP, Sz, Zcz, Zw',
+  'arm.izh.end': 'Gleisende {id} gewählt – Befehl Zcz oder Zw löst die hier endende Fahrstraße auf',
+  'arm.izh.point': 'Weiche {id} gewählt – Befehl: + / − (umstellen), STOP (sperren), Zw (Sperre aufheben)',
+  'arm.izh.derailer': 'Gleissperre {id} gewählt – Befehl: + (auflegen), − (abnehmen), STOP, Zw',
+  'arm.izh.route': 'Fahrstraße {from} → {to} – Befehl P (Zugfahrt) oder M (Rangierfahrt) drücken',
+  'start.srkIzh': 'IZH-111 · Dunkelpult',
+  'help.izh': `<h2>Bedienung des Pults Typ IZH-111</h2>
+      <p>Jedes Element hat eine <b>Adresstaste</b>: beim Signal in der Mitte des Feldes, bei Weiche, Gleissperre und Gleisende daneben. Die <b>Befehlstasten</b> bilden eine eigene Gruppe über dem Gleisbild. Zuerst die Adresstaste drücken (sie leuchtet), dann den Befehl – dafür bleiben 10 s. Erneutes Drücken derselben Adresse hebt die Wahl auf.</p>
+      <p><b>Fahrstraße</b>: Adresse des Startsignals, Adresse des Ziels (Signal oder Gleisende) und Befehl <b>P</b> (Zugfahrt) oder <b>M</b> (Rangierfahrt). Zwischensignale stellen sich selbst. <b>Weiche</b>: Adresse und <b>+</b> oder <b>−</b>; <b>STOP</b> sperrt die Weiche (rote Lampe), <b>Zw</b> hebt die Sperre auf. <b>STOP</b> mit einer Signaladresse stellt das Signal auf Halt. <b>Zcz</b> mit der Adresse des Fahrstraßenziels löst eine Zugfahrstraße nach 120 s auf, <b>Zw</b> löst eine Rangierfahrstraße sofort auf. <b>Sz</b> zeigt das Ersatzsignal (mit Zähler).</p>
+      <p>Dies ist ein <b>Dunkelpult</b>: im Grundzustand sind die Lampen aus. Ein dunkler Signalmelder bedeutet Halt. Die Weichenschlitze leuchten, wenn die Weichenadresse gewählt ist, wenn die Weiche gesperrt ist und wenn der Abschnitt festgelegt (weiß) oder besetzt (rot) ist. Der Streckenblock wird mit den Tasten auf den Feldern am Gleisende bedient.</p>`,
   'desk.auto': 'Automat',
   'desk.readonly': '{name} – wird vom anderen Stellwerk bedient (nur Ansicht)',
   'desk.district': 'Bezirk',

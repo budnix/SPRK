@@ -12,6 +12,17 @@ export default {
   'menu.settings': 'Ustawienia…',
   'menu.report': 'Raport zmiany',
   'menu.help': 'Instrukcja obsługi',
+  'hint.izh': 'przycisk adresowy elementu, potem przycisk rozkazu · przebieg: początek, koniec, P lub M',
+  'arm.izh.signal': 'Wybrany sygnalizator {id} – wskaż koniec przebiegu albo rozkaz: STOP, Sz, Zcz, Zw',
+  'arm.izh.end': 'Wybrany koniec toru {id} – rozkaz Zcz lub Zw zwalnia przebieg, który się tu kończy',
+  'arm.izh.point': 'Wybrana zwrotnica {id} – rozkaz: + / − (przestawienie), STOP (zamknięcie), Zw (odwołanie zamknięcia)',
+  'arm.izh.derailer': 'Wybrana wykolejnica {id} – rozkaz: + (nałożenie), − (zdjęcie), STOP, Zw',
+  'arm.izh.route': 'Przebieg {from} → {to} – naciśnij rozkaz P (pociągowy) albo M (manewrowy)',
+  'start.srkIzh': 'IZH-111 · pulpit ciemny',
+  'help.izh': `<h2>Obsługa pulpitu urządzeń typu IZH-111</h2>
+      <p>Każdy element ma jeden <b>przycisk adresowy</b>: semafor i tarcza na środku swojej kostki, zwrotnica, wykolejnica i koniec toru przy sobie. <b>Przyciski rozkazów</b> są w osobnej grupie nad planem. Najpierw naciśnij przycisk adresowy (podświetli się), potem rozkaz – masz na to 10 s. Ponowne naciśnięcie tego samego adresu odwołuje wybór.</p>
+      <p><b>Przebieg</b>: adres sygnalizatora początkowego, adres końca (sygnalizator albo koniec toru) i rozkaz <b>P</b> (pociągowy) lub <b>M</b> (manewrowy). Sygnały na semaforach pośrednich podają się same. <b>Zwrotnica</b>: adres i <b>+</b> albo <b>−</b>; <b>STOP</b> zamyka zwrotnicę (czerwona lampka), <b>Zw</b> odwołuje zamknięcie. <b>STOP</b> z adresem sygnalizatora gasi sygnał. <b>Zcz</b> z adresem końca przebiegu zwalnia przebieg pociągowy po 120 s, <b>Zw</b> zwalnia przebieg manewrowy od razu. <b>Sz</b> podaje sygnał zastępczy (licznik).</p>
+      <p>To <b>pulpit ciemny</b>: w stanie zasadniczym lampki są wygaszone. Ciemny powtarzacz oznacza sygnał „Stój”. Szczeliny zwrotnicy świecą po wybraniu jej adresu, przy zamknięciu oraz gdy odcinek jest utwierdzony (białe) lub zajęty (czerwone). Blokadę liniową obsługuje się przyciskami na kostkach przy końcu toru.</p>`,
   'desk.auto': 'automat',
   'desk.readonly': '{name} – obsługuje druga nastawnia (podgląd)',
   'desk.district': 'okręg',
