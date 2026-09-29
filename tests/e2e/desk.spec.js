@@ -150,14 +150,18 @@ test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasł
   for (const l of labels) expect(l.inside, `${l.nr}: etykieta wychodzi poza rząd kostki`).toBe(true);
 });
 
-test('blokada samoczynna na pulpicie kostkowym: kostka Zk zmienia kierunek toru szlakowego', async ({ page }) => {
+// Kierunek SBL zmienia się za zgodą sąsiada (Ir-1 §30 ust. 2 pkt 1) – Zk to prośba, dawniej działało od razu; SBL nie ma
+// liczników doraźnych (dawniej rysowane przy Zk).
+test('blokada samoczynna na pulpicie kostkowym: kostka Zk – prośba o zmianę kierunku, po zgodzie sąsiada kierunek zmieniony', async ({ page }) => {
   await openShift(page, 'sopot', { params: { srk: 'E' } });
   const before = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
   await btn(page, { kind: 'block', exit: 'OR1', btn: 'Zk' }).click();
   await advance(page, 2);
+  expect(await page.evaluate(() => [window.sim.blocks.get('OR1').direction, window.sim.blocks.get('OR1').request])).toEqual([before, 'ours']);
+  await advance(page, 30);
   const after = await page.evaluate(() => window.sim.blocks.get('OR1').direction);
   expect(after).not.toBe(before);
-  expect(await page.locator('#desk .block-cluster[data-exit=OR1] .t-blockdev').count()).toBe(2); // Zk + licznik doraźny
+  expect(await page.locator('#desk .block-cluster[data-exit=OR1] .t-blockdev').count()).toBe(1); // tylko Zk
 });
 
 test('ustawienia: motyw i położenie panelu są zapamiętane po przeładowaniu; ukryty panel pokazuje licznik dziennika', async ({ page }) => {

@@ -172,3 +172,18 @@ test('nazwy obiektów bez względu na wielkość liter (iPad pisze wielkimi): po
   assert.deepEqual(p.submit('POZ KW').cmd, { type: 'block', exit: 'W', btn: 'Poz' });
   assert.ok(sim.submitCommand('POC A D1').ok);
 });
+
+// EBIScreen wyszarza polecenia niedostępne: na blokadzie samoczynnej (SBL) tylko ZK, bez poleceń Eap (Ir-1 §29; LIRK
+// „EBILock 950 z pulpitem EBIScreen 300” §1 pkt 1). Dawniej menu SBL pokazywało WBL, POZ, KO, DPO, DKO, a WBL zmieniało kierunek.
+test('blokada: na Eap WBL / OWBL / POZ / KO / DPO / DKO bez ZK; na SBL tylko ZK, polecenia Eap odrzucone', async () => {
+  const sopot = (await import('../src/stations/sopot.js')).default;
+  const s = new Simulation(sopot, { srk: 'ebilock', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', trains: [] } });
+  s.pull({ kind: 'end', id: 'kOR1' });
+  assert.deepEqual(s.input.menu().map((m) => m.code), ['ZK']);
+  const r = s.submitCommand('DKO kOR1');
+  assert.equal(r.ok, false);
+  assert.match(r.reason, /DKO nie dotyczy/);
+  const e = ebi();
+  e.pull({ kind: 'end', id: 'kW' });
+  assert.deepEqual(e.input.menu().map((m) => m.code), ['WBL', 'OWBL', 'POZ', 'KO', 'DPO', 'DKO']);
+});

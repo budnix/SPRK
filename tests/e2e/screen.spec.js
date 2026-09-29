@@ -172,6 +172,9 @@ test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd
   await expect(page.locator('.scr-menu h5')).toContainText('samoczynna');
   await expect(page.locator('.scr-menu button:has-text("(Poz)")')).toHaveCount(0);
   await expect(page.locator('.scr-menu button:has-text("(Zk)")')).toHaveCount(1);
+  // SBL nie ma bloków Po / Ko – bez poleceń doraźnych dPo / dKo (Ir-1 §29)
+  await expect(page.locator('.scr-menu button:has-text("(dPo)")')).toHaveCount(0);
+  await expect(page.locator('.scr-menu button:has-text("(dKo)")')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await page.click('#panel-tabs button[data-tab=stan]');
   await expect(page.locator('#counters')).toContainText('dPo');

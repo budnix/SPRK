@@ -22,7 +22,8 @@ test('kostki blokady Eap dwukierunkowej: strzałki wyjazd | wjazd na dwóch skra
   assert.deepEqual(E.devices.map((d) => [d.role, d.x, d.y]), [['Ko', 31, 3], ['Poz', 30, 3], ['Wbl', 29, 3], ['dKo', 31, 2], ['dPo', 30, 2]]);
 });
 
-test('blokada jednokierunkowa: jedna strzałka; wjazdowa ma Ko i dKo, wyjazdowa tylko dPo; SBL: Zk i licznik', () => {
+// SBL nie ma bloków Po / Ko (Ir-1 §29) – dawniej pulpit rysował przy niej liczniki dKo / dPo.
+test('blokada jednokierunkowa: jedna strzałka; wjazdowa ma Ko i dKo, wyjazdowa tylko dPo; SBL: tylko Zk', () => {
   const Lw = blockLayouts(wola);
   assert.deepEqual(Lw.get('K1').arrows, [{ x: 0, y: 4, kind: 'out' }]); // tor wyjazdowy
   assert.deepEqual(Lw.get('K1').devices.map((d) => d.role), ['dPo']);
@@ -30,8 +31,8 @@ test('blokada jednokierunkowa: jedna strzałka; wjazdowa ma Ko i dKo, wyjazdowa 
   assert.deepEqual(Lw.get('K2').devices.map((d) => [d.role, d.y]), [['Ko', 5], ['dKo', 7]]); // rząd 4 zajęty torem K1 → licznik pod torem
   const Ls = blockLayouts(sopot);
   assert.deepEqual(Ls.get('GD1').arrows.map((a) => a.kind), ['out', 'in']); // SBL: kierunek zmienny (Zk) – obie strzałki
-  assert.deepEqual(Ls.get('GD1').devices.map((d) => d.role), ['Zk', 'dKo']);
-  assert.deepEqual(Ls.get('GD2').devices.map((d) => d.role), ['Zk', 'dPo']);
+  assert.deepEqual(Ls.get('GD1').devices.map((d) => d.role), ['Zk']);
+  assert.deepEqual(Ls.get('GD2').devices.map((d) => d.role), ['Zk']);
 });
 
 test('każdy wyjazd każdej stacji ma komplet kostek blokady na wolnych polach pulpitu, bez nakładania', () => {
@@ -46,7 +47,7 @@ test('każdy wyjazd każdej stacji ma komplet kostek blokady na wolnych polach p
       const l = L.get(id);
       assert.ok(l, `${st.id}/${id}: brak układu blokady`);
       const auto = e.block === 'sbl', fixed = e.direction;
-      const want = auto ? ['Zk', fixed === 'in' ? 'dKo' : 'dPo'] : fixed === 'in' ? ['Ko', 'dKo'] : fixed === 'out' ? ['dPo'] : ['Ko', 'Poz', 'Wbl', 'dKo', 'dPo'];
+      const want = auto ? ['Zk'] : fixed === 'in' ? ['Ko', 'dKo'] : fixed === 'out' ? ['dPo'] : ['Ko', 'Poz', 'Wbl', 'dKo', 'dPo'];
       assert.deepEqual(l.devices.map((d) => d.role), want, `${st.id}/${id}: role kostek`);
       for (const a of l.arrows) assert.ok(straight(st, a.x, a.y), `${st.id}/${id}: strzałka ${a.kind} nie na prostej kostce toru (${a.x},${a.y})`);
       assert.equal(l.arrows[0].x, e.tile.x, `${st.id}/${id}: pierwsza strzałka na kostce wyjazdu`);

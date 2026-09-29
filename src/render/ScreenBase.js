@@ -497,7 +497,7 @@ export class ScreenBase extends PanelView {
     const inn = b.direction === 'in';
     r.dirOut.setAttribute('class', `blk-dir${out ? '' : ' off'}`);
     r.dirIn.setAttribute('class', `blk-dir${inn ? '' : ' off'}`);
-    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? ['Wbl', true] : b.koPending ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
+    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? [b.auto ? 'Zk' : 'Wbl', true] : b.koPending && !b.auto ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
     r.status.textContent = st[0];
     r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
   }

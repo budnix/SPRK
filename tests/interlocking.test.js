@@ -218,7 +218,9 @@ test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośredni
   run(s2, 120);
   assert.deepEqual([...s2.ilk.active.keys()], ['A-H', 'H-O', 'O-OR1']);
   const s3 = new Simulation(sopot, { disruptions: 'none' });
-  assert.equal(s3.blocks.get('OR1').press('Zk').ok, true); // tor 1 na wjazd – wyjazd niemożliwy
+  assert.equal(s3.blocks.get('OR1').press('Zk').ok, true); // prośba o zmianę kierunku – tor 1 na przyjazd, wyjazd niemożliwy
+  run(s3, 60); // zgoda sąsiada (Ir-1 §30 ust. 2 pkt 1)
+  assert.equal(s3.blocks.get('OR1').direction, 'in');
   s3.press({ kind: 'signal', id: 'A', color: 'green' });
   const bad = s3.pressCompound({ kind: 'end', id: 'kOR1' });
   assert.equal(bad.ok, false);

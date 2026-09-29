@@ -96,10 +96,11 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
 * `direction: 'out'` / `'in'` – tor szlakowy linii dwutorowej z ruchem jednokierunkowym (tylko Po/Ko;
   na torze wjazdowym sąsiad wyprawia bez pozwolenia, na torze wyjazdowym nie ma pozwolenia),
 * `block: 'sbl'` (wymaga `direction` = kierunek zasadniczy) – blokada samoczynna linii dwutorowej: bez pozwoleń
-  i bez Ko, odstęp zwalnia się sam; blokada dwukierunkowa – jazda „pod prąd” po zmianie kierunku (`Zk`,
-  na pulpicie kostkowym przycisk Wbl) przy wolnym odstępie; sąsiad zmienia kierunek sam, gdy odstęp jest wolny
-  i nie mamy nastawionego wyjazdu (także wtedy, gdy zgłosił pociąg przed naszym `Zk` – odzyskuje kierunek przy
-  wyprawianiu). Przy usterce – zapowiadanie telefoniczne (przyjazd potwierdza telefonogram); gdy usterka mija, blok
+  i bez Ko, odstęp zwalnia się sam; blokada dwukierunkowa – jazda „pod prąd” po zmianie kierunku (`Zk` – prośba
+  do sąsiada, który odpowiada po chwili) przy wolnym odstępie; sąsiad z pociągiem do nas prosi o kierunek przyjazdu
+  i czeka na naszą zgodę (`Zk`); godzina zgody idzie do dziennika (Ir-1 §30 ust. 2 pkt 1). Przy nastawionym naszym
+  wyjeździe sąsiad nie prosi o kierunek; po zwolnieniu odstępu prosi o niego bez powtórnego zgłoszenia pociągu.
+  Przy usterce – zapowiadanie telefoniczne (przyjazd potwierdza telefonogram); gdy usterka mija, blok
   początkowy po telefonicznie potwierdzonym przyjeździe zwalnia się sam, a odstęp SBL po zjeździe pociągu sąsiada też.
   Rozkład musi trzymać się kierunków: `from` nie może wskazywać toru `direction: 'out'`, a `to` toru
   `direction: 'in'` (walidacja) – jazda po torze lewym po `Zk` jest dozwolona w grze, ale rozkład jej nie wymaga.

@@ -162,15 +162,16 @@ export class ScreenRenderer extends ScreenBase {
     const b = this.sim.blocks.get(exit);
     const press = (btn) => () => this.handlers.onCommand({ type: 'block', exit, btn });
     const items = [];
-    if (b?.auto) items.push({ label: `Zmiana kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
+    if (b?.auto) items.push({ label: b.request === 'theirs' ? 'Zgoda na zmianę kierunku blokady – prośba sąsiada (Zk)' : `Prośba o zmianę kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'odjazd' : 'przyjazd'}`, run: press('Zk') });
     else {
       if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie pociągu (Wbl)', run: press('Wbl') },
         { label: 'Odwołanie żądania / zwrot pozwolenia (oWbl)', run: press('oWbl') },
         { label: 'Danie pozwolenia na wyprawienie pociągu (Poz)', run: press('Poz') });
       items.push({ label: 'Zwolnienie bloku końcowego – pociąg przybył w całości (Ko)', run: press('Ko') });
     }
-    items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, run: press('dPo') });
-    items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, run: press('dKo') });
+    // SBL nie ma bloków Po / Ko – bez poleceń doraźnych
+    if (!b?.auto && b?.fixed !== 'in') items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, run: press('dPo') });
+    if (!b?.auto && b?.fixed !== 'out') items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, run: press('dKo') });
     // pod separatorem: numery pociągów na tym torze szlakowym jako czerwone kasetki (jak na planie) – najpierw
     // pociąg na szlaku, potem w kolejce pociągi zgłoszone przez sąsiada i czekające na wyprawienie (kontur)
     items.push({ sep: true }, { trains: this.lineTrains(exit) });

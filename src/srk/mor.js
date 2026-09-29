@@ -57,9 +57,9 @@ export const MOR_MENUS = {
     { code: 'oWbl', name: 'odwołanie żądania / zwrot pozwolenia', block: 'oWbl', when: (b) => !b.auto && !b.fixed },
     { code: 'Poz', name: 'danie pozwolenia', block: 'Poz', when: (b) => !b.auto && !b.fixed },
     { code: 'Ko', name: 'zwolnienie bloku końcowego – pociąg przybył w całości', block: 'Ko', when: (b) => !b.auto },
-    { code: 'Zk', name: 'zmiana kierunku blokady samoczynnej', block: 'Zk', when: (b) => !!b.auto && !b.fixed },
-    { code: 'dPo', name: 'doraźne zablokowanie bloku początkowego', block: 'dPo', level: LEVEL.special },
-    { code: 'dKo', name: 'doraźne przygotowanie bloku końcowego', block: 'dKo', level: LEVEL.special },
+    { code: 'Zk', name: 'zmiana kierunku blokady samoczynnej (prośba / zgoda)', block: 'Zk', when: (b) => !!b.auto },
+    { code: 'dPo', name: 'doraźne zablokowanie bloku początkowego', block: 'dPo', level: LEVEL.special, when: (b) => !b.auto && b.fixed !== 'in' },
+    { code: 'dKo', name: 'doraźne przygotowanie bloku końcowego', block: 'dKo', level: LEVEL.special, when: (b) => !b.auto && b.fixed !== 'out' },
   ],
 };
 

@@ -250,7 +250,11 @@ export class EbiLockProtocol {
         return { ok: true, cmd: { type: 'substitute-off' } };
       }
       default:
-        if (def.block) return { ok: true, cmd: { type: 'block', exit: this.#exitOf(obj.id), btn: def.block } };
+        if (def.block) {
+          const exit = this.#exitOf(obj.id);
+          if (!this.#blockApplies(def, exit)) return refuse(`${def.code}: polecenie niedostępne dla blokady ${this.ilk.station.exits[exit]?.block === 'sbl' ? 'samoczynnej' : 'tego toru szlakowego'}`);
+          return { ok: true, cmd: { type: 'block', exit, btn: def.block } };
+        }
         return refuse(`${def.code}: brak funkcji`);
     }
   }
@@ -264,7 +268,22 @@ export class EbiLockProtocol {
       if (def.code === 'SZI' || def.code === 'SZW') return s.kind === 'semafor';
       return true;
     }
-    return def.args[0] === obj.kind || (def.args[0] === 'block' && obj.kind === 'end');
+    if (def.args[0] === 'block' && (obj.kind === 'block' || obj.kind === 'end')) return this.#blockApplies(def, this.#exitOf(obj.id));
+    return def.args[0] === obj.kind;
+  }
+
+  /**
+   * Polecenie blokady według jej rodzaju (EBIScreen wyszarza niedostępne): SBL – tylko ZK; Eap dwukierunkowa – WBL, OWBL,
+   * POZ, KO, DPO, DKO; tor jednokierunkowy wjazdowy – KO, DKO; wyjazdowy – DPO.
+   */
+  #blockApplies(def, exit) {
+    const e = this.ilk.station?.exits?.[exit];
+    if (!e) return false;
+    if (e.block === 'sbl') return def.block === 'Zk';
+    if (def.block === 'Zk') return false;
+    if (e.direction === 'in') return def.block === 'Ko' || def.block === 'dKo';
+    if (e.direction === 'out') return def.block === 'dPo';
+    return true;
   }
 
   /** Identyfikator obiektu rodzaju `kind` ze stacji dla nazwy wpisanej dowolną wielkością liter (albo undefined). */

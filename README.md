@@ -75,7 +75,8 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Eap semi-automatic block** on single-track lines (permission request and grant, cancelling a request by pulling
   Wbl, end block, line interlock Pwl after an exit signal; dPo locks the starting block after a departure on a
   substitute signal, dKo prepares the end block before an entry on it – neither resets the block)
-  and **automatic block (SBL)** on double-track lines with a normal direction per track and direction change (Zk);
+  and **automatic block (SBL)** on double-track lines with a normal direction per track and direction change (Zk)
+  agreed with the neighbour (our request, or our consent to theirs – the time goes to the log);
   neighbouring stations are driven by the simulator (they request, dispatch on time and confirm arrival).
 * Block state is shown on the monitor at the line exit: track arrow (red when the section is occupied), direction
   arrow and a status label ("żąd.", "Wbl", "Ko", "tel."); dPo / dKo counters live in the *Stan* tab.

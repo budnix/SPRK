@@ -154,3 +154,15 @@ test('ZeroLO: w menu toru tylko przy usterce licznika osi, polecenie specjalne z
   sim.press({ kind: 'section', id: 'T1' });
   assert.ok(!sim.input.menu().some((m) => m.code === 'ZeroLO'), 'wyzerowany – drugi raz nie');
 });
+
+// Na blokadzie samoczynnej menu trójkąta MOR-1 ma tylko Zk – dPo / dKo dotyczą bloków Eap (SBL ich nie ma).
+test('menu trójkąta: SBL – tylko Zk (bez dPo / dKo), Eap – bez Zk, z oWbl', async () => {
+  const sopot = (await import('../src/stations/sopot.js')).default;
+  const s = new Simulation(sopot, { srk: 'mor3', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', trains: [] } });
+  s.press({ kind: 'end', id: 'kOR1' });
+  assert.deepEqual(codes(s), ['Zk']);
+  const e = mor();
+  e.press({ kind: 'end', id: 'kW' });
+  assert.ok(codes(e).includes('oWbl'));
+  assert.ok(!codes(e).includes('Zk'));
+});

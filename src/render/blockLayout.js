@@ -10,7 +10,7 @@ import { deskControls } from '../tiles/controls.js';
  *    Eap dwukierunkowa: Ko | Poz | Wbl; Eap jednokierunkowa wjazdowa: Ko; wyjazdowa: bez przycisków;
  *    SBL (samoczynna): Zk (zmiana kierunku);
  *  - w następnym rzędzie (lub po drugiej stronie toru / w tym samym rzędzie, gdy brak miejsca) – liczniki doraźne
- *    dKo | dPo z przyciskami (jednokierunkowa: tylko odpowiedni licznik).
+ *    dKo | dPo z przyciskami (jednokierunkowa Eap: tylko odpowiedni licznik; SBL – bez liczników).
  *
  * @returns Map exitId → { exit, dir, inward, arrows: [{ x, y, kind: 'in'|'out' }], devices: [{ x, y, role }] } – tylko dla wyjazdów W/E; wyjazdy bez miejsca na kostki pomijają je (devices: []).
  */
@@ -37,7 +37,8 @@ export function blockLayouts(station) {
     if (auto || !fixed) { arrows.push({ x, y, kind: 'out' }); if (trackAt(x + inward, y)) arrows.push({ x: x + inward, y, kind: 'in' }); }
     else arrows.push({ x, y, kind: fixed });
     const buttons = auto ? ['Zk'] : fixed === 'in' ? ['Ko'] : fixed === 'out' ? [] : ['Ko', 'Poz', 'Wbl'];
-    const counters = fixed === 'in' ? ['dKo'] : fixed === 'out' ? ['dPo'] : ['dKo', 'dPo'];
+    // SBL nie ma bloków Po / Ko – bez liczników doraźnych
+    const counters = auto ? [] : fixed === 'in' ? ['dKo'] : fixed === 'out' ? ['dPo'] : ['dKo', 'dPo'];
     const rowFree = (yy, n) => Array.from({ length: n }, (_, i) => free(x + i * inward, yy)).every(Boolean);
     let devices = null;
     for (const s of [-1, 1]) {

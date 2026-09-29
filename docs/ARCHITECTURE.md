@@ -230,7 +230,8 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Blokada Eap: Wbl (żądanie pozwolenia), oWbl (wyciągnięcie Wbl – `Simulation.pull`), Poz (danie pozwolenia), Ko
   (zwolnienie bloku końcowego po przyjeździe w całości i stwierdzeniu przejazdu), dPo (doraźne zablokowanie bloku
   początkowego po wyjeździe na Sz), dKo (doraźne przygotowanie bloku końcowego przed wjazdem na Sz) – liczniki;
-  blokada samoczynna SBL: bez pozwoleń i Ko, Zk (zmiana kierunku).
+  blokada samoczynna SBL: bez pozwoleń, bez Po / Ko i liczników doraźnych, Zk (prośba o zmianę kierunku albo zgoda
+  na prośbę sąsiada – `request` 'ours' / 'theirs'); odstęp zwalnia się, gdy nasz pociąg go opuści.
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 

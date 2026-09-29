@@ -120,7 +120,8 @@ export class AutoOperator {
         if (b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
         continue;
       }
-      if (b.request === 'theirs' && this.#mayAccept(b)) b.press('Poz');
+      // prośba sąsiada: Eap – pozwolenie (Poz), SBL – zgoda na zmianę kierunku (Zk)
+      if (b.request === 'theirs' && this.#mayAccept(b)) b.press(b.auto ? 'Zk' : 'Poz');
       if (b.koPending) { if (!b.zpg && !b.koPrepared) b.press('dKo'); b.press('Ko'); }
     }
 
@@ -244,7 +245,7 @@ export class AutoOperator {
           cands = facing;
         }
         if (b.fault) { if (!b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
-        else if (b.auto) { if (b.direction !== 'out' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
+        else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
         if (staged) {
           for (const r of cands) if (this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }

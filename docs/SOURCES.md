@@ -373,8 +373,13 @@ potwierdzenie przyjazdu, zmiana kierunku, zwolnienia doraźne) wydaje się z men
 są rejestrowane w dzienniku zdarzeń i licznikach systemu, nie przy blokadzie. Tak jest w grze;
 geometria symbolu (strzałka szlaku, strzałka kierunku nad torem, napis stanu) jest własna, w duchu Ie-104.
 
-Linie 202 (Gdańsk – Gdynia) i 250 (SKM) są dwutorowe z samoczynną blokadą liniową (SBL) – bez pozwoleń
-i bez Ko; po modernizacji blokada jest dwukierunkowa (jazda po torze lewym po zmianie kierunku). Dlatego szlaki
+Linie 202 (Gdańsk – Gdynia) i 250 (SKM) są dwutorowe z samoczynną blokadą liniową (SBL) – bez pozwoleń Eap, bez
+bloków Po / Ko i przycisków doraźnych dPo / dKo (Ir-1 §29 ust. 1 i 3); po modernizacji blokada jest dwukierunkowa
+(jazda po torze lewym po zmianie kierunku). Kierunek zmienia się przy wolnym odstępie po otrzymaniu pozwolenia sąsiada,
+a czas pozwolenia wpisuje się do dziennika ruchu (Ir-1 §30 ust. 2 pkt 1, wersja od 20.05.2025): w grze nasze Zk to
+prośba (sąsiad-automat zgadza się przy wolnym odstępie), a prośbę sąsiada gracz przyjmuje przyciskiem Zk; godzina
+trafia do dziennika zdarzeń. Przyjęte: szlak SBL to jeden odstęp (gra nie rysuje semaforów odstępowych; na szlakach
+SKM w rzeczywistości jest ich kilka); odstęp zwalnia się, gdy pociąg go opuści. Dlatego szlaki
 Sopotu, Orłowa, Chyloni i Gdyni Głównej mają `block: 'sbl'` z kierunkiem zasadniczym wg numeracji torów
 (tor 1 / 501 – w stronę Gdyni, tor 2 / 502 – w stronę Gdańska). Linie jednotorowe do Gdyni Port (723) i Wielkiego
 Kacka (201) zostały z blokadą półsamoczynną. Stacja fikcyjna Szkolna ma Eap – celowo, bo uczy
@@ -455,8 +460,8 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
   prawy klawisz – tablet nie ma drugiego klawisza;
 * alarmami są usterki urządzeń i rozprucie zwrotnicy; żądania blokady i łączność to zdarzenia; zamknięcie ruchowe
   zwrotnicy (ITS / ITO dla zwrotnicy) jest zastąpione stopowaniem (ZWS / ZWO), a ITS / ITO dotyczy torów;
-* stacja treningowa Brzezina (misja 5) jest fikcyjna; linia dwutorowa z blokadą samoczynną, tory szlakowe
-  jednokierunkowe;
+* stacja treningowa Brzezina (misja 5) jest fikcyjna; linia dwutorowa z blokadą samoczynną dwukierunkową, każdy tor
+  szlakowy ma kierunek zasadniczy (jazda po torze lewym po zmianie kierunku za zgodą sąsiada);
 * usterka „pęknięta szyna” (`track-defect`, misja 5) to zgłoszenie maszynisty, którego urządzenia nie widzą: dyżurny
   zamyka tor poleceniem ITS i prowadzi ruch innym torem, po naprawie odwołuje zamknięcie (ITO); wjazd pociągu na tor
   z usterką bez zamknięcia kosztuje w grze punkty – reguła gry, nie cytat z instrukcji;
@@ -499,7 +504,8 @@ Uproszczenia i założenia w grze (przyjęte):
   zbliżania jest wolny; przy zajętym gra odsyła do ZCZ; ZCZ – zwolnienie czasowe (czas jak na innych stanowiskach),
   oZCZ – jego odwołanie;
 * Plus / Minus dla wykolejnicy: „+” – nałożona, „−” – zdjęta; zwrotnica Stop / oStop – zamknięcie indywidualne;
-* przy blokadzie samoczynnej w menu szlaku jest Zk (jak na innych stanowiskach gry);
+* przy blokadzie samoczynnej w menu szlaku jest tylko Zk (jak na innych stanowiskach gry), polecenia Eap są
+  niedostępne (EBIScreen je wyszarza);
 * okno komunikatów i alarmów leży między planem a listwą narzędzi; komunikaty to wpisy dziennika i wydane polecenia,
   alarmy – usterki urządzeń i rozprucie; licznik poleceń specjalnych liczy potwierdzone polecenia czerwone (SZ, dPo,
   dKo), a liczniki Sz / dPz na planie działają jak na innych stanowiskach;

@@ -86,7 +86,9 @@ test('Ko bez stwierdzenia przejazdu (wjazd na Sz bez dKo) odmawia; spóźnione d
   assert.equal(b.direction, null);
 });
 
-test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam, zmiana kierunku Zk przy wolnym odstępie', () => {
+// Kierunek SBL zmienia się tylko za zgodą sąsiada (Ir-1 §30 ust. 2 pkt 1) – dawniej Zk działało od razu, a sąsiad sam
+// przestawiał kierunek; odstęp po naszym pociągu zwalnia się bez potwierdzenia sąsiada (SBL nie ma Ko).
+test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam, zmiana kierunku Zk za zgodą sąsiada', () => {
   const bus = new EventBus();
   const inn = new LineBlock('Z1', { name: 'Zalesie', tile: { x: 35, y: 4 }, dir: 'E', direction: 'in', block: 'sbl' }, bus);
   const out = new LineBlock('Z2', { name: 'Zalesie', tile: { x: 35, y: 6 }, dir: 'E', direction: 'out', block: 'sbl' }, bus);
@@ -105,24 +107,34 @@ test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam
   assert.equal(inn.press('Ko').ok, false, 'Ko nie stosuje się');
   assert.equal(inn.canNeighbourDispatch(12), true);
   assert.equal(inn.direction, 'in', 'kierunek zasadniczy');
-  // jazda „pod prąd”: Zk zmienia kierunek, wyjazd możliwy, sąsiad nie zmieni kierunku pod naszym pociągiem
+  // jazda „pod prąd”: Zk to prośba – kierunek zmienia się po zgodzie sąsiada
   assert.equal(inn.gate().ok, false);
   assert.equal(inn.press('Zk').ok, true);
+  assert.equal(inn.request, 'ours');
+  assert.equal(inn.direction, 'in', 'bez zgody sąsiada kierunek bez zmian');
+  inn.tick(100);
   assert.equal(inn.direction, 'out');
   assert.equal(inn.gate().ok, true);
-  assert.equal(inn.neighbourRequests(14), false, 'kierunek zajęty przez nas');
+  inn.commitOut();
+  assert.equal(inn.neighbourRequests(14), true, 'sąsiad zgłasza pociąg');
+  assert.equal(inn.request, null, 'nasz wyjazd nastawiony – sąsiad nie prosi o kierunek');
   inn.trainDeparted({ nr: 21 });
   assert.equal(inn.gate().ok, false);
-  inn.trainArrivedAtNeighbour({ nr: 21 }); inn.tick(1000);
-  assert.equal(inn.gate().ok, true, 'odstęp zwolniony po potwierdzeniu');
+  inn.trainArrivedAtNeighbour({ nr: 21 });
+  assert.equal(inn.gate().ok, true, 'odstęp zwolniony, gdy pociąg go opuścił – bez Ko sąsiada');
   assert.equal(inn.direction, 'out', 'kierunek zostaje, dopóki ktoś go nie zmieni');
-  assert.equal(inn.neighbourRequests(15), true, 'sąsiad sam zmienia kierunek, gdy odstęp wolny');
+  // sąsiad z pociągiem prosi o kierunek przyjazdu i czeka na zgodę (Zk)
+  assert.equal(inn.canNeighbourDispatch(15), false);
+  assert.equal(inn.request, 'theirs');
+  assert.equal(inn.direction, 'out');
+  assert.equal(inn.press('Zk').ok, true, 'zgoda');
   assert.equal(inn.direction, 'in');
+  assert.equal(inn.canNeighbourDispatch(15), true);
   // tor wyjazdowy: bez Wbl, po wyjeździe blok początkowy do potwierdzenia przyjazdu przez sąsiada
   assert.equal(out.gate().ok, true);
   out.trainDeparted({ nr: 22 });
   assert.equal(out.gate().ok, false);
-  out.trainArrivedAtNeighbour({ nr: 22 }); out.tick(1000);
+  out.trainArrivedAtNeighbour({ nr: 22 });
   assert.equal(out.gate().ok, true);
   assert.equal(out.direction, 'out');
   // usterka: zapowiadanie telefoniczne i dKo jak w Eap
@@ -207,15 +219,19 @@ test('SBL: koniec usterki po telefonicznie potwierdzonym przyjazdie zwalnia blok
   assert.equal(b.canNeighbourDispatch(5301), true);
 });
 
-test('SBL: sąsiad, który zgłosił pociąg przed naszym Zk, wyprawia go po zwolnieniu odstępu bez powtórnego zgłoszenia', () => {
+test('SBL: sąsiad, który zgłosił pociąg przed naszym Zk, po zwolnieniu odstępu prosi o kierunek i wyprawia po zgodzie', () => {
   const bus = new EventBus();
   const b = new LineBlock('Z2', { name: 'Gdynia Główna', tile: { x: 69, y: 6 }, dir: 'E', direction: 'in', block: 'sbl' }, bus);
   assert.equal(b.neighbourRequests(55203), true);
-  assert.equal(b.press('Zk').ok, true);
+  assert.equal(b.press('Zk').ok, true); b.tick(100);
+  assert.equal(b.direction, 'out');
   b.commitOut();
   assert.equal(b.canNeighbourDispatch(55203), false, 'nasz wyjazd nastawiony – sąsiad czeka');
-  b.trainDeparted({ nr: 88301 }); b.trainArrivedAtNeighbour({ nr: 88301 }); b.tick(1000);
+  b.trainDeparted({ nr: 88301 }); b.trainArrivedAtNeighbour({ nr: 88301 });
   assert.equal(b.direction, 'out');
+  assert.equal(b.canNeighbourDispatch(55203), false, 'czeka na zgodę');
+  assert.equal(b.request, 'theirs');
+  b.press('Zk');
   assert.equal(b.canNeighbourDispatch(55203), true);
   assert.equal(b.direction, 'in');
 });
@@ -266,4 +282,18 @@ test('usterka Eap: po naprawie blokada wg stanu szlaku – wolny: stan zasadnicz
   b.entryPassed(true); b.neighbourTrainArrived({ nr: 4 });
   assert.equal(b.press('Ko').ok, true);
   assert.equal(b.direction, null);
+});
+
+// SBL nie ma Ko ani bloku początkowego (Ir-1 §29 ust. 1–3) – komunikaty mówią o odstępie; zgoda na zmianę kierunku
+// trafia do dziennika z godziną (Ir-1 §30 ust. 2 pkt 1).
+test('SBL: komunikaty o odstępie (bez „Ko” i „bloku początkowego”), godzina zgody na zmianę kierunku w dzienniku', () => {
+  const bus = new EventBus();
+  const msgs = []; bus.on('log', (l) => msgs.push(l.msg));
+  const b = new LineBlock('Z1', { name: 'Zalesie', tile: { x: 35, y: 4 }, dir: 'E', direction: 'out', block: 'sbl' }, bus);
+  b.tick(6 * 3600);
+  b.trainDeparted({ nr: 7 }); b.trainArrivedAtNeighbour({ nr: 7 });
+  assert.equal(b.occupied, false, 'odstęp wolny od razu po zjeździe pociągu');
+  b.canNeighbourDispatch(8); b.press('Zk');
+  assert.ok(msgs.some((m) => /Zgoda na zmianę kierunku.*06:00.*dziennik ruchu/.test(m)), msgs.join('\n'));
+  assert.ok(!msgs.some((m) => /\bKo\b|blok początkowy/.test(m)), msgs.join('\n'));
 });
