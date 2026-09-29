@@ -12,6 +12,7 @@ import { AutoOperator } from './Operator.js';
 import { validateStation } from './validate.js';
 import { getSrk } from '../srk/registry.js';
 import { ButtonProtocol } from '../srk/buttons.js';
+import { SpecialCommand } from '../srk/special.js';
 
 const OTHER_DISTRICT = 'Element w okręgu obsługiwanym przez drugą nastawnię';
 
@@ -61,6 +62,7 @@ export class Simulation {
       ? this.scenario.timetable
       : (this.scenario.trains ? station.timetable.filter((t) => this.scenario.trains.includes(t.nr)) : station.timetable);
     this.traffic = new Traffic(this.station, this.ilk, this.blocks, this.bus, { rng: this.rng, level: this.level, timetable, tasks: this.scenario.tasks });
+    this.special = new SpecialCommand(); // polecenie specjalne stanowiska komputerowego (Ie-104.1 §11)
     this.comms = new Comms(this);
     this.faults = new Faults(this, this.rng, this.level, this.scenario.faults || []);
     this.closed = (this.scenario.closedSections || []).map((c) => ({ section: c.section, from: c.from ? Clock.parse(c.from) : 0, to: c.to ? Clock.parse(c.to) : Infinity, active: false }));
@@ -213,10 +215,16 @@ export class Simulation {
       this.traffic.tick(h, t);
       this.ilk.tick(t);
       this.comms.tick(t);
+      const expired = this.special.tick(t);
+      if (expired) {
+        this.bus.emit('log', { time: t, level: 'warn', msg: `Polecenie specjalne „${expired.label}” odwołane samoczynnie po 60 s bez potwierdzenia` });
+        this.bus.emit('special', null);
+      }
       for (const op of this.operators) op.tick();
       if (this.commands.length) this.#checkCommands(t);
     }
     this.bus.emit('tick', { time: this.clock.time });
+    if (this.special.pending) this.bus.emit('special', this.special.state(this.clock.time)); // odliczanie zwłoki w widoku
     this.#checkEnd();
   }
 
@@ -300,8 +308,10 @@ export class Simulation {
    *  { type: 'cancel-timed', signal }         – odwołanie zwalniania czasowego (KZW)
    *  { type: 'axle-reset', section }         – zerowanie licznika osi (ZeroLO) przy usterce licznika
    */
-  execute(cmd) {
+  execute(cmd, { confirmed = false } = {}) {
     const refuse = (reason) => ({ ok: false, reason });
+    // w trakcie polecenia specjalnego inne polecenia są zablokowane (Ie-104.1 §11 ust. 16)
+    if (this.special.pending && !confirmed) return refuse(`Trwa polecenie specjalne „${this.special.pending.label}” – potwierdź albo odwołaj (OPS)`);
     const ilk = this.ilk;
     switch (cmd?.type) {
       case 'route':
@@ -400,7 +410,33 @@ export class Simulation {
   }
 
   /** Naciśnięcie przycisku – ref jak w ButtonProtocol.press lub { kind:'block', exit, btn }. */
+  /** Inicjowanie polecenia specjalnego (stanowisko komputerowe): `cmd` – polecenie `execute`, `meta` { label, target }. */
+  initiateSpecial(cmd, meta = {}) {
+    const res = this.special.start(this.clock.time, cmd, meta);
+    if (res.ok) {
+      this.bus.emit('log', { time: this.clock.time, level: 'info', msg: `Polecenie specjalne zainicjowane: ${meta.label ?? cmd.type} – potwierdzenie po 5 s, najpóźniej po 60 s` });
+      this.bus.emit('special', this.special.state(this.clock.time));
+    }
+    return res;
+  }
+
+  /** Potwierdzenie polecenia specjalnego – wykonanie po zwłoce (odmowa: za wcześnie, brak polecenia). */
+  confirmSpecial() {
+    const res = this.special.confirm(this.clock.time);
+    if (!res.ok) return res;
+    this.bus.emit('special', null);
+    return this.execute(res.cmd, { confirmed: true });
+  }
+
+  /** Odwołanie polecenia specjalnego (OPS). */
+  cancelSpecial() {
+    const had = this.special.cancel();
+    if (had) { this.bus.emit('log', { time: this.clock.time, level: 'info', msg: `Polecenie specjalne „${had.label}” odwołane (OPS)` }); this.bus.emit('special', null); }
+    return { ok: true, noop: !had };
+  }
+
   press(ref) {
+    if (this.special.pending) return { ok: false, reason: `Trwa polecenie specjalne „${this.special.pending.label}” – potwierdź albo odwołaj (OPS)` };
     if (!this.#refAllowed(ref)) return { ok: false, reason: OTHER_DISTRICT };
     if (ref.kind === 'block') return this.blocks.get(ref.exit)?.press(ref.btn) ?? { ok: false };
     return this.buttons.press(ref);
@@ -422,6 +458,7 @@ export class Simulation {
   }
 
   pull(ref) {
+    if (this.special.pending) return { ok: false, reason: `Trwa polecenie specjalne „${this.special.pending.label}” – potwierdź albo odwołaj (OPS)` };
     // wyciągnięcie Wbl – odwołanie żądania / zwrot niewykorzystanego pozwolenia (oWbl); inne przyciski blokady się nie wyciąga
     if (ref.kind === 'block') return ref.btn === 'Wbl' && this.#allowed('block', ref.exit) ? this.blocks.get(ref.exit)?.press('oWbl') ?? { ok: false } : { ok: false };
     return this.buttons.pull(ref);

@@ -426,7 +426,7 @@ export default {
       Zugnummern in roten Feldern. Blauer Rahmen – für einen Befehl gewähltes Element, rot blinkend – Alarm.</p>
       <p><b>Befehle</b>: Leiste am oberen Bildschirmrand – Art wählen (ZUGSTRASSE, RANGIERSTRASSE, FAHRSTRASSE AUFLÖSEN, WEICHE, STOP …), dann Element(e) wählen:
       Fahrstraße = Startsignal, dann Zielsignal oder Strecke. Dasselbe bietet das Menü nach Klick auf ein Element. Sonderbefehle (dPz, Sz, Zz, dPo, dKo) werden eingeleitet,
-      mit „AUSFÜHREN“ bestätigt und gezählt; <b>OPS</b>, Esc oder die rechte Taste bricht den Befehl ab. Streckenblock: Zustand an der Ausfahrt auf die Strecke – Streckenpfeil (rot: Abschnitt besetzt), Richtungspfeil über dem Gleis, Anzeige „żąd.“ / „Wbl“ / „Ko“; Klick auf den Streckenpfeil öffnet das Menü mit den Befehlen (Eap: Wbl, Poz, Ko; Selbstblock: Zk; dPo, dKo). Zähler dPo/dKo – Reiter Anlagen.</p>`,
+      frühestens nach 5 s mit „AUSFÜHREN“ bestätigt (Element orange markiert, vor Sz grauer Bildhintergrund), ohne Bestätigung nach 60 s selbst verworfen, andere Befehle sind währenddessen gesperrt; gezählt; <b>OPS</b>, Esc oder die rechte Taste bricht den Befehl ab. Streckenblock: Zustand an der Ausfahrt auf die Strecke – Streckenpfeil (rot: Abschnitt besetzt), Richtungspfeil über dem Gleis, Anzeige „żąd.“ / „Wbl“ / „Ko“; Klick auf den Streckenpfeil öffnet das Menü mit den Befehlen (Eap: Wbl, Poz, Ko; Selbstblock: Zk; dPo, dKo). Zähler dPo/dKo – Reiter Anlagen.</p>`,
   'help.body': `<h3>Fahrstraßen</h3>
       <ul>
         <li><b>Zugstraße</b>: grüne Taste des Startsignals → grüne Taste des Zielsignals (oder Zieltaste auf der Strecke <i>kW</i>/<i>kE</i>). Weichen stellen sich selbst um, Abschnitte leuchten weiß (Verschluss), das Signal zeigt Fahrt nach Ie-1.</li>

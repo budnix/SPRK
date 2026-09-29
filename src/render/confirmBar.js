@@ -15,9 +15,15 @@ export function createConfirmBar() {
     el: bar,
     hide,
     /** { html | text, ok, cancel, onOk, onCancel } – `html` tylko z tekstów gry (dane przez `text`). */
-    show({ html, text, ok, cancel, onOk, onCancel = () => {} }) {
+    /** Zmiana opisu i dostępności przycisku wykonania (np. odliczanie zwłoki polecenia specjalnego). */
+    set({ html, disabled }) {
+      if (html != null) bar.querySelector(':scope > span').innerHTML = html;
+      const okB = bar.querySelector('.tb.warn');
+      if (okB && disabled != null) okB.disabled = disabled;
+    },
+    show({ html, text, ok, cancel, onOk, onCancel = () => {}, disabled = false }) {
       bar.innerHTML = `<span>${html ?? escapeHtml(text)}</span>`;
-      const okB = document.createElement('button'); okB.type = 'button'; okB.className = 'tb warn'; okB.textContent = ok;
+      const okB = document.createElement('button'); okB.type = 'button'; okB.className = 'tb warn'; okB.textContent = ok; okB.disabled = disabled;
       const noB = document.createElement('button'); noB.type = 'button'; noB.className = 'tb'; noB.textContent = cancel;
       okB.addEventListener('click', () => { hide(); onOk(); });
       noB.addEventListener('click', () => { hide(); onCancel(); });

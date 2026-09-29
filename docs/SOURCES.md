@@ -421,8 +421,10 @@ Ie-104.2) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią si
   położenia zasadniczego, różowy – zamknięcie indywidualne, seledynowe numery (EbiScreen);
 * grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
   czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
-* polecenia (Ie-104.2; stanowisko `komputerowe`): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
-  inicjowane i potwierdzane, rejestrowane w licznikach, odwołanie OPS.
+* polecenia (Ie-104.1 §11–§12; stanowisko `komputerowe`): pasek poleceń (rodzaj → element początkowy → końcowy);
+  polecenie specjalne wg Ie-104.1 (2025) §11 ust. 13, 14, 16: inicjowanie markuje element pomarańczowym tłem, przed Sz
+  tło obrazu szarzeje; potwierdzenie najwcześniej po 5 s, po 60 s bez potwierdzenia polecenie odwołuje się samo,
+  w tym czasie inne polecenia są zablokowane (`src/srk/special.js`); rejestrowane w licznikach, odwołanie OPS.
 
 Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
 jak w nomenklaturze PKP: peron I, II; tory arabskie). Polecenia w menu elementów mają formę rzeczownikową zgodną

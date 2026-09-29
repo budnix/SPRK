@@ -426,7 +426,7 @@ export default {
       Train numbers in red boxes. Blue frame – element selected for a command, flashing red – alarm.</p>
       <p><b>Commands</b>: the bar at the top of the screen – choose the kind (TRAIN ROUTE, SHUNTING ROUTE, RELEASE ROUTE, POINT, STOP …), then select the element(s):
       route = start signal, then end signal or line. The menu after clicking an element gives the same. Special commands (dPz, Sz, Zz, dPo, dKo) are initiated,
-      confirmed with “EXECUTE” and counted; <b>OPS</b>, Esc or the right button cancels the command. Block system: state at the exit to the line – the line arrow (red: section occupied), direction arrow above the track, the “żąd.” / “Wbl” / “Ko” labels; click the line arrow and the menu offers the commands (Eap: Wbl, Poz, Ko; automatic: Zk; dPo, dKo). dPo/dKo counters – Equipment tab.</p>`,
+      confirmed with “EXECUTE” no sooner than 5 s later (the element is marked orange, before Sz the picture turns grey), cancelled automatically after 60 s without confirmation, other commands are blocked meanwhile; counted; <b>OPS</b>, Esc or the right button cancels the command. Block system: state at the exit to the line – the line arrow (red: section occupied), direction arrow above the track, the “żąd.” / “Wbl” / “Ko” labels; click the line arrow and the menu offers the commands (Eap: Wbl, Poz, Ko; automatic: Zk; dPo, dKo). dPo/dKo counters – Equipment tab.</p>`,
   'help.body': `<h3>Routes</h3>
       <ul>
         <li><b>Train route</b>: green button of the start signal → green button of the end signal (or the route end button on the line <i>kW</i>/<i>kE</i>). Points throw automatically, sections light white (locking), the signal shows a proceed aspect per Ie-1.</li>

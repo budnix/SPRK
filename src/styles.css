@@ -54,6 +54,7 @@
   --sc-shadow: rgba(0,0,0,0.5);
   --sc-thumb: #0a0d11;   /* tło miniatury planu – jak monitor, niezależne od motywu */
   /* paski i menu stanowiska komputerowego – barwy monitora, niezależne od motywu */
+  --mon-special-mark: #ff8c00; --mon-special-sz: #3c3c3c;
   --mon-bg: #10161c; --mon-bg2: #1b242c; --mon-hover: #243040; --mon-text: #dfe6ec; --mon-muted: #6f8090; --mon-title: #8fb0c9;
   --mon-border: #3a4652; --mon-active: #1f3f7a; --mon-active-border: #3f8cff; --mon-on-active: #fff; --mon-special: #ffb84d;
   --mon-train: #c81e14; --mon-train-border: #ff6a60; --mon-on-train: #fff;
@@ -646,6 +647,9 @@ svg.desk.readonly .btn { cursor: not-allowed; }
 /* ---- stanowisko komputerowe (monitor) – zobrazowanie wg Ie-104, kolory niezależne od motywu ---- */
 svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; font-family: var(--font); font-variant-numeric: tabular-nums; }
 .scr-bg { fill: #000000; }
+/* polecenie specjalne (Ie-104.1 §11): element zamarkowany – pomarańczowe tło; przed Sz – szare tło obrazu */
+svg.screen .special-bg { fill: var(--mon-special-mark); opacity: 0.85; }
+svg.screen.special-sz .scr-bg { fill: var(--mon-special-sz); }
 .scr-banner { fill: #ffb84d; font-size: 8px; }
 /* odcinki: seg = grupa (linia zewnętrzna + wewnętrzna); klasa stanu na grupie */
 .seg .trk { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linecap: butt; stroke-linejoin: round; stroke: #8a949e; }

@@ -238,6 +238,11 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
+Polecenie specjalne (Ie-104.1 §11): `src/srk/special.js` (bez DOM, czas symulacji) – `Simulation.initiateSpecial`,
+`confirmSpecial` (po `SPECIAL_DELAY` s), `cancelSpecial`; po `SPECIAL_TIMEOUT` s odwołanie samoczynne; w trakcie
+`execute` / `press` / `pull` odmawiają. Zdarzenie `special` (stan co krok) – `ScreenRenderer` pokazuje pasek z odliczaniem,
+tło `special-bg` elementu i `special-sz` obrazu. Test: `tests/special.test.js`.
+
 Obraz monitora rysuje `ScreenBase` (rozszerza `PanelView`); stanowiska komputerowe różnią się tylko obsługą
 i dziedziczą po nim (`ScreenRenderer` – pasek poleceń i menu elementu, `EbiRenderer` – linia poleceń EBILock 950, `MorRenderer` – menu
 obiektów MOR-3). Pola dotyku torów (tor jako obiekt poleceń) daje `ScreenBase.addSectionHits()`. Kontrakt widoków (`tests/views.test.js`)

@@ -45,10 +45,26 @@ test('menu elementu: przebieg manewrowy na tor 13 (żółty), STOP gasi, polecen
   expect((await simState(page)).counters.Sz).toBe(0);
   await page.click('.scr-cmdbar button[data-cmd=sz]');
   await tap(page, 'B');
+  // Ie-104.1 §11: element zamarkowany (pomarańczowe tło), przed Sz szare tło obrazu, WYKONAJ dopiero po 5 s
+  await expect(page.locator('#desk .special-bg')).toHaveCount(1);
+  await expect(page.locator('#desk svg.screen')).toHaveClass(/special-sz/);
+  await expect(page.locator('.scr-confirm button:has-text("WYKONAJ")')).toBeDisabled();
+  await expect(page.locator('.scr-confirm')).toContainText('potwierdzenie możliwe za');
+  expect(await page.evaluate(() => window.sim.execute({ type: 'point', id: 'Zw1' }).ok)).toBe(false); // inne polecenia zablokowane
+  await advance(page, 5);
   await page.click('.scr-confirm button:has-text("WYKONAJ")');
   st = await simState(page);
   expect(st.signals.B).toBe('Sz');
   expect(st.counters.Sz).toBe(1);
+  await expect(page.locator('#desk .special-bg')).toHaveCount(0);
+  await expect(page.locator('#desk svg.screen')).not.toHaveClass(/special-sz/);
+  // bez potwierdzenia – samoczynne odwołanie po 60 s
+  await page.click('.scr-cmdbar button[data-cmd=dpz]');
+  await tap(page, 'L501');
+  await expect(page.locator('.scr-confirm')).toBeVisible();
+  await advance(page, 62);
+  await expect(page.locator('.scr-confirm')).toBeHidden();
+  expect(await page.evaluate(() => window.sim.special.pending)).toBe(null);
 });
 
 test('ekrany: podział wg szerokości, strzałki, przebieg zaczęty na ekranie 1 i zakończony na innym', async ({ page }) => {
@@ -325,6 +341,7 @@ test('monitor wydaje polecenia wprost: Zw, Zz, Pz i blokada z menu nie naciskaj�
   expect((await simState(page)).points.Zw1).not.toBe(before);
   await tap(page, 'Zw1');
   await page.click('.scr-menu button:has-text("(Zz)")');
+  await advance(page, 5); // polecenie specjalne – WYKONAJ po 5 s
   await page.click('.scr-confirm button:has-text("WYKONAJ")');
   expect(await page.evaluate(() => window.sim.ilk.points.get('Zw1').individualLock)).toBe(true);
   // blokada liniowa z menu strzałki szlaku

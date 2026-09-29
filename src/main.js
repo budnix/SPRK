@@ -66,6 +66,8 @@ const handlers = {
   onCommand: (cmd) => sim.execute(cmd), onCancel: () => sim.cancelSelection(),
   onSubmit: (text) => sim.submitCommand(text), onAck: (ids) => sim.ackAlarms(ids), // linia poleceń EBILock
   onChoose: (code) => sim.chooseCommand(code), onConfirm: () => sim.confirmCommand(), // menu obiektów MOR-3
+  // polecenie specjalne stanowiska komputerowego (Ie-104.1 §11): inicjowanie, potwierdzenie po zwłoce, odwołanie
+  onSpecial: (cmd, meta) => sim.initiateSpecial(cmd, meta), onSpecialConfirm: () => sim.confirmSpecial(), onSpecialCancel: () => sim.cancelSpecial(),
 };
 const deskRoot = document.getElementById('desk');
 const desks = [];

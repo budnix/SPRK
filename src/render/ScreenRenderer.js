@@ -2,6 +2,7 @@ import { refKey } from './refKey.js';
 import { ScreenBase } from './ScreenBase.js';
 import { tip } from '../data/glossary.js';
 import { createConfirmBar } from './confirmBar.js';
+import { escapeHtml } from '../ui/dom.js';
 
 /**
  * Stanowisko komputerowe (monitor dyżurnego ruchu): obraz wg Ie-104 ze `ScreenBase`, obsługa paskiem poleceń
@@ -9,7 +10,9 @@ import { createConfirmBar } from './confirmBar.js';
  *
  *  Polecenia: pasek poleceń u góry (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ, dPz, ZWROTNICA, Zz,
  *  Sz, STOP, OPS – odwołanie polecenia) + menu elementu. Polecenie = rodzaj → element początkowy → element
- *  końcowy. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane, potwierdzane „WYKONAJ” i rejestrowane.
+ *  końcowy. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) wg Ie-104.1 §11: inicjowanie (element zamarkowany na
+ *  pomarańczowo, przed Sz szare tło obrazu), WYKONAJ najwcześniej po 5 s, samoczynne odwołanie po 60 s, w tym czasie
+ *  inne polecenia zablokowane – logika i czas w `src/srk/special.js` (Simulation.initiateSpecial / confirmSpecial).
  */
 export class ScreenRenderer extends ScreenBase {
   constructor(container, sim, handlers, opts = {}) {
@@ -26,6 +29,7 @@ export class ScreenRenderer extends ScreenBase {
     this.#bind();
     this.bindModel();
     this.refreshAll();
+    sim.bus.on('special', (st) => this.#showSpecial(st)); // także co krok symulacji w trakcie polecenia (odliczanie)
   }
 
   /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
@@ -56,7 +60,7 @@ export class ScreenRenderer extends ScreenBase {
   }
 
   #setMode(mode, cancelAll = false) {
-    if (cancelAll) { this.#cancelPending(); this.confirmBar.hide(); }
+    if (cancelAll) { this.#cancelPending(); if (this.sim.special?.pending) this.handlers.onSpecialCancel?.(); this.confirmBar.hide(); }
     this.mode = mode;
     for (const [id, b] of this.cmdButtons) b.classList.toggle('active', id === mode);
     const INFO = {
@@ -129,22 +133,22 @@ export class ScreenRenderer extends ScreenBase {
       if (s.kind === 'tm' || s.shunting) items.push({ mode: 'shunt', label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
       items.push({ mode: 'stop', label: 'Wygaszenie sygnału – STOP (przebieg pozostaje utwierdzony)', run: exec({ type: 'stop', signal: ref.id }) });
       items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (Pz)', run: exec({ type: 'release', signal: ref.id }) });
-      items.push({ mode: 'dpz', label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, run: exec({ type: 'release', signal: ref.id, emergency: true }) });
-      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Podanie sygnału zastępczego (Sz)', special: true, run: exec({ type: 'substitute', signal: ref.id }) });
+      items.push({ mode: 'dpz', label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, target: ref, cmd: { type: 'release', signal: ref.id, emergency: true } });
+      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Podanie sygnału zastępczego (Sz)', special: true, target: ref, cmd: { type: 'substitute', signal: ref.id } });
       return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };
     }
     if (ref.kind === 'point') {
       const p = this.ilk.points.get(ref.id);
       return { title: `Zwrotnica ${p?.label || ref.id}`, items: [
         { mode: 'zw', label: 'Przestawienie zwrotnicy (Zw)', run: exec({ type: 'point', id: ref.id }) },
-        { mode: 'zz', label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, run: exec({ type: 'lock', id: ref.id }) },
+        { mode: 'zz', label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, target: ref, cmd: { type: 'lock', id: ref.id } },
       ] };
     }
     if (ref.kind === 'derailer') {
       const d = this.ilk.derailers.get(ref.id);
       return { title: `Wykolejnica ${ref.id}`, items: [
         { mode: 'zw', label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Zw)' : 'Nałożenie wykolejnicy (Zw)', run: exec({ type: 'derailer', id: ref.id }) },
-        { mode: 'zz', label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, run: exec({ type: 'lock', id: ref.id, derailer: true }) },
+        { mode: 'zz', label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, target: ref, cmd: { type: 'lock', id: ref.id, derailer: true } },
       ] };
     }
     if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);
@@ -170,8 +174,9 @@ export class ScreenRenderer extends ScreenBase {
       items.push({ label: 'Zwolnienie bloku końcowego – pociąg przybył w całości (Ko)', run: press('Ko') });
     }
     // SBL nie ma bloków Po / Ko – bez poleceń doraźnych
-    if (!b?.auto && b?.fixed !== 'in') items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, run: press('dPo') });
-    if (!b?.auto && b?.fixed !== 'out') items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, run: press('dKo') });
+    const blk = { kind: 'blockpanel', exit };
+    if (!b?.auto && b?.fixed !== 'in') items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, target: blk, cmd: { type: 'block', exit, btn: 'dPo' } });
+    if (!b?.auto && b?.fixed !== 'out') items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, target: blk, cmd: { type: 'block', exit, btn: 'dKo' } });
     // pod separatorem: numery pociągów na tym torze szlakowym jako czerwone kasetki (jak na planie) – najpierw
     // pociąg na szlaku, potem w kolejce pociągi zgłoszone przez sąsiada i czekające na wyprawienie (kontur)
     items.push({ sep: true }, { trains: this.lineTrains(exit) });
@@ -203,9 +208,38 @@ export class ScreenRenderer extends ScreenBase {
 
   #closeMenu() { this.menu.classList.add('hidden'); }
 
-  /** Polecenie specjalne – inicjalizacja, potwierdzenie WYKONAJ, rejestracja (licznik). OPS odwołuje. */
+  /** Polecenie specjalne – inicjowanie (Ie-104.1 §11); potwierdzenie WYKONAJ po zwłoce, OPS odwołuje. */
   #confirm(item) {
-    this.confirmBar.show({ html: `Polecenie specjalne: <b>${item.label}</b> – rejestrowane w liczniku.`, ok: 'WYKONAJ', cancel: 'OPS – odwołaj', onOk: () => item.run() });
+    const res = this.handlers.onSpecial?.(item.cmd, { label: item.label, target: item.target });
+    if (res && !res.ok) this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: res.reason });
+  }
+
+  /** Stan polecenia specjalnego: pasek z odliczaniem, pomarańczowe tło elementu, szare tło obrazu przed Sz. */
+  #showSpecial(st) {
+    this.#markSpecial(st?.target ?? null);
+    this.svg.classList.toggle('special-sz', st?.cmd?.type === 'substitute');
+    if (!st) { this.confirmBar.hide(); this.specialShown = false; return; }
+    const html = `Polecenie specjalne: <b>${escapeHtml(st.label)}</b> – ${st.ready ? `potwierdź WYKONAJ (odwołanie samoczynne za ${st.left} s)` : `potwierdzenie możliwe za ${st.wait} s`}; rejestrowane w liczniku.`;
+    if (!this.specialShown) {
+      this.specialShown = true;
+      this.confirmBar.show({ html, ok: 'WYKONAJ', cancel: 'OPS – odwołaj', disabled: !st.ready,
+        onOk: () => { const r = this.handlers.onSpecialConfirm?.(); if (r && !r.ok) this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: r.reason }); },
+        onCancel: () => this.handlers.onSpecialCancel?.() });
+    } else this.confirmBar.set({ html, disabled: !st.ready });
+  }
+
+  /** Markowanie elementu polecenia specjalnego – pomarańczowe tło pod symbolem. */
+  #markSpecial(target) {
+    const key = target ? JSON.stringify(target) : null;
+    if (key === this.specialKey) return;
+    this.specialKey = key;
+    this.svg.querySelectorAll('.special-bg').forEach((e) => e.remove());
+    const g = target ? this.elementFor(target) : null;
+    if (!g?.getBBox) return;
+    const bb = g.getBBox();
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    for (const [k, v] of Object.entries({ class: 'special-bg', x: bb.x - 2, y: bb.y - 2, width: bb.width + 4, height: bb.height + 4, rx: 2 })) r.setAttribute(k, v);
+    g.insertBefore(r, g.firstChild);
   }
 
 
