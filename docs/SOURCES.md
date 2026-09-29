@@ -281,7 +281,8 @@ Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustal
   biały – brak danych;
 * sygnalizatory (lista stanów wg malejącego priorytetu): biały – brak danych, biały migający – sygnał zastępczy,
   zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – sygnalizator początkowy lub
-  końcowy utwierdzonego przebiegu, różowy – zamknięty indywidualnie, szary – stan podstawowy; mały trójkąt końca
+  końcowy utwierdzonego przebiegu, różowy – zamknięty indywidualnie (w grze: stopowany poleceniem SES albo SSS),
+  szary – stan podstawowy; mały trójkąt końca
   przebiegu (Ie-104.1); symbol semafora jako podwójny grot z żółtą nazwą (EbiScreen), rysowany na linii toru w miejscu ustawienia – bez masztu i bez odsunięcia od toru (uproszczenie dla czytelności, jak w SimRail);
 * zwrotnica: pole „Z” (kształt – położenie iglic / brak kontroli, kolor – stan) i ramiona a/b/c, „+” przy ramieniu
   położenia zasadniczego, różowy – zamknięcie indywidualne, seledynowe numery (EbiScreen);

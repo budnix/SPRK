@@ -219,7 +219,7 @@ export class Simulation {
       if (active !== c.active) {
         c.active = active;
         const s = this.ilk.sections.get(c.section);
-        if (s) { s.closed = active; this.bus.emit('section', s); }
+        if (s) { s.closed = active || !!s.closedByOrder; this.bus.emit('section', s); }
         this.bus.emit('log', { time: t, level: 'warn', msg: `Odcinek ${c.section} ${active ? 'zamknięty dla ruchu' : 'otwarty dla ruchu'}` });
       }
     }
@@ -285,6 +285,11 @@ export class Simulation {
    *  { type: 'point', id } | { type: 'derailer', id } – przestawienie
    *  { type: 'lock', id, derailer? }          – zamknięcie indywidualne (Zz) – założenie / zdjęcie
    *  { type: 'block', exit, btn }             – blokada liniowa (Wbl, Poz, Ko, Zk, dPo, dKo)
+   *  { type: 'close-section', section, closed } – zamknięcie ruchowe toru (ITS) / odwołanie (ITO)
+   *  { type: 'signal-stop', signal, on }      – stopowanie sygnalizatora (SES) / odwołanie (SEO)
+   *  { type: 'all-stop', on }                 – stopowanie wszystkich sygnalizatorów stacji (SSS / SSO)
+   *  { type: 'substitute-off' }               – wygaszenie sygnałów zastępczych (SZO)
+   *  { type: 'cancel-timed', signal }         – odwołanie zwalniania czasowego (KZW)
    */
   execute(cmd) {
     const refuse = (reason) => ({ ok: false, reason });
@@ -314,6 +319,16 @@ export class Simulation {
       case 'block':
         if (!this.#allowed('block', cmd.exit)) return refuse(OTHER_DISTRICT);
         return this.blocks.get(cmd.exit)?.press(cmd.btn) ?? refuse(`Brak blokady liniowej ${cmd.exit}`);
+      case 'close-section':
+        return this.#allowed('section', cmd.section) ? ilk.closeSection(cmd.section, !!cmd.closed) : refuse(OTHER_DISTRICT);
+      case 'signal-stop':
+        return this.#allowed('signal', cmd.signal) ? ilk.stopSignal(cmd.signal, !!cmd.on) : refuse(OTHER_DISTRICT);
+      case 'all-stop':
+        return ilk.stopAll(!!cmd.on);
+      case 'substitute-off':
+        return ilk.substituteOff();
+      case 'cancel-timed':
+        return this.#allowed('signal', cmd.signal) ? ilk.cancelTimedRelease(cmd.signal) : refuse(OTHER_DISTRICT);
       default:
         return refuse(`Nieznane polecenie: ${cmd?.type}`);
     }
@@ -347,7 +362,8 @@ export class Simulation {
     if (kind === 'block') return this.playerControls(this.exitDistrict(id));
     if (kind === 'signal') return this.playerControls(this.districtOf(id));
     const topo = this.ilk.topo;
-    const tile = kind === 'point' ? topo.points.get(id) : kind === 'derailer' ? topo.derailers.get(id) : kind === 'end' ? topo.endButtons.get(id) : null;
+    const tile = kind === 'point' ? topo.points.get(id) : kind === 'derailer' ? topo.derailers.get(id) : kind === 'end' ? topo.endButtons.get(id)
+      : kind === 'section' ? topo.sectionTiles.get(id)?.[0] : null;
     return tile ? this.playerControls(this.#districtAtX(tile.x)) : true;
   }
 

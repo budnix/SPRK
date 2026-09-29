@@ -685,6 +685,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .sig-body.st-shunt path { fill: #ffd21f; filter: url(#glow); }
 .sig-body.st-locked path { fill: #ff2419; }
 .sig-body.st-sz path { fill: #ffffff; animation: blink 0.8s steps(1) infinite; }
+.sig-body.st-stopped path { fill: #ff7ad9; }            /* różowy – sygnalizator zamknięty (stopowany: SES, SSS) */
 .sig-body.st-nodata path { fill: #ffffff; }
 .sig-end { fill: none; stroke: #6d7884; stroke-width: 0.8; }
 .sig-end.on { fill: #ff2419; stroke: #ff2419; }

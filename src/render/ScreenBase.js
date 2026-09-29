@@ -449,8 +449,8 @@ export class ScreenBase extends PanelView {
     r.g.classList.toggle('locked', !!d.individualLock);
   }
 
-  /** Stan sygnalizatora wg listy Ie-104 (malejący priorytet): Sz biały migający, zielony/żółty zezwalający,
-   *  czerwony – początek lub koniec utwierdzonego przebiegu, szary – stan podstawowy. */
+  /** Stan sygnalizatora wg listy Ie-104 (malejący priorytet): Sz biały migający, różowy – zamknięty (stopowany),
+   *  zielony/żółty zezwalający, czerwony – początek lub koniec utwierdzonego przebiegu, szary – stan podstawowy. */
   updateSignal(id) {
     const s = this.ilk.signals.get(id);
     const r = this.signalRefs.get(id);
@@ -459,6 +459,7 @@ export class ScreenBase extends PanelView {
     let st = 'base';
     const isEnd = [...this.ilk.active.values()].some((act) => act.route.end.type === 'signal' && act.route.end.id === id);
     if (a === 'Sz') st = 'sz';
+    else if (s.stopped || this.ilk.allStop) st = 'stopped';
     else if (a === 'Ms2') st = 'shunt';
     else if (a && a !== 'S1' && a !== 'Ms1') st = 'train';
     else if (s.route != null || isEnd) st = 'locked';

@@ -86,7 +86,7 @@ export class Interlocking {
     for (const [id, t] of this.topo.signals) {
       this.signals.set(id, {
         id, tile: t, kind: t.kind, dir: t.dir, aspect: this.#stopAspect(t.kind),
-        route: null, substitute: false, substituteUntil: 0, shunting: !!t.shunting,
+        route: null, substitute: false, substituteUntil: 0, stopped: false, shunting: !!t.shunting,
         canSubstitute: t.substitute !== false, overlap: t.overlap !== false,
       });
     }
@@ -101,6 +101,7 @@ export class Interlocking {
     this.active = new Map();     // routeId -> aktywny przebieg
     this.pending = [];           // przebiegi w trakcie nastawiania (zwrotnice się przestawiają)
     this.counters = { dPz: 0, Sz: 0, rozprucie: 0 };
+    this.allStop = false;        // SSS – wszystkie sygnalizatory stacji na „Stój” (stanowiska komputerowe)
     this.alarms = new Set();
     this.#refreshSignals();
   }
@@ -699,6 +700,69 @@ export class Interlocking {
     this.bus.emit('route', { id: act.id, state: 'released' });
   }
 
+  /* ------------------------------------------------------------------ */
+  /* Polecenia stanowisk komputerowych (EBILock 950: ITS/ITO, SES/SEO, SSS/SSO, SZO, KZW)                  */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Zamknięcie ruchowe toru przez dyżurnego (ITS) i jego odwołanie (ITO). Odcinka utwierdzonego w przebiegu się nie
+   * zamyka; zamknięcia z planu (scenariusz, `closedSections`) dyżurny nie odwołuje.
+   */
+  closeSection(id, closed) {
+    const s = this.sections.get(id);
+    if (!s) return this.#fail(`Brak odcinka ${id}`);
+    if (closed) {
+      if (s.closed) return { ok: true, noop: true };
+      if (s.route) return this.#fail(`Odcinek ${id} utwierdzony w przebiegu ${s.route} – nie można zamknąć`);
+      s.closed = true; s.closedByOrder = true;
+    } else {
+      if (!s.closed) return { ok: true, noop: true };
+      if (!s.closedByOrder) return this.#fail(`Odcinek ${id} zamknięty z planu (zamknięcie torowe) – dyżurny go nie otwiera`);
+      s.closed = false; s.closedByOrder = false;
+    }
+    this.#log('info', `Odcinek ${id} ${closed ? 'zamknięty' : 'otwarty'} dla ruchu (polecenie dyżurnego)`);
+    this.bus.emit('section', s);
+    return { ok: true };
+  }
+
+  /** Stopowanie sygnalizatora (SES) – „Stój” mimo nastawionego przebiegu – i odwołanie (SEO). */
+  stopSignal(signalId, on) {
+    const sig = this.signals.get(signalId);
+    if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
+    if (sig.stopped === !!on) return { ok: true, noop: true };
+    sig.stopped = !!on;
+    this.#log('info', `Sygnalizator ${signalId} ${on ? 'stopowany – „Stój”' : 'odstopowany'}`);
+    this.#refreshSignals();
+    return { ok: true };
+  }
+
+  /** Stopowanie wszystkich sygnalizatorów stacji (SSS) i odwołanie (SSO). */
+  stopAll(on) {
+    if (this.allStop === !!on) return { ok: true, noop: true };
+    this.allStop = !!on;
+    this.#log('warn', on ? 'Wszystkie sygnalizatory stacji na „Stój” (SSS)' : 'Odwołanie stopowania wszystkich sygnalizatorów (SSO)');
+    this.#refreshSignals();
+    return { ok: true };
+  }
+
+  /** Wygaszenie wszystkich wyświetlonych sygnałów zastępczych (SZO). */
+  substituteOff() {
+    const on = [...this.signals.values()].filter((s) => s.substitute);
+    for (const s of on) s.substitute = false;
+    if (on.length) { this.#log('info', `Sygnały zastępcze wygaszone: ${on.map((s) => s.id).join(', ')}`); this.#refreshSignals(); }
+    return on.length ? { ok: true } : { ok: true, noop: true };
+  }
+
+  /** Odwołanie zwalniania czasowego przebiegu od sygnalizatora (KZW) – przebieg zostaje utwierdzony. */
+  cancelTimedRelease(signalId) {
+    const act = [...this.active.values()].find((a) => a.route.start === signalId && a.timedRelease);
+    if (!act) return this.#fail(`${signalId}: brak zwalniania czasowego do odwołania`);
+    act.timedRelease = null;
+    this.#log('info', `Przebieg ${act.id}: zwalnianie czasowe odwołane`);
+    this.bus.emit('route', { id: act.id, state: 'set' });
+    return { ok: true };
+  }
+
   /** Sygnał zastępczy Sz na semaforze (licznik). */
   substituteSignal(signalId) {
     const sig = this.signals.get(signalId);
@@ -782,7 +846,7 @@ export class Interlocking {
   #computeAspect(sig) {
     if (sig.substitute) return 'Sz';
     const stop = this.#stopAspect(sig.kind);
-    if (sig.failed) return stop;
+    if (sig.failed || sig.stopped || this.allStop) return stop;
     if (!sig.route) return stop;
     const act = this.active.get(sig.route);
     if (!act || act.signalOff) return stop;

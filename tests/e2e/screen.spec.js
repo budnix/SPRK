@@ -418,3 +418,15 @@ test('monitor: symbole i napisy nie nachodzą na siebie na żadnej stacji – pr
   }
   expect(found).toEqual([]);
 });
+
+test('monitor: sygnalizator stopowany (SES) i wszystkie po SSS są różowe (Ie-104: zamknięty), tor zamknięty poleceniem – podwójna linia', async ({ page }) => {
+  await openShift(page, 'szkolna');
+  const cls = (id) => page.evaluate((i) => window.desk.signalRefs.get(i).body.getAttribute('class'), id);
+  await page.evaluate(() => window.sim.execute({ type: 'signal-stop', signal: 'A', on: true }));
+  expect(await cls('A')).toContain('st-stopped');
+  expect(await cls('B')).not.toContain('st-stopped');
+  await page.evaluate(() => { window.sim.execute({ type: 'signal-stop', signal: 'A', on: false }); window.sim.execute({ type: 'all-stop', on: true }); });
+  expect(await cls('B')).toContain('st-stopped');
+  const sec = await page.evaluate(() => { const s = window.sim; const id = s.ilk.routes.get('A-D1').sections.find((x) => s.ilk.sections.get(x).kind === 'station'); s.execute({ type: 'close-section', section: id, closed: true }); return id; });
+  expect(await page.evaluate((id) => window.desk.sectionRefs.get(id).every((e) => e.getAttribute('class').includes('closed')), sec)).toBe(true);
+});
