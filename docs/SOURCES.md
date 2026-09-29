@@ -29,6 +29,27 @@ semafora, aż cały pociąg zjedzie z odcinków zwrotnicowych przebiegu (przyję
 przebiegu). Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
 (`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
 
+Zezwolenie na jazdę (wszystkie stanowiska). Ze źródeł: pociąg mija semafor tylko na sygnał zezwalający dla pociągu
+(S2–S13, Sr2/Sr3), sygnał zastępczy Sz albo rozkaz pisemny; sygnał Ms2 na semaforze dotyczy wyłącznie jazdy
+manewrowej, dla pociągu znaczy „Stój” (Ie-1 §4 ust. 14 i 17; Ir-1 §11 ust. 1). Pociąg wyprawia się na szlak
+na sygnał semafora wyjazdowego albo na rozkaz pisemny (Ir-1 §63 ust. 1 pkt 1). Jazda manewrowa obok sygnalizatora –
+na Ms2 (M2) (Ie-1 §3 ust. 17–18). Przebieg manewrowy przez drogę ochronną przebiegu pociągowego jest z nim sprzeczny
+(Ie-4 §43 ust. 2 pkt 4). Sygnał manewrowy gaśnie dopiero po minięciu sygnalizatora przez cały skład (Ie-4 §40,
+§42 ust. 2 – wytyczne dla nowych urządzeń; przyjęte na wszystkich stanowiskach poza nastawnią mechaniczną). Przyjęte
+(uproszczenia gry):
+
+* pociąg, który nie minął jeszcze żadnego semafora (utworzony na stacji, po zmianie czoła, po przełączeniu
+  z manewrów), rusza tylko wtedy, gdy najbliższy semafor przed nim – przed najbliższą zwrotnicą – wskazuje sygnał
+  zezwalający dla pociągu albo pociąg ma rozkaz na jego minięcie; potem jedzie do granicy stacji tylko wtedy, gdy
+  ostatni miniony semafor miał przebieg na szlak (albo Sz / rozkaz);
+* skład manewrowy rusza, gdy sygnalizator przed nim (przed najbliższą zwrotnicą) albo pod nim, zwrócony w kierunku
+  jazdy, wskazuje Ms2 / M2; po minięciu sygnalizatora jedzie dalej w obrębie tego przebiegu – przebieg manewrowy innej
+  jazdy nie jest zezwoleniem;
+* przebieg manewrowy z semafora końcowego przebiegu pociągowego nie jest jego kontynuacją: nie zastępuje drogi
+  ochronnej (wjazd i manewr przez drogę ochronną wykluczają się), a semafor przed semaforem z Ms2 zapowiada „Stój”;
+* Ms2 gaśnie, gdy zwolni się odcinek przed sygnalizatorem (cały skład za nim); na nastawni mechanicznej tarczę
+  przestawia dźwignia jak dotąd.
+
 ## Urządzenia przekaźnikowe typu IZH-111 (JZH-111)
 
 Źródło: Beskidzka Strona Kolejowa – „Urządzenia typu JZH-111” (bsk.isdr.pl/srk_izh111.php); plany ciemne i półciemne:

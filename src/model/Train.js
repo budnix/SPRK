@@ -46,6 +46,16 @@ export class Train {
     this.activeLimit = Infinity; // ograniczenie obowiązujące do następnego sygnalizatora (np. Sz – 20 km/h)
     this.zoneLimit = null;       // ograniczenie z obrazu semafora do końca okręgu zwrotnicowego ({ speed, sections, entered })
     this.orders = [];            // rozkazy pisemne: { signal, used }
+    // zezwolenie na jazdę pociągu: mija semafor na sygnał zezwalający (albo Sz / rozkaz) – do tej chwili pociąg utworzony
+    // na stacji, po zmianie czoła albo przełączeniu z manewrów rusza tylko na sygnał semafora przed sobą
+    this.authority = false;
+    this.exitAuth = null;        // wyjazd na szlak: id wyjazdu z przebiegu minionego semafora, '*' po Sz / rozkazie
+    this.shuntRoute = null;      // przebieg manewrowy, na którego sygnał Ms2 skład minął sygnalizator
+  }
+
+  /** Utrata zezwolenia (zmiana czoła, zmiana rodzaju jazdy) – dalsza jazda dopiero na nowy sygnał. */
+  clearAuthority() {
+    this.authority = false; this.exitAuth = null; this.shuntRoute = null;
   }
 
   /** Czy pociąg ma niewykorzystany rozkaz pisemny na przejazd obok sygnalizatora. */
@@ -70,6 +80,7 @@ export class Train {
     this.head = this.length; // cały pociąg na szlaku
     this.v = Math.min(this.vmax, this.lineSpeed);
     this.state = 'moving';
+    this.authority = true; // jazda po szlaku na podstawie blokady / sygnału semafora odstępowego
   }
 
   /** Umieszcza stojący pociąg na kostkach (czoło na kostce `headTile`, kierunek `dir`). */
@@ -186,7 +197,9 @@ export class Train {
           if (!relevant) continue;
           // skład manewrowy jedzie obok semafora tylko na sygnał manewrowy Ms2 – sygnał pociągowy (przebieg na szlak)
           // go nie dotyczy, więc nie wyjedzie ze stacji jako manewr
-          const proceed = this.mode === 'shunt' && sig.kind === 'semafor' ? Interlocking.isShuntProceed(sig.aspect) : Interlocking.isProceed(sig.aspect);
+          // pociąg – tylko sygnał zezwalający dla pociągu: Ms2 na semaforze dla niego znaczy „Stój” (Ie-1 §4 ust. 17)
+          const proceed = this.mode === 'shunt' ? (sig.kind === 'semafor' ? Interlocking.isShuntProceed(sig.aspect) : Interlocking.isProceed(sig.aspect))
+            : Interlocking.isTrainProceed(sig.aspect);
           if (!proceed) {
             if (this.hasOrderFor(sig.id)) {
               // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 20 km/h
@@ -203,6 +216,8 @@ export class Train {
         const exit = this.topo.exitAt(tile, outPort);
         if (exit) {
           if (this.mode === 'shunt') { constraints.push({ dist, speed: 0, reason: 'granica stacji – manewry', kind: 'signal', signal: exit.id }); return constraints; }
+          // na szlak tylko przebiegiem wyjazdowym (albo na Sz / rozkaz pisemny z semafora wyjazdowego)
+          if (this.exitAuth !== exit.id && this.exitAuth !== '*') { constraints.push({ dist, speed: 0, reason: 'granica stacji – brak przebiegu wyjazdowego', kind: 'signal', signal: exit.id }); return constraints; }
           constraints.push({ dist, speed: Math.min(this.lineSpeed, this.vmax), reason: 'szlak', kind: 'limit' });
           return constraints;
         }
@@ -260,6 +275,7 @@ export class Train {
     // (prędkość drogowa) – rozjazdy i sygnały ograniczają dalej
     let allowed = Math.min(this.vmax, this.activeLimit, this.lineSpeed, this.#pointsUnderTrain(), this.#zoneSpeed());
     if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
+    if (this.mode === 'train' && this.v === 0 && !this.authority && !this.#mayStart()) return; // pociąg bez zezwolenia – czeka na sygnał
     let stopC = null;
     for (const c of constraints) {
       const v = Math.sqrt(c.speed * c.speed + 2 * this.brake * Math.max(0, c.dist));
@@ -339,14 +355,61 @@ export class Train {
     return sections.size ? { speed: speed * KMH, sections, entered: false } : null;
   }
 
-  /** Jazda manewrowa dozwolona: tabor stoi w obrębie nastawionego przebiegu manewrowego. */
+  /**
+   * Jazda manewrowa dozwolona: najbliższy sygnalizator przed czołem (przed najbliższą zwrotnicą) albo pod składem,
+   * zwrócony w kierunku jazdy, wskazuje Ms2 / M2, albo skład jest w przebiegu manewrowym, na którego sygnał minął
+   * sygnalizator. Przebieg manewrowy innej jazdy, na którego odcinkach skład
+   * stoi, nie jest zezwoleniem (Ie-1 §3).
+   */
   #shuntPermitted() {
-    const occ = this.occupiedSections();
-    for (const act of this.ilk.active.values()) {
-      if (act.route.kind !== 'shunt' || act.signalOff) continue;
+    const act = this.shuntRoute && this.ilk.active.get(this.shuntRoute);
+    if (act) {
+      const occ = this.occupiedSections();
       if (occ.has(act.route.approach) || act.route.sections.some((sid) => occ.has(sid))) return true;
     }
-    return false;
+    // sygnalizator pod składem (skład stoi częściowo za nim), zwrócony w kierunku jazdy
+    for (const seg of this.trail) {
+      if (!seg.tile || !seg.outPort || seg.start >= this.head || seg.start + seg.len <= this.tail) continue;
+      for (const sg of this.topo.signalsAt(seg.tile, seg.outPort)) {
+        const under = this.ilk.signals.get(sg.id);
+        if (under && Interlocking.isShuntProceed(under.aspect)) { this.shuntRoute = under.route; return true; }
+      }
+    }
+    const sig = this.#signalAhead(() => true, true);
+    return !!sig && Interlocking.isShuntProceed(sig.aspect);
+  }
+
+  /**
+   * Pociąg bez zezwolenia (utworzony na stacji, po zmianie czoła albo po manewrach) rusza tylko wtedy, gdy najbliższy
+   * semafor przed nim – przed najbliższą zwrotnicą i granicą stacji – wskazuje sygnał zezwalający dla pociągu albo
+   * pociąg ma rozkaz pisemny na jego minięcie.
+   */
+  #mayStart() {
+    const sig = this.#signalAhead((s) => s.kind === 'semafor', true);
+    return !!sig && (Interlocking.isTrainProceed(sig.aspect) || this.hasOrderFor(sig.id));
+  }
+
+  /**
+   * Najbliższy sygnalizator przed czołem spełniający `accept` (po torze wg bieżących położeń zwrotnic) albo null,
+   * gdy wcześniej jest koniec toru, granica stacji albo – przy `stopAtPoint` – zwrotnica.
+   */
+  #signalAhead(accept, stopAtPoint = false) {
+    const seg = this.trail[this.trail.length - 1];
+    if (!seg?.tile) return null;
+    const positions = this.ilk.positions();
+    let tile = seg.tile, outPort = seg.outPort;
+    for (let dist = seg.start + seg.len - this.head, guard = 0; dist < 2000 && guard < 200 && outPort; guard++) {
+      for (const s of this.topo.signalsAt(tile, outPort)) {
+        const sig = this.ilk.signals.get(s.id);
+        if (sig && accept(sig)) return sig;
+      }
+      if (this.topo.exitAt(tile, outPort)) return null;
+      const nb = this.topo.neighbour(tile, outPort);
+      if (!nb || nb.tile.type === 'buffer' || (stopAtPoint && nb.tile.type === 'point')) return null;
+      tile = nb.tile; outPort = this.topo.step(nb.tile, nb.inPort, positions).outPort;
+      dist += tile._len;
+    }
+    return null;
   }
 
   #canDepart(time) {
@@ -367,7 +430,13 @@ export class Train {
           const sig = this.ilk.signals.get(sg.id);
           if (this.mode === 'train' && sig.kind !== 'semafor') continue;
           const order = this.orders.find((o) => o.signal === sig.id && !o.used);
-          if (order && !Interlocking.isProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
+          if (order && !Interlocking.isTrainProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
+          if (this.mode === 'train') {
+            // zezwolenie od minionego semafora: przebieg (i ewentualny wyjazd na szlak), Sz albo rozkaz – na dowolny wyjazd
+            const act = sig.route && this.ilk.active.get(sig.route);
+            this.authority = true;
+            this.exitAuth = (order || sig.aspect === 'Sz') ? '*' : act?.route.kind === 'train' ? (act.route.exit ?? null) : null;
+          } else if (Interlocking.isShuntProceed(sig.aspect)) this.shuntRoute = sig.route;
           this.activeLimit = (sig.aspect === 'Sz' || order) ? 20 * KMH : Infinity;
           const sp = Interlocking.aspectSpeed(sig.aspect);
           const restricted = this.mode === 'train' && !order && sig.aspect !== 'Sz' && Interlocking.isProceed(sig.aspect) && sp < Infinity;
@@ -435,6 +504,7 @@ export class Train {
     void headOffsetInLast;
     this.hasStopped = true;
     this.state = 'stopped';
+    this.clearAuthority(); // po zmianie czoła jazda dopiero na sygnał sygnalizatora przed nowym czołem
     return true;
   }
 

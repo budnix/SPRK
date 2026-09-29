@@ -201,8 +201,14 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   semaforem wyjazdowym jest osobny odcinek (T1w/T2w/T1e/T2e) przed rozjazdem, więc krzyżowanie A→D2 + B→C1 nastawia
   się od razu; na stacji testowej `tests/fixtures/stare-pustkowie.js` droga ochronna za C1 leży na rozjazdzie 1
   i drugi wjazd czeka na zwolnienie Iz1 (test `interlocking.test.js`).
-* Przejazd: semafor na Stój po zajęciu pierwszego odcinka za nim; zwalnianie odcinkowe; droga ochronna
-  zwalnia się po wjeździe na tor docelowy.
+* Przejazd: semafor na Stój po zajęciu pierwszego odcinka za nim (sygnał manewrowy – po zwolnieniu odcinka przed
+  sygnalizatorem, `act.shuntHold`); zwalnianie odcinkowe; droga ochronna zwalnia się po wjeździe na tor docelowy.
+  Kontynuacją przebiegu pociągowego (droga ochronna zbędna) jest tylko przebieg pociągowy z semafora końcowego.
+* Zezwolenie na jazdę (`Train`): pociąg jedzie tylko na `Interlocking.isTrainProceed` (bez Ms2 / M2), Sz albo rozkaz;
+  `authority` daje miniony semafor albo wjazd ze szlaku, `exitAuth` – przebieg na szlak (albo Sz / rozkaz); bez
+  zezwolenia (`reverse`, `toTrainMode` / `toShunting` wołają `clearAuthority`) rusza tylko na sygnał semafora przed sobą.
+  Skład manewrowy – na Ms2 sygnalizatora przed sobą albo pod sobą i dalej w przebiegu, którego sygnał minął
+  (`shuntRoute`). Test: `tests/train-authority.test.js`.
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania), dPz (doraźne, licznik).
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
 * Blokada Eap: Wbl (żądanie pozwolenia), Poz (danie pozwolenia), Ko (zwolnienie bloku końcowego po przyjeździe

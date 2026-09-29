@@ -83,6 +83,10 @@ Play it: **https://budnix.github.io/SPRK/**
   (the whole train, and up to the end of the switch zone after a 40 km/h signal aspect), 20 km/h on a substitute signal, train categories with realistic speeds and dynamics (EIP/IC/TLK/Regio/SKM/freight, capped by
   line speed), full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable, non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, stop 10 m before other stock.
+* Movement authority: a train moves only on a train proceed aspect, a substitute signal or a written order – never on
+  Ms2 – and leaves for the line only through an exit route; after reversing or switching from shunting it waits for
+  the signal in front of it. A shunt move starts only on Ms2 / M2 of its own signal, and Ms2 goes out once the whole
+  consist has passed.
 * Timetable with live status and delays, event log, state tab (blocks, routes, counters, shunting tasks, train
   mode / direction), written orders "S" for passing a signal at Stop, telephone train announcements per Ir-1 formulas
   when a block loses communication, radio calls from drivers.

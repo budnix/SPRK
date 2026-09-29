@@ -73,6 +73,7 @@ test('rozprucie: najazd na zwrotnicę z ostrza przy złym położeniu', () => {
   const tr = new Train(e, sim.ilk.topo, sim.ilk, { mode: 'train' });
   tr.placeOnTrack([...t2b].reverse(), 'W'); // czoło na (21,6) w kierunku W
   tr.mode = 'train'; tr.state = 'moving'; tr.vmax = 25 / 3.6; // jazda bez przebiegu (np. na rozkaz) – wjazd na zwrotnicę z ostrza
+  tr.authority = true; // pociąg ma już zezwolenie (np. minął semafor na rozkaz) – bez niego nie ruszyłby bez sygnału
   sim.traffic.trains.push(tr);
   run(sim, 60);
   assert.equal(sim.ilk.counters.rozprucie, 1, 'rozprucie niewykryte');

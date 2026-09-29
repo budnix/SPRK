@@ -429,6 +429,7 @@ export class Traffic {
     if (!e?.train) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'shunt';
+    e.train.clearAuthority();
     e.train.def.stop = false;
     e.train.state = 'moving';
     e.train.vmax = 25 / 3.6;
@@ -441,6 +442,7 @@ export class Traffic {
     if (!e?.train) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'train';
+    e.train.clearAuthority(); // pociąg utworzony ze składu rusza dopiero na sygnał semafora
     e.train.vmax = speedFor(e) / 3.6;
     e.train.state = 'stopped';
     return true;

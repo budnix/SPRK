@@ -324,16 +324,22 @@ export class Interlocking {
   /* Przebiegi                                                            */
   /* ------------------------------------------------------------------ */
 
-  /** Aktywne przebiegi kończące się na semaforze początkowym `route` (ich kontynuacja). */
+  /**
+   * Aktywne przebiegi pociągowe kończące się na semaforze początkowym `route` (ich kontynuacja). Kontynuacją przebiegu
+   * pociągowego jest tylko przebieg pociągowy: przebieg manewrowy z semafora końcowego nie przedłuża jazdy pociągu
+   * (dla pociągu Ms2 znaczy „Stój”, Ie-1 §4 ust. 17), więc nie zastępuje drogi ochronnej.
+   */
   #continuedBy(route) {
-    return [...this.active.values()].filter((a) => a.route.end.type === 'signal' && a.route.end.id === route.start);
+    if (route.kind !== 'train') return [];
+    return [...this.active.values()].filter((a) => a.route.kind === 'train' && a.route.end.type === 'signal' && a.route.end.id === route.start);
   }
 
-  /** Czy semafor końcowy przebiegu ma nastawiony własny przebieg (kontynuacja – droga ochronna zbędna). */
+  /** Czy semafor końcowy przebiegu ma nastawiony własny przebieg pociągowy (kontynuacja – droga ochronna zbędna). */
   #hasContinuation(route) {
     if (route.end.type !== 'signal') return false;
     const endSig = this.signals.get(route.end.id);
-    return !!(endSig?.route && this.active.has(endSig.route));
+    const cont = endSig?.route && this.active.get(endSig.route);
+    return !!cont && cont.route.kind === 'train';
   }
 
   /** Sprawdzenie warunków nastawienia przebiegu (bez zmiany stanu) – komunikaty przeszkód. */
@@ -824,6 +830,11 @@ export class Interlocking {
     return aspect === 'S1' || aspect === 'Sr1';
   }
 
+  /** Sygnał zezwalający dla pociągu (S2–S13, Sr2/Sr3, Sz) – Ms2 / M2 na semaforze dla pociągu znaczy „Stój”. */
+  static isTrainProceed(aspect) {
+    return Interlocking.isProceed(aspect) && !Interlocking.isShuntProceed(aspect);
+  }
+
   /** Jazda manewrowa dozwolona (Ms2 na tarczy świetlnej albo semaforze, M2 na tarczy kształtowej). */
   static isShuntProceed(aspect) {
     return aspect === 'Ms2' || aspect === 'M2';
@@ -873,7 +884,8 @@ export class Interlocking {
     if (this.shapedSignals) return restricted ? 'Sr3' : 'Sr2';
     let next = null;
     if (act.route.end.type === 'signal') next = this.signals.get(act.route.end.id)?.aspect || 'S1';
-    const nextStop = !next || next === 'S1' || next === 'Sz';
+    // następny semafor na „Stój” – także gdy wskazuje tylko sygnał manewrowy (Ms2 / M2 dla pociągu znaczy „Stój”)
+    const nextStop = !next || next === 'S1' || next === 'Sz' || Interlocking.isShuntProceed(next);
     const nextRestricted = next && ['S10', 'S11', 'S12', 'S13'].includes(next);
     if (act.route.end.type === 'exit') return restricted ? 'S10' : 'S2';
     if (nextStop) return restricted ? 'S13' : 'S5';
@@ -964,8 +976,16 @@ export class Interlocking {
         act.trainEntered = true;
         act.timedRelease = null;
         const prevAspect = sig.aspect;
-        if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
+        // sygnał manewrowy gaśnie dopiero, gdy cały skład minie sygnalizator (Ie-4 §40) – ogon na odcinku przed nim;
+        // nastawnia mechaniczna: tarczę przestawia dźwignia, bez zmian
+        const approach = this.sections.get(act.route.approach);
+        if (!act.signalOff && act.route.kind === 'shunt' && !this.manualSignal && approach?.physical) act.shuntHold = true;
+        else if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
         if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
+      }
+      if (act.shuntHold && !this.sections.get(act.route.approach)?.physical) {
+        act.shuntHold = false; act.signalOff = true; this.#refreshSignals();
+        this.#log('info', `Skład minął ${sig.kind === 'tm' ? 'tarczę' : 'semafor'} ${sig.id} – sygnał manewrowy zgasł`);
       }
       if (act.timedRelease && act.timedRelease <= time) {
         this.#log('info', `Przebieg ${act.id} zwolniony (zwalnianie czasowe)`);

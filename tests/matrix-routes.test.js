@@ -12,6 +12,9 @@ function grantBlocks(sim) {
   run(sim, 40);
 }
 
+/** Czy przebieg `b` jest kontynuacją przebiegu `a` (oba pociągowe, `b` zaczyna się na semaforze końcowym `a`). */
+const continues = (a, b) => a.kind === 'train' && b.kind === 'train' && a.end.type === 'signal' && a.end.id === b.start;
+
 function conflicts(r1, r2) {
   if (r1.start === r2.start) return 'ten sam semafor';
   const s1 = new Set(r1.sections), s2 = new Set(r2.sections);
@@ -19,8 +22,10 @@ function conflicts(r1, r2) {
   const pos = new Map();
   for (const p of [...r1.points, ...r1.flank]) pos.set(p.id, p.position);
   for (const p of [...r2.points, ...r2.flank]) if (pos.has(p.id) && pos.get(p.id) !== p.position) return `zwrotnica ${p.id} w różnych położeniach`;
-  const r2ContinuesR1 = r1.end.type === 'signal' && r1.end.id === r2.start; // przelot: droga ochronna r1 zbędna
-  const r1ContinuesR2 = r2.end.type === 'signal' && r2.end.id === r1.start; // r2 kończy się tam, gdzie zaczyna r1
+  // kontynuacją przebiegu pociągowego jest tylko przebieg pociągowy – manewr z semafora końcowego nie zastępuje drogi
+  // ochronnej (Ms2 dla pociągu znaczy „Stój”)
+  const r2ContinuesR1 = continues(r1, r2); // przelot: droga ochronna r1 zbędna
+  const r1ContinuesR2 = continues(r2, r1); // r2 kończy się tam, gdzie zaczyna r1
   if (!r2ContinuesR1) for (const s of r2.sections) if (r1.overlap.includes(s)) return `odcinek ${s} w drodze ochronnej r1`;
   if (!r1ContinuesR2) for (const s of r2.overlap) if (s1.has(s)) return `droga ochronna r2 utwierdzona w r1`;
   const d1 = new Map([...r1.derailers.onRoute, ...r1.derailers.protect].map((d) => [d.id, d.position]));
@@ -46,8 +51,7 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
       // zwrotnice drogi ochronnej r1 utwierdzone w bieżącym położeniu
       const act1 = sim.ilk.active.get(r1.id);
       let overlapPointConflict = null;
-      const r2ContinuesR1 = r1.end.type === 'signal' && r1.end.id === r2.start;
-      if (!r2ContinuesR1) for (const p of [...r2.points, ...r2.flank]) {
+      if (!continues(r1, r2)) for (const p of [...r2.points, ...r2.flank]) {
         const op = act1.overlapPoints.find((q) => q.id === p.id);
         if (op && op.position !== p.position) overlapPointConflict = `zwrotnica ${p.id} w drodze ochronnej r1`;
       }
