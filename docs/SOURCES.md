@@ -50,6 +50,21 @@ na Ms2 (M2) (Ie-1 §3 ust. 17–18). Przebieg manewrowy przez drogę ochronną p
 * Ms2 gaśnie, gdy zwolni się odcinek przed sygnalizatorem (cały skład za nim); na nastawni mechanicznej tarczę
   przestawia dźwignia jak dotąd.
 
+Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
+pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
+daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości
+dyżurny sprawdza tor na miejscu (Ie-10 §32 ust. 5); pociągi zatrzymuje się przed przeszkodą (Ir-1 §75 ust. 1–2).
+Przyjęte (uproszczenia gry):
+
+* droga Sz i rozkazu to tor za semaforem po bieżących położeniach zwrotnic do następnego semafora, wyjazdu albo końca
+  toru (`Interlocking.pathBeyond`); blokadę sprawdza się tylko dla wyjazdu na tej drodze;
+* Sz i rozkaz są bez kary, gdy usterka jest na tej drodze (semafor bez sygnału, zajętość z usterki, zwrotnica bez
+  kontroli); usterka gdzie indziej na stacji ich nie uzasadnia (Sz −5, rozkaz −10);
+* Sz przy zwrotnicy na drodze ani utwierdzonej w przebiegu, ani zamkniętej Zz – dodatkowo −10 (urządzenie Sz nie
+  blokuje – odpowiada dyżurny); rozkaz w takiej sytuacji jest odrzucany jak dotąd;
+* rozkaz nie jest odrzucany z powodu zajętości z usterki (fałszywa zajętość, licznik osi) – tylko taboru;
+* każdy nowy wjazd pociągu na tor z pękniętą szyną kosztuje −50, na tor zamknięty dla ruchu (ITS, np. na Sz) −80.
+
 ## Urządzenia przekaźnikowe typu IZH-111 (JZH-111)
 
 Źródło: Beskidzka Strona Kolejowa – „Urządzenia typu JZH-111” (bsk.isdr.pl/srk_izh111.php); plany ciemne i półciemne:

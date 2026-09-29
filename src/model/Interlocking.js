@@ -320,6 +320,48 @@ export class Interlocking {
     return o;
   }
 
+  /**
+   * Droga jazdy za semaforem po bieżących położeniach zwrotnic – do następnego semafora w tym kierunku, wyjazdu na szlak
+   * albo końca toru (droga Sz i rozkazu „S”). `points`: zwrotnice na drodze (`trailing` – najazd od strony
+   * krzyżownicy przy złym położeniu), `derailers`: wykolejnice, `exit`: wyjazd na szlak albo null.
+   */
+  pathBeyond(signalId) {
+    const sig = this.signals.get(signalId);
+    const path = { sections: [], points: [], derailers: [], exit: null };
+    if (!sig) return path;
+    const positions = this.positions();
+    const start = this.topo.trackAt(sig.tile.at.x, sig.tile.at.y);
+    let outPort = start._def.ports(start).find((p) => (p.includes('E') ? 'E' : p.includes('W') ? 'W' : null) === sig.dir);
+    let tile = start;
+    const sections = new Set();
+    for (let guard = 0; guard < 100 && outPort; guard++) {
+      const exit = this.topo.exitAt(tile, outPort);
+      if (exit) { path.exit = exit.id; break; }
+      const nb = this.topo.neighbour(tile, outPort);
+      if (!nb) break;
+      tile = nb.tile;
+      if (tile.section) sections.add(tile.section);
+      if (tile.derailer) path.derailers.push(tile.derailer);
+      if (tile.type === 'buffer') break;
+      const st = this.topo.step(tile, nb.inPort, positions);
+      if (tile.type === 'point') path.points.push({ id: tile.id, trailing: !!st.trailing });
+      outPort = st.outPort;
+      if (outPort && this.topo.signalsAt(tile, outPort).some((sg) => sg.kind === 'semafor')) break;
+    }
+    path.sections = [...sections];
+    return path;
+  }
+
+  /**
+   * Usterka urządzeń na drodze za semaforem (uzasadnienie Sz i rozkazu „S”): semafor bez sygnału zezwalającego,
+   * zajętość z usterki na odcinku drogi, zwrotnica drogi bez kontroli albo z usterką napędu.
+   */
+  faultOnPath(signalId, path = this.pathBeyond(signalId)) {
+    if (this.signals.get(signalId)?.failed) return true;
+    if (path.sections.some((id) => Interlocking.faultOccupied(this.sections.get(id)))) return true;
+    return path.points.some(({ id }) => { const p = this.points.get(id); return !p.control || p.faultUntil > this.time; });
+  }
+
   /* ------------------------------------------------------------------ */
   /* Przebiegi                                                            */
   /* ------------------------------------------------------------------ */
@@ -792,16 +834,20 @@ export class Interlocking {
     if (!sig || sig.kind !== 'semafor') return this.#fail(`Sz tylko na semaforze`);
     if (!sig.canSubstitute) return this.#fail(`Semafor ${signalId} nie ma sygnału zastępczego`);
     if (sig.route && Interlocking.isProceed(sig.aspect)) return this.#fail(`Semafor ${signalId} wyświetla sygnał zezwalający`);
-    const route = [...this.routes.values()].find((r) => r.start === signalId && r.exit);
-    if (route && this.opts.blockGate) {
-      const g = this.opts.blockGate(route.exit);
+    // blokada liniowa – tylko wyjazdu, na który prowadzi droga za semaforem (po bieżących położeniach zwrotnic)
+    const path = this.pathBeyond(signalId);
+    if (path.exit && this.opts.blockGate) {
+      const g = this.opts.blockGate(path.exit);
       if (!g.ok) return this.#fail(`Sz na ${signalId}: ${g.reason}`);
     }
     sig.substitute = true; sig.substituteUntil = this.time + SUBSTITUTE_TIME;
     this.counters.Sz++;
     this.#log('warn', `Sygnał zastępczy Sz na semaforze ${signalId} (licznik ${this.counters.Sz})`);
-    const justified = !!sig.failed || [...this.sections.values()].some((x) => Interlocking.faultOccupied(x)) || [...this.points.values()].some((p) => p.faultUntil > this.time);
+    const justified = this.faultOnPath(signalId, path);
     this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
+    // przed Sz zwrotnice drogi ustawia się i utwierdza (przebieg albo zamknięcie Zz) – urządzenie tego nie wymusza
+    const loose = path.points.filter(({ id }) => !this.points.get(id).individualLock && !this.pointLockedByRoute(id)).map((p) => p.id);
+    if (loose.length) this.bus.emit('score', { time: this.time, code: 'Sz-points', points: -10, msg: `Sz na ${signalId}: zwrotnice ${loose.join(', ')} nieutwierdzone ani niezamknięte (Zz)` });
     this.#refreshSignals();
     return { ok: true };
   }

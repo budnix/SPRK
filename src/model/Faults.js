@@ -108,15 +108,20 @@ export class Faults {
     }
   }
 
-  /** Pociąg wjechał na tor z usterką nawierzchni, którego dyżurny nie zamknął (tabor stojący tam przy zgłoszeniu się nie liczy). */
+  /**
+   * Pociąg wjechał na tor z usterką nawierzchni (tabor stojący tam przy zgłoszeniu się nie liczy). Pociągi zatrzymuje się
+   * przed przeszkodą (Ir-1 §75), więc każdy nowy wjazd jest karany; na tor zamknięty (ITS, np. na Sz) – mocniej.
+   * Urządzenie wjazdu nie blokuje – odpowiada za to dyżurny.
+   */
   #defectRide(f) {
     const s = this.sim.ilk.sections.get(f.target);
     if (!s) return;
     const occ = !!s.physical;
-    if (occ && !f.wasOccupied && !s.closed && !f.penalized) {
-      f.penalized = true;
-      this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target}) – tor nie został zamknięty`);
-      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: -50, msg: `Jazda po torze z usterką nawierzchni (${f.target}) bez zamknięcia toru` });
+    if (occ && !f.wasOccupied) {
+      const closed = !!s.closed;
+      this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target})${closed ? ' mimo zamknięcia toru' : ' – tor nie został zamknięty'}`);
+      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: closed ? -80 : -50,
+        msg: `Jazda po torze z usterką nawierzchni (${f.target})${closed ? ' zamkniętym dla ruchu' : ' bez zamknięcia toru'}` });
     }
     f.wasOccupied = occ;
   }
@@ -132,7 +137,7 @@ export class Faults {
         const s = sim.ilk.signals.get(f.target);
         if (!s) return;
         s.failed = true; sim.ilk.refreshSignals();
-        this.#log('alarm', `USTERKA: semafor ${f.target} nie podaje sygnału zezwalającego (żarówka / obwód). Użyj Sz lub rozkazu „S”.`);
+        this.#log('alarm', `USTERKA: semafor ${f.target} nie podaje sygnału zezwalającego (żarówka / obwód). Podaj Sz; gdy nie można – rozkaz „S”.`);
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
       }

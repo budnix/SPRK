@@ -75,45 +75,25 @@ export class Traffic {
     if (tr.hasOrderFor(signal)) return { ok: false, reason: `Pociąg ${nr} ma już rozkaz na ${signal}` };
     // Droga jazdy za semaforem do następnego semafora
     const problems = [];
-    const positions = this.ilk.positions();
-    const start = this.ilk.topo.trackAt(sig.tile.at.x, sig.tile.at.y);
-    let outPort = start._def.ports(start).find((p) => (p.includes('E') ? 'E' : p.includes('W') ? 'W' : null) === sig.dir);
-    let tile = start, guard = 0, exitId = null;
-    const sections = new Set();
-    while (guard++ < 100) {
-      const exit = this.ilk.topo.exitAt(tile, outPort);
-      if (exit) { exitId = exit.id; break; }
-      const nb = this.ilk.topo.neighbour(tile, outPort);
-      if (!nb) break;
-      tile = nb.tile;
-      sections.add(tile.section);
-      if (tile.type === 'point') {
-        const p = this.ilk.points.get(tile.id);
-        const lockedInRoute = !!this.ilk.pointLockedByRoute(tile.id);
-        if (!p.individualLock && !lockedInRoute) problems.push(`zwrotnica ${tile.id} niezamknięta (Zz) ani nieutwierdzona`);
-        if (!p.control || p.moving) problems.push(`zwrotnica ${tile.id} bez kontroli`);
-      }
-      if (tile.derailer) {
-        const d = this.ilk.derailers.get(tile.derailer);
-        if (d.position !== 'off') problems.push(`wykolejnica ${tile.derailer} nałożona`);
-      }
-      if (tile.type === 'buffer') break;
-      const st = this.ilk.topo.step(tile, nb.inPort, positions);
-      if (st.trailing) problems.push(`zwrotnica ${tile.id} w położeniu na rozprucie`);
-      outPort = st.outPort;
-      if (!outPort) break;
-      if (this.ilk.topo.signalsAt(tile, outPort).some((sg) => sg.kind === 'semafor')) break;
+    const path = this.ilk.pathBeyond(signal);
+    for (const { id, trailing } of path.points) {
+      const p = this.ilk.points.get(id);
+      if (!p.individualLock && !this.ilk.pointLockedByRoute(id)) problems.push(`zwrotnica ${id} niezamknięta (Zz) ani nieutwierdzona`);
+      if (!p.control || p.moving) problems.push(`zwrotnica ${id} bez kontroli`);
+      if (trailing) problems.push(`zwrotnica ${id} w położeniu na rozprucie`);
     }
-    for (const sid of sections) {
+    for (const id of path.derailers) if (this.ilk.derailers.get(id).position !== 'off') problems.push(`wykolejnica ${id} nałożona`);
+    for (const sid of path.sections) {
       const s = this.ilk.sections.get(sid);
-      if (s.occupied) problems.push(`odcinek ${sid} zajęty`);
+      // zajętość z usterki (fałszywa, licznik osi) dyżurny sprawdza na miejscu – nie przeszkadza, uzasadnia rozkaz
+      if (s.physical) problems.push(`odcinek ${sid} zajęty`);
       if (s.route) {
         const act = this.ilk.active.get(s.route);
         if (act && act.route.start !== signal) problems.push(`odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
       }
     }
-    if (exitId) {
-      const g = this.blocks.get(exitId)?.gate();
+    if (path.exit) {
+      const g = this.blocks.get(path.exit)?.gate();
       if (g && !g.ok) problems.push(g.reason);
     }
     if (problems.length) return { ok: false, reason: `Rozkaz dla ${nr} na ${signal}: ${problems.join('; ')}` };
@@ -123,7 +103,7 @@ export class Traffic {
     };
     this.orders.push(order);
     tr.orders.push({ signal, used: false, id: order.id });
-    const justified = !!sig.failed || [...this.ilk.sections.values()].some((x) => Interlocking.faultOccupied(x));
+    const justified = this.ilk.faultOnPath(signal, path);
     this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 20 km/h.` });
     this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (20 km/h)` });
