@@ -333,16 +333,16 @@ test('monitor wydaje polecenia wprost: Zw, Zz, Pz i blokada z menu nie naciskaj�
   await page.click('.scr-cmdbar button[data-cmd=pz]');
   await tap(page, 'A');
   expect((await simState(page)).active).not.toContain('A-D1');
-  // zwrotnica: przestawienie (Zw) z paska, zamknięcie indywidualne (Zz) z menu z potwierdzeniem
+  // zwrotnica: przestawienie (Plus / Minus) z paska, zamknięcie (Zmk) z menu – polecenie zwykłe, bez potwierdzenia
+  // (Ie-104.1 §12; dawniej Zz było specjalne)
   const before = (await simState(page)).points.Zw1;
   await page.click('.scr-cmdbar button[data-cmd=zw]');
   await tap(page, 'Zw1');
   await advance(page, 6);
   expect((await simState(page)).points.Zw1).not.toBe(before);
   await tap(page, 'Zw1');
-  await page.click('.scr-menu button:has-text("(Zz)")');
-  await advance(page, 5); // polecenie specjalne – WYKONAJ po 5 s
-  await page.click('.scr-confirm button:has-text("WYKONAJ")');
+  await page.click('.scr-menu button:has-text("(Zmk)")');
+  await expect(page.locator('.scr-confirm')).toBeHidden();
   expect(await page.evaluate(() => window.sim.ilk.points.get('Zw1').individualLock)).toBe(true);
   // blokada liniowa z menu strzałki szlaku
   await tap(page, 'kE');
@@ -359,8 +359,8 @@ test('pasek polecenia specjalnego mieści się na tablecie: przyciski w jednej l
   for (const size of [{ width: 820, height: 1180 }, { width: 1024, height: 1366 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size);
     await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
-    await page.click('.scr-cmdbar button[data-cmd=zz]');
-    await tap(page, 'Zw3');
+    await page.click('.scr-cmdbar button[data-cmd=sz]');
+    await tap(page, 'A');
     const bar = page.locator('.scr-confirm');
     await expect(bar).toBeVisible();
     const m = await bar.evaluate((el) => {
@@ -460,4 +460,25 @@ test('blokada Eap na monitorze: po sygnale wyjazdowym znacznik „Pwl” przy st
   expect(await page.evaluate(() => [window.sim.ilk.signals.get('D1').aspect, window.sim.blocks.get('E').pwl])).toEqual(['S2', true]);
   const mark = page.locator(`.hit[data-ref*='"id":"kE"']`).locator('xpath=ancestor::*[contains(@class,"scr-el")][1]').locator('.blk-status');
   await expect(mark).toHaveText('Pwl');
+});
+
+// Ie-104.1 §12 rozróżnia „Stój” (sygnał „Stój”, przebieg zostaje) i Stop / oStop (zastopowanie sygnalizatora) – dawniej
+// monitor miał tylko „STOP” działające jak „Stój”.
+test('monitor: Stój gasi sygnał; Stop zastopowuje sygnalizator (sygnał nie wraca po nowym przebiegu), oStop odwołuje', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await page.click('.scr-cmdbar button[data-cmd=sstop]');
+  await tap(page, 'A');
+  expect(await page.evaluate(() => window.sim.ilk.signals.get('A').stopped)).toBe(true);
+  await page.evaluate(() => window.sim.ilk.setRoute('A-D1'));
+  await advance(page, 8);
+  expect((await simState(page)).signals.A).toBe('S1');
+  await tap(page, 'A');
+  await page.click('.scr-menu button:has-text("(oStop)")');
+  expect(await page.evaluate(() => window.sim.ilk.signals.get('A').stopped)).toBe(false);
+  expect((await simState(page)).signals.A).not.toBe('S1');
+  await page.click('.scr-cmdbar button[data-cmd=stop]');
+  await tap(page, 'A');
+  const st = await simState(page);
+  expect(st.signals.A).toBe('S1');
+  expect(st.active).toContain('A-D1');
 });

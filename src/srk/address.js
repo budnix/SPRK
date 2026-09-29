@@ -108,10 +108,12 @@ export class AddressOrderProtocol {
         if (target.kind === 'derailer') return ilk.switchDerailer(target.id, id === '+' ? 'on' : 'off');
         return ilk.switchPoint(target.id, id);
       case 'STOP':
+        // JZH-111: STOP z adresem sygnalizatora zamyka go (sygnał „Stój” do odwołania rozkazem Zw), zwrotnicę – zamyka
         if (moving) return this.#lock(target, true);
-        return ilk.cancelSignal(target.id);
+        return ilk.stopSignal(target.id, true);
       case 'Zw':
         if (moving) return this.#lock(target, false);
+        if (target.kind === 'signal' && ilk.signals.get(target.id)?.stopped) return ilk.stopSignal(target.id, false);
         return this.#release(target, 'shunt', id);
       case 'Zcz':
         return this.#release(target, 'train', id);

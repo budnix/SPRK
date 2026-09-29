@@ -10,7 +10,7 @@ export const phrases = {
   anchor: (cmdId) => ({ cmd: cmdId }),
   signal: colouredSignal,
   release: RELEASE_E,
-  releaseNames: 'STOP i Pz',
+  releaseNames: 'Stój i ZCZ',
   indicator: 'napis',
   blockPress: (exit, name, btn) => `kliknij <b>strzałkę szlaku do ${name}</b> na krańcu toru i wybierz <b>${btn}</b>`,
   trainRoute: (s, e, what) => `na pasku poleceń wybierz <b>PRZEBIEG POCIĄGOWY</b>, kliknij semafor <b>${s}</b>, a potem ${what || `semafor <b>${e}</b>`}`,

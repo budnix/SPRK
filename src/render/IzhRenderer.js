@@ -108,7 +108,8 @@ export class IzhRenderer extends PanelView {
     setLamp(r.lamps.white, a === 'Ms2' ? 'white' : a === 'Sz' ? 'white blink' : 'off');
     // lampka kontrolna przy przycisku sygnalizatora końcowego miga podczas zwalniania czasowego przebiegu
     const timed = [...this.ilk.active.values()].some((act) => act.timedRelease && act.route.endButton === id);
-    setLamp(r.ctl, timed ? 'white blink' : 'off');
+    // sygnalizator zamknięty rozkazem STOP – lampka miga na czerwono (do odwołania rozkazem Zw)
+    setLamp(r.ctl, s.stopped ? 'red blink' : timed ? 'white blink' : 'off');
     r.btn.classList.toggle('active', !stop);
   }
 

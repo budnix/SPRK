@@ -8,9 +8,11 @@ import { escapeHtml } from '../ui/dom.js';
  * Stanowisko komputerowe (monitor dyżurnego ruchu): obraz wg Ie-104 ze `ScreenBase`, obsługa paskiem poleceń
  * i menu elementu.
  *
- *  Polecenia: pasek poleceń u góry (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ, dPz, ZWROTNICA, Zz,
- *  Sz, STOP, OPS – odwołanie polecenia) + menu elementu. Polecenie = rodzaj → element początkowy → element
- *  końcowy. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) wg Ie-104.1 §11: inicjowanie (element zamarkowany na
+ *  Polecenia (skróty wg Ie-104.1 §12): pasek poleceń u góry (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZCZ – zwolnienie
+ *  przebiegu, ZD – doraźne: ZDP pociągowego / ZDM manewrowego, Plus / Minus – zwrotnica, Zmk / oZmk – zamknięcie
+ *  zwrotnicy, SZ, Stój, Stop / oStop – zastopowanie sygnalizatora, OPS – odwołanie polecenia) + menu elementu.
+ *  Polecenie = rodzaj → element początkowy → element końcowy. Polecenia specjalne (ZDP, SZ, dPo, dKo) wg
+ *  Ie-104.1 §11: inicjowanie (element zamarkowany na
  *  pomarańczowo, przed Sz szare tło obrazu), WYKONAJ najwcześniej po 5 s, samoczynne odwołanie po 60 s, w tym czasie
  *  inne polecenia zablokowane – logika i czas w `src/srk/special.js` (Simulation.initiateSpecial / confirmSpecial).
  */
@@ -35,19 +37,19 @@ export class ScreenRenderer extends ScreenBase {
   /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
   cmdButton(id) { return this.cmdButtons?.get(id) || null; }
 
-  /** Pasek poleceń (obsługa własna gry, w duchu Ie-104.2): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
+  /** Pasek poleceń (skróty wg Ie-104.1 §12): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
   #buildCmdBar(container) {
     const bar = document.createElement('div');
     bar.className = 'scr-cmdbar';
     const CMDS = [
-      ['train', 'PRZEBIEG POCIĄGOWY'], ['shunt', 'PRZEBIEG MANEWROWY'], ['pz', 'ZWOLNIENIE PRZEBIEGU'], ['dpz', 'dPz', true],
-      ['zw', 'ZWROTNICA'], ['zz', 'Zz', true], ['sz', 'Sz', true], ['stop', 'STOP'], ['ops', 'OPS'],
+      ['train', 'PRZEBIEG POCIĄGOWY'], ['shunt', 'PRZEBIEG MANEWROWY'], ['pz', 'ZCZ'], ['dpz', 'ZD', true],
+      ['zw', 'Plus / Minus'], ['zz', 'Zmk / oZmk'], ['sz', 'SZ', true], ['stop', 'Stój'], ['sstop', 'Stop / oStop'], ['ops', 'OPS'],
     ];
     this.cmdButtons = new Map();
     for (const [id, label, special] of CMDS) {
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = label; b.dataset.cmd = id;
-      b.title = tip({ train: 'przebieg pociągowy', shunt: 'przebieg manewrowy', pz: 'Pz', dpz: 'dPz', zw: 'Zw', zz: 'Zz', sz: 'Sz', stop: 'STOP', ops: 'OPS' }[id]);
+      b.title = tip({ train: 'przebieg pociągowy', shunt: 'przebieg manewrowy', pz: 'Pz', dpz: 'dPz', zw: 'Zw', zz: 'Zz', sz: 'Sz', stop: 'STOP', sstop: 'STOP', ops: 'OPS' }[id]);
       if (special) b.classList.add('special');
       b.addEventListener('click', () => this.#setMode(id === 'ops' ? null : id, id === 'ops'));
       bar.appendChild(b); this.cmdButtons.set(id, b);
@@ -65,8 +67,9 @@ export class ScreenRenderer extends ScreenBase {
     for (const [id, b] of this.cmdButtons) b.classList.toggle('active', id === mode);
     const INFO = {
       train: 'wskaż semafor początkowy, potem semafor końcowy lub szlak', shunt: 'wskaż sygnalizator początkowy, potem końcowy / koniec toru',
-      pz: 'wskaż semafor początkowy przebiegu do zwolnienia', dpz: 'polecenie specjalne – wskaż semafor początkowy', zw: 'wskaż zwrotnicę lub wykolejnicę',
-      zz: 'polecenie specjalne – wskaż zwrotnicę (zamknięcie / otwarcie)', sz: 'polecenie specjalne – wskaż semafor', stop: 'wskaż sygnalizator do wygaszenia',
+      pz: 'ZCZ – wskaż sygnalizator początkowy przebiegu do zwolnienia', dpz: 'ZD – wskaż sygnalizator początkowy (ZDP pociągowego – polecenie specjalne, ZDM manewrowego)', zw: 'Plus / Minus – wskaż zwrotnicę lub wykolejnicę',
+      zz: 'Zmk / oZmk – wskaż zwrotnicę (zamknięcie / odwołanie)', sz: 'SZ – polecenie specjalne, wskaż semafor', stop: 'Stój – wskaż sygnalizator (sygnał „Stój”, przebieg zostaje)',
+      sstop: 'Stop / oStop – wskaż sygnalizator (zastopowanie / odwołanie)',
     };
     this.cmdInfo.textContent = mode ? INFO[mode] : '';
     this.svg.classList.toggle('picking', !!mode || !!this.pending);
@@ -105,7 +108,7 @@ export class ScreenRenderer extends ScreenBase {
   #runMode(ref) {
     const cmd = this.#commands(ref);
     // polecenie paska → rodzaje elementów, których dotyczy; pozycję menu elementu wskazuje jej `mode`
-    const kinds = { train: ['signal'], shunt: ['signal'], pz: ['signal'], dpz: ['signal'], zw: ['point', 'derailer'], zz: ['point', 'derailer'], sz: ['signal'], stop: ['signal'] }[this.mode];
+    const kinds = { train: ['signal'], shunt: ['signal'], pz: ['signal'], dpz: ['signal'], zw: ['point', 'derailer'], zz: ['point', 'derailer'], sz: ['signal'], stop: ['signal'], sstop: ['signal'] }[this.mode];
     if (!kinds || !kinds.includes(ref.kind)) { this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: 'Polecenie nie dotyczy wskazanego elementu' }); return; }
     const item = cmd?.items.find((it) => it.mode === this.mode);
     if (!item) return;
@@ -131,24 +134,30 @@ export class ScreenRenderer extends ScreenBase {
       const items = [];
       if (s.kind === 'semafor') items.push({ mode: 'train', label: `Nastawienie przebiegu pociągowego od ${ref.id} …`, run: startRoute('green') });
       if (s.kind === 'tm' || s.shunting) items.push({ mode: 'shunt', label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
-      items.push({ mode: 'stop', label: 'Wygaszenie sygnału – STOP (przebieg pozostaje utwierdzony)', run: exec({ type: 'stop', signal: ref.id }) });
-      items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (Pz)', run: exec({ type: 'release', signal: ref.id }) });
-      items.push({ mode: 'dpz', label: 'Doraźne zwolnienie przebiegu (dPz)', special: true, target: ref, cmd: { type: 'release', signal: ref.id, emergency: true } });
-      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Podanie sygnału zastępczego (Sz)', special: true, target: ref, cmd: { type: 'substitute', signal: ref.id } });
+      items.push({ mode: 'stop', label: 'Sygnał „Stój” – przebieg pozostaje utwierdzony (Stój)', run: exec({ type: 'stop', signal: ref.id }) });
+      items.push(s.stopped
+        ? { mode: 'sstop', label: 'Odwołanie zastopowania sygnalizatora (oStop)', run: exec({ type: 'signal-stop', signal: ref.id, on: false }) }
+        : { mode: 'sstop', label: 'Zastopowanie sygnalizatora (Stop)', run: exec({ type: 'signal-stop', signal: ref.id, on: true }) });
+      items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (ZCZ)', run: exec({ type: 'release', signal: ref.id }) });
+      // ZDP – przebiegu pociągowego: polecenie specjalne; ZDM – manewrowego: zwykłe (Ie-104.1 §12)
+      const act = s.route && this.ilk.active.get(s.route);
+      if (act?.route.kind === 'shunt') items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu manewrowego (ZDM)', run: exec({ type: 'release', signal: ref.id, emergency: true }) });
+      else items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu pociągowego (ZDP)', special: true, target: ref, cmd: { type: 'release', signal: ref.id, emergency: true } });
+      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Sygnał zastępczy (SZ)', special: true, target: ref, cmd: { type: 'substitute', signal: ref.id } });
       return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };
     }
     if (ref.kind === 'point') {
       const p = this.ilk.points.get(ref.id);
       return { title: `Zwrotnica ${p?.label || ref.id}`, items: [
-        { mode: 'zw', label: 'Przestawienie zwrotnicy (Zw)', run: exec({ type: 'point', id: ref.id }) },
-        { mode: 'zz', label: p?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne zwrotnicy (Zz)', special: true, target: ref, cmd: { type: 'lock', id: ref.id } },
+        { mode: 'zw', label: p?.position === '+' ? 'Przestawienie zwrotnicy w położenie minus (Minus)' : 'Przestawienie zwrotnicy w położenie plus (Plus)', run: exec({ type: 'point', id: ref.id }) },
+        { mode: 'zz', label: p?.individualLock ? 'Odwołanie zamknięcia zwrotnicy (oZmk)' : 'Zamknięcie zwrotnicy (Zmk)', run: exec({ type: 'lock', id: ref.id }) },
       ] };
     }
     if (ref.kind === 'derailer') {
       const d = this.ilk.derailers.get(ref.id);
       return { title: `Wykolejnica ${ref.id}`, items: [
-        { mode: 'zw', label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Zw)' : 'Nałożenie wykolejnicy (Zw)', run: exec({ type: 'derailer', id: ref.id }) },
-        { mode: 'zz', label: d?.individualLock ? 'Otwarcie zamknięcia indywidualnego (Zz)' : 'Zamknięcie indywidualne wykolejnicy (Zz)', special: true, target: ref, cmd: { type: 'lock', id: ref.id, derailer: true } },
+        { mode: 'zw', label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Minus)' : 'Nałożenie wykolejnicy (Plus)', run: exec({ type: 'derailer', id: ref.id }) },
+        { mode: 'zz', label: d?.individualLock ? 'Odwołanie zamknięcia wykolejnicy (oZmk)' : 'Zamknięcie wykolejnicy (Zmk)', run: exec({ type: 'lock', id: ref.id, derailer: true }) },
       ] };
     }
     if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);

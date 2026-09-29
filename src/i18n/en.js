@@ -12,7 +12,7 @@ export default {
   'menu.report': 'Shift report',
   'menu.help': 'User manual',
   'hint.izh': 'element address button, then an order button · route: start, end, P or M',
-  'arm.izh.signal': 'Signal {id} selected – pick the route end or an order: STOP, Sz, Zcz, Zw',
+  'arm.izh.signal': 'Signal {id} selected – pick the route end or an order: STOP (close), Sz, Zcz, Zw (cancel closing)',
   'arm.izh.end': 'Track end {id} selected – order Zcz or Zw releases the route that ends here',
   'arm.izh.point': 'Point {id} selected – order: + / − (throw), STOP (lock), Zw (cancel the lock)',
   'arm.izh.derailer': 'Derailer {id} selected – order: + (put on), − (take off), STOP, Zw',
@@ -20,7 +20,7 @@ export default {
   'start.srkIzh': 'IZH-111 · dark desk',
   'help.izh': `<h2>Operating the type IZH-111 desk</h2>
       <p>Every element has one <b>address button</b>: a signal has it in the middle of its tile, a point, a derailer and a track end next to them. The <b>order buttons</b> form a separate group above the plan. Press the address button first (it lights up), then the order – you have 10 s. Pressing the same address again cancels the selection.</p>
-      <p><b>Route</b>: address of the start signal, address of the end (a signal or a track end) and order <b>P</b> (train) or <b>M</b> (shunting). Intermediate signals clear by themselves. <b>Point</b>: address and <b>+</b> or <b>−</b>; <b>STOP</b> locks the point (red lamp), <b>Zw</b> cancels the lock. <b>STOP</b> with a signal address puts the signal to stop. <b>Zcz</b> with the address of the route end releases a train route after 120 s, <b>Zw</b> releases a shunting route at once. <b>Sz</b> shows the substitute signal (counted).</p>
+      <p><b>Route</b>: address of the start signal, address of the end (a signal or a track end) and order <b>P</b> (train) or <b>M</b> (shunting). Intermediate signals clear by themselves. <b>Point</b>: address and <b>+</b> or <b>−</b>; <b>STOP</b> locks the point (red lamp), <b>Zw</b> cancels the lock. <b>STOP</b> with a signal address closes the signal – it shows stop until cancelled with <b>Zw</b> (the lamp flashes red). <b>Zcz</b> with the address of the route end releases a train route after 120 s, <b>Zw</b> releases a shunting route at once. <b>Sz</b> shows the substitute signal (counted).</p>
       <p>This is a <b>dark desk</b>: in the normal state the lamps are off. A dark repeater means the signal is at stop. Point slits light up when the point address is selected, when the point is locked and when the section is locked in a route (white) or occupied (red). The line block is operated with the buttons on the tiles at the end of the track.</p>`,
   'hint.lever': 'point levers → route lever → route block → signal lever · after the train: signal lever back to stop, route lever back',
   'start.srkMech': 'mechanical · lever frame',
@@ -424,7 +424,7 @@ export default {
       <span class="sw p"></span> pink number – individual lock. Signal: a double arrowhead (shunting signal – single) drawn on the track line where it stands, pointing in the direction of travel (no mast); the name on the right of the track in the direction of travel. Colours: grey – basic state,
       green – proceed aspect for a train, yellow – shunting permitted, red – start or end of a locked route, flashing white – substitute signal.
       Train numbers in red boxes. Blue frame – element selected for a command, flashing red – alarm.</p>
-      <p><b>Commands</b>: the bar at the top of the screen – choose the kind (TRAIN ROUTE, SHUNTING ROUTE, RELEASE ROUTE, POINT, STOP …), then select the element(s):
+      <p><b>Commands</b>: the bar at the top of the screen – choose the kind (abbreviations per Ie-104.1 §12: TRAIN ROUTE, SHUNTING ROUTE, ZCZ – release, ZD – emergency: ZDP train / ZDM shunting, Plus / Minus, Zmk / oZmk, SZ, Stój – stop aspect, Stop / oStop – signal stopping …), then select the element(s):
       route = start signal, then end signal or line. The menu after clicking an element gives the same. Special commands (dPz, Sz, Zz, dPo, dKo) are initiated,
       confirmed with “EXECUTE” no sooner than 5 s later (the element is marked orange, before Sz the picture turns grey), cancelled automatically after 60 s without confirmation, other commands are blocked meanwhile; counted; <b>OPS</b>, Esc or the right button cancels the command. Block system: state at the exit to the line – the line arrow (red: section occupied), direction arrow above the track, the “żąd.” / “Wbl” / “Ko” labels; click the line arrow and the menu offers the commands (Eap: Wbl, Poz, Ko; automatic: Zk; dPo, dKo). dPo/dKo counters – Equipment tab.</p>`,
   'help.body': `<h3>Routes</h3>

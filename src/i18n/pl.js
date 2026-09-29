@@ -13,7 +13,7 @@ export default {
   'menu.report': 'Raport zmiany',
   'menu.help': 'Instrukcja obsługi',
   'hint.izh': 'przycisk adresowy elementu, potem przycisk rozkazu · przebieg: początek, koniec, P lub M',
-  'arm.izh.signal': 'Wybrany sygnalizator {id} – wskaż koniec przebiegu albo rozkaz: STOP, Sz, Zcz, Zw',
+  'arm.izh.signal': 'Wybrany sygnalizator {id} – wskaż koniec przebiegu albo rozkaz: STOP (zamknięcie), Sz, Zcz, Zw (odwołanie zamknięcia)',
   'arm.izh.end': 'Wybrany koniec toru {id} – rozkaz Zcz lub Zw zwalnia przebieg, który się tu kończy',
   'arm.izh.point': 'Wybrana zwrotnica {id} – rozkaz: + / − (przestawienie), STOP (zamknięcie), Zw (odwołanie zamknięcia)',
   'arm.izh.derailer': 'Wybrana wykolejnica {id} – rozkaz: + (nałożenie), − (zdjęcie), STOP, Zw',
@@ -21,7 +21,7 @@ export default {
   'start.srkIzh': 'IZH-111 · pulpit ciemny',
   'help.izh': `<h2>Obsługa pulpitu urządzeń typu IZH-111</h2>
       <p>Każdy element ma jeden <b>przycisk adresowy</b>: semafor i tarcza na środku swojej kostki, zwrotnica, wykolejnica i koniec toru przy sobie. <b>Przyciski rozkazów</b> są w osobnej grupie nad planem. Najpierw naciśnij przycisk adresowy (podświetli się), potem rozkaz – masz na to 10 s. Ponowne naciśnięcie tego samego adresu odwołuje wybór.</p>
-      <p><b>Przebieg</b>: adres sygnalizatora początkowego, adres końca (sygnalizator albo koniec toru) i rozkaz <b>P</b> (pociągowy) lub <b>M</b> (manewrowy). Sygnały na semaforach pośrednich podają się same. <b>Zwrotnica</b>: adres i <b>+</b> albo <b>−</b>; <b>STOP</b> zamyka zwrotnicę (czerwona lampka), <b>Zw</b> odwołuje zamknięcie. <b>STOP</b> z adresem sygnalizatora gasi sygnał. <b>Zcz</b> z adresem końca przebiegu zwalnia przebieg pociągowy po 120 s, <b>Zw</b> zwalnia przebieg manewrowy od razu. <b>Sz</b> podaje sygnał zastępczy (licznik).</p>
+      <p><b>Przebieg</b>: adres sygnalizatora początkowego, adres końca (sygnalizator albo koniec toru) i rozkaz <b>P</b> (pociągowy) lub <b>M</b> (manewrowy). Sygnały na semaforach pośrednich podają się same. <b>Zwrotnica</b>: adres i <b>+</b> albo <b>−</b>; <b>STOP</b> zamyka zwrotnicę (czerwona lampka), <b>Zw</b> odwołuje zamknięcie. <b>STOP</b> z adresem sygnalizatora zamyka go – sygnał „Stój” do odwołania rozkazem <b>Zw</b> (lampka miga na czerwono). <b>Zcz</b> z adresem końca przebiegu zwalnia przebieg pociągowy po 120 s, <b>Zw</b> zwalnia przebieg manewrowy od razu. <b>Sz</b> podaje sygnał zastępczy (licznik).</p>
       <p>To <b>pulpit ciemny</b>: w stanie zasadniczym lampki są wygaszone. Ciemny powtarzacz oznacza sygnał „Stój”. Szczeliny zwrotnicy świecą po wybraniu jej adresu, przy zamknięciu oraz gdy odcinek jest utwierdzony (białe) lub zajęty (czerwone). Blokadę liniową obsługuje się przyciskami na kostkach przy końcu toru.</p>`,
   'hint.lever': 'dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia sygnałowa · po przejeździe: dźwignia na „Stój”, drążek z powrotem',
   'start.srkMech': 'mechaniczna · ława dźwigniowa',
@@ -433,7 +433,7 @@ export default {
       <span class="sw p"></span> różowy numer – zamknięcie indywidualne. Semafor: podwójny grot (tarcza manewrowa – pojedynczy) rysowany na linii toru w miejscu, gdzie stoi, grotem w kierunku jazdy (bez masztu); nazwa po prawej stronie toru w kierunku jazdy. Kolory: szary – stan podstawowy,
       zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – początek lub koniec utwierdzonego przebiegu, biały migający – sygnał zastępczy.
       Numery pociągów w czerwonych kasetkach. Niebieska ramka – element wybrany do polecenia, czerwona migająca – alarm.</p>
-      <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIJ PRZEBIEG, ZWROTNICA, STOP …), potem wskaż element(y):
+      <p><b>Polecenia</b>: pasek u góry ekranu – wybierz rodzaj (skróty wg Ie-104.1 §12: PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZCZ – zwolnienie, ZD – doraźne: ZDP pociągowego / ZDM manewrowego, Plus / Minus, Zmk / oZmk, SZ, Stój, Stop / oStop …), potem wskaż element(y):
       przebieg = sygnalizator początkowy, potem końcowy lub szlak. To samo daje menu po kliknięciu elementu. Polecenia specjalne (dPz, Sz, Zz, dPo, dKo) są inicjowane,
       potwierdzane „WYKONAJ” najwcześniej po 5 s (element zamarkowany na pomarańczowo, przed Sz szare tło obrazu), bez potwierdzenia odwołują się same po 60 s, w tym czasie inne polecenia są zablokowane; rejestrowane w licznikach; <b>OPS</b>, Esc lub prawy przycisk odwołuje polecenie. Blokada liniowa: stan przy wyjeździe na szlak – strzałka szlaku (czerwona: odstęp zajęty), strzałka kierunku nad torem, napis „żąd.” / „Wbl” / „Ko”; kliknij strzałkę szlaku, a menu da polecenia (Eap: Wbl, Poz, Ko; samoczynna: Zk; dPo, dKo). Liczniki dPo/dKo – zakładka Urządzenia.</p>`,
   'help.body': `<h3>Przebiegi</h3>

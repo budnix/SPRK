@@ -87,3 +87,17 @@ test('IZH-111: zwrotnica rozkazem „−”, zamknięcie STOP z czerwoną lampk�
   await order(page, 'P');
   await expect(page.locator('#status')).toContainText('przycisk adresowy');
 });
+
+// JZH-111: STOP z adresem sygnalizatora zamyka go – lampka miga na czerwono, Zw odwołuje zamknięcie (bsk.isdr.pl).
+test('IZH-111: STOP zamyka sygnalizator (czerwona migająca lampka), Zw odwołuje zamknięcie', async ({ page }) => {
+  await open(page);
+  await pressBtn(page, A('signal', 'A'));
+  await order(page, 'STOP');
+  expect(await page.evaluate(() => window.sim.ilk.signals.get('A').stopped)).toBe(true);
+  const ctl = await page.evaluate(() => window.desk.signalRefs.get('A').ctl.getAttribute('class'));
+  expect(ctl).toMatch(/lamp-red/); expect(ctl).toMatch(/blink/);
+  await pressBtn(page, A('signal', 'A'));
+  await order(page, 'Zw');
+  expect(await page.evaluate(() => window.sim.ilk.signals.get('A').stopped)).toBe(false);
+  expect(await page.evaluate(() => window.desk.signalRefs.get('A').ctl.classList.contains('on'))).toBe(false);
+});

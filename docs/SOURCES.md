@@ -168,6 +168,8 @@ transportszynowy.pl – „Urządzenia elektryczne przekaźnikowe”. Z opisu wz
   odwołanie zamknięcia; zwrotnice w przejściach nie są sprzężone;
 * zwalnianie: „Zcz” z adresem semafora końcowego – po 120 s, lampka przy przycisku miga na biało; przebieg manewrowy
   – „Zw”, bezzwłocznie; sygnał zastępczy rozkazem „Sz”, rejestrowany licznikiem;
+* sygnalizator: „STOP” z adresem zamyka go – sygnał „Stój” do odwołania rozkazem „Zw”, lampka przy przycisku miga na
+  czerwono (bsk.isdr.pl/srk_izh111.php);
 * **pulpit ciemny**: lampki w stanie zasadniczym wygaszone; powtarzacze bez lampki sygnału zabraniającego (zielona
   i biała, tarcze – tylko biała); szczeliny zwrotnic ciemne, położenie widać po obsłużeniu przycisku adresowego oraz
   przy utwierdzeniu lub zajętości odcinka; rozprucie – szczeliny migają na czerwono, niespodziewany brak kontroli –
@@ -403,11 +405,13 @@ pozwoleń.
 
 Standardem dla komputerowych stanowisk obsługi w PKP PLK są wytyczne **Ie-104** („Wytyczne w zakresie zobrazowania,
 wprowadzania poleceń oraz rejestracji zdarzeń dla komputerowych stanowisk obsługi urządzeń srk”, z załącznikami
-Ie-104.1 – symbole i kolory, Ie-104.2 – polecenia) oraz instrukcja **Ie-20** (obsługa komputerowych urządzeń srk).
+Ie-104.1 – zobrazowanie, symbole, kolory i polecenia (§11–§12); Ie-104.2 dotyczy ETCS poziomu 2, nie poleceń) oraz
+instrukcja **Ie-20** (obsługa komputerowych urządzeń srk).
 Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustalono z ich streszczeń i cytowań
 (wyszukiwarka, dokumentacja SCS-1 TD2 i opisy stanowisk EbiScreen/SimRail wzorowanych na Ie-104). Ten obraz
-rysują oba stanowiska komputerowe gry: `komputerowe` (pasek poleceń i menu elementu – obsługa własna gry, w duchu
-Ie-104.2) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sposobem wydawania poleceń. Zastosowano:
+rysują oba stanowiska komputerowe gry: `komputerowe` (pasek poleceń i menu elementu – obsługa własna gry, skróty poleceń
+z tabeli Ie-104.1 §12: ZCZ, ZDP – specjalne, ZDM – zwykłe, Plus / Minus, Zmk / oZmk, SZ, Stój, Stop / oStop, Ko, dPo,
+dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sposobem wydawania poleceń. Zastosowano:
 
 * odcinki toru (tab. 8 Ie-104): szary – stan podstawowy, czerwony – zajęty, zielony – utwierdzony w przebiegu
   pociągowym, żółty – w przebiegu manewrowym, fioletowy – zwalnianie czasowe, podwójna szara linia – tor zamknięty,

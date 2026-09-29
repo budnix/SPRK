@@ -53,7 +53,7 @@ registerSrk({
   short: 'komputerowe',
   description: 'Obraz stanu na monitorze (ciemne tło, tor szary/zielony/czerwony), polecenia z menu elementu: przebieg = wskazanie początku i końca, polecenia specjalne (dPz, Sz, Zz, dPo, dKo) z potwierdzeniem i rejestracją.',
   view: 'screen',
-  model: { armTimeout: 60 },
+  model: { armTimeout: 60, shuntEmergencyPlain: true }, // ZDM – zwykłe polecenie (Ie-104.1 §12)
 });
 
 registerSrk({

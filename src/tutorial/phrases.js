@@ -10,7 +10,7 @@ export const A = (term, label = term) => `<abbr data-term="${term}">${label}</ab
 export const colouredSignal = (id, color) => ({ ref: { kind: 'signal', id, color } });
 
 /** Zwolnienie błędnie nastawionego przebiegu na pulpicie typu E i na monitorze. */
-export const RELEASE_E = (start) => `zwolnij przebieg (ZWOLNIJ PRZEBIEG / Pz + ${start})`;
+export const RELEASE_E = (start) => `zwolnij przebieg (ZCZ / Pz + ${start})`;
 
 /** Kostki blokady liniowej i wskazania wspólne dla pulpitów kostkowych (typ E, IZH-111). */
 export const DESK_BLOCK = {

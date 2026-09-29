@@ -12,7 +12,7 @@ export default {
   'menu.report': 'Schichtbericht',
   'menu.help': 'Bedienungsanleitung',
   'hint.izh': 'Adresstaste des Elements, dann Befehlstaste · Fahrstraße: Start, Ziel, P oder M',
-  'arm.izh.signal': 'Signal {id} gewählt – Ziel der Fahrstraße oder Befehl wählen: STOP, Sz, Zcz, Zw',
+  'arm.izh.signal': 'Signal {id} gewählt – Ziel der Fahrstraße oder Befehl wählen: STOP (sperren), Sz, Zcz, Zw (Sperre aufheben)',
   'arm.izh.end': 'Gleisende {id} gewählt – Befehl Zcz oder Zw löst die hier endende Fahrstraße auf',
   'arm.izh.point': 'Weiche {id} gewählt – Befehl: + / − (umstellen), STOP (sperren), Zw (Sperre aufheben)',
   'arm.izh.derailer': 'Gleissperre {id} gewählt – Befehl: + (auflegen), − (abnehmen), STOP, Zw',
@@ -20,7 +20,7 @@ export default {
   'start.srkIzh': 'IZH-111 · Dunkelpult',
   'help.izh': `<h2>Bedienung des Pults Typ IZH-111</h2>
       <p>Jedes Element hat eine <b>Adresstaste</b>: beim Signal in der Mitte des Feldes, bei Weiche, Gleissperre und Gleisende daneben. Die <b>Befehlstasten</b> bilden eine eigene Gruppe über dem Gleisbild. Zuerst die Adresstaste drücken (sie leuchtet), dann den Befehl – dafür bleiben 10 s. Erneutes Drücken derselben Adresse hebt die Wahl auf.</p>
-      <p><b>Fahrstraße</b>: Adresse des Startsignals, Adresse des Ziels (Signal oder Gleisende) und Befehl <b>P</b> (Zugfahrt) oder <b>M</b> (Rangierfahrt). Zwischensignale stellen sich selbst. <b>Weiche</b>: Adresse und <b>+</b> oder <b>−</b>; <b>STOP</b> sperrt die Weiche (rote Lampe), <b>Zw</b> hebt die Sperre auf. <b>STOP</b> mit einer Signaladresse stellt das Signal auf Halt. <b>Zcz</b> mit der Adresse des Fahrstraßenziels löst eine Zugfahrstraße nach 120 s auf, <b>Zw</b> löst eine Rangierfahrstraße sofort auf. <b>Sz</b> zeigt das Ersatzsignal (mit Zähler).</p>
+      <p><b>Fahrstraße</b>: Adresse des Startsignals, Adresse des Ziels (Signal oder Gleisende) und Befehl <b>P</b> (Zugfahrt) oder <b>M</b> (Rangierfahrt). Zwischensignale stellen sich selbst. <b>Weiche</b>: Adresse und <b>+</b> oder <b>−</b>; <b>STOP</b> sperrt die Weiche (rote Lampe), <b>Zw</b> hebt die Sperre auf. <b>STOP</b> mit einer Signaladresse sperrt das Signal – Halt bis zur Aufhebung mit <b>Zw</b> (die Lampe blinkt rot). <b>Zcz</b> mit der Adresse des Fahrstraßenziels löst eine Zugfahrstraße nach 120 s auf, <b>Zw</b> löst eine Rangierfahrstraße sofort auf. <b>Sz</b> zeigt das Ersatzsignal (mit Zähler).</p>
       <p>Dies ist ein <b>Dunkelpult</b>: im Grundzustand sind die Lampen aus. Ein dunkler Signalmelder bedeutet Halt. Die Weichenschlitze leuchten, wenn die Weichenadresse gewählt ist, wenn die Weiche gesperrt ist und wenn der Abschnitt festgelegt (weiß) oder besetzt (rot) ist. Der Streckenblock wird mit den Tasten auf den Feldern am Gleisende bedient.</p>`,
   'hint.lever': 'Weichenhebel → Fahrstraßenhebel → Fahrstraßenblock → Signalhebel · nach der Fahrt: Signalhebel zurück auf Halt, Fahrstraßenhebel zurück',
   'start.srkMech': 'mechanisch · Hebelbank',
@@ -424,7 +424,7 @@ export default {
       <span class="sw p"></span> rosa Nummer – Einzelsperre. Signal: doppelte Pfeilspitze (Rangiersignal – einfache) auf der Gleislinie an seinem Standort, Spitze in Fahrtrichtung (ohne Mast); der Name rechts vom Gleis in Fahrtrichtung. Farben: grau – Grundstellung,
       grün – Fahrtstellung für einen Zug, gelb – Rangieren erlaubt, rot – Start oder Ziel einer verschlossenen Fahrstraße, weiß blinkend – Ersatzsignal.
       Zugnummern in roten Feldern. Blauer Rahmen – für einen Befehl gewähltes Element, rot blinkend – Alarm.</p>
-      <p><b>Befehle</b>: Leiste am oberen Bildschirmrand – Art wählen (ZUGSTRASSE, RANGIERSTRASSE, FAHRSTRASSE AUFLÖSEN, WEICHE, STOP …), dann Element(e) wählen:
+      <p><b>Befehle</b>: Leiste am oberen Bildschirmrand – Art wählen (Abkürzungen nach Ie-104.1 §12: ZUGSTRASSE, RANGIERSTRASSE, ZCZ – Auflösung, ZD – Hilfsauflösung: ZDP Zug / ZDM Rangier, Plus / Minus, Zmk / oZmk, SZ, Stój – Halt, Stop / oStop – Signalsperre …), dann Element(e) wählen:
       Fahrstraße = Startsignal, dann Zielsignal oder Strecke. Dasselbe bietet das Menü nach Klick auf ein Element. Sonderbefehle (dPz, Sz, Zz, dPo, dKo) werden eingeleitet,
       frühestens nach 5 s mit „AUSFÜHREN“ bestätigt (Element orange markiert, vor Sz grauer Bildhintergrund), ohne Bestätigung nach 60 s selbst verworfen, andere Befehle sind währenddessen gesperrt; gezählt; <b>OPS</b>, Esc oder die rechte Taste bricht den Befehl ab. Streckenblock: Zustand an der Ausfahrt auf die Strecke – Streckenpfeil (rot: Abschnitt besetzt), Richtungspfeil über dem Gleis, Anzeige „żąd.“ / „Wbl“ / „Ko“; Klick auf den Streckenpfeil öffnet das Menü mit den Befehlen (Eap: Wbl, Poz, Ko; Selbstblock: Zk; dPo, dKo). Zähler dPo/dKo – Reiter Anlagen.</p>`,
   'help.body': `<h3>Fahrstraßen</h3>

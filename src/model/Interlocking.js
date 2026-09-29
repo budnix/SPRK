@@ -46,7 +46,9 @@ export class Interlocking {
    *               onExitSignal: (exitId, routeId, on) – sygnał wyjazdowy podany / przebieg rozwiązany bez wyjazdu,
    *               onDeparture: (exitId, route) => void,
    *               timedRelease, shuntTimedRelease – czasy zwalniania czasowego [s] (0 = bezzwłocznie),
-   *               timedReleaseAlways – przebieg pociągowy zwalnia się zawsze czasowo (IZH-111: Zcz) }
+   *               timedReleaseAlways – przebieg pociągowy zwalnia się zawsze czasowo (IZH-111: Zcz),
+   *               shuntEmergencyPlain – doraźne zwolnienie przebiegu manewrowego to polecenie zwykłe, bez licznika
+   *               (stanowisko komputerowe: ZDM, Ie-104.1 §12) }
    */
   constructor(station, bus, opts = {}) {
     this.station = station;
@@ -56,6 +58,7 @@ export class Interlocking {
     this.timedRelease = opts.timedRelease ?? TIMED_RELEASE;
     this.shuntTimedRelease = opts.shuntTimedRelease ?? SHUNT_TIMED_RELEASE;
     this.timedReleaseAlways = !!opts.timedReleaseAlways;
+    this.shuntEmergencyPlain = !!opts.shuntEmergencyPlain;
     this.pointSwitchTime = opts.pointSwitchTime ?? POINT_SWITCH_TIME;
     this.manualPoints = !!opts.manualPoints;
     this.manualSignal = !!opts.manualSignal;
@@ -727,6 +730,11 @@ export class Interlocking {
     act.lever = false;
     act.signalOff = true;
     this.#refreshSignals();
+    if (emergency && this.shuntEmergencyPlain && act.route.kind === 'shunt') {
+      this.#log('info', `Doraźne zwolnienie przebiegu manewrowego ${act.id} (ZDM)`);
+      this.#dissolve(act);
+      return { ok: true };
+    }
     if (emergency) {
       this.counters.dPz++;
       this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (dPz, licznik ${this.counters.dPz})`);

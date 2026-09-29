@@ -47,3 +47,21 @@ test('K1: symulacja – w trakcie polecenia specjalnego inne polecenia zablokowa
   assert.ok(logs.some((m) => /odwołane samoczynnie po 60 s/.test(m)), logs.join('\n'));
   assert.notEqual(sim.ilk.signals.get('B').aspect, 'Sz');
 });
+
+// Ie-104.1 §12: ZDM (doraźne zwolnienie przebiegu manewrowego) to polecenie zwykłe – bez licznika i kary; ZDP pociągowego
+// – specjalne, z licznikiem. Dawniej monitor liczył jako dPz także przebieg manewrowy. Pulpit typu E bez zmian.
+test('K2: stanowisko komputerowe – ZDM bez licznika i kary, ZDP z licznikiem; pulpit typu E liczy oba', () => {
+  const mk = (sc) => new Simulation(szkolna, { scenario: sc, disruptions: 'none' });
+  const s = mk('zmiana');
+  assert.ok(s.ilk.setRoute('D2-kT3m').ok); run(s, 8);
+  assert.ok(s.execute({ type: 'release', signal: 'D2', emergency: true }).ok);
+  assert.equal(s.ilk.counters.dPz, 0);
+  assert.ok(!s.score.items.some((i) => i.code === 'dPz'));
+  assert.ok(s.ilk.setRoute('A-D1').ok); run(s, 8);
+  assert.ok(s.execute({ type: 'release', signal: 'A', emergency: true }).ok);
+  assert.equal(s.ilk.counters.dPz, 1, 'ZDP liczone');
+  const e = mk('zmiana-e');
+  assert.ok(e.ilk.setRoute('D2-kT3m').ok); run(e, 8);
+  e.execute({ type: 'release', signal: 'D2', emergency: true });
+  assert.equal(e.ilk.counters.dPz, 1, 'typ E – dPz liczone jak dotąd');
+});

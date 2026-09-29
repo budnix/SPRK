@@ -145,14 +145,22 @@ test('IZH-111: Zcz z adresem semafora końcowego zwalnia przebieg pociągowy po 
   assert.ok(!sim.ilk.active.has('D2-kT3m'));
 });
 
-test('IZH-111: STOP na semaforze gasi sygnał, Sz podaje sygnał zastępczy z licznikiem; blokada liniowa bez zmian', () => {
+// JZH-111: STOP z adresem sygnalizatora zamyka go (bsk.isdr.pl/srk_izh111.php) – dawniej tylko gasił sygnał, a Zw
+// zwalniało przebieg manewrowy zamiast odwołać zamknięcie.
+test('IZH-111: STOP zamyka sygnalizator (sygnał nie wraca, także po nowym przebiegu), Zw odwołuje zamknięcie; Sz z licznikiem; blokada bez zmian', () => {
   const sim = izh();
   sim.press(S('A')); sim.press(S('D1')); sim.press(order('P'));
   run(sim, POINT_SWITCH_TIME + 1);
   assert.notEqual(sim.ilk.signals.get('A').aspect, 'S1');
   sim.press(S('A')); assert.ok(sim.press(order('STOP')).ok);
+  assert.equal(sim.ilk.signals.get('A').stopped, true, 'sygnalizator zamknięty');
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
   assert.ok(sim.ilk.active.has('A-D1'), 'przebieg pozostaje utwierdzony');
+  run(sim, 10);
+  assert.equal(sim.ilk.signals.get('A').aspect, 'S1', 'zamknięty – sygnał nie wraca');
+  sim.press(S('A')); assert.ok(sim.press(order('Zw')).ok);
+  assert.equal(sim.ilk.signals.get('A').stopped, false, 'Zw odwołuje zamknięcie');
+  assert.ok(sim.ilk.active.has('A-D1'), 'Zw nie zwalnia przebiegu');
   sim.press(S('B')); assert.ok(sim.press(order('Sz')).ok);
   assert.equal(sim.ilk.signals.get('B').aspect, 'Sz');
   assert.equal(sim.ilk.counters.Sz, 1);
