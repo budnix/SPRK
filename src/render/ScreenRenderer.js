@@ -1,7 +1,7 @@
 import { refKey } from './refKey.js';
 import { ScreenBase } from './ScreenBase.js';
 import { tip } from '../data/glossary.js';
-import { makeDraggable } from '../ui/drag.js';
+import { createConfirmBar } from './confirmBar.js';
 
 /**
  * Stanowisko komputerowe (monitor dyżurnego ruchu): obraz wg Ie-104 ze `ScreenBase`, obsługa paskiem poleceń
@@ -20,10 +20,7 @@ export class ScreenRenderer extends ScreenBase {
     this.menu = document.createElement('div');
     this.menu.className = 'scr-menu hidden';
     document.body.appendChild(this.menu);
-    this.confirmBar = document.createElement('div');
-    this.confirmBar.className = 'scr-confirm hidden';
-    document.body.appendChild(this.confirmBar);
-    makeDraggable(this.confirmBar, null);
+    this.confirmBar = createConfirmBar();
     if (!this.readonly) this.#buildCmdBar(opts.cmdHost || container);
 
     this.#bind();
@@ -59,7 +56,7 @@ export class ScreenRenderer extends ScreenBase {
   }
 
   #setMode(mode, cancelAll = false) {
-    if (cancelAll) { this.#cancelPending(); this.confirmBar.classList.add('hidden'); }
+    if (cancelAll) { this.#cancelPending(); this.confirmBar.hide(); }
     this.mode = mode;
     for (const [id, b] of this.cmdButtons) b.classList.toggle('active', id === mode);
     const INFO = {
@@ -205,17 +202,9 @@ export class ScreenRenderer extends ScreenBase {
 
   /** Polecenie specjalne – inicjalizacja, potwierdzenie WYKONAJ, rejestracja (licznik). OPS odwołuje. */
   #confirm(item) {
-    this.confirmBar.innerHTML = `<span>Polecenie specjalne: <b>${item.label}</b> – rejestrowane w liczniku.</span>`;
-    const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'tb warn'; ok.textContent = 'WYKONAJ';
-    const no = document.createElement('button'); no.type = 'button'; no.className = 'tb'; no.textContent = 'OPS – odwołaj';
-    ok.addEventListener('click', () => { this.confirmBar.classList.add('hidden'); item.run(); });
-    no.addEventListener('click', () => this.confirmBar.classList.add('hidden'));
-    // przyciski trzymają się razem: na wąskim ekranie schodzą pod opis jako para
-    const actions = document.createElement('div'); actions.className = 'confirm-actions';
-    actions.append(ok, no);
-    this.confirmBar.append(actions);
-    this.confirmBar.classList.remove('hidden');
+    this.confirmBar.show({ html: `Polecenie specjalne: <b>${item.label}</b> – rejestrowane w liczniku.`, ok: 'WYKONAJ', cancel: 'OPS – odwołaj', onOk: () => item.run() });
   }
+
 
   #beginPending(id, color) {
     this.pending = { id, color };

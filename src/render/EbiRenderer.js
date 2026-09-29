@@ -38,7 +38,7 @@ export class EbiRenderer extends ScreenBase {
       this.#buildCommandLine(opts.cmdHost || container);
       this.#buildLogWindow();
       this.#bind();
-      sim.bus.on('ebi', (e) => this.#onEbi(e));
+      sim.bus.on('console', (e) => this.#onEbi(e));
     }
     this.bindModel();
     this.refreshAll();

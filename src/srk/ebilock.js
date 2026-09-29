@@ -23,6 +23,8 @@
  * rozprucie) – aktywne / nieaktywne, potwierdzone / niepotwierdzone (`ack`, `ackAll`).
  */
 
+import { EventLog } from './eventLog.js';
+
 /** Okno czasu na polecenie wykonania po poleceniu inicjującym [s] (instrukcja: od 5 s do 30 s). */
 export const SPECIAL_WINDOW = { min: 5, max: 30 };
 
@@ -60,12 +62,8 @@ export const EBI_COMMANDS = [
 
 const byCode = new Map(EBI_COMMANDS.map((c) => [c.code, c]));
 const same = (a, b) => !!a && !!b && a.kind === b.kind && a.id === b.id;
-const MAX_EVENTS = 200;
 
 export class EbiLockProtocol {
-  #nextAlarm = 1;
-  #lastAlarmText = '';
-
   /**
    * @param ilk Interlocking (stan stacji, `time`, `refuse`)
    * @param bus EventBus (`armed`, `log`, `alarm`, `ebi` – zmiana linii, znaczników, alarmów)
@@ -82,13 +80,7 @@ export class EbiLockProtocol {
     };
     this.sel = { start: null, end: null, via: null, object: null, candidates: [] };
     this.marks = new Map();   // 'signal:A' -> { code: 'SZI', at, color }
-    this.events = [];         // { time, text, kind: 'log' | 'cmd' | 'refused' }
-    this.alarms = [];         // { id, time, text, acked, active() }
-    bus.on('log', (e) => {
-      if (e.level === 'alarm') this.#lastAlarmText = e.msg;
-      this.#event(e.time, e.msg, 'log');
-    });
-    bus.on('alarm', (a) => this.#alarm(a));
+    this.log = new EventLog(ilk, bus); // okno zdarzeń i alarmów
   }
 
   /* ---------------- wybór myszą ---------------- */
@@ -182,12 +174,12 @@ export class EbiLockProtocol {
     const [codeRaw, ...args] = src.split(/\s+/);
     const code = (codeRaw || '').toUpperCase();
     const def = byCode.get(code);
-    const refuse = (reason) => { this.#event(this.ilk.time, `${src} – ${reason}`, 'refused'); return this.ilk.refuse(reason); };
+    const refuse = (reason) => { this.log.note(this.ilk.time, `${src} – ${reason}`, 'refused'); return this.ilk.refuse(reason); };
     if (!src) return refuse('Linia poleceń jest pusta');
     if (!def) return refuse(`Nieznane polecenie ${codeRaw}`);
     const res = this.#build(def, args, refuse);
     if (res.ok) {
-      this.#event(this.ilk.time, src, 'cmd');
+      this.log.note(this.ilk.time, src, 'cmd');
       this.sel = { start: null, end: null, via: null, object: null, candidates: [] };
       this.#changed();
     }
@@ -311,42 +303,15 @@ export class EbiLockProtocol {
     return ids.filter((id) => routes.some((r) => !r.points.some((p) => p.id === id))).map((id) => ({ kind: 'point', id }));
   }
 
-  /* ---------------- zdarzenia i alarmy ---------------- */
+  /* ---------------- zdarzenia i alarmy (EventLog) ---------------- */
 
-  #event(time, text, kind) {
-    this.events.push({ time, text, kind });
-    if (this.events.length > MAX_EVENTS) this.events.shift();
-    this.bus.emit('ebi', { what: 'events' });
-  }
-
-  /** Alarm urządzeń: usterka (aktywna, dopóki trwa) albo rozprucie (dopóki zwrotnica nie odzyska kontroli). */
-  #alarm(a) {
-    let active;
-    if (a.type === 'fault') active = () => !!a.fault.active;
-    else if (a.type === 'rozprucie') active = () => this.ilk.alarms.has(`rozprucie:${a.id}`);
-    else return; // żądanie blokady, łączność – zdarzenia, nie alarmy urządzeń
-    this.alarms.push({ id: this.#nextAlarm++, time: this.ilk.time, text: this.#lastAlarmText || a.type, acked: false, active });
-    this.bus.emit('ebi', { what: 'alarms' });
-  }
-
-  /** Lista alarmów do okna: aktywne (czerwony kwadrat) / nieaktywne (zielony), niepotwierdzone migają. */
-  alarmList() {
-    return this.alarms.map((x) => ({ id: x.id, time: x.time, text: x.text, acked: x.acked, active: x.active() }));
-  }
-
-  ack(ids) {
-    const set = new Set([ids].flat());
-    for (const x of this.alarms) if (set.has(x.id)) x.acked = true;
-    this.bus.emit('ebi', { what: 'alarms' });
-  }
-
-  ackAll() {
-    for (const x of this.alarms) x.acked = true;
-    this.bus.emit('ebi', { what: 'alarms' });
-  }
+  get events() { return this.log.events; }
+  alarmList() { return this.log.alarmList(); }
+  ack(ids) { this.log.ack(ids); }
+  ackAll() { this.log.ackAll(); }
 
   #changed() {
     this.bus.emit('armed', this.armed);
-    this.bus.emit('ebi', { what: 'selection' });
+    this.bus.emit('console', { what: 'selection' });
   }
 }
