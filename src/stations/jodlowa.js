@@ -41,7 +41,7 @@ export default {
     Iz3: { length: 90, kind: 'point' },
     T1: { length: 620, kind: 'station', track: '1', platform: 'Peron I' },
     T2: { length: 440, kind: 'station', track: '2', platform: 'Peron I' },
-    T3: { length: 480, kind: 'station', track: '3', platform: 'Peron II' },
+    T3: { length: 480, kind: 'station', track: '3', platform: 'Peron II', mainKind: 'dodatkowy' },
     Iz7: { length: 70, kind: 'point' },
     T3b: { length: 70, kind: 'station', track: '3' },
     Iz5: { length: 90, kind: 'point' },

@@ -75,6 +75,9 @@ T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
   zwrotnic albo skrzyżowanie w odcinku, np. Chylonia `Iz21`: 21, 24 na torach 502/501 i 22/26, 25/23 do torów 21/22)
   dzieli się na odcinek na każdą zwrotnicę (`Iz24`, `Iz22`…) i na skrzyżowanie (`Iz21x`); kostki proste idą do
   najbliższej zwrotnicy, długość po równo.
+* `mainKind: 'dodatkowy'` – tor główny dodatkowy (tor stacyjny do przyjmowania i wyprawiania pociągów poza torem
+  głównym zasadniczym): ograniczenie prędkości z obrazu semafora (S10–S13, Sr3) obowiązuje na całej drodze przebiegu na
+  ten tor, nie tylko w okręgu zwrotnicowym (Dz.U. 2015 poz. 360 §66 ust. 3). Oznaczone na stacjach szkoleniowych.
 * `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
   (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą, pulpit kostkowy jako obrys; krawędź peronowa od strony
   toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna).

@@ -399,12 +399,17 @@ export class Train {
     return z.speed;
   }
 
-  /** Okręg zwrotnicowy za semaforem: odcinki zwrotnic przebiegu, na który semafor podaje sygnał. */
+  /**
+   * Obszar ograniczenia z obrazu semafora: okręg zwrotnicowy (odcinki zwrotnic przebiegu), a cała droga przebiegu, gdy
+   * przebieg prowadzi na tor główny dodatkowy (Dz.U. 2015 poz. 360 §66 ust. 3) albo semafor wjazdowy kształtowy wskazuje
+   * Sr3 (§65 pkt 3; Ie-1 §4 ust. 5 pkt 3).
+   */
   #zoneOf(sig, speed) {
     const route = sig.route && this.ilk.active.get(sig.route)?.route;
     if (!route) return null;
     const pointSections = new Set([...this.ilk.points.values()].map((p) => p.section));
-    const sections = new Set(route.sections.filter((id) => pointSections.has(id)));
+    const whole = route.sections.some((id) => this.ilk.sections.get(id)?.mainKind === 'dodatkowy') || (sig.aspect === 'Sr3' && !!sig.tile.entry);
+    const sections = new Set(whole ? route.sections : route.sections.filter((id) => pointSections.has(id)));
     return sections.size ? { speed: speed * KMH, sections, entered: false } : null;
   }
 

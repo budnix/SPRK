@@ -26,7 +26,10 @@ za ramieniem), w którą zwrotnica nie jest ustawiona, zostaje ciemna, żeby nie
 Szybkość pociągu w okręgu zwrotnicowym (Ie-1 §3, wszystkie stanowiska): S10–S13 i Sr3 zezwalają na jazdę do 40 km/h
 „począwszy od semafora do końca okręgu zwrotnicowego osłanianego tym semaforem”. W grze ograniczenie obowiązuje od
 semafora, aż cały pociąg zjedzie z odcinków zwrotnicowych przebiegu (przyjęte: okręg zwrotnicowy = odcinki zwrotnic
-przebiegu). Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
+przebiegu). Wyjątki – ograniczenie na całej drodze przebiegu: przebieg na tor główny dodatkowy (Dz.U. 2015 poz. 360
+§66 ust. 3; pole `mainKind` odcinka, oznaczone na fikcyjnych stacjach szkoleniowych – na stacjach rzeczywistych gra
+nie zgaduje, które tory są dodatkowe) i Sr3 na kształtowym semaforze wjazdowym (§65 pkt 3; Ie-1 §4 ust. 5 pkt 3).
+Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
 (`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
 
 Zezwolenie na jazdę (wszystkie stanowiska). Ze źródeł: pociąg mija semafor tylko na sygnał zezwalający dla pociągu

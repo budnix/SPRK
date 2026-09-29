@@ -54,6 +54,9 @@ export function validateStation(st) {
       if (!at || getTileDef(at.type).category !== 'track') errors.push(`Sygnalizator ${t.id}: 'at' nie wskazuje kostki torowej`);
     }
   }
+  for (const [id, s] of Object.entries(st.sections || {})) {
+    if (s.mainKind != null && s.mainKind !== 'dodatkowy') errors.push(`Odcinek ${id}: nieznany rodzaj toru głównego '${s.mainKind}' (dodatkowy)`);
+  }
   for (const [id, e] of Object.entries(st.exits || {})) {
     if (e.block && !['eap', 'sbl'].includes(e.block)) errors.push(`Wyjazd ${id}: nieznany rodzaj blokady '${e.block}' (eap | sbl)`);
     if (e.block === 'sbl' && !e.direction) errors.push(`Wyjazd ${id}: blokada samoczynna (sbl) wymaga stałego kierunku (direction: 'in' | 'out')`);

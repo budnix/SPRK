@@ -91,3 +91,38 @@ test('W22: na szlaku wjazdowym pociąg jedzie z prędkością tego szlaku (Śró
   assert.ok(vmax > 0, 'pociąg nie pojawił się na szlaku');
   assert.ok(vmax <= 60.5, `na szlaku wjazdowym ${vmax.toFixed(1)} km/h`);
 });
+
+/*
+ * W23, N2: ograniczenie z obrazu semafora (40 km/h) obowiązuje na całej drodze przebiegu, gdy przebieg prowadzi na tor
+ * główny dodatkowy (Dz.U. 2015 poz. 360 §66 ust. 3) albo semafor wjazdowy kształtowy wskazuje Sr3 (§65 pkt 3) – nie tylko
+ * do końca zwrotnic.
+ */
+async function maxOnTrack(st, scenario, nr, section) {
+  const { AutoOperator } = await import('../src/model/Operator.js');
+  const sim = new Simulation(st, { scenario: { ...scenario, trains: [nr] }, disruptions: 'none', seed: 1 });
+  const op = new AutoOperator(sim, { district: null, role: 'full' });
+  const e = sim.traffic.timetable()[0];
+  let vmax = 0, n = 0;
+  for (let i = 0; i < 2 * 3600 * 2 && !e.train?.hasStopped; i++) {
+    sim.step(0.5); if (n++ % 4 === 0) op.tick();
+    if (e.train?.occupiedSections().has(section)) vmax = Math.max(vmax, kmh(e.train.v));
+  }
+  assert.ok(e.train?.hasStopped, `pociąg ${nr} nie dojechał`);
+  return vmax;
+}
+
+test('W23: na torze głównym dodatkowym (Jodłowa, tor 3) pociąg po S13 nie przyspiesza za rozjazdami', async () => {
+  const jodlowa = (await import('../src/stations/jodlowa.js')).default;
+  assert.equal(jodlowa.sections.T3.mainKind, 'dodatkowy');
+  const v = await maxOnTrack(jodlowa, { id: 't', name: 't', endTime: '10:00' }, 6612, 'T3');
+  assert.ok(v > 20 && v <= 40.5, `na torze 3: ${v.toFixed(1)} km/h`);
+});
+
+test('N2: Sr3 na kształtowym semaforze wjazdowym – 40 km/h na całej drodze przebiegu (także poza torem dodatkowym)', async () => {
+  const szkolna = (await import('../src/stations/szkolna.js')).default;
+  // tor 2 bez oznaczenia „dodatkowy” – działa sama reguła Sr3 na semaforze wjazdowym
+  const st = { ...szkolna, sections: { ...szkolna.sections, T2: { ...szkolna.sections.T2, mainKind: undefined } } };
+  const mech = szkolna.scenarios.find((s) => s.srk === 'mech');
+  const v = await maxOnTrack(st, { ...mech, disruptions: 'none' }, 6103, 'T2');
+  assert.ok(v > 20 && v <= 40.5, `na torze 2 po Sr3: ${v.toFixed(1)} km/h`);
+});

@@ -39,7 +39,7 @@ export default {
     T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' },
     T1e: { length: 60, kind: 'station', track: '1' },
     T2w: { length: 40, kind: 'station', track: '2' },
-    T2: { length: 480, kind: 'station', track: '2', platform: 'Peron I' },
+    T2: { length: 480, kind: 'station', track: '2', platform: 'Peron I', mainKind: 'dodatkowy' },
     T2e: { length: 40, kind: 'station', track: '2' },
     Iz2: { length: 110, kind: 'point' },
     Iz3: { length: 160, kind: 'point' },
