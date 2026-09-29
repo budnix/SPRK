@@ -105,10 +105,14 @@ for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pul
   test(`widok stanowiska (${name}) spełnia kontrakt PanelView: rysunek, margines, wycinek, elementy obsługi, etykiety pociągów`, async ({ page }) => {
     await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
     const v = await page.evaluate(() => {
-      // klasa widoku i jej baza (nazwy klas znikają w zbudowanej paczce – liczy się, gdzie leżą metody)
-      const d = window.desk; const view = Object.getPrototypeOf(d), base = Object.getPrototypeOf(view);
+      // klasa widoku, ewentualnie wspólna baza stanowisk (ScreenBase) i PanelView (nazwy klas znikają w zbudowanej
+      // paczce – liczy się, gdzie leżą metody)
+      const d = window.desk;
       const own = (o, list) => list.filter((m) => Object.prototype.hasOwnProperty.call(o, m));
-      const chain = { depth: Object.getPrototypeOf(base) === Object.prototype ? 2 : 0, base: own(base, ['bindModel', 'refreshAll', 'updateTrains', 'setView']), view: own(view, ['updateSection', 'updateSignal', 'createTrainLabel', 'bindModel', 'refreshAll']) };
+      const protos = []; for (let p = Object.getPrototypeOf(d); p && p !== Object.prototype; p = Object.getPrototypeOf(p)) protos.push(p);
+      const base = protos.at(-1), viewSide = protos.slice(0, -1);
+      const union = (list) => list.filter((m) => viewSide.some((o) => own(o, [m]).length));
+      const chain = { depth: viewSide.length >= 1 && viewSide.length <= 2 ? 2 : viewSide.length + 1, base: own(base, ['bindModel', 'refreshAll', 'updateTrains', 'setView']), view: union(['updateSection', 'updateSignal', 'createTrainLabel', 'bindModel', 'refreshAll']) };
       const methods = ['setView', 'resetView', 'elementFor', 'refreshAll', 'cmdButton', 'setSymbolScale', 'updateTrains', 'bindModel'];
       const full = d.svg.getAttribute('viewBox');
       d.setView(2, 5); const part = d.svg.getAttribute('viewBox'); d.resetView();

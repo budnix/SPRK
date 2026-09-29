@@ -11,11 +11,25 @@ const dir = new URL('../src/render/', import.meta.url);
 const views = readdirSync(dir).filter((f) => /Renderer\.js$/.test(f)).map((f) => [f, readFileSync(new URL(f, dir), 'utf8')]);
 const strip = (code) => code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
 
-test('każdy widok stanowiska rozszerza PanelView i dostarcza metody kontraktu', () => {
+/**
+ * Kod widoku razem z jego wspólną bazą (np. `ScreenRenderer` i `EbiRenderer` rozszerzają `ScreenBase` – obraz Ie-104
+ * jest wspólny, różni się obsługa). Baza sama rozszerza PanelView i nie jest widokiem (nazwa bez „Renderer”).
+ */
+function withBase(src) {
+  const code = strip(src);
+  const m = /export class \w+ extends (\w+)\b/.exec(code);
+  if (!m || m[1] === 'PanelView') return { code, base: 'PanelView' };
+  const imp = new RegExp(`import \\{[^}]*\\b${m[1]}\\b[^}]*\\} from '\\./(\\w+\\.js)'`).exec(code);
+  if (!imp || /Renderer\.js$/.test(imp[1])) return { code, base: m[1] };
+  const baseCode = strip(readFileSync(new URL(imp[1], dir), 'utf8'));
+  return { code: `${baseCode}\n${code}`, own: code, base: /export class \w+ extends PanelView\b/.test(baseCode) ? 'PanelView' : m[1] };
+}
+
+test('każdy widok stanowiska rozszerza PanelView (wprost albo przez wspólną bazę) i dostarcza metody kontraktu', () => {
   assert.ok(views.length >= 2);
   for (const [file, src] of views) {
-    const code = strip(src);
-    assert.match(code, /export class \w+ extends PanelView\b/, `${file}: nie rozszerza PanelView`);
+    const { code, base } = withBase(src);
+    assert.equal(base, 'PanelView', `${file}: nie rozszerza PanelView`);
     assert.match(code, /static PAD = /, `${file}: brak marginesu PAD`);
     for (const m of PANEL_VIEW_REQUIRED) assert.match(code, new RegExp(`^  ${m}\\(`, 'm'), `${file}: brak metody ${m}`);
     assert.match(code, /this\.bindModel\(\)/, `${file}: nie podpina zdarzeń symulacji`);

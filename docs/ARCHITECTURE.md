@@ -16,8 +16,8 @@ src/
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
                DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), LeverRenderer
-               (nastawnia mechaniczna: plan świetlny i ława dźwigniowa), leverFrame (dźwignie i drążki ławy, bez DOM), ScreenRenderer
-               (monitor stanowiska komputerowego wg Ie-104), deskParts (części wspólne pulpitów kostkowych: rama,
+               (nastawnia mechaniczna: plan świetlny i ława dźwigniowa), leverFrame (dźwignie i drążki ławy, bez DOM), ScreenBase
+               (wspólny obraz monitorów wg Ie-104), ScreenRenderer (monitor: pasek poleceń i menu elementu), deskParts (części wspólne pulpitów kostkowych: rama,
                kostki z planu, perony, blokada, przyciski pod palcem), tileArt / izhArt (grafika kostek),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
                platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
@@ -190,12 +190,14 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Blokada Eap: Wbl (żądanie pozwolenia), Poz (danie pozwolenia), Ko (zwolnienie bloku końcowego po przyjeździe
   w całości), dPo/dKo (doraźne, liczniki); blokada samoczynna SBL: bez pozwoleń i Ko, Zk (zmiana kierunku).
 
-## Monitor stanowiska komputerowego (`src/render/ScreenRenderer.js`)
+## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
-Zobrazowanie wg Ie-104 (kolory odcinków, stany sygnalizatorów, pole „Z” zwrotnicy, ramki selekcji i alarmu).
+Obraz monitora rysuje `ScreenBase` (rozszerza `PanelView`); stanowiska komputerowe różnią się tylko obsługą
+i dziedziczą po nim (`ScreenRenderer` – pasek poleceń i menu elementu). Kontrakt widoków (`tests/views.test.js`)
+czyta widok razem z jego bazą. Zobrazowanie wg Ie-104 (kolory odcinków, stany sygnalizatorów, pole „Z” zwrotnicy, ramki selekcji i alarmu).
 Uproszczenia dla czytelności: semafory i tarcze rysowane na linii toru w miejscu ustawienia (grot w kierunku jazdy,
 bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramkach „tor N” na linii (opisy kostek
-`label` w formie „tor N · …” są skracane – `ScreenRenderer.labelText`), perony jako szare prostokąty z nazwą
+`label` w formie „tor N · …” są skracane – `ScreenBase.labelText`), perony jako szare prostokąty z nazwą
 (`platform: 'Peron II'`, numeracja rzymska), stan blokady przy wyjeździe na szlak. Polecenia w formie rzeczownikowej
 („Nastawienie przebiegu pociągowego od A”, „Zwolnienie przebiegu (Pz)”, „Danie pozwolenia na wyprawienie pociągu
 (Poz)”) – jedno słownictwo z samouczkiem, słownikiem i dziennikiem. Symbole skalowane ustawieniem `symScale`
@@ -267,7 +269,7 @@ sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strza
 poleceniach, jako czerwone kasetki z samymi numerami (`lineTrains`: pociąg na szlaku pełną kasetką, potem w kolejce
 pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śledzenia numerów w komputerowych srk, tylko na
 żądanie, bo przy szlakach dwutorowych nie ma miejsca na kasetkę przy strzałce; pulpit kostkowy – nie.
-Na monitorze stan blokady rysuje `ScreenRenderer.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
+Na monitorze stan blokady rysuje `ScreenBase.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
 (`src/render/blockLayout.js`, bez DOM: strzałki na kostkach toru, przyciski Ko | Poz | Wbl albo Zk w rzędzie obok,
 liczniki dKo | dPo wyżej – jak na pulpitach typu E), bez osobnej kostki `block`.
