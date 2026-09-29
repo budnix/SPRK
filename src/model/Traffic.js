@@ -78,8 +78,9 @@ export class Traffic {
     const path = this.ilk.pathBeyond(signal);
     for (const { id, trailing } of path.points) {
       const p = this.ilk.points.get(id);
-      if (!p.individualLock && !this.ilk.pointLockedByRoute(id)) problems.push(`zwrotnica ${id} niezamknięta (Zz) ani nieutwierdzona`);
-      if (!p.control || p.moving) problems.push(`zwrotnica ${id} bez kontroli`);
+      if (!p.individualLock && !p.secured && !this.ilk.pointLockedByRoute(id)) problems.push(`zwrotnica ${id} niezamknięta (Zz) ani nieutwierdzona`);
+      // zwrotnica bez kontroli – dopiero po zabezpieczeniu na miejscu (Ie-10 §32)
+      if (p.moving || (!p.control && !p.secured)) problems.push(`zwrotnica ${id} bez kontroli${p.moving ? '' : ' – zabezpiecz ją na miejscu'}`);
       if (trailing) problems.push(`zwrotnica ${id} w położeniu na rozprucie`);
     }
     for (const id of path.derailers) if (this.ilk.derailers.get(id).position !== 'off') problems.push(`wykolejnica ${id} nałożona`);

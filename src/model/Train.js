@@ -232,7 +232,8 @@ export class Train {
         if (tile.section && this.blockedBy(tile.section)) { constraints.push({ dist: Math.max(0, dist - 10), speed: 0, reason: 'tabor na torze', kind: 'end' }); return constraints; }
         if (tile.type === 'point') {
           const p = this.ilk.points.get(tile.id);
-          if (p.moving || !p.control) { constraints.push({ dist, speed: 0, reason: `zwrotnica ${tile.id} bez kontroli`, kind: 'end' }); return constraints; }
+          // zwrotnica bez kontroli – przejazd tylko po zabezpieczeniu na miejscu (zamek trzpieniowy / spona)
+          if (p.moving || (!p.control && !p.secured)) { constraints.push({ dist, speed: 0, reason: `zwrotnica ${tile.id} bez kontroli`, kind: 'end' }); return constraints; }
         }
         const lim = this.#tileLimit(tile, inPort, outPort);
         if (lim < Infinity) constraints.push({ dist, speed: lim, reason: `zwrotnica ${tile.id}`, kind: 'limit' });

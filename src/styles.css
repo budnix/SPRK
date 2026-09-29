@@ -442,6 +442,8 @@ ul.log li.lv-alarm { color: var(--danger); font-weight: 700; }
 .alert-rozprucie { background: var(--danger); color: var(--on-danger); }
 #tab-stan h4 { margin: 10px 0 4px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 #tab-stan .blk { font-size: 12px; padding: 3px 0; }
+#tab-stan .point-onsite { font-size: 12px; padding: 3px 0; }
+#tab-stan .point-onsite .tb { margin-left: 6px; }
 .warn { color: var(--warn); font-weight: 600; }
 ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .muted { color: var(--muted); }

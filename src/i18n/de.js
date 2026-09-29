@@ -283,6 +283,7 @@ export default {
   'sp.trains.dwell': 'Halt, Abfahrt {time}',
   'sp.trains.ended': 'Lauf beendet – auf Rangierfahrt umzustellen',
   'sp.trains.stopped': 'steht',
+  'sp.trains.afterSpad': 'steht hinter Signal {signal} (Halt überfahren)',
   'sp.trains.track': 'Gleis {track}',
   'sp.trains.front': 'Spitze',
   'sp.tab.stan': 'Anlagen',
@@ -296,6 +297,13 @@ export default {
   'sp.col.track': 'Gleis',
   'sp.col.state': 'Status',
   'sp.faults': 'Störungen',
+  'sp.pointsOnSite': 'Weichen ohne Überwachung',
+  'sp.point.name': 'Weiche {id}',
+  'sp.point.noControl': 'keine Lageüberwachung – vor einer Fahrt auf Sz oder schriftlichen Befehl vor Ort sichern',
+  'sp.point.securing': 'ein Mitarbeiter sichert sie vor Ort (fertig etwa {time})',
+  'sp.point.secured': 'vor Ort gesichert in Lage {pos} – Fahrt auf Sz oder schriftlichen Befehl „S“',
+  'sp.point.secure': 'Vor Ort sichern',
+  'sp.point.unsecure': 'Sicherung entfernen',
   'sp.blocks': 'Streckenblock',
   'sp.routes': 'Eingestellte Fahrstraßen',
   'sp.counters': 'Zähler',
@@ -444,7 +452,7 @@ export default {
       <h3>Störungen, Kommunikation und Bewertung</h3>
       <ul>
         <li>Auf dem Startbildschirm wählst du Szenario und Störungsgrad: Verspätungen der Züge von den Nachbarn, Störungen (Signal dunkel, Weiche ohne Überwachung, Falschbesetzung, Streckenblock ohne Verbindung), Sonderzüge.</li>
-        <li><b>Signalstörung</b>: Sz oder Befehl „S“. <b>Falschbesetzung</b>: nach Prüfung des Gleises Sz. <b>Weiche ohne Überwachung</b>: auf Reparatur warten oder mit Zz sperren und Befehl erteilen.</li>
+        <li><b>Signalstörung</b>: Sz oder Befehl „S“. <b>Falschbesetzung</b>: nach Prüfung des Gleises Sz. <b>Weiche ohne Überwachung</b>: bis zur Reparatur keine Fahrstraße darüber; ein Zug fährt, nachdem die Weiche vor Ort gesichert ist (Reiter Anlagen, etwa 3 min), auf Sz oder Befehl „S“.</li>
         <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Formeln nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“, „Strecke … frei“, „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“. Die Blockfelder werden nach fernmündlicher Bestätigung mit dPo / dKo aufgelöst.</li>
         <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dPo/dKo ohne Grund −15; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
       </ul>

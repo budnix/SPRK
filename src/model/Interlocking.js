@@ -36,6 +36,7 @@ export const POINT_SWITCH_TIME = 4;    // s – czas przestawiania zwrotnicy
 export const TIMED_RELEASE = 90;       // s – zwalnianie czasowe przebiegu pociągowego przy zajętym odcinku zbliżania
 export const SHUNT_TIMED_RELEASE = 30; // s – zwalnianie czasowe przebiegu manewrowego
 export const SUBSTITUTE_TIME = 90;     // s – czas świecenia sygnału zastępczego
+export const POINT_SECURE_TIME = 180;  // s – zabezpieczenie zwrotnicy na miejscu (dojście pracownika, zamek / spona)
 
 export class Interlocking {
   /**
@@ -68,6 +69,7 @@ export class Interlocking {
       this.points.set(id, {
         id, tile: t, position: '+', target: '+', moving: false, movingUntil: 0,
         control: true, trailed: false, individualLock: false, section: t.section,
+        secured: false, securing: null, // zabezpieczona na miejscu (zamek trzpieniowy / spona); `securing` – czas gotowości
         speedDiverging: t.speedDiverging ?? station.points?.[id]?.speedDiverging ?? 40,
       });
     }
@@ -252,6 +254,7 @@ export class Interlocking {
     if (!p) return { ok: false, reason: `Brak zwrotnicy ${id}` };
     if (p.moving) return { ok: false, reason: `Zwrotnica ${id} w trakcie przestawiania` };
     if (p.individualLock) return { ok: false, reason: `Zwrotnica ${id} zamknięta indywidualnie` };
+    if (p.secured || p.securing) return { ok: false, reason: `Zwrotnica ${id} zabezpieczona na miejscu – najpierw zdejmij zabezpieczenie` };
     if (this.sections.get(p.section)?.occupied) return { ok: false, reason: `Zwrotnica ${id}: odcinek ${p.section} zajęty` };
     const r = this.pointLockedByRoute(id);
     if (r) return { ok: false, reason: `Zwrotnica ${id} utwierdzona w przebiegu ${r.id}` };
@@ -298,6 +301,29 @@ export class Interlocking {
     el.individualLock = !el.individualLock;
     this.#log('info', `${isDerailer ? 'Wykolejnica' : 'Zwrotnica'} ${id} ${el.individualLock ? 'zamknięta' : 'otwarta'} (zamknięcie indywidualne)`);
     this.bus.emit(isDerailer ? 'derailer' : 'point', el);
+    return { ok: true };
+  }
+
+  /**
+   * Zabezpieczenie zwrotnicy na miejscu (zamek trzpieniowy albo spona) i jego zdjęcie – polecenie dla pracownika, nie
+   * przycisk pulpitu. Zabezpieczenie gotowe po `POINT_SECURE_TIME`; zwrotnica bez kontroli, ale zabezpieczona, może być
+   * przejechana na Sz albo rozkaz „S” (Ie-10 §32, §35). Zdjęcie – od razu.
+   */
+  securePoint(id, on) {
+    const p = this.points.get(id);
+    if (!p) return this.#fail(`Brak zwrotnicy ${id}`);
+    if (!on) {
+      if (!p.secured && !p.securing) return { ok: true, noop: true };
+      p.secured = false; p.securing = null;
+      this.#log('info', `Zwrotnica ${id}: zabezpieczenie na miejscu zdjęte`);
+      this.bus.emit('point', p);
+      return { ok: true };
+    }
+    if (p.secured || p.securing) return { ok: true, noop: true };
+    if (p.moving) return this.#fail(`Zwrotnica ${id} w trakcie przestawiania`);
+    p.securing = this.time + POINT_SECURE_TIME;
+    this.#log('info', `Zwrotnica ${id}: pracownik zabezpiecza ją na miejscu w położeniu ${p.position} (zamek trzpieniowy / spona) – ok. ${Math.round(POINT_SECURE_TIME / 60)} min`);
+    this.bus.emit('point', p);
     return { ok: true };
   }
 
@@ -437,6 +463,7 @@ export class Interlocking {
         add('point-position', p.moving ? `Zwrotnica ${req.id} w trakcie przestawiania` : `Zwrotnica ${req.id} w położeniu ${p.position} – potrzebne ${req.position}`);
       } else if (p.position !== req.position || !p.control) {
         if (p.individualLock) add('point', `Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
+        if (p.secured || p.securing) add('point', `Zwrotnica ${req.id} zabezpieczona na miejscu w położeniu ${p.position}`);
         const r = this.pointLockedByRoute(req.id, predIds);
         if (r) add('point', `Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
         if (this.sections.get(p.section).occupied) add('point', `Zwrotnica ${req.id}: odcinek zajęty – nie można przestawić`);
@@ -890,7 +917,7 @@ export class Interlocking {
     const justified = this.faultOnPath(signalId, path);
     this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     // przed Sz zwrotnice drogi ustawia się i utwierdza (przebieg albo zamknięcie Zz) – urządzenie tego nie wymusza
-    const loose = path.points.filter(({ id }) => !this.points.get(id).individualLock && !this.pointLockedByRoute(id)).map((p) => p.id);
+    const loose = path.points.filter(({ id }) => { const p = this.points.get(id); return !p.individualLock && !p.secured && !this.pointLockedByRoute(id); }).map((p) => p.id);
     if (loose.length) this.bus.emit('score', { time: this.time, code: 'Sz-points', points: -10, msg: `Sz na ${signalId}: zwrotnice ${loose.join(', ')} nieutwierdzone ani niezamknięte (Zz)` });
     this.#refreshSignals();
     return { ok: true };
@@ -1031,8 +1058,13 @@ export class Interlocking {
     this.time = time;
     this.input?.tick(time); // uzbrojenie przycisku wygasa w protokole obsługi
 
-    // Zwrotnice i wykolejnice kończą przestawianie
+    // Zwrotnice i wykolejnice kończą przestawianie; zabezpieczenie na miejscu gotowe
     for (const p of this.points.values()) {
+      if (p.securing && p.securing <= time) {
+        p.securing = null; p.secured = true;
+        this.#log('info', `Zwrotnica ${p.id} zabezpieczona na miejscu w położeniu ${p.position} – jazda przez nią na Sz lub rozkaz „S”`);
+        this.bus.emit('point', p);
+      }
       if (p.moving && p.movingUntil <= time) {
         p.moving = false; p.position = p.target; p.trailed = false;
         p.control = !(p.faultUntil && p.faultUntil > time); // usterka napędu: brak kontroli do czasu naprawy

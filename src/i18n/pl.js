@@ -290,6 +290,7 @@ export default {
   'sp.trains.dwell': 'postój, odjazd {time}',
   'sp.trains.ended': 'zakończył bieg – do przełączenia na jazdę manewrową',
   'sp.trains.stopped': 'stoi',
+  'sp.trains.afterSpad': 'stoi za semaforem {signal} (przejechał „Stój”)',
   'sp.trains.track': 'tor {track}',
   'sp.trains.front': 'czoło',
   'sp.tab.stan': 'Urządzenia',
@@ -303,6 +304,13 @@ export default {
   'sp.col.track': 'Tor',
   'sp.col.state': 'Stan',
   'sp.faults': 'Usterki',
+  'sp.pointsOnSite': 'Zwrotnice bez kontroli',
+  'sp.point.name': 'Zwrotnica {id}',
+  'sp.point.noControl': 'brak kontroli położenia – przed jazdą na Sz lub rozkaz zabezpiecz ją na miejscu',
+  'sp.point.securing': 'pracownik zabezpiecza ją na miejscu (gotowe ok. {time})',
+  'sp.point.secured': 'zabezpieczona na miejscu w położeniu {pos} – jazda na Sz lub rozkaz „S”',
+  'sp.point.secure': 'Zabezpiecz na miejscu',
+  'sp.point.unsecure': 'Zdejmij zabezpieczenie',
   'sp.blocks': 'Blokady liniowe',
   'sp.routes': 'Przebiegi nastawione',
   'sp.counters': 'Liczniki',
@@ -453,7 +461,7 @@ export default {
       <h3>Zakłócenia, łączność i ocena</h3>
       <ul>
         <li>Na ekranie startowym wybierasz scenariusz i poziom zakłóceń: opóźnienia pociągów od sąsiadów, usterki (semafor bez sygnału, zwrotnica bez kontroli, fałszywa zajętość, blokada bez łączności), pociągi nadzwyczajne.</li>
-        <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: czekaj na naprawę lub zamknij ją Zz i wydaj rozkaz.</li>
+        <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: przebiegu przez nią nie nastawisz aż do naprawy; pociąg przejedzie po zabezpieczeniu jej na miejscu (zakładka Urządzenia, ok. 3 min) na Sz lub rozkaz „S”.</li>
         <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Bloki zwalnia się dPo / dKo po telefonicznym potwierdzeniu.</li>
         <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dPo/dKo bez uzasadnienia −15; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
       </ul>

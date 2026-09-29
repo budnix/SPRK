@@ -73,6 +73,13 @@ i zał. 1). Przyjęte (uproszczenia gry):
   niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary przy
   usterce semafora), hamowanie nagłe do zatrzymania; dalej pociąg jedzie dopiero na nowe zezwolenie.
 
+Zwrotnica bez kontroli położenia (wszystkie stanowiska). Ze źródeł: zwrotnicę bez kontroli (także rozprutą)
+zabezpiecza się na miejscu zamkiem trzpieniowym albo sponą, potem pociąg jedzie przez nią na Sz albo rozkaz „S”
+(Ie-10 §32 ust. 2, 4, 8, 9; §35 ust. 1 pkt 1–3 i 6; Ir-1 §41 ust. 6). Przyjęte (uproszczenia gry): zabezpieczenie
+zleca się w zakładce Urządzenia panelu (polecenie dla pracownika, nie przycisk pulpitu) i jest gotowe po 3 min
+(`POINT_SECURE_TIME`); zabezpieczona zwrotnica się nie przestawia i liczy się jak zamknięta (Zz) dla Sz i rozkazu;
+zdjęcie zabezpieczenia – od razu.
+
 Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
 pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
 daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości

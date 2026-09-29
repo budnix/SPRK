@@ -29,6 +29,8 @@ export class SidePanel {
       <section class="tab hidden" id="tab-stan">
         <h4>${t('sp.faults')}</h4>
         <div id="faults" class="muted">${t('sp.none')}</div>
+        <h4>${t('sp.pointsOnSite')}</h4>
+        <div id="points-onsite"></div>
         <h4>${t('sp.blocks')}</h4>
         <div id="blocks"></div>
         <h4>${t('sp.routes')}</h4>
@@ -102,6 +104,15 @@ export class SidePanel {
     sim.bus.on('tick', () => this.#throttled());
     sim.bus.on('block', () => this.renderState());
     sim.bus.on('route', () => this.renderState());
+    sim.bus.on('point', () => this.renderState());
+    // zabezpieczenie zwrotnicy na miejscu – polecenie dla pracownika (nie przycisk pulpitu), wspólne dla stanowisk
+    this.root.querySelector('#points-onsite').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-point]');
+      if (!b) return;
+      const res = sim.execute({ type: 'point-secure', id: b.dataset.point, on: b.dataset.on === '1' });
+      if (res && !res.ok) this.addLog({ time: sim.clock.time, level: 'warn', msg: res.reason });
+      this.renderState();
+    });
     sim.bus.on('alarm', (a) => this.alarm(a));
     this.renderTimetable();
     this.renderState();
@@ -396,6 +407,15 @@ export class SidePanel {
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
     this.root.querySelector('#faults').innerHTML = faults.length ? faults.map((f) => `<div class="warn">${faultListText(f, this.sim)}</div>`).join('') : `<span class="muted">${t('sp.none')}</span>`;
+    // zwrotnice bez kontroli położenia i zabezpieczone na miejscu (zamek trzpieniowy / spona)
+    const pts = [...this.sim.ilk.points.values()].filter((p) => (!p.control && !p.moving) || p.secured || p.securing);
+    setHtmlIfChanged(this.root.querySelector('#points-onsite'), pts.length ? pts.map((p) => {
+      const state = p.secured ? t('sp.point.secured', { pos: p.position }) : p.securing ? t('sp.point.securing', { time: Clock.format(p.securing) }) : t('sp.point.noControl');
+      const btn = p.secured || p.securing
+        ? `<button type="button" class="tb" data-point="${escapeHtml(p.id)}" data-on="0">${t('sp.point.unsecure')}</button>`
+        : `<button type="button" class="tb" data-point="${escapeHtml(p.id)}" data-on="1">${t('sp.point.secure')}</button>`;
+      return `<div class="point-onsite${p.control ? '' : ' warn'}"><b>${t('sp.point.name', { id: escapeHtml(p.id) })}</b> · ${state} ${btn}</div>`;
+    }).join('') : `<span class="muted">${t('sp.none')}</span>`);
     const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${t(a.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${a.timedRelease ? t('sp.route.timed') : ''}${a.trainEntered ? t('sp.route.entered') : ''}</li>`)
       .concat(this.sim.ilk.pending.map((p) => `<li>${t('sp.route.setting', { id: p.route.id })}</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || `<li class="muted">${t('sp.none')}</li>`;
@@ -418,7 +438,8 @@ export class SidePanel {
         : tr.state === 'dwell' ? t('sp.trains.dwell', { time: e.dep ?? '–' })
         : tr.stoppedAt?.kind === 'signal' ? t('sp.trains.atSignal', { signal: tr.stoppedAt.signal })
         : tr.stoppedAt?.kind === 'platform' ? t('sp.trains.atPlatform')
-        : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd') : t('sp.trains.stopped');
+        : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd')
+        : tr.stoppedAt?.kind === 'spad' ? t('sp.trains.afterSpad', { signal: tr.stoppedAt.signal }) : t('sp.trains.stopped');
       const meta = [`${modeIcon(tr.mode)} ${t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(tr.direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
       const canControl = tr.v === 0;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;

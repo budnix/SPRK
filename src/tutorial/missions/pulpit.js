@@ -15,7 +15,7 @@ const faulty = (sim) => sim.ilk.points.get('Zw3');
 const brokenHint = (sim) => {
   const p = faulty(sim);
   if (!(p.faultUntil > sim.clock.time)) return null;
-  if (p.moving || !p.control) return 'Zwrotnica 3 została przestawiona i nie ma kontroli położenia. Nie da się tego cofnąć przed naprawą (ok. 08:21) – pociąg poczeka przed semaforem. Następnym razem zamknij ją od razu.';
+  if (p.moving || !p.control) return 'Zwrotnica 3 została przestawiona i nie ma kontroli położenia – żaden przebieg przez nią się nie nastawi aż do naprawy (ok. 08:21). Pociąg może przez nią przejechać dopiero, gdy pracownik zabezpieczy ją na miejscu (zakładka Urządzenia → „Zabezpiecz na miejscu”, ok. 3 min), a potem na sygnał zastępczy Sz. Następnym razem zamknij ją od razu.';
   if (p.position === '+') return 'Zwrotnica 3 stoi w położeniu na tor 2 – nie przestawiaj jej i przyjmij pociąg na tor 2 (A → E2).';
   return null;
 };

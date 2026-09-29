@@ -219,6 +219,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).
   Test: `tests/signal-safety.test.js`.
+* Zwrotnica bez kontroli: `Interlocking.securePoint` (polecenie `{ type: 'point-secure', id, on }`, zakładka Urządzenia
+  panelu) – po `POINT_SECURE_TIME` `secured`; pociąg przejeżdża zabezpieczoną zwrotnicę bez kontroli (na Sz / rozkaz),
+  `issueOrder` jej nie odrzuca. Testy: `tests/point-secured.test.js`, `tests/e2e/points.spec.js`.
 * Sz i rozkaz „S”: droga za semaforem po bieżących położeniach zwrotnic (`Interlocking.pathBeyond`) – blokada tylko
   wyjazdu na tej drodze, uzasadnienie usterką tylko na niej (`faultOnPath`); `Traffic.issueOrder` używa tej samej drogi.
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.

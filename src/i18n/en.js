@@ -283,6 +283,7 @@ export default {
   'sp.trains.dwell': 'stop, departure {time}',
   'sp.trains.ended': 'ended its run – to be switched to shunting movement',
   'sp.trains.stopped': 'standing',
+  'sp.trains.afterSpad': 'standing beyond signal {signal} (passed at danger)',
   'sp.trains.track': 'track {track}',
   'sp.trains.front': 'front',
   'sp.tab.stan': 'Equipment',
@@ -296,6 +297,13 @@ export default {
   'sp.col.track': 'Track',
   'sp.col.state': 'State',
   'sp.faults': 'Faults',
+  'sp.pointsOnSite': 'Points without detection',
+  'sp.point.name': 'Point {id}',
+  'sp.point.noControl': 'no position detection – secure it on site before a run on Sz or a written order',
+  'sp.point.securing': 'a worker is securing it on site (ready about {time})',
+  'sp.point.secured': 'secured on site in position {pos} – run on Sz or written order “S”',
+  'sp.point.secure': 'Secure on site',
+  'sp.point.unsecure': 'Remove securing',
   'sp.blocks': 'Block system',
   'sp.routes': 'Routes set',
   'sp.counters': 'Counters',
@@ -444,7 +452,7 @@ export default {
       <h3>Disruptions, communication and scoring</h3>
       <ul>
         <li>On the start screen you choose the scenario and the disruption level: delays of trains from the neighbours, faults (signal dark, point without detection, false occupancy, block system without communication), extra trains.</li>
-        <li><b>Signal fault</b>: Sz or order “S”. <b>False occupancy</b>: after checking the track, Sz. <b>Point without detection</b>: wait for repair or lock it with Zz and issue an order.</li>
+        <li><b>Signal fault</b>: Sz or order “S”. <b>False occupancy</b>: after checking the track, Sz. <b>Point without detection</b>: no route over it until repair; a train passes after the point is secured on site (Equipment tab, about 3 min) on Sz or order “S”.</li>
         <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 formulas): “Is the line clear for train no. …?”, “Line … clear”, “Train no. … departed at …”, “Train no. … arrived at …”. Blocks are released with dPo / dKo after telephone confirmation.</li>
         <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dPo/dKo without reason −15; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
       </ul>
