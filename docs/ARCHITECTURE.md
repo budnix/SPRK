@@ -213,7 +213,12 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   `EMERGENCY_BRAKE`. Minięcie semafora bez sygnału dla pociągu (i bez rozkazu) to `spad` (Traffic: alarm, kara), potem
   hamowanie nagłe i utrata zezwolenia. Postój przy peronie trwa, dopóki semafor tuż przed pociągiem ma „Stój”
   (`depart` przy ruszeniu). Testy: `tests/braking.test.js`, `tests/departure.test.js`.
-* Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania), dPz (doraźne, licznik).
+* Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania albo przebiegu poprzednim z sygnałem
+  zezwalającym lub pociągiem), dPz (doraźne, licznik). Po zwolnieniu kontynuacji `#restoreOverlap` przywraca drogę
+  ochronną przebiegu poprzedniego (`overlapByCont`) albo daje „Stój”.
+* Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
+  ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).
+  Test: `tests/signal-safety.test.js`.
 * Sz i rozkaz „S”: droga za semaforem po bieżących położeniach zwrotnic (`Interlocking.pathBeyond`) – blokada tylko
   wyjazdu na tej drodze, uzasadnienie usterką tylko na niej (`faultOnPath`); `Traffic.issueOrder` używa tej samej drogi.
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.

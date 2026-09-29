@@ -483,8 +483,13 @@ export class Interlocking {
     return null;
   }
 
-  /** Zwolnienie drogi ochronnej po wjeździe pociągu na tor docelowy. */
-  #releaseOverlap(act) {
+  /**
+   * Zwolnienie drogi ochronnej po wjeździe pociągu na tor docelowy albo (`byContinuation`) przez nastawiany przebieg
+   * kontynuacji – wtedy droga ochronna wraca po jego zwolnieniu (`#restoreOverlap`).
+   */
+  #releaseOverlap(act, byContinuation = false) {
+    if (byContinuation && act.route.overlap.length) act.overlapByCont = true;
+    else if (!byContinuation) act.overlapByCont = false;
     if (!act.overlap.length && !act.overlapPoints.length) return;
     const keep = new Set([...act.route.points, ...act.route.flank].map((p) => p.id));
     for (const p of act.overlapPoints) if (!keep.has(p.id)) act.lockedPoints.delete(p.id);
@@ -570,7 +575,7 @@ export class Interlocking {
     if (problems.length) return { ...this.#fail(`Przebieg ${routeId}: ${problems.map((p) => p.msg).join('; ')}`), codes: [...new Set(problems.map((p) => p.code))] };
     // nastawnia mechaniczna: zwrotnice już stoją dobrze (inaczej przeszkoda point-position) – przebieg zamyka się od razu
     if (this.manualPoints) { this.#completeRoute(route); return { ok: true }; }
-    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred);
+    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred, true);
     // Przestaw zwrotnice i wykolejnice (nastawianie przebiegowe)
     for (const req of [...route.points, ...route.flank]) {
       const p = this.points.get(req.id);
@@ -587,7 +592,7 @@ export class Interlocking {
   }
 
   #completeRoute(route) {
-    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred); // kontynuacja zastępuje drogę ochronną
+    for (const pred of this.#continuedBy(route)) this.#releaseOverlap(pred, true); // kontynuacja zastępuje drogę ochronną
     const hasCont = this.#hasContinuation(route);
     const act = {
       id: route.id, route, since: this.time,
@@ -595,7 +600,8 @@ export class Interlocking {
       overlapPoints: hasCont ? [] : this.#overlapPoints(route),
       lockedPoints: new Set([...route.points, ...route.flank, ...(hasCont ? [] : this.#overlapPoints(route))].map((p) => p.id)),
       lockedDerailers: new Set([...route.derailers.onRoute, ...route.derailers.protect].map((d) => d.id)),
-      overlap: hasCont ? [] : [...route.overlap], signalOff: this.manualSignal, timedRelease: null,
+      overlap: hasCont ? [] : [...route.overlap], overlapByCont: hasCont && route.overlap.length > 0,
+      signalOff: this.manualSignal, timedRelease: null,
       lever: false, blocked: false, passed: false, // dźwignia sygnałowa, blok przebiegowy, przejazd przy holdRoute
     };
     for (const sid of route.sections) { const s = this.sections.get(sid); s.route = route.id; s.wasOccupied = false; }
@@ -672,7 +678,12 @@ export class Interlocking {
     const sig = this.signals.get(signalId);
     if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
     const pend = this.pending.findIndex((p) => p.route.start === signalId);
-    if (pend >= 0) { this.pending.splice(pend, 1); this.#log('info', `Nastawianie przebiegu z ${signalId} przerwane`); return { ok: true }; }
+    if (pend >= 0) {
+      const [{ route }] = this.pending.splice(pend, 1);
+      this.#log('info', `Nastawianie przebiegu z ${signalId} przerwane`);
+      this.#restoreOverlap(this.#continuedBy(route));
+      return { ok: true };
+    }
     if (!sig.route) return this.#fail(`Semafor ${signalId} nie ma nastawionego przebiegu`);
     const act = this.active.get(sig.route);
     if (this.manualSignal && act.lever && !emergency) return this.#fail(`Przebieg ${act.id}: najpierw przełóż dźwignię sygnałową ${signalId} na „Stój”`);
@@ -698,7 +709,10 @@ export class Interlocking {
     const approach = this.sections.get(act.route.approach);
     const train = act.route.kind === 'train';
     const delay = train ? this.timedRelease : this.shuntTimedRelease;
-    const occupied = approach?.occupied || (!train && act.lockedSections.some((s) => this.sections.get(s).occupied));
+    // zbliżanie zajęte także wtedy, gdy przebieg poprzedni (kończący się na tym semaforze) ma sygnał zezwalający albo
+    // pociąg – pociąg może już jechać na ten przebieg (Ie-4 §41 ust. 3)
+    const predTrain = train && this.#continuedBy(act.route).some((p) => !p.signalOff || p.trainEntered);
+    const occupied = approach?.occupied || predTrain || (!train && act.lockedSections.some((s) => this.sections.get(s).occupied));
     // `timed` – zwolnienie czasowe na żądanie dyżurnego (MOR-3: ZCZ), także przy wolnym odcinku zbliżania
     if (delay > 0 && (occupied || timed || (train && this.timedReleaseAlways))) {
       if (act.timedRelease) return { ok: true, noop: true };
@@ -738,6 +752,7 @@ export class Interlocking {
   }
 
   #dissolve(act) {
+    const preds = this.#continuedBy(act.route);
     for (const sid of act.lockedSections) {
       const s = this.sections.get(sid);
       if (s.route === act.id) s.route = null;
@@ -745,8 +760,37 @@ export class Interlocking {
     const sig = this.signals.get(act.route.start);
     if (sig.route === act.id) sig.route = null;
     this.active.delete(act.id);
+    this.#restoreOverlap(preds);
     this.#refreshSignals();
     this.bus.emit('route', { id: act.id, state: 'released' });
+  }
+
+  /**
+   * Po zwolnieniu przebiegu kontynuacji droga ochronna przebiegów poprzedzających wraca (jest częścią przebiegu
+   * pociągowego, Ie-4 §37 ust. 2); gdy nie może (odcinek zajęty lub w innym przebiegu, zwrotnica utwierdzona inaczej),
+   * semafor poprzedzający przed wjazdem pociągu zmienia się na „Stój”.
+   */
+  #restoreOverlap(preds) {
+    for (const pred of preds) {
+      if (!this.active.has(pred.id) || !pred.overlapByCont || pred.overlap.length) continue;
+      pred.overlapByCont = false;
+      const secs = pred.route.overlap;
+      const pts = this.#overlapPoints(pred.route);
+      const busySec = secs.find((sid) => {
+        const s = this.sections.get(sid);
+        return s.occupied || s.route || [...this.active.values()].some((a) => a !== pred && a.overlap.includes(sid));
+      });
+      const busyPoint = pts.find((p) => this.points.get(p.id).moving || (this.#lockedPosition(p.id) ?? p.position) !== p.position);
+      if (!busySec && !busyPoint) {
+        pred.overlap = [...secs]; pred.overlapPoints = pts;
+        for (const p of pts) pred.lockedPoints.add(p.id);
+        this.#log('info', `Przebieg ${pred.id}: droga ochronna ${secs.join(', ')} przywrócona`);
+        this.bus.emit('route', { id: pred.id, state: 'overlap-restored' });
+      } else if (!pred.trainEntered && !pred.signalOff && !this.manualSignal) {
+        pred.signalOff = true;
+        this.#log('warn', `Semafor ${pred.route.start} na „Stój”: droga ochronna przebiegu ${pred.id} nie może wrócić (${busySec ? `odcinek ${busySec}` : `zwrotnica ${busyPoint.id}`})`);
+      }
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -917,6 +961,18 @@ export class Interlocking {
     for (const sig of this.signals.values()) this.bus.emit('signal', sig);
   }
 
+  /** Warunek sygnału zezwalającego przebiegu niespełniony (opis) albo null. */
+  #signalCondition(act) {
+    for (const sid of [...act.lockedSections, ...act.overlap]) {
+      if (this.sections.get(sid)?.occupied) return `odcinek ${sid} zajęty`;
+    }
+    for (const pid of act.lockedPoints) {
+      const p = this.points.get(pid);
+      if (!p.control || p.moving) return `zwrotnica ${pid} bez kontroli`;
+    }
+    return null;
+  }
+
   #computeAspect(sig) {
     if (sig.substitute) return 'Sz';
     const stop = this.#stopAspect(sig.kind);
@@ -1028,6 +1084,16 @@ export class Interlocking {
         if (!act.signalOff && act.route.kind === 'shunt' && !this.manualSignal && approach?.physical) act.shuntHold = true;
         else if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
         if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
+      }
+      // stała kontrola warunków sygnału przed wjazdem pociągu: zajętość odcinka przebiegu lub drogi ochronnej, utrata
+      // kontroli zwrotnicy – semafor na „Stój”, przebieg zostaje utwierdzony; sygnał nie wraca sam (nastawnia
+      // mechaniczna: sygnał trzyma dźwignia – bez zmian)
+      if (!act.trainEntered && !act.signalOff && !this.manualSignal && act.route.kind === 'train') {
+        const why = this.#signalCondition(act);
+        if (why) {
+          act.signalOff = true; this.#refreshSignals();
+          this.#log('warn', `Semafor ${sig.id} samoczynnie na „Stój”: ${why} – przebieg ${act.id} utwierdzony`);
+        }
       }
       if (act.shuntHold && !this.sections.get(act.route.approach)?.physical) {
         act.shuntHold = false; act.signalOff = true; this.#refreshSignals();

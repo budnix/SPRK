@@ -50,6 +50,19 @@ na Ms2 (M2) (Ie-1 §3 ust. 17–18). Przebieg manewrowy przez drogę ochronną p
 * Ms2 gaśnie, gdy zwolni się odcinek przed sygnalizatorem (cały skład za nim); na nastawni mechanicznej tarczę
   przestawia dźwignia jak dotąd.
 
+Stała kontrola sygnału i droga ochronna (wszystkie stanowiska poza nastawnią mechaniczną). Ze źródeł: niezajętość
+i kontrola zwrotnic są warunkami sygnału zezwalającego (Ie-4 §30 ust. 1, §39 ust. 2); Ie-4 nie mówi wprost, że sygnał
+gaśnie po utracie warunku – to wniosek z zasady bezpieczności; droga ochronna jest częścią drogi przebiegu
+pociągowego (Ie-4 §35 ust. 1, §37 ust. 2); zwolnienie przebiegu przy pociągu w zbliżaniu ma zwłokę (Ie-4 §41 ust. 3).
+Przyjęte (uproszczenia gry):
+
+* przed wjazdem pociągu zajętość odcinka przebiegu albo drogi ochronnej (także z usterki) lub utrata kontroli
+  zwrotnicy przebiegu daje „Stój”; przebieg zostaje utwierdzony, sygnał nie wraca sam (Pz i ponowne nastawienie, Sz);
+* po zwolnieniu przebiegu, który zastępował drogę ochronną (kontynuacja), droga ochronna przebiegu poprzedniego wraca;
+  gdy nie może (odcinek zajęty lub w innym przebiegu, zwrotnica utwierdzona inaczej), semafor poprzedzający daje „Stój”;
+* Pz przebiegu, do którego prowadzi przebieg poprzedni z sygnałem zezwalającym albo z pociągiem – zwalnianie czasowe,
+  jak przy zajętym odcinku zbliżania.
+
 Odjazd i hamowanie (wszystkie stanowiska). Ze źródeł: pociąg rusza z peronu na sygnał zezwalający (Ie-1 §4 ust. 13
 pkt 1); droga hamowania pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4
 i zał. 1). Przyjęte (uproszczenia gry):
