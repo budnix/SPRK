@@ -12,8 +12,13 @@ import { Clock } from '../core/Clock.js';
  *  - block-fail      – blokada liniowa bez łączności elektrycznej: zapowiadanie telefoniczne
  *  - route-block     – nastawnia mechaniczna: pociąg nie zwalnia bloku przebiegowego utwierdzającego (urządzenie
  *                      oddziaływania) – drążek przebiegu od semafora `target` cofa się tylko zwalniaczem
+ *  - track-defect    – usterka nawierzchni zgłoszona przez maszynistę (np. pęknięta szyna) na odcinku `target`:
+ *                      dyżurny zamyka tor (ITS); wjazd pociągu na tor z usterką bez zamknięcia kosztuje punkty.
+ *                      Tylko ze scenariusza – nie losuje się (tor zamyka się poleceniem stanowiska komputerowego)
  */
-export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block'];
+export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block', 'track-defect'];
+/** Usterki, których nie losuje się przy zakłóceniach (tylko w scenariuszu). */
+const SCRIPTED_ONLY = new Set(['track-defect']);
 
 export class Faults {
   constructor(sim, rng, level, scripted = []) {
@@ -47,7 +52,7 @@ export class Faults {
     const exits = [...sim.blocks.keys()];
     for (let i = 0; i < n; i++) {
       // usterka bloku przebiegowego tylko tam, gdzie jest blok (nastawnia mechaniczna); na innych stanowiskach losowanie bez zmian
-      const type = this.rng.pick(sim.ilk.routeBlock ? FAULT_TYPES : FAULT_TYPES.filter((t) => t !== 'route-block'));
+      const type = this.rng.pick(FAULT_TYPES.filter((t) => !SCRIPTED_ONLY.has(t) && (sim.ilk.routeBlock || t !== 'route-block')));
       const pool = { 'signal-fail': semafory, 'point-control': points, 'false-occupancy': sections, 'block-fail': exits, 'route-block': semafory }[type];
       if (!pool.length) continue;
       this.list.push({
@@ -68,7 +73,21 @@ export class Faults {
     for (const f of this.list) {
       if (!f.active && !f.done && time >= f.at) { f.active = true; this.#apply(f); }
       if (f.active && time >= f.at + f.duration) { f.active = false; f.done = true; this.#clear(f); }
+      if (f.active && f.type === 'track-defect') this.#defectRide(f);
     }
+  }
+
+  /** Pociąg wjechał na tor z usterką nawierzchni, którego dyżurny nie zamknął (tabor stojący tam przy zgłoszeniu się nie liczy). */
+  #defectRide(f) {
+    const s = this.sim.ilk.sections.get(f.target);
+    if (!s) return;
+    const occ = s.occupied && !s.forced;
+    if (occ && !f.wasOccupied && !s.closed && !f.penalized) {
+      f.penalized = true;
+      this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target}) – tor nie został zamknięty`);
+      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: -50, msg: `Jazda po torze z usterką nawierzchni (${f.target}) bez zamknięcia toru` });
+    }
+    f.wasOccupied = occ;
   }
 
   #log(level, msg) {
@@ -110,6 +129,15 @@ export class Faults {
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
       }
+      case 'track-defect': {
+        const s = sim.ilk.sections.get(f.target);
+        if (!s) return;
+        s.defect = true;
+        f.wasOccupied = s.occupied && !s.forced; // pociąg, który już tam jest, zgłosił usterkę – może zjechać
+        this.#log('alarm', `USTERKA: maszynista zgłasza pękniętą szynę na odcinku ${f.target}${s.track ? ` (tor ${s.track})` : ''}. Zamknij tor dla ruchu (ITS) i prowadź pociągi innym torem.`);
+        sim.bus.emit('alarm', { type: 'fault', fault: f });
+        break;
+      }
       case 'route-block': {
         const s = sim.ilk.signals.get(f.target);
         if (!s) return;
@@ -147,6 +175,12 @@ export class Faults {
         const b = sim.blocks.get(f.target);
         if (b) b.setFault(false);
         this.#log('info', `Blokada liniowa do ${b?.neighbour} – łączność przywrócona.`);
+        break;
+      }
+      case 'track-defect': {
+        const s = sim.ilk.sections.get(f.target);
+        if (s) s.defect = false;
+        this.#log('info', `Odcinek ${f.target}${s?.track ? ` (tor ${s.track})` : ''} – nawierzchnia naprawiona, tor można otworzyć (ITO).`);
         break;
       }
       case 'route-block': {

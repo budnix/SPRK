@@ -88,3 +88,35 @@ test('KZW: odwołanie zwalniania czasowego – przebieg zostaje utwierdzony', ()
   assert.ok(s.ilk.active.has('A-D1'), 'bez zwalniania czasowego przebieg trwa');
   assert.equal(s.execute({ type: 'cancel-timed', signal: 'A' }).ok, false, 'nic do odwołania');
 });
+
+/* Usterka nawierzchni zgłoszona przez maszynistę (track-defect): tor trzeba zamknąć (ITS); jazda po torze z usterką bez
+   zamknięcia kosztuje punkty, po zamknięciu i przyjęciu na inny tor – bez kary; usterki nie losuje się. */
+test('track-defect: alarm, kara za jazdę po torze bez zamknięcia, zamknięcie ITS zapobiega; tylko ze scenariusza', async () => {
+  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  assert.ok(FAULT_TYPES.includes('track-defect'));
+  const mk = () => new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'track-defect', target: 'T1', at: '07:01', duration: 30 }] } });
+  const s = mk();
+  const alarms = [];
+  s.bus.on('alarm', (a) => alarms.push(a));
+  run(s, 90);
+  assert.equal(alarms.filter((a) => a.type === 'fault').length, 1);
+  assert.equal(s.ilk.sections.get('T1').defect, true);
+  // pociąg wjeżdża na tor 1 bez zamknięcia – kara
+  s.ilk.updateOccupancy(new Set(['T1']));
+  run(s, 1);
+  assert.ok(s.score.items.some((i) => i.code === 'track-defect' && i.points < 0));
+  // po zamknięciu toru jazda po nim (np. pociąg, który już stał) nie jest karana drugi raz
+  const t2 = mk();
+  run(t2, 90);
+  assert.ok(t2.execute({ type: 'close-section', section: 'T1', closed: true }).ok);
+  t2.ilk.updateOccupancy(new Set(['T1']));
+  run(t2, 1);
+  assert.ok(!t2.score.items.some((i) => i.code === 'track-defect'));
+  run(t2, 30 * 60);
+  assert.equal(t2.ilk.sections.get('T1').defect, false, 'naprawa po czasie usterki');
+  // losowanie usterek nie daje usterki nawierzchni
+  for (let seed = 1; seed < 30; seed++) {
+    const r = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'high', seed });
+    assert.ok(!r.faults.list.some((f) => f.type === 'track-defect'), `seed ${seed}`);
+  }
+});

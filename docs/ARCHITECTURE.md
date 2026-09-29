@@ -321,9 +321,11 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   | 2 `pulpit` | pulpit kostkowy typu E | Jodłowa – linia dwutorowa z odgałęzieniem | ruch bez pozwoleń z Ko, wyprzedzanie, odgałęzienie z Eap; usterka: zwrotnica bez kontroli położenia (zamknąć, przyjąć na inny tor) |
   | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji; usterka: odcinek z fałszywą zajętością (droga ułożona ręcznie i zamknięta, wjazd na Sz) |
   | 4 `mech` | nastawnia mechaniczna | Olszyny – linia jednotorowa z bocznicą | dźwignie, drążek, blok przebiegowy, dźwignia sygnałowa, powrót po przejeździe, krzyżowanie z wykolejnicą ochronną; usterka: pociąg nie zwolnił bloku przebiegowego (zwalniacz) |
+  | 5 `ebi` | EBILock 950 (EBIScreen) | Brzezina – linia dwutorowa z blokadą samoczynną | menu pod prawym klawiszem, linia poleceń i „Wykonaj”, polecenie z klawiatury, wyprzedzanie, okno zdarzeń i alarmów; usterka: pęknięta szyna – zamknięcie toru ITS, przyjęcie na tor 3, otwarcie ITO |
 
-  Każda misja uczy innej usterki – razem wszystkie pięć rodzajów (`src/model/Faults.js`; `route-block` tylko na
-  nastawni mechanicznej, także w losowaniu). Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
+  Każda misja uczy innej usterki – razem wszystkie sześć rodzajów (`src/model/Faults.js`; `route-block` tylko na
+  nastawni mechanicznej, także w losowaniu; `track-defect` tylko w scenariuszu). Wjazd na tor z pękniętą szyną bez
+  zamknięcia kosztuje punkty; przyjęcie na inny tor, gdy planowy jest zamknięty, jest bez kary. Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
   inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka (tak jak uzasadnione Sz).
 
   Misje nie mają rozgrzewki: zaczynają się o 07:00 (pierwszy sąsiad już pyta o pozwolenie albo wyprawia pociąg)

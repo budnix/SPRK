@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openShift, tap, advance, pressBtn } from './helpers.js';
 
 /* Misje wprowadzające (samouczki): każda na własnej stacji – Szkolna (monitor), Jodłowa (typ E), Zacisze (IZH-111),
-   Olszyny (nastawnia mechaniczna) */
+   Olszyny (nastawnia mechaniczna), Brzezina (EBILock 950) */
 
 /** Przechodzi samouczek do kroku o podanym tytule: „Dalej” na krokach z opisem, „Pomiń krok” na zadaniach. */
 async function goTo(page, title) {
@@ -204,8 +204,8 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
 
 test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
-  await expect(page.locator('.st-mission')).toHaveCount(4);
-  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny']);
+  await expect(page.locator('.st-mission')).toHaveCount(5);
+  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny', 'brzezina']);
   await page.click('.st-mission[data-scenario="nauka-3"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 3');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Zacisze');
@@ -316,7 +316,7 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   await expect(box.locator('.tut-title')).toContainText('Odjazd 7108');
 });
 
-for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3'], ['olszyny', 'nauka-4']]) {
+for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3'], ['olszyny', 'nauka-4'], ['brzezina', 'nauka-5']]) {
   test(`dymek samouczka nie zasłania zakładek panelu, paska poleceń ani wskazywanego elementu (${station}, każdy krok misji)`, async ({ page }) => {
     await openShift(page, station, { params: { scenariusz: scenario } });
     await page.waitForFunction(() => window.tutorial);
@@ -366,4 +366,46 @@ test('misja 4: nastawnia mechaniczna w Olszynach – pełna kolejność kliknię
   await ctl('lever', 'A').click();
   await expect(title).toContainText('Pociąg wjeżdża');
   expect(await page.evaluate(() => window.sim.ilk.signals.get('A').aspect)).not.toBe('S1');
+});
+
+test('misja 5: EBILock 950 w Brzezinie – przebieg kliknięciami przez linię poleceń, alarm pękniętej szyny, ITS prawym klawiszem', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await page.click('.st-mission[data-scenario="nauka-5"]');
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 5: stanowisko EBILock 950');
+  await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Brzezina');
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=brzezina.*scenariusz=nauka-5/);
+  await page.waitForFunction(() => window.tutorial && window.sim);
+  await page.evaluate(() => { window.sim.clock.paused = true; return document.fonts.ready; });
+  await expect(page.locator('#desk svg.screen.ebi')).toHaveCount(1);
+  const box = page.locator('.tut-box');
+  const title = box.locator('.tut-title');
+  const hit = (kind, id) => page.locator(`#desk .hit[data-ref*='"kind":"${kind}","id":"${id}"']`).first();
+  await goTo(page, 'Linia poleceń');
+  await expect(page.locator('#ebi-line')).toHaveClass(/tut-hl/);
+  await box.locator('.tut-next').click();
+  await expect(title).toContainText('Wjazd 9101 myszą');
+  await hit('signal', 'A').click();
+  await hit('signal', 'E2').click({ button: 'right' });
+  await page.locator('.ebi-menu button[data-code="POC"]').click();
+  await expect(title).toContainText('Wjazd 9101 myszą', { timeout: 1000 }); // bez „Wykonaj” krok trwa
+  await page.locator('.ebi-exec').click();
+  await expect(title).toContainText('Wyjazd 9101 z klawiatury');
+  // lekcja usterki: alarm w oknie, potwierdzenie, zamknięcie toru 1 prawym klawiszem na torze
+  await goTo(page, 'Pęknięta szyna');
+  await box.locator('.tut-next').click();
+  await expect(title).toContainText('Potwierdzenie alarmu');
+  await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 8000 && !s.input.alarmList().length; i++) s.step(0.5); c.paused = true; });
+  await expect(page.locator('.ebi-log.alarm')).toHaveCount(1);
+  await page.locator('.ebi-log').click();
+  await expect(page.locator('.ebi-alarms')).toContainText('pękniętą szynę');
+  await page.locator('.ebi-ack-all').click();
+  await expect(title).toContainText('Zamknięcie toru 1 (ITS)');
+  await page.locator('.ebi-win-close').click();
+  await hit('section', 'T1').dispatchEvent('pointerdown', { bubbles: true, button: 2, pointerType: 'mouse', clientX: 500, clientY: 300 });
+  await page.locator('.ebi-menu button[data-code="ITS"]').click();
+  await expect(page.locator('#ebi-line')).toHaveValue('ITS T1');
+  await page.locator('.ebi-exec').click();
+  await expect(title).toContainText('Osobowy 9104 na tor 3');
+  expect(await page.evaluate(() => window.desk.sectionRefs.get('T1').every((e) => e.getAttribute('class').includes('closed')))).toBe(true);
 });

@@ -4,7 +4,8 @@
  *  - misja 1 (monitor): Szkolna – linia jednotorowa, krzyżowanie, manewry, usterki; lekcje w `lessons.js`,
  *  - misja 2 (pulpit typu E): Jodłowa – linia dwutorowa, wyprzedzanie, odgałęzienie,
  *  - misja 3 (pulpit IZH-111): Zacisze – stacja krańcowa, tory czołowe, zmiana czoła,
- *  - misja 4 (nastawnia mechaniczna): Olszyny – dźwignie, drążki, bloki przebiegowe, krzyżowanie z wykolejnicą.
+ *  - misja 4 (nastawnia mechaniczna): Olszyny – dźwignie, drążki, bloki przebiegowe, krzyżowanie z wykolejnicą,
+ *  - misja 5 (EBILock 950): Brzezina – linia poleceń, wyprzedzanie, okno alarmów, zamknięcie toru z pękniętą szyną.
  *
  * Nowy samouczek: plik misji (`id`, `name`, `view`, `phrases`, `steps()`), wpis tutaj i scenariusz stacji z polem
  * `tutorial: '<id>'`.
@@ -13,9 +14,10 @@ import monitor from './missions/monitor.js';
 import pulpit from './missions/pulpit.js';
 import izh from './missions/izh.js';
 import mech from './missions/mech.js';
+import ebi from './missions/ebi.js';
 
 /** Rejestr misji: id z pola `tutorial` scenariusza → definicja. */
-export const MISSIONS = Object.fromEntries([monitor, pulpit, izh, mech].map((m) => [m.id, m]));
+export const MISSIONS = Object.fromEntries([monitor, pulpit, izh, mech, ebi].map((m) => [m.id, m]));
 
 export function getMission(id) {
   return MISSIONS[id] || null;

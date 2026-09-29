@@ -343,6 +343,11 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
   prawy klawisz – tablet nie ma drugiego klawisza;
 * alarmami są usterki urządzeń i rozprucie zwrotnicy; żądania blokady i łączność to zdarzenia; zamknięcie ruchowe
   zwrotnicy (ITS / ITO dla zwrotnicy) jest zastąpione stopowaniem (ZWS / ZWO), a ITS / ITO dotyczy torów;
+* stacja treningowa Brzezina (misja 5) jest fikcyjna; linia dwutorowa z blokadą samoczynną, tory szlakowe
+  jednokierunkowe;
+* usterka „pęknięta szyna” (`track-defect`, misja 5) to zgłoszenie maszynisty, którego urządzenia nie widzą: dyżurny
+  zamyka tor poleceniem ITS i prowadzi ruch innym torem, po naprawie odwołuje zamknięcie (ITO); wjazd pociągu na tor
+  z usterką bez zamknięcia kosztuje w grze punkty – reguła gry, nie cytat z instrukcji;
 * pominięte: ZWB / ZBP / ZBM (przestawienie bez kontroli niezajętości), ZRI / ZRK (kasowanie rozprucia – w grze
   rozprucie znika po przestawieniu zwrotnicy), SZN (sygnał zastępczy na tor lewy), alarm dźwiękowy i „Wyłącz”,
   pola numerów pociągów (PIP) – numery pociągów rysuje się jak na innych monitorach.

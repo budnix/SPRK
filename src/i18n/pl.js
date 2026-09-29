@@ -342,6 +342,7 @@ export default {
   'sp.fault.false-occupancy': 'fałszywa zajętość',
   'sp.fault.block-fail': 'blokada bez łączności',
   'sp.fault.route-block': 'blok przebiegowy (urządzenie oddziaływania)',
+  'sp.fault.track-defect': 'nawierzchnia (pęknięta szyna)',
   'sp.route.train': 'pociągowy',
   'sp.route.shunt': 'manewrowy',
   'sp.route.timed': ' – zwalnianie czasowe',
@@ -363,6 +364,7 @@ export default {
   'sp.alarm.fault.section': 'odcinek {id}',
   'sp.alarm.fault.block': 'blokada {name}',
   'sp.alarm.fault.routeBlock': 'blok przebiegowy za semaforem {id} – zwolnij zwalniaczem',
+  'sp.alarm.fault.track': 'pęknięta szyna na odcinku {id} – zamknij tor (ITS)',
   'sp.alarm.phone': 'Telefon od {name} – odpowiedz w zakładce Łączność.',
   'sp.alarm.radio': 'Radio: maszynista pociągu {nr} melduje – zakładka Łączność.',
   // samouczek

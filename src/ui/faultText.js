@@ -10,6 +10,7 @@ const ALARM = {
   'false-occupancy': (f) => t('sp.alarm.fault.section', { id: f.target }),
   'block-fail': (f, sim) => t('sp.alarm.fault.block', { name: sim.blocks.get(f.target)?.neighbour ?? f.target }),
   'route-block': (f) => t('sp.alarm.fault.routeBlock', { id: f.target }),
+  'track-defect': (f) => t('sp.alarm.fault.track', { id: f.target }),
 };
 
 /** Tekst alarmu: „USTERKA: …”. */

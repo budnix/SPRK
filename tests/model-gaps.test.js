@@ -282,12 +282,12 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   const missions = missionList(STATIONS);
   // stacje szkoleniowe są tylko w misjach – nie ma ich wśród posterunków do służby
   const duty = dutyStations(STATIONS).map((s) => s.id);
-  for (const id of ['szkolna', 'jodlowa', 'zacisze', 'olszyny']) assert.ok(!duty.includes(id), `${id} wśród posterunków`);
+  for (const id of ['szkolna', 'jodlowa', 'zacisze', 'olszyny', 'brzezina']) assert.ok(!duty.includes(id), `${id} wśród posterunków`);
   assert.ok(duty.includes('sopot') && duty.includes('rumia'));
   assert.equal(duty.length, STATIONS.length - missions.length);
-  assert.deepEqual(missions.map((m) => `${m.station.id}/${m.scenario.id}`), ['szkolna/nauka-1', 'jodlowa/nauka-2', 'zacisze/nauka-3', 'olszyny/nauka-4']);
+  assert.deepEqual(missions.map((m) => `${m.station.id}/${m.scenario.id}`), ['szkolna/nauka-1', 'jodlowa/nauka-2', 'zacisze/nauka-3', 'olszyny/nauka-4', 'brzezina/nauka-5']);
   // nazwa misji bez numeru i dopisku „(samouczek)” – numer dodaje ekran startowy („Misja 1: Misja 1: …” był błędem)
-  assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111', 'nastawnia mechaniczna']);
+  assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111', 'nastawnia mechaniczna', 'stanowisko EBILock 950']);
   assert.equal(missionName({ name: 'Nauka obsługi' }), 'Nauka obsługi');
   // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
   const mark = difficultyMark(3, 'trudność');
