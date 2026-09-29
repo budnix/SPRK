@@ -130,7 +130,6 @@ export default {
     { id: 'zmiana-izh', name: 'Pełna zmiana – pulpit typu IZH-111 (07:00–08:50)', srk: 'izh111', description: 'Ten sam rozkład na pulpicie ciemnym urządzeń przekaźnikowych typu IZH-111: przycisk adresowy elementu i przycisk rozkazu (P, M, +, −, STOP, Zw, Zcz, Sz). Instrukcja obsługi jest pod przyciskiem „?”. Poziom zakłóceń do wyboru.', endTime: '08:50' },
     { id: 'zmiana-mech', name: 'Pełna zmiana – nastawnia mechaniczna (07:00–08:50)', srk: 'mech', description: 'Ten sam rozkład w nastawni mechanicznej: zwrotnice dźwigniami, przebieg drążkiem przebiegowym, blok przebiegowy utwierdzający i dźwignia sygnałowa; po przejeździe dźwignia na „Stój” i drążek z powrotem. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:50' },
     { id: 'zmiana-ebi', name: 'Pełna zmiana – stanowisko EBILock 950 (07:00–08:50)', srk: 'ebilock', description: 'Ten sam rozkład na monitorze EBIScreen: polecenia w linii poleceń (POC, MAN, ZWP, SES…) zatwierdzane „Wykonaj”, prawy klawisz – menu obiektu, sygnał zastępczy dwuczęściowy (SZI → SZW), okno zdarzeń i alarmów. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:50' },
-    { id: 'zmiana-mor', name: 'Pełna zmiana – stanowisko MOR-3 (07:00–08:50)', srk: 'mor3', description: 'Ten sam rozkład na monitorze z pulpitem MOR-1: kliknięcie obiektu – menu poleceń, kliknięcie celu – przebieg „Pociąg” / „Manewr”, polecenia fioletowe i czerwone z potwierdzeniem, okno komunikatów i alarmów. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:50' },
   ],
 
   timetable: [

@@ -105,7 +105,10 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'ebilock' | 'mor3' | 'izh111' | 'me
   * **polecenia wprost** – `sim.execute({ type, … })`: `route` (`start`, `end`, `kind`, `compound?`), `stop`,
     `release` (`emergency?`), `substitute`, `point`, `derailer`, `lock`, `block` – bez przycisków i bez uzbrojenia;
     polecenia stanowisk komputerowych: `close-section` (zamknięcie ruchowe toru ITS / ITO), `signal-stop`
-    (stopowanie sygnalizatora SES / SEO), `all-stop` (SSS / SSO), `substitute-off` (SZO), `cancel-timed` (KZW).
+    (stopowanie sygnalizatora SES / SEO), `all-stop` (SSS / SSO), `substitute-off` (SZO), `cancel-timed` (KZW),
+    `axle-reset` (zerowanie licznika osi ZeroLO), `release` z `timed` (zwolnienie czasowe na żądanie – ZCZ).
+    Zajętość odcinka (`occupied`) obejmuje usterki (`forced`, `axleFault` – `Interlocking.faultOccupied`), ale wjazd
+    pociągu do przebiegu (`wasOccupied`) liczy się tylko z taboru (`physical`).
     Oba wejścia pilnują okręgu nastawczego gracza.
 * Pulpit kostkowy używa tylko przycisków. Monitor wydaje polecenia wprost (Pz, dPz, Sz, Zw, Zz, STOP, blokada);
   przez protokół przycisków przechodzi u niego tylko wskazanie początku i końca przebiegu, bo wskazany początek
@@ -329,9 +332,10 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   | 3 `izh` | pulpit IZH-111 | Zacisze – stacja krańcowa | tory czołowe, zmiana czoła, dwa składy na stacji; usterka: odcinek z fałszywą zajętością (droga ułożona ręcznie i zamknięta, wjazd na Sz) |
   | 4 `mech` | nastawnia mechaniczna | Olszyny – linia jednotorowa z bocznicą | dźwignie, drążek, blok przebiegowy, dźwignia sygnałowa, powrót po przejeździe, krzyżowanie z wykolejnicą ochronną; usterka: pociąg nie zwolnił bloku przebiegowego (zwalniacz) |
   | 5 `ebi` | EBILock 950 (EBIScreen) | Brzezina – linia dwutorowa z blokadą samoczynną | menu pod prawym klawiszem, linia poleceń i „Wykonaj”, polecenie z klawiatury, wyprzedzanie, okno zdarzeń i alarmów; usterka: pęknięta szyna – zamknięcie toru ITS, przyjęcie na tor 3, otwarcie ITO |
+  | 6 `mor` | MOR-3 (MOR-1) | Kalinowo – węzeł trzech linii jednotorowych z Eap | menu obiektów, przebieg kliknięciem celu (semafor, tor, trójkąt) i przeciąganiem, blokada z menu trójkąta, krzyżowanie w węźle, alarm dwuklikiem, zwrotnice Minus / Stop / oStop; usterka: licznik osi (ZeroLO, przejazd kontrolny na SZ) |
 
-  Każda misja uczy innej usterki – razem wszystkie sześć rodzajów (`src/model/Faults.js`; `route-block` tylko na
-  nastawni mechanicznej, także w losowaniu; `track-defect` tylko w scenariuszu). Wjazd na tor z pękniętą szyną bez
+  Każda misja uczy innej usterki – razem wszystkie siedem rodzajów (`src/model/Faults.js`; `route-block` tylko na
+  nastawni mechanicznej, także w losowaniu; `track-defect` i `axle-counter` tylko w scenariuszu). Wjazd na tor z pękniętą szyną bez
   zamknięcia kosztuje punkty; przyjęcie na inny tor, gdy planowy jest zamknięty, jest bez kary. Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
   inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka (tak jak uzasadnione Sz).
 

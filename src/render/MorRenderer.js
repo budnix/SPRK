@@ -158,9 +158,15 @@ export class MorRenderer extends ScreenBase {
 
   #elementsOf(ref) {
     if (!ref) return [];
-    if (ref.kind === 'section') return this.sectionHits.get(ref.id) || [];
+    if (ref.kind === 'section') return this.sectionHits.get(ref.id) || []; // obwódka na całym torze, nie na jednym polu
     const e = this.elementFor(ref);
     return e ? [e] : [];
+  }
+
+  /** Tor (pole dotyku linii toru) też jest obiektem poleceń – samouczek wskazuje go jak semafor czy zwrotnicę. */
+  elementFor(ref) {
+    if (ref.kind === 'section') return this.sectionHits.get(ref.id)?.[0] || null;
+    return super.elementFor(ref);
   }
 
   /** Wybór MOR-1: fioletowa obwódka obiektu (i celu przebiegu). Baza woła to także na końcu odświeżania obrazu. */

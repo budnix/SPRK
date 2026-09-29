@@ -34,13 +34,14 @@ export class EventLog {
     if (a.type === 'fault') active = () => !!a.fault.active;
     else if (a.type === 'rozprucie') active = () => this.ilk.alarms.has(`rozprucie:${a.id}`);
     else return; // żądanie blokady, łączność – zdarzenia, nie alarmy urządzeń
-    this.alarms.push({ id: this.#nextAlarm++, time: this.ilk.time, text: this.#lastAlarmText || a.type, acked: false, active });
+    // `kind` – rodzaj alarmu z danych (usterka: jej typ), nie z treści komunikatu
+    this.alarms.push({ id: this.#nextAlarm++, time: this.ilk.time, kind: a.type === 'fault' ? a.fault.type : a.type, text: this.#lastAlarmText || a.type, acked: false, active });
     this.bus.emit('console', { what: 'alarms' });
   }
 
   /** Lista alarmów do okna: aktywne / ustąpione, potwierdzone / niepotwierdzone. */
   alarmList() {
-    return this.alarms.map((x) => ({ id: x.id, time: x.time, text: x.text, acked: x.acked, active: x.active() }));
+    return this.alarms.map((x) => ({ id: x.id, time: x.time, kind: x.kind, text: x.text, acked: x.acked, active: x.active() }));
   }
 
   ack(ids) {

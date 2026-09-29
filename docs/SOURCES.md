@@ -391,7 +391,15 @@ Uproszczenia i założenia w grze (przyjęte):
 * okno komunikatów i alarmów leży między planem a listwą narzędzi; komunikaty to wpisy dziennika i wydane polecenia,
   alarmy – usterki urządzeń i rozprucie; licznik poleceń specjalnych liczy potwierdzone polecenia czerwone (SZ, dPo,
   dKo), a liczniki Sz / dPz na planie działają jak na innych stanowiskach;
-* pominięte: NSZ (sygnał zastępczy na tor niewłaściwy, W24), ZeroLO (zerowanie liczników osi), KSR (kasowanie
+* ZeroLO (zerowanie licznika osi) – tylko dla toru; wg opisu SPE: po zerowaniu odcinek ciemnieje (Ie-104:
+  ciemnoczerwony – zajęty, oczekujący), a zwalnia się po wjeździe i wyjeździe pojazdu, który wjechał na sygnał
+  zastępczy lub rozkaz pisemny. W grze: usterka `axle-counter` (tylko w scenariuszu, misja 6 w fikcyjnym węźle
+  Kalinowo) – od czasu `at` licznik myli się przy najbliższym przejeździe: po zjeździe pociągu odcinek dalej wskazuje
+  zajętość; przejazdem kontrolnym jest nowy wjazd i wyjazd pociągu po zerowaniu (tabor stojący na odcinku przy
+  zerowaniu się nie liczy); bez zerowania usterkę usuwa automatyk po czasie usterki; sprawdzenie, że tor jest wolny,
+  zostaje po stronie gracza (gra tego nie wymusza); zajętość z usterki nie jest wjazdem pociągu – przebieg
+  nastawiony przed usterką nie „przejeżdża” sam (tak samo przy fałszywej zajętości);
+* pominięte: NSZ (sygnał zastępczy na tor niewłaściwy, W24), ZeroLO zwrotnicy, KSR (kasowanie
   rozprucia – w grze rozprucie znika po przestawieniu zwrotnicy), PlusBZ / MinusBZ, Zmk / oZmk zwrotnicy, blokady
   Eac (Wbl + Pzk, Zwbl), C i SHL-12, przejazdy kategorii A i SSP, przyciski widoku (Sem, Tm, Zwr, Odc), zgłaszanie
   usterek z menu.

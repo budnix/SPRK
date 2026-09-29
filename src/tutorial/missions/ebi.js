@@ -65,7 +65,7 @@ export function steps() {
     act('in-9106', 'Osobowy 9106 znów na tor 1', `Tor 1 jest otwarty. Osobowy <b>9106</b> (08:16) jedzie planowo torem 1: <b>POC B D1</b>, po postoju <b>POC D1 kT1</b>.`, sig('B'),
       (sim) => atNeighbour(sim, 9106)),
 
-    info('end', 'Koniec misji', `To wszystko: menu pod prawym klawiszem, linia poleceń i „Wykonaj”, polecenia z klawiatury, wyprzedzanie, okno zdarzeń i alarmów oraz zamknięcie toru ITS / ITO. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>W instrukcji pod przyciskiem „?” są pozostałe polecenia – m.in. sygnał zastępczy dwoma poleceniami (<b>SZI</b>, potem po 5–30 s <b>SZW</b>), stopowanie semafora (SES) i zwrotnicy (ZWS).</p>`, { el: '#btn-menu' }),
+    info('end', 'Koniec misji', `To wszystko: menu pod prawym klawiszem, linia poleceń i „Wykonaj”, polecenia z klawiatury, wyprzedzanie, okno zdarzeń i alarmów oraz zamknięcie toru ITS / ITO. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b>.<p>W instrukcji pod przyciskiem „?” są pozostałe polecenia – m.in. sygnał zastępczy dwoma poleceniami (<b>SZI</b>, potem po 5–30 s <b>SZW</b>), stopowanie semafora (SES) i zwrotnicy (ZWS).</p><p>Misja 6 pokazuje stanowisko MOR-3 w węźle Kalinowo (menu → Nowa zmiana → Misja 6).</p>`, { el: '#btn-menu' }),
   ];
 }
 

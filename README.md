@@ -66,7 +66,7 @@ Play it: **https://budnix.github.io/SPRK/**
   drag with the right mouse button. Violet commands need a confirmation, red ones are special (confirmation and a
   special-command counter); while one waits, no other command is accepted (Ie-20). A messages / alarms window sits
   below the picture; alarms are acknowledged with a double click. Operation follows the SPE simulator's description of
-  the MOR-1 desk (no public station manual). Available as a shift on the training stations.
+  the MOR-1 desk (no public station manual). Played in mission 6 at Kalinowo (and its full shift there).
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -91,17 +91,18 @@ Play it: **https://budnix.github.io/SPRK/**
   decision.
 
 ### Stations
-The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny, Brzezina) are not in the list of stations for a
-regular shift; their full shifts on every workstation (type E, IZH-111, mechanical, computer, EBILock 950, MOR-3) are
-picked in the mission briefing, next to the tutorial.
+The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny, Brzezina, Kalinowo) are not in the list of stations for a
+regular shift; a mission never switches workstations, so the mission briefing offers the tutorial and the station's
+full shift on the same workstation (MOR-3 only at Kalinowo, mission 6).
 
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
-| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical / EBILock 950 / MOR-3 | 1/5 | Training station on a single-track line; mission 1. |
-| **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical / EBILock 950 / MOR-3 | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
-| **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical / EBILock 950 / MOR-3 | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
-| **Olszyny** (fictional) | mechanical / relay type E / IZH-111 / computer / EBILock 950 / MOR-3 | 2/5 | Training station on a single-track line with a goods siding and a protecting derailer; mission 4. |
-| **Brzezina** (fictional) | EBILock 950 / computer / relay type E / MOR-3 | 2/5 | Training station on a double-track line with automatic block: two main and two loop tracks, overtaking; mission 5. |
+| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical / EBILock 950 | 1/5 | Training station on a single-track line; mission 1. |
+| **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical / EBILock 950 | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
+| **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical / EBILock 950 | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
+| **Olszyny** (fictional) | mechanical / relay type E / IZH-111 / computer / EBILock 950 | 2/5 | Training station on a single-track line with a goods siding and a protecting derailer; mission 4. |
+| **Brzezina** (fictional) | EBILock 950 | 2/5 | Training station on a double-track line with automatic block: two main and two loop tracks, overtaking; mission 5. |
+| **Kalinowo** (fictional) | MOR-3 | 3/5 | Training junction of three single-track lines (Eap everywhere): crossings, a branch, a freight without stopping; mission 6. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
@@ -117,16 +118,19 @@ Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenario
 failure, a block failure, a peak with heavy disruptions).
 
 ### Guided missions and the start screen
-* Five missions, each on **its own training station** with a different track layout and timetable:
+* Six missions, each on **its own training station** with a different track layout and timetable:
   **Mission 1** – computer workstation at Szkolna (single-track line: permissions, crossing, shunting, substitute
   signal, telephone announcements); **Mission 2** – type E desk at Jodłowa (double-track line: traffic without
   permissions, overtaking, a branch with the Eap block); **Mission 3** – type IZH-111 desk at Zacisze (terminus:
   stub tracks, reversing, two consists in the station); **Mission 4** – mechanical signal box at Olszyny (point and
   derailer levers, route lever, route block, signal lever, crossing with a protecting derailer); **Mission 5** – EBILock 950
   workstation at Brzezina (double-track line with automatic block: right-click menus, the command line and *Execute*,
-  typed commands, overtaking, the events and alarms window, closing a track with a broken rail). Commands are taught when they are needed – by the traffic
+  typed commands, overtaking, the events and alarms window, closing a track with a broken rail); **Mission 6** – MOR-3
+  workstation at Kalinowo (junction of three single-track lines: object menus, route by clicking the target or dragging,
+  line block from the triangle menu, acknowledging alarms with a double click, resetting an axle counter with ZeroLO and
+  a check run on the substitute signal). Commands are taught when they are needed – by the traffic
   or by a fault – and every mission ends with a different equipment fault and how to handle it (dark signal, block without
-  communication, point without detection, false track occupancy, route block not released by the train, broken rail),
+  communication, point without detection, false track occupancy, route block not released by the train, broken rail, axle counter),
   a popup pinned to the element to use, highlighted targets, a clickable glossary of every abbreviation
   (Poz, Wbl, Ko, Pz, dPz, Sz, Zz, Zk…), feedback when you set the wrong route. The timetable walks through permission
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a

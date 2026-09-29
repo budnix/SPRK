@@ -101,9 +101,9 @@ test('zakładki ekranów nie są wymieniane przy ponownym planowaniu (start, zmi
   await expect.poll(() => page.evaluate(() => window.__tabs.some((b) => !b.isConnected))).toBe(true);
 });
 
-for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk'], ['pulpit IZH-111', 'zmiana-izh', 'desk izh'], ['nastawnia mechaniczna', 'zmiana-mech', 'desk mech'], ['EBILock 950', 'zmiana-ebi', 'screen ebi'], ['MOR-3', 'zmiana-mor', 'screen mor']]) {
+for (const [name, scenario, svgClass, station = 'szkolna'] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk'], ['pulpit IZH-111', 'zmiana-izh', 'desk izh'], ['nastawnia mechaniczna', 'zmiana-mech', 'desk mech'], ['EBILock 950', 'zmiana-ebi', 'screen ebi'], ['MOR-3', 'zmiana', 'screen mor', 'kalinowo']]) {
   test(`widok stanowiska (${name}) spełnia kontrakt PanelView: rysunek, margines, wycinek, elementy obsługi, etykiety pociągów`, async ({ page }) => {
-    await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
+    await openShift(page, station, { params: { scenariusz: scenario } });
     const v = await page.evaluate(() => {
       // klasa widoku, ewentualnie wspólna baza stanowisk (ScreenBase) i PanelView (nazwy klas znikają w zbudowanej
       // paczce – liczy się, gdzie leżą metody)

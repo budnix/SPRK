@@ -178,12 +178,13 @@ export class StartScreen {
     b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>${t('start.tutorial')}${steps ? ` · ${t('start.steps', { n: steps })}` : ''}</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
     this.root.querySelector('#st-station-desc').textContent = m.scenario.description || '';
-    // wybór zmiany: samouczek (domyślnie) albo pełne zmiany stacji szkoleniowej – po jednej na każde stanowisko
-    // (stacje szkoleniowe nie są na liście „Służba”, więc tu jest do nich wejście)
+    // wybór zmiany: samouczek (domyślnie) albo pełna zmiana stacji szkoleniowej na tym samym pulpicie co misja – misja
+    // nie zmienia pulpitu (stacje szkoleniowe nie są na liście „Służba”, więc tu jest wejście do ich pełnej zmiany)
     this.root.querySelector('.st-form').classList.remove('hidden');
     this.root.querySelector('#st-district-wrap').classList.add('hidden');
     this.root.querySelector('#st-district-desc').textContent = '';
-    const shifts = (m.station.scenarios || []).filter((sc) => !sc.tutorial);
+    const srkOf = (sc) => getSrk(sc.srk || m.station.srk).id; // jak Simulation: nieznane / brak → typ E
+    const shifts = (m.station.scenarios || []).filter((sc) => !sc.tutorial && srkOf(sc) === srkOf(m.scenario));
     this.#scenarioChoice([{ ...m.scenario, name: t('start.missionOption', { name: missionName(m.scenario) }), description: '' }, ...shifts], m.scenario.id, (sc) => {
       const tut = sc.id === m.scenario.id;
       this.root.querySelector('#st-go').textContent = t(tut ? 'start.goMission' : 'start.go');

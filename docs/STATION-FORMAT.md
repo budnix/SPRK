@@ -142,7 +142,9 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 * `faults` – usterki zadane, `duration` w minutach: `signal-fail` (semafor bez sygnału zezwalającego), `point-control`
   (brak kontroli po przestawieniu), `false-occupancy` (zajętość bez pociągu), `block-fail` (blokada bez łączności –
   zapowiadanie telefoniczne), `route-block` (nastawnia mechaniczna: blok przebiegowy niezwolniony przez pociąg),
-  `track-defect` (pęknięta szyna na odcinku `target` – dyżurny zamyka tor, tylko w scenariuszu, nie losuje się);
+  `track-defect` (pęknięta szyna na odcinku `target` – dyżurny zamyka tor, tylko w scenariuszu, nie losuje się),
+  `axle-counter` (od `at` licznik osi odcinka `target` myli się przy najbliższym przejeździe – po zjeździe pociągu
+  wskazuje zajętość; zerowanie i przejazd kontrolny; czas trwania liczony od wystąpienia; tylko w scenariuszu);
   `closedSections` – zamknięcia torów,
 * `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz; poziomy dodają losowe
   opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,

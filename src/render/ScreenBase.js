@@ -412,6 +412,7 @@ export class ScreenBase extends PanelView {
   /** Stan odcinka wg tab. 8 Ie-104. */
   #sectionClass(sec) {
     if (!sec) return 'free';
+    if (sec.occupied && sec.resetPending) return 'occ-reset'; // ciemnoczerwony – zajęty, po zerowaniu licznika osi
     if (sec.occupied) return 'occ';
     if (sec.route) {
       const act = this.ilk.active.get(sec.route);
@@ -426,7 +427,7 @@ export class ScreenBase extends PanelView {
     const sec = this.ilk.sections.get(id);
     const cls = this.#sectionClass(sec);
     // łącznica, w którą zwrotnica nie jest ustawiona, nie pokazuje zajętości ani przebiegu (Topology.branchGates)
-    const gated = cls === 'occ' || cls === 'timed' || cls.startsWith('rt-');
+    const gated = cls.startsWith('occ') || cls === 'timed' || cls.startsWith('rt-');
     for (const e of this.sectionRefs.get(id) || []) setSeg(e, gated && e._tile && !this.ilk.onSetBranch(e._tile) ? 'free' : cls);
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);

@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test';
 import { openShift, simState, advance } from './helpers.js';
 
 /* Stanowisko komputerowe MOR-3 (pulpit MOR-1): menu obiektów, przebieg kliknięciem celu, polecenia z potwierdzeniem,
-   okno komunikatów i alarmów (Szkolna, zmiana-mor). */
+   okno komunikatów i alarmów (Kalinowo – stacja misji 6, pełna zmiana na MOR-3). */
 
-const open = (page) => openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-mor' } });
+const open = (page) => openShift(page, 'kalinowo', { params: { scenariusz: 'zmiana' } });
 const hit = (page, kind, id) => page.locator(`#desk .hit[data-ref*='"kind":"${kind}","id":"${id}"']`).first();
 const codes = (page) => page.locator('.mor-menu button').evaluateAll((b) => b.map((x) => x.dataset.code));
 
@@ -17,20 +17,20 @@ test('przebieg: kliknięcie semafora – fioletowa obwódka i menu, kliknięcie 
   await hit(page, 'signal', 'A').click();
   await expect(page.locator('#desk .scr-el.signal.mor-sel')).toHaveCount(1);
   expect(await codes(page)).toEqual(['Stop', 'SZ']);
-  await hit(page, 'signal', 'D1').click();
+  await hit(page, 'signal', 'E1').click();
   expect(await codes(page)).toEqual(['Pociąg']);
-  await expect(page.locator('#status')).toContainText('Przebieg A → D1');
+  await expect(page.locator('#status')).toContainText('Przebieg A → E1');
   await page.locator('.mor-menu button[data-code="Pociąg"]').click();
   await advance(page, 8);
-  expect((await simState(page)).active).toContain('A-D1');
+  expect((await simState(page)).active).toContain('A-E1');
   await expect(page.locator('#desk .mor-sel')).toHaveCount(0);
   // zwrotnica: Minus od razu, bez potwierdzenia
-  await hit(page, 'point', 'Zw4').click();
+  await hit(page, 'point', 'Zw3').click();
   await page.locator('.mor-menu button[data-code="Minus"]').click();
   await advance(page, 6);
-  expect((await simState(page)).points.Zw4).toBe('-');
+  expect((await simState(page)).points.Zw3).toBe('-');
   // komunikaty: polecenia w oknie pod obrazem
-  await expect(page.locator('.mor-list')).toContainText('Pociąg A-D1');
+  await expect(page.locator('.mor-list')).toContainText('Pociąg A-E1');
   expect(errors).toEqual([]);
 });
 
@@ -62,11 +62,11 @@ test('tablet: dotknięcie początku i dotknięcie celu (bez przeciągania) dają
   await open(page);
   const tap = (loc) => loc.dispatchEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'touch', clientX: 300, clientY: 300 });
   await tap(hit(page, 'signal', 'A'));
-  await tap(hit(page, 'signal', 'D2'));
+  await tap(hit(page, 'signal', 'E2'));
   expect(await codes(page)).toEqual(['Pociąg']);
   // tor jako cel przebiegu i obiekt poleceń (Zmk)
   await page.keyboard.press('Escape');
-  const sec = await page.evaluate(() => window.sim.ilk.routes.get('A-D1').sections.at(-1));
+  const sec = await page.evaluate(() => window.sim.ilk.routes.get('A-E1').sections.at(-1));
   await tap(hit(page, 'signal', 'A'));
   await tap(hit(page, 'section', sec));
   expect(await codes(page)).toEqual(['Pociąg']);
@@ -88,30 +88,33 @@ test('alarm: przełącznik okna miga, dwuklik potwierdza (czerwony na niebieskim
 
 test('mysz: przeciągnięcie prawym klawiszem od semafora do celu daje menu przebiegu', async ({ page }) => {
   await open(page);
-  const a = await hit(page, 'signal', 'A').boundingBox(), d = await hit(page, 'signal', 'D2').boundingBox();
+  const a = await hit(page, 'signal', 'A').boundingBox(), d = await hit(page, 'signal', 'E2').boundingBox();
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down({ button: 'right' });
   await page.mouse.move(d.x + d.width / 2, d.y + d.height / 2, { steps: 5 });
   await page.mouse.up({ button: 'right' });
   expect(await codes(page)).toEqual(['Pociąg']);
-  expect(await page.evaluate(() => window.sim.input.armed.selection.map((r) => r.id))).toEqual(['A', 'D2']);
+  expect(await page.evaluate(() => window.sim.input.armed.selection.map((r) => r.id))).toEqual(['A', 'E2']);
 });
 
-test('ekran startowy: w odprawie misji wybór zmiany – samouczek albo pełna zmiana stacji na każdym stanowisku, także MOR-3', async ({ page }) => {
+test('ekran startowy: odprawa misji – samouczek albo pełna zmiana tej stacji na tym samym pulpicie; MOR-3 tylko w misji 6', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
-  // stacje szkoleniowe nie są na liście „Służba” – wejście do ich zmian jest w odprawie misji
-  await expect(page.locator('.st-card[data-id="szkolna"]')).toHaveCount(0);
+  // stacje szkoleniowe nie są na liście „Służba” – wejście do ich pełnej zmiany jest w odprawie misji
+  await expect(page.locator('.st-card[data-id="kalinowo"]')).toHaveCount(0);
+  const opts = () => page.locator('#st-scenario option').evaluateAll((o) => o.map((x) => x.value));
+  // misja nie zmienia pulpitu: misja 1 (monitor) – tylko zmiana na monitorze
   await page.click('.st-mission[data-scenario="nauka-1"]');
+  expect(await opts()).toEqual(['nauka-1', 'zmiana']);
+  await page.click('.st-mission[data-scenario="nauka-6"]');
   const sel = page.locator('#st-scenario');
-  await expect(sel).toHaveValue('nauka-1');
+  await expect(sel).toHaveValue('nauka-6');
   await expect(page.locator('#st-go')).toContainText('misję');
-  const options = await sel.locator('option').evaluateAll((o) => o.map((x) => x.value));
-  expect(options).toEqual(['nauka-1', 'zmiana', 'zmiana-e', 'zmiana-izh', 'zmiana-mech', 'zmiana-ebi', 'zmiana-mor']);
-  await sel.selectOption('zmiana-mor');
-  await expect(page.locator('#st-scenario-desc')).toContainText('MOR-1');
+  expect(await opts()).toEqual(['nauka-6', 'zmiana']);
+  await sel.selectOption('zmiana');
+  await expect(page.locator('#st-scenario-desc')).toContainText('MOR-3');
   await expect(page.locator('#st-level')).toBeEnabled();
   await page.click('#st-go');
-  await page.waitForURL(/stacja=szkolna.*scenariusz=zmiana-mor/);
+  await page.waitForURL(/stacja=kalinowo.*scenariusz=zmiana/);
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);
   expect(await page.evaluate(() => !!window.tutorial?.active)).toBe(false);

@@ -15,10 +15,15 @@ import { Clock } from '../core/Clock.js';
  *  - track-defect    – usterka nawierzchni zgłoszona przez maszynistę (np. pęknięta szyna) na odcinku `target`:
  *                      dyżurny zamyka tor (ITS); wjazd pociągu na tor z usterką bez zamknięcia kosztuje punkty.
  *                      Tylko ze scenariusza – nie losuje się (tor zamyka się poleceniem stanowiska komputerowego)
+ *  - axle-counter    – od `at` licznik osi odcinka `target` myli się przy najbliższym przejeździe: gdy pociąg zjedzie
+ *                      z odcinka, ten dalej wskazuje zajętość (`axleFault`). Dyżurny zeruje licznik (`axle-reset`, MOR-3:
+ *                      ZeroLO), odcinek zostaje zajęty (ciemnoczerwony) do przejazdu kontrolnego – wjazd i wyjazd
+ *                      pociągu (na sygnał zastępczy) po zerowaniu go zwalnia. Bez zerowania usterkę usuwa automatyk po
+ *                      `duration` od jej wystąpienia. Tylko ze scenariusza (zerowanie ma stanowisko MOR-3)
  */
-export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block', 'track-defect'];
+export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block', 'track-defect', 'axle-counter'];
 /** Usterki, których nie losuje się przy zakłóceniach (tylko w scenariuszu). */
-const SCRIPTED_ONLY = new Set(['track-defect']);
+const SCRIPTED_ONLY = new Set(['track-defect', 'axle-counter']);
 
 export class Faults {
   constructor(sim, rng, level, scripted = []) {
@@ -71,9 +76,35 @@ export class Faults {
   tick(time) {
     this.time = time;
     for (const f of this.list) {
-      if (!f.active && !f.done && time >= f.at) { f.active = true; this.#apply(f); }
-      if (f.active && time >= f.at + f.duration) { f.active = false; f.done = true; this.#clear(f); }
+      if (!f.active && !f.done && time >= f.at && this.#ready(f)) { f.active = true; f.since = time; this.#apply(f); }
+      if (f.active && time >= (f.since ?? f.at) + f.duration) { f.active = false; f.done = true; this.#clear(f); }
       if (f.active && f.type === 'track-defect') this.#defectRide(f);
+      if (f.active && f.type === 'axle-counter') this.#pilotRide(f);
+    }
+  }
+
+  /** Usterka licznika osi pojawia się, gdy pociąg zjedzie z odcinka (po `at`); inne usterki – o czasie `at`. */
+  #ready(f) {
+    if (f.type !== 'axle-counter') return true;
+    const s = this.sim.ilk.sections.get(f.target);
+    if (!s) return false;
+    if (s.physical) { f.trainSeen = true; return false; }
+    return !!f.trainSeen;
+  }
+
+  /**
+   * Po zerowaniu licznika osi – przejazd kontrolny: nowy wjazd pociągu na odcinek i wyjazd z niego zwalnia odcinek. Tabor
+   * stojący na odcinku w chwili zerowania musi najpierw zjechać (jego wyjazd nie jest przejazdem kontrolnym).
+   */
+  #pilotRide(f) {
+    const s = this.sim.ilk.sections.get(f.target);
+    if (!s?.resetPending) return;
+    f.pilot ??= s.physical ? 'leave' : 'enter';
+    if (f.pilot === 'leave' && !s.physical) f.pilot = 'enter';
+    else if (f.pilot === 'enter' && s.physical) f.pilot = 'inside';
+    else if (f.pilot === 'inside' && !s.physical) {
+      f.active = false; f.done = true; f.pilot = 'done';
+      this.#clear(f);
     }
   }
 
@@ -81,7 +112,7 @@ export class Faults {
   #defectRide(f) {
     const s = this.sim.ilk.sections.get(f.target);
     if (!s) return;
-    const occ = s.occupied && !s.forced;
+    const occ = !!s.physical;
     if (occ && !f.wasOccupied && !s.closed && !f.penalized) {
       f.penalized = true;
       this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target}) – tor nie został zamknięty`);
@@ -129,11 +160,20 @@ export class Faults {
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
       }
+      case 'axle-counter': {
+        const s = sim.ilk.sections.get(f.target);
+        if (!s) return;
+        s.axleFault = true; s.resetPending = false;
+        sim.ilk.refreshOccupancy();
+        this.#log('alarm', `USTERKA: licznik osi odcinka ${f.target}${s.track ? ` (tor ${s.track})` : ''} wskazuje zajętość po przejeździe pociągu. Sprawdź, że tor jest wolny, i wyzeruj licznik (ZeroLO); pierwszy pociąg wjedzie na sygnał zastępczy.`);
+        sim.bus.emit('alarm', { type: 'fault', fault: f });
+        break;
+      }
       case 'track-defect': {
         const s = sim.ilk.sections.get(f.target);
         if (!s) return;
         s.defect = true;
-        f.wasOccupied = s.occupied && !s.forced; // pociąg, który już tam jest, zgłosił usterkę – może zjechać
+        f.wasOccupied = !!s.physical; // pociąg, który już tam jest, zgłosił usterkę – może zjechać
         this.#log('alarm', `USTERKA: maszynista zgłasza pękniętą szynę na odcinku ${f.target}${s.track ? ` (tor ${s.track})` : ''}. Zamknij tor dla ruchu (ITS) i prowadź pociągi innym torem.`);
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
@@ -175,6 +215,13 @@ export class Faults {
         const b = sim.blocks.get(f.target);
         if (b) b.setFault(false);
         this.#log('info', `Blokada liniowa do ${b?.neighbour} – łączność przywrócona.`);
+        break;
+      }
+      case 'axle-counter': {
+        const s = sim.ilk.sections.get(f.target);
+        const pilot = f.pilot === 'done'; // po przejeździe kontrolnym; inaczej – upłynął czas usterki (automatyk)
+        if (s) { s.axleFault = false; s.resetPending = false; sim.ilk.refreshOccupancy(); sim.bus.emit('section', s); }
+        this.#log('info', pilot ? `Odcinek ${f.target} – przejazd kontrolny po zerowaniu licznika osi, odcinek wolny.` : `Licznik osi odcinka ${f.target} naprawiony (automatyk).`);
         break;
       }
       case 'track-defect': {

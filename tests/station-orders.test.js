@@ -137,3 +137,84 @@ test('zwolnienie czasowe na żądanie (release z timed): czasowo także przy wol
   assert.deepEqual(t.execute({ type: 'release', signal: 'A' }), { ok: true });
   assert.equal(t.ilk.active.has('A-D1'), false);
 });
+
+/* Usterka licznika osi (axle-counter): od `at` licznik myli się przy najbliższym przejeździe – po zjeździe pociągu odcinek
+   wskazuje zajętość; zerowanie ZeroLO (axle-reset) – odcinek ciemnoczerwony do przejazdu kontrolnego (nowy wjazd
+   i wyjazd pociągu), potem wolny (opis SPE). Tabor fizycznie symulowany zbiorem zajętości ruchu. */
+const axleSim = (duration = 120) => new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'axle-counter', target: 'T1', at: '07:01', duration }] } });
+const occupy = (s, set) => { s.traffic.currentOccupancy = () => new Set(set); run(s, 1); };
+
+test('axle-counter: pojawia się po zjeździe pociągu, zerowanie, przejazd kontrolny zwalnia odcinek; tylko ze scenariusza', async () => {
+  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  assert.ok(FAULT_TYPES.includes('axle-counter'));
+  const s = axleSim();
+  run(s, 90);
+  const T1 = s.ilk.sections.get('T1');
+  assert.equal(T1.axleFault, undefined, 'bez przejazdu pociągu usterki jeszcze nie ma');
+  assert.equal(s.execute({ type: 'axle-reset', section: 'T1' }).ok, false, 'nie ma czego zerować');
+  occupy(s, ['T1']); occupy(s, []); // pociąg przejechał – licznik się pomylił
+  assert.equal(T1.axleFault, true);
+  assert.equal(T1.occupied, true);
+  assert.equal(T1.physical, false);
+  assert.equal(s.ilk.setRoute('A-D1').ok, false, 'na zajęty tor przebiegu nie ma');
+  assert.deepEqual(s.execute({ type: 'axle-reset', section: 'T1' }), { ok: true });
+  assert.equal(T1.resetPending, true);
+  assert.equal(T1.occupied, true, 'po zerowaniu nadal zajęty – do przejazdu kontrolnego');
+  assert.equal(s.execute({ type: 'axle-reset', section: 'T1' }).ok, false, 'zerowanie już wykonane');
+  occupy(s, ['T1']); occupy(s, []); // przejazd kontrolny
+  assert.equal(T1.occupied, false);
+  assert.equal(T1.axleFault, false);
+  assert.ok(s.faults.list.find((f) => f.type === 'axle-counter').done);
+  for (let seed = 1; seed < 30; seed++) {
+    const r = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'high', seed });
+    assert.ok(!r.faults.list.some((f) => f.type === 'axle-counter'), `seed ${seed}`);
+  }
+});
+
+test('axle-counter: tabor stojący przy zerowaniu to nie przejazd kontrolny; bez przejazdu usterkę usuwa automatyk', () => {
+  const s = axleSim();
+  const logs = [];
+  s.bus.on('log', (e) => logs.push(e.msg));
+  run(s, 90); occupy(s, ['T1']); occupy(s, []);
+  occupy(s, ['T1']); // na odcinek wjechał pociąg (np. na sygnał zastępczy) jeszcze przed zerowaniem
+  assert.ok(s.execute({ type: 'axle-reset', section: 'T1' }).ok);
+  occupy(s, []); // ten pociąg zjeżdża – to nie jest przejazd kontrolny po zerowaniu
+  assert.equal(s.ilk.sections.get('T1').axleFault, true);
+  occupy(s, ['T1']); occupy(s, []); // dopiero nowy wjazd i wyjazd
+  assert.equal(s.ilk.sections.get('T1').axleFault, false);
+  assert.ok(logs.some((m) => /przejazd kontrolny po zerowaniu/.test(m)));
+  // bez przejazdu: po czasie usterki automatyk – właściwy komunikat także po zerowaniu
+  const t = axleSim(2);
+  const tl = [];
+  t.bus.on('log', (e) => tl.push(e.msg));
+  run(t, 90); occupy(t, ['T1']); occupy(t, []);
+  t.execute({ type: 'axle-reset', section: 'T1' });
+  run(t, 180);
+  assert.equal(t.ilk.sections.get('T1').axleFault, false);
+  assert.ok(tl.some((m) => /naprawiony \(automatyk\)/.test(m)));
+  assert.ok(!tl.some((m) => /przejazd kontrolny po zerowaniu/.test(m)));
+});
+
+test('fałszywa zajętość i licznik osi na tym samym odcinku nie kasują się nawzajem', () => {
+  const s = new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [
+    { type: 'axle-counter', target: 'T1', at: '07:01', duration: 120 }, { type: 'false-occupancy', target: 'T1', at: '07:05', duration: 2 }] } });
+  run(s, 90); occupy(s, ['T1']); occupy(s, []);
+  run(s, 5 * 60); // fałszywa zajętość minęła
+  assert.equal(s.ilk.sections.get('T1').axleFault, true);
+  assert.equal(s.ilk.sections.get('T1').occupied, true, 'licznik osi dalej wskazuje zajętość');
+});
+
+/* Zajętość z usterki (fałszywa zajętość, licznik osi) nie jest wjazdem pociągu: przebieg nastawiony przed usterką nie
+   „przejeżdża” sam – semafor nie spada na „Stój” z powodu przejazdu, przebieg zostaje utwierdzony. */
+test('zajętość z usterki na odcinku przebiegu nie jest wjazdem pociągu – przebieg nie rozwiązuje się sam', () => {
+  const s = new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'false-occupancy', target: 'T1', at: '07:01', duration: 10 }] } });
+  assert.ok(s.ilk.setRoute('A-D1').ok);
+  run(s, 30);
+  assert.ok(s.ilk.active.has('A-D1'));
+  run(s, 60); // 07:01 – odcinek T1 przebiegu „zajęty” bez pociągu
+  assert.equal(s.ilk.sections.get('T1').occupied, true);
+  const act = s.ilk.active.get('A-D1');
+  assert.ok(act, 'przebieg nadal nastawiony');
+  assert.equal(act.trainEntered, false, 'usterka to nie wjazd pociągu');
+  assert.ok(!s.ilk.log.some((e) => /Pociąg minął semafor A/.test(e.msg)));
+});

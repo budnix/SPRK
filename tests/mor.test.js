@@ -15,7 +15,7 @@ const codes = (sim) => sim.input.menu().map((m) => m.code);
 test('MOR-3 w rejestrze: widok „mor”, menu obiektów wg opisu SPE (bez poleceń, których gra nie ma)', () => {
   assert.equal(getSrk('mor3').view, 'mor');
   assert.deepEqual(MOR_MENUS.signal.map((m) => m.code), ['Stój', 'Stop', 'oStop', 'ZCZ', 'oZCZ', 'SZ', 'ZD']);
-  assert.deepEqual(MOR_MENUS.section.map((m) => m.code), ['Zmk', 'oZmk']);
+  assert.deepEqual(MOR_MENUS.section.map((m) => m.code), ['Zmk', 'oZmk', 'ZeroLO']);
   assert.deepEqual(MOR_MENUS.point.map((m) => m.code), ['Plus', 'Minus', 'Stop', 'oStop']);
   const e = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   assert.equal(e.chooseCommand('Plus').ok, false, 'inne stanowiska nie mają menu MOR');
@@ -133,4 +133,24 @@ test('okno komunikatów i alarmów: polecenia jako komunikaty, usterka jako alar
   assert.equal(sim.input.alarmList().length, 1);
   sim.ackAlarms('all');
   assert.ok(sim.input.alarmList()[0].acked);
+});
+
+test('ZeroLO: w menu toru tylko przy usterce licznika osi, polecenie specjalne z potwierdzeniem i licznikiem', () => {
+  const sim = mor({ scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'axle-counter', target: 'T1', at: '07:01', duration: 120 }] } });
+  sim.press({ kind: 'section', id: 'T1' });
+  assert.ok(!sim.input.menu().some((m) => m.code === 'ZeroLO'), 'licznik sprawny – bez ZeroLO');
+  sim.cancelSelection();
+  run(sim, 90);
+  // pociąg przejechał przez T1 – licznik się pomylił
+  sim.traffic.currentOccupancy = () => new Set(['T1']); run(sim, 1);
+  sim.traffic.currentOccupancy = () => new Set(); run(sim, 1);
+  sim.press({ kind: 'section', id: 'T1' });
+  const z = sim.input.menu().find((m) => m.code === 'ZeroLO');
+  assert.equal(z?.level, 'special');
+  assert.ok(sim.chooseCommand('ZeroLO').confirm);
+  assert.ok(sim.confirmCommand().ok);
+  assert.equal(sim.ilk.sections.get('T1').resetPending, true);
+  assert.equal(sim.input.specialCount, 1);
+  sim.press({ kind: 'section', id: 'T1' });
+  assert.ok(!sim.input.menu().some((m) => m.code === 'ZeroLO'), 'wyzerowany – drugi raz nie');
 });

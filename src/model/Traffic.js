@@ -123,7 +123,7 @@ export class Traffic {
     };
     this.orders.push(order);
     tr.orders.push({ signal, used: false, id: order.id });
-    const justified = !!sig.failed || [...this.ilk.sections.values()].some((x) => x.forced);
+    const justified = !!sig.failed || [...this.ilk.sections.values()].some((x) => Interlocking.faultOccupied(x));
     this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 20 km/h.` });
     this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (20 km/h)` });
@@ -255,7 +255,7 @@ export class Traffic {
           this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
           const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
           // usterka urządzeń (zwrotnica bez kontroli, odcinek z fałszywą zajętością) uzasadnia inny tor – jak przy Sz
-          const fault = [...this.ilk.sections.values()].some((s) => s.forced) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
+          const fault = [...this.ilk.sections.values()].some((s) => Interlocking.faultOccupied(s)) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
           if (fault) this.bus.emit('log', { time: t, level: 'info', msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
           if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }

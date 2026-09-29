@@ -11,6 +11,7 @@ const ALARM = {
   'block-fail': (f, sim) => t('sp.alarm.fault.block', { name: sim.blocks.get(f.target)?.neighbour ?? f.target }),
   'route-block': (f) => t('sp.alarm.fault.routeBlock', { id: f.target }),
   'track-defect': (f) => t('sp.alarm.fault.track', { id: f.target }),
+  'axle-counter': (f) => t('sp.alarm.fault.axle', { id: f.target }),
 };
 
 /** Tekst alarmu: „USTERKA: …”. */

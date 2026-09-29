@@ -19,7 +19,7 @@ export default {
   id: 'brzezina',
   name: 'Brzezina',
   srk: 'ebilock',
-  srkInfo: 'Stacja fikcyjna, treningowa: komputerowe urządzenia stacyjne typu EBILock 950 z pulpitem EBIScreen (linia poleceń); zmiany także na stanowisku komputerowym i na pulpicie typu E.',
+  srkInfo: 'Stacja fikcyjna, treningowa: komputerowe urządzenia stacyjne typu EBILock 950 z pulpitem EBIScreen (linia poleceń).',
   description: 'Stacja pośrednia linii dwutorowej Topolno – Klonów z blokadą samoczynną: dwa tory główne zasadnicze przy peronie wyspowym i dwa tory dodatkowe do wyprzedzania.',
   location: 'Stacja fikcyjna na linii dwutorowej Topolno – Klonów (poligon szkoleniowy).',
   traffic: 'Osobowe w obu kierunkach, pospieszny bez zatrzymania, towarowy wyprzedzany na torze 4.',
@@ -126,9 +126,6 @@ export default {
       faults: [{ type: 'track-defect', target: 'T1', at: '07:50', duration: 18 }],
       description: 'Stanowisko EBILock 950 krok po kroku: menu pod prawym klawiszem i linia poleceń z „Wykonaj”, przebiegi POC, wyprzedzanie towarowego na torze 4, okno zdarzeń i alarmów, zamknięcie toru z pękniętą szyną (ITS / ITO) i przyjęcie pociągu na tor 3.' },
     { id: 'zmiana', name: 'Pełna zmiana – stanowisko EBILock 950 (07:00–08:40)', srk: 'ebilock', description: 'Ruch w obu kierunkach i wyprzedzanie na stanowisku EBILock 950. Poziom zakłóceń do wyboru.', endTime: '08:40' },
-    { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:40)', srk: 'komputerowe', description: 'Ten sam rozkład na monitorze z paskiem poleceń (zobrazowanie wg Ie-104).', endTime: '08:40' },
-    { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:40)', srk: 'E', description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E.', endTime: '08:40' },
-    { id: 'zmiana-mor', name: 'Pełna zmiana – stanowisko MOR-3 (07:00–08:40)', srk: 'mor3', description: 'Ten sam rozkład na monitorze z pulpitem MOR-1: kliknięcie obiektu – menu poleceń, kliknięcie celu – przebieg „Pociąg” / „Manewr”, polecenia fioletowe i czerwone z potwierdzeniem, okno komunikatów i alarmów. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:40' },
   ],
 
   timetable: [

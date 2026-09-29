@@ -44,6 +44,7 @@ export const MOR_MENUS = {
   section: [
     { code: 'Zmk', name: 'zamknięcie toru', when: (ilk, id) => !ilk.sections.get(id).closed, cmd: (id) => ({ type: 'close-section', section: id, closed: true }) },
     { code: 'oZmk', name: 'otwarcie toru', level: LEVEL.confirm, when: (ilk, id) => !!ilk.sections.get(id).closed, cmd: (id) => ({ type: 'close-section', section: id, closed: false }) },
+    { code: 'ZeroLO', name: 'zerowanie licznika osi (odcinek zajęty bez pociągu)', level: LEVEL.special, when: (ilk, id) => !!ilk.sections.get(id).axleFault && !ilk.sections.get(id).resetPending, cmd: (id) => ({ type: 'axle-reset', section: id }) },
   ],
   point: [
     { code: 'Plus', name: 'przestawienie w położenie „+”', cmd: (id, o) => (o.kind === 'derailer' ? { type: 'derailer', id, position: 'on' } : { type: 'point', id, position: '+' }) },

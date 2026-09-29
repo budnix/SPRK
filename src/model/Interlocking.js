@@ -726,6 +726,22 @@ export class Interlocking {
     return { ok: true };
   }
 
+  /**
+   * Zerowanie licznika osi (MOR-3: ZeroLO) na odcinku z usterką licznika: odcinek dalej wskazuje zajętość, ale czeka na
+   * przejazd kontrolny – zwolni go wjazd i wyjazd pierwszego pociągu (Faults, `axle-counter`).
+   */
+  resetAxleCounter(id) {
+    const s = this.sections.get(id);
+    if (!s) return this.#fail(`Brak odcinka ${id}`);
+    if (!s.axleFault) return this.#fail(`Odcinek ${id}: licznik osi sprawny – zerowanie niepotrzebne`);
+    if (s.resetPending) return this.#fail(`Odcinek ${id}: licznik już wyzerowany – czeka na przejazd kontrolny`);
+    if (s.route) return this.#fail(`Odcinek ${id} utwierdzony w przebiegu ${s.route}`);
+    s.resetPending = true;
+    this.#log('warn', `Zerowanie licznika osi odcinka ${id} (ZeroLO) – odcinek zajęty do przejazdu kontrolnego; pierwszy pociąg na sygnał zastępczy`);
+    this.bus.emit('section', s);
+    return { ok: true };
+  }
+
   /** Stopowanie sygnalizatora (SES) – „Stój” mimo nastawionego przebiegu – i odwołanie (SEO). */
   stopSignal(signalId, on) {
     const sig = this.signals.get(signalId);
@@ -778,7 +794,7 @@ export class Interlocking {
     sig.substitute = true; sig.substituteUntil = this.time + SUBSTITUTE_TIME;
     this.counters.Sz++;
     this.#log('warn', `Sygnał zastępczy Sz na semaforze ${signalId} (licznik ${this.counters.Sz})`);
-    const justified = !!sig.failed || [...this.sections.values()].some((x) => x.forced) || [...this.points.values()].some((p) => p.faultUntil > this.time);
+    const justified = !!sig.failed || [...this.sections.values()].some((x) => Interlocking.faultOccupied(x)) || [...this.points.values()].some((p) => p.faultUntil > this.time);
     this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.#refreshSignals();
     return { ok: true };
@@ -869,16 +885,32 @@ export class Interlocking {
   /* Zajętość i takt                                                      */
   /* ------------------------------------------------------------------ */
 
-  /** Aktualizacja zajętości odcinków (zbiór id odcinków zajętych). */
+  /**
+   * Aktualizacja zajętości odcinków (zbiór id odcinków zajętych przez tabor). Obraz zajętości (`occupied`) obejmuje też
+   * usterki (fałszywa zajętość `forced`, licznik osi `axleFault`), ale wjazd pociągu (`wasOccupied`) i zajętość fizyczna
+   * (`physical`) – tylko tabor: zajętość z usterki nie „przejeżdża” przebiegu.
+   */
   updateOccupancy(occupiedSet) {
     for (const s of this.sections.values()) {
-      const occ = occupiedSet.has(s.id) || !!s.forced;
+      const phys = occupiedSet.has(s.id);
+      if (phys && !s.physical) s.wasOccupied = true; // wjazd taboru (tabor stojący przy utwierdzeniu się nie liczy)
+      s.physical = phys;
+      const occ = phys || Interlocking.faultOccupied(s);
       if (occ !== s.occupied) {
         s.occupied = occ;
-        if (occ) s.wasOccupied = true;
         this.bus.emit('section', s);
       }
     }
+  }
+
+  /** Zajętość odcinka z usterki urządzeń (nie z taboru). */
+  static faultOccupied(s) {
+    return !!s.forced || !!s.axleFault;
+  }
+
+  /** Obraz zajętości od nowa z ostatniej zajętości fizycznej – po zmianie usterki odcinka. */
+  refreshOccupancy() {
+    this.updateOccupancy(new Set([...this.sections.values()].filter((s) => s.physical).map((s) => s.id)));
   }
 
   tick(time) {

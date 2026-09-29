@@ -20,8 +20,7 @@ test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scen
   assert.equal(new Simulation(szkolna, { scenario: 'nauka-1' }).srk.view, 'screen');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana' }).srk.view, 'screen', 'pełna zmiana – monitor');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana-e' }).srk.view, 'desk', 'pełna zmiana – pulpit typu E');
-  assert.deepEqual(szkolna.scenarios.filter((x) => !x.tutorial).map((x) => x.id), ['zmiana', 'zmiana-e', 'zmiana-izh', 'zmiana-mech', 'zmiana-ebi', 'zmiana-mor'], 'w wyborze scenariusza po jednej zmianie na każde stanowisko');
-  assert.equal(new Simulation(szkolna, { scenario: 'zmiana-mor' }).srk.view, 'mor', 'pełna zmiana – MOR-3');
+  assert.deepEqual(szkolna.scenarios.filter((x) => !x.tutorial).map((x) => x.id), ['zmiana', 'zmiana-e', 'zmiana-izh', 'zmiana-mech', 'zmiana-ebi'], 'w wyborze scenariusza po jednej zmianie na każde stanowisko (MOR-3 tylko w misji 6)');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana-ebi' }).srk.view, 'ebi', 'pełna zmiana – EBILock 950');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana-mech' }).srk.view, 'lever', 'pełna zmiana – nastawnia mechaniczna');
   assert.equal(new Simulation(szkolna, { scenario: 'zmiana-izh' }).srk.view, 'izh', 'pełna zmiana – pulpit typu IZH-111');
@@ -311,7 +310,7 @@ test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocze
 test('Szkolna: karta posterunku oznacza stanowisko „do wyboru” (zmiany na monitorze i na pulpicie typu E); Sopot – tylko monitor', async () => {
   const { srkBadge, stationViews } = await import('../src/ui/StartScreen.js');
   const sopot = (await import('../src/stations/sopot.js')).default;
-  assert.deepEqual(stationViews(szkolna).sort(), ['desk', 'ebi', 'izh', 'lever', 'mor', 'screen']);
+  assert.deepEqual(stationViews(szkolna).sort(), ['desk', 'ebi', 'izh', 'lever', 'screen']);
   assert.equal(srkBadge({ srk: 'mor3' }), 'MOR-3 · menu obiektów');
   assert.equal(srkBadge({ srk: 'ebilock' }), 'EBILock 950 · linia poleceń');
   assert.equal(srkBadge({ srk: 'izh111' }), 'IZH-111 · pulpit ciemny');

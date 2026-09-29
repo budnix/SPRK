@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { openShift, tap, advance, pressBtn } from './helpers.js';
 
 /* Misje wprowadzające (samouczki): każda na własnej stacji – Szkolna (monitor), Jodłowa (typ E), Zacisze (IZH-111),
-   Olszyny (nastawnia mechaniczna), Brzezina (EBILock 950) */
+   Olszyny (nastawnia mechaniczna), Brzezina (EBILock 950), Kalinowo (MOR-3) */
 
 /** Przechodzi samouczek do kroku o podanym tytule: „Dalej” na krokach z opisem, „Pomiń krok” na zadaniach. */
 async function goTo(page, title) {
@@ -207,8 +207,8 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
 
 test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
-  await expect(page.locator('.st-mission')).toHaveCount(5);
-  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny', 'brzezina']);
+  await expect(page.locator('.st-mission')).toHaveCount(6);
+  expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny', 'brzezina', 'kalinowo']);
   await page.click('.st-mission[data-scenario="nauka-3"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 3');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Zacisze');
@@ -319,7 +319,7 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   await expect(box.locator('.tut-title')).toContainText('Odjazd 7108');
 });
 
-for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3'], ['olszyny', 'nauka-4'], ['brzezina', 'nauka-5']]) {
+for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'], ['zacisze', 'nauka-3'], ['olszyny', 'nauka-4'], ['brzezina', 'nauka-5'], ['kalinowo', 'nauka-6']]) {
   test(`dymek samouczka nie zasłania zakładek panelu, paska poleceń ani wskazywanego elementu (${station}, każdy krok misji)`, async ({ page }) => {
     await openShift(page, station, { params: { scenariusz: scenario } });
     await page.waitForFunction(() => window.tutorial);
@@ -411,4 +411,57 @@ test('misja 5: EBILock 950 w Brzezinie – przebieg kliknięciami przez linię p
   await page.locator('.ebi-exec').click();
   await expect(title).toContainText('Osobowy 9104 na tor 3');
   expect(await page.evaluate(() => window.desk.sectionRefs.get('T1').every((e) => e.getAttribute('class').includes('closed')))).toBe(true);
+});
+
+test('misja 6: MOR-3 w Kalinowie – przebieg kliknięciem celu, alarm licznika osi (dwuklik), ZeroLO z potwierdzeniem', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  await page.click('.st-mission[data-scenario="nauka-6"]');
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 6: stanowisko MOR-3');
+  await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Kalinowo');
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=kalinowo.*scenariusz=nauka-6/);
+  await page.waitForFunction(() => window.tutorial && window.sim);
+  await page.evaluate(() => { window.sim.clock.paused = true; return document.fonts.ready; });
+  await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);
+  const box = page.locator('.tut-box');
+  const title = box.locator('.tut-title');
+  const hit = (kind, id) => page.locator(`#desk .hit[data-ref*='"kind":"${kind}","id":"${id}"']`).first();
+  await goTo(page, 'Przebieg: początek, potem cel');
+  await expect(hit('signal', 'A').locator('xpath=..')).toHaveClass(/tut-hl/);
+  await hit('signal', 'A').click();
+  await hit('signal', 'E1').click();
+  await page.locator('.mor-menu button[data-code="Pociąg"]').click();
+  await expect(title).toContainText('Potwierdzenie przyjazdu');
+  // lekcja usterki: alarm licznika osi, dwuklik, ZeroLO na torze 2 z potwierdzeniem
+  await goTo(page, 'Licznik osi');
+  await box.locator('.tut-next').click();
+  await expect(title).toContainText('Alarm – dwuklik');
+  // licznik osi myli się przy przejeździe: przepuszczamy sam towarowy 47201 z Lipnik torem 2 do Jesionki
+  await onlyTrains(page, [47201]);
+  await page.evaluate(() => {
+    const s = window.sim, c = s.clock; c.paused = false;
+    const on = (id) => s.ilk.active.has(id) || s.ilk.pending.some((p) => p.route.id === id);
+    for (const a of [...s.ilk.active.values()]) s.execute({ type: 'release', signal: a.route.start, emergency: true }); // przebiegi pociągów zdjętych z rozkładu
+    for (let i = 0; i < 8000 && !s.input.alarmList().length; i++) {
+      s.step(0.5);
+      const L = s.blocks.get('L'), W = s.blocks.get('W');
+      for (const x of ['W', 'E', 'L']) if (s.blocks.get(x).koPending) s.blocks.get(x).press('Ko'); // przyjazdy z kroków pominiętych
+      if (L.request === 'theirs') L.press('Poz');
+      if (!W.direction && !W.request && !W.occupied && !W.koPending) W.press('Wbl');
+      if (L.direction === 'in' && !on('C-D2') && !s.ilk.sections.get('T2').physical && i % 20 === 0) s.ilk.setRoute('C-D2');
+      if (W.direction === 'out' && W.permission && !on('D2-W') && i % 20 === 0) s.ilk.setRoute('D2-W');
+    }
+    c.paused = true;
+  });
+  await expect(page.locator('.mor-tab[data-tab="alarms"].alarm')).toHaveCount(1);
+  await page.locator('.mor-tab[data-tab="alarms"]').click();
+  await page.locator('.mor-alarm').first().dblclick();
+  await expect(title).toContainText('Zerowanie (ZeroLO)');
+  await hit('section', 'T2').dispatchEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse', clientX: 500, clientY: 300 });
+  await expect(page.locator('.mor-menu button[data-code="ZeroLO"]')).toHaveClass(/special/);
+  await page.locator('.mor-menu button[data-code="ZeroLO"]').click();
+  await page.locator('.scr-confirm .tb.warn').click();
+  await expect(title).toContainText('Droga ręcznie');
+  await expect(page.locator('.mor-counter b')).toHaveText('00001');
+  expect(await page.evaluate(() => window.desk.sectionRefs.get('T2').some((e) => e.getAttribute('class').includes('occ-reset')))).toBe(true);
 });

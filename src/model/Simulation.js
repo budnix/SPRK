@@ -290,6 +290,7 @@ export class Simulation {
    *  { type: 'all-stop', on }                 – stopowanie wszystkich sygnalizatorów stacji (SSS / SSO)
    *  { type: 'substitute-off' }               – wygaszenie sygnałów zastępczych (SZO)
    *  { type: 'cancel-timed', signal }         – odwołanie zwalniania czasowego (KZW)
+   *  { type: 'axle-reset', section }         – zerowanie licznika osi (ZeroLO) przy usterce licznika
    */
   execute(cmd) {
     const refuse = (reason) => ({ ok: false, reason });
@@ -327,6 +328,8 @@ export class Simulation {
         return ilk.stopAll(!!cmd.on);
       case 'substitute-off':
         return ilk.substituteOff();
+      case 'axle-reset':
+        return this.#allowed('section', cmd.section) ? ilk.resetAxleCounter(cmd.section) : refuse(OTHER_DISTRICT);
       case 'cancel-timed':
         return this.#allowed('signal', cmd.signal) ? ilk.cancelTimedRelease(cmd.signal) : refuse(OTHER_DISTRICT);
       default:

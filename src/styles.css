@@ -652,6 +652,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .seg.rt-train .trk { stroke: #21d04a; }
 .seg.rt-shunt .trk { stroke: #ffd21f; }
 .seg.occ .trk { stroke: #ff2419; stroke-width: calc(4.4px * var(--sym, 1)); }
+.seg.occ-reset .trk { stroke: #8f140d; stroke-width: calc(4.4px * var(--sym, 1)); }   /* ciemnoczerwony – zajęty po zerowaniu licznika osi (Ie-104) */
 .seg.timed .trk { stroke: #c04cff; }
 .seg.closed .trk { stroke: #8a949e; stroke-width: calc(6px * var(--sym, 1)); }
 .seg.closed .trk-inner { display: block; }
@@ -659,7 +660,7 @@ svg.screen { width: 100%; height: 100%; display: block; touch-action: manipulati
 .seg.dim .trk { stroke: #2b3339; }
 .seg.nodata .trk { stroke: #ffffff; }
 .z-field { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linejoin: round; stroke: #8a949e; }
-.z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
+.z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.occ-reset { stroke: #8f140d; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
 .z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
 .platform { fill: #1f262d; stroke: #4a5563; stroke-width: 1; }
 .platform.side { fill: #1a2026; }
