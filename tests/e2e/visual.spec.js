@@ -67,10 +67,13 @@ test('wygląd stanowiska EBILock 950 (Szkolna): przebieg nastawiony z linii pole
     s.clock.paused = false;
     s.submitCommand('POC A D2');
     for (let i = 0; i < 16; i++) s.step(0.5);
-    s.submitCommand('SZI B');
-    s.pull({ kind: 'point', id: 'Zw4' });
+    s.submitCommand('SZI C1');
+    s.pull({ kind: 'point', id: 'Zw1' });
     s.clock.paused = true;
   });
   await page.waitForTimeout(200);
+  // w kadrze: przebieg A → D2, czerwone tło SZI pod C1, zielona ramka wyboru zwrotnicy 1
+  await expect(page.locator('#desk .scr-el.signal.ebi-mark[data-mark="red"]')).toHaveCount(1);
+  await expect(page.locator('#desk .scr-el.point.ebi-sel')).toHaveCount(1);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-ebi-szkolna.png');
 });
