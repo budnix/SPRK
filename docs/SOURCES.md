@@ -133,7 +133,8 @@ każdym pociągu także przy sprawnej blokadzie (Ir-1 §28 ust. 3, §24 ust. 5, 
 właściwym linii dwutorowej – oznajmienie odjazdu i potwierdzenie przyjazdu, bez zapytania (Ir-1 §23 ust. 2–4, §24
 ust. 1–2); na linii dwutorowej numer pociągu przekazuje się przy odjeździe (Ir-1 §28 ust. 2, §29 ust. 4). Przyjęte
 (uproszczenia gry): rozmowy przy sprawnej blokadzie nadają się same (ustawienie „Rozmowy przy sprawnej blokadzie”:
-automatycznie – domyślnie, ręcznie – pominięty telefonogram −2 pkt); zapowiadanie włącza się i wyłącza z usterką
+automatycznie – domyślnie, ręcznie – pominięty telefonogram −2 pkt; w samouczkach zawsze automatycznie, a automat
+dyżurnego drugiego okręgu nadaje swoje telefonogramy sam); zapowiadanie włącza się i wyłącza z usterką
 blokady – bez telefonogramów wprowadzenia (wzór 16) i odwołania (wzór 17) i bez oczekiwania na przejazd pociągu przy
 sprawnej blokadzie (Ir-1 §28 ust. 16, 21, 24, 25; Ie-10 §33 ust. 5); rozkaz pisemny „S” zachowuje nazwę i treść
 dawnego druku – od 14.12.2025 (zmiana 18 Ir-1, §58 ust. 5 i 9, Dodatek 4) PKP PLK stosuje Księgę Formularzy

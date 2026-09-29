@@ -497,7 +497,8 @@ export class ScreenBase extends PanelView {
     const inn = b.direction === 'in';
     r.dirOut.setAttribute('class', `blk-dir${out ? '' : ' off'}`);
     r.dirIn.setAttribute('class', `blk-dir${inn ? '' : ' off'}`);
-    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? [b.auto ? 'Zk' : 'Wbl', true] : b.koPending && !b.auto ? ['Ko', true] : b.fault ? ['tel.', false] : ['', false];
+    // Pwl – sygnał wyjazdowy na szlak podany (przeciwwtórność liniowa Eap)
+    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? [b.auto ? 'Zk' : 'Wbl', true] : b.koPending && !b.auto ? ['Ko', true] : b.fault ? ['tel.', false] : b.pwl ? ['Pwl', false] : ['', false];
     r.status.textContent = st[0];
     r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
   }

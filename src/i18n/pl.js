@@ -269,7 +269,7 @@ export default {
   'rp.task.failed': 'niewykonane w terminie',
   'rp.task.due': 'termin {time}',
   'rp.noItems': 'brak zdarzeń punktowanych',
-  'rp.rules': 'Zasady: punktualne wyprawienie +5; przetrzymanie pociągu −1/min; przyjęcie na inny tor niż planowy −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz „S” bez usterki −5/−10; błędny telefonogram −5; rozprucie −100; pociąg nieobsłużony −10. Ocena: wzorowo ≥ 40 pkt, dobrze ≥ 10, dostatecznie ≥ −20.',
+  'rp.rules': 'Zasady: punktualne wyprawienie +5; przetrzymanie pociągu −1/min; przyjęcie na inny tor niż planowy −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz „S” bez usterki −5/−10; błędny telefonogram −5; pominięty telefonogram (tryb ręczny) −2; Sz przy nieutwierdzonej zwrotnicy −10; sygnał „Stój” bliżej niż droga hamowania −20; rozprucie −100; pociąg nieobsłużony −10. Ocena: wzorowo ≥ 40 pkt, dobrze ≥ 10, dostatecznie ≥ −20.',
   'rp.new': 'Nowa zmiana…',
   'rp.again': 'Zagraj ponownie',
   'rp.viewDesk': 'Obejrzyj pulpit',
@@ -472,7 +472,7 @@ export default {
         <li>Na ekranie startowym wybierasz scenariusz i poziom zakłóceń: opóźnienia pociągów od sąsiadów, usterki (semafor bez sygnału, zwrotnica bez kontroli, fałszywa zajętość, blokada bez łączności), pociągi nadzwyczajne.</li>
         <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: przebiegu przez nią nie nastawisz aż do naprawy; pociąg przejedzie po zabezpieczeniu jej na miejscu (zakładka Urządzenia, ok. 3 min) na Sz lub rozkaz „S”.</li>
         <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, wzory Ir-1): „Czy droga dla pociągu nr … jest wolna?” (1a), „Dla pociągu nr … droga jest wolna” (4a), „Pociąg nr … odjechał o …”, „Pociąg nr … przyjechał o …” (14); sąsiad powtarza treść. Na torze właściwym linii dwutorowej nie pytasz o drogę – wyprawiasz po potwierdzonym przyjeździe poprzedniego pociągu i zawiadamiasz o odjeździe. Sygnał wyjazdowy wyjdzie tylko, gdy pozwolenie było u nas – inaczej wyprawienie na Sz (uzasadniony), po wyjeździe dPo; przyjazd potwierdza telefonogram (bez Ko i dKo), a blokadę po naprawie przywraca automatyk.</li>
-        <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
+        <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; pominięty telefonogram (tryb ręczny) −2; Sz przy nieutwierdzonej zwrotnicy −10; sygnał „Stój” bliżej niż droga hamowania −20; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
       </ul>
       <h3>Pociągi</h3>
       <ul>

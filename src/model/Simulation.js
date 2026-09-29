@@ -40,7 +40,8 @@ export class Simulation {
     this.score = new Score(this.bus);
     this.blocks = new Map();
     // rozmowy telefoniczne przy sprawnej blokadzie: 'auto' (domyślnie) albo 'manual' (ustawienie gracza)
-    this.phoneRoutine = opts.phoneRoutine === 'manual' ? 'manual' : 'auto';
+    // samouczki uczą obsługi urządzeń – rozmowy idą w nich zawsze same
+    this.phoneRoutine = opts.phoneRoutine === 'manual' && !this.scenario.tutorial ? 'manual' : 'auto';
     const nextTrain = (exitId) => this.traffic?.timetable().filter((e) => e.to === exitId && e.actualDep == null && e.status !== 'na następnym posterunku')
       .sort((a, b) => (a.depTime ?? a.arrTime ?? 0) - (b.depTime ?? b.arrTime ?? 0))[0]?.nr ?? null;
     for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus, { phoneRoutine: this.phoneRoutine, nextTrain }));

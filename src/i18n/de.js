@@ -263,7 +263,7 @@ export default {
   'rp.task.failed': 'nicht fristgerecht erledigt',
   'rp.task.due': 'Frist {time}',
   'rp.noItems': 'keine bewerteten Ereignisse',
-  'rp.rules': 'Regeln: pünktliche Abfahrt +5; Zurückhalten eines Zuges −1/min; Einfahrt auf ein anderes als das geplante Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl „S“ ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100; Zug nicht abgefertigt −10. Bewertung: vorbildlich ≥ 40 Pkt., gut ≥ 10, ausreichend ≥ −20.',
+  'rp.rules': 'Regeln: pünktliche Abfahrt +5; Zurückhalten eines Zuges −1/min; Einfahrt auf ein anderes als das geplante Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl „S“ ohne Störung −5/−10; falsche Fernsprechmeldung −5; vergessene Meldung (manuell) −2; Sz bei nicht verschlossener Weiche −10; Halt näher als der Bremsweg −20; Weichenauffahrt −100; Zug nicht abgefertigt −10. Bewertung: vorbildlich ≥ 40 Pkt., gut ≥ 10, ausreichend ≥ −20.',
   'rp.new': 'Neue Schicht…',
   'rp.again': 'Noch einmal spielen',
   'rp.viewDesk': 'Pult ansehen',
@@ -463,7 +463,7 @@ export default {
         <li>Auf dem Startbildschirm wählst du Szenario und Störungsgrad: Verspätungen der Züge von den Nachbarn, Störungen (Signal dunkel, Weiche ohne Überwachung, Falschbesetzung, Streckenblock ohne Verbindung), Sonderzüge.</li>
         <li><b>Signalstörung</b>: Sz oder Befehl „S“. <b>Falschbesetzung</b>: nach Prüfung des Gleises Sz. <b>Weiche ohne Überwachung</b>: bis zur Reparatur keine Fahrstraße darüber; ein Zug fährt, nachdem die Weiche vor Ort gesichert ist (Reiter Anlagen, etwa 3 min), auf Sz oder Befehl „S“.</li>
         <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Vordrucke nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“ (1a), „Für Zug Nr. … ist die Strecke frei“ (4a), „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“ (14); der Nachbar wiederholt die Meldung. Auf dem Regelgleis einer zweigleisigen Strecke fragst du nicht – du lässt nach bestätigter Ankunft des vorigen Zuges ab und meldest die Abfahrt. Das Ausfahrsignal kommt nur, wenn die Erlaubnis bei uns war – sonst Ausfahrt auf Sz (begründet), danach dPo; die Ankunft wird fernmündlich bestätigt (ohne Ko und dKo), den Block stellt nach der Reparatur der Techniker wieder her.</li>
-        <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
+        <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; vergessene Meldung (manuell) −2; Sz bei nicht verschlossener Weiche −10; Halt näher als der Bremsweg −20; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
       </ul>
       <h3>Züge</h3>
       <ul>

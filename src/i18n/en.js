@@ -263,7 +263,7 @@ export default {
   'rp.task.failed': 'not done in time',
   'rp.task.due': 'due {time}',
   'rp.noItems': 'no scored events',
-  'rp.rules': 'Rules: on-time departure +5; holding a train −1/min; arrival on a track other than planned −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order “S” without a fault −5/−10; wrong telephone message −5; run-through −100; train not handled −10. Grade: exemplary ≥ 40 pts, good ≥ 10, satisfactory ≥ −20.',
+  'rp.rules': 'Rules: on-time departure +5; holding a train −1/min; arrival on a track other than planned −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order “S” without a fault −5/−10; wrong telephone message −5; skipped telephone message (manual mode) −2; Sz with a point neither locked nor clamped −10; Stop given closer than the braking distance −20; run-through −100; train not handled −10. Grade: exemplary ≥ 40 pts, good ≥ 10, satisfactory ≥ −20.',
   'rp.new': 'New shift…',
   'rp.again': 'Play again',
   'rp.viewDesk': 'View the desk',
@@ -463,7 +463,7 @@ export default {
         <li>On the start screen you choose the scenario and the disruption level: delays of trains from the neighbours, faults (signal dark, point without detection, false occupancy, block system without communication), extra trains.</li>
         <li><b>Signal fault</b>: Sz or order “S”. <b>False occupancy</b>: after checking the track, Sz. <b>Point without detection</b>: no route over it until repair; a train passes after the point is secured on site (Equipment tab, about 3 min) on Sz or order “S”.</li>
         <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 forms): “Is the line clear for train no. …?” (1a), “The line is clear for train no. …” (4a), “Train no. … departed at …”, “Train no. … arrived at …” (14); the neighbour repeats the message. On the proper track of a double-track line you do not ask – you dispatch once the previous train's arrival is confirmed and announce the departure. The exit signal clears only if the permission was ours – otherwise departure on Sz (justified), then dPo; the arrival is confirmed by telephone (no Ko or dKo) and the technician restores the block after the repair.</li>
-        <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
+        <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order without a fault −5/−10; wrong telephone message −5; skipped telephone message (manual mode) −2; Sz with a point neither locked nor clamped −10; Stop given closer than the braking distance −20; run-through −100. The report appears at the end of the shift.</li>
       </ul>
       <h3>Trains</h3>
       <ul>

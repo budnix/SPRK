@@ -433,3 +433,14 @@ test('monitor: sygnalizator stopowany (SES) i wszystkie po SSS są różowe (Ie-
   const sec = await page.evaluate(() => { const s = window.sim; const id = s.ilk.routes.get('A-D1').sections.find((x) => s.ilk.sections.get(x).kind === 'station'); s.execute({ type: 'close-section', section: id, closed: true }); return id; });
   expect(await page.evaluate((id) => window.desk.sectionRefs.get(id).every((e) => e.getAttribute('class').includes('closed')), sec)).toBe(true);
 });
+
+// Przeciwwtórność liniowa Eap na monitorze: po podaniu sygnału wyjazdowego przy strzałce szlaku napis „Pwl” – gracz widzi,
+// dlaczego po odwołaniu sygnału drugi nie wyjdzie (audyt realizmu, grupa 4, W13).
+test('blokada Eap na monitorze: po sygnale wyjazdowym znacznik „Pwl” przy strzałce szlaku', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await page.evaluate(() => { const b = window.sim.blocks.get('E'); b.direction = 'out'; b.permission = true; window.sim.ilk.setRoute('D1-E'); });
+  await advance(page, 8);
+  expect(await page.evaluate(() => [window.sim.ilk.signals.get('D1').aspect, window.sim.blocks.get('E').pwl])).toEqual(['S2', true]);
+  const mark = page.locator(`.hit[data-ref*='"id":"kE"']`).locator('xpath=ancestor::*[contains(@class,"scr-el")][1]').locator('.blk-status');
+  await expect(mark).toHaveText('Pwl');
+});

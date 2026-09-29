@@ -121,7 +121,12 @@ export class AutoOperator {
         continue;
       }
       // prośba sąsiada: Eap – pozwolenie (Poz), SBL – zgoda na zmianę kierunku (Zk)
-      if (b.request === 'theirs' && this.#mayAccept(b)) b.press(b.auto ? 'Zk' : 'Poz');
+      if (b.request === 'theirs' && this.#mayAccept(b)) {
+        // tryb ręczny rozmów: automat też nadaje 4a przed Poz (kary za pominięcie nie mogą trafić do gracza)
+        if (!b.auto && b.phoneRoutine === 'manual' && b.talk.theirAsk != null) sim.comms.send('free', { exit: b.id, nr: b.talk.theirAsk }, { silent: true });
+        b.press(b.auto ? 'Zk' : 'Poz');
+      }
+      if (!b.fault && b.phoneRoutine === 'manual' && b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
       if (b.koPending) { if (!b.zpg && !b.koPrepared) b.press('dKo'); b.press('Ko'); }
     }
 
@@ -216,7 +221,7 @@ export class AutoOperator {
       if (e.to && tr && !tr.finished && e.actualDep == null && e.depTime != null && t >= e.depTime - 6 * 60 && this.#exitInDistrict(e.to) && this.role !== 'executive') {
         const b = sim.blocks.get(e.to);
         if (b && b.fault) { if (!b.auto && !b.fixed && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: e.to, nr: e.nr }, { silent: true }); }
-        else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) b.press('Wbl');
+        else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) this.#wbl(b, e.nr);
       }
       // Wyjazd: przebieg nastawiany dopiero na ~2 min przed planowym odjazdem (nie blokować głowicy stojącym składem)
       if (e.to && tr.entered && !e.exitRouteSet && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {
@@ -246,7 +251,7 @@ export class AutoOperator {
         }
         if (b.fault) { if (b.fixed !== 'out' && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
         else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
-        else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
+        else if (!b.fixed && !b.direction && !b.request && !b.occupied) this.#wbl(b, e.nr);
         if (staged) {
           for (const r of cands) if (this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
           continue;
@@ -260,6 +265,12 @@ export class AutoOperator {
         }
       }
     }
+  }
+
+  /** Wbl; w trybie ręcznym rozmów najpierw zapytanie 1a (automat nie może zostawić kary graczowi). */
+  #wbl(b, nr) {
+    if (b.phoneRoutine === 'manual' && String(b.talk.askedFor) !== String(nr)) this.sim.comms.send('ask-free', { exit: b.id, nr }, { silent: true });
+    b.press('Wbl');
   }
 
   /** Czy nastawnia wykonawcza może dać pozwolenie sąsiadowi: tylko gdy dyżurny polecił przyjąć ten pociąg. */

@@ -106,3 +106,24 @@ test('W31: linia dwutorowa – numer pociągu przy odjeździe: sąsiad zawiadami
   man2.b.trainArrivedAtNeighbour({ nr: 44 });
   assert.equal(man2.ev.score.length, 0);
 });
+
+// Tryb ręczny rozmów dotyczy gracza: automat dyżurnego (np. drugi okręg) sam nadaje 1a / 4a i zawiadomienia o odjeździe,
+// więc kary za pominięcie nie trafiają do gracza; samouczki zawsze w trybie automatycznym.
+test('W26 / W31: tryb ręczny – automat dyżurnego nadaje swoje telefonogramy (bez kar); samouczek wymusza tryb automatyczny', async () => {
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const { AutoOperator } = await import('../src/model/Operator.js');
+  const { Clock } = await import('../src/core/Clock.js');
+  for (const [id, sc] of [['szkolna', 'zmiana'], ['gdynia-glowna', 'zmiana']]) {
+    const st = (await import(`../src/stations/${id}.js`)).default;
+    const sim = new Simulation(st, { scenario: sc, disruptions: 'none', seed: 1, phoneRoutine: 'manual' });
+    assert.equal(sim.phoneRoutine, 'manual');
+    const op = new AutoOperator(sim, { district: null, role: 'full' });
+    const end = Clock.parse(sim.scenario.endTime ?? '09:00');
+    for (let n = 0; sim.clock.time < end; n++) { sim.step(0.5); if (n % 4 === 0) op.tick(); }
+    const bad = sim.score.items.filter((i) => i.code === 'phone-routine');
+    assert.deepEqual(bad.map((i) => i.msg), [], `${id}: kary za telefonogramy automatu`);
+    assert.ok(sim.comms.messages.some((m) => m.dir === 'out'), `${id}: automat nadawał telefonogramy`);
+  }
+  const szkolna = (await import('../src/stations/szkolna.js')).default;
+  assert.equal(new Simulation(szkolna, { scenario: 'nauka-1', phoneRoutine: 'manual' }).phoneRoutine, 'auto');
+});
