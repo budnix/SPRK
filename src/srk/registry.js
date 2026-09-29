@@ -6,8 +6,8 @@
  *  - `view`    – rodzaj stanowiska obsługi ('desk' = pulpit kostkowy typu E, 'izh' = pulpit ciemny IZH-111,
  *                'screen' = monitor komputerowy); same widoki rejestruje warstwa UI (src/srk/views.js),
  *                model nie zna DOM,
- *  - `input`   – opcjonalnie: protokół obsługi `(ilk, bus, model) => { press, pull, pressCompound, cancel, tick,
- *                armed }`; bez niego obowiązują przyciski typu E (src/srk/buttons.js).
+ *  - `input`   – opcjonalnie: protokół obsługi `(ilk, bus, model, { blocks }) => { press, pull, pressCompound, cancel,
+ *                tick, armed }`; bez niego obowiązują przyciski typu E (src/srk/buttons.js).
  *
  * Logika zależności (przebiegi, utwierdzenie, zwalnianie, blokady) jest wspólna – różni się sposób
  * wydawania poleceń, obraz stanu i opcje zależności (np. nastawnia mechaniczna: zwrotnice dźwigniami, drążek
@@ -15,6 +15,7 @@
  */
 import { AddressOrderProtocol } from './address.js';
 import { EbiLockProtocol } from './ebilock.js';
+import { MorProtocol } from './mor.js';
 
 const SRK = new Map();
 
@@ -82,4 +83,14 @@ registerSrk({
   view: 'ebi',
   model: { armTimeout: 60 },
   input: (ilk, bus) => new EbiLockProtocol(ilk, bus),
+});
+
+registerSrk({
+  id: 'mor3',
+  name: 'Komputerowe urządzenia stacyjne typu MOR-3 (pulpit MOR-1)',
+  short: 'komputerowe MOR-3',
+  description: 'Monitor wg Ie-104, obsługa menu obiektów: kliknięcie obiektu – fioletowa obwódka i menu (Stój, Stop, ZCZ, ZD, SZ, Plus, Minus, Zmk…), kliknięcie celu przebiegu – menu „Pociąg” / „Manewr”; polecenia fioletowe wymagają potwierdzenia, czerwone są specjalne (licznik); okno komunikatów i alarmów pod obrazem.',
+  view: 'mor',
+  model: { armTimeout: 60 },
+  input: (ilk, bus, model, ctx) => new MorProtocol(ilk, bus, ctx),
 });

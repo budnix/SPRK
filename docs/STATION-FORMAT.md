@@ -148,7 +148,7 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,
 * `tasks` – zadania manewrowe (niżej),
 * `tutorial` – identyfikator misji wprowadzającej (`src/tutorial/missions.js`: `monitor`, `pulpit`, `izh`, `mech`); gra pokazuje dymki krok po kroku,
-* `srk` – stanowisko obsługi tej zmiany (`E` / `izh111` / `komputerowe` / `ebilock` / `mech`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
+* `srk` – stanowisko obsługi tej zmiany (`E` / `izh111` / `komputerowe` / `ebilock` / `mor3` / `mech`) niezależnie od stacji (misja 2 uczy pulpitu kostkowego;
   Rumia i Reda mają zmianę na pulpicie i na monitorze). Nieznana wartość jest błędem walidacji.
 
 ## Rozkład jazdy (`timetable`)
@@ -222,7 +222,9 @@ i rozkazów), `srk: 'mech'` (urządzenia mechaniczne scentralizowane: plan świe
 przebiegowymi i blokami przebiegowymi), `srk: 'komputerowe'` (stanowisko z monitorem: schemat na ciemnym tle, polecenia z menu elementu,
 polecenia specjalne z potwierdzeniem) lub `srk: 'ebilock'` (komputerowe urządzenia EBILock 950 z pulpitem EBIScreen: ten sam
 obraz, polecenia w linii poleceń zatwierdzane „Wykonaj”; nazwy obiektów w poleceniach to identyfikatory z definicji stacji –
-sygnalizatory, zwrotnice, wykolejnice, odcinki, przyciski końca przebiegu). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla wszystkich
+sygnalizatory, zwrotnice, wykolejnice, odcinki, przyciski końca przebiegu) lub `srk: 'mor3'` (komputerowe urządzenia
+MOR-3 z pulpitem MOR-1: ten sam obraz, polecenia z menu obiektów, przebieg kliknięciem celu, polecenia fioletowe
+i specjalne z potwierdzeniem). Lista strategii: `src/srk/registry.js`. Układ kostek jest wspólny dla wszystkich
 stanowisk – monitor rysuje ten sam plan jako schemat liniowy. Przyciski grupowe (Zw, Zz, Pz, dPz, Sz) nie są częścią definicji stacji – patrz „Przyciski stanowiska”. Nieznana wartość jest błędem walidacji.
 
 ## Ekrany pulpitu (`screens`, opcjonalne)

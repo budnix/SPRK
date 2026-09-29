@@ -60,6 +60,10 @@
   --mon-confirm-bg: #3a2a00; --mon-confirm-text: #ffe2b0; --mon-on-special: #1c1300; --mon-shadow: rgba(0,0,0,0.6);
   --mon-screen: #000;
   /* EBIScreen (EBILock 950): wybór – zielona pulsująca ramka, elementy pośrednie – błękitna, markowanie – tło */
+  /* MOR-1 (MOR-3): wybór – fioletowa obwódka, polecenia fioletowe (potwierdzenie) i czerwone (specjalne), licznik
+     poleceń specjalnych żółty na niebieskim, alarm biały na czerwonym → po potwierdzeniu czerwony na niebieskim */
+  --mon-mor-sel: #b46cff; --mon-mor-violet: #c58bff; --mon-mor-red: #ff5a4f; --mon-mor-counter-bg: #1739a8; --mon-mor-counter: #ffd21f;
+  --mon-mor-alarm-bg: #c81e14; --mon-mor-alarm: #ffffff; --mon-mor-acked-bg: #1739a8; --mon-mor-acked: #ff5a4f;
   --mon-ebi-sel: #2fe05a; --mon-ebi-cand: #5cc8ff; --mon-ebi-mark-red: #b3160e; --mon-ebi-alarm: #ff2419; --mon-ebi-ok: #21d04a;
   /* grupa przycisków rozkazów pulpitu IZH-111 – barwy urządzenia, niezależne od motywu */
   --desk-izh-bar: #3b3d3f; --desk-izh-key: #1e1f20; --desk-izh-key-edge: #6f7578; --desk-izh-key-text: #f4f4f4; --desk-izh-ready: #ffd23f;
@@ -755,7 +759,7 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .ebi-menu button b { display: inline-block; min-width: 3.2em; color: var(--mon-title); }
 .screen.ebi .scr-el.ebi-sel .sel-frame { stroke: var(--mon-ebi-sel); stroke-width: 1.4; stroke-dasharray: none; animation: ebi-pulse 1s ease-in-out infinite; }
 .screen.ebi .scr-el.ebi-cand .sel-frame { stroke: var(--mon-ebi-cand); stroke-width: 1.4; stroke-dasharray: none; animation: blink 0.8s steps(1) infinite; }
-.screen.ebi .hit-seg { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
+.screen .hit-seg { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }   /* pola dotyku torów (ScreenBase.addSectionHits) */
 .screen.ebi .hit-seg.ebi-sel { stroke: var(--mon-ebi-sel); stroke-opacity: 0.35; animation: ebi-pulse 1s ease-in-out infinite; }
 .screen.ebi .hit-station.ebi-sel { stroke: var(--mon-ebi-sel); stroke-width: 1.4; fill: transparent; animation: ebi-pulse 1s ease-in-out infinite; }
 .screen.ebi .scr-el.ebi-mark[data-mark="red"] .sig-back { fill: var(--mon-ebi-mark-red); }   /* markowanie do polecenia specjalnego (SZI) */
@@ -780,6 +784,30 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .ebi-empty { color: var(--mon-muted); padding: 4px 0; }
 .ebi-win-actions { display: flex; gap: 6px; justify-content: flex-end; padding: 6px 10px; border-top: 1px solid var(--mon-border); }
 .ebi-win-actions button { background: var(--mon-bg2); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 4px 10px; font: 600 12px var(--font); cursor: pointer; }
+/* MOR-1 (MOR-3): menu obiektów, fioletowa obwódka wyboru, okno komunikatów i alarmów pod obrazem */
+.mor-menu button b { display: inline-block; min-width: 3.6em; color: var(--mon-title); }
+.mor-menu button.confirm, .mor-menu button.confirm b, .mor-violet { color: var(--mon-mor-violet); }
+.mor-menu button.special, .mor-menu button.special b, .mor-red { color: var(--mon-mor-red); }
+.screen.mor .scr-el.mor-sel .sel-frame { stroke: var(--mon-mor-sel); stroke-width: 1.6; stroke-dasharray: none; }
+.screen.mor .hit-seg.mor-sel { stroke: var(--mon-mor-sel); stroke-opacity: 0.45; }
+.mor-window { --mor-win-h: 114px; flex: 0 0 var(--mor-win-h); height: var(--mor-win-h); box-sizing: border-box; display: flex; flex-direction: column; background: var(--mon-bg); color: var(--mon-text); border-top: 1px solid var(--mon-border); font-size: 12px; }
+.mor-win-bar { display: flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--mon-bg2); }
+.mor-tab { background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 2px 10px; font: 600 11px var(--font); cursor: pointer; }
+.mor-tab.active { background: var(--mon-active); border-color: var(--mon-active-border); color: var(--mon-on-active); }
+.mor-tab.alarm { color: var(--mon-mor-red); border-color: var(--mon-mor-red); animation: blink 1s steps(1) infinite; }
+.mor-hint { color: var(--mon-muted); margin-left: 6px; }
+.mor-counter { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px; background: var(--mon-mor-counter-bg); color: var(--mon-mor-counter); border-radius: var(--radius-sm); padding: 1px 8px; font-variant-numeric: tabular-nums; }
+.mor-counter small { font-size: 10px; opacity: 0.85; }
+.mor-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 2px 8px; }
+/* podpowiedź stanu (nad listwą narzędzi) nie zasłania okna komunikatów – stoi nad nim */
+#desk-wrap:has(> .mor-window:not(.hidden)) #desk-tools .status { bottom: calc(100% + 120px); }
+.mor-msg, .mor-alarm { padding: 1px 4px; line-height: 1.35; border-radius: var(--radius-sm); }
+.mor-msg time, .mor-alarm time { font-variant-numeric: tabular-nums; margin-right: 4px; opacity: 0.8; }
+.mor-msg.cmd { color: var(--mon-title); }
+.mor-msg.refused { color: var(--mon-special); }
+.mor-alarm { background: var(--mon-mor-alarm-bg); color: var(--mon-mor-alarm); margin: 1px 0; cursor: pointer; user-select: none; }
+.mor-alarm.acked { background: var(--mon-mor-acked-bg); color: var(--mon-mor-acked); }
+.mor-empty { color: var(--mon-muted); padding: 2px 4px; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
 
 

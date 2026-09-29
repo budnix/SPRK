@@ -120,3 +120,20 @@ test('track-defect: alarm, kara za jazdę po torze bez zamknięcia, zamknięcie 
     assert.ok(!r.faults.list.some((f) => f.type === 'track-defect'), `seed ${seed}`);
   }
 });
+
+test('zwolnienie czasowe na żądanie (release z timed): czasowo także przy wolnym odcinku zbliżania', () => {
+  const s = sim();
+  assert.ok(s.ilk.setRoute('A-D1').ok);
+  run(s, 10);
+  const r = s.execute({ type: 'release', signal: 'A', timed: true });
+  assert.ok(r.timed, 'zwalnianie czasowe');
+  assert.ok(s.ilk.active.get('A-D1').timedRelease);
+  assert.equal(s.ilk.signals.get('A').aspect, 'S1', 'sygnał „Stój” od razu');
+  run(s, 100);
+  assert.equal(s.ilk.active.has('A-D1'), false, 'po czasie przebieg zwolniony');
+  // bez flagi, przy wolnym odcinku zbliżania – od razu (jak dotąd)
+  const t = sim();
+  t.ilk.setRoute('A-D1'); run(t, 10);
+  assert.deepEqual(t.execute({ type: 'release', signal: 'A' }), { ok: true });
+  assert.equal(t.ilk.active.has('A-D1'), false);
+});

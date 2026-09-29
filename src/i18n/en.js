@@ -25,6 +25,21 @@ export default {
   'hint.lever': 'point levers → route lever → route block → signal lever · after the train: signal lever back to stop, route lever back',
   'start.srkMech': 'mechanical · lever frame',
   'start.srkEbi': 'EBILock 950 · command line',
+  'start.srkMor': 'MOR-3 · object menus',
+  'hint.mor': 'click an object = command menu · route: start, then target (signal, track, triangle) and Pociąg / Manewr · violet and red – confirm',
+  'arm.mor.object': 'Selected {id} – pick a command or click the route target',
+  'arm.mor.route': 'Route {path} – pick Pociąg (train) or Manewr (shunting)',
+  'arm.mor.pending': '{cmd} – confirm or cancel (other commands on hold)',
+  'mor.messages': 'Messages',
+  'mor.alarms': 'Alarms',
+  'mor.special': 'Special commands',
+  'mor.ackHint': 'double-click – acknowledge an alarm',
+  'mor.noAlarms': 'No alarms',
+  'mor.noMessages': 'No messages',
+  'mor.confirm': 'Confirm',
+  'mor.cancel': 'Cancel',
+  'mor.confirmText': 'Command {cmd} – confirm that you mean it.',
+  'mor.specialText': 'Special command {cmd} – check the object and the command, then confirm (special command counter).',
   'hint.ebi': 'right button (tablet: hold) = object menu · route: left on start, right on end · command → Execute · F12 = command line',
   'arm.ebi.route': 'Route {path} – pick POC / MAN from the menu (right button on the end) and press Execute',
   'arm.ebi.start': 'Route start {id} – right button (tablet: hold) on the route end',
@@ -372,6 +387,11 @@ export default {
   'help.desk': `<h2>Operating the push-button desk (type E equipment)</h2>
       <p><b>Pressing</b> a button – click / tap. <b>Pulling</b> – hold (0.5 s) or right mouse button.
       Two-button operations: press the first button, then the second within 6 s (the “armed” button is highlighted).</p>`,
+  'help.mor': `<h2>Operating the MOR-3 workstation (MOR-1 desk)</h2>
+      <p>The picture is the same as on other computer workstations (Ie-104). Commands come from the <b>object menu</b>: clicking a signal, point, track or the triangle at an exit gives a violet outline and a menu. An ordinary command runs at once. <b class="mor-violet">Violet</b> ones need a confirmation, <b class="mor-red">red</b> ones are special commands – confirmation and the <b>special command counter</b> (yellow on blue). While a command waits for confirmation, no other commands are accepted; Esc or “Cancel” withdraws it.</p>
+      <p><b>Route</b>: click the start signal (instead of an entry signal you can click the line block arrow), then – instead of a menu command – click the <b>target</b>: a signal, a track or an end-of-track triangle. The menu <b>Pociąg</b> (train) / <b>Manewr</b> (shunting) appears. With a mouse you can also drag with the right button from the start to the target.</p>
+      <p>Commands: signal – <b>Stój</b> (stop without releasing the route), <b>Stop</b> / <b>oStop</b> (block the proceed aspect), <b>ZCZ</b> / <b>oZCZ</b> (timed release / cancel), <b>ZD</b> (release now – when the approach section is free), <b>SZ</b> (substitute signal); track – <b>Zmk</b> / <b>oZmk</b> (close / reopen); point – <b>Plus</b>, <b>Minus</b>, <b>Stop</b> / <b>oStop</b>; line – <b>Wbl</b>, <b>Poz</b>, <b>Ko</b>, <b>dPo</b>, <b>dKo</b> (or <b>Zk</b> on automatic block).</p>
+      <p>Below the picture is the <b>Messages</b> / <b>Alarms</b> window. An alarm (white on red) is acknowledged with a double click – it turns red on blue and disappears after the repair.</p>`,
   'help.ebi': `<h2>Operating the EBILock 950 workstation (EBIScreen)</h2>
       <p>The picture is the same as on other computer workstations (Ie-104). Every command goes to the <b>command line</b> above the diagram and only <b>Execute</b> (or Enter) sends it. <b>F12</b> moves to the command line – you can type: command name, then object names, e.g. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Clear</b>, Esc or a click on an empty spot deselects.</p>
       <p><b>Object</b>: right mouse button (tablet: hold your finger) – green pulsing frame and the command menu; hovering a command explains it, clicking puts it into the line. <b>Route</b>: left button on the start signal, right button on the end (signal or end-of-track triangle), then <b>POC</b> (train) or <b>MAN</b> (shunting) from the menu. When there are two ways, the points you can choose have a light blue frame – a right click on one picks the alternative way.</p>

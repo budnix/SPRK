@@ -77,6 +77,25 @@ export class ScreenBase extends PanelView {
     this.#declutter();
   }
 
+  /**
+   * Pola dotyku torów nad liniami torów – tor jako obiekt poleceń (zamknięcie toru, cel przebiegu). Stanowiska, które
+   * tego potrzebują, wołają to po `super()`; `sectionHits`: odcinek → pola (do ramki wyboru).
+   */
+  addSectionHits() {
+    this.sectionHits = new Map();
+    for (const [sid, segs] of this.sectionRefs) {
+      for (const seg of segs) {
+        const d = seg.querySelector?.('.trk')?.getAttribute('d');
+        if (!d) continue;
+        const h = el('path', { class: 'hit hit-seg', d });
+        h.dataset.ref = JSON.stringify({ kind: 'section', id: sid });
+        this.layerTracks.appendChild(h);
+        if (!this.sectionHits.has(sid)) this.sectionHits.set(sid, []);
+        this.sectionHits.get(sid).push(h);
+      }
+    }
+  }
+
   /** Położenie symbolu: środek + przesunięcie w jednostkach symbolu (`sx`, rośnie ze skalą) + przesunięcie porządkujące (`off`). */
   #place(sym) {
     sym.g.setAttribute('transform', `translate(${sym.cx + (sym.sx || 0) * this.S + (sym.off || 0)},${sym.cy}) scale(${this.S})`);

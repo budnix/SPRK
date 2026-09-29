@@ -26,6 +26,21 @@ export default {
   'hint.lever': 'dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia sygnałowa · po przejeździe: dźwignia na „Stój”, drążek z powrotem',
   'start.srkMech': 'mechaniczna · ława dźwigniowa',
   'start.srkEbi': 'EBILock 950 · linia poleceń',
+  'start.srkMor': 'MOR-3 · menu obiektów',
+  'hint.mor': 'kliknij obiekt = menu poleceń · przebieg: początek, potem cel (sygnalizator, tor, trójkąt) i Pociąg / Manewr · fioletowe i czerwone – potwierdzenie',
+  'arm.mor.object': 'Wybrany {id} – polecenie z menu albo kliknij cel przebiegu',
+  'arm.mor.route': 'Przebieg {path} – wybierz Pociąg albo Manewr',
+  'arm.mor.pending': '{cmd} – potwierdź albo odwołaj (inne polecenia wstrzymane)',
+  'mor.messages': 'Komunikaty',
+  'mor.alarms': 'Alarmy',
+  'mor.special': 'Polecenia specjalne',
+  'mor.ackHint': 'dwuklik – potwierdzenie alarmu',
+  'mor.noAlarms': 'Brak alarmów',
+  'mor.noMessages': 'Brak komunikatów',
+  'mor.confirm': 'Potwierdź',
+  'mor.cancel': 'Odwołaj',
+  'mor.confirmText': 'Polecenie {cmd} – potwierdź zamiar użycia.',
+  'mor.specialText': 'Polecenie specjalne {cmd} – sprawdź obiekt i polecenie, potem potwierdź (licznik poleceń specjalnych).',
   'hint.ebi': 'prawy klawisz (na tablecie: przytrzymaj) = menu obiektu · przebieg: lewy na początku, prawy na końcu · polecenie → Wykonaj · F12 = linia poleceń',
   'arm.ebi.route': 'Przebieg {path} – wybierz POC / MAN z menu (prawy klawisz na końcu) i naciśnij Wykonaj',
   'arm.ebi.start': 'Początek przebiegu {id} – prawym klawiszem (na tablecie: przytrzymaj) wskaż koniec przebiegu',
@@ -381,6 +396,11 @@ export default {
   'help.desk': `<h2>Obsługa pulpitu kostkowego (urządzenia typu E)</h2>
       <p><b>Naciśnięcie</b> przycisku – kliknięcie / dotknięcie. <b>Wyciągnięcie</b> – przytrzymanie (0,5 s) lub prawy przycisk myszy.
       Operacje dwuprzyciskowe: naciśnij pierwszy przycisk, a w ciągu 6 s drugi (przycisk „uzbrojony” jest podświetlony).</p>`,
+  'help.mor': `<h2>Obsługa stanowiska MOR-3 (pulpit MOR-1)</h2>
+      <p>Obraz jak na innych stanowiskach komputerowych (Ie-104). Polecenia wydaje się z <b>menu obiektu</b>: kliknięcie semafora, zwrotnicy, toru albo trójkąta przy wyjeździe daje fioletową obwódkę i menu. Polecenie zwykłe wykonuje się od razu. <b class="mor-violet">Fioletowe</b> wymagają potwierdzenia, <b class="mor-red">czerwone</b> to polecenia specjalne – potwierdzenie i <b>licznik poleceń specjalnych</b> (żółty na niebieskim tle). Dopóki polecenie czeka na potwierdzenie, innych poleceń nie ma; Esc albo „Odwołaj” je wycofuje.</p>
+      <p><b>Przebieg</b>: kliknij sygnalizator początkowy (zamiast semafora wjazdowego można kliknąć strzałkę blokady), a potem – zamiast polecenia z menu – <b>cel</b>: sygnalizator, tor albo trójkąt końca toru. Pojawi się menu <b>Pociąg</b> / <b>Manewr</b>. Myszą można też przeciągnąć prawym klawiszem od początku do celu.</p>
+      <p>Polecenia: semafor – <b>Stój</b> („Stój” bez zwalniania przebiegu), <b>Stop</b> / <b>oStop</b> (zablokowanie sygnału zezwalającego), <b>ZCZ</b> / <b>oZCZ</b> (zwolnienie czasowe / odwołanie), <b>ZD</b> (zwolnienie od razu – gdy odcinek zbliżania wolny), <b>SZ</b> (sygnał zastępczy); tor – <b>Zmk</b> / <b>oZmk</b> (zamknięcie / otwarcie); zwrotnica – <b>Plus</b>, <b>Minus</b>, <b>Stop</b> / <b>oStop</b>; szlak – <b>Wbl</b>, <b>Poz</b>, <b>Ko</b>, <b>dPo</b>, <b>dKo</b> (albo <b>Zk</b> przy blokadzie samoczynnej).</p>
+      <p>Pod obrazem jest okno <b>Komunikaty</b> / <b>Alarmy</b>. Alarm (biały na czerwonym) potwierdza się dwuklikiem – zmieni się na czerwony na niebieskim, a zniknie po naprawie.</p>`,
   'help.ebi': `<h2>Obsługa stanowiska EBILock 950 (pulpit EBIScreen)</h2>
       <p>Obraz jak na innych stanowiskach komputerowych (Ie-104). Każde polecenie trafia do <b>linii poleceń</b> nad planem i dopiero <b>Wykonaj</b> (albo Enter) je wysyła. <b>F12</b> przechodzi do linii poleceń – można pisać: nazwa polecenia, potem nazwy obiektów, np. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Wyczyść</b>, Esc albo klik w puste pole odznacza.</p>
       <p><b>Obiekt</b>: prawy klawisz myszy (na tablecie: przytrzymaj palec) – zielona pulsująca ramka i menu poleceń; najechanie na polecenie pokazuje objaśnienie, kliknięcie wpisuje je do linii. <b>Przebieg</b>: lewy klawisz na sygnalizatorze początkowym, prawy na końcu (sygnalizator albo trójkąt końca toru), potem z menu <b>POC</b> (pociągowy) lub <b>MAN</b> (manewrowy). Gdy są dwie drogi, zwrotnice do wyboru mają błękitną ramkę – prawy klawisz na jednej wybiera drogę alternatywną.</p>

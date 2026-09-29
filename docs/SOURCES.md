@@ -351,6 +351,50 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
 * pominięte: ZWB / ZBP / ZBM (przestawienie bez kontroli niezajętości), ZRI / ZRK (kasowanie rozprucia – w grze
   rozprucie znika po przestawieniu zwrotnicy), SZN (sygnał zastępczy na tor lewy), alarm dźwiękowy i „Wyłącz”,
   pola numerów pociągów (PIP) – numery pociągów rysuje się jak na innych monitorach.
+
+## Stanowisko MOR-3 z pulpitem MOR-1 (`srk: 'mor3'`)
+
+**Instrukcji stanowiskowej MOR-3 nie ma publicznie** (Ie-20 §13 ust. 13 odsyła do instrukcji stanowiskowych
+załączanych do regulaminu posterunku). Źródła:
+
+* Instrukcja **Ie-20** (PKP PLK, „Instrukcja obsługi komputerowych urządzeń sterowania ruchem kolejowym”, plk-sa.pl)
+  – zasady ogólne, wspólne dla stanowisk komputerowych: polecenia nastawcze zwykłe, specjalne i techniczne (§13 ust. 2);
+  zwykłe wykonuje się po akceptacji, a w systemach ze wskaźnikiem (mysz) wskazanie polecenia z menu jest akceptacją
+  (§13 ust. 6); specjalne są co najmniej dwuetapowe i wymagają potwierdzenia po sprawdzeniu adresu i kodu polecenia
+  (§13 ust. 7); po zainicjowaniu polecenia specjalnego nie wydaje się innych poleceń nastawczych (§13 ust. 8); z każdego
+  polecenia można się wycofać na dowolnym etapie (§13 ust. 9); polecenia niepoprawne są odrzucane z informacją na
+  ekranie (§13 ust. 12);
+* **opis symulatora SPE** (Symulator Pulpitów Elektronicznych współpracujący z Train Driver 2, wiki.td2.info.pl,
+  „Instrukcja SPE”) – symulacja pulpitu MOR-1 dla MOR-3, MOR-3E i E; to opis programu społeczności, nie producenta
+  (Kombud). Z niego wzięto: kliknięcie sygnalizatora lub toru początkowego zapala fioletową obwódkę i menu
+  kontekstowe, a kliknięcie celu (zamiast wyboru z menu) daje menu przebiegu „Manewr” / „Pociąg” (tylko dostępne);
+  zamiast semafora wjazdowego można kliknąć strzałkę blokady; przeciągnięcie prawym klawiszem od początku do celu;
+  menu sygnalizatora: Stój, Stop, oStop, ZCZ, oZCZ, SZ, NSZ, ZD; toru: Zmk, oZmk, ZeroLO; zwrotnicy: Plus, Minus,
+  Stop, oStop, Zmk, oZmk, KSR, PlusBZ, MinusBZ, ZeroLO; polecenia fioletowe (oStop, oZmk) wymagają potwierdzenia,
+  czerwone (SZ, NSZ, ZeroLO, KSR, PlusBZ, MinusBZ, dPo, dKo) są specjalne i liczone w liczniku poleceń specjalnych
+  (żółty na niebieskim tle); dostępność poleceń zależy od stanu obiektu; pod obrazem okno komunikatów albo alarmów
+  (przełącznik), alarm potwierdza się dwuklikiem (biały na czerwonym → czerwony na niebieskim), a znika po
+  potwierdzeniu i naprawie; blokada Eap: Wbl, Poz, Ko, dPo, dKo.
+
+Uproszczenia i założenia w grze (przyjęte):
+
+* obraz stanu jak na innych stanowiskach komputerowych gry (Ie-104); zielonego toru szlakowego przy ustawionym
+  kierunku blokady, który stosuje producent w systemach MOR, gra nie rysuje – PKP PLK uznały go za niezgodny ze swoimi
+  wymaganiami (kolejowyportal.pl, „Zobrazowania w systemach MOR do poprawy”);
+* potwierdzenie polecenia fioletowego i czerwonego – pasek „Potwierdź” / „Odwołaj” (opis SPE nie podaje wyglądu);
+  polecenie czekające na potwierdzenie nie wygasa samo;
+* ZD (w opisie SPE bez koloru, „natychmiast zwalnia przebieg”) – zwolnienie przebiegu bez licznika, gdy odcinek
+  zbliżania jest wolny; przy zajętym gra odsyła do ZCZ; ZCZ – zwolnienie czasowe (czas jak na innych stanowiskach),
+  oZCZ – jego odwołanie;
+* Plus / Minus dla wykolejnicy: „+” – nałożona, „−” – zdjęta; zwrotnica Stop / oStop – zamknięcie indywidualne;
+* przy blokadzie samoczynnej w menu szlaku jest Zk (jak na innych stanowiskach gry);
+* okno komunikatów i alarmów leży między planem a listwą narzędzi; komunikaty to wpisy dziennika i wydane polecenia,
+  alarmy – usterki urządzeń i rozprucie; licznik poleceń specjalnych liczy potwierdzone polecenia czerwone (SZ, dPo,
+  dKo), a liczniki Sz / dPz na planie działają jak na innych stanowiskach;
+* pominięte: NSZ (sygnał zastępczy na tor niewłaściwy, W24), ZeroLO (zerowanie liczników osi), KSR (kasowanie
+  rozprucia – w grze rozprucie znika po przestawieniu zwrotnicy), PlusBZ / MinusBZ, Zmk / oZmk zwrotnicy, blokady
+  Eac (Wbl + Pzk, Zwbl), C i SHL-12, przejazdy kategorii A i SSP, przyciski widoku (Sem, Tm, Zwr, Odc), zgłaszanie
+  usterek z menu.
 ## Systemy srk stacji – stan rzeczywisty
 
 Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego środowiska):

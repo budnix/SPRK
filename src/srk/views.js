@@ -8,6 +8,7 @@ import { ScreenRenderer } from '../render/ScreenRenderer.js';
 import { IzhRenderer } from '../render/IzhRenderer.js';
 import { LeverRenderer } from '../render/LeverRenderer.js';
 import { EbiRenderer } from '../render/EbiRenderer.js';
+import { MorRenderer } from '../render/MorRenderer.js';
 import { getSrk } from './registry.js';
 import { t } from '../i18n/index.js';
 
@@ -82,6 +83,20 @@ registerView('ebi', {
   hint: () => t('hint.ebi'),
   armHint: { signal: ebiHint, end: ebiHint, point: ebiHint, derailer: ebiHint, section: ebiHint, station: ebiHint },
   help: () => t('help.ebi'),
+});
+
+/** MOR-3: podpowiedź – wybrany obiekt (menu), cel przebiegu (Pociąg / Manewr) albo polecenie czekające na potwierdzenie. */
+function morHint(a) {
+  if (a.pending) return t('arm.mor.pending', { cmd: a.pending.text });
+  if (a.role === 'route') return t('arm.mor.route', { path: a.selection.map((r) => r.id).join(' → ') });
+  return t('arm.mor.object', { id: a.id });
+}
+
+registerView('mor', {
+  View: MorRenderer,
+  hint: () => t('hint.mor'),
+  armHint: { signal: morHint, end: morHint, point: morHint, derailer: morHint, section: morHint },
+  help: () => t('help.mor'),
 });
 
 function viewOf(srk) {

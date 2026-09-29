@@ -28,11 +28,10 @@ export class EbiRenderer extends ScreenBase {
     super(container, sim, handlers, opts);
     this.svg.classList.add('ebi');
     this.cmdEls = new Map();
-    this.sectionHits = new Map(); // odcinek → pola dotyku toru (ITS / ITO)
     this.menu = document.createElement('div');
     this.menu.className = 'scr-menu ebi-menu hidden';
     document.body.appendChild(this.menu);
-    this.#sectionHitAreas();
+    this.addSectionHits(); // tor jako obiekt poleceń (ITS / ITO)
     requestAnimationFrame(() => this.#stationHit());
     if (!this.readonly) {
       this.#buildCommandLine(opts.cmdHost || container);
@@ -48,21 +47,6 @@ export class EbiRenderer extends ScreenBase {
   cmdButton(id) { return this.cmdEls.get(id) || null; }
 
   /* ---------------- budowa ---------------- */
-
-  /** Pola dotyku torów (prawy klawisz na torze – ITS / ITO) nad liniami torów. */
-  #sectionHitAreas() {
-    for (const [sid, segs] of this.sectionRefs) {
-      for (const seg of segs) {
-        const d = seg.querySelector?.('.trk')?.getAttribute('d');
-        if (!d) continue;
-        const h = el('path', { class: 'hit hit-seg', d });
-        h.dataset.ref = JSON.stringify({ kind: 'section', id: sid });
-        this.layerTracks.appendChild(h);
-        if (!this.sectionHits.has(sid)) this.sectionHits.set(sid, []);
-        this.sectionHits.get(sid).push(h);
-      }
-    }
-  }
 
   /** Nazwa stacji na planie – obiekt poleceń ogólnych stacji (SSS, SSO, SZO). */
   #stationHit() {

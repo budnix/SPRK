@@ -77,3 +77,18 @@ test('wygląd stanowiska EBILock 950 (Szkolna): przebieg nastawiony z linii pole
   await expect(page.locator('#desk .scr-el.point.ebi-sel')).toHaveCount(1);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-ebi-szkolna.png');
 });
+
+test('wygląd stanowiska MOR-3 (Szkolna): przebieg nastawiony z menu, wybrany semafor z fioletową obwódką', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-mor' } });
+  await page.evaluate(() => {
+    const s = window.sim;
+    s.clock.paused = false;
+    s.press({ kind: 'signal', id: 'A' }); s.press({ kind: 'signal', id: 'D2' }); s.chooseCommand('Pociąg');
+    for (let i = 0; i < 16; i++) s.step(0.5);
+    s.press({ kind: 'signal', id: 'C1' });
+    s.clock.paused = true;
+  });
+  await page.waitForTimeout(200);
+  await expect(page.locator('#desk .scr-el.signal.mor-sel')).toHaveCount(1);
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mor-szkolna.png');
+});

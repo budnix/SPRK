@@ -128,6 +128,7 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana – stanowisko EBILock 950 (07:00–08:40)', srk: 'ebilock', description: 'Ruch w obu kierunkach i wyprzedzanie na stanowisku EBILock 950. Poziom zakłóceń do wyboru.', endTime: '08:40' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (07:00–08:40)', srk: 'komputerowe', description: 'Ten sam rozkład na monitorze z paskiem poleceń (zobrazowanie wg Ie-104).', endTime: '08:40' },
     { id: 'zmiana-e', name: 'Pełna zmiana – pulpit kostkowy typu E (07:00–08:40)', srk: 'E', description: 'Ten sam rozkład na pulpicie kostkowym urządzeń przekaźnikowych typu E.', endTime: '08:40' },
+    { id: 'zmiana-mor', name: 'Pełna zmiana – stanowisko MOR-3 (07:00–08:40)', srk: 'mor3', description: 'Ten sam rozkład na monitorze z pulpitem MOR-1: kliknięcie obiektu – menu poleceń, kliknięcie celu – przebieg „Pociąg” / „Manewr”, polecenia fioletowe i czerwone z potwierdzeniem, okno komunikatów i alarmów. Instrukcja obsługi jest pod przyciskiem „?”.', endTime: '08:40' },
   ],
 
   timetable: [

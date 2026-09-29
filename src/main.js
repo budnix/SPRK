@@ -64,6 +64,7 @@ const handlers = {
   onPress: (ref) => sim.press(ref), onPull: (ref) => sim.pull(ref), onCompound: (ref) => sim.pressCompound(ref),
   onCommand: (cmd) => sim.execute(cmd), onCancel: () => sim.cancelSelection(),
   onSubmit: (text) => sim.submitCommand(text), onAck: (ids) => sim.ackAlarms(ids), // linia poleceń EBILock
+  onChoose: (code) => sim.chooseCommand(code), onConfirm: () => sim.confirmCommand(), // menu obiektów MOR-3
 };
 const deskRoot = document.getElementById('desk');
 const desks = [];

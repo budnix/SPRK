@@ -3,7 +3,8 @@
 **Symulator Prowadzenia Ruchu Kolejowego**: a browser game in which you are the train dispatcher of a Polish
 station. You work either at a **type E relay interlocking desk** (*pulpit kostkowy*, modelled on the ISDR simulator)
 or at a **computer-based interlocking workstation** (a monitor drawn according to the PKP PLK Ie-104 guidelines,
-with a command bar, or as an **EBILock 950 / EBIScreen** workstation with a text command line). Real Tricity stations, Polish signalling rules (Ie-1, Ir-1), guided missions for
+with a command bar, as an **EBILock 950 / EBIScreen** workstation with a text command line, or as a **MOR-3 / MOR-1**
+workstation with object menus). Real Tricity stations, Polish signalling rules (Ie-1, Ir-1), guided missions for
 beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) and SVG, no frameworks. One bundled typeface
 (Inter, SIL OFL) so the desk, the monitor and the interface look the same on every system.
 
@@ -31,7 +32,7 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ## Features
 
-### Five workstations, one interlocking model
+### Six workstations, one interlocking model
 * **Type E relay desk** – cube tiles, two-button operation (press the first button, then the second within 6 s),
   pull a button to put a signal to stop, group buttons Zw / Zz / Pz / dPz / Sz with sealed counters, Eap line-block
   panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow).
@@ -59,6 +60,13 @@ Play it: **https://budnix.github.io/SPRK/**
   The substitute signal is a two-part special command (SZI marks the signal, SZW 5–30 s later). An events and alarms
   window lists events and alarms (active / cleared, acknowledged / not). Played in mission 5 at Brzezina and available as
   a shift on the training stations.
+* **MOR-3 workstation (MOR-1 desk)** – the same Ie-104 picture, operated with object menus: click an object for a
+  violet outline and its commands (Stój, Stop / oStop, ZCZ / oZCZ, ZD, SZ; Plus, Minus; Zmk / oZmk…); for a route click
+  the start, then the target (signal, track or end triangle) instead of a menu command and pick *Pociąg* / *Manewr* – or
+  drag with the right mouse button. Violet commands need a confirmation, red ones are special (confirmation and a
+  special-command counter); while one waits, no other command is accepted (Ie-20). A messages / alarms window sits
+  below the picture; alarms are acknowledged with a double click. Operation follows the SPE simulator's description of
+  the MOR-1 desk (no public station manual). Available as a shift on the training stations.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -88,11 +96,11 @@ not in the list of stations for a regular shift.
 
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|
-| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical / EBILock 950 | 1/5 | Training station on a single-track line; mission 1. |
-| **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical / EBILock 950 | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
-| **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical / EBILock 950 | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
-| **Olszyny** (fictional) | mechanical / relay type E / IZH-111 / computer / EBILock 950 | 2/5 | Training station on a single-track line with a goods siding and a protecting derailer; mission 4. |
-| **Brzezina** (fictional) | EBILock 950 / computer / relay type E | 2/5 | Training station on a double-track line with automatic block: two main and two loop tracks, overtaking; mission 5. |
+| **Szkolna** (fictional) | computer / relay type E / relay type IZH-111 / mechanical / EBILock 950 / MOR-3 | 1/5 | Training station on a single-track line; mission 1. |
+| **Jodłowa** (fictional) | relay type E / IZH-111 / computer / mechanical / EBILock 950 / MOR-3 | 2/5 | Training station on a double-track line with a single-track branch: one-way blocks, overtaking on track 3; mission 2. |
+| **Zacisze** (fictional) | relay type IZH-111 / type E / computer / mechanical / EBILock 950 / MOR-3 | 1/5 | Training terminus of a single-track line: three stub tracks, every train reverses; mission 3. |
+| **Olszyny** (fictional) | mechanical / relay type E / IZH-111 / computer / EBILock 950 / MOR-3 | 2/5 | Training station on a single-track line with a goods siding and a protecting derailer; mission 4. |
+| **Brzezina** (fictional) | EBILock 950 / computer / relay type E / MOR-3 | 2/5 | Training station on a double-track line with automatic block: two main and two loop tracks, overtaking; mission 5. |
 | **Gdynia Orłowo** | computer | 3/5 | Lines 202 and 250 (SKM), tracks 3, 4 and 6 of the Sopot EMU depot, siding 18. |
 | **Sopot** | computer | 4/5 | A passage takes three routes; SKM platform I, stabling tracks 4 / 6 / 13. |
 | **Gdynia Chylonia** | computer | 4/5 | Junction of lines 202 and 250 with branches to Gdynia Postojowa and Gdynia Port. |
@@ -181,7 +189,7 @@ Polish railway rules and terminology).
 
 * `src/model/` – simulation (interlocking, line block, trains, traffic, faults, communication, scoring); no DOM,
 * `src/render/` – desk and monitor renderers, screen split, station thumbnails,
-* `src/srk/` – control-system strategies (type E, IZH-111, mechanical, computer, EBILock 950) and their operating protocols,
+* `src/srk/` – control-system strategies (type E, IZH-111, mechanical, computer, EBILock 950, MOR-3) and their operating protocols,
 * `src/tutorial/` – guided missions (steps, progress engine, popups),
 * `src/stations/` – station definitions (`docs/STATION-FORMAT.md`),
 * `tests/` – Node tests (route matrices, full shifts, missions) and Playwright e2e tests with screenshot baselines,

@@ -25,6 +25,21 @@ export default {
   'hint.lever': 'Weichenhebel → Fahrstraßenhebel → Fahrstraßenblock → Signalhebel · nach der Fahrt: Signalhebel zurück auf Halt, Fahrstraßenhebel zurück',
   'start.srkMech': 'mechanisch · Hebelbank',
   'start.srkEbi': 'EBILock 950 · Befehlszeile',
+  'start.srkMor': 'MOR-3 · Objektmenüs',
+  'hint.mor': 'Objekt anklicken = Befehlsmenü · Fahrstraße: Start, dann Ziel (Signal, Gleis, Dreieck) und Pociąg / Manewr · violett und rot – bestätigen',
+  'arm.mor.object': '{id} gewählt – Befehl im Menü oder Fahrstraßenziel anklicken',
+  'arm.mor.route': 'Fahrstraße {path} – Pociąg (Zug) oder Manewr (Rangieren) wählen',
+  'arm.mor.pending': '{cmd} – bestätigen oder abbrechen (andere Befehle gesperrt)',
+  'mor.messages': 'Meldungen',
+  'mor.alarms': 'Alarme',
+  'mor.special': 'Sonderbefehle',
+  'mor.ackHint': 'Doppelklick – Alarm quittieren',
+  'mor.noAlarms': 'Keine Alarme',
+  'mor.noMessages': 'Keine Meldungen',
+  'mor.confirm': 'Bestätigen',
+  'mor.cancel': 'Abbrechen',
+  'mor.confirmText': 'Befehl {cmd} – Absicht bestätigen.',
+  'mor.specialText': 'Sonderbefehl {cmd} – Objekt und Befehl prüfen, dann bestätigen (Sonderbefehlszähler).',
   'hint.ebi': 'rechte Maustaste (Tablet: halten) = Objektmenü · Fahrstraße: links auf Start, rechts auf Ziel · Befehl → Ausführen · F12 = Befehlszeile',
   'arm.ebi.route': 'Fahrstraße {path} – POC / MAN im Menü wählen (rechte Taste auf dem Ziel) und Ausführen drücken',
   'arm.ebi.start': 'Fahrstraßenstart {id} – rechte Taste (Tablet: halten) auf dem Ziel',
@@ -372,6 +387,11 @@ export default {
   'help.desk': `<h2>Bedienung des Drucktastenpults (Technik Typ E)</h2>
       <p><b>Drücken</b> einer Taste – Klick / Tippen. <b>Ziehen</b> – gedrückt halten (0,5 s) oder rechte Maustaste.
       Zweitastenbedienung: erste Taste drücken, innerhalb von 6 s die zweite (die „vorgewählte“ Taste leuchtet).</p>`,
+  'help.mor': `<h2>Bedienung des Arbeitsplatzes MOR-3 (Pult MOR-1)</h2>
+      <p>Das Bild ist wie auf anderen Rechnerarbeitsplätzen (Ie-104). Befehle kommen aus dem <b>Objektmenü</b>: Ein Klick auf Signal, Weiche, Gleis oder das Dreieck an der Ausfahrt gibt einen violetten Rahmen und ein Menü. Ein normaler Befehl wird sofort ausgeführt. <b class="mor-violet">Violette</b> brauchen eine Bestätigung, <b class="mor-red">rote</b> sind Sonderbefehle – Bestätigung und <b>Sonderbefehlszähler</b> (gelb auf blau). Solange ein Befehl auf Bestätigung wartet, gibt es keine anderen Befehle; Esc oder „Abbrechen“ zieht ihn zurück.</p>
+      <p><b>Fahrstraße</b>: Startsignal anklicken (statt des Einfahrsignals auch den Streckenblockpfeil), dann – statt eines Menübefehls – das <b>Ziel</b>: Signal, Gleis oder Dreieck am Gleisende. Es erscheint das Menü <b>Pociąg</b> (Zug) / <b>Manewr</b> (Rangieren). Mit der Maus kann man auch mit der rechten Taste vom Start zum Ziel ziehen.</p>
+      <p>Befehle: Signal – <b>Stój</b> (Halt ohne Auflösung), <b>Stop</b> / <b>oStop</b> (Fahrtbegriff sperren), <b>ZCZ</b> / <b>oZCZ</b> (Zeitauflösung / Abbruch), <b>ZD</b> (sofort auflösen – bei freiem Annäherungsabschnitt), <b>SZ</b> (Ersatzsignal); Gleis – <b>Zmk</b> / <b>oZmk</b> (sperren / freigeben); Weiche – <b>Plus</b>, <b>Minus</b>, <b>Stop</b> / <b>oStop</b>; Strecke – <b>Wbl</b>, <b>Poz</b>, <b>Ko</b>, <b>dPo</b>, <b>dKo</b> (oder <b>Zk</b> beim selbsttätigen Block).</p>
+      <p>Unter dem Bild ist das Fenster <b>Meldungen</b> / <b>Alarme</b>. Ein Alarm (weiß auf rot) wird per Doppelklick quittiert – er wird rot auf blau und verschwindet nach der Reparatur.</p>`,
   'help.ebi': `<h2>Bedienung des Arbeitsplatzes EBILock 950 (EBIScreen)</h2>
       <p>Das Bild ist wie auf anderen Rechnerarbeitsplätzen (Ie-104). Jeder Befehl kommt in die <b>Befehlszeile</b> über dem Gleisbild und erst <b>Ausführen</b> (oder Enter) sendet ihn. <b>F12</b> springt in die Befehlszeile – man kann tippen: Befehlsname, dann Objektnamen, z. B. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Löschen</b>, Esc oder ein Klick auf eine leere Stelle hebt die Auswahl auf.</p>
       <p><b>Objekt</b>: rechte Maustaste (Tablet: Finger halten) – grüner pulsierender Rahmen und das Befehlsmenü; Überfahren erklärt den Befehl, Klick schreibt ihn in die Zeile. <b>Fahrstraße</b>: linke Taste auf dem Startsignal, rechte auf dem Ziel (Signal oder Dreieck am Gleisende), dann <b>POC</b> (Zug) oder <b>MAN</b> (Rangieren) im Menü. Gibt es zwei Wege, haben die wählbaren Weichen einen hellblauen Rahmen – ein Rechtsklick auf eine wählt den Umweg.</p>

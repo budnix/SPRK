@@ -620,7 +620,7 @@ export class Interlocking {
    * lub dPz (doraźne, licznikowe). Przy nastawni mechanicznej: cofnięcie drążka przebiegowego (dźwignia sygnałowa
    * musi stać na „Stój”); zablokowany blok przebiegowy – tylko zwalniacz (`emergency`, licznik jak dPz).
    */
-  releaseRoute(signalId, emergency) {
+  releaseRoute(signalId, emergency, timed = false) {
     const sig = this.signals.get(signalId);
     if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
     const pend = this.pending.findIndex((p) => p.route.start === signalId);
@@ -651,7 +651,8 @@ export class Interlocking {
     const train = act.route.kind === 'train';
     const delay = train ? this.timedRelease : this.shuntTimedRelease;
     const occupied = approach?.occupied || (!train && act.lockedSections.some((s) => this.sections.get(s).occupied));
-    if (delay > 0 && (occupied || (train && this.timedReleaseAlways))) {
+    // `timed` – zwolnienie czasowe na żądanie dyżurnego (MOR-3: ZCZ), także przy wolnym odcinku zbliżania
+    if (delay > 0 && (occupied || timed || (train && this.timedReleaseAlways))) {
       if (act.timedRelease) return { ok: true, noop: true };
       act.timedRelease = this.time + delay;
       this.#log('info', `Przebieg ${act.id}: ${occupied ? 'odcinek zbliżania zajęty – ' : ''}zwalnianie czasowe (${delay} s)`);

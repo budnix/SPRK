@@ -46,7 +46,7 @@ export class Simulation {
     });
     // obsługa przyciskami (press / pull): protokół systemu srk, domyślnie przyciski typu E
     this.buttons = this.ilk.attachInput(this.srk.input
-      ? this.srk.input(this.ilk, this.bus, this.srk.model)
+      ? this.srk.input(this.ilk, this.bus, this.srk.model, { blocks: (exit) => this.blocks.get(exit) })
       : new ButtonProtocol(this.ilk, this.bus, { armTimeout: this.srk.model.armTimeout }));
     // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
     this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
@@ -280,7 +280,7 @@ export class Simulation {
    *  { type: 'route', start, end, kind: 'train'|'shunt', compound? } – nastawienie przebiegu; `end` to semafor końcowy
    *      albo przycisk końca przebiegu (szlak, kozioł); `compound` – także łańcuch przez semafory pośrednie
    *  { type: 'stop', signal }                 – sygnał „Stój”, przebieg pozostaje utwierdzony
-   *  { type: 'release', signal, emergency? }  – zwolnienie przebiegu (Pz) / doraźne (dPz, licznik)
+   *  { type: 'release', signal, emergency?, timed? } – zwolnienie przebiegu (Pz) / doraźne (dPz, licznik) / czasowe na żądanie
    *  { type: 'substitute', signal }           – sygnał zastępczy (Sz, licznik)
    *  { type: 'point', id } | { type: 'derailer', id } – przestawienie
    *  { type: 'lock', id, derailer? }          – zamknięcie indywidualne (Zz) – założenie / zdjęcie
@@ -307,7 +307,7 @@ export class Simulation {
       case 'route-block':
         return this.#allowed('signal', cmd.signal) ? ilk.blockRoute(cmd.signal) : refuse(OTHER_DISTRICT);
       case 'release':
-        return this.#allowed('signal', cmd.signal) ? ilk.releaseRoute(cmd.signal, !!cmd.emergency) : refuse(OTHER_DISTRICT);
+        return this.#allowed('signal', cmd.signal) ? ilk.releaseRoute(cmd.signal, !!cmd.emergency, !!cmd.timed) : refuse(OTHER_DISTRICT);
       case 'substitute':
         return this.#allowed('signal', cmd.signal) ? ilk.substituteSignal(cmd.signal) : refuse(OTHER_DISTRICT);
       case 'point':
@@ -340,8 +340,26 @@ export class Simulation {
    */
   submitCommand(text) {
     if (typeof this.buttons.submit !== 'function') return { ok: false, reason: 'To stanowisko nie ma linii poleceń' };
-    const r = this.buttons.submit(text);
-    if (!r.ok || !r.cmd) return r;
+    return this.#runInput(this.buttons.submit(text));
+  }
+
+  /**
+   * Menu obiektu stanowiska MOR-3: wybór polecenia (zwykłe wykonuje się od razu, fioletowe i specjalne czekają na
+   * potwierdzenie) i potwierdzenie polecenia czekającego (Ie-20 §13.7).
+   */
+  chooseCommand(code) {
+    if (typeof this.buttons.choose !== 'function') return { ok: false, reason: 'To stanowisko nie ma menu poleceń obiektu' };
+    return this.#runInput(this.buttons.choose(code));
+  }
+
+  confirmCommand() {
+    if (typeof this.buttons.confirm !== 'function') return { ok: false, reason: 'To stanowisko nie potwierdza poleceń' };
+    return this.#runInput(this.buttons.confirm());
+  }
+
+  /** Wynik protokołu obsługi: polecenie do wykonania (`cmd`) idzie przez `execute` (okręg nastawczy, blokada). */
+  #runInput(r) {
+    if (!r?.ok || !r.cmd) return r;
     return this.execute(r.cmd);
   }
 
