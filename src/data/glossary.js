@@ -3,10 +3,10 @@
  * Bez DOM – używany w dymkach samouczka, w instrukcji i jako podpowiedzi przycisków.
  */
 export const GLOSSARY = {
-  Poz: { name: 'Poz – danie pozwolenia', text: 'Danie sąsiedniemu posterunkowi pozwolenia na wyprawienie pociągu w naszą stronę (blokada Eap). Naciska się, gdy sąsiad żąda pozwolenia – miga lampka „żąd.”. Po Poz kierunek blokady ustawia się na wjazd.' },
-  Wbl: { name: 'Wbl – żądanie pozwolenia', text: 'Żądanie od sąsiada pozwolenia na wyprawienie naszego pociągu. Sąsiad odpowiada po chwili; gdy da pozwolenie, strzałka „wyjazd” świeci i można nastawić przebieg wyjazdowy.' },
-  Ko: { name: 'Ko – zwolnienie bloku końcowego', text: 'Zwolnienie bloku końcowego po przyjeździe pociągu sąsiada w całości – potwierdzenie przyjazdu. Naciska się, gdy miga lampka „Ko” (pociąg cały na stacji). Zwalnia blokadę – szlak jest znów wolny.' },
-  Po: { name: 'Po – blok początkowy', text: 'Po wyjeździe naszego pociągu na szlak blok początkowy blokuje się (czerwona strzałka „wyjazd”) do chwili, gdy sąsiad potwierdzi przyjazd (Ko u sąsiada).' },
+  Poz: { name: 'Poz – danie pozwolenia', text: 'Danie sąsiedniemu posterunkowi pozwolenia na wyprawienie pociągu w naszą stronę (blokada Eap). Naciska się, gdy sąsiad żąda pozwolenia – miga na biało strzałka „przyjazd”. Po Poz kierunek blokady ustawia się na wjazd.' },
+  Wbl: { name: 'Wbl – żądanie pozwolenia', text: 'Żądanie od sąsiada pozwolenia na wyprawienie naszego pociągu. Sąsiad odpowiada po chwili; gdy da pozwolenie, strzałka „odjazd” świeci na biało i można nastawić przebieg wyjazdowy.' },
+  Ko: { name: 'Ko – zwolnienie bloku końcowego', text: 'Zwolnienie bloku końcowego po przyjeździe pociągu sąsiada w całości – potwierdzenie przyjazdu. Naciska się, gdy świeci lampka „Ko” (pociąg cały na stacji, minął semafor wjazdowy). Zwalnia blokadę – szlak jest znów wolny.' },
+  Po: { name: 'Po – blok początkowy', text: 'Po wyjeździe naszego pociągu na szlak blok początkowy blokuje się (czerwona strzałka „odjazd”) do chwili, gdy sąsiad potwierdzi przyjazd (Ko u sąsiada).' },
   dPo: { name: 'dPo – doraźne zablokowanie bloku początkowego', text: 'Po wyjeździe pociągu na sygnał zastępczy albo rozkaz blok początkowy nie blokuje się sam (pociąg nie minął semafora na sygnale zezwalającym) – dyżurny blokuje go doraźnie. Nie kasuje blokady. Rejestrowane w liczniku.' },
   dKo: { name: 'dKo – doraźne przygotowanie bloku końcowego', text: 'Przed wjazdem pociągu na sygnał zastępczy albo rozkaz: blokada nie stwierdzi przejazdu przy semaforze wjazdowym, więc bez dKo Ko po przyjeździe nie zadziała. Nie kasuje blokady. Rejestrowane w liczniku.' },
   oWbl: { name: 'oWbl – wyciągnięcie Wbl', text: 'Odwołanie naszego żądania pozwolenia albo zwrot niewykorzystanego pozwolenia (sąsiad też wyciąga Wbl). Zwykła obsługa, bez licznika. Po podaniu sygnału wyjazdowego (Pwl) – niemożliwe.' },

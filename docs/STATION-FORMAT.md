@@ -106,7 +106,8 @@ K1: { name: 'Krasne', label: 'Krasne – tor 1', tile: { x: 0, y: 4 }, dir: 'W',
   Blokady nie definiuje się kostkami: pulpit kostkowy rysuje ją sam z definicji wyjazdu (`src/render/blockLayout.js`) jako
   kostki przy końcu toru szlakowego – strzałki „wyjazd” (kostka skrajna) i „wjazd” (następna) w kanale toru
   (zamiast paska świetlnego; przy zajętości odcinka pod kostką strzałka świeci na czerwono), w rzędzie nad torem
-  (lub pod, gdy zajęty) przyciski Ko | Poz | Wbl (Eap dwukierunkowa), Ko (jednokierunkowa wjazdowa) albo Zk (SBL),
+  (lub pod, gdy zajęty) przyciski Ko | Poz | Wbl (Eap dwukierunkowa; lampka Ko i czerwona Pwl), Ko (jednokierunkowa
+  wjazdowa) albo Zk (SBL); strzałki „odjazd” / „przyjazd” na kostkach toru,
   wyżej liczniki dKo | dPo; nazwa sąsiedniego posterunku (`text` kostki wyjazdu) zostaje na kostce skrajnej, nad torem, obok przycisku końca przebiegu.
   Monitor pokazuje stan blokady przy wyjeździe.
 * `label` – krótki opis szlaku (gdy dwa tory prowadzą do tego samego posterunku).

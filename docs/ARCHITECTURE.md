@@ -319,8 +319,9 @@ pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śl
 żądanie, bo przy szlakach dwutorowych nie ma miejsca na kasetkę przy strzałce; pulpit kostkowy – nie.
 Na monitorze stan blokady rysuje `ScreenBase.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
-(`src/render/blockLayout.js`, bez DOM: strzałki na kostkach toru, przyciski Ko | Poz | Wbl albo Zk w rzędzie obok,
-liczniki dKo | dPo wyżej – jak na pulpitach typu E), bez osobnej kostki `block`.
+(`src/render/blockLayout.js`, bez DOM: strzałki „odjazd” / „przyjazd” na kostkach toru – żądania migają na nich,
+przyciski Ko | Poz | Wbl albo Zk w rzędzie obok – lampka Ko i Pwl, liczniki dKo | dPo wyżej – jak na pulpitach typu
+E; `deskParts.updateBlockLamps`), bez osobnej kostki `block`.
 Perony na pulpicie kostkowym: `DeskRenderer.#buildPlatforms` rysuje obrys z nazwą z tej samej geometrii
 (`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
 jest rysowany delikatnie, zawsze nad opisywanym torem, na prostej kostce toru tuż nad paskiem (`trackLabelPlace`);

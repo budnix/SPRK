@@ -87,9 +87,10 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   const cells = await cluster.locator('.t-blockdev').evaluateAll((els) => els.map((g) => /translate\((-?[\d.]+),(-?[\d.]+)\)/.exec(g.getAttribute('transform')).slice(1).map((v) => +v / 40)));
   expect(cells).toEqual([[31, 3], [30, 3], [29, 3], [31, 2], [30, 2]]);
   const arrows = await page.locator('#desk .t-track .arrow-lamp').evaluateAll((els) => els.length);
-  expect(arrows).toBe(4); // dwa krańce × (wjazd + wyjazd)
+  expect(arrows).toBe(4); // dwa krańce × (przyjazd + odjazd)
   const labelsByCol = await page.locator('#desk .t-track:has(.blk-arrow-label)').evaluateAll((els) => Object.fromEntries(els.map((g) => [+/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40, g.querySelector('.blk-arrow-label').textContent])));
-  expect(labelsByCol).toEqual({ 0: 'wyjazd', 1: 'wjazd', 30: 'wjazd', 31: 'wyjazd' }); // strzałka „wyjazd” na kostce skrajnej (grot ku krawędzi), „wjazd” na następnej (grot ku stacji)
+  // opisy jak na pulpitach typu E (ISDR tabl. 2.3.12): „odjazd” na kostce skrajnej (grot ku krawędzi), „przyjazd” na następnej
+  expect(labelsByCol).toEqual({ 0: 'odjazd', 1: 'przyjazd', 30: 'przyjazd', 31: 'odjazd' });
   // nazwa sąsiedniego posterunku zostaje na kostce skrajnej (nad torem); rysowana w warstwie ponad kostkami (.tile-over)
   const names = await page.locator('#desk .t-track:has(text.small), #desk .tile-over:has(text.small)').evaluateAll((els) => Object.fromEntries(els.map((g) => [g.querySelector('text.small').textContent, +/translate\((-?[\d.]+)/.exec(g.getAttribute('transform'))[1] / 40])));
   const exits = await page.evaluate(() => { const st = window.sim.station; const txt = (id) => st.tiles.find((t) => t.x === st.exits[id].tile.x && t.y === st.exits[id].tile.y).text; return { W: txt('W'), E: txt('E') }; }); // napis z kostki wyjazdu (może być skrócony)
@@ -116,10 +117,20 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   expect(await page.evaluate(() => { const b = window.sim.blocks.get('E'); return [b.request, b.counters.dPo + b.counters.dKo]; })).toEqual([null, 0]);
   await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
   expect(await page.evaluate(() => window.sim.blocks.get('E').request)).toBe('ours');
-  await expect(cluster.locator('.t-blockdev').nth(2).locator('.lamp')).toHaveClass(/blink/); // lampka na kostce Wbl miga, dopóki sąsiad nie odpowie
+  // nasze żądanie: strzałka „odjazd” miga na biało, dopóki sąsiad nie odpowie (bez osobnej lampki przy Wbl)
+  const outArrow = page.locator('#desk .t-track[transform^="translate(1240,"] .arrow-lamp');
+  await expect(outArrow).toHaveClass(/blink/);
   await advance(page, 40);
   const perm = await page.evaluate(() => { const b = window.sim.blocks.get('E'); return b.permission || b.direction; });
   expect(perm).toBeTruthy();
+  await expect(outArrow).not.toHaveClass(/blink/);
+  // sygnał wyjazdowy podany – czerwona lampka Pwl na kostce Wbl; Ko świeci światłem ciągłym (nie miga)
+  const pwl = cluster.locator('.t-blockdev').nth(2).locator('.lamp');
+  await expect(pwl).not.toHaveClass(/\bon\b/);
+  await page.evaluate(() => window.sim.ilk.setRoute('D1-E'));
+  await advance(page, 8);
+  await expect(pwl).toHaveClass(/lamp-red/);
+  await expect(pwl).toHaveClass(/\bon\b/);
 });
 
 test('etykieta numeru pociągu leży wewnątrz kostki czoła pociągu (nie zasłania przycisków w sąsiednim rzędzie)', async ({ page }) => {

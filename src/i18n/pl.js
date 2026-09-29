@@ -448,8 +448,8 @@ export default {
       </ul>
       <h3>Blokada liniowa Eap</h3>
       <ul>
-        <li><b>Wyprawienie pociągu</b>: <b>Wbl</b> – żądanie pozwolenia. Sąsiad odpowiada (lampka „wyjazd”). Potem nastaw przebieg wyjazdowy. Po wyjeździe blok początkowy Po i zajętość szlaku świecą na czerwono aż sąsiad potwierdzi przyjazd.</li>
-        <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca lampka „żąd.”, komunikat). Daj pozwolenie (<b>Poz</b>). Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (miga „Ko”) zwolnij blok końcowy (<b>Ko</b>).</li>
+        <li><b>Wyprawienie pociągu</b>: <b>Wbl</b> – żądanie pozwolenia. Sąsiad odpowiada (strzałka „odjazd” świeci na biało). Potem nastaw przebieg wyjazdowy. Po wyjeździe blok początkowy Po i zajętość szlaku świecą na czerwono aż sąsiad potwierdzi przyjazd.</li>
+        <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca na biało strzałka „przyjazd”, komunikat). Daj pozwolenie (<b>Poz</b>). Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (świeci „Ko”) zwolnij blok końcowy (<b>Ko</b>). Czerwona lampka <b>Pwl</b> – sygnał wyjazdowy na ten szlak już podany.</li>
         <li><b>dPo</b> – doraźne zablokowanie bloku początkowego po wyjeździe na Sz / rozkaz; <b>dKo</b> – doraźne przygotowanie bloku końcowego przed wjazdem na Sz / rozkaz (bez niego Ko nie zadziała). Liczniki; żaden nie kasuje blokady. <b>Wyciągnięcie Wbl</b> (oWbl) odwołuje żądanie albo zwraca niewykorzystane pozwolenie. Po podaniu sygnału wyjazdowego działa przeciwwtórność (Pwl): drugi sygnał na szlak nie wyjdzie.</li>
         <li><b>Blokada samoczynna (SBL)</b> na liniach dwutorowych (Sopot, Gdynia): bez pozwoleń i bez Ko – odstęp zwalnia się sam. Tor ma kierunek zasadniczy; jazda po torze „pod prąd” wymaga zmiany kierunku <b>Zk</b> (na pulpicie kostkowym: przycisk Wbl) przy wolnym odstępie. Przy usterce – zapowiadanie telefoniczne jak w Eap.</li>
       </ul>

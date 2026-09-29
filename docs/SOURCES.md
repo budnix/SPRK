@@ -119,6 +119,13 @@ blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywra
 pozwolenie „u nas” przy usterce – kierunek wyjazdu z pozwoleniem w chwili utraty łączności. Stanowisko MOR-1 ma w menu
 trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
 
+Lampki blokady Eap na pulpitach kostkowych (typ E, IZH-111, plan świetlny nastawni mechanicznej) – ISDR 2.3.2.3.2,
+tabl. 2.3.12; trainbrains.eu „Elementy blokady liniowej typu Eap”: strzałki opisane „odjazd” i „przyjazd”; żądanie
+sąsiada – biała migająca strzałka „przyjazd” (dzwonka gra nie odtwarza), nasze żądanie – biała migająca „odjazd”; po
+podaniu sygnału wyjazdowego – czerwona lampka Pwl (w grze na kostce Wbl; na torze jednokierunkowym wyjazdowym bez
+kostki Wbl lampki Pwl nie ma – przyjęte); Ko – białe światło ciągłe. Czerwonej migającej strzałki „przyjazd” u sąsiada
+(sygnał wyjazdowy podany u niego) gra nie pokazuje, bo nie modeluje sygnałów sąsiada – przyjęte.
+
 Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
 pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
 daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości

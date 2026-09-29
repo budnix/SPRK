@@ -31,12 +31,12 @@ export function steps() {
 
     /* ---------------- linia dwutorowa: bez pozwoleń ---------------- */
     info('block-intro', 'Blokada na linii dwutorowej', `Kostki przy krańcach torów szlakowych to ${A('blokada jednokierunkowa', 'blokady jednokierunkowe')}. Na torze, którym pociągi <b>przyjeżdżają</b> (od Krasnego tor 2, od Zalesia tor 1), jest tylko przycisk ${A('Ko')} – potwierdzasz nim przyjazd. Na torze, którym <b>odjeżdżają</b>, nie ma żadnego przycisku: wyprawiasz pociąg, gdy tor jest wolny.<p>Sąsiad nie pyta o zgodę – po prostu wyprawia pociąg. Musisz zdążyć z przebiegiem wjazdowym.</p><p>Tylko szlak do Borków jest jednotorowy i ma pełną ${A('Eap', 'blokadę Eap')} z przyciskami Wbl, Poz, Ko.</p>`, { block: 'K2' }),
-    act('in-3301', 'Wjazd bez pozwolenia', `Od Krasnego jedzie osobowy <b>3301</b> (tor 2, przyjazd 07:05). Nikt nie pytał o pozwolenie – strzałka „wjazd” przy torze od Krasnego zaświeci na czerwono, gdy pociąg będzie na szlaku. Nastaw wjazd na tor 2: ${route('A', 'semafora E2')}.`, green('A'),
+    act('in-3301', 'Wjazd bez pozwolenia', `Od Krasnego jedzie osobowy <b>3301</b> (tor 2, przyjazd 07:05). Nikt nie pytał o pozwolenie – strzałka „przyjazd” przy torze od Krasnego zaświeci na czerwono, gdy pociąg będzie na szlaku. Nastaw wjazd na tor 2: ${route('A', 'semafora E2')}.`, green('A'),
       (sim) => active(sim, 'A-E2') || arrived(sim, 3301),
       { wrong: (sim) => (active(sim, 'A-E3') ? 'To przebieg na tor 3. Pociąg 3301 ma tor 2 – zwolnij przebieg (Pz + A) i nastaw A → E2.' : null) }),
-    act('ko-3301', 'Potwierdzenie przyjazdu (Ko)', `Gdy 3301 stanie w całości na torze 2, zamiga lampka <b>Ko</b> na kostce blokady od Krasnego. Naciśnij przycisk <b>Ko</b>. Dopóki tego nie zrobisz, Krasne nie wyprawi następnego pociągu.`, { block: 'K2' },
+    act('ko-3301', 'Potwierdzenie przyjazdu (Ko)', `Gdy 3301 stanie w całości na torze 2, zaświeci lampka <b>Ko</b> na kostce blokady od Krasnego. Naciśnij przycisk <b>Ko</b>. Dopóki tego nie zrobisz, Krasne nie wyprawi następnego pociągu.`, { block: 'K2' },
       (sim) => koDone(sim, 'K2', 3301)),
-    act('out-3301', 'Wyjazd bez pozwolenia', `3301 odjeżdża o 07:06 do Zalesia. Tor szlakowy jest wolny, więc od razu nastaw wyjazd: ${route('E2', 'końca przebiegu na kostce wyjazdu do Zalesia (tor 2)')}. Po wyjeździe strzałka „wyjazd” zaświeci na czerwono, aż pociąg dojedzie do Zalesia.`, green('E2'),
+    act('out-3301', 'Wyjazd bez pozwolenia', `3301 odjeżdża o 07:06 do Zalesia. Tor szlakowy jest wolny, więc od razu nastaw wyjazd: ${route('E2', 'końca przebiegu na kostce wyjazdu do Zalesia (tor 2)')}. Po wyjeździe strzałka „odjazd” zaświeci na czerwono, aż pociąg dojedzie do Zalesia.`, green('E2'),
       (sim) => active(sim, 'E2-Z2') || atNeighbour(sim, 3301)),
     act('train-3302', 'Pociąg w drugą stronę – samodzielnie', `Od Zalesia jedzie osobowy <b>3302</b> (tor 1, przyjazd 07:12, odjazd 07:13 do Krasnego). Zrób to samo w drugim kierunku: wjazd <b>B → D1</b>, po przyjeździe <b>Ko</b> na blokadzie od Zalesia, wyjazd <b>D1 → szlak do Krasnego</b>.`, green('B'),
       (sim) => atNeighbour(sim, 3302) && !sim.blocks.get('Z1').koPending,
@@ -53,18 +53,18 @@ export function steps() {
       (sim, ctx) => (active(sim, 'A-E2') && active(sim, 'E2-Z2')) || atNeighbour(sim, 5501) || ctx.seen.has('step:pass-5501')),
     act('after-5501', 'Towarowy rusza za pospiesznym', `Po przejeździe IC: <b>Ko</b> na blokadzie od Krasnego. Gdy IC dojedzie do Zalesia i tor szlakowy się zwolni, wypraw towarowy: ${route('E3', 'końca przebiegu do Zalesia (tor 2)')}. Odjazd 07:33.`, green('E3'),
       (sim) => atNeighbour(sim, 42801) && !sim.blocks.get('K2').koPending,
-      { tip: 'Przebieg wyjazdowy nie nastawi się, dopóki tor szlakowy do Zalesia jest zajęty przez IC – strzałka „wyjazd” świeci wtedy na czerwono.' }),
+      { tip: 'Przebieg wyjazdowy nie nastawi się, dopóki tor szlakowy do Zalesia jest zajęty przez IC – strzałka „odjazd” świeci wtedy na czerwono.' }),
 
     /* ---------------- odgałęzienie do Borków: Eap ---------------- */
     info('branch-intro', 'Odgałęzienie do Borków', `Szlak do Borków jest <b>jednotorowy</b>, więc pociągi uzgadnia się z sąsiadem: ${A('Wbl')} – żądasz pozwolenia dla swojego pociągu, ${A('Poz')} – dajesz pozwolenie sąsiadowi, ${A('Ko')} – potwierdzasz przyjazd. Kostki tej blokady są przy torze 3, z prawej strony pulpitu.`, { block: 'B' }),
     act('in-6612', 'Osobowy do Borków: wjazd', `Osobowy <b>6612</b> z Krasnego do Borków (tor 3, przyjazd 07:42). Nastaw wjazd <b>A → E3</b>, a po przyjeździe naciśnij <b>Ko</b> na blokadzie od Krasnego.`, green('A'),
       (sim) => koDone(sim, 'K2', 6612)),
-    act('wbl-6612', 'Żądanie pozwolenia (Wbl)', `Przed wyjazdem do Borków potrzebujesz pozwolenia: naciśnij <b>Wbl</b> na kostkach blokady do Borków. Borki odpowiedzą po kilkunastu sekundach – strzałka „wyjazd” zaświeci na biało.`, { block: 'B' },
+    act('wbl-6612', 'Żądanie pozwolenia (Wbl)', `Przed wyjazdem do Borków potrzebujesz pozwolenia: naciśnij <b>Wbl</b> na kostkach blokady do Borków. Borki odpowiedzą po kilkunastu sekundach – strzałka „odjazd” zaświeci na biało.`, { block: 'B' },
       (sim) => { const b = sim.blocks.get('B'); return (b.direction === 'out' && b.permission) || atNeighbour(sim, 6612); },
       { wrong: (sim) => (sim.blocks.get('B').request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Borków.' : null) }),
     act('out-6612', 'Wyjazd do Borków', `Masz pozwolenie. Nastaw wyjazd: ${route('E3', 'końca przebiegu na kostce wyjazdu do Borków')}. Odjazd 07:44. Poczekaj, aż pociąg dojedzie do Borków.`, green('E3'),
       (sim) => atNeighbour(sim, 6612) && !sim.blocks.get('B').occupied),
-    act('train-6611', 'Pociąg z Borków – samodzielnie', `Borki zgłoszą osobowy <b>6611</b> do Krasnego (tor 3, przyjazd 07:56, odjazd 07:59) – zamiga lampka „żąd.”. Daj <b>Poz</b>, nastaw wjazd <b>C → D3</b>, po przyjeździe <b>Ko</b> na blokadzie do Borków, potem wyjazd <b>D3 → szlak do Krasnego</b> (bez pozwolenia – to linia dwutorowa).`, { block: 'B' },
+    act('train-6611', 'Pociąg z Borków – samodzielnie', `Borki zgłoszą osobowy <b>6611</b> do Krasnego (tor 3, przyjazd 07:56, odjazd 07:59) – zamiga na biało strzałka „przyjazd”. Daj <b>Poz</b>, nastaw wjazd <b>C → D3</b>, po przyjeździe <b>Ko</b> na blokadzie do Borków, potem wyjazd <b>D3 → szlak do Krasnego</b> (bez pozwolenia – to linia dwutorowa).`, { block: 'B' },
       (sim) => atNeighbour(sim, 6611) && !sim.blocks.get('B').koPending,
       { tip: 'Żądanie od Borków przyjdzie kilka minut przed przyjazdem. Do tego czasu Poz nie zadziała.' }),
 

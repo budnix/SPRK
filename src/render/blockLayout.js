@@ -5,7 +5,7 @@ import { deskControls } from '../tiles/controls.js';
  * Układ kostek blokady liniowej na pulpicie kostkowym (bez DOM) – jak na pulpitach typu E (ISDR / AC-20):
  * blokada to nie osobne pole u góry pulpitu, tylko zwykłe kostki przy końcu toru szlakowego.
  *
- *  - na kostce wyjazdu (skrajnej) strzałka „wyjazd”, na sąsiedniej „wjazd” – w kanale toru (lampka biała/czerwona);
+ *  - na kostce wyjazdu (skrajnej) strzałka „odjazd”, na sąsiedniej „przyjazd” – w kanale toru (lampka biała/czerwona);
  *  - w rzędzie obok toru (nad, a gdy zajęty – pod) – kostki przycisków, od krawędzi pulpitu do środka:
  *    Eap dwukierunkowa: Ko | Poz | Wbl; Eap jednokierunkowa wjazdowa: Ko; wyjazdowa: bez przycisków;
  *    SBL (samoczynna): Zk (zmiana kierunku);

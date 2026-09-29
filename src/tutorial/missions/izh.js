@@ -21,8 +21,8 @@ export function steps() {
     info('layout', 'Plan stacji', `Jedyny szlak prowadzi w lewo, do Modrzewia. Tory <b>1</b>, <b>2</b> i <b>3</b> to ${A('tor czołowy', 'tory czołowe')} zakończone kozłami: 1 i 2 przy peronie I, 3 przy peronie II.<p>${A('semafor', 'Semafor')} <b>A</b> jest wjazdowy. <b>B1, B2, B3</b> to semafory wyjazdowe – stoją na zachodnim końcu każdego toru, bo stąd pociągi odjeżdżają tam, skąd przyjechały.</p><p>To ${A('pulpit ciemny')}: w stanie zasadniczym lampki są zgaszone. Szczeliny toru świecą na <b>biało</b>, gdy odcinek jest utwierdzony, i na <b>czerwono</b>, gdy jest zajęty. Powtarzacz semafora ma tylko lampkę zieloną i białą – <b>ciemny powtarzacz oznacza „Stój”</b>.</p>`, { el: '#desk' }),
 
     /* ---------------- pierwszy pociąg: przyjazd, zmiana czoła, odjazd ---------------- */
-    info('block-intro', 'Blokada liniowa', `Kostki przy lewym krańcu toru to ${A('Eap', 'blokada liniowa Eap')} do Modrzewia. Linia jest jednotorowa, więc każdy pociąg uzgadnia się z sąsiadem: ${A('Poz')} – dajesz pozwolenie na przyjazd, ${A('Ko')} – potwierdzasz przyjazd, ${A('Wbl')} – żądasz pozwolenia na wyjazd.<p>Strzałki na kostkach toru: <b>wjazd</b> – sąsiad ma pozwolenie albo jego pociąg jedzie do nas, <b>wyjazd</b> – mamy pozwolenie albo nasz pociąg jest na szlaku.</p>`, { block: 'W' }),
-    act('poz-7101', 'Danie pozwolenia (Poz)', `Modrzew <b>żąda pozwolenia</b> na wyprawienie osobowego <b>7101</b> (tor 1, przyjazd 07:04) – miga lampka „żąd.”. Naciśnij przycisk <b>Poz</b> na kostkach blokady.`, { block: 'W' },
+    info('block-intro', 'Blokada liniowa', `Kostki przy lewym krańcu toru to ${A('Eap', 'blokada liniowa Eap')} do Modrzewia. Linia jest jednotorowa, więc każdy pociąg uzgadnia się z sąsiadem: ${A('Poz')} – dajesz pozwolenie na przyjazd, ${A('Ko')} – potwierdzasz przyjazd, ${A('Wbl')} – żądasz pozwolenia na wyjazd.<p>Strzałki na kostkach toru: <b>przyjazd</b> – sąsiad żąda pozwolenia (miga na biało), ma pozwolenie albo jego pociąg jedzie do nas, <b>odjazd</b> – mamy pozwolenie albo nasz pociąg jest na szlaku.</p>`, { block: 'W' }),
+    act('poz-7101', 'Danie pozwolenia (Poz)', `Modrzew <b>żąda pozwolenia</b> na wyprawienie osobowego <b>7101</b> (tor 1, przyjazd 07:04) – miga na biało strzałka „przyjazd”. Naciśnij przycisk <b>Poz</b> na kostkach blokady.`, { block: 'W' },
       (sim) => W(sim).direction === 'in' || arrived(sim, 7101),
       { tip: 'Jeśli żądania jeszcze nie ma, odczekaj chwilę – przychodzi kilka minut przed przyjazdem.' }),
     act('route-7101', 'Wjazd na tor czołowy', `Nastaw wjazd na tor 1: ${route('A', trackEnd(1))}.`, adr('A'),
@@ -32,7 +32,7 @@ export function steps() {
       (sim) => arrived(sim, 7101) && blockFree(W(sim))),
     act('reverse-7101', 'Zmiana czoła', `Skład stoi czołem do kozła. Żeby wrócić do Modrzewia, musi zmienić czoło: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 7101 (${A('zmiana czoła')}).<p>Skład odjedzie jako nowy pociąg <b>7102</b> o 07:14.</p>`, { tab: 'pociagi' },
       (sim) => facingWest(sim, 7101, 7102) || atNeighbour(sim, 7102)),
-    act('wbl-7102', 'Żądanie pozwolenia (Wbl)', `Przed odjazdem potrzebujesz pozwolenia od Modrzewia: przycisk <b>Wbl</b> na kostkach blokady. Sąsiad odpowie po kilkunastu sekundach – strzałka „wyjazd” zaświeci na biało.`, { block: 'W' },
+    act('wbl-7102', 'Żądanie pozwolenia (Wbl)', `Przed odjazdem potrzebujesz pozwolenia od Modrzewia: przycisk <b>Wbl</b> na kostkach blokady. Sąsiad odpowie po kilkunastu sekundach – strzałka „odjazd” zaświeci na biało.`, { block: 'W' },
       (sim) => (W(sim).direction === 'out' && W(sim).permission) || atNeighbour(sim, 7102),
       { wrong: (sim) => (W(sim).request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Modrzewia.' : null) }),
     act('out-7102', 'Wyjazd z toru czołowego', `Masz pozwolenie. Nastaw wyjazd z toru 1: ${route('B1', lineEnd)}. Pociąg odjedzie o 07:14. Poczekaj, aż dojedzie do Modrzewia.`, adr('B1'),

@@ -28,7 +28,7 @@ export function steps() {
 
     /* ---------------- pierwszy pociąg: pełna kolejność ---------------- */
     info('block-intro', 'Blokada liniowa i blok przebiegowy', `Kostki przy lewym i prawym krańcu planu to ${A('Eap', 'blokada liniowa Eap')}: ${A('Poz')} – pozwolenie dla sąsiada, ${A('Ko')} – potwierdzenie przyjazdu, ${A('Wbl')} – żądanie pozwolenia na wyjazd.<p>Nad każdym drążkiem pociągowym jest okienko <b>bloku przebiegowego</b>: czerwone w położeniu zasadniczym, białe po zablokowaniu. Zablokowany blok zamyka drążek – cofnie go dopiero pociąg, który przejedzie.</p>`, { block: 'W' }),
-    act('poz-8401', 'Danie pozwolenia (Poz)', `Wierzbno <b>żąda pozwolenia</b> dla osobowego <b>8401</b> (tor 1, przyjazd 07:05) – miga lampka „żąd.”. Naciśnij przycisk <b>Poz</b> na kostkach blokady przy lewym krańcu.`, { block: 'W' },
+    act('poz-8401', 'Danie pozwolenia (Poz)', `Wierzbno <b>żąda pozwolenia</b> dla osobowego <b>8401</b> (tor 1, przyjazd 07:05) – miga na biało strzałka „przyjazd”. Naciśnij przycisk <b>Poz</b> na kostkach blokady przy lewym krańcu.`, { block: 'W' },
       (sim) => B(sim, 'W').direction === 'in' || arrived(sim, 8401),
       { tip: 'Żądanie przychodzi ok. 07:01. Jeśli go nie ma, przyspiesz czas (5×) w nagłówku.' }),
     act('route-8401', '1. Drążek przebiegowy', `Przełóż drążek <b>a</b> w górę (kliknij górną połowę drążka, przy napisie „D1”) – to ${A('przebieg pociągowy')} od semafora A na tor 1.<p>Drążek przełoży się tylko wtedy, gdy zwrotnice stoją tak, jak wymaga przebieg – tu zwrotnica 1 stoi już na „+”. Przełożony drążek zamyka zwrotnice przebiegu: pod dźwignią <b>1</b> pojawi się ciemna listwa. Dopóki nie zablokujesz bloku przebiegowego, drążek można cofnąć (kliknij go jeszcze raz).</p>`, drazek('A-D1'),

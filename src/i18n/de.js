@@ -439,8 +439,8 @@ export default {
       </ul>
       <h3>Streckenblock Eap</h3>
       <ul>
-        <li><b>Zug ablassen</b>: <b>Wbl</b> – Erlaubnisanfrage. Der Nachbar antwortet (Lampe „Ausfahrt“). Dann Ausfahrstraße einstellen. Nach der Ausfahrt leuchten Anfangsfeld Po und Streckenbesetzung rot, bis der Nachbar die Ankunft bestätigt.</li>
-        <li><b>Zug annehmen</b>: der Nachbar fragt die Erlaubnis an (blinkende Lampe „żąd.“, Meldung). Erlaubnis geben (<b>Poz</b>). Einfahrstraße einstellen. Nach vollständiger Ankunft des Zuges („Ko“ blinkt) das Endfeld auflösen (<b>Ko</b>).</li>
+        <li><b>Zug ablassen</b>: <b>Wbl</b> – Erlaubnisanfrage. Der Nachbar antwortet (Pfeil „odjazd“ leuchtet weiß). Dann Ausfahrstraße einstellen. Nach der Ausfahrt leuchten Anfangsfeld Po und Streckenbesetzung rot, bis der Nachbar die Ankunft bestätigt.</li>
+        <li><b>Zug annehmen</b>: der Nachbar fragt die Erlaubnis an (Pfeil „przyjazd“ blinkt weiß, Meldung). Erlaubnis geben (<b>Poz</b>). Einfahrstraße einstellen. Nach vollständiger Ankunft des Zuges („Ko“ leuchtet) das Endfeld auflösen (<b>Ko</b>). Rote Lampe <b>Pwl</b> – ein Ausfahrsignal auf diese Strecke wurde schon gegeben.</li>
         <li><b>dPo</b> – Hilfsblockung des Anfangsfeldes nach Ausfahrt auf Sz / schriftlichen Befehl; <b>dKo</b> – Hilfsvorbereitung des Endfeldes vor Einfahrt auf Sz / schriftlichen Befehl (ohne sie wirkt Ko nicht). Zähler; keines löscht den Block. <b>Ziehen von Wbl</b> (oWbl) nimmt die Anforderung zurück oder gibt eine ungenutzte Erlaubnis zurück. Nach einem Ausfahrsignal sperrt die Streckenwiederholungssperre (Pwl) ein zweites Signal.</li>
         <li><b>Selbstblock (SBL)</b> auf zweigleisigen Strecken (Sopot, Gdynia): ohne Erlaubnisse und ohne Ko – der Abschnitt löst sich selbst auf. Das Gleis hat eine Regelrichtung; Fahren „gegen den Strom“ erfordert den Richtungswechsel <b>Zk</b> (am Drucktastenpult: Taste Wbl) bei freiem Abschnitt. Bei Störung – Zugmeldeverfahren wie bei Eap.</li>
       </ul>

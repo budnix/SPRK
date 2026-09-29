@@ -146,9 +146,8 @@ function buildTiles(view, art) {
       cluster.appendChild(dev.g);
       filled.add(`${d.x},${d.y}`);
       Object.assign(r.btns, dev.refs.btns);
-      if (d.role === 'Poz') r.req = dev.refs.lamp;
       if (d.role === 'Ko') r.ko = dev.refs.lamp;
-      if (d.role === 'Wbl') r.wbl = dev.refs.lamp;
+      if (d.role === 'Wbl') r.pwl = dev.refs.lamp;
       if (d.role === 'dPo') r.cntPo = dev.refs.counter;
       if (d.role === 'dKo') r.cntKo = dev.refs.counter;
     }
@@ -252,21 +251,24 @@ export function bindDeskButtons(view, { pull = true } = {}) {
   });
 }
 
-/** Lampki i liczniki blokady liniowej szlaku (strzałki na kostkach toru, lampki żądania, Wbl i Ko). */
+/**
+ * Lampki i liczniki blokady liniowej szlaku (ISDR tabl. 2.3.12, trainbrains.eu): strzałki „odjazd” / „przyjazd” na
+ * kostkach toru, lampka Ko (biała, ciągła) i Pwl (czerwona).
+ */
 export function updateBlockLamps(view, exitId) {
   const b = view.sim.blocks.get(exitId);
   const r = view.blockRefs.get(exitId);
   if (!b || !r) return;
-  // strzałka „wyjazd”: czerwona – nasz pociąg na szlaku (Po zablokowany), biała – pozwolenie na wyjazd, migająca – żądanie wysłane
+  // strzałka „odjazd”: czerwona – nasz pociąg na szlaku (Po zablokowany), biała – pozwolenie na wyjazd, migająca – żądanie wysłane
   // zajęty odcinek pod kostką strzałki (tabor na kostce) – strzałka czerwona jak pasek toru
   const occ = (sid) => !!(sid && view.ilk.sections.get(sid)?.occupied);
   const outPerm = b.direction === 'out' && (b.permission || b.phone?.permissionFor || b.fixed === 'out') && !b.occupied;
   setLamp(r.outArrow, b.poBlocked || occ(r.outSection) ? 'red' : outPerm ? 'white' : b.request === 'ours' ? 'white blink' : 'off');
-  // strzałka „wjazd”: czerwona – pociąg sąsiada na szlaku, biała – pozwolenie dane sąsiadowi
-  setLamp(r.inArrow, (b.direction === 'in' && b.occupied) || occ(r.inSection) ? 'red' : b.direction === 'in' && !b.koPending ? 'white' : 'off');
-  setLamp(r.req, b.request === 'theirs' ? 'white blink' : 'off');
-  setLamp(r.wbl, b.request === 'ours' ? 'white blink' : 'off');
-  setLamp(r.ko, b.koPending ? 'white blink' : 'off');
+  // strzałka „przyjazd”: czerwona – pociąg sąsiada na szlaku, biała – pozwolenie dane sąsiadowi, migająca biała – sąsiad
+  // żąda pozwolenia
+  setLamp(r.inArrow, (b.direction === 'in' && b.occupied) || occ(r.inSection) ? 'red' : b.request === 'theirs' ? 'white blink' : b.direction === 'in' && !b.koPending ? 'white' : 'off');
+  setLamp(r.pwl, b.pwl ? 'red' : 'off');
+  setLamp(r.ko, b.koPending ? 'white' : 'off');
   if (r.cntPo) r.cntPo.textContent = PanelView.counterText(b.counters.dPo);
   if (r.cntKo) r.cntKo.textContent = PanelView.counterText(b.counters.dKo);
 }

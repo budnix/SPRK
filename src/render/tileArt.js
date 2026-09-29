@@ -299,8 +299,8 @@ export function blankArt() {
 /** Skrzynka wskaźnika kierunku blokady: obrys w kształcie strzałki, w środku dwie okrągłe lampki (biała, czerwona). */
 /**
  * Strzałka blokady liniowej na kostce toru szlakowego – jak na pulpitach typu E: kanał toru w kształcie strzałki, w nim
- * zamiast paska świetlnego krótka lampka-strzałka (biała – pozwolenie / kierunek, czerwona – tor szlakowy zajęty),
- * pod kanałem opis „wjazd” / „wyjazd”.
+ * zamiast paska świetlnego krótka lampka-strzałka (biała – pozwolenie / kierunek, migająca biała „przyjazd” – sąsiad
+ * żąda pozwolenia, czerwona – tor szlakowy zajęty), pod kanałem opis „przyjazd” / „odjazd” (ISDR tabl. 2.3.12).
  * Dokłada się do gotowej kostki toru (`g`), usuwając jej pasek i śrubki; zwraca lampkę-strzałkę. `toWest` – szlak leży na zachód.
  */
 export function blockArrowArt(g, kind, toWest) {
@@ -315,14 +315,15 @@ export function blockArrowArt(g, kind, toWest) {
     : `M${b},${C} L${b - tip},${C - H} L${b - tip},${C - h} H${a} V${C + h} H${b - tip} L${b - tip},${C + H} Z`;
   const lampEl = el('path', { class: 'lamp arrow-lamp', d });
   g.appendChild(lampEl);
-  g.appendChild(text(C, 33, kind === 'out' ? 'wyjazd' : 'wjazd', { class: 'tile-text tiny blk-arrow-label' }));
+  g.appendChild(text(C, 33, kind === 'out' ? 'odjazd' : 'przyjazd', { class: 'tile-text tiny blk-arrow-label' }));
   return lampEl;
 }
 
 /**
  * Kostka urządzenia blokady liniowej – w układzie zwykłych kostek przyciskowych pulpitu (buttonTileArt):
- * przycisk Wbl / Poz / Ko / Zk z opisem po prawej i lampką w rogu (żąd. / Ko / Wbl), albo licznik doraźny dKo / dPo
- * z przyciskiem pod nim. Poz i Wbl na zielonym polu, jak na pulpitach typu E.
+ * przycisk Wbl / Poz / Ko / Zk z opisem po prawej, lampka w rogu: Ko (biała – potwierdzić przyjazd), przy Wbl czerwona
+ * Pwl (przeciwwtórność liniowa – sygnał wyjazdowy podany); albo licznik doraźny dKo / dPo z przyciskiem pod nim. Poz
+ * i Wbl na zielonym polu, jak na pulpitach typu E. Żądanie sąsiada i nasze żądanie pokazują strzałki (bez lampek).
  */
 export function blockDeviceArt(role, exit) {
   const refs = { btns: {} };
@@ -335,10 +336,10 @@ export function blockDeviceArt(role, exit) {
     return { g, refs };
   }
   const g = tileBase('t-blockdev', role === 'Poz' || role === 'Wbl' ? 'green' : '');
-  if (role !== 'Zk') {
-    // lampka w prawym górnym rogu (żąd. – sąsiad żąda pozwolenia, Ko – potwierdzić przyjazd, Wbl – żądanie wysłane)
-    refs.lamp = lamp(33, 7, 3, 'lamp-white'); g.appendChild(refs.lamp);
-    if (role === 'Poz') g.appendChild(text(28.5, 7.5, 'żąd.', { class: 'tile-text tiny', 'text-anchor': 'end' }));
+  if (role === 'Ko') { refs.lamp = lamp(33, 7, 3, 'lamp-white'); g.appendChild(refs.lamp); }
+  if (role === 'Wbl') {
+    refs.lamp = lamp(33, 7, 3, 'lamp-red'); g.appendChild(refs.lamp);
+    g.appendChild(text(28.5, 7.5, 'Pwl', { class: 'tile-text tiny', 'text-anchor': 'end' }));
   }
   refs.btns[role] = button(11, 20, 6, role === 'Zk' ? 'black' : 'red', ref, role, 'right'); g.appendChild(refs.btns[role]);
   return { g, refs };
