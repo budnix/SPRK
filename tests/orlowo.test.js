@@ -76,6 +76,9 @@ test('Gdynia Orłowo: scenariusz z usterką blokady od Gdyni – zapowiadanie te
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'Z2' || x.to === 'Z2')) {
     assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg', `${e.nr}: ${e.status}`);
   }
-  assert.ok(sim.comms.messages.some((m) => m.kind === 'ask'), 'brak pytania telefonicznego');
+  // linia dwutorowa: przy zapowiadaniu na torze właściwym sąsiad nie pyta o drogę, tylko zawiadamia o odjeździe
+  // (Ir-1 §23 ust. 2–4) – dawniej gra wymagała pytania „Czy droga … wolna?” także tu
+  assert.ok(sim.comms.messages.some((m) => m.dir === 'in' && /Pociąg nr \d+ odjechał o/.test(m.text)), 'brak zawiadomienia o odjeździe');
+  assert.ok(!sim.comms.messages.some((m) => m.kind === 'ask' && m.exit === 'Z2'), 'pytanie o drogę na torze właściwym');
   assert.ok(!sim.score.items.some((i) => i.code === 'comms-wrong'), 'zła formuła telefoniczna');
 });

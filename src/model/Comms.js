@@ -1,15 +1,16 @@
 import { Clock } from '../core/Clock.js';
 
 /**
- * Łączność: telefonogramy do posterunków sąsiednich (wg formuł Ir-1) i radio z maszynistą.
- * Wiadomości przychodzące trafiają przez zdarzenie 'comms' na szynie.
+ * Łączność: telefonogramy do posterunków sąsiednich (wzory Ir-1, Dodatek 2) i radio z maszynistą.
+ * Wiadomości przychodzące trafiają przez zdarzenie 'comms' na szynie; telefonogramy nadane automatycznie (rozmowy
+ * przy sprawnej blokadzie w trybie `phoneRoutine: 'auto'`) – przez 'phone-out'.
  */
 export const FORMULAS = [
-  { id: 'ask-free', to: 'neighbour', text: (p) => `Czy droga dla pociągu nr ${p.nr} wolna?`, doc: 'Pytanie o drogę przed wyprawieniem pociągu (blokada bez łączności)' },
-  { id: 'free', to: 'neighbour', text: (p) => `Droga dla pociągu nr ${p.nr} wolna.`, doc: 'Odpowiedź na pytanie sąsiada o drogę' },
+  { id: 'ask-free', to: 'neighbour', text: (p) => `Czy droga dla pociągu nr ${p.nr} jest wolna?`, doc: 'Zapytanie o drogę przed wyprawieniem pociągu (wzór 1a)' },
+  { id: 'free', to: 'neighbour', text: (p) => `Dla pociągu nr ${p.nr} droga jest wolna.`, doc: 'Pozwolenie – odpowiedź na zapytanie sąsiada (wzór 4a)' },
   { id: 'departed', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} odjechał o ${p.time}.`, doc: 'Zawiadomienie o odjeździe wyprawionego pociągu' },
-  { id: 'arrived', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} przybył o ${p.time}.`, doc: 'Potwierdzenie przyjazdu pociągu od sąsiada' },
-  { id: 'ask-arrived', to: 'neighbour', text: (p) => `Czy pociąg nr ${p.nr} przybył?`, doc: 'Pytanie o przyjazd naszego pociągu do sąsiada' },
+  { id: 'arrived', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} przyjechał o ${p.time}.`, doc: 'Zawiadomienie o przyjeździe pociągu od sąsiada (wzór 14)' },
+  { id: 'ask-arrived', to: 'neighbour', text: (p) => `Czy pociąg nr ${p.nr} przyjechał?`, doc: 'Pytanie o przyjazd naszego pociągu do sąsiada' },
   { id: 'driver-wait', to: 'driver', text: (p) => `Pociąg nr ${p.nr}, proszę czekać przed semaforem.`, doc: 'Radio: polecenie oczekiwania' },
 ];
 
@@ -21,6 +22,12 @@ export class Comms {
     this.time = 0;
     this.driverReported = new Set();
     this.bus.on('comms', (m) => this.#incoming(m));
+    // telefonogram nadany automatycznie (rozmowa przy sprawnej blokadzie) – do dziennika łączności
+    this.bus.on('phone-out', (m) => {
+      const msg = { dir: 'out', time: this.time, to: m.to, text: m.text, auto: true };
+      this.messages.push(msg);
+      this.bus.emit('comms-log', msg);
+    });
   }
 
   #incoming(m) {
@@ -70,7 +77,7 @@ export class Comms {
         if (!b) return { ok: false, reason: 'brak posterunku' };
         if (b.phone.departedTrain !== nr) return { ok: false, reason: `pociąg nr ${nr} nie został wyprawiony do ${b.neighbour}` };
         const arrived = b.phone.arrivalConfirmed === nr;
-        this.#incoming({ time: this.time + 6, from: b.neighbour, kind: 'info', text: arrived ? `Pociąg nr ${nr} przybył w całości.` : `Pociąg nr ${nr} jeszcze nie przybył.` });
+        this.#incoming({ time: this.time + 6, from: b.neighbour, kind: 'info', text: arrived ? `Pociąg nr ${nr} przyjechał.` : `Pociąg nr ${nr} jeszcze nie przyjechał.` });
         return { ok: true };
       }
       case 'driver-wait': {

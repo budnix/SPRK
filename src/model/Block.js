@@ -23,8 +23,16 @@ import { Clock } from '../core/Clock.js';
  *                 'in' – pozwolenie dane sąsiadowi na wjazd do nas.
  */
 export class LineBlock {
-  constructor(exitId, exitDef, bus) {
+  /**
+   * opts: `phoneRoutine` – rozmowy telefoniczne przy sprawnej blokadzie (1a / 4a na szlaku jednotorowym, numer pociągu
+   * przy odjeździe na dwutorowym): 'auto' (domyślnie – nadają się same, widać je w Łączności) albo 'manual' (gracz nadaje,
+   * pominięcie kosztuje punkty); `nextTrain(exitId)` – numer naszego następnego pociągu na ten szlak.
+   */
+  constructor(exitId, exitDef, bus, opts = {}) {
     this.id = exitId;
+    this.phoneRoutine = opts.phoneRoutine || 'auto';
+    this.nextTrain = opts.nextTrain || (() => null);
+    this.talk = { askedFor: null, clearedFor: null, theirAsk: null, answered: null }; // rozmowy 1a / 4a przy sprawnej blokadzie
     this.def = exitDef;
     this.bus = bus;
     this.neighbour = exitDef.name;
@@ -69,7 +77,8 @@ export class LineBlock {
     if (this.occupied) return { ok: false, reason: `Tor szlakowy do ${this.neighbour} zajęty` };
     if (this.fault) {
       // zapowiadanie telefoniczne: blok początkowy zostaje zablokowany do naprawy – o drodze decyduje telefonogram
-      if (!this.phone.permissionFor) return { ok: false, fault: true, reason: `Blokada bez łączności – zapytaj ${this.neighbour} telefonicznie, czy droga wolna` };
+      // tor właściwy linii dwutorowej: wyjazd po potwierdzeniu przyjazdu poprzedniego pociągu (tor wolny), bez zapytania
+      if (!this.phone.permissionFor && this.fixed !== 'out') return { ok: false, fault: true, reason: `Blokada bez łączności – zapytaj ${this.neighbour} telefonicznie, czy droga jest wolna` };
       // sygnał zezwalający tylko, gdy pozwolenie było u nas przed utratą łączności (albo tor ma stały kierunek wyjazdu)
       if (mode === 'signal' && !this.auto && this.fixed !== 'out' && this.faultDir !== 'out') return { ok: false, fault: true, reason: `Blokada do ${this.neighbour} bez łączności, pozwolenie u sąsiada – wyprawienie na Sz lub rozkaz „S”` };
       return { ok: true, fault: true };
@@ -154,6 +163,20 @@ export class LineBlock {
     }
   }
 
+  /** Szlak jednotorowy z Eap – rozmowa 1a / 4a przy każdym pociągu (Ir-1 §28 ust. 3, §24 ust. 5, 9). */
+  #single() { return !this.auto && !this.fixed; }
+
+  #phoneOut(text) { this.bus.emit('phone-out', { to: this.neighbour, text }); }
+
+  #phoneIn(text, delay = 0, extra = {}) {
+    this.bus.emit('comms', { time: this.time + delay, from: this.neighbour, kind: 'info', exit: this.id, text, ...extra });
+  }
+
+  /** Kara za pominięty telefonogram w trybie ręcznym (`phoneRoutine: 'manual'`). */
+  #routineMissed(msg) {
+    this.bus.emit('score', { time: this.time, code: 'phone-routine', points: -2, msg: `${msg} (${this.neighbour})` });
+  }
+
   #requestPermission() {
     if (this.auto) return this.#fail(`Blokada samoczynna – pozwolenia nie stosuje się`);
     if (this.fixed) return this.#fail(`Blokada jednokierunkowa – pozwolenia nie stosuje się`);
@@ -164,7 +187,13 @@ export class LineBlock {
     if (this.request === 'theirs') return this.#fail(`Sąsiad żąda pozwolenia – najpierw obsłuż Poz (lub poczekaj)`);
     if (this.request === 'ours') return { ok: true, noop: true };
     this.request = 'ours'; this.requestSince = this.time;
-    this.neighbourReply = { at: this.time + 8 + Math.random() * 20 };
+    this.neighbourReply = { at: this.time + 8 + Math.random() * 20, nr: this.nextTrain(this.id) };
+    // żądanie pozwolenia na szlaku jednotorowym poprzedza zapytanie telefoniczne (wzór 1a)
+    const nr = this.neighbourReply.nr;
+    if (nr != null) {
+      if (this.phoneRoutine === 'auto') this.#phoneOut(`Czy droga dla pociągu nr ${nr} jest wolna?`);
+      else if (String(this.talk.askedFor) !== String(nr)) this.#routineMissed(`Wbl bez zapytania telefonicznego o drogę dla pociągu nr ${nr} (wzór 1a)`);
+    }
     this.log('info', `Żądanie pozwolenia na wyjazd wysłane (Wbl)`);
     this.#emit();
     return { ok: true };
@@ -230,6 +259,12 @@ export class LineBlock {
     if (this.request !== 'theirs') return this.#fail(`Brak żądania pozwolenia od sąsiada`);
     if (this.occupied) return this.#fail(`Tor szlakowy zajęty`);
     if (this.direction) return this.#fail(`Kierunek już ustawiony`);
+    const nr = this.talk.theirAsk;
+    if (nr != null) {
+      if (this.phoneRoutine === 'auto') this.#phoneOut(`Dla pociągu nr ${nr} droga jest wolna.`);
+      else if (String(this.talk.answered) !== String(nr)) this.#routineMissed(`Poz bez telefonogramu „Dla pociągu nr ${nr} droga jest wolna” (wzór 4a)`);
+    }
+    this.talk.theirAsk = null; this.talk.answered = null;
     this.request = null; this.direction = 'in'; this.permission = false;
     this.log('info', `Pozwolenie dane (Poz) – kierunek: wjazd od ${this.neighbour}`);
     this.#emit();
@@ -288,6 +323,7 @@ export class LineBlock {
     this.pwl = false; this.pwlRoute = null; this.needPo = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false;
     this.phone.permissionFor = null; this.phone.arrivalConfirmed = null; this.phone.arrivedTrain = null;
     this.phone.askedByThem = null; this.phone.clearedFor = null; this.phone.departedTrain = null;
+    this.talk = { askedFor: null, clearedFor: null, theirAsk: null, answered: null };
     this.#emit();
   }
 
@@ -297,7 +333,7 @@ export class LineBlock {
   phoneAskFromNeighbour(nr) {
     if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return false;
     this.phone.askedByThem = nr;
-    this.bus.emit('comms', { time: this.time, from: this.neighbour, kind: 'ask', exit: this.id, nr, text: `Czy droga dla pociągu nr ${nr} wolna?` });
+    this.bus.emit('comms', { time: this.time, from: this.neighbour, kind: 'ask', exit: this.id, nr, text: `Czy droga dla pociągu nr ${nr} jest wolna?` });
     this.bus.emit('alarm', { type: 'phone', exit: this.id });
     this.#emit();
     return true;
@@ -305,6 +341,12 @@ export class LineBlock {
 
   /** Nasza odpowiedź „Droga dla pociągu nr … wolna”. */
   phoneAnswerFree(nr) {
+    if (!this.fault) {
+      // sprawna blokada, szlak jednotorowy: telefonogram 4a przed Poz (pozwolenie przenosi blokada)
+      if (!this.#single() || String(this.talk.theirAsk) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
+      this.talk.answered = nr;
+      return { ok: true };
+    }
     if (String(this.phone.askedByThem) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
     if (this.occupied || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return { ok: false, reason: `Droga nie jest wolna` };
     this.phone.askedByThem = null;
@@ -316,7 +358,15 @@ export class LineBlock {
 
   /** Nasze pytanie o drogę dla naszego pociągu – sąsiad odpowiada po chwili. */
   phoneAskNeighbour(nr) {
-    if (!this.fault) return { ok: false, reason: `blokada działa – użyj Wbl` };
+    if (!this.fault) {
+      // sprawna blokada: na szlaku jednotorowym zapytanie 1a przed Wbl; na dwutorowym zapytania się nie stosuje
+      if (!this.#single()) return { ok: false, reason: `tor szlakowy linii dwutorowej – zapytanie o drogę zbędne` };
+      this.talk.askedFor = nr;
+      const free = !this.occupied && this.direction !== 'in' && this.request !== 'theirs';
+      this.#phoneIn(free ? `Dla pociągu nr ${nr} droga jest wolna.` : `Stój pociąg nr ${nr} – tor szlakowy zajęty.`, 6 + Math.random() * 8);
+      return { ok: true };
+    }
+    if (this.fixed === 'out') return { ok: false, reason: `tor właściwy linii dwutorowej – zapytanie zbędne, wystarczy potwierdzony przyjazd poprzedniego pociągu` };
     // przy zapowiadaniu blok początkowy zostaje zablokowany do naprawy – o wolnej drodze decyduje telefonogram
     if (this.occupied) return { ok: false, reason: `tor szlakowy zajęty` };
     this.neighbourReply = { at: this.time + 8 + Math.random() * 15, phoneFor: nr };
@@ -329,7 +379,7 @@ export class LineBlock {
     this.phone.arrivalConfirmed = nr;
     this.koPending = false; // przy zapowiadaniu telefonicznym telefonogram zastępuje Ko
     this.#emit();
-    this.bus.emit('comms', { time: this.time + 2, from: this.neighbour, kind: 'info', exit: this.id, text: `Zrozumiano, pociąg nr ${nr} przybył.` });
+    this.#phoneIn(`Powtarzam: pociąg nr ${nr} przyjechał.`, 2); // odbiorca powtarza treść telefonogramu
     return { ok: true };
   }
 
@@ -337,7 +387,7 @@ export class LineBlock {
   phoneReportDeparture(nr) {
     if (String(this.phone.departedTrain) !== String(nr)) return { ok: false, reason: `pociąg nr ${nr} nie odjechał na szlak do ${this.neighbour}` };
     this.phone.departedReported = true;
-    this.bus.emit('comms', { time: this.time + 2, from: this.neighbour, kind: 'info', exit: this.id, text: `Zrozumiano, pociąg nr ${nr} odjechał.` });
+    this.#phoneIn(`Powtarzam: pociąg nr ${nr} odjechał.`, 2); // odbiorca powtarza treść telefonogramu
     return { ok: true };
   }
 
@@ -356,7 +406,11 @@ export class LineBlock {
   trainDeparted(train) {
     this.occupied = true; this.permission = false; this.lineTrain = train.nr; this.lineOurs = true;
     this.phone.permissionFor = null; this.phone.departedTrain = train.nr;
-    if (this.fault) this.phone.departedReported = false;
+    // zawiadomienie o odjeździe: przy zapowiadaniu telefonicznym, a na linii dwutorowej (Eap, SBL) – numer pociągu zawsze
+    // (Ir-1 §28 ust. 2, §29 ust. 4)
+    const notice = this.fault || this.fixed || this.auto;
+    if (notice && !this.fault && this.phoneRoutine === 'auto') { this.#phoneOut(`Pociąg nr ${train.nr} odjechał o ${Clock.format(this.time)}.`); this.phone.departedReported = true; }
+    else if (notice) this.phone.departedReported = false;
     // blok początkowy blokuje sam pociąg wyjeżdżający na sygnał zezwalający; po wyjeździe na Sz / rozkaz (albo przy
     // zapowiadaniu telefonicznym) – dyżurny doraźnie dPo
     const onSignal = train.exitAuth !== '*' && !this.fault;
@@ -370,6 +424,10 @@ export class LineBlock {
   /** Nasz pociąg dotarł do sąsiada (koniec toru szlakowego). */
   trainArrivedAtNeighbour(train) {
     this.log('info', `Pociąg ${train.nr} przybył do ${this.neighbour}`);
+    if (!this.fault && !this.phone.departedReported) {
+      this.phone.departedReported = true;
+      this.#routineMissed(`Brak zawiadomienia o odjeździe pociągu nr ${train.nr}`);
+    }
     if (this.needPo) {
       this.needPo = false;
       this.bus.emit('score', { time: this.time, code: 'no-dpo', points: -10, msg: `Blok początkowy do ${this.neighbour} nie zablokowany (dPo) po wyjeździe pociągu ${train.nr} bez sygnału` });
@@ -386,8 +444,9 @@ export class LineBlock {
       this.pendingArrivalAck = null;
       this.occupied = false; this.lineTrain = null;
       this.phone.arrivalConfirmed = train.nr;
-      this.bus.emit('comms', { time: this.time + 5, from: this.neighbour, kind: 'info', exit: this.id, text: `Pociąg nr ${train.nr} przybył o ${Clock.format(this.time)}.` });
+      this.#phoneIn(`Pociąg nr ${train.nr} przyjechał o ${Clock.format(this.time)}.`, 5);
       if (!this.phone.departedReported) this.bus.emit('score', { time: this.time, code: 'no-depart-report', points: -10, msg: `Brak telefonicznego zawiadomienia ${this.neighbour} o odjeździe pociągu ${train.nr}` });
+      this.phone.departedReported = true;
       return;
     }
     this.pendingArrivalAck = this.time + 10 + Math.random() * 20;
@@ -397,6 +456,7 @@ export class LineBlock {
   neighbourTrainEntered(train) {
     this.occupied = true; this.arrivedFully = false; this.koPending = false; this.lineTrain = train.nr; this.lineOurs = false; this.zpg = false; this.entrySeen = false;
     this.log('info', `Pociąg ${train.nr} wyjechał z ${this.neighbour} – tor szlakowy zajęty`);
+    if (this.fault || this.fixed || this.auto) this.#phoneIn(`Pociąg nr ${train.nr} odjechał o ${Clock.format(this.time)}.`);
     this.#emit();
   }
 
@@ -416,12 +476,15 @@ export class LineBlock {
 
   /** Żądanie pozwolenia od sąsiada (AI). */
   neighbourRequests(nr) {
-    if (this.fault) return this.phoneAskFromNeighbour(nr);
+    // przy zapowiadaniu na torze właściwym linii dwutorowej sąsiad nie pyta – wyprawia po potwierdzonym przyjeździe
+    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.koPending : this.phoneAskFromNeighbour(nr);
     if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked; }
     if (this.fixed === 'in') return !this.occupied && !this.koPending; // blokada jednokierunkowa: bez pozwolenia
     if (this.fixed === 'out') return false;
     if (this.request || this.direction || this.occupied) return false;
     this.request = 'theirs'; this.requestSince = this.time;
+    // szlak jednotorowy: zapytanie o drogę (wzór 1a) przed żądaniem pozwolenia przez blokadę
+    if (nr != null) { this.talk.theirAsk = nr; this.talk.answered = null; this.bus.emit('comms', { time: this.time, from: this.neighbour, kind: 'ask', exit: this.id, nr, text: `Czy droga dla pociągu nr ${nr} jest wolna?` }); }
     this.log('info', `${this.neighbour} żąda pozwolenia na wyprawienie pociągu – daj pozwolenie (Poz)`);
     this.bus.emit('alarm', { type: 'request', exit: this.id });
     this.#emit();
@@ -443,7 +506,7 @@ export class LineBlock {
   }
 
   canNeighbourDispatch(nr) {
-    if (this.fault) return String(this.phone.clearedFor) === String(nr) && !this.occupied;
+    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.koPending : String(this.phone.clearedFor) === String(nr) && !this.occupied;
     // SBL: sąsiad z pociągiem do wyprawienia prosi o kierunek przyjazdu (np. po naszej jeździe po torze lewym) i czeka
     // na zgodę
     if (this.auto) {
@@ -461,7 +524,7 @@ export class LineBlock {
       this.neighbourReply = null;
       if (reply.phoneFor) {
         const free = !this.occupied && !this.phone.askedByThem && !this.phone.clearedFor;
-        this.bus.emit('comms', { time, from: this.neighbour, kind: 'info', exit: this.id, text: free ? `Droga dla pociągu nr ${reply.phoneFor} wolna.` : `Droga dla pociągu nr ${reply.phoneFor} zajęta.` });
+        this.bus.emit('comms', { time, from: this.neighbour, kind: 'info', exit: this.id, text: free ? `Dla pociągu nr ${reply.phoneFor} droga jest wolna.` : `Stój pociąg nr ${reply.phoneFor} – tor szlakowy zajęty.` });
         if (free) this.phone.permissionFor = reply.phoneFor; // telefonogram nie przestawia kierunku blokady
         this.#emit();
       } else if (reply.dirChange) {
@@ -487,6 +550,7 @@ export class LineBlock {
           this.log('warn', `${this.neighbour} odmawia pozwolenia`);
         } else {
           this.direction = 'out'; this.permission = true;
+          if (reply.nr != null && this.phoneRoutine === 'auto') this.#phoneIn(`Dla pociągu nr ${reply.nr} droga jest wolna.`);
           this.log('info', `${this.neighbour} dał pozwolenie na wyjazd (Poz)`);
         }
         this.#emit();

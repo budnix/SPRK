@@ -67,7 +67,7 @@ test('usterka blokady: zapowiadanie telefoniczne w obie strony, przyjazd potwier
   assert.equal(sim.press({ kind: 'block', exit: 'W', btn: 'Wbl' }).ok, false);
   // sąsiad pyta telefonicznie o drogę dla 5310
   run(sim, 60 * 6);
-  const ask = sim.comms.messages.find((m) => m.kind === 'ask');
+  const ask = sim.comms.messages.find((m) => m.kind === 'ask' && m.exit === 'W'); // pytania 1a są też przy sprawnej blokadzie (od Dąbrowy)
   assert.ok(ask, 'brak pytania telefonicznego od sąsiada');
   assert.equal(String(ask.nr), '5310');
   // zła formuła – kara

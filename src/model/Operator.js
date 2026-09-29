@@ -244,7 +244,7 @@ export class AutoOperator {
           if (!facing.length) { sim.traffic.reverseTrain(e.nr); continue; }
           cands = facing;
         }
-        if (b.fault) { if (!b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
+        if (b.fault) { if (b.fixed !== 'out' && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
         else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) b.press('Wbl');
         if (staged) {

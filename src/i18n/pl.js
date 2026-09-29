@@ -176,6 +176,15 @@ export default {
   'set.rowScale.1': 'normalny',
   'set.rowScale.0.7': 'ciasny',
   'set.rowScale.0.7.hint': 'semafory i tarcze bliżej toru',
+  'set.cat.ruch.kicker': 'Ruch',
+  'set.cat.ruch.title': 'Łączność z sąsiadami',
+  'set.cat.ruch.intro': 'Telefonogramy z posterunkami sąsiednimi przy sprawnej blokadzie liniowej. Przy usterce blokady zapowiadanie telefoniczne zawsze prowadzisz sam.',
+  'set.phoneRoutine.title': 'Rozmowy przy sprawnej blokadzie',
+  'set.phoneRoutine.desc': 'Na szlaku jednotorowym przed Wbl i Poz dyżurni wymieniają telefonogramy „Czy droga dla pociągu nr … jest wolna?” i „Dla pociągu nr … droga jest wolna”, a na dwutorowym zawiadamiają o odjeździe pociągu. Automatycznie – rozmowy idą same i widać je w zakładce Łączność. Ręcznie – nadajesz je sam, pominięcie kosztuje 2 punkty. Zmiana obowiązuje od nowej zmiany.',
+  'set.phoneRoutine.auto': 'automatycznie',
+  'set.phoneRoutine.auto.hint': 'telefonogramy nadają się same',
+  'set.phoneRoutine.manual': 'ręcznie',
+  'set.phoneRoutine.manual.hint': 'nadajesz 1a / 4a i zawiadomienia o odjeździe (zakładka Łączność)',
   'set.cat.wyglad.kicker': 'Wygląd',
   'set.cat.wyglad.title': 'Motyw',
   'set.cat.wyglad.intro': 'Kolory interfejsu wokół pulpitu. Kostki pulpitu i monitor mają własne, stałe kolory.',
@@ -455,14 +464,14 @@ export default {
       </ul>
       <h3>Rozkazy pisemne</h3>
       <ul>
-        <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 40 km/h (np. przy usterce semafora).</li>
+        <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 40 km/h (np. przy usterce semafora). Gra używa nazwy i treści dawnego druku „S”; od 14.12.2025 PKP PLK stosuje Księgę Formularzy (instrukcje 21.10 i 21.15).</li>
         <li>Warunki wydania (Ir-1): pociąg stoi przed tym semaforem, zwrotnice w drodze jazdy zamknięte <b>Zz</b> lub utwierdzone w przebiegu, wykolejnice zdjęte, odcinki wolne, przy wyjeździe pozwolenie blokady.</li>
       </ul>
       <h3>Zakłócenia, łączność i ocena</h3>
       <ul>
         <li>Na ekranie startowym wybierasz scenariusz i poziom zakłóceń: opóźnienia pociągów od sąsiadów, usterki (semafor bez sygnału, zwrotnica bez kontroli, fałszywa zajętość, blokada bez łączności), pociągi nadzwyczajne.</li>
         <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: przebiegu przez nią nie nastawisz aż do naprawy; pociąg przejedzie po zabezpieczeniu jej na miejscu (zakładka Urządzenia, ok. 3 min) na Sz lub rozkaz „S”.</li>
-        <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Sygnał wyjazdowy wyjdzie tylko, gdy pozwolenie było u nas – inaczej wyprawienie na Sz (uzasadniony), po wyjeździe dPo; przyjazd potwierdza telefonogram (bez Ko i dKo), a blokadę po naprawie przywraca automatyk.</li>
+        <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, wzory Ir-1): „Czy droga dla pociągu nr … jest wolna?” (1a), „Dla pociągu nr … droga jest wolna” (4a), „Pociąg nr … odjechał o …”, „Pociąg nr … przyjechał o …” (14); sąsiad powtarza treść. Na torze właściwym linii dwutorowej nie pytasz o drogę – wyprawiasz po potwierdzonym przyjeździe poprzedniego pociągu i zawiadamiasz o odjeździe. Sygnał wyjazdowy wyjdzie tylko, gdy pozwolenie było u nas – inaczej wyprawienie na Sz (uzasadniony), po wyjeździe dPo; przyjazd potwierdza telefonogram (bez Ko i dKo), a blokadę po naprawie przywraca automatyk.</li>
         <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
       </ul>
       <h3>Pociągi</h3>

@@ -50,6 +50,7 @@ const sim = new Simulation(station, {
   seed: params.get('seed') ? Number(params.get('seed')) : undefined,
   district: params.get('okreg') || undefined,
   srk: params.get('srk') || undefined, // tylko do testów/porównań; stanowisko zawsze wynika z definicji stacji lub scenariusza
+  phoneRoutine: settings.values.phoneRoutine, // rozmowy telefoniczne przy sprawnej blokadzie: same albo ręcznie
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? t('top.bothDistricts') : sim.playerDistrict}` : ''}`;

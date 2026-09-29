@@ -12,9 +12,11 @@ test('menu ≡ ma tylko akcje; „Ustawienia…” otwiera pełny ekran z katego
   const se = page.locator('#settings');
   await expect(se).toBeVisible();
   await expect(se.locator('.st-tagline')).toHaveText('Ustawienia');
-  await expect(se.locator('.se-cat')).toHaveCount(5);
-  await expect(se.locator('.se-section')).toHaveCount(5);
-  await expect(se.locator('.se-option')).toHaveCount(8);
+  // + kategoria „Ruch” z trybem rozmów telefonicznych przy sprawnej blokadzie (audyt realizmu, grupa 4)
+  await expect(se.locator('.se-cat')).toHaveCount(6);
+  await expect(se.locator('.se-section')).toHaveCount(6);
+  await expect(se.locator('.se-option')).toHaveCount(9);
+  await expect(se.locator('.se-option[data-key=phoneRoutine] .se-desc')).toContainText('Czy droga dla pociągu');
   await expect(se.locator('.se-option[data-key=srk]')).toHaveCount(0); // stanowisko zawsze z definicji stacji – bez wyboru
   await expect(se.locator('.se-option[data-key=edgePanels] .se-desc')).toContainText('przypięte');
   await expect(se.locator('.se-option[data-key=rowScale] .se-tag')).toHaveText('przeładowuje widok');
@@ -34,3 +36,10 @@ test('menu ≡ ma tylko akcje; „Ustawienia…” otwiera pełny ekran z katego
   await se.locator('#se-close').click();
   await expect(se).toBeHidden();
 });
+
+for (const [value, want] of [[undefined, 'auto'], ['manual', 'manual']]) {
+  test(`ustawienie „Rozmowy przy sprawnej blokadzie” trafia do symulacji: ${want}`, async ({ page }) => {
+    await openShift(page, 'szkolna', { settings: value ? { phoneRoutine: value } : {}, params: { scenariusz: 'zmiana' } });
+    expect(await page.evaluate(() => [window.sim.phoneRoutine, window.sim.blocks.get('W').phoneRoutine])).toEqual([want, want]);
+  });
+}

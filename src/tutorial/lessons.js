@@ -134,7 +134,7 @@ export function lessonSteps(P) {
   info('phone-intro', 'Blokada bez łączności', `O 08:26 blokada do ${LIPa} traci łączność. Pociąg <b>6106</b> z ${DEBa} (08:33, tor 1) ma jechać dalej do ${LIPa} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
   act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie – gdy ${DEB} zgłosi 6106 (zamiga ${P.indicator} „żąd.”): <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
     (sim) => arrived(sim, 6106) && blockFree(sim.blocks.get('E')));
-  act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … wolna?”</b>, numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Droga … wolna” – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
+  act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … jest wolna?”</b> (wzór 1a), numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Dla pociągu nr 6106 droga jest wolna” (wzór 4a) – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
     (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),
     { wrong: (sim) => (sim.blocks.get('W').neighbourReply?.phoneFor ? 'Pytanie nadane – czekaj na odpowiedź Lipna.' : null) });
   act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak do ${LIPa}</b>. Semafor C1 zostanie na „Stój”: pozwolenie było u ${LIPa}, a bez łączności blokada go nie przeniesie – sygnał zezwalający nie wyjdzie.`, cmd('train', sig('C1')),
@@ -143,7 +143,7 @@ export function lessonSteps(P) {
     (sim, ctx) => ctx.seen.has('sz:C1') || sim.blocks.get('W').occupied || atNeighbour(sim, 6106)),
   act('phone-departed', 'Zawiadomienie o odjeździe', `Gdy 6106 wyjedzie na szlak, nadaj do ${LIPa}: <b>„Pociąg nr … odjechał o …”</b> (numer 6106). Brak zawiadomienia jest punktowany ujemnie.`, { tab: 'lacznosc' },
     (sim) => { const b = sim.blocks.get('W'); return String(b.phone.departedTrain) === '6106' && b.phone.departedReported; });
-  act('phone-dpo', 'Zablokowanie bloku początkowego (dPo)', `6106 wyjechał bez sygnału zezwalającego, więc blok początkowy do ${LIPa} nie zablokował się sam. Zablokuj go doraźnie: ${P.dpo(LIPa)}. Przy wyjeździe na Sz to uzasadnione ${A('dPo')} – bez punktów ujemnych. Blok zostanie zablokowany do naprawy blokady; przyjazd ${LIP} potwierdzi telefonogramem <b>„Pociąg nr 6106 przybył o …”</b>.`, blockW,
+  act('phone-dpo', 'Zablokowanie bloku początkowego (dPo)', `6106 wyjechał bez sygnału zezwalającego, więc blok początkowy do ${LIPa} nie zablokował się sam. Zablokuj go doraźnie: ${P.dpo(LIPa)}. Przy wyjeździe na Sz to uzasadnione ${A('dPo')} – bez punktów ujemnych. Blok zostanie zablokowany do naprawy blokady; przyjazd ${LIP} potwierdzi telefonogramem <b>„Pociąg nr 6106 przyjechał o …”</b>.`, blockW,
     (sim) => { const b = sim.blocks.get('W'); return b.counters.dPo >= 1 && b.poBlocked && String(b.phone.arrivalConfirmed) === '6106'; });
 
   info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, ${P.releaseNames}, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b> (później: menu ☰ → Raport zmiany).<p>${P.next}</p>`, { el: '#btn-menu' });

@@ -19,6 +19,7 @@ export function settingsCategories() {
   return [
     // kolejność wg grup (kicker): Ogólne, Widok (pulpit, monitor, panel), Wygląd
     cat('jezyk', [opt('lang', ['auto', ...LANGS], { reload: true, type: 'select' })]),
+    cat('ruch', [opt('phoneRoutine', ['auto', 'manual'], { reload: true })]),
     cat('pulpit', [opt('deskPos', ['top', 'middle', 'bottom']), opt('screens', ['auto', 'off']), opt('edgePanels', ['off', 'on'])]),
     cat('monitor', [
       { key: 'symScale', title: t('set.symScale.title'), description: t('set.symScale.desc'), type: 'range', range: { min: 1, max: 1.5, step: 0.05 } },

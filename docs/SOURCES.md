@@ -126,6 +126,19 @@ podaniu sygnału wyjazdowego – czerwona lampka Pwl (w grze na kostce Wbl; na t
 kostki Wbl lampki Pwl nie ma – przyjęte); Ko – białe światło ciągłe. Czerwonej migającej strzałki „przyjazd” u sąsiada
 (sygnał wyjazdowy podany u niego) gra nie pokazuje, bo nie modeluje sygnałów sąsiada – przyjęte.
 
+Telefonogramy i zapowiadanie telefoniczne (wszystkie stanowiska). Ze źródeł: wzory Ir-1 (Dodatek 2) – 1a „Czy droga
+dla pociągu nr … jest wolna?”, 4a „Dla pociągu nr … droga jest wolna”, 5a „Stój pociąg nr …” z przyczyną, 14 „Pociąg
+nr … przyjechał o …”; odbiorca powtarza treść (Ir-1 §23 ust. 7 i 9, §24); na szlaku jednotorowym rozmowa 1a / 4a przy
+każdym pociągu także przy sprawnej blokadzie (Ir-1 §28 ust. 3, §24 ust. 5, 9, 16); przy zapowiadaniu na torze
+właściwym linii dwutorowej – oznajmienie odjazdu i potwierdzenie przyjazdu, bez zapytania (Ir-1 §23 ust. 2–4, §24
+ust. 1–2); na linii dwutorowej numer pociągu przekazuje się przy odjeździe (Ir-1 §28 ust. 2, §29 ust. 4). Przyjęte
+(uproszczenia gry): rozmowy przy sprawnej blokadzie nadają się same (ustawienie „Rozmowy przy sprawnej blokadzie”:
+automatycznie – domyślnie, ręcznie – pominięty telefonogram −2 pkt); zapowiadanie włącza się i wyłącza z usterką
+blokady – bez telefonogramów wprowadzenia (wzór 16) i odwołania (wzór 17) i bez oczekiwania na przejazd pociągu przy
+sprawnej blokadzie (Ir-1 §28 ust. 16, 21, 24, 25; Ie-10 §33 ust. 5); rozkaz pisemny „S” zachowuje nazwę i treść
+dawnego druku – od 14.12.2025 (zmiana 18 Ir-1, §58 ust. 5 i 9, Dodatek 4) PKP PLK stosuje Księgę Formularzy
+(instrukcje 21.10 – wyjazd, 21.15 – wjazd).
+
 Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
 pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
 daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości

@@ -171,6 +171,15 @@ export default {
   'set.rowScale.1': 'normal',
   'set.rowScale.0.7': 'eng',
   'set.rowScale.0.7.hint': 'Signale näher am Gleis',
+  'set.cat.ruch.kicker': 'Betrieb',
+  'set.cat.ruch.title': 'Verständigung mit Nachbarn',
+  'set.cat.ruch.intro': 'Fernsprechmeldungen mit den Nachbarstellen bei funktionierendem Streckenblock. Bei gestörtem Block führst du das Zugmeldeverfahren immer selbst.',
+  'set.phoneRoutine.title': 'Meldungen bei funktionierendem Block',
+  'set.phoneRoutine.desc': 'Auf eingleisigen Strecken tauschen die Fahrdienstleiter vor Wbl und Poz „Ist die Strecke für Zug Nr. … frei?“ und „Für Zug Nr. … ist die Strecke frei“ aus, auf zweigleisigen melden sie jede Abfahrt. Automatisch – die Meldungen gehen von selbst und stehen im Reiter Kommunikation. Manuell – du sendest sie selbst, jede vergessene kostet 2 Punkte. Gilt ab der nächsten Schicht.',
+  'set.phoneRoutine.auto': 'automatisch',
+  'set.phoneRoutine.auto.hint': 'Meldungen werden für dich gesendet',
+  'set.phoneRoutine.manual': 'manuell',
+  'set.phoneRoutine.manual.hint': 'du sendest 1a / 4a und Abfahrmeldungen (Reiter Kommunikation)',
   'set.cat.wyglad.kicker': 'Aussehen',
   'set.cat.wyglad.title': 'Design',
   'set.cat.wyglad.intro': 'Farben der Oberfläche rund um das Pult. Pultfelder und Monitor haben eigene, feste Farben.',
@@ -446,14 +455,14 @@ export default {
       </ul>
       <h3>Schriftliche Befehle</h3>
       <ul>
-        <li>Reiter <i>Befehle</i>: Befehl „S“ erlaubt einem vor einem Halt zeigenden Signal stehenden Zug die Vorbeifahrt bis zum nächsten Signal mit höchstens 40 km/h (z. B. bei Signalstörung).</li>
+        <li>Reiter <i>Befehle</i>: Befehl „S“ erlaubt einem vor einem Halt zeigenden Signal stehenden Zug die Vorbeifahrt bis zum nächsten Signal mit höchstens 40 km/h (z. B. bei Signalstörung). Das Spiel behält Namen und Wortlaut des früheren Vordrucks „S“; seit dem 14.12.2025 verwendet PKP PLK das Formularbuch (Anweisungen 21.10 und 21.15).</li>
         <li>Bedingungen (Ir-1): der Zug steht vor diesem Signal, Weichen im Fahrweg mit <b>Zz</b> gesperrt oder in einer Fahrstraße verschlossen, Gleissperren abgelegt, Abschnitte frei, bei Ausfahrt Erlaubnis des Streckenblocks.</li>
       </ul>
       <h3>Störungen, Kommunikation und Bewertung</h3>
       <ul>
         <li>Auf dem Startbildschirm wählst du Szenario und Störungsgrad: Verspätungen der Züge von den Nachbarn, Störungen (Signal dunkel, Weiche ohne Überwachung, Falschbesetzung, Streckenblock ohne Verbindung), Sonderzüge.</li>
         <li><b>Signalstörung</b>: Sz oder Befehl „S“. <b>Falschbesetzung</b>: nach Prüfung des Gleises Sz. <b>Weiche ohne Überwachung</b>: bis zur Reparatur keine Fahrstraße darüber; ein Zug fährt, nachdem die Weiche vor Ort gesichert ist (Reiter Anlagen, etwa 3 min), auf Sz oder Befehl „S“.</li>
-        <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Formeln nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“, „Strecke … frei“, „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“. Das Ausfahrsignal kommt nur, wenn die Erlaubnis bei uns war – sonst Ausfahrt auf Sz (begründet), danach dPo; die Ankunft wird fernmündlich bestätigt (ohne Ko und dKo), den Block stellt nach der Reparatur der Techniker wieder her.</li>
+        <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Vordrucke nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“ (1a), „Für Zug Nr. … ist die Strecke frei“ (4a), „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“ (14); der Nachbar wiederholt die Meldung. Auf dem Regelgleis einer zweigleisigen Strecke fragst du nicht – du lässt nach bestätigter Ankunft des vorigen Zuges ab und meldest die Abfahrt. Das Ausfahrsignal kommt nur, wenn die Erlaubnis bei uns war – sonst Ausfahrt auf Sz (begründet), danach dPo; die Ankunft wird fernmündlich bestätigt (ohne Ko und dKo), den Block stellt nach der Reparatur der Techniker wieder her.</li>
         <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
       </ul>
       <h3>Züge</h3>

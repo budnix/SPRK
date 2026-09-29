@@ -137,11 +137,13 @@ test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam
   out.trainArrivedAtNeighbour({ nr: 22 });
   assert.equal(out.gate().ok, true);
   assert.equal(out.direction, 'out');
-  // usterka: zapowiadanie telefoniczne i dKo jak w Eap
+  // usterka: zapowiadanie telefoniczne – na torze właściwym linii dwutorowej sąsiad nie pyta o drogę, wyprawia po
+  // potwierdzonym przyjeździe poprzedniego pociągu (Ir-1 §23 ust. 2–4; dawniej gra wymagała „Czy droga … wolna?”)
   inn.setFault(true);
   assert.equal(inn.press('Zk').ok, false);
   assert.equal(inn.neighbourRequests(13), true);
-  assert.equal(inn.phoneAnswerFree(13).ok, true);
+  assert.equal(inn.phoneAnswerFree(13).ok, false, 'sąsiad nie pytał');
+  assert.equal(inn.canNeighbourDispatch(13), true);
   inn.neighbourTrainEntered({ nr: 13 }); inn.entryPassed(true); inn.neighbourTrainArrived({ nr: 13 });
   assert.equal(inn.koPending, true, 'przy usterce przyjazd potwierdza się telefonicznie');
   assert.equal(inn.phoneReportArrival(13).ok, true);
@@ -196,7 +198,7 @@ test('SBL: koniec usterki po telefonicznie potwierdzonym przyjazdie zwalnia blok
   b.trainArrivedAtNeighbour({ nr: 88301 });
   assert.equal(b.occupied, false, 'przy usterce tor wolny po telefonicznym potwierdzeniu przyjazdu');
   assert.equal(b.poBlocked, true, 'blok początkowy zablokowany do naprawy blokady');
-  assert.equal(b.canNeighbourDispatch(55203), false);
+  assert.equal(b.canNeighbourDispatch(55203), true, 'tor właściwy sąsiada – wyprawia po potwierdzonym przyjeździe, bez zapytania');
   b.setFault(false);
   b.tick(210);
   assert.equal(b.occupied, false, 'blokada sprawna: blok początkowy zwolniony po potwierdzonym przyjeździe');

@@ -227,6 +227,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Sz i rozkaz „S”: droga za semaforem po bieżących położeniach zwrotnic (`Interlocking.pathBeyond`) – blokada tylko
   wyjazdu na tej drodze, uzasadnienie usterką tylko na niej (`faultOnPath`); `Traffic.issueOrder` używa tej samej drogi.
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
+* Telefonogramy: `FORMULAS` w `Comms` (wzory Ir-1); rozmowy przy sprawnej blokadzie (`LineBlock.talk`, 1a / 4a na
+  jednotorze, zawiadomienie o odjeździe na dwutorze) – `phoneRoutine` 'auto' (nadaje blokada: `phone-out`) albo 'manual'
+  (ustawienie gracza, kara `phone-routine`); przy usterce na torze właściwym dwutoru bez zapytania.
 * Blokada Eap: Wbl (żądanie pozwolenia), oWbl (wyciągnięcie Wbl – `Simulation.pull`), Poz (danie pozwolenia), Ko
   (zwolnienie bloku końcowego po przyjeździe w całości i stwierdzeniu przejazdu), dPo (doraźne zablokowanie bloku
   początkowego po wyjeździe na Sz), dKo (doraźne przygotowanie bloku końcowego przed wjazdem na Sz) – liczniki;

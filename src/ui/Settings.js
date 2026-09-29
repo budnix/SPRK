@@ -13,7 +13,7 @@
  */
 const KEY = 'sprk.settings';
 /** Ustawienia domyślne (nowy użytkownik): pulpit na środku, motyw ciemny, panel na dole, cały pulpit na jednym ekranie, stałe pola skrajne włączone, symbole 125 %. Stanowisko (srk) nie jest ustawieniem – wynika z definicji stacji/scenariusza. */
-export const DEFAULTS = { deskPos: 'middle', sidePos: 'bottom', theme: 'dark', sideCollapsed: false, screens: 'off', symScale: '1.25', rowScale: '1', edgePanels: 'on', lang: 'auto', sideSize: null, sideWidth: null };
+export const DEFAULTS = { deskPos: 'middle', sidePos: 'bottom', theme: 'dark', sideCollapsed: false, screens: 'off', symScale: '1.25', rowScale: '1', edgePanels: 'on', lang: 'auto', phoneRoutine: 'auto', sideSize: null, sideWidth: null };
 
 export class Settings {
   constructor(onChange) {

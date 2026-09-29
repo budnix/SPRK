@@ -19,7 +19,7 @@ const OTHER_DISTRICT = 'Element w okręgu obsługiwanym przez drugą nastawnię'
  * Symulacja: spina zegar, zależności (Interlocking), blokady liniowe, ruch, usterki,
  * łączność i ocenę zmiany.
  *
- * opts: { scenario: id | obiekt, disruptions: 'none'|'low'|'high', seed, startTime, speed }
+ * opts: { scenario: id | obiekt, disruptions: 'none'|'low'|'high', seed, startTime, speed, phoneRoutine: 'auto'|'manual' }
  */
 export class Simulation {
   constructor(station, opts = {}) {
@@ -39,7 +39,11 @@ export class Simulation {
     this.endTime = this.scenario.endTime ? Clock.parse(this.scenario.endTime) : null;
     this.score = new Score(this.bus);
     this.blocks = new Map();
-    for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus));
+    // rozmowy telefoniczne przy sprawnej blokadzie: 'auto' (domyślnie) albo 'manual' (ustawienie gracza)
+    this.phoneRoutine = opts.phoneRoutine === 'manual' ? 'manual' : 'auto';
+    const nextTrain = (exitId) => this.traffic?.timetable().filter((e) => e.to === exitId && e.actualDep == null && e.status !== 'na następnym posterunku')
+      .sort((a, b) => (a.depTime ?? a.arrTime ?? 0) - (b.depTime ?? b.arrTime ?? 0))[0]?.nr ?? null;
+    for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus, { phoneRoutine: this.phoneRoutine, nextTrain }));
     this.ilk = new Interlocking(this.station, this.bus, {
       blockGate: (exitId, mode, routeId) => this.blocks.get(exitId)?.gate(mode, routeId) ?? { ok: true },
       // sygnał wyjazdowy podany / przebieg z nim rozwiązany bez wyjazdu – przeciwwtórność liniowa Eap (Pwl)

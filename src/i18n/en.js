@@ -171,6 +171,15 @@ export default {
   'set.rowScale.1': 'normal',
   'set.rowScale.0.7': 'tight',
   'set.rowScale.0.7.hint': 'signals closer to the track',
+  'set.cat.ruch.kicker': 'Traffic',
+  'set.cat.ruch.title': 'Talking to neighbours',
+  'set.cat.ruch.intro': 'Telephone messages with neighbouring posts while the line block works. When the block fails you always run telephone block working yourself.',
+  'set.phoneRoutine.title': 'Messages with a working block',
+  'set.phoneRoutine.desc': 'On a single-track line, before Wbl and Poz the signallers exchange “Is the line clear for train no. …?” and “The line is clear for train no. …”; on a double-track line they announce each departure. Automatic – the messages go by themselves and show in the Comms tab. Manual – you send them yourself; skipping one costs 2 points. Takes effect from the next shift.',
+  'set.phoneRoutine.auto': 'automatic',
+  'set.phoneRoutine.auto.hint': 'messages are sent for you',
+  'set.phoneRoutine.manual': 'manual',
+  'set.phoneRoutine.manual.hint': 'you send 1a / 4a and departure notices (Comms tab)',
   'set.cat.wyglad.kicker': 'Appearance',
   'set.cat.wyglad.title': 'Theme',
   'set.cat.wyglad.intro': 'Colours of the interface around the desk. The desk tiles and the monitor have their own fixed colours.',
@@ -446,14 +455,14 @@ export default {
       </ul>
       <h3>Written orders</h3>
       <ul>
-        <li><i>Orders</i> tab: order “S” lets a train standing at a signal at “Stop” pass it to the next signal at up to 40 km/h (e.g. with a signal fault).</li>
+        <li><i>Orders</i> tab: order “S” lets a train standing at a signal at “Stop” pass it to the next signal at up to 40 km/h (e.g. with a signal fault). The game keeps the name and wording of the former “S” form; since 14 Dec 2025 PKP PLK uses the Book of Forms (instructions 21.10 and 21.15).</li>
         <li>Conditions (Ir-1): the train stands at that signal, points in the route locked <b>Zz</b> or held in a route, derailers off, sections clear, for a departure block permission.</li>
       </ul>
       <h3>Disruptions, communication and scoring</h3>
       <ul>
         <li>On the start screen you choose the scenario and the disruption level: delays of trains from the neighbours, faults (signal dark, point without detection, false occupancy, block system without communication), extra trains.</li>
         <li><b>Signal fault</b>: Sz or order “S”. <b>False occupancy</b>: after checking the track, Sz. <b>Point without detection</b>: no route over it until repair; a train passes after the point is secured on site (Equipment tab, about 3 min) on Sz or order “S”.</li>
-        <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 formulas): “Is the line clear for train no. …?”, “Line … clear”, “Train no. … departed at …”, “Train no. … arrived at …”. The exit signal clears only if the permission was ours – otherwise departure on Sz (justified), then dPo; the arrival is confirmed by telephone (no Ko or dKo) and the technician restores the block after the repair.</li>
+        <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 forms): “Is the line clear for train no. …?” (1a), “The line is clear for train no. …” (4a), “Train no. … departed at …”, “Train no. … arrived at …” (14); the neighbour repeats the message. On the proper track of a double-track line you do not ask – you dispatch once the previous train's arrival is confirmed and announce the departure. The exit signal clears only if the permission was ours – otherwise departure on Sz (justified), then dPo; the arrival is confirmed by telephone (no Ko or dKo) and the technician restores the block after the repair.</li>
         <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
       </ul>
       <h3>Trains</h3>

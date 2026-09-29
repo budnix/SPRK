@@ -93,8 +93,9 @@ Play it: **https://budnix.github.io/SPRK/**
   the signal in front of it. A shunt move starts only on Ms2 / M2 of its own signal, and Ms2 goes out once the whole
   consist has passed.
 * Timetable with live status and delays, event log, state tab (blocks, routes, counters, shunting tasks, train
-  mode / direction), written orders "S" for passing a signal at Stop, telephone train announcements per Ir-1 formulas
-  when a block loses communication, radio calls from drivers.
+  mode / direction), written orders "S" for passing a signal at Stop, telephone messages per Ir-1 forms (1a / 4a on
+  single-track lines for every train, departure notices on double-track lines – sent automatically or by you, see
+  Settings), telephone block working when a block loses communication, radio calls from drivers.
 * Disruptions: inbound delays, faults (dark signal, point without detection, false occupancy, block without
   communication), extra trains; seeded so a shift can be replayed. Shift report with a score for every procedural
   decision.
