@@ -82,7 +82,7 @@ Play it: **https://budnix.github.io/SPRK/**
 * Trains run over the real topology and current point positions, brake for stop signals, 40 km/h over diverging points
   (the whole train, and up to the end of the switch zone after a 40 km/h signal aspect), 40 km/h on a substitute signal or written order (to the end of the points when leaving for the line), train categories with realistic speeds and dynamics (EIP/IC/TLK/Regio/SKM/freight, capped by
   line speed), full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable, non-stop passes, terminating trains, units handed over
-  as new trains, shunting under Ms2 with two-stage moves, stop 10 m before other stock.
+  as new trains, shunting under Ms2 with two-stage moves, running onto an occupied track up to the standing stock (last 50 m at 3 km/h).
 * A point without detection is secured on site from the Equipment tab (a worker, about 3 minutes); then a train can
   pass it on a substitute signal or a written order.
 * Movement authority: a train moves only on a train proceed aspect, a substitute signal or a written order – never on

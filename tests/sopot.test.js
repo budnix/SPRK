@@ -60,7 +60,43 @@ test('Sopot: pełna zmiana – przejazdy trzyprzebiegowe, odstawianie na tor 13 
   assert.ok(sim.ended);
 });
 
-test('tabor manewrujący zatrzymuje się przed taborem stojącym na torze zajętym (jazda na Ms2)', () => {
+/** Przedziały zajęte przez pociąg na kostkach (współrzędna od pierwszego portu kostki). */
+function spans(tr) {
+  const out = [];
+  for (const seg of tr.trail) {
+    if (!seg.tile) continue;
+    const a = Math.max(0, tr.tail - seg.start), b = Math.min(seg.len, tr.head - seg.start);
+    if (a >= b) continue;
+    const p0 = seg.tile._def.ports(seg.tile)[0];
+    out.push({ tile: seg.tile, from: seg.inPort === p0 ? a : seg.len - b, to: seg.inPort === p0 ? b : seg.len - a });
+  }
+  return out;
+}
+
+/** Odległość od czoła `b` do taboru `a` po torze (niezależnie od obliczeń pociągu). */
+function gapAhead(sim, b, a) {
+  const sa = spans(a);
+  const last = b.trail[b.trail.length - 1];
+  if (sa.some((x) => x.tile === last.tile)) return 0;
+  let tile = last.tile, outPort = last.outPort, dist = last.start + last.len - b.head;
+  for (let i = 0; i < 60 && outPort; i++) {
+    const nb = sim.ilk.topo.neighbour(tile, outPort);
+    if (!nb) return Infinity;
+    tile = nb.tile;
+    const hits = sa.filter((x) => x.tile === tile);
+    if (hits.length) {
+      const p0 = tile._def.ports(tile)[0];
+      return dist + Math.min(...hits.map((h) => (nb.inPort === p0 ? h.from : tile._len - h.to)));
+    }
+    dist += tile._len;
+    outPort = sim.ilk.topo.step(tile, nb.inPort, sim.ilk.positions()).outPort;
+  }
+  return Infinity;
+}
+
+// Dojazd do taboru na torze zajętym: do taboru (nie do złącza izolowanego), ostatnie metry do 3 km/h (Dz.U. 2015 poz. 360
+// §9 ust. 4 i 7). Wcześniej skład stawał 10 m przed granicą odcinka – ok. 90 m od taboru.
+test('tabor manewrujący dojeżdża do taboru stojącego na torze zajętym (jazda na Ms2) – bez najechania, ostatnie metry do 3 km/h', () => {
   const sim = new Simulation(sopot, { disruptions: 'none', scenario: { id: 't', name: 't', tasks: [], timetable: [
     { nr: 1, kind: 'os', name: 'stojący', from: null, to: null, dep: '09:00', track: '501', stop: true, terminates: true, length: 130, vmax: 90, startOn: { section: 'T501a', dir: 'E' } },
     { nr: 2, kind: 'os', name: 'manewrujący', from: null, to: null, dep: '09:00', track: '13', stop: true, terminates: true, length: 130, vmax: 60, startOn: { section: 'T13', dir: 'E' } },
@@ -68,11 +104,20 @@ test('tabor manewrujący zatrzymuje się przed taborem stojącym na torze zajęt
   sim.step(0.5);
   sim.traffic.toShunting(2);
   assert.ok(sim.ilk.setRoute('Tm13-R501').ok, 'przebieg manewrowy na tor zajęty');
-  for (let i = 0; i < 600 && sim.clock.time < Clock.parse('06:10'); i++) sim.step(0.5);
   const a = sim.traffic.trains.find((t) => t.nr === 1), b = sim.traffic.trains.find((t) => t.nr === 2);
+  const gap = () => gapAhead(sim, b, a);
+  let vNear = 0;
+  for (let i = 0; i < 1200 && sim.clock.time < Clock.parse('06:15'); i++) {
+    sim.step(0.5);
+    if (gap() < 40) vNear = Math.max(vNear, b.v * 3.6);
+  }
   assert.equal(b.v, 0);
   assert.equal(b.stoppedAt?.reason, 'tabor na torze');
-  for (const s of b.occupiedSections()) assert.ok(!a.occupiedSections().has(s), `najechanie na ${s}`);
+  assert.ok(gap() <= 5, `skład stanął ${gap().toFixed(1)} m od taboru`);
+  assert.ok(vNear <= 3.1, `dojazd do taboru ${vNear.toFixed(1)} km/h`);
+  // bez najechania: przedziały zajęte na kostkach się nie nakładają
+  const sa = spans(a);
+  for (const x of spans(b)) for (const y of sa) if (x.tile === y.tile) assert.ok(x.to <= y.from || y.to <= x.from, `najechanie na kostce ${x.tile.x},${x.tile.y}`);
 });
 
 test('Sopot: ruch prawostronny jak w Orłowie – tor 1 linii 202 (jazda na Gdynię) pod torem 2, SKM 501 pod 502; sygnalizatory przy swoich torach', async () => {

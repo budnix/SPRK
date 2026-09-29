@@ -9,6 +9,8 @@ export const EMERGENCY_BRAKE = 1.3;
 export const SUBSTITUTE_SPEED = 40;
 /** Umowny pierwszy odstęp SBL za semaforem wyjazdowym (m) – do niego obowiązuje ograniczenie z Sz / rozkazu. */
 export const SBL_FIRST_BLOCK = 1000;
+/** Dojazd do taboru na torze zajętym: ostatnie metry (przyjęte) z prędkością do 3 km/h (Dz.U. 2015 poz. 360 §9 ust. 4). */
+export const STOCK_CREEP = 50;
 
 /**
  * Pociąg poruszający się po topologii toru według rzeczywistych położeń zwrotnic
@@ -25,6 +27,7 @@ export class Train {
     this.ilk = ilk;
     this.length = def.length ?? 100;
     this.blockedBy = opts.blockedBy || (() => false); // odcinek zajęty przez inny tabor (jazda na tor zajęty – stop przed taborem)
+    this.stockAt = opts.stockAt || null; // (kostka, port wejścia) → odległość od wejścia na kostkę do innego taboru albo null
     // prędkość maksymalna i dynamika wg kategorii pociągu (IC/TLK/R/SKM/towarowy…) – `vmax`/`accel`/`brake` wpisu nadpisują
     this.vmax = speedFor(def) * KMH;
     const dyn = dynamicsFor(def);
@@ -239,7 +242,17 @@ export class Train {
         const st = this.topo.step(nb.tile, nb.inPort, positions);
         tile = nb.tile; inPort = nb.inPort; outPort = st.outPort;
         if (tile.type === 'buffer') { constraints.push({ dist: dist + tile._len * 0.5, speed: 0, reason: 'kozioł', kind: 'end' }); return constraints; }
-        if (tile.section && this.blockedBy(tile.section)) { constraints.push({ dist: Math.max(0, dist - 10), speed: 0, reason: 'tabor na torze', kind: 'end' }); return constraints; }
+        if (tile.section && this.blockedBy(tile.section)) {
+          // jazda na tor zajęty: do taboru (ostatnie metry do 3 km/h); bez położenia taboru – przed złączem odcinka
+          if (!this.stockAt) { constraints.push({ dist: Math.max(0, dist - 10), speed: 0, reason: 'tabor na torze', kind: 'end' }); return constraints; }
+          const off = this.stockAt(tile, inPort);
+          if (off != null) {
+            const at = dist + off;
+            constraints.push({ dist: Math.max(0, at - STOCK_CREEP), speed: 3 * KMH, reason: 'dojazd do taboru', kind: 'limit' });
+            constraints.push({ dist: Math.max(0, at - 2), speed: 0, reason: 'tabor na torze', kind: 'end' });
+            return constraints;
+          }
+        }
         if (tile.type === 'point') {
           const p = this.ilk.points.get(tile.id);
           // zwrotnica bez kontroli – przejazd tylko po zabezpieczeniu na miejscu (zamek trzpieniowy / spona)

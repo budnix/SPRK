@@ -209,6 +209,8 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   zezwolenia (`reverse`, `toTrainMode` / `toShunting` wołają `clearAuthority`) rusza tylko na sygnał semafora przed sobą.
   Skład manewrowy – na Ms2 sygnalizatora przed sobą albo pod sobą i dalej w przebiegu, którego sygnał minął
   (`shuntRoute`). Test: `tests/train-authority.test.js`.
+* Jazda na tor zajęty: `Train.#lookahead` pyta `Traffic.stockAt(kostka, port)` o odległość do innego taboru na kostce
+  odcinka zajętego – zatrzymanie 2 m przed taborem, ostatnie `STOCK_CREEP` m do 3 km/h (bez `stockAt` – przed złączem).
 * Hamowanie (`Train.tick`): służbowe z kategorii; gdy ograniczenie jest bliżej niż droga hamowania – mocniej, najwyżej
   `EMERGENCY_BRAKE`. Minięcie semafora bez sygnału dla pociągu (i bez rozkazu) to `spad` (Traffic: alarm, kara), potem
   hamowanie nagłe i utrata zezwolenia. Postój przy peronie trwa, dopóki semafor tuż przed pociągiem ma „Stój”

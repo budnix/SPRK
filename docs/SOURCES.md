@@ -84,6 +84,10 @@ odstępowego (Dz.U. 2015 poz. 360 §65). Przyjęte (uproszczenia gry): szlak ma 
 wjazdowym obowiązuje ona do wjazdu całego pociągu na stację; gra nie rysuje semaforów odstępowych, więc na SBL
 ograniczenie z Sz / rozkazu trwa przez umowny pierwszy odstęp 1000 m (`SBL_FIRST_BLOCK`).
 
+Jazda na tor zajęty (wszystkie stanowiska). Ze źródeł: przy dojeżdżaniu do taboru prędkość nie większa niż 3 km/h,
+skład zatrzymuje się przy taborze (Dz.U. 2015 poz. 360 §9 ust. 4 i 7). Przyjęte (uproszczenia gry): 3 km/h obowiązuje
+na ostatnich 50 m przed taborem (`STOCK_CREEP`), skład staje 2 m przed nim (gra nie łączy składów).
+
 Zwrotnica bez kontroli położenia (wszystkie stanowiska). Ze źródeł: zwrotnicę bez kontroli (także rozprutą)
 zabezpiecza się na miejscu zamkiem trzpieniowym albo sponą, potem pociąg jedzie przez nią na Sz albo rozkaz „S”
 (Ie-10 §32 ust. 2, 4, 8, 9; §35 ust. 1 pkt 1–3 i 6; Ir-1 §41 ust. 6). Przyjęte (uproszczenia gry): zabezpieczenie
