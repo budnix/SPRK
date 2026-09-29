@@ -227,8 +227,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Sz i rozkaz „S”: droga za semaforem po bieżących położeniach zwrotnic (`Interlocking.pathBeyond`) – blokada tylko
   wyjazdu na tej drodze, uzasadnienie usterką tylko na niej (`faultOnPath`); `Traffic.issueOrder` używa tej samej drogi.
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
-* Blokada Eap: Wbl (żądanie pozwolenia), Poz (danie pozwolenia), Ko (zwolnienie bloku końcowego po przyjeździe
-  w całości), dPo/dKo (doraźne, liczniki); blokada samoczynna SBL: bez pozwoleń i Ko, Zk (zmiana kierunku).
+* Blokada Eap: Wbl (żądanie pozwolenia), oWbl (wyciągnięcie Wbl – `Simulation.pull`), Poz (danie pozwolenia), Ko
+  (zwolnienie bloku końcowego po przyjeździe w całości i stwierdzeniu przejazdu), dPo (doraźne zablokowanie bloku
+  początkowego po wyjeździe na Sz), dKo (doraźne przygotowanie bloku końcowego przed wjazdem na Sz) – liczniki;
+  blokada samoczynna SBL: bez pozwoleń i Ko, Zk (zmiana kierunku).
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
@@ -305,7 +307,12 @@ któregokolwiek ogniwa nic nie jest nastawiane, a odmowa nazywa ogniwo. Pulpit k
 `LineBlock` obsługuje trzy warianty jednym modelem: Eap dwukierunkowa (szlak jednotorowy: Wbl/Poz/Ko), Eap
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
-`route:set`). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
+`route:set`). Warunek wyjazdu `gate(mode, routeId)`: 'route' (przebieg), 'substitute' (Sz, rozkaz), 'signal' (sygnał
+zezwalający – `Interlocking.#computeAspect` woła go dla przebiegów na szlak: pozwolenie przeniesione przez blokadę,
+przeciwwtórność `pwl`); `fault: true` w wyniku uzasadnia Sz / rozkaz (`faultOnPath`). Pwl włącza `onExitSignal`
+z `Interlocking` przy pierwszym sygnale zezwalającym przebiegu na szlak. Stwierdzenie przejazdu (`zpg`): `Train`
+zgłasza minięcie pierwszego semafora stacji (`entry-signal`) → `Traffic` → `entryPassed(onSignal)`; wyjazd na Sz /
+rozkaz (`exitAuth === '*'`) nie blokuje bloku początkowego (`needPo` → dPo). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
 sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strzałki szlaku pod separatorem, po
 poleceniach, jako czerwone kasetki z samymi numerami (`lineTrains`: pociąg na szlaku pełną kasetką, potem w kolejce
 pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śledzenia numerów w komputerowych srk, tylko na

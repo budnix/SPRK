@@ -260,7 +260,7 @@ export default {
   'rp.task.failed': 'niewykonane w terminie',
   'rp.task.due': 'termin {time}',
   'rp.noItems': 'brak zdarzeń punktowanych',
-  'rp.rules': 'Zasady: punktualne wyprawienie +5; przetrzymanie pociągu −1/min; przyjęcie na inny tor niż planowy −5; dPz −20; dPo/dKo bez uzasadnienia −15; Sz i rozkaz „S” bez usterki −5/−10; błędny telefonogram −5; rozprucie −100; pociąg nieobsłużony −10. Ocena: wzorowo ≥ 40 pkt, dobrze ≥ 10, dostatecznie ≥ −20.',
+  'rp.rules': 'Zasady: punktualne wyprawienie +5; przetrzymanie pociągu −1/min; przyjęcie na inny tor niż planowy −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz „S” bez usterki −5/−10; błędny telefonogram −5; rozprucie −100; pociąg nieobsłużony −10. Ocena: wzorowo ≥ 40 pkt, dobrze ≥ 10, dostatecznie ≥ −20.',
   'rp.new': 'Nowa zmiana…',
   'rp.again': 'Zagraj ponownie',
   'rp.viewDesk': 'Obejrzyj pulpit',
@@ -450,7 +450,7 @@ export default {
       <ul>
         <li><b>Wyprawienie pociągu</b>: <b>Wbl</b> – żądanie pozwolenia. Sąsiad odpowiada (lampka „wyjazd”). Potem nastaw przebieg wyjazdowy. Po wyjeździe blok początkowy Po i zajętość szlaku świecą na czerwono aż sąsiad potwierdzi przyjazd.</li>
         <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca lampka „żąd.”, komunikat). Daj pozwolenie (<b>Poz</b>). Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (miga „Ko”) zwolnij blok końcowy (<b>Ko</b>).</li>
-        <li><b>dPo</b>, <b>dKo</b> – doraźne zwolnienie bloków (liczniki).</li>
+        <li><b>dPo</b> – doraźne zablokowanie bloku początkowego po wyjeździe na Sz / rozkaz; <b>dKo</b> – doraźne przygotowanie bloku końcowego przed wjazdem na Sz / rozkaz (bez niego Ko nie zadziała). Liczniki; żaden nie kasuje blokady. <b>Wyciągnięcie Wbl</b> (oWbl) odwołuje żądanie albo zwraca niewykorzystane pozwolenie. Po podaniu sygnału wyjazdowego działa przeciwwtórność (Pwl): drugi sygnał na szlak nie wyjdzie.</li>
         <li><b>Blokada samoczynna (SBL)</b> na liniach dwutorowych (Sopot, Gdynia): bez pozwoleń i bez Ko – odstęp zwalnia się sam. Tor ma kierunek zasadniczy; jazda po torze „pod prąd” wymaga zmiany kierunku <b>Zk</b> (na pulpicie kostkowym: przycisk Wbl) przy wolnym odstępie. Przy usterce – zapowiadanie telefoniczne jak w Eap.</li>
       </ul>
       <h3>Rozkazy pisemne</h3>
@@ -462,8 +462,8 @@ export default {
       <ul>
         <li>Na ekranie startowym wybierasz scenariusz i poziom zakłóceń: opóźnienia pociągów od sąsiadów, usterki (semafor bez sygnału, zwrotnica bez kontroli, fałszywa zajętość, blokada bez łączności), pociągi nadzwyczajne.</li>
         <li><b>Usterka semafora</b>: Sz lub rozkaz „S”. <b>Fałszywa zajętość</b>: po sprawdzeniu toru Sz. <b>Zwrotnica bez kontroli</b>: przebiegu przez nią nie nastawisz aż do naprawy; pociąg przejedzie po zabezpieczeniu jej na miejscu (zakładka Urządzenia, ok. 3 min) na Sz lub rozkaz „S”.</li>
-        <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Bloki zwalnia się dPo / dKo po telefonicznym potwierdzeniu.</li>
-        <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dPo/dKo bez uzasadnienia −15; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
+        <li><b>Blokada bez łączności</b>: zapowiadanie telefoniczne (zakładka <i>Łączność</i>, formuły wg Ir-1): „Czy droga dla pociągu nr … wolna?”, „Droga … wolna”, „Pociąg nr … odjechał o …”, „Pociąg nr … przybył o …”. Sygnał wyjazdowy wyjdzie tylko, gdy pozwolenie było u nas – inaczej wyprawienie na Sz (uzasadniony), po wyjeździe dPo; przyjazd potwierdza telefonogram (bez Ko i dKo), a blokadę po naprawie przywraca automatyk.</li>
+        <li><b>Ocena</b> (menu ☰ → Raport): punktualne wyprawienia +5; przetrzymanie pociągu −1/min; zły tor −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz bez usterki −5/−10; błędny telefonogram −5; rozprucie −100. Raport pojawia się na koniec zmiany.</li>
       </ul>
       <h3>Pociągi</h3>
       <ul>

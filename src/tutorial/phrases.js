@@ -17,6 +17,7 @@ export const DESK_BLOCK = {
   indicator: 'lampka',
   blockPress: (exit, name, btn) => `naciśnij przycisk <b>${btn}</b> na kostkach blokady przy końcu toru szlakowego do <b>${name}</b> (lewy / prawy kraniec pulpitu)`,
   dpo: (name) => `naciśnij <b>dPo</b> na kostce licznika blokady do <b>${name}</b>`,
+  dko: (name) => `naciśnij <b>dKo</b> na kostce licznika blokady do <b>${name}</b>`,
   permissionGiven: () => 'pole <b>wyjazd</b> zaświeci',
   lineOccupied: 'strzałka „wyjazd” czerwona',
   blockIntro: (n) => `Kostki przy obu krańcach toru szlakowego to ${A('Eap', 'blokada liniowa Eap')} do ${n.LIPa} i do ${n.DEBa}. Na kostkach toru są strzałki z lampkami: <b>wyjazd</b> – mamy pozwolenie / nasz pociąg jest na szlaku, <b>wjazd</b> – sąsiad ma pozwolenie / jego pociąg jedzie do nas. Nad torem kostki przycisków z lampkami: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić; wyżej liczniki doraźne.`,

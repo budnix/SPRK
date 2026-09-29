@@ -254,7 +254,7 @@ export default {
   'rp.task.failed': 'not done in time',
   'rp.task.due': 'due {time}',
   'rp.noItems': 'no scored events',
-  'rp.rules': 'Rules: on-time departure +5; holding a train −1/min; arrival on a track other than planned −5; dPz −20; dPo/dKo without reason −15; Sz and order “S” without a fault −5/−10; wrong telephone message −5; run-through −100; train not handled −10. Grade: exemplary ≥ 40 pts, good ≥ 10, satisfactory ≥ −20.',
+  'rp.rules': 'Rules: on-time departure +5; holding a train −1/min; arrival on a track other than planned −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order “S” without a fault −5/−10; wrong telephone message −5; run-through −100; train not handled −10. Grade: exemplary ≥ 40 pts, good ≥ 10, satisfactory ≥ −20.',
   'rp.new': 'New shift…',
   'rp.again': 'Play again',
   'rp.viewDesk': 'View the desk',
@@ -441,7 +441,7 @@ export default {
       <ul>
         <li><b>Dispatching a train</b>: <b>Wbl</b> – permission request. The neighbour answers (“departure” lamp). Then set the departure route. After departure the start block Po and the line occupancy show red until the neighbour confirms arrival.</li>
         <li><b>Accepting a train</b>: the neighbour requests permission (flashing “żąd.” lamp, message). Give permission (<b>Poz</b>). Set the arrival route. After the whole train has arrived (“Ko” flashes) release the end block (<b>Ko</b>).</li>
-        <li><b>dPo</b>, <b>dKo</b> – emergency release of the blocks (counters).</li>
+        <li><b>dPo</b> – emergency locking of the starting block after a departure on Sz / written order; <b>dKo</b> – emergency preparation of the end block before an entry on Sz / written order (without it Ko does not work). Counters; neither resets the block. <b>Pulling Wbl</b> (oWbl) cancels the request or returns an unused permission. After an exit signal the line interlock (Pwl) prevents a second signal onto the line.</li>
         <li><b>Automatic block (SBL)</b> on double-track lines (Sopot, Gdynia): no permissions and no Ko – the section releases itself. A track has a normal direction; running “against the flow” requires a direction change <b>Zk</b> (on the push-button desk: the Wbl button) with the section clear. In case of a fault – telephone block working as with Eap.</li>
       </ul>
       <h3>Written orders</h3>
@@ -453,8 +453,8 @@ export default {
       <ul>
         <li>On the start screen you choose the scenario and the disruption level: delays of trains from the neighbours, faults (signal dark, point without detection, false occupancy, block system without communication), extra trains.</li>
         <li><b>Signal fault</b>: Sz or order “S”. <b>False occupancy</b>: after checking the track, Sz. <b>Point without detection</b>: no route over it until repair; a train passes after the point is secured on site (Equipment tab, about 3 min) on Sz or order “S”.</li>
-        <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 formulas): “Is the line clear for train no. …?”, “Line … clear”, “Train no. … departed at …”, “Train no. … arrived at …”. Blocks are released with dPo / dKo after telephone confirmation.</li>
-        <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dPo/dKo without reason −15; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
+        <li><b>Block system without communication</b>: telephone block working (<i>Comms</i> tab, Ir-1 formulas): “Is the line clear for train no. …?”, “Line … clear”, “Train no. … departed at …”, “Train no. … arrived at …”. The exit signal clears only if the permission was ours – otherwise departure on Sz (justified), then dPo; the arrival is confirmed by telephone (no Ko or dKo) and the technician restores the block after the repair.</li>
+        <li><b>Scoring</b> (menu ☰ → Report): on-time departures +5; holding a train −1/min; wrong track −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order without a fault −5/−10; wrong telephone message −5; run-through −100. The report appears at the end of the shift.</li>
       </ul>
       <h3>Trains</h3>
       <ul>

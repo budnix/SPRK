@@ -111,6 +111,11 @@ test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl o
   await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
   const req = await page.evaluate(() => window.sim.blocks.get('E').request);
   expect(req).toBe('ours');
+  // wyciągnięcie Wbl (prawy przycisk) odwołuje żądanie – bez licznika (oWbl)
+  await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click({ button: 'right' });
+  expect(await page.evaluate(() => { const b = window.sim.blocks.get('E'); return [b.request, b.counters.dPo + b.counters.dKo]; })).toEqual([null, 0]);
+  await btn(page, { kind: 'block', exit: 'E', btn: 'Wbl' }).click();
+  expect(await page.evaluate(() => window.sim.blocks.get('E').request)).toBe('ours');
   await expect(cluster.locator('.t-blockdev').nth(2).locator('.lamp')).toHaveClass(/blink/); // lampka na kostce Wbl miga, dopóki sąsiad nie odpowie
   await advance(page, 40);
   const perm = await page.evaluate(() => { const b = window.sim.blocks.get('E'); return b.permission || b.direction; });

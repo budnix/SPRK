@@ -1,4 +1,5 @@
 import { Clock } from '../core/Clock.js';
+import { Interlocking } from './Interlocking.js';
 
 /**
  * Automatyczny operator okręgu nastawczego (nastawniczy / dyżurny ruchu sterowany przez program).
@@ -110,15 +111,17 @@ export class AutoOperator {
     // ---- blokady w moim okręgu ----
     for (const b of sim.blocks.values()) {
       if (!this.#exitInDistrict(b.id)) continue;
+      // pociąg wyprawiony bez sygnału zezwalającego (Sz, rozkaz, zapowiadanie) – doraźne zablokowanie bloku początkowego
+      if (b.needPo) b.press('dPo');
       if (b.fault) {
         if (b.phone.askedByThem && this.#mayAccept(b)) sim.comms.send('free', { exit: b.id, nr: b.phone.askedByThem }, { silent: true });
+        // przyjazd pociągu sąsiada: telefonogram zastępuje Ko
         if (b.koPending && String(b.phone.arrivalConfirmed) !== String(b.phone.arrivedTrain)) sim.comms.send('arrived', { exit: b.id, nr: b.phone.arrivedTrain }, { silent: true });
-        if (b.koPending && String(b.phone.arrivalConfirmed) === String(b.phone.arrivedTrain)) b.press('dKo');
-        if (b.poBlocked && String(b.phone.arrivalConfirmed) === String(b.phone.departedTrain)) { if (!b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true }); b.press('dPo'); }
+        if (b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
         continue;
       }
       if (b.request === 'theirs' && this.#mayAccept(b)) b.press('Poz');
-      if (b.koPending) b.press('Ko');
+      if (b.koPending) { if (!b.zpg && !b.koPrepared) b.press('dKo'); b.press('Ko'); }
     }
 
     for (const e of sim.traffic.timetable()) {
@@ -133,6 +136,13 @@ export class AutoOperator {
         }
       }
       if (!tr || tr.finished) continue;
+
+      // ---- wyjazd przy blokadzie bez łączności: przebieg nastawiony, semafor na „Stój” (pozwolenie u sąsiada) – Sz ----
+      if (e.exitRouteSet && e.to && sim.blocks.get(e.to)?.fault && tr.v === 0 && (e.depTime == null || t >= e.depTime)) {
+        const act = [...ilk.active.values()].find((a) => a.route.exit === e.to && a.route.kind === 'train' && !a.trainEntered);
+        const sig = act && ilk.signals.get(act.route.start);
+        if (sig && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
+      }
 
       // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
       if (e._entryPath?.length) {

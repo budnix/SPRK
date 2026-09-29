@@ -53,11 +53,12 @@ export const EBI_COMMANDS = [
   { code: 'SSO', args: ['station'], name: 'odwołanie polecenia SSS' },
   { code: 'SZO', args: ['station'], name: 'wygaszenie sygnałów zastępczych lub odwołanie SZI' },
   { code: 'WBL', args: ['block'], name: 'żądanie pozwolenia na wyprawienie pociągu', block: 'Wbl' },
+  { code: 'OWBL', args: ['block'], name: 'odwołanie żądania pozwolenia albo zwrot niewykorzystanego pozwolenia', block: 'oWbl' },
   { code: 'POZ', args: ['block'], name: 'danie pozwolenia na wyprawienie pociągu', block: 'Poz' },
   { code: 'KO', args: ['block'], name: 'zwolnienie bloku końcowego – pociąg przybył w całości', block: 'Ko' },
   { code: 'ZK', args: ['block'], name: 'zmiana kierunku blokady samoczynnej', block: 'Zk' },
-  { code: 'DPO', args: ['block'], name: 'doraźne zwolnienie bloku początkowego', block: 'dPo' },
-  { code: 'DKO', args: ['block'], name: 'doraźne zwolnienie bloku końcowego', block: 'dKo' },
+  { code: 'DPO', args: ['block'], name: 'doraźne zablokowanie bloku początkowego (po wyjeździe na Sz / rozkaz)', block: 'dPo' },
+  { code: 'DKO', args: ['block'], name: 'doraźne przygotowanie bloku końcowego (przed wjazdem na Sz / rozkaz)', block: 'dKo' },
 ];
 
 const byCode = new Map(EBI_COMMANDS.map((c) => [c.code, c]));

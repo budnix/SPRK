@@ -303,10 +303,14 @@ test('misja 3: usterka obwodu torowego – tor świeci na czerwono bez pociągu,
   for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('-'); }
   await advance(page, 5);
   for (const id of ['Zw1', 'Zw2']) { await pressBtn(page, { kind: 'point', id }); await order('STOP'); }
-  await expect(box.locator('.tut-title')).toContainText('Wjazd na sygnał zastępczy');
-  await expect(page.locator('.izh-orders button[data-order="Sz"]')).toHaveClass(/tut-hl/);
+  // przed Sz – dKo: blokada nie stwierdzi przejazdu przy semaforze A, bez dKo Ko by nie zadziałało
+  await expect(box.locator('.tut-title')).toContainText('Przygotowanie bloku końcowego');
   await untilRequest(page, 'W');
   await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Poz' });
+  await pressBtn(page, { kind: 'block', exit: 'W', btn: 'dKo' });
+  expect(await page.evaluate(() => window.sim.blocks.get('W').koPrepared)).toBe(true);
+  await expect(box.locator('.tut-title')).toContainText('Wjazd na sygnał zastępczy');
+  await expect(page.locator('.izh-orders button[data-order="Sz"]')).toHaveClass(/tut-hl/);
   await page.evaluate(() => { const s = window.sim, c = s.clock; c.paused = false; for (let i = 0; i < 4000 && s.traffic.timetable().find((t) => t.nr === 7107).train?.stoppedAt?.signal !== 'A'; i++) s.step(0.5); c.paused = true; });
   await pressBtn(page, { kind: 'signal', id: 'A' }); await order('Sz');
   await expect(box.locator('.tut-title')).toContainText('Po przyjeździe');

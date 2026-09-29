@@ -72,7 +72,9 @@ Play it: **https://budnix.github.io/SPRK/**
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
   derailers, sectional release, timed release (90 s) when the approach section is occupied, emergency release,
   individual point locking, run-through detection, signal aspects per Ie-1 (S1–S5, S10–S13, Ms1 / Ms2, Sz).
-* **Eap semi-automatic block** on single-track lines (permission request and grant, end block, emergency releases)
+* **Eap semi-automatic block** on single-track lines (permission request and grant, cancelling a request by pulling
+  Wbl, end block, line interlock Pwl after an exit signal; dPo locks the starting block after a departure on a
+  substitute signal, dKo prepares the end block before an entry on it – neither resets the block)
   and **automatic block (SBL)** on double-track lines with a normal direction per track and direction change (Zk);
   neighbouring stations are driven by the simulator (they request, dispatch on time and confirm arrival).
 * Block state is shown on the monitor at the line exit: track arrow (red when the section is occupied), direction

@@ -57,7 +57,9 @@ test('fałszywa zajętość: odcinek zajęty bez pociągu blokuje przebieg', () 
   assert.equal(sim.ilk.sections.get('T1').occupied, false);
 });
 
-test('usterka blokady: zapowiadanie telefoniczne w obie strony, dKo/dPo uzasadnione', () => {
+// Przy usterce blokady przyjazd potwierdza telefonogram – dawniej wymagano potem dKo, które „kasowało” blokadę; dKo
+// przygotowuje blok końcowy przed wjazdem na Sz i przy zapowiadaniu się go nie używa (LIRK Eap, Ir-1 §28 ust. 16).
+test('usterka blokady: zapowiadanie telefoniczne w obie strony, przyjazd potwierdzony telefonogramem (bez dKo); po naprawie blokada w stanie zasadniczym', () => {
   const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: [{ type: 'block-fail', target: 'W', at: '05:52', duration: 60 }] } });
   const w = sim.blocks.get('W');
   run(sim, 5);
@@ -82,10 +84,12 @@ test('usterka blokady: zapowiadanie telefoniczne w obie strony, dKo/dPo uzasadni
   assert.equal(w.koPending, true);
   assert.equal(sim.press({ kind: 'block', exit: 'W', btn: 'Ko' }).ok, false, 'Ko elektryczne nie działa przy usterce');
   assert.equal(sim.comms.send('arrived', { exit: 'W', nr: 5310 }).ok, true);
-  sim.press({ kind: 'block', exit: 'W', btn: 'dKo' });
-  const dko = sim.score.items.filter((i) => i.code === 'dKo').at(-1);
-  assert.equal(dko.points, 0, 'dKo po zapowiedzi powinno być uzasadnione');
-  assert.equal(w.direction, null);
+  assert.equal(w.koPending, false, 'telefonogram o przyjeździe zastępuje Ko');
+  assert.equal(sim.press({ kind: 'block', exit: 'W', btn: 'dKo' }).ok, false, 'przy zapowiadaniu dKo się nie stosuje');
+  assert.equal(w.counters.dKo, 0);
+  run(sim, 60 * 60); // naprawa blokady (usterka 60 min)
+  assert.equal(w.fault, false);
+  assert.equal(w.direction, null, 'po naprawie blokada w stanie zasadniczym');
   // wyjazd 5310 do E działa normalnie (blokada E sprawna) – tu tylko sprawdzamy wyjazd przez W dla innego pociągu: pytanie o drogę
   const eE = sim.traffic.timetable().find((x) => x.nr === 5311);
   void eE;

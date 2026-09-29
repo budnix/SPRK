@@ -41,7 +41,9 @@ export class Simulation {
     this.blocks = new Map();
     for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus));
     this.ilk = new Interlocking(this.station, this.bus, {
-      blockGate: (exitId) => this.blocks.get(exitId)?.gate() ?? { ok: true },
+      blockGate: (exitId, mode, routeId) => this.blocks.get(exitId)?.gate(mode, routeId) ?? { ok: true },
+      // sygnał wyjazdowy podany / przebieg z nim rozwiązany bez wyjazdu – przeciwwtórność liniowa Eap (Pwl)
+      onExitSignal: (exitId, routeId, on) => { const b = this.blocks.get(exitId); if (b) { if (on) b.exitSignalGiven(routeId); else b.exitSignalCancelled(routeId); } },
       ...this.srk.model,
     });
     // obsługa przyciskami (press / pull): protokół systemu srk, domyślnie przyciski typu E
@@ -285,7 +287,7 @@ export class Simulation {
    *  { type: 'point', id } | { type: 'derailer', id } – przestawienie
    *  { type: 'lock', id, derailer? }          – zamknięcie indywidualne (Zz) – założenie / zdjęcie
    *  { type: 'point-secure', id, on }         – zabezpieczenie zwrotnicy na miejscu (zamek / spona) – polecenie dla pracownika
-   *  { type: 'block', exit, btn }             – blokada liniowa (Wbl, Poz, Ko, Zk, dPo, dKo)
+   *  { type: 'block', exit, btn }             – blokada liniowa (Wbl, oWbl, Poz, Ko, Zk, dPo, dKo)
    *  { type: 'close-section', section, closed } – zamknięcie ruchowe toru (ITS) / odwołanie (ITO)
    *  { type: 'signal-stop', signal, on }      – stopowanie sygnalizatora (SES) / odwołanie (SEO)
    *  { type: 'all-stop', on }                 – stopowanie wszystkich sygnalizatorów stacji (SSS / SSO)
@@ -415,7 +417,8 @@ export class Simulation {
   }
 
   pull(ref) {
-    if (ref.kind === 'block') return { ok: false };
+    // wyciągnięcie Wbl – odwołanie żądania / zwrot niewykorzystanego pozwolenia (oWbl); inne przyciski blokady się nie wyciąga
+    if (ref.kind === 'block') return ref.btn === 'Wbl' && this.#allowed('block', ref.exit) ? this.blocks.get(ref.exit)?.press('oWbl') ?? { ok: false } : { ok: false };
     return this.buttons.pull(ref);
   }
 

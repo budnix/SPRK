@@ -106,7 +106,7 @@ test('misje bez rozgrzewki: po planie stacji od razu blokada i pierwszy pociąg 
   }
   // misja 1 = wspólne lekcje rozkładu Szkolnej w niezmienionej kolejności
   const lessons = lessonSteps(MISSIONS.monitor.phrases).map((s) => s.id);
-  assert.equal(lessons.length, 40);
+  assert.equal(lessons.length, 42); // + dKo przed Sz na A i Sz na C1 przy zapowiadaniu (blokada Eap wg LIRK)
   assert.deepEqual(missionSteps('monitor').map((s) => s.id), lessons);
   assert.deepEqual(Object.keys(PHRASES), ['monitor'], 'ze wspólnych lekcji korzysta misja 1');
   for (const k of LESSON_PHRASES) assert.ok(k in PHRASES.monitor, `brak tekstu ${k}`);
@@ -209,6 +209,7 @@ function studentIzh(sim) {
         if (!z.individualLock) { press({ kind: 'point', id }); order('STOP'); return; }
       }
     },
+    'fault-dko': () => { poz('W'); if (!B('W').koPrepared && B('W').direction === 'in') press({ kind: 'block', exit: 'W', btn: 'dKo' }); },
     'fault-sz': () => { poz('W'); const tr = e(7107).train; if (tr && tr.v === 0 && tr.stoppedAt?.signal === 'A' && sim.ilk.signals.get('A').aspect !== 'Sz' && !sim.ilk.armed) { press(S('A')); order('Sz'); } },
     'fault-ko': () => { ko('W'); if (e(7107).actualArr != null && !sim.ilk.armed) for (const id of ['Zw1', 'Zw2']) if (sim.ilk.points.get(id).individualLock) { press({ kind: 'point', id }); order('Zw'); return; } },
     'out-7108': () => { reverse(7107, 7108); depart(7108, 'B3', 'B3-W'); },
@@ -316,6 +317,7 @@ function studentMor(sim) {
     'fault-ack': () => { if (sim.input.alarmList().length) sim.ackAlarms('all'); },
     'fault-zero': () => { if (T2().axleFault && !T2().resetPending) { cmd(Sec('T2'), 'ZeroLO'); sim.confirmCommand(); } },
     'fault-points': () => { for (const id of ['Zw3', 'Zw2']) { const p = pt(id); if (p.moving) return; if (p.position !== '-') { cmd(P(id), 'Minus'); return; } if (!p.individualLock) { cmd(P(id), 'Stop'); return; } } },
+    'fault-dko': () => { poz('L'); if (!B('L').koPrepared && B('L').direction === 'in') sim.press({ kind: 'block', exit: 'L', btn: 'dKo' }); },
     'fault-sz': () => { poz('L'); const tr = e(7205).train; if (tr && tr.v === 0 && tr.stoppedAt?.signal === 'C' && sim.ilk.signals.get('C').aspect !== 'Sz') { cmd(S('C'), 'SZ'); sim.confirmCommand(); } },
     'fault-out': () => { ko('L'); out(7205, 'W', 'D2', 'kW', 'D2-W'); },
     'fault-unlock': () => { for (const id of ['Zw3', 'Zw2']) if (pt(id).individualLock) { cmd(P(id), 'oStop'); sim.confirmCommand(); return; } },

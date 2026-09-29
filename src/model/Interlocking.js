@@ -42,7 +42,9 @@ export class Interlocking {
   /**
    * @param station definicja stacji
    * @param bus EventBus
-   * @param opts { blockGate: (exitId) => {ok, reason}, onDeparture: (exitId, route) => void,
+   * @param opts { blockGate: (exitId, mode, routeId) => {ok, reason, fault} – mode 'route' | 'substitute' | 'signal',
+   *               onExitSignal: (exitId, routeId, on) – sygnał wyjazdowy podany / przebieg rozwiązany bez wyjazdu,
+   *               onDeparture: (exitId, route) => void,
    *               timedRelease, shuntTimedRelease – czasy zwalniania czasowego [s] (0 = bezzwłocznie),
    *               timedReleaseAlways – przebieg pociągowy zwalnia się zawsze czasowo (IZH-111: Zcz) }
    */
@@ -384,6 +386,7 @@ export class Interlocking {
    */
   faultOnPath(signalId, path = this.pathBeyond(signalId)) {
     if (this.signals.get(signalId)?.failed) return true;
+    if (path.exit && this.opts.blockGate?.(path.exit, 'substitute')?.fault) return true; // blokada bez łączności
     if (path.sections.some((id) => Interlocking.faultOccupied(this.sections.get(id)))) return true;
     return path.points.some(({ id }) => { const p = this.points.get(id); return !p.control || p.faultUntil > this.time; });
   }
@@ -486,7 +489,7 @@ export class Interlocking {
     }
     // Blokada liniowa dla wyjazdu
     if (route.exit && this.opts.blockGate) {
-      const g = this.opts.blockGate(route.exit);
+      const g = this.opts.blockGate(route.exit, 'route');
       if (!g.ok) add('block', g.reason);
     }
     return problems;
@@ -780,6 +783,7 @@ export class Interlocking {
 
   #dissolve(act) {
     const preds = this.#continuedBy(act.route);
+    if (act.exitSignal && !act.trainEntered) this.opts.onExitSignal?.(act.route.exit, act.id, false);
     for (const sid of act.lockedSections) {
       const s = this.sections.get(sid);
       if (s.route === act.id) s.route = null;
@@ -908,7 +912,7 @@ export class Interlocking {
     // blokada liniowa – tylko wyjazdu, na który prowadzi droga za semaforem (po bieżących położeniach zwrotnic)
     const path = this.pathBeyond(signalId);
     if (path.exit && this.opts.blockGate) {
-      const g = this.opts.blockGate(path.exit);
+      const g = this.opts.blockGate(path.exit, 'substitute');
       if (!g.ok) return this.#fail(`Sz na ${signalId}: ${g.reason}`);
     }
     sig.substitute = true; sig.substituteUntil = this.time + SUBSTITUTE_TIME;
@@ -986,6 +990,10 @@ export class Interlocking {
       }
     }
     for (const sig of this.signals.values()) this.bus.emit('signal', sig);
+    for (const act of this.active.values()) {
+      if (!act.route.exit || act.route.kind !== 'train' || act.exitSignal) continue;
+      if (Interlocking.isTrainProceed(this.signals.get(act.route.start).aspect)) { act.exitSignal = true; this.opts.onExitSignal?.(act.route.exit, act.id, true); }
+    }
   }
 
   /** Warunek sygnału zezwalającego przebiegu niespełniony (opis) albo null. */
@@ -1008,6 +1016,8 @@ export class Interlocking {
     const act = this.active.get(sig.route);
     if (!act || act.signalOff) return stop;
     if (act.route.kind === 'shunt') return this.shapedSignals ? 'M2' : 'Ms2';
+    // sygnał wyjazdowy wymaga pozwolenia przeniesionego przez blokadę (i wolnej przeciwwtórności Pwl)
+    if (act.route.exit && this.opts.blockGate && !this.opts.blockGate(act.route.exit, 'signal', act.id).ok) return stop;
     const restricted = act.route.speed <= 60;
     // semafor kształtowy nie zapowiada następnego: Sr3 – do 40 km/h przez okręg zwrotnicowy, Sr2 – największa dozwolona
     if (this.shapedSignals) return restricted ? 'Sr3' : 'Sr2';

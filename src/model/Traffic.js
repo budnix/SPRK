@@ -94,7 +94,7 @@ export class Traffic {
       }
     }
     if (path.exit) {
-      const g = this.blocks.get(path.exit)?.gate();
+      const g = this.blocks.get(path.exit)?.gate('substitute');
       if (g && !g.ok) problems.push(g.reason);
     }
     if (problems.length) return { ok: false, reason: `Rozkaz dla ${nr} na ${signal}: ${problems.join('; ')}` };
@@ -274,6 +274,9 @@ export class Traffic {
         else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
         break;
       }
+      case 'entry-signal':
+        if (e.from) this.blocks.get(e.from)?.entryPassed(arg.onSignal);
+        break;
       case 'spad': {
         // pociąg przejechał semafor „Stój” – sygnał zmieniony bliżej niż droga hamowania (odwołanie, SSS; usterka semafora)
         const sig = this.ilk.signals.get(arg);

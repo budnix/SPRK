@@ -9,7 +9,7 @@ function mk() {
   return { b, bus };
 }
 
-test('sąsiad żąda pozwolenia, Poz ustawia kierunek wjazdu, Ko po przyjeździe', () => {
+test('sąsiad żąda pozwolenia, Poz ustawia kierunek wjazdu, Ko po przyjeździe (po minięciu semafora wjazdowego)', () => {
   const { b } = mk();
   assert.equal(b.press('Poz').ok, false, 'bez żądania Poz nie działa');
   assert.equal(b.neighbourRequests(), true);
@@ -22,6 +22,8 @@ test('sąsiad żąda pozwolenia, Poz ustawia kierunek wjazdu, Ko po przyjeździe
   assert.equal(b.occupied, true);
   assert.equal(b.press('Ko').ok, false, 'Ko przed przyjazdem w całości');
   b.neighbourTrainArrived({ nr: 1 });
+  assert.equal(b.koPending, false, 'ogon zjechał ze szlaku, ale czoło jeszcze przed semaforem wjazdowym');
+  b.entryPassed(true); // pociąg minął semafor wjazdowy na sygnał zezwalający – stwierdzenie przejazdu
   assert.equal(b.koPending, true);
   assert.equal(b.press('Ko').ok, true);
   assert.equal(b.direction, null);
@@ -44,14 +46,44 @@ test('żądanie Wbl, odpowiedź sąsiada, wyjazd i potwierdzenie przyjazdu', () 
   assert.equal(b.direction, null);
 });
 
-test('dKo i dPo zwalniają doraźnie i liczą', () => {
-  const { b } = mk();
+// dKo i dPo nie kasują blokady (LIRK Eap): dKo przygotowuje blok końcowy przed wjazdem na Sz, dPo blokuje blok
+// początkowy po wyjeździe na Sz / rozkaz. Dawniej oba zerowały blokadę także z pociągiem na szlaku.
+test('dKo przygotowuje blok końcowy, dPo blokuje blok początkowy – żaden nie kasuje blokady; oba liczą', () => {
+  const { b, bus } = mk();
+  const score = []; bus.on('score', (s) => score.push(s));
+  assert.equal(b.press('dKo').ok, false, 'dKo bez przyjmowanego pociągu');
   b.neighbourRequests(); b.press('Poz'); b.neighbourTrainEntered({ nr: 3 });
-  b.press('dKo');
+  assert.equal(b.press('dKo').ok, true);
   assert.equal(b.counters.dKo, 1);
-  assert.equal(b.direction, null);
-  b.press('dPo');
+  assert.equal(b.direction, 'in', 'dKo nie kasuje kierunku');
+  assert.equal(b.occupied, true, 'dKo nie zwalnia toru szlakowego');
+  assert.equal(score.at(-1).points, 0, 'przed wjazdem pociągu na Sz – uzasadnione');
+  b.entryPassed(false); b.neighbourTrainArrived({ nr: 3 }); // bez stwierdzenia przejazdu (wjazd na Sz)
+  assert.equal(b.press('Ko').ok, true, 'po dKo Ko działa bez stwierdzenia przejazdu');
+  assert.equal(b.press('dPo').ok, false, 'dPo bez pociągu wyprawionego bez sygnału');
+  assert.equal(b.counters.dPo, 0);
+  b.press('Wbl'); b.tick(100);
+  b.trainDeparted({ nr: 4, exitAuth: '*' }); // wyjazd na Sz
+  assert.equal(b.poBlocked, false, 'Sz nie blokuje bloku początkowego');
+  assert.equal(b.press('dPo').ok, true);
   assert.equal(b.counters.dPo, 1);
+  assert.equal(b.poBlocked, true, 'dPo zablokował blok początkowy');
+  assert.equal(b.occupied, true);
+});
+
+test('Ko bez stwierdzenia przejazdu (wjazd na Sz bez dKo) odmawia; spóźnione dKo – kara, potem Ko', () => {
+  const { b, bus } = mk();
+  const score = []; bus.on('score', (s) => score.push(s));
+  b.neighbourRequests(); b.press('Poz'); b.neighbourTrainEntered({ nr: 5 });
+  b.entryPassed(false); // Sz na semaforze wjazdowym
+  b.neighbourTrainArrived({ nr: 5 });
+  const ko = b.press('Ko');
+  assert.equal(ko.ok, false);
+  assert.match(ko.reason, /stwierdzenia przejazdu/);
+  assert.equal(b.press('dKo').ok, true);
+  assert.ok(score.at(-1).points < 0, 'dKo po wjeździe – spóźnione');
+  assert.equal(b.press('Ko').ok, true);
+  assert.equal(b.direction, null);
 });
 
 test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam, zmiana kierunku Zk przy wolnym odstępie', () => {
@@ -98,11 +130,11 @@ test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam
   assert.equal(inn.press('Zk').ok, false);
   assert.equal(inn.neighbourRequests(13), true);
   assert.equal(inn.phoneAnswerFree(13).ok, true);
-  inn.neighbourTrainEntered({ nr: 13 }); inn.neighbourTrainArrived({ nr: 13 });
-  assert.equal(inn.koPending, true, 'przy usterce zwolnienie doraźne dKo po zawiadomieniu');
+  inn.neighbourTrainEntered({ nr: 13 }); inn.entryPassed(true); inn.neighbourTrainArrived({ nr: 13 });
+  assert.equal(inn.koPending, true, 'przy usterce przyjazd potwierdza się telefonicznie');
   assert.equal(inn.phoneReportArrival(13).ok, true);
-  assert.equal(inn.press('dKo').ok, true);
-  assert.equal(inn.koPending, false);
+  assert.equal(inn.koPending, false, 'telefonogram zastępuje Ko (bez dKo)');
+  assert.equal(inn.press('dKo').ok, false, 'SBL nie ma bloku końcowego');
   // Eap: Zk nie działa
   const eap = new LineBlock('W', { name: 'Lipowa', tile: { x: 0, y: 4 }, dir: 'W' }, bus);
   assert.equal(eap.press('Zk').ok, false);
@@ -123,20 +155,21 @@ test('numer pociągu na torze szlakowym (lineTrain): nasz od wyjazdu do potwierd
   b.neighbourRequests(11); b.press('Poz');
   b.neighbourTrainEntered({ nr: 11 });
   assert.equal(b.lineTrain, 11);
-  b.neighbourTrainArrived({ nr: 11 });
+  b.entryPassed(true); b.neighbourTrainArrived({ nr: 11 });
   assert.equal(b.lineTrain, null, 'po zjeździe w całości numer znika (Ko jeszcze do obsłużenia)');
-  b.press('Ko');
+  assert.equal(b.press('Ko').ok, true);
   b.press('Wbl'); b.tick(100);
   b.trainDeparted({ nr: 22 });
   assert.equal(b.lineTrain, 22);
   b.trainArrivedAtNeighbour({ nr: 22 }); b.tick(1000);
   assert.equal(b.lineTrain, null, 'po potwierdzeniu przyjazdu przez sąsiada');
   assert.equal(b.snapshot().lineTrain, null);
-  // dPo kasuje numer razem z blokiem
-  b.press('Wbl'); b.tick(2000); b.trainDeparted({ nr: 23 });
+  // dPo nie kasuje blokady ani numeru (dawniej kasował) – blok początkowy blokuje, pociąg dalej na szlaku
+  b.press('Wbl'); b.tick(2000); b.trainDeparted({ nr: 23, exitAuth: '*' });
   assert.equal(b.lineTrain, 23);
   b.press('dPo');
-  assert.equal(b.lineTrain, null);
+  assert.equal(b.lineTrain, 23);
+  assert.equal(b.poBlocked, true);
 });
 
 test('SBL: koniec usterki po telefonicznie potwierdzonym przyjazdie zwalnia blok początkowy sam (bez dPo); sąsiad odzyskuje kierunek i wyprawia', () => {
@@ -149,7 +182,8 @@ test('SBL: koniec usterki po telefonicznie potwierdzonym przyjazdie zwalnia blok
   b.setFault(true);
   b.tick(200);
   b.trainArrivedAtNeighbour({ nr: 88301 });
-  assert.equal(b.occupied, true, 'przy usterce blok czeka na dPo po telefonicznym potwierdzeniu');
+  assert.equal(b.occupied, false, 'przy usterce tor wolny po telefonicznym potwierdzeniu przyjazdu');
+  assert.equal(b.poBlocked, true, 'blok początkowy zablokowany do naprawy blokady');
   assert.equal(b.canNeighbourDispatch(55203), false);
   b.setFault(false);
   b.tick(210);
@@ -166,7 +200,7 @@ test('SBL: koniec usterki po telefonicznie potwierdzonym przyjazdie zwalnia blok
   assert.equal(b.occupied, false);
   // SBL wjazdowa: pociąg sąsiada zjechał w całości przy usterce (dKo), usterka mija – odstęp zwalnia się sam
   assert.equal(b.canNeighbourDispatch(55205), true);
-  b.neighbourTrainEntered({ nr: 55205 }); b.setFault(true); b.neighbourTrainArrived({ nr: 55205 });
+  b.neighbourTrainEntered({ nr: 55205 }); b.setFault(true); b.entryPassed(false); b.neighbourTrainArrived({ nr: 55205 });
   assert.equal(b.koPending, true);
   b.setFault(false);
   assert.equal(b.koPending, false);
@@ -197,4 +231,39 @@ test('walidacja rozkładu: wyjazd torem wjazdowym (direction in) i wjazd torem w
   const errs = validateStation(bad).errors;
   assert.ok(errs.some((e) => /Rozkład 1: wyjazd do Gdynia Główna torem wjazdowym 'Z2'/.test(e)), errs.join('\n'));
   assert.ok(errs.some((e) => /Rozkład 2: wjazd od Gdynia Główna torem wyjazdowym 'Z1'/.test(e)), errs.join('\n'));
+});
+
+// Po naprawie blokady automatyk ustawia ją zgodnie ze stanem szlaku. Wcześniej numer „przybył” był wspólny dla obu
+// kierunków i nadpisywał się – blok początkowy mógł zostać zablokowany na zawsze (Reda, usterka blokady od Helu).
+test('usterka Eap: po naprawie blokada wg stanu szlaku – wolny: stan zasadniczy; nasz pociąg: Po do Ko sąsiada; pociąg sąsiada: wjazd', () => {
+  const { b } = mk();
+  b.press('Wbl'); b.tick(100); b.trainDeparted({ nr: 1 });
+  assert.equal(b.poBlocked, true);
+  b.setFault(true);
+  b.trainArrivedAtNeighbour({ nr: 1 }); // przyjazd potwierdzony telefonicznie – Po zostaje zablokowany do naprawy
+  assert.equal(b.poBlocked, true);
+  assert.equal(b.occupied, false);
+  // pociąg sąsiada na zapowiadanie
+  assert.equal(b.phoneAskFromNeighbour(2), true);
+  assert.equal(b.phoneAnswerFree(2).ok, true);
+  b.neighbourTrainEntered({ nr: 2 }); b.entryPassed(true); b.neighbourTrainArrived({ nr: 2 });
+  assert.equal(b.phoneReportArrival(2).ok, true);
+  b.setFault(false);
+  assert.deepEqual([b.poBlocked, b.direction, b.koPending], [false, null, false], 'wolny szlak – stan zasadniczy');
+  b.press('Wbl'); b.tick(300);
+  assert.equal(b.gate().ok, true);
+  // nasz pociąg na szlaku w chwili naprawy
+  b.trainDeparted({ nr: 3 }); b.setFault(true); b.setFault(false);
+  assert.deepEqual([b.poBlocked, b.direction], [true, 'out']);
+  b.trainArrivedAtNeighbour({ nr: 3 }); b.tick(1000);
+  assert.deepEqual([b.poBlocked, b.occupied, b.direction], [false, false, null]);
+  // pociąg sąsiada na szlaku w chwili naprawy – kierunek wjazdu, po przyjeździe zwykłe Ko
+  b.setFault(true);
+  assert.equal(b.phoneAskFromNeighbour(4), true); b.phoneAnswerFree(4);
+  b.neighbourTrainEntered({ nr: 4 });
+  b.setFault(false);
+  assert.equal(b.direction, 'in');
+  b.entryPassed(true); b.neighbourTrainArrived({ nr: 4 });
+  assert.equal(b.press('Ko').ok, true);
+  assert.equal(b.direction, null);
 });

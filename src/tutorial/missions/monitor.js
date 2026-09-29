@@ -25,6 +25,7 @@ export const phrases = {
   sectionsLocked: 'zżółkną',
   sz: (s) => `wybierz <b>Sz</b>, kliknij semafor <b>${s}</b> i potwierdź <b>WYKONAJ</b>`,
   dpo: (name) => `kliknij strzałkę szlaku do <b>${name}</b> → <b>dPo</b> → <b>WYKONAJ</b>`,
+  dko: (name) => `kliknij strzałkę szlaku do <b>${name}</b> → <b>dKo</b> → <b>WYKONAJ</b>`,
   permissionGiven: (neighbour) => `nad torem pojawi się strzałka kierunku w stronę ${neighbour}`,
   lineOccupied: 'strzałka szlaku czerwona',
   blockIntro: (n) => `Stan ${A('Eap', 'blokady liniowej Eap')} do ${n.LIPa} i do ${n.DEBa} jest przy wyjazdach na szlak, na krańcach toru: <b>strzałka szlaku</b> (czerwona – odstęp zajęty przez pociąg), nad torem <b>strzałka kierunku</b> (w stronę sąsiada – mamy pozwolenie na wyjazd; do nas – sąsiad ma pozwolenie) oraz napis: <b>żąd.</b> – sąsiad żąda pozwolenia, <b>Wbl</b> – czekamy na pozwolenie, <b>Ko</b> – pociąg sąsiada przybył, trzeba potwierdzić.`,

@@ -95,6 +95,30 @@ zleca się w zakładce Urządzenia panelu (polecenie dla pracownika, nie przycis
 (`POINT_SECURE_TIME`); zabezpieczona zwrotnica się nie przestawia i liczy się jak zamknięta (Zz) dla Sz i rozkazu;
 zdjęcie zabezpieczenia – od razu.
 
+Blokada liniowa Eap – przyciski doraźne, Pwl, usterka (wszystkie stanowiska). Źródła: LIRK, P. Okrzesik, „Obsługa
+i sygnalizacja stanu półsamoczynnej blokady liniowej typu Eap” (lirk.isdr.pl); ISDR 2.3.2.3.2.3; Ie-20 zał. 4 pkt 16;
+trainbrains.eu; DTR Eap-94 (M. Grot); Ir-1 §28 ust. 8–9, 16, 18. Ze źródeł:
+
+* dPo służy do doraźnego **zablokowania** bloku początkowego po wyjeździe pociągu na Sz lub rozkaz (pociąg nie minął
+  semafora wyjazdowego na sygnale zezwalającym, więc blok nie zablokował się sam); dKo użyte **przed** wjazdem pociągu
+  na Sz lub rozkaz przygotowuje blok końcowy – bez niego Ko nie zadziała, bo urządzenie nie stwierdziło przejazdu przy
+  semaforze wjazdowym; żaden z tych przycisków nie kasuje blokady;
+* wyciągnięcie Wbl odwołuje żądanie; przed podaniem sygnału pozwolenie wraca, gdy oba posterunki wyciągną Wbl;
+* przeciwwtórność liniowa (Pwl): po podaniu sygnału wyjazdowego drugi sygnał na ten szlak nie wyjdzie; po odwołaniu
+  sygnału bez wyjazdu pociąg wyprawia się na Sz lub rozkaz;
+* bez łączności: sygnał zezwalający wymaga pozwolenia przeniesionego przez blokadę; wyjazd na Sz lub rozkaz po
+  zapowiedzi telefonicznej, blokadę obsługuje się pomocniczo (dPo); na torze ze stałym kierunkiem sygnał zezwalający
+  jest dopuszczalny (Ir-1 §28 ust. 16 pkt 2, ust. 18; Ie-10 §33 ust. 5, §35 ust. 1 pkt 5–6).
+
+Przyjęte (uproszczenia gry): stwierdzenie przejazdu – gdy pociąg sąsiada minie pierwszy semafor stacji na sygnale
+zezwalającym (nie Sz, nie rozkaz); Ko jest do obsłużenia, gdy pociąg minął ten semafor i zjechał w całości ze szlaku;
+dKo przed wjazdem – 0 pkt, po wjeździe – −10, bez pociągu przyjmowanego – odmowa; dPo – tylko po wyjeździe naszego
+pociągu bez sygnału (0 pkt), brak dPo do przyjazdu – −10; oWbl – od razu przy żądaniu, zwrot pozwolenia po
+odpowiedzi sąsiada; przy zapowiadaniu telefonicznym telefonogram o przyjeździe zastępuje Ko (dKo się nie używa),
+blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywraca blokadę do stanu zasadniczego;
+pozwolenie „u nas” przy usterce – kierunek wyjazdu z pozwoleniem w chwili utraty łączności. Stanowisko MOR-1 ma w menu
+trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
+
 Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
 pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
 daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości
@@ -415,8 +439,8 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
   (w EBIScreen to osobne okno na innym monitorze);
 * nazwy obiektów w poleceniach to identyfikatory z definicji stacji (sygnalizator „A”, zwrotnica „Zw3”, odcinek
   „T2”, trójkąt końca toru „kE”), bez względu na wielkość liter; stację wskazuje jej nazwa albo identyfikator;
-* polecenia blokady liniowej – skróty przycisków blokady: WBL, POZ, KO, ZK, DPO, DKO (dPo i dKo jak na innych
-  stanowiskach: z licznikiem, bez polecenia inicjującego);
+* polecenia blokady liniowej – skróty przycisków blokady: WBL, OWBL, POZ, KO, ZK, DPO, DKO (dPo i dKo jak na innych
+  stanowiskach: z licznikiem, bez polecenia inicjującego; OWBL – wyciągnięcie Wbl, przyjęte);
 * ZWP / ZWM dla wykolejnicy: „+” – nałożona, „−” – zdjęta;
 * bez wybranego elementu pośredniego przebieg idzie drogą zasadniczą (pierwszą w tablicy przebiegów); elementami
   pośrednimi są zwrotnice leżące tylko na części dróg;

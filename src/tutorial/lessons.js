@@ -29,7 +29,7 @@ export function active(sim, id) { return sim.ilk.active.has(id); }
 
 /** Klucze słownika tekstów, których wymagają wspólne lekcje. */
 export const LESSON_PHRASES = ['view', 'anchor', 'signal', 'release', 'releaseNames', 'indicator', 'blockPress', 'trainRoute', 'trainRouteMenu',
-  'trainRouteMenuTitle', 'trainRouteMenuLead', 'exitEnd', 'shuntRoute', 'shuntEndTrack3', 'shuntEndTm2', 'shuntEndC2', 'sectionsLocked', 'sz', 'dpo',
+  'trainRouteMenuTitle', 'trainRouteMenuLead', 'exitEnd', 'shuntRoute', 'shuntEndTrack3', 'shuntEndTm2', 'shuntEndC2', 'sectionsLocked', 'sz', 'dpo', 'dko',
   'permissionGiven', 'lineOccupied', 'blockIntro', 'blockCommands', 'blockSpecial', 'colours', 'intro', 'next'];
 
 /** Lekcje w kolejności rozkładu, z tekstami ze słownika `P`. */
@@ -50,7 +50,7 @@ export function lessonSteps(P) {
   /* ---------------- wprowadzenie ---------------- */
   info('intro', 'Witaj na stacji Szkolna', `${P.intro}<p>Jesteś <b>dyżurnym ruchu</b>: przyjmujesz i wyprawiasz pociągi tak, by jechały bezpiecznie i punktualnie. Linia jest <b>jednotorowa</b> – w obie strony jeździ się tym samym ${A('tor szlakowy', 'torem szlakowym')}, dlatego z sąsiadami (${LIP} na zachodzie, ${DEB} na wschodzie) uzgadnia się każdy pociąg przez ${A('Eap', 'blokadę liniową Eap')}.</p><p>Na krokach z opisem zegar stoi. Kliknij <b>Dalej</b>, gdy przeczytasz. Skróty z kropkowanym podkreśleniem mają wyjaśnienie – kliknij je.</p>`);
   info('layout', 'Plan stacji', `Tor <b>1</b> i <b>2</b> mają perony (szare prostokąty), tor <b>3</b> to bocznica z kozłem oporowym i ${A('wykolejnica', 'wykolejnicą')} Wk1. ${A('semafor', 'Semafory')} wjazdowe: <b>A</b> (od ${LIPa}) i <b>B</b> (od ${DEBa}); wyjazdowe: <b>C1, C2</b> (na zachód) i <b>D1, D2</b> (na wschód). <b>Tm1, Tm2</b> to ${A('Tm', 'tarcze manewrowe')}.<p>${P.colours}</p>`, { el: '#desk' });
-  info('block-intro', 'Blokada liniowa', `${P.blockIntro(n)}<p>${P.blockCommands}: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – danie pozwolenia sąsiadowi, ${A('Ko')} – zwolnienie bloku końcowego po przyjeździe pociągu w całości; ${A('dPo')} i ${A('dKo')} – doraźne zwolnienia (tylko przy usterce, ${P.blockSpecial}liczniki).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
+  info('block-intro', 'Blokada liniowa', `${P.blockIntro(n)}<p>${P.blockCommands}: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – danie pozwolenia sąsiadowi, ${A('Ko')} – zwolnienie bloku końcowego po przyjeździe pociągu w całości; ${A('dPo')} – doraźne zablokowanie bloku początkowego po wyjeździe na Sz, ${A('dKo')} – doraźne przygotowanie bloku końcowego przed wjazdem na Sz (${P.blockSpecial}liczniki; żaden nie kasuje blokady).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
 
   /* ---------------- pociąg 1: 6101 z Lipna, tor 1, dalej do Dębna ---------------- */
   act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga ${P.indicator} „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
@@ -123,6 +123,8 @@ export function lessonSteps(P) {
   info('fault-intro', 'Usterka semafora', `O 08:15 semafor <b>A</b> ulegnie usterce (obwód świateł): przebieg wjazdowy da się nastawić i utwierdzić jak zwykle, ale semafor <b>nie wyświetli sygnału zezwalającego</b> i zostanie na „Stój”. O 08:22 od ${LIPa} przyjedzie <b>6105</b> na tor 1 i zatrzyma się przed A.<p>W takiej sytuacji dyżurny podaje ${A('Sz', 'sygnał zastępczy Sz')}: białe migające światło, na które maszynista mija semafor z prędkością do 40 km/h. Warunek: droga przebiegu utwierdzona i sprawdzona. Każde użycie Sz jest liczone.</p>`, sig('A'));
   act('in-6105-route', 'Przebieg mimo usterki', `Gdy ${LIP} zgłosi 6105 (zamiga ${P.indicator} „żąd.”): <b>Poz</b> i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
     (sim) => (active(sim, 'A-D1') && sim.ilk.signals.get('A').failed) || arrived(sim, 6105));
+  act('dko-6105', 'Przygotowanie bloku końcowego (dKo)', `Na sygnał zastępczy blokada nie stwierdzi przejazdu pociągu przy semaforze A, więc po przyjeździe Ko by nie zadziałało. Dlatego <b>przed</b> podaniem Sz przygotuj blok końcowy doraźnie: ${P.dko(LIPa)}. Przy wjeździe na Sz to uzasadnione ${A('dKo')} – bez punktów ujemnych, ale licznik rośnie. dKo nie kasuje blokady: szlak zwolnisz zwykłym Ko po przyjeździe.`, blockW,
+    (sim) => sim.blocks.get('W').koPrepared || arrived(sim, 6105)),
   act('sz-6105', 'Sygnał zastępczy', `Gdy pociąg stanie przed A (albo od razu, gdy droga jest utwierdzona): ${P.sz('A')}. Semafor pokaże <b>białe migające</b> światło (${A('Sz')}) – maszynista może jechać z prędkością do 40 km/h. Licznik Sz wzrośnie o 1 – każde użycie jest rejestrowane.`, cmd('sz', { ref: { kind: 'group', id: 'Sz', role: 'substitute' } }),
     (sim, ctx) => ctx.seen.has('sz:A') || arrived(sim, 6105));
   act('out-6105', 'Reszta jak zwykle', `Po przyjeździe 6105: <b>Ko</b> (${LIP}), <b>Wbl</b> (${DEB}), przebieg <b>D1 → szlak do ${DEBa}</b>. Odjazd 08:24.`, blockE,
@@ -135,13 +137,14 @@ export function lessonSteps(P) {
   act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … wolna?”</b>, numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Droga … wolna” – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
     (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),
     { wrong: (sim) => (sim.blocks.get('W').neighbourReply?.phoneFor ? 'Pytanie nadane – czekaj na odpowiedź Lipna.' : null) });
-  act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak do ${LIPa}</b>. Odjazd 08:35.`, cmd('train', sig('C1')),
-    (sim) => active(sim, 'C1-W') || atNeighbour(sim, 6106) || sim.blocks.get('W').occupied);
+  act('phone-route', 'Wyjazd na zapowiadanie', `Przebieg <b>C1 → szlak do ${LIPa}</b>. Semafor C1 zostanie na „Stój”: pozwolenie było u ${LIPa}, a bez łączności blokada go nie przeniesie – sygnał zezwalający nie wyjdzie.`, cmd('train', sig('C1')),
+    (sim) => active(sim, 'C1-W') || atNeighbour(sim, 6106) || sim.blocks.get('W').occupied),
+  act('phone-sz', 'Wyjazd na sygnał zastępczy', `Po telefonicznym „droga wolna” pociąg wyprawia się na ${A('Sz', 'sygnał zastępczy')}. Gdy 6106 będzie gotowy do odjazdu (08:35): ${P.sz('C1')}. Sz jest uzasadniony usterką blokady.`, cmd('sz', { ref: { kind: 'group', id: 'Sz', role: 'substitute' } }),
+    (sim, ctx) => ctx.seen.has('sz:C1') || sim.blocks.get('W').occupied || atNeighbour(sim, 6106)),
   act('phone-departed', 'Zawiadomienie o odjeździe', `Gdy 6106 wyjedzie na szlak, nadaj do ${LIPa}: <b>„Pociąg nr … odjechał o …”</b> (numer 6106). Brak zawiadomienia jest punktowany ujemnie.`, { tab: 'lacznosc' },
     (sim) => { const b = sim.blocks.get('W'); return String(b.phone.departedTrain) === '6106' && b.phone.departedReported; });
-  act('phone-dpo', 'Doraźne zwolnienie bloku (dPo)', `Blok początkowy do ${LIPa} pozostaje zablokowany, bo blokada nie odbierze potwierdzenia. Gdy ${LIP} zawiadomi telefonicznie <b>„Pociąg nr 6106 przybył o …”</b> (zakładka Łączność), zwolnij blok doraźnie: ${P.dpo(LIPa)}. Uzasadnione usterką ${A('dPo')} nie kosztuje punktów.`, blockW,
-    (sim) => sim.blocks.get('W').counters.dPo >= 1 && !sim.blocks.get('W').poBlocked,
-    { wrong: (sim) => { const b = sim.blocks.get('W'); return b.poBlocked && String(b.phone.arrivalConfirmed) !== '6106' ? 'Poczekaj na telefoniczne potwierdzenie przyjazdu 6106 – dPo przed nim to −15 pkt.' : null; } });
+  act('phone-dpo', 'Zablokowanie bloku początkowego (dPo)', `6106 wyjechał bez sygnału zezwalającego, więc blok początkowy do ${LIPa} nie zablokował się sam. Zablokuj go doraźnie: ${P.dpo(LIPa)}. Przy wyjeździe na Sz to uzasadnione ${A('dPo')} – bez punktów ujemnych. Blok zostanie zablokowany do naprawy blokady; przyjazd ${LIP} potwierdzi telefonogramem <b>„Pociąg nr 6106 przybył o …”</b>.`, blockW,
+    (sim) => { const b = sim.blocks.get('W'); return b.counters.dPo >= 1 && b.poBlocked && String(b.phone.arrivalConfirmed) === '6106'; });
 
   info('end', 'Koniec misji', `To wszystko: pozwolenia, przebiegi, przelot, krzyżowanie, ${P.releaseNames}, zwrotnice, manewry, Sz i zapowiadanie telefoniczne. Po „Dalej” zmiana się zakończy i pokaże się <b>raport zmiany</b> (później: menu ☰ → Raport zmiany).<p>${P.next}</p>`, { el: '#btn-menu' });
   return steps;

@@ -93,6 +93,7 @@ export class Train {
     this.v = Math.min(this.vmax, this.inLineSpeed);
     this.state = 'moving';
     this.authority = true; // jazda po szlaku na podstawie blokady / sygnału semafora odstępowego
+    this.entryPending = true; // pierwszy semafor stacji (wjazdowy) jeszcze przed pociągiem
   }
 
   /** Umieszcza stojący pociąg na kostkach (czoło na kostce `headTile`, kierunek `dir`). */
@@ -508,6 +509,11 @@ export class Train {
           if (this.mode === 'train' && sig.kind !== 'semafor') continue;
           const order = this.orders.find((o) => o.signal === sig.id && !o.used);
           if (order && !Interlocking.isTrainProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
+          if (this.mode === 'train' && this.entryPending) {
+            // semafor wjazdowy: na sygnał zezwalający (nie Sz, nie rozkaz) urządzenie stwierdza przejazd – blokada Eap
+            this.entryPending = false;
+            this.onEvent('entry-signal', this, { signal: sig.id, onSignal: !order && sig.aspect !== 'Sz' && Interlocking.isTrainProceed(sig.aspect) });
+          }
           if (this.mode === 'train' && !order && !Interlocking.isTrainProceed(sig.aspect)) {
             // przejechanie semafora wskazującego „Stój” (sygnał zmieniony bliżej niż droga hamowania) – hamowanie nagłe
             this.authority = false; this.exitAuth = null; this.spad = sig.id;

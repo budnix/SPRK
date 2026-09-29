@@ -164,11 +164,13 @@ export class ScreenRenderer extends ScreenBase {
     const items = [];
     if (b?.auto) items.push({ label: `Zmiana kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'wyjazd' : 'wjazd'}`, run: press('Zk') });
     else {
-      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie pociągu (Wbl)', run: press('Wbl') }, { label: 'Danie pozwolenia na wyprawienie pociągu (Poz)', run: press('Poz') });
+      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie pociągu (Wbl)', run: press('Wbl') },
+        { label: 'Odwołanie żądania / zwrot pozwolenia (oWbl)', run: press('oWbl') },
+        { label: 'Danie pozwolenia na wyprawienie pociągu (Poz)', run: press('Poz') });
       items.push({ label: 'Zwolnienie bloku końcowego – pociąg przybył w całości (Ko)', run: press('Ko') });
     }
-    items.push({ label: 'Doraźne zwolnienie bloku początkowego (dPo)', special: true, run: press('dPo') });
-    items.push({ label: 'Doraźne zwolnienie bloku końcowego (dKo)', special: true, run: press('dKo') });
+    items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, run: press('dPo') });
+    items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, run: press('dKo') });
     // pod separatorem: numery pociągów na tym torze szlakowym jako czerwone kasetki (jak na planie) – najpierw
     // pociąg na szlaku, potem w kolejce pociągi zgłoszone przez sąsiada i czekające na wyprawienie (kontur)
     items.push({ sep: true }, { trains: this.lineTrains(exit) });

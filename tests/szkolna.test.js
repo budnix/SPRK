@@ -108,13 +108,15 @@ function studentScript(sim) {
     'shunt-task2': () => { const t = sim.traffic.tasks.find((x) => x.id === 'podstaw-90202'); const tr = e(90201).train || e(90202).train; if (t?.done && tr && tr.mode === 'shunt' && tr.v === 0) sim.traffic.toTrainMode(tr.nr); },
     'out-90202': () => { if (!e(90202).train) return; const b = B('W'); if (b.direction === 'out' && b.permission) route('C2', { kind: 'end', id: 'kW' }, 'C2-W'); else wbl('W'); },
     'in-6105-route': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); },
+    'dko-6105': () => { poz('W'); if (!B('W').koPrepared && B('W').direction === 'in') press(blk('W', 'dKo')); },
     'sz-6105': () => { if (stoppedBefore(6105, 'A') && !sim.ilk.armed && sim.ilk.signals.get('A').aspect !== 'Sz') op.sz('A'); },
     'out-6105': () => { ko('W'); out(6105, 'D1', 'kE', 'E', 'D1-E'); },
     'in-6106': () => { poz('E'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); ko('E'); },
     'phone-ask': () => one('ask', () => sim.comms.send('ask-free', { exit: 'W', nr: '6106' })),
     'phone-route': () => { if (String(B('W').phone.permissionFor) === '6106') route('C1', { kind: 'end', id: 'kW' }, 'C1-W'); },
+    'phone-sz': () => { const x = e(6106); const tr = x?.train; if (tr && tr.v === 0 && tr.nextSignal() === 'C1' && sim.clock.time >= x.depTime && !sim.ilk.armed && sim.ilk.signals.get('C1').aspect !== 'Sz') op.sz('C1'); },
     'phone-departed': () => { const b = B('W'); if (String(b.phone.departedTrain) === '6106' && !b.phone.departedReported) sim.comms.send('departed', { exit: 'W', nr: '6106' }); },
-    'phone-dpo': () => { const b = B('W'); if (String(b.phone.arrivalConfirmed) === '6106' && b.poBlocked) press(blk('W', 'dPo')); },
+    'phone-dpo': () => { const b = B('W'); if (b.needPo) press(blk('W', 'dPo')); },
   };
 }
 
@@ -143,8 +145,10 @@ for (const [scenario, mission] of [['nauka-1', 'monitor']]) {
       assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
       if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     }
-    assert.equal(sim.ilk.counters.Sz, 1);
-    assert.equal(sim.blocks.get('W').counters.dPo, 1);
+    assert.equal(sim.ilk.counters.Sz, 2, 'Sz na A (usterka semafora) i na C1 (wyjazd przy blokadzie bez łączności)');
+    assert.equal(sim.blocks.get('W').counters.dKo, 1, 'dKo przed wjazdem 6105 na Sz');
+    assert.equal(sim.blocks.get('W').counters.dPo, 1, 'dPo po wyjeździe 6106 na Sz');
+    assert.ok(!sim.score.items.some((i) => ['dKo', 'dPo', 'Sz'].includes(i.code) && i.points < 0), 'doraźne i Sz uzasadnione');
     assert.ok(sim.traffic.tasks.every((t) => t.done), 'zadania manewrowe wykonane');
   });
 }

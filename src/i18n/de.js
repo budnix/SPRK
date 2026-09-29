@@ -254,7 +254,7 @@ export default {
   'rp.task.failed': 'nicht fristgerecht erledigt',
   'rp.task.due': 'Frist {time}',
   'rp.noItems': 'keine bewerteten Ereignisse',
-  'rp.rules': 'Regeln: pünktliche Abfahrt +5; Zurückhalten eines Zuges −1/min; Einfahrt auf ein anderes als das geplante Gleis −5; dPz −20; dPo/dKo ohne Grund −15; Sz und Befehl „S“ ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100; Zug nicht abgefertigt −10. Bewertung: vorbildlich ≥ 40 Pkt., gut ≥ 10, ausreichend ≥ −20.',
+  'rp.rules': 'Regeln: pünktliche Abfahrt +5; Zurückhalten eines Zuges −1/min; Einfahrt auf ein anderes als das geplante Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl „S“ ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100; Zug nicht abgefertigt −10. Bewertung: vorbildlich ≥ 40 Pkt., gut ≥ 10, ausreichend ≥ −20.',
   'rp.new': 'Neue Schicht…',
   'rp.again': 'Noch einmal spielen',
   'rp.viewDesk': 'Pult ansehen',
@@ -441,7 +441,7 @@ export default {
       <ul>
         <li><b>Zug ablassen</b>: <b>Wbl</b> – Erlaubnisanfrage. Der Nachbar antwortet (Lampe „Ausfahrt“). Dann Ausfahrstraße einstellen. Nach der Ausfahrt leuchten Anfangsfeld Po und Streckenbesetzung rot, bis der Nachbar die Ankunft bestätigt.</li>
         <li><b>Zug annehmen</b>: der Nachbar fragt die Erlaubnis an (blinkende Lampe „żąd.“, Meldung). Erlaubnis geben (<b>Poz</b>). Einfahrstraße einstellen. Nach vollständiger Ankunft des Zuges („Ko“ blinkt) das Endfeld auflösen (<b>Ko</b>).</li>
-        <li><b>dPo</b>, <b>dKo</b> – Hilfsauflösung der Blockfelder (Zähler).</li>
+        <li><b>dPo</b> – Hilfsblockung des Anfangsfeldes nach Ausfahrt auf Sz / schriftlichen Befehl; <b>dKo</b> – Hilfsvorbereitung des Endfeldes vor Einfahrt auf Sz / schriftlichen Befehl (ohne sie wirkt Ko nicht). Zähler; keines löscht den Block. <b>Ziehen von Wbl</b> (oWbl) nimmt die Anforderung zurück oder gibt eine ungenutzte Erlaubnis zurück. Nach einem Ausfahrsignal sperrt die Streckenwiederholungssperre (Pwl) ein zweites Signal.</li>
         <li><b>Selbstblock (SBL)</b> auf zweigleisigen Strecken (Sopot, Gdynia): ohne Erlaubnisse und ohne Ko – der Abschnitt löst sich selbst auf. Das Gleis hat eine Regelrichtung; Fahren „gegen den Strom“ erfordert den Richtungswechsel <b>Zk</b> (am Drucktastenpult: Taste Wbl) bei freiem Abschnitt. Bei Störung – Zugmeldeverfahren wie bei Eap.</li>
       </ul>
       <h3>Schriftliche Befehle</h3>
@@ -453,8 +453,8 @@ export default {
       <ul>
         <li>Auf dem Startbildschirm wählst du Szenario und Störungsgrad: Verspätungen der Züge von den Nachbarn, Störungen (Signal dunkel, Weiche ohne Überwachung, Falschbesetzung, Streckenblock ohne Verbindung), Sonderzüge.</li>
         <li><b>Signalstörung</b>: Sz oder Befehl „S“. <b>Falschbesetzung</b>: nach Prüfung des Gleises Sz. <b>Weiche ohne Überwachung</b>: bis zur Reparatur keine Fahrstraße darüber; ein Zug fährt, nachdem die Weiche vor Ort gesichert ist (Reiter Anlagen, etwa 3 min), auf Sz oder Befehl „S“.</li>
-        <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Formeln nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“, „Strecke … frei“, „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“. Die Blockfelder werden nach fernmündlicher Bestätigung mit dPo / dKo aufgelöst.</li>
-        <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dPo/dKo ohne Grund −15; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
+        <li><b>Streckenblock ohne Verbindung</b>: Zugmeldeverfahren (Reiter <i>Kommunikation</i>, Formeln nach Ir-1): „Ist die Strecke für Zug Nr. … frei?“, „Strecke … frei“, „Zug Nr. … abgefahren um …“, „Zug Nr. … angekommen um …“. Das Ausfahrsignal kommt nur, wenn die Erlaubnis bei uns war – sonst Ausfahrt auf Sz (begründet), danach dPo; die Ankunft wird fernmündlich bestätigt (ohne Ko und dKo), den Block stellt nach der Reparatur der Techniker wieder her.</li>
+        <li><b>Bewertung</b> (Menü ☰ → Bericht): pünktliche Abfahrten +5; Zurückhalten eines Zuges −1/min; falsches Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl ohne Störung −5/−10; falsche Fernsprechmeldung −5; Weichenauffahrt −100. Der Bericht erscheint am Ende der Schicht.</li>
       </ul>
       <h3>Züge</h3>
       <ul>
