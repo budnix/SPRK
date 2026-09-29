@@ -119,3 +119,10 @@ test('ekran startowy: odprawa misji – samouczek albo pełna zmiana tej stacji 
   await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);
   expect(await page.evaluate(() => !!window.tutorial?.active)).toBe(false);
 });
+
+// MOR-1 ma jeden licznik poleceń specjalnych (w oknie pod obrazem) – bez liczników dPz / Sz na planie (I3).
+test('MOR-3: bez liczników dPz / Sz na planie, licznik poleceń specjalnych w oknie', async ({ page }) => {
+  await openShift(page, 'kalinowo', { params: { scenariusz: 'zmiana' } });
+  await expect(page.locator('#desk .scr-counter')).toHaveCount(0);
+  await expect(page.locator('.mor-counter')).toBeVisible();
+});

@@ -154,7 +154,8 @@ test('kilka dróg między początkiem a końcem: elementy pośrednie do wyboru (
   sim.press({ kind: 'signal', id: 'G7' }); sim.pull({ kind: 'signal', id: 'G1' });
   sim.pull({ kind: 'point', id: 'Zw16' });
   assert.deepEqual(p.armed.candidates, [], 'po wyborze elementu pośredniego ramki gasną');
-  assert.deepEqual(p.menu().map((m) => m.text), ['POC G7 G1 Zw16', 'PZA G7 G1 Zw16']);
+  // element pośredni nazwą z obrazu – numer zwrotnicy (B1; dawniej identyfikator „Zw16”)
+  assert.deepEqual(p.menu().map((m) => m.text), ['POC G7 G1 16', 'PZA G7 G1 16']);
   assert.deepEqual(p.submit('POC G7 G1 Zw16').cmd, { type: 'route', id: 'G7-G1#2' });
   // przez model (tu odmowa blokady samoczynnej – ważne, że chodzi o drogę alternatywną)
   assert.match(sim.submitCommand('POC G7 G1 Zw16').reason ?? 'ok', /G7-G1#2|ok/);
@@ -186,4 +187,25 @@ test('blokada: na Eap WBL / OWBL / POZ / KO / DPO / DKO bez ZK; na SBL tylko ZK,
   const e = ebi();
   e.pull({ kind: 'end', id: 'kW' });
   assert.deepEqual(e.input.menu().map((m) => m.code), ['WBL', 'OWBL', 'POZ', 'KO', 'DPO', 'DKO']);
+});
+
+// Linia poleceń EBIScreen nazywa obiekty tak jak na obrazie (bsk.isdr.pl/srk_ebilock.php; LIRK EBIScreen 3 §1):
+// „ZWP 1”, „ITS 1”, „MAN 1 C2” – dawniej tylko identyfikatory stacji (Zw1, T1, Tm1); identyfikatory działają dalej (B1).
+test('B1: nazwy z obrazu – numer zwrotnicy, toru i tarczy; menu wpisuje nazwę z obrazu; PZA w dzienniku (I3)', async () => {
+  const brzezina = (await import('../src/stations/brzezina.js')).default;
+  const s = new Simulation(brzezina, { srk: 'ebilock', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', trains: [] } });
+  const p0 = s.ilk.points.values().next().value;
+  const r = s.submitCommand(`ZWM ${p0.tile.label}`);
+  assert.equal(r.ok, true, r.reason);
+  run(s, 5);
+  assert.equal(p0.position, '-');
+  assert.ok(s.submitCommand('ITS 1').ok, 'tor 1 numerem z obrazu');
+  assert.ok([...s.ilk.sections.values()].some((x) => String(x.track) === '1' && x.closed));
+  s.pull({ kind: 'point', id: p0.id });
+  assert.ok(s.input.menu().every((m) => m.text.endsWith(` ${p0.tile.label}`)), JSON.stringify(s.input.menu()));
+  const sz = ebi();
+  const logs = []; sz.bus.on('log', (l) => logs.push(l.msg));
+  sz.ilk.setRoute('A-D1'); run(sz, 8);
+  assert.ok(sz.submitCommand('PZA A D1').ok);
+  assert.ok(logs.some((m) => /Doraźne zwolnienie przebiegu A-D1 \(PZA/.test(m)), logs.join('\n'));
 });

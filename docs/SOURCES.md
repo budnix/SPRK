@@ -482,8 +482,11 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
 
 * linia poleceń jest nad planem (w EBIScreen – na dole ekranu), a okno zdarzeń i alarmów otwiera się przyciskiem
   (w EBIScreen to osobne okno na innym monitorze);
-* nazwy obiektów w poleceniach to identyfikatory z definicji stacji (sygnalizator „A”, zwrotnica „Zw3”, odcinek
-  „T2”, trójkąt końca toru „kE”), bez względu na wielkość liter; stację wskazuje jej nazwa albo identyfikator;
+* nazwy obiektów w poleceniach jak na obrazie (bsk.isdr.pl/srk_ebilock.php; LIRK EBIScreen 3 §1): numer zwrotnicy
+  („ZWP 3”), numer toru („ITS 1” – przyjęte: najdłuższy odcinek toru), numer tarczy bez „Tm” („MAN 1 C2”); menu wpisuje
+  te nazwy; identyfikatory z definicji stacji (sygnalizator „A”, zwrotnica „Zw3”, odcinek „T2”, trójkąt końca toru
+  „kE”) działają dalej, bez względu na wielkość liter; stację wskazuje jej nazwa albo identyfikator; doraźne
+  zwolnienie przebiegu zapisuje się w dzienniku jako PZA;
 * polecenia blokady liniowej – skróty przycisków blokady: WBL, OWBL, POZ, KO, ZK, DPO, DKO (dPo i dKo jak na innych
   stanowiskach: z licznikiem, bez polecenia inicjującego; OWBL – wyciągnięcie Wbl, przyjęte);
 * ZWP / ZWM dla wykolejnicy: „+” – nałożona, „−” – zdjęta;
@@ -541,7 +544,7 @@ Uproszczenia i założenia w grze (przyjęte):
   niedostępne (EBIScreen je wyszarza);
 * okno komunikatów i alarmów leży między planem a listwą narzędzi; komunikaty to wpisy dziennika i wydane polecenia,
   alarmy – usterki urządzeń i rozprucie; licznik poleceń specjalnych liczy potwierdzone polecenia czerwone (SZ, dPo,
-  dKo), a liczniki Sz / dPz na planie działają jak na innych stanowiskach;
+  dKo) – liczników Sz / dPz na planie MOR-1 nie ma (jeden licznik poleceń specjalnych);
 * ZeroLO (zerowanie licznika osi) – tylko dla toru; wg opisu SPE: po zerowaniu odcinek ciemnieje (Ie-104:
   ciemnoczerwony – zajęty, oczekujący), a zwalnia się po wjeździe i wyjeździe pojazdu, który wjechał na sygnał
   zastępczy lub rozkaz pisemny. W grze: usterka `axle-counter` (tylko w scenariuszu, misja 6 w fikcyjnym węźle

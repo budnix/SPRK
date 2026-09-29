@@ -18,6 +18,9 @@ import { PanelView } from './PanelView.js';
  *    czerwony na niebieskim), a znika po potwierdzeniu i naprawie.
  */
 export class MorRenderer extends ScreenBase {
+  /** MOR-1 ma jeden licznik poleceń specjalnych (w oknie pod obrazem) – bez liczników dPz / Sz na planie (I3). */
+  static PLAN_COUNTERS = false;
+
   constructor(container, sim, handlers, opts = {}) {
     super(container, sim, handlers, opts);
     this.svg.classList.add('mor');

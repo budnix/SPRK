@@ -19,7 +19,8 @@ const order = (id) => ({ kind: 'order', id });
 test('IZH-111 w rejestrze: własny protokół obsługi i parametry zależności; typ E zostaje przy przyciskach', () => {
   const srk = getSrk('izh111');
   assert.equal(srk.id, 'izh111'); assert.equal(srk.view, 'izh');
-  assert.deepEqual(srk.model, { armTimeout: 10, timedRelease: 120, shuntTimedRelease: 0, timedReleaseAlways: true });
+  // + emergencyReleaseName: null – JZH-111 nie ma dPz, odmowy i dziennik bez tej nazwy (audyt, grupa 5, I3)
+  assert.deepEqual(srk.model, { armTimeout: 10, timedRelease: 120, shuntTimedRelease: 0, timedReleaseAlways: true, emergencyReleaseName: null });
   const sim = izh();
   assert.ok(sim.ilk.input instanceof AddressOrderProtocol);
   assert.ok(new Simulation(szkolna, { scenario: 'zmiana-e' }).ilk.input instanceof ButtonProtocol);
@@ -190,4 +191,18 @@ test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie po
   assert.deepEqual(left, []);
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.equal(sim.ilk.counters.dPz, 0);
+});
+
+// JZH-111 nie ma dPz – odmowa zwolnienia przebiegu z pociągiem w środku nie podsuwa nieistniejącego polecenia (I3).
+test('IZH-111: odmowa zwolnienia przebiegu, w który wjechał pociąg – bez „dPz”', () => {
+  const sim = izh();
+  sim.ilk.setRoute('A-D1'); run(sim, POINT_SWITCH_TIME + 1);
+  sim.ilk.active.get('A-D1').trainEntered = true; // pociąg w przebiegu (stan zadany w teście)
+  const r = sim.ilk.releaseRoute('A', false);
+  assert.equal(r.ok, false);
+  assert.doesNotMatch(r.reason, /dPz/);
+  const e = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana-e' });
+  e.ilk.setRoute('A-D1'); run(e, POINT_SWITCH_TIME + 1);
+  e.ilk.active.get('A-D1').trainEntered = true;
+  assert.match(e.ilk.releaseRoute('A', false).reason, /lub dPz/, 'typ E – dPz');
 });

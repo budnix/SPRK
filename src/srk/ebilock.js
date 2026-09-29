@@ -79,6 +79,23 @@ export class EbiLockProtocol {
       signal: names(ilk.signals.keys()), point: names(ilk.points.keys()), derailer: names(ilk.derailers.keys()),
       section: names(ilk.sections.keys()), end: names(ilk.topo.endButtons.keys()), exit: names(Object.keys(ilk.station?.exits || {})),
     };
+    // nazwy widoczne na obrazie (EBIScreen: „ZWP 10”, „ITS 1”, „MAN 11 C”): numer zwrotnicy, numer tarczy bez „Tm”,
+    // numer toru → jego odcinek; identyfikatory ze stacji działają dalej. `display` – nazwa do menu
+    this.display = new Map();
+    const alias = (kind, name, id) => {
+      const k = String(name).toUpperCase();
+      if (!this.names[kind].has(k)) this.names[kind].set(k, id);
+      this.display.set(`${kind}:${id}`, String(name));
+    };
+    for (const p of ilk.points.values()) if (p.tile?.label != null) alias('point', p.tile.label, p.id);
+    for (const s of ilk.signals.values()) if (s.kind === 'tm' && /^Tm/i.test(s.id)) alias('signal', s.id.replace(/^Tm/i, ''), s.id);
+    const byTrack = new Map();
+    for (const sec of ilk.sections.values()) {
+      if (sec.track == null) continue;
+      const n = sec.tiles?.size ?? sec.tiles?.length ?? 0, cur = byTrack.get(String(sec.track));
+      if (!cur || n > cur.n) byTrack.set(String(sec.track), { id: sec.id, n });
+    }
+    for (const [nr, { id }] of byTrack) alias('section', nr, id);
     this.sel = { start: null, end: null, via: null, object: null, candidates: [] };
     this.marks = new Map();   // 'signal:A' -> { code: 'SZI', at, color }
     this.log = new EventLog(ilk, bus); // okno zdarzeń i alarmów
@@ -149,7 +166,7 @@ export class EbiLockProtocol {
   menu() {
     const s = this.sel;
     if (s.start && s.end) {
-      const parts = [s.start.id, s.end.id, ...(s.via ? [s.via.id] : [])].join(' ');
+      const parts = [s.start, s.end, ...(s.via ? [s.via] : [])].map((o) => this.#shown(o)).join(' ');
       const kinds = new Set(this.#routes(s.start.id, s.end.id, s.via?.id).map((r) => r.kind));
       const out = [];
       if (kinds.has('train')) out.push('POC');
@@ -161,7 +178,12 @@ export class EbiLockProtocol {
     if (!o) return [];
     const kind = o.kind === 'derailer' ? 'point' : o.kind === 'end' ? 'block' : o.kind;
     if (kind === 'block' && !this.#exitOf(o.id)) return [];
-    return EBI_COMMANDS.filter((c) => c.args[0] === kind && this.#applies(c, o)).map((c) => ({ code: c.code, text: `${c.code} ${o.id}`, name: c.name }));
+    return EBI_COMMANDS.filter((c) => c.args[0] === kind && this.#applies(c, o)).map((c) => ({ code: c.code, text: `${c.code} ${this.#shown(o)}`, name: c.name }));
+  }
+
+  /** Nazwa obiektu tak jak na obrazie (numer zwrotnicy, tarczy, toru) – do treści polecenia w linii. */
+  #shown(o) {
+    return this.display.get(`${o.kind}:${o.id}`) ?? o.id;
   }
 
   /* ---------------- linia poleceń ---------------- */

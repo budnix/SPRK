@@ -59,6 +59,8 @@ export class Interlocking {
     this.shuntTimedRelease = opts.shuntTimedRelease ?? SHUNT_TIMED_RELEASE;
     this.timedReleaseAlways = !!opts.timedReleaseAlways;
     this.shuntEmergencyPlain = !!opts.shuntEmergencyPlain;
+    // nazwa doraźnego zwolnienia przebiegu na tym stanowisku (dPz, ZDP, PZA, zwalniacz; null – brak takiego polecenia)
+    this.emergencyReleaseName = opts.emergencyReleaseName === undefined ? 'dPz' : opts.emergencyReleaseName;
     this.pointSwitchTime = opts.pointSwitchTime ?? POINT_SWITCH_TIME;
     this.manualPoints = !!opts.manualPoints;
     this.manualSignal = !!opts.manualSignal;
@@ -737,13 +739,13 @@ export class Interlocking {
     }
     if (emergency) {
       this.counters.dPz++;
-      this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (dPz, licznik ${this.counters.dPz})`);
+      this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (${this.emergencyReleaseName ?? 'dPz'}, licznik ${this.counters.dPz})`);
       // zwalniacz przy bloku, którego nie zwolnił pociąg (usterka urządzenia oddziaływania) jest uzasadniony
-      this.bus.emit('score', { time: this.time, code: 'dPz', points: act.stuck ? 0 : -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (dPz)${act.stuck ? ' – uzasadnione usterką' : ''}` });
+      this.bus.emit('score', { time: this.time, code: 'dPz', points: act.stuck ? 0 : -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (${this.emergencyReleaseName ?? 'dPz'})${act.stuck ? ' – uzasadnione usterką' : ''}` });
       this.#dissolve(act);
       return { ok: true };
     }
-    if (act.trainEntered) return this.#fail(`Przebieg ${act.id}: pociąg już wjechał – zwalnianie odcinkowe (lub dPz)`);
+    if (act.trainEntered) return this.#fail(`Przebieg ${act.id}: pociąg już wjechał – zwalnianie odcinkowe${this.emergencyReleaseName ? ` (lub ${this.emergencyReleaseName})` : ''}`);
     const approach = this.sections.get(act.route.approach);
     const train = act.route.kind === 'train';
     const delay = train ? this.timedRelease : this.shuntTimedRelease;

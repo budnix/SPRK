@@ -411,7 +411,7 @@ test('misja 5: EBILock 950 w Brzezinie – przebieg kliknięciami przez linię p
   await page.locator('.ebi-win-close').click();
   await hit('section', 'T1').dispatchEvent('pointerdown', { bubbles: true, button: 2, pointerType: 'mouse', clientX: 500, clientY: 300 });
   await page.locator('.ebi-menu button[data-code="ITS"]').click();
-  await expect(page.locator('#ebi-line')).toHaveValue('ITS T1');
+  await expect(page.locator('#ebi-line')).toHaveValue('ITS 1'); // nazwa toru z obrazu (B1; dawniej „ITS T1”)
   await page.locator('.ebi-exec').click();
   await expect(title).toContainText('Osobowy 9104 na tor 3');
   expect(await page.evaluate(() => window.desk.sectionRefs.get('T1').every((e) => e.getAttribute('class').includes('closed')))).toBe(true);

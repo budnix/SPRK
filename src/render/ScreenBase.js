@@ -225,8 +225,12 @@ export class ScreenBase extends PanelView {
     }
   }
 
-  /** Liczniki poleceń specjalnych (dPz, Sz) – na polach przycisków grupowych układu stanowiska. */
+  /**
+   * Liczniki poleceń specjalnych (dPz, Sz) – na polach przycisków grupowych układu stanowiska. Widok bez takich liczników
+   * na planie (MOR-1: jeden licznik poleceń specjalnych w oknie) ustawia `static PLAN_COUNTERS = false`.
+   */
   #counterBoxes() {
+    if (this.constructor.PLAN_COUNTERS === false) return;
     for (const c of deskControls(this.station)) {
       if (!c.counter || !this.inWindow(c.x)) continue;
       const g = el('g', { class: 'scr-counter' }, [

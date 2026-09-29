@@ -238,6 +238,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
+Nazwy poleceń zależą od stanowiska: opcja zależności `emergencyReleaseName` (dPz, ZDP, PZA, zwalniacz; null – brak
+doraźnego zwolnienia) w odmowach i dzienniku; `static PLAN_COUNTERS = false` widoku – bez liczników na planie (MOR-1).
+
 Polecenie specjalne (Ie-104.1 §11): `src/srk/special.js` (bez DOM, czas symulacji) – `Simulation.initiateSpecial`,
 `confirmSpecial` (po `SPECIAL_DELAY` s), `cancelSpecial`; po `SPECIAL_TIMEOUT` s odwołanie samoczynne; w trakcie
 `execute` / `press` / `pull` odmawiają. Zdarzenie `special` (stan co krok) – `ScreenRenderer` pokazuje pasek z odliczaniem,

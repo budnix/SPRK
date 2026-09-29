@@ -27,7 +27,7 @@ function wrongPoint(sim, routeId) {
 test('nastawnia mechaniczna w rejestrze: widok ława dźwigniowa, opcje zależności; inne stanowiska bez zmian', () => {
   const srk = getSrk('mech');
   assert.equal(srk.view, 'lever');
-  assert.deepEqual(srk.model, { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true, shapedSignals: true });
+  assert.deepEqual(srk.model, { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true, shapedSignals: true, emergencyReleaseName: 'zwalniacz' }); // nazwa doraźnego zwolnienia w dzienniku (I3)
   const sim = mech();
   assert.equal(sim.ilk.manualPoints && sim.ilk.manualSignal && sim.ilk.routeBlock && sim.ilk.holdRoute && sim.ilk.shapedSignals, true);
   // domyślnie (typ E, monitor, IZH-111) przebieg sam przestawia zwrotnice i podaje sygnał
