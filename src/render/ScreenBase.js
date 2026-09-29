@@ -43,6 +43,8 @@ export class ScreenBase extends PanelView {
     this.svg.style.setProperty('--sym', String(this.S));
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
     this.addBackdrop(el('rect', { class: 'scr-bg', x: 0, y: 0, width: this.width, height: this.height }));
+    // miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (Ie-104.1 §4 ust. 17): wspólna faza – klasa `ph` na obrazie
+    if (typeof setInterval === 'function') this.blinkTimer = setInterval(() => this.svg.classList.toggle('ph'), 500);
     if (this.readonly) this.addBackdrop(text(this.width / 2, 8, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'scr-banner' }));
     this.layerTracks = el('g', { class: 'layer-tracks' });
     this.layerMarks = el('g', { class: 'layer-marks' });
@@ -212,10 +214,11 @@ export class ScreenBase extends PanelView {
       let mid = (xmin + xmax + 1) / 2;
       for (let d = 1; d < 6 && sigX.some((x) => Math.abs(x - mid) < 1.2); d++) mid += d % 2 ? d : -d;
       const cx = (mid - this.x0) * CELL, cy = (y * CELL + C) * this.ry;
-      const label = `tor ${nr}`;
-      const w = 4.3 * label.length + 8;
+      // numer toru: sama liczba, ciemnoszara, w linii toru (Ie-104.1 §8 pkt 30) – tło przerywa linię pod cyframi
+      const label = String(nr);
+      const w = 4.3 * label.length + 4;
       const g = this.#sym(cx, cy, 'scr-el trk-no', [
-        el('rect', { class: 'trk-no-box', x: -w / 2, y: -5.5, width: w, height: 11, rx: 1.5 }),
+        el('rect', { class: 'trk-no-box', x: -w / 2, y: -4, width: w, height: 8 }),
         text(0, 0, label, { class: 'scr-text trk-no-text', 'dominant-baseline': 'central' }),
       ]);
       this.layerMarks.appendChild(g);
@@ -252,14 +255,17 @@ export class ScreenBase extends PanelView {
           s._tile = tile;
           this.layerTracks.appendChild(s); addSec(tile.section, s);
           if (tile.derailer) {
+            // wykolejnica jako pole Z (Ie-104.1 §8 pkt 12): kształt – położenie (nałożona: kreska przez tor, zdjęta:
+            // kreska obok toru), „+” przy położeniu zasadniczym (nałożona); barwa – stan (ciemnoszara, różowa – zamknięta)
             const g = this.#sym(cx, cy, 'scr-el derailer', [
               this.#frame(0, 0, 18, 18),
-              el('path', { class: 'wk-mark', d: 'M-5,6 L0,-4 L5,6 Z' }),
+              el('path', { class: 'wk-z', d: '' }),
+              text(6, -5, '+', { class: 'scr-text wk-plus' }),
               text(0, 14, tile.derailer, { class: 'scr-text small' }),
               this.#hit({ kind: 'derailer', id: tile.derailer }, 0, 0),
             ]);
             this.layerMarks.appendChild(g);
-            this.derailerRefs.set(tile.derailer, { mark: g.querySelector('.wk-mark'), g });
+            this.derailerRefs.set(tile.derailer, { mark: g.querySelector('.wk-z'), g });
             this.controlEls.set(refKey({ kind: 'derailer', id: tile.derailer }), g);
           }
           if (tile.endButton) this.#exitMark(tile);
@@ -267,11 +273,16 @@ export class ScreenBase extends PanelView {
         }
         case 'buffer': {
           const s = this.#segment(this.#leg(tile, tile.port, 0, 1));
+          this.layerTracks.append(s); addSec(tile.section, s);
+          // kozioł: symbol w kształcie T z zagiętymi końcami (Ie-104.1 §8 pkt 32 lit. d); gdy kozioł jest końcem
+          // przebiegu – zamiast niego symbol końca przebiegu (#exitMark)
+          if (tile.endButton) { this.#exitMark(tile); break; }
           const [px, py] = this.#pt(tile, tile.port);
-          const nx = -(py - cy), ny = px - cx;
-          const bar = el('path', { class: 'buffer-bar', d: `M${cx + nx * 0.35},${cy + ny * 0.35 / this.ry} L${cx - nx * 0.35},${cy - ny * 0.35 / this.ry}` });
-          this.layerTracks.append(s, bar); addSec(tile.section, s);
-          if (tile.endButton) this.#exitMark(tile);
+          const ux = (px - cx) / C, uy = (py - cy) / C / this.ry; // jednostkowo w stronę toru
+          const nx = -uy, ny = ux, h = 0.35 * C, k = 0.18 * C;
+          const P = (x, y) => `${cx + x},${cy + y * this.ry}`;
+          const bar = el('path', { class: 'buffer-bar', d: `M${P(nx * h + ux * k, ny * h + uy * k)} L${P(nx * h, ny * h)} L${P(-nx * h, -ny * h)} L${P(-nx * h + ux * k, -ny * h + uy * k)}` });
+          this.layerTracks.append(bar);
           break;
         }
         case 'point': {
@@ -340,8 +351,13 @@ export class ScreenBase extends PanelView {
       // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
       kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status,
         text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
+    } else if (tile.endButton.color === 'white') {
+      // koniec przebiegu manewrowego – półkole (Ie-104.1 §8 pkt 7), wypukłością od toru
+      const d = tile.type === 'buffer' && tile.port === 'E' ? -1 : 1;
+      kids.push(el('path', { class: 'end-mark', d: `M0,-4 A4,4 0 0 ${d > 0 ? 1 : 0} 0,4 Z` }));
     } else {
-      kids.push(el('circle', { class: 'end-mark', cx: 0, cy: 0, r: 3 }));
+      // koniec przebiegu pociągowego – pusty prostokąt (Ie-104.1 §8 pkt 7)
+      kids.push(el('rect', { class: 'end-mark', x: -3, y: -4, width: 6, height: 8 }));
     }
     kids.push(this.#hit(ref, 0, 0, 10));
     const g = this.#sym(cx, cy, `scr-el end${ex ? ' exit' : ''}`, kids);
@@ -375,21 +391,30 @@ export class ScreenBase extends PanelView {
     // rozsunięcie w jednostkach symbolu (rośnie ze skalą): tło jednego (15) nie zasłania trójkąta drugiego (13)
     const sx = twin ? -dir * 14 : 0;
     const side = dir; // prawa strona toru w kierunku jazdy: E → pod torem (+y), W → nad torem (−y)
-    const chevron = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4 Z`;
+    // Ie-104.1 §8 pkt 4 ust. 1: a) pełny trójkąt – semafor bez sygnalizacji manewrowej, b) pełny trójkąt z otwartym
+    // grotem – semafor z sygnalizacją manewrową, c) otwarty grot – tarcza manewrowa, f) wjazdowy będący końcem przebiegu
+    // wyjazdowego – z małym trójkątem skierowanym przeciwnie
+    const tri = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4 Z`;
+    const open = (x) => `M${x - dir * 4},-4 L${x + dir * 2},0 L${x - dir * 4},4`;
     const body = el('g', { class: 'sig-body' });
-    if (tile.kind === 'tm') body.appendChild(el('path', { d: chevron(dir * 1) }));
-    else body.append(el('path', { d: chevron(-dir * 3) }), el('path', { d: chevron(dir * 4) }));
-    const endTri = el('path', { class: 'sig-end', d: `M${dir * 9},-3 L${dir * 13},0 L${dir * 9},3 Z` });
-    const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, [
-      // tło przerywa linię toru pod całym symbolem, także pod trójkątem końca przebiegu (dir*9..13)
+    if (tile.kind === 'tm') body.appendChild(el('path', { class: 'open', d: open(dir * 1) }));
+    else if (tile.shunting) body.append(el('path', { d: tri(-dir * 3) }), el('path', { class: 'open', d: open(dir * 4) }));
+    else body.appendChild(el('path', { d: tri(dir * 1) }));
+    const exitEnd = !!tile.entry && [...this.ilk.routes.values()].some((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === tile.id);
+    const kids = [
       el('rect', { class: 'sig-back', x: dir > 0 ? -9 : -15, y: -5, width: 24, height: 10 }),
       this.#frame(0, 0, 28, 18),
-      body, endTri,
-      text(-dir * 2, side > 0 ? 18 : -12, tile.id, { class: 'scr-text sig-label' }),
-      this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 10),
-    ], sx);
+      body,
+    ];
+    if (exitEnd) kids.push(el('path', { class: 'sig-end', d: `M${dir * 13},-3 L${dir * 9},0 L${dir * 13},3 Z` }));
+    // tarcza: sam numer, turkusowy (Ie-104.1 §4 ust. 14, §8 pkt 4 ust. 3); semafor – nazwa
+    const name = tile.kind === 'tm' ? tile.id.replace(/^Tm/i, '') : tile.id;
+    kids.push(text(-dir * 2, side > 0 ? 18 : -12, name, { class: `scr-text sig-label${tile.kind === 'tm' ? ' tm' : ''}` }),
+      this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 10));
+    const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, kids, sx);
+    g.setAttribute('data-signal', tile.id); // opis tarczy to sam numer – identyfikator sygnalizatora w atrybucie
     this.layerSignals.appendChild(g);
-    this.signalRefs.set(tile.id, { body, endTri, g, tile });
+    this.signalRefs.set(tile.id, { body, label: kids.find((k) => k.classList?.contains('sig-label')), g, tile });
     this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'green' }), g);
     this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'white' }), g);
   }
@@ -419,16 +444,18 @@ export class ScreenBase extends PanelView {
       if (act?.timedRelease) return 'timed';
       return act?.route.kind === 'shunt' ? 'rt-shunt' : 'rt-train';
     }
-    if (sec.closed) return 'closed';
     return 'free';
   }
 
   updateSection(id) {
     const sec = this.ilk.sections.get(id);
     const cls = this.#sectionClass(sec);
+    // zamknięcie toru to kształt (podwójna linia), barwa pokazuje stan – zajęty tor zamknięty: podwójna czerwona
+    // (Ie-104.1 §8 pkt 1)
+    const closed = sec?.closed ? ' closed' : '';
     // łącznica, w którą zwrotnica nie jest ustawiona, nie pokazuje zajętości ani przebiegu (Topology.branchGates)
     const gated = cls.startsWith('occ') || cls === 'timed' || cls.startsWith('rt-');
-    for (const e of this.sectionRefs.get(id) || []) setSeg(e, gated && e._tile && !this.ilk.onSetBranch(e._tile) ? 'free' : cls);
+    for (const e of this.sectionRefs.get(id) || []) setSeg(e, (gated && e._tile && !this.ilk.onSetBranch(e._tile) ? 'free' : cls) + closed);
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);
   }
@@ -438,16 +465,23 @@ export class ScreenBase extends PanelView {
     const r = this.pointRefs.get(id);
     if (!p || !r) return;
     const [cx, cy] = this.#ctr(r.tile);
-    const base = this.#sectionClass(this.ilk.sections.get(p.section));
-    const cls = p.individualLock && base === 'free' ? 'locked' : base;
+    // ramiona w barwie odcinka; róż zamknięcia indywidualnego tylko w polu Z (Ie-104.1 §8 pkt 9)
+    const cls = this.#sectionClass(this.ilk.sections.get(p.section));
+    const zcls = p.individualLock && cls === 'free' ? 'locked' : cls;
     const leg = (port) => { const [px, py] = this.#pt(r.tile, port); return [cx + (px - cx) * 0.3, cy + (py - cy) * 0.3]; };
     const [tx, ty] = leg(r.tile.toe);
-    if (p.moving || !p.control) {
-      // pole Z: brak kontroli – iglice w położeniu pośrednim (kreska do środka), migotanie
+    if (p.moving) {
+      // w czasie przestawiania pole Z puste
+      setSeg(r.toe, cls); setSeg(r.straight, 'dim'); setSeg(r.diverge, 'dim');
+      r.zField.setAttribute('d', '');
+      r.zField.setAttribute('class', 'z-field');
+      r.g.classList.remove('alarm', 'trailed');
+    } else if (!p.control) {
+      // brak kontroli: pole Z białe migające, rozprucie – czerwone migające
       setSeg(r.toe, cls); setSeg(r.straight, 'dim'); setSeg(r.diverge, 'dim');
       r.zField.setAttribute('d', `M${tx},${ty} L${cx},${cy}`);
-      r.zField.setAttribute('class', `z-field ${cls} nocontrol`);
-      r.g.classList.toggle('alarm', !p.moving); // nieoczekiwany brak kontroli / rozprucie – ramka alarmowa
+      r.zField.setAttribute('class', `z-field ${p.trailed ? 'trailed' : 'nocontrol'}`);
+      r.g.classList.add('alarm'); // ramka alarmowa
       r.g.classList.toggle('trailed', !!p.trailed);
     } else {
       const [ax, ay] = leg(p.position === '+' ? r.tile.straight : r.tile.diverge);
@@ -455,7 +489,7 @@ export class ScreenBase extends PanelView {
       setSeg(r.straight, p.position === '+' ? cls : 'dim');
       setSeg(r.diverge, p.position === '-' ? cls : 'dim');
       r.zField.setAttribute('d', `M${tx},${ty} L${cx},${cy} L${ax},${ay}`);
-      r.zField.setAttribute('class', `z-field ${cls}`);
+      r.zField.setAttribute('class', `z-field ${zcls}`);
       r.g.classList.remove('alarm', 'trailed');
     }
     r.lbl.classList.toggle('locked', !!p.individualLock);
@@ -465,7 +499,9 @@ export class ScreenBase extends PanelView {
     const d = this.ilk.derailers.get(id);
     const r = this.derailerRefs.get(id);
     if (!d || !r) return;
-    r.mark.classList.toggle('on', d.position === 'on' && !d.moving);
+    // pole Z wykolejnicy: nałożona – kreska przez tor, zdjęta – kreska obok toru; w czasie przestawiania puste
+    r.mark.setAttribute('d', d.moving ? '' : d.position === 'on' ? 'M0,-5 L0,5' : 'M-4,-6 L4,-6');
+    r.mark.setAttribute('class', `wk-z${d.individualLock ? ' locked' : ''}`);
     r.g.classList.toggle('locked', !!d.individualLock);
   }
 
@@ -478,13 +514,19 @@ export class ScreenBase extends PanelView {
     const a = s.aspect;
     let st = 'base';
     const isEnd = [...this.ilk.active.values()].some((act) => act.route.end.type === 'signal' && act.route.end.id === id);
+    const stopped = !!(s.stopped || this.ilk.allStop);
+    const act = s.route && this.ilk.active.get(s.route);
     if (a === 'Sz') st = 'sz';
-    else if (s.stopped || this.ilk.allStop) st = 'stopped';
     else if (a === 'Ms2') st = 'shunt';
     else if (a && a !== 'S1' && a !== 'Ms1') st = 'train';
+    // EBIScreen: sygnalizator w trakcie zwalniania czasowego – fioletowy (bsk.isdr.pl/srk_ebilock.php)
+    else if (act?.timedRelease && this.constructor.TIMED_SIGNAL) st = 'timed';
+    // czerwony (początek / koniec utwierdzonego przebiegu) ma pierwszeństwo przed różowym (zastopowany)
     else if (s.route != null || isEnd) st = 'locked';
+    else if (stopped) st = 'stopped';
     r.body.setAttribute('class', `sig-body st-${st}`);
-    r.endTri.setAttribute('class', `sig-end${isEnd ? ' on' : ''}`);
+    // zastopowany – różowy opis (także gdy symbol jest czerwony, Ie-104.1 §8 pkt 4 ust. 3)
+    r.label?.classList.toggle('stopped', stopped);
   }
 
   updateBlock(exitId) {
@@ -493,14 +535,17 @@ export class ScreenBase extends PanelView {
     if (!b || !r) return;
     r.g.classList.toggle('blk-occ', !!(b.occupied || b.poBlocked));
     r.g.classList.toggle('blk-fault', !!b.fault);
-    const out = b.direction === 'out' && (b.auto || b.permission || b.fixed === 'out' || !!b.phone?.permissionFor);
+    // strzałki kierunku (Ie-104.1 blokada Eap): ciemnoszare – stan neutralny, żółte – kierunek ustawiony, czerwone –
+    // kierunek wykorzystany (pociąg na szlaku)
+    const out = b.direction === 'out' && (b.auto || b.permission || b.fixed === 'out' || !!b.phone?.permissionFor || b.poBlocked);
     const inn = b.direction === 'in';
-    r.dirOut.setAttribute('class', `blk-dir${out ? '' : ' off'}`);
-    r.dirIn.setAttribute('class', `blk-dir${inn ? '' : ' off'}`);
+    const used = b.occupied || b.poBlocked;
+    r.dirOut.setAttribute('class', `blk-dir${out ? (used ? ' used' : ' on') : ''}`);
+    r.dirIn.setAttribute('class', `blk-dir${inn ? (used ? ' used' : ' on') : ''}`);
     // Pwl – sygnał wyjazdowy na szlak podany (przeciwwtórność liniowa Eap)
     const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? [b.auto ? 'Zk' : 'Wbl', true] : b.koPending && !b.auto ? ['Ko', true] : b.fault ? ['tel.', false] : b.pwl ? ['Pwl', false] : ['', false];
     r.status.textContent = st[0];
-    r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}`);
+    r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}${st[0] === 'Ko' ? ' ko' : ''}`);
   }
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */
@@ -518,7 +563,8 @@ export class ScreenBase extends PanelView {
   }
 
   placeTrainLabel(label, headTile) {
-    label.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry - 13 * this.S})`);
+    // numer pociągu w osi toru (Ie-104.1 §8 pkt 29)
+    label.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry})`);
   }
 }
 

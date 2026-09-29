@@ -24,6 +24,9 @@ const LONG_PRESS = 450;
  *    miganie – niepotwierdzony), „Potwierdź” i „Potwierdź wszystkie”.
  */
 export class EbiRenderer extends ScreenBase {
+  /** EBIScreen: sygnalizator w trakcie zwalniania czasowego rysowany na fioletowo (B2). */
+  static TIMED_SIGNAL = true;
+
   constructor(container, sim, handlers, opts = {}) {
     super(container, sim, handlers, opts);
     this.svg.classList.add('ebi');

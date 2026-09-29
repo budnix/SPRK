@@ -105,8 +105,8 @@ test('skala symboli działa na żywo, opisy szlaków i symbole mieszczą się w 
   expect(await page.locator('rect.platform').count()).toBeGreaterThan(0);
   expect(await page.locator('line.platform-edge').count()).toBe(2 * await page.locator('rect.platform.island').count() + await page.locator('rect.platform.side').count()); // krawędź peronowa – podwójna kreska
   await expect(page.locator('text.platform-label').first()).toHaveText(/Peron II|Peron I/); // nazwa peronu na prostokącie
-  // numery torów w ramkach na linii toru, opisy „tor N” nie są dublowane
-  expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['tor 1', 'tor 13', 'tor 1a', 'tor 2', 'tor 2a', 'tor 4', 'tor 4a', 'tor 4b', 'tor 501', 'tor 502', 'tor 6', 'tor 6a', 'tor 6b']);
+  // numery torów: sama liczba w linii toru, bez ramki i słowa „tor” (Ie-104.1 §8 pkt 30; dawniej „tor N” w ramkach), nie dublowane
+  expect((await page.locator('.trk-no .trk-no-text').allTextContents()).sort()).toEqual(['1', '13', '1a', '2', '2a', '4', '4a', '4b', '501', '502', '6', '6a', '6b']);
   // ramka numeru toru i napis peronu wycentrowane: tekst w środku ramki / prostokąta (w układzie SVG)
   const centred = await page.evaluate(() => {
     const out = [];
@@ -151,7 +151,7 @@ test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawęd
     const CELL = 40;
     const out = {};
     for (const t of st.tiles.filter((x) => x.type === 'signal')) {
-      const g = [...document.querySelectorAll('#desk .scr-el.signal')].find((el) => el.querySelector('.sig-label')?.textContent === t.id);
+      const g = document.querySelector(`#desk .scr-el.signal[data-signal="${t.id}"]`);
       const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform'));
       const expX = t.at.x * CELL + (t.dir === 'E' ? CELL : 0), expY = t.at.y * CELL + CELL / 2;
       out[t.id] = { dx: Math.abs(+m[1] - expX), dy: Math.abs(+m[2] - expY), body: g.querySelector('.sig-body').getAttribute('class'), labelBelow: +g.querySelector('.sig-label').getAttribute('y') > 0, dir: t.dir, kind: t.kind };
@@ -180,8 +180,10 @@ test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd
   expect(await page.evaluate(() => window.sim.blocks.get('W').direction)).toBe('in');
   await expect(page.locator('.scr-el.exit').first().locator('.blk-status')).toHaveText('');
   const dirs = await page.evaluate(() => [...document.querySelector(`.hit[data-ref*='"id":"kW"']`).closest('.scr-el').querySelectorAll('.blk-dir')].map((e) => e.getAttribute('class')));
-  expect(dirs[0]).toContain('off'); // strzałka „wyjazd” zgaszona
-  expect(dirs[1]).not.toContain('off'); // strzałka „wjazd” świeci po Poz
+  // Ie-104.1 (blokada Eap): strzałki zawsze widoczne – ciemnoszare w stanie neutralnym, żółte (on) dla kierunku
+  // (dawniej kierunek pokazywała sama biała strzałka, a stanu neutralnego nie było)
+  expect(dirs[0]).not.toMatch(/\bon\b|used/); // strzałka „odjazd” – neutralna
+  expect(dirs[1]).toMatch(/\bon\b/); // strzałka „przyjazd” – kierunek po Poz
   // Sopot: linia 202 z blokadą samoczynną
   await openShift(page, 'sopot', { params: { scenariusz: 'zmiana' } });
   await page.locator(`.hit[data-ref*='"id":"kOR1"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 300, clientY: 300 });
@@ -393,8 +395,11 @@ test('napis stanu blokady („żąd.”) jest czytelny: większy niż nazwy sema
   const m = await page.evaluate(() => {
     const st = document.querySelector('.scr-el.exit .blk-status'), g = st.closest('.scr-el');
     const c = getComputedStyle(st), sig = getComputedStyle(document.querySelector('svg.screen .sig-label'));
-    // najciemniejsza faza migania napisu
-    const dim = Math.min(...[...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === c.animationName).flatMap((r) => [...r.cssRules]).map((k) => parseFloat(k.style.opacity)).filter((v) => !Number.isNaN(v)));
+    // najciemniejsza faza migania napisu (miganie synchroniczne: faza `ph` na całym obrazie)
+    const svg = st.closest('svg'), had = svg.classList.contains('ph');
+    svg.classList.add('ph');
+    const dim = parseFloat(getComputedStyle(st).opacity);
+    svg.classList.toggle('ph', had);
     g.classList.add('tut-hl');
     const hl = getComputedStyle(g);
     const out = { size: parseFloat(c.fontSize), sig: parseFloat(sig.fontSize), weight: Number(c.fontWeight), dim, hlAnim: hl.animationName, hlKeys: [...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === hl.animationName).flatMap((r) => [...r.cssRules]).some((k) => k.style.opacity !== '') };

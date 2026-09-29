@@ -419,9 +419,9 @@ export default {
       <p>Das <b>Ersatzsignal</b> ist ein Sonderbefehl: <b>SZI</b> markiert das Signal rot, <b>SZW</b> sendet man nach der Prüfung – 5 bis 30 s nach SZI. Die Taste <b>Ereignisse und Alarme</b> öffnet ein Fenster: Ereignisse oben, Alarme unten (rotes Quadrat – aktiv, grün – behoben, blinkend – nicht quittiert); Alarm wählen und <b>Quittieren</b> oder <b>Alle quittieren</b>.</p>`,
   'help.screen': `<h2>Bedienung des Rechnerarbeitsplatzes (Darstellung nach Ie-104)</h2>
       <p>Gleisabschnitte: <span class="sw g"></span> grau – frei, <span class="sw grn"></span> grün – in einer Zugstraße verschlossen,
-      <span class="sw y"></span> gelb – in einer Rangierstraße, <span class="sw r"></span> rot – besetzt, <span class="sw v"></span> violett – Zeitauflösung,
+      <span class="sw y"></span> gelb – in einer Rangierstraße, <span class="sw r"></span> rot – besetzt, <span class="sw v"></span> rosa – Zeitauflösung,
       doppelte graue Linie – Gleis gesperrt. Weiche: das Feld „Z“ zeigt die Zungenlage (gestrichelt, blinkend – keine Überwachung), „+“ am Stammgleis,
-      <span class="sw p"></span> rosa Nummer – Einzelsperre. Signal: doppelte Pfeilspitze (Rangiersignal – einfache) auf der Gleislinie an seinem Standort, Spitze in Fahrtrichtung (ohne Mast); der Name rechts vom Gleis in Fahrtrichtung. Farben: grau – Grundstellung,
+      <span class="sw p"></span> rosa Z-Feld – Einzelsperre; gesperrtes Gleis – Doppellinie in der Zustandsfarbe. Signal: gefülltes Dreieck (mit Rangiersignal – dazu offene Pfeilspitze; Rangiersignal – nur offene Pfeilspitze, türkise Nummer) auf der Gleislinie an seinem Standort, Spitze in Fahrtrichtung (ohne Mast); der Name rechts vom Gleis in Fahrtrichtung. Farben: grau – Grundstellung,
       grün – Fahrtstellung für einen Zug, gelb – Rangieren erlaubt, rot – Start oder Ziel einer verschlossenen Fahrstraße, weiß blinkend – Ersatzsignal.
       Zugnummern in roten Feldern. Blauer Rahmen – für einen Befehl gewähltes Element, rot blinkend – Alarm.</p>
       <p><b>Befehle</b>: Leiste am oberen Bildschirmrand – Art wählen (Abkürzungen nach Ie-104.1 §12: ZUGSTRASSE, RANGIERSTRASSE, ZCZ – Auflösung, ZD – Hilfsauflösung: ZDP Zug / ZDM Rangier, Plus / Minus, Zmk / oZmk, SZ, Stój – Halt, Stop / oStop – Signalsperre …), dann Element(e) wählen:

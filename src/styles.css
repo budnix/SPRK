@@ -55,6 +55,9 @@
   --sc-thumb: #0a0d11;   /* tło miniatury planu – jak monitor, niezależne od motywu */
   /* paski i menu stanowiska komputerowego – barwy monitora, niezależne od motywu */
   --mon-special-mark: #ff8c00; --mon-special-sz: #3c3c3c;
+  /* barwy obrazu wg Ie-104.1 tab. 1: jeden różowy (255,0,255) dla zwalniania czasowego i zamknięć; turkusowe numery
+     tarcz; fiolet tylko w EBIScreen (sygnalizator w trakcie zwalniania czasowego) */
+  --mon-pink: #ff00ff; --mon-turquoise: #40e0d0; --mon-violet: #c04cff; --mon-dark: #4a545d;
   --mon-bg: #10161c; --mon-bg2: #1b242c; --mon-hover: #243040; --mon-text: #dfe6ec; --mon-muted: #6f8090; --mon-title: #8fb0c9;
   --mon-border: #3a4652; --mon-active: #1f3f7a; --mon-active-border: #3f8cff; --mon-on-active: #fff; --mon-special: #ffb84d;
   --mon-train: #c81e14; --mon-train-border: #ff6a60; --mon-on-train: #fff;
@@ -659,20 +662,22 @@ svg.screen.special-sz .scr-bg { fill: var(--mon-special-sz); }
 .seg.rt-shunt .trk { stroke: #ffd21f; }
 .seg.occ .trk { stroke: #ff2419; stroke-width: calc(4.4px * var(--sym, 1)); }
 .seg.occ-reset .trk { stroke: #8f140d; stroke-width: calc(4.4px * var(--sym, 1)); }   /* ciemnoczerwony – zajęty po zerowaniu licznika osi (Ie-104) */
-.seg.timed .trk { stroke: #c04cff; }
-.seg.closed .trk { stroke: #8a949e; stroke-width: calc(6px * var(--sym, 1)); }
+.seg.timed .trk { stroke: var(--mon-pink); }
+/* zamknięcie – kształt (podwójna linia), barwa z klasy stanu */
+.seg.closed .trk { stroke-width: calc(6px * var(--sym, 1)); }
 .seg.closed .trk-inner { display: block; }
-.seg.locked .trk { stroke: #ff7ad9; }
+.seg.locked .trk { stroke: var(--mon-pink); }
 .seg.dim .trk { stroke: #2b3339; }
 .seg.nodata .trk { stroke: #ffffff; }
 .z-field { fill: none; stroke-width: calc(3.6px * var(--sym, 1)); stroke-linejoin: round; stroke: #8a949e; }
-.z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.occ-reset { stroke: #8f140d; } .z-field.timed { stroke: #c04cff; } .z-field.locked { stroke: #ff7ad9; }
-.z-field.nocontrol { animation: blink 0.8s steps(1) infinite; stroke-dasharray: 3 2; }
+.z-field.rt-train { stroke: #21d04a; } .z-field.rt-shunt { stroke: #ffd21f; } .z-field.occ { stroke: #ff2419; } .z-field.occ-reset { stroke: #8f140d; } .z-field.timed { stroke: var(--mon-pink); } .z-field.locked { stroke: var(--mon-pink); }
+.z-field.nocontrol { stroke: #ffffff; }               /* brak kontroli – biały migający */
+.z-field.trailed { stroke: #ff2419; }                 /* rozprucie – czerwony migający */
 .platform { fill: #1f262d; stroke: #4a5563; stroke-width: 1; }
 .platform.side { fill: #1a2026; }
 .platform-edge { stroke: #5c6978; stroke-width: 0.8; } /* krawędź peronowa – druga kreska obrysu */
-.trk-no-box { fill: #000; stroke: #8a949e; stroke-width: 0.9; }
-.trk-no-text { fill: #dfe6ec; font-size: 6.8px; font-weight: 700; }
+.trk-no-box { fill: #000; stroke: none; }
+.trk-no-text { fill: var(--mon-dark); font-size: 6.8px; font-weight: 700; }   /* numer toru: sama liczba, ciemnoszara */
 .platform-label { fill: #7d8994; font-size: 6.2px; letter-spacing: 0.4px; pointer-events: none; }
 .buffer-bar { stroke: #b5bec7; stroke-width: 2.5; fill: none; }
 .scr-text { fill: #b6c0ca; font-size: 7px; }
@@ -684,36 +689,42 @@ svg.screen.special-sz .scr-bg { fill: var(--mon-special-sz); }
 .scr-label { fill: #55606b; font-size: calc(8px * var(--sym, 1)); }
 .scr-label.title { fill: #ffd21f; font-weight: 700; letter-spacing: 1px; }
 .pt-label { fill: #9fe3b4; font-size: 7px; }         /* seledynowe numery rozjazdów */
-.pt-label.locked { fill: #ff7ad9; }                  /* różowy – zamknięcie indywidualne */
+.pt-label.locked { fill: var(--mon-pink); }          /* różowy – zamknięcie indywidualne */
 .pt-plus { fill: #9fe3b4; font-size: 7px; }
-.point.trailed .pt-label { fill: #ff2419; animation: blink 0.5s steps(1) infinite; }
-.wk-mark { fill: #10171d; stroke: #b5bec7; stroke-width: 1; }
-.wk-mark.on { fill: #ffd21f; stroke: #ffd21f; }
-.derailer.locked .wk-mark { stroke: #ff7ad9; stroke-width: 1.6; }
-/* sygnalizatory: podwójny grot (semafor) / pojedynczy (Tm); kolor = stan wg Ie-104 */
+.point.trailed .pt-label { fill: #ff2419; }
+/* wykolejnica – pole Z: ciemnoszare w stanie podstawowym, różowe przy zamknięciu indywidualnym (Ie-104.1 §8 pkt 12) */
+.wk-z { fill: none; stroke: #8a949e; stroke-width: 2.2; stroke-linecap: round; }
+.wk-z.locked { stroke: var(--mon-pink); }
+.wk-plus { fill: #9fe3b4; font-size: 6px; }
+/* sygnalizatory (Ie-104.1 §8 pkt 4): pełny trójkąt – semafor, + otwarty grot – z sygnalizacją manewrową, otwarty grot
+   – tarcza; barwa = stan (wypełnienie trójkąta, obrys grotu) */
 .sig-back { fill: #000; }
-.sig-body path { fill: #6d7884; stroke: none; }
-.sig-body.st-base path { fill: #6d7884; }
-.sig-body.st-train path { fill: #21d04a; filter: url(#glow); }
-.sig-body.st-shunt path { fill: #ffd21f; filter: url(#glow); }
-.sig-body.st-locked path { fill: #ff2419; }
-.sig-body.st-sz path { fill: #ffffff; animation: blink 0.8s steps(1) infinite; }
-.sig-body.st-stopped path { fill: #ff7ad9; }            /* różowy – sygnalizator zamknięty (stopowany: SES, SSS) */
-.sig-body.st-nodata path { fill: #ffffff; }
-.sig-end { fill: none; stroke: #6d7884; stroke-width: 0.8; }
-.sig-end.on { fill: #ff2419; stroke: #ff2419; }
-svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy sygnalizatorów na monitorze */
+.sig-body path { fill: #6d7884; stroke: #6d7884; stroke-width: 0; }
+.sig-body.st-base path { fill: #6d7884; stroke: #6d7884; }
+.sig-body.st-train path { fill: #21d04a; stroke: #21d04a; filter: url(#glow); }
+.sig-body.st-shunt path { fill: #ffd21f; stroke: #ffd21f; filter: url(#glow); }
+.sig-body.st-locked path { fill: #ff2419; stroke: #ff2419; }
+.sig-body.st-sz path { fill: #ffffff; stroke: #ffffff; }
+.sig-body.st-stopped path { fill: var(--mon-pink); stroke: var(--mon-pink); }   /* różowy – zastopowany (Stop, SES, SSS) */
+.sig-body.st-timed path { fill: var(--mon-violet); stroke: var(--mon-violet); } /* EBIScreen: w trakcie zwalniania czasowego */
+.sig-body.st-nodata path { fill: #ffffff; stroke: #ffffff; }
+.sig-body path.open { fill: none; stroke-width: 1.4px; stroke-linejoin: miter; }
+.sig-end { fill: #6d7884; stroke: none; }            /* wjazdowy będący końcem przebiegu wyjazdowego – mały trójkąt */
+svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy semaforów */
+svg.screen .sig-label.tm { fill: var(--mon-turquoise); }       /* tarcze – sam numer, turkusowy */
+svg.screen .sig-label.stopped { fill: var(--mon-pink); }
 /* blokada liniowa na wyjeździe: strzałka szlaku (czerwona – odstęp zajęty), strzałki kierunku nad torem, napis stanu */
 .exit-arrow { fill: #2d3a46; stroke: #8c98a4; stroke-width: 1; }
 .blk-occ .exit-arrow { fill: #ff2419; stroke: #ff2419; }
 .blk-fault .exit-arrow { stroke-dasharray: 2 1.5; stroke: #ffd21f; }
-.blk-dir { fill: #e8eef2; stroke: none; }
-.blk-dir.off { display: none; }
+/* strzałki kierunku blokady (Ie-104.1, blokada Eap): ciemnoszare – neutralny, żółte – kierunek, czerwone – wykorzystany */
+.blk-dir { fill: var(--mon-dark); stroke: none; }
+.blk-dir.on { fill: #ffd21f; }
+.blk-dir.used { fill: #ff2419; }
 .blk-status { fill: #ffd21f; font-size: 7.5px; font-weight: 600; }
-/* napis stanu miga łagodniej niż lampki: w ciemnej fazie nadal da się go przeczytać */
-.blk-status.blink { animation: blink-text 0.8s steps(1) infinite; }
-@keyframes blink-text { 50% { opacity: 0.45; } }
-.end-mark { fill: #000; stroke: #b5bec7; stroke-width: 1.2; }
+.blk-status.ko { fill: #21d04a; }                     /* Ko – zielony */
+/* koniec przebiegu: prostokąt (pociągowy) / półkole (manewrowy) */
+.end-mark { fill: none; stroke: #b5bec7; stroke-width: 1.2; }
 .block-box { fill: #0c1218; stroke: #2f3d4a; stroke-width: 1; }
 .block-title { font-size: 6.5px; fill: #ffd21f; }
 .scr-lamp { fill: #1a2128; stroke: #3a4653; stroke-width: 0.6; }
@@ -726,8 +737,12 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .sel-frame { fill: none; stroke: none; stroke-width: 1.2; }
 .scr-el:hover .sel-frame { stroke: #3a6fd8; stroke-dasharray: 2 1.5; }
 .scr-el.selected .sel-frame { stroke: #3f8cff; stroke-dasharray: none; }
-.screen.picking .scr-el.selected .sel-frame { animation: blink 0.8s steps(1) infinite; }
-.scr-el.alarm .sel-frame { stroke: #ff2419; animation: blink 0.6s steps(1) infinite; }
+.scr-el.alarm .sel-frame { stroke: #ff2419; }
+/* miganie synchroniczne na całym obrazie monitora, 1 Hz, 50/50 (Ie-104.1 §4 ust. 17): wspólna faza – klasa `ph`
+   przełączana co 0,5 s przez widok; bez osobnych animacji o różnych okresach */
+svg.screen.ph .z-field.nocontrol, svg.screen.ph .z-field.trailed, svg.screen.ph .point.trailed .pt-label,
+svg.screen.ph .sig-body.st-sz path, svg.screen.picking.ph .scr-el.selected .sel-frame, svg.screen.ph .scr-el.alarm .sel-frame { visibility: hidden; }
+svg.screen.ph .blk-status.blink { opacity: 0.45; }    /* napis stanu – w ciemnej fazie nadal czytelny */
 .screen.picking .hit { cursor: crosshair; }
 .scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }
@@ -815,7 +830,7 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .mor-alarm { background: var(--mon-mor-alarm-bg); color: var(--mon-mor-alarm); margin: 1px 0; cursor: pointer; user-select: none; }
 .mor-alarm.acked { background: var(--mon-mor-acked-bg); color: var(--mon-mor-acked); }
 .mor-empty { color: var(--mon-muted); padding: 2px 4px; }
-.sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
+.sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: var(--mon-pink); } .sw.p { background: var(--mon-pink); }
 
 
 /* samouczek (misje wprowadzające) */

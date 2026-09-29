@@ -66,3 +66,18 @@ test('bez martwych reguł i z ograniczeniem animacji ozdobnych', () => {
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /:focus-visible/);
 });
+
+// Ie-104.1 §4 ust. 17: miganie synchroniczne na całym obrazie monitora, 1 Hz, 50/50 – wspólna faza (klasa `ph`), bez
+// osobnych animacji o różnych okresach i fazach (dawniej 0,5–1 s, każda animacja startowała osobno). Wyjątek: EBIScreen.
+test('monitor: elementy obrazu migają wspólną fazą – bez własnych animacji', () => {
+  const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const monitor = /\.(z-field|sig-body|blk-status|pt-label|sel-frame|wk-z|end-mark|blk-dir|exit-arrow|seg)\b/;
+  const bad = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    const [, sel, body] = m;
+    if (!/animation\s*:/.test(body) || !monitor.test(sel) || /\.ebi\b|ebi-/.test(sel) || /\.bar\b|svg\.desk/.test(sel)) continue;
+    bad.push(sel.trim());
+  }
+  assert.deepEqual(bad, []);
+  assert.match(css, /svg\.screen\.ph [^{]*\.z-field\.nocontrol/);
+});

@@ -414,15 +414,28 @@ z tabeli Ie-104.1 §12: ZCZ, ZDP – specjalne, ZDM – zwykłe, Plus / Minus, Z
 dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sposobem wydawania poleceń. Zastosowano:
 
 * odcinki toru (tab. 8 Ie-104): szary – stan podstawowy, czerwony – zajęty, zielony – utwierdzony w przebiegu
-  pociągowym, żółty – w przebiegu manewrowym, fioletowy – zwalnianie czasowe, podwójna szara linia – tor zamknięty,
-  biały – brak danych;
-* sygnalizatory (lista stanów wg malejącego priorytetu): biały – brak danych, biały migający – sygnał zastępczy,
-  zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – sygnalizator początkowy lub
-  końcowy utwierdzonego przebiegu, różowy – zamknięty indywidualnie (w grze: stopowany poleceniem SES albo SSS),
-  szary – stan podstawowy; mały trójkąt końca
-  przebiegu (Ie-104.1); symbol semafora jako podwójny grot z żółtą nazwą (EbiScreen), rysowany na linii toru w miejscu ustawienia – bez masztu i bez odsunięcia od toru (uproszczenie dla czytelności, jak w SimRail);
-* zwrotnica: pole „Z” (kształt – położenie iglic / brak kontroli, kolor – stan) i ramiona a/b/c, „+” przy ramieniu
-  położenia zasadniczego, różowy – zamknięcie indywidualne, seledynowe numery (EbiScreen);
+  pociągowym, żółty – w przebiegu manewrowym, różowy (255,0,255) – zwalnianie czasowe (Ie-104.1 tab. 1: jedna barwa
+  różowa dla zwalniania czasowego i zamknięć, fioletu w palecie nie ma), biały – brak danych; tor zamknięty – podwójna
+  linia w barwie stanu (zajęty tor zamknięty – podwójna czerwona, §8 pkt 1);
+* sygnalizatory (lista stanów wg malejącego priorytetu, §8 pkt 4 ust. 2–3): biały – brak danych, biały migający – sygnał
+  zastępczy, zielony – sygnał zezwalający dla pociągu, żółty – zezwalający na manewry, czerwony – sygnalizator
+  początkowy lub końcowy utwierdzonego przebiegu (ma pierwszeństwo przed różowym), różowy – zastopowany (Stop, SES,
+  SSS; różowy także opis, gdy symbol jest czerwony), szary – stan podstawowy; symbol (§8 pkt 4 ust. 1): pełny trójkąt –
+  semafor bez sygnalizacji manewrowej, pełny trójkąt z otwartym grotem – semafor z sygnalizacją manewrową, otwarty grot
+  – tarcza manewrowa (sam numer, turkusowy, §4 ust. 14), mały trójkąt skierowany przeciwnie tylko przy semaforze
+  wjazdowym będącym też końcem przebiegu wyjazdowego; żółte nazwy semaforów (EbiScreen); symbol na linii toru w miejscu
+  ustawienia – bez masztu i bez odsunięcia od toru (uproszczenie dla czytelności, jak w SimRail); w widoku EBILock
+  sygnalizator w trakcie zwalniania czasowego jest fioletowy (bsk.isdr.pl/srk_ebilock.php – źródło miłośnicze);
+* zwrotnica: pole „Z” (kształt – położenie iglic, kolor – stan; w czasie przestawiania puste, brak kontroli – białe
+  migające, rozprucie – czerwone migające, §8 pkt 9) i ramiona a/b/c w barwie odcinka, „+” przy ramieniu położenia
+  zasadniczego, róż zamknięcia indywidualnego tylko w polu Z i numerze, seledynowe numery (EbiScreen);
+* wykolejnica – pole Z (§8 pkt 12): nałożona – kreska przez tor, zdjęta – kreska obok toru (kształt przyjęty wg
+  opisu, rysunku nie odtworzono dokładnie), „+” przy położeniu zasadniczym, ciemnoszara, różowa przy zamknięciu;
+* koniec przebiegu (§8 pkt 7): pociągowego – pusty prostokąt, manewrowego – półkole; kozioł – symbol T z zagiętymi
+  końcami (§8 pkt 32 lit. d); przyjęte: bez opisu „<sygnalizator>k”;
+* blokada Eap na wyjeździe: strzałki kierunku ciemnoszare (stan neutralny), żółte (kierunek), czerwone (kierunek
+  wykorzystany – pociąg na szlaku), Ko – zielony napis (§4 ust. 11 pkt 5, ust. 13 pkt 2; s. 60–63);
+* miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (§4 ust. 17) – wspólna faza (klasa `ph` przełączana przez widok);
 * grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
   czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
 * polecenia (Ie-104.1 §11–§12; stanowisko `komputerowe`): pasek poleceń (rodzaj → element początkowy → końcowy);
@@ -430,7 +443,7 @@ dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sp
   tło obrazu szarzeje; potwierdzenie najwcześniej po 5 s, po 60 s bez potwierdzenia polecenie odwołuje się samo,
   w tym czasie inne polecenia są zablokowane (`src/srk/special.js`); rejestrowane w licznikach, odwołanie OPS.
 
-Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
+Numery torów to sama liczba, ciemnoszara, w linii toru, a numery pociągów – w osi toru (Ie-104.1 §8 pkt 29–30); perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
 jak w nomenklaturze PKP: peron I, II; tory arabskie). Polecenia w menu elementów mają formę rzeczownikową zgodną
 z terminologią Ie-1 / Ir-1 (nastawienie przebiegu, zwolnienie przebiegu, danie pozwolenia, zwolnienie bloku końcowego,
 podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne).
