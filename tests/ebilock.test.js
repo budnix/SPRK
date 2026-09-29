@@ -159,3 +159,16 @@ test('kilka dróg między początkiem a końcem: elementy pośrednie do wyboru (
   // przez model (tu odmowa blokady samoczynnej – ważne, że chodzi o drogę alternatywną)
   assert.match(sim.submitCommand('POC G7 G1 Zw16').reason ?? 'ok', /G7-G1#2|ok/);
 });
+
+test('nazwy obiektów bez względu na wielkość liter (iPad pisze wielkimi): polecenie niesie identyfikatory ze stacji', () => {
+  const sim = ebi();
+  const p = sim.input;
+  assert.deepEqual(p.submit('poc a d1').cmd, { type: 'route', id: 'A-D1' });
+  assert.deepEqual(p.submit('POC D1 KE').cmd, { type: 'route', id: 'D1-E' });
+  assert.deepEqual(p.submit('zws ZW1').cmd, { type: 'lock', id: 'Zw1' });
+  const sec = sim.ilk.routes.get('A-D1').sections.find((x) => sim.ilk.sections.get(x).kind === 'station');
+  assert.deepEqual(p.submit(`its ${sec.toLowerCase()}`).cmd, { type: 'close-section', section: sec, closed: true });
+  assert.deepEqual(p.submit('SES TM1').cmd, { type: 'signal-stop', signal: 'Tm1', on: true });
+  assert.deepEqual(p.submit('POZ KW').cmd, { type: 'block', exit: 'W', btn: 'Poz' });
+  assert.ok(sim.submitCommand('POC A D1').ok);
+});

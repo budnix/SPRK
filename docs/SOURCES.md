@@ -333,7 +333,7 @@ Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo 
 * linia poleceń jest nad planem (w EBIScreen – na dole ekranu), a okno zdarzeń i alarmów otwiera się przyciskiem
   (w EBIScreen to osobne okno na innym monitorze);
 * nazwy obiektów w poleceniach to identyfikatory z definicji stacji (sygnalizator „A”, zwrotnica „Zw3”, odcinek
-  „T2”, trójkąt końca toru „kE”); stację wskazuje jej nazwa albo identyfikator;
+  „T2”, trójkąt końca toru „kE”), bez względu na wielkość liter; stację wskazuje jej nazwa albo identyfikator;
 * polecenia blokady liniowej – skróty przycisków blokady: WBL, POZ, KO, ZK, DPO, DKO (dPo i dKo jak na innych
   stanowiskach: z licznikiem, bez polecenia inicjującego);
 * ZWP / ZWM dla wykolejnicy: „+” – nałożona, „−” – zdjęta;

@@ -46,7 +46,7 @@ test('linia poleceń z klawiatury (F12, Enter); prawy klawisz na zwrotnicy – m
   await page.locator('.ebi-clear').click();
   await expect(page.locator('#ebi-line')).toHaveValue('');
   await expect(page.locator('#desk .ebi-sel')).toHaveCount(0);
-  expect((await simState(page)).points.Zw1).toBe('-', 'bez „Wykonaj” zwrotnica stoi');
+  expect((await simState(page)).points.Zw1, 'bez „Wykonaj” zwrotnica stoi').toBe('-');
   // tor: prawy klawisz na linii toru – ITS
   const sec = await page.evaluate(() => window.sim.ilk.routes.get('A-D1').sections.find((x) => window.sim.ilk.sections.get(x).kind === 'station'));
   await hit(page, 'section', sec).dispatchEvent('pointerdown', { bubbles: true, button: 2, pointerType: 'mouse', clientX: 400, clientY: 300 });

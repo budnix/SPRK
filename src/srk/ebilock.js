@@ -74,6 +74,12 @@ export class EbiLockProtocol {
     this.ilk = ilk;
     this.bus = bus;
     this.stationNames = [ilk.station?.id, ilk.station?.name].filter(Boolean).map((s) => String(s).toUpperCase());
+    // nazwy obiektów bez względu na wielkość liter (linia poleceń pisze wielkimi, np. „KK2”) → identyfikator ze stacji
+    const names = (ids) => new Map([...ids].map((id) => [String(id).toUpperCase(), id]));
+    this.names = {
+      signal: names(ilk.signals.keys()), point: names(ilk.points.keys()), derailer: names(ilk.derailers.keys()),
+      section: names(ilk.sections.keys()), end: names(ilk.topo.endButtons.keys()), exit: names(Object.keys(ilk.station?.exits || {})),
+    };
     this.sel = { start: null, end: null, via: null, object: null, candidates: [] };
     this.marks = new Map();   // 'signal:A' -> { code: 'SZI', at, color }
     this.events = [];         // { time, text, kind: 'log' | 'cmd' | 'refused' }
@@ -191,8 +197,11 @@ export class EbiLockProtocol {
   #build(def, args, refuse) {
     const ilk = this.ilk;
     if (def.args[0] === 'route') {
-      const [start, end, via] = args;
-      if (!start || !end) return refuse(`${def.code}: podaj początek i koniec przebiegu`);
+      const [start, end, via] = [this.#id('signal', args[0]), this.#id('signal', args[1]) ?? this.#id('end', args[1]), this.#id('point', args[2])];
+      if (!args[0] || !args[1]) return refuse(`${def.code}: podaj początek i koniec przebiegu`);
+      if (!start) return refuse(`${def.code}: nieznany sygnalizator ${args[0]}`);
+      if (!end) return refuse(`${def.code}: nieznany koniec przebiegu ${args[1]}`);
+      if (args[2] && !via) return refuse(`${def.code}: nieznany element pośredni ${args[2]}`);
       if (def.code === 'PZA') {
         const act = [...ilk.active.values()].find((a) => a.route.start === start && (a.route.end.id === end || a.route.endButton === end));
         if (!act) return refuse(`PZA: brak nastawionego przebiegu od ${start} do ${end}`);
@@ -265,14 +274,19 @@ export class EbiLockProtocol {
     return def.args[0] === obj.kind || (def.args[0] === 'block' && obj.kind === 'end');
   }
 
-  /** Nazwa z linii poleceń → obiekt oczekiwanego rodzaju. */
+  /** Identyfikator obiektu rodzaju `kind` ze stacji dla nazwy wpisanej dowolną wielkością liter (albo undefined). */
+  #id(kind, name) {
+    return name == null ? undefined : this.names[kind].get(String(name).toUpperCase());
+  }
+
+  /** Nazwa z linii poleceń → obiekt oczekiwanego rodzaju (z identyfikatorem ze stacji). */
   #resolve(kind, name) {
-    const ilk = this.ilk;
-    if (kind === 'section') return ilk.sections.has(name) ? { kind: 'section', id: name } : null;
-    if (kind === 'point') return ilk.points.has(name) ? { kind: 'point', id: name } : ilk.derailers.has(name) ? { kind: 'derailer', id: name } : null;
-    if (kind === 'signal') return ilk.signals.has(name) ? { kind: 'signal', id: name } : null;
+    const as = (k, id) => (id ? { kind: k, id } : null);
+    if (kind === 'section') return as('section', this.#id('section', name));
+    if (kind === 'point') return as('point', this.#id('point', name)) || as('derailer', this.#id('derailer', name));
+    if (kind === 'signal') return as('signal', this.#id('signal', name));
     if (kind === 'station') return this.stationNames.includes(name.toUpperCase()) ? { kind: 'station', id: name } : null;
-    if (kind === 'block') return this.#exitOf(name) ? { kind: 'block', id: name } : null;
+    if (kind === 'block') return as('block', this.#id('end', name) ?? this.#id('exit', name));
     return null;
   }
 

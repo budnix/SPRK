@@ -31,7 +31,7 @@ Play it: **https://budnix.github.io/SPRK/**
 
 ## Features
 
-### Three workstations, one interlocking model
+### Five workstations, one interlocking model
 * **Type E relay desk** – cube tiles, two-button operation (press the first button, then the second within 6 s),
   pull a button to put a signal to stop, group buttons Zw / Zz / Pz / dPz / Sz with sealed counters, Eap line-block
   panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow).
