@@ -408,3 +408,36 @@ test('zajęty odcinek zwrotnicowy świeci tylko na drodze, w którą leży zwrot
     expect((await lit()).link, scenariusz).toMatch(/lamp-red|occ/);
   }
 });
+
+test('etykieta pociągu wjeżdżającego ze szlaku nie zasłania nazwy szlaku na kostce skrajnej (typ E, IZH-111, mechaniczna)', async ({ page }) => {
+  for (const scenariusz of ['zmiana-e', 'zmiana-izh', 'zmiana']) {
+    await openShift(page, 'olszyny', { params: { scenariusz } });
+    // 8401 z Wierzbna (kostka skrajna x = 0) i 8402 z Grabowca (x = 29): czoło do czwartej kostki od krańca –
+    // w każdym kroku nazwa szlaku odkryta
+    const res = await page.evaluate(() => {
+      const s = window.sim, c = s.clock; c.paused = false;
+      const out = { seen: 0, hits: [] };
+      for (const [nr, line, inside] of [[8401, 'Wierzbno', (x) => x >= 4], [8402, 'Grabowiec', (x) => x <= 25]]) {
+        const e = s.traffic.timetable().find((x) => x.nr === nr);
+        const name = [...document.querySelectorAll('#desk .tile-over text')].find((t) => t.textContent === line).getBoundingClientRect();
+        for (let i = 0; i < 8000; i++) {
+          s.step(0.5);
+          for (const ex of ['W', 'E']) { const b = s.blocks.get(ex); if (b.request === 'theirs') b.press('Poz'); }
+          if (!e.train?.entered) continue;
+          window.desk.updateTrains();
+          const lab = [...document.querySelectorAll('#desk .train-label')].find((l) => l.textContent.trim() === String(nr) && l.style.display !== 'none');
+          if (!lab) continue;
+          const r = lab.querySelector('rect').getBoundingClientRect();
+          const x = e.train.trail[e.train.trail.length - 1].tile?.x ?? 0;
+          out.seen++;
+          if (r.right > name.left && r.left < name.right && r.bottom > name.top && r.top < name.bottom) out.hits.push(`${nr}@${x}`);
+          if (inside(x)) break;
+        }
+      }
+      c.paused = true;
+      return out;
+    });
+    expect(res.seen, scenariusz).toBeGreaterThan(6);
+    expect(res.hits, `${scenariusz}: etykieta na nazwie szlaku`).toEqual([]);
+  }
+});

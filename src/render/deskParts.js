@@ -297,5 +297,29 @@ export function deskTrainLabel(tr) {
 export function placeDeskTrainLabel(view, label, headTile) {
   const above = headTile.y >= 6 || headTile.y === 4;
   const ty = headTile.y * CELL + (above ? 8 : CELL - 6);
-  label.setAttribute('transform', `translate(${(headTile.x - view.x0) * CELL + CELL / 2},${ty})`);
+  let tx = (headTile.x - view.x0) * CELL + CELL / 2;
+  // nazwa szlaku na kostce skrajnej (tile-over) zostaje czytelna: etykieta przesuwa się za nią, w stronę stacji
+  for (const b of edgeTextBoxes(view)) {
+    if (ty + LABEL.y2 < b.y1 || ty + LABEL.y1 > b.y2 || tx + LABEL.x2 + 1 < b.x1 || tx + LABEL.x1 - 1 > b.x2) continue;
+    tx = b.west ? b.x2 - LABEL.x1 + 2 : b.x1 - LABEL.x2 - 2;
+  }
+  label.setAttribute('transform', `translate(${tx},${ty})`);
+}
+
+/** Obrys etykiety pociągu (`deskTrainLabel`) względem jej punktu zaczepienia. */
+const LABEL = { x1: -16, x2: 16, y1: -7, y2: 6 };
+
+/** Prostokąty nazw szlaków nad kostkami skrajnymi (w układzie planu); liczone raz po narysowaniu. */
+function edgeTextBoxes(view) {
+  if (view._edgeBoxes) return view._edgeBoxes;
+  const boxes = [];
+  for (const g of view.layerTiles.querySelectorAll('.tile-over')) {
+    const t = g.querySelector('text');
+    const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform') || '');
+    const b = t?.getBBox?.();
+    if (!m || !b) continue;
+    if (!b.width) return []; // jeszcze nie narysowane (ukryty kontener) – policz przy następnym ustawieniu
+    boxes.push({ x1: +m[1] + b.x, x2: +m[1] + b.x + b.width, y1: +m[2] + b.y, y2: +m[2] + b.y + b.height, west: t.getAttribute('text-anchor') === 'start' });
+  }
+  return (view._edgeBoxes = boxes);
 }
