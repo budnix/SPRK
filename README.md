@@ -25,6 +25,10 @@ Play it: **https://budnix.github.io/SPRK/**
 |---|---|
 | ![Type IZH-111 desk, Zacisze](docs/screenshots/izh-zacisze.png) | ![Type E desk, Jodłowa](docs/screenshots/desk-jodlowa.png) |
 
+| Mechanical signal box with semaphore signals (Olszyny, mission 4) |
+|---|
+| ![Mechanical signal box, Olszyny: illuminated diagram with semaphore arms, route levers and the lever frame](docs/screenshots/mech-olszyny.png) |
+
 ## Features
 
 ### Three workstations, one interlocking model
