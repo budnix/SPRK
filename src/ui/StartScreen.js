@@ -132,9 +132,11 @@ export class StartScreen {
       this.select(card.dataset.id);
     });
     root.querySelector('#st-go').addEventListener('click', () => {
-      if (this.mission) { this.#go(this.mission.station.id, this.mission.scenario.id, 'none'); return; }
+      const scId = root.querySelector('#st-scenario').value;
+      // odprawa misji: samouczek albo pełna zmiana tej stacji szkoleniowej na wybranym stanowisku
+      if (this.mission && scId === this.mission.scenario.id) { this.#go(this.mission.station.id, this.mission.scenario.id, 'none'); return; }
       const p = new URLSearchParams();
-      p.set('stacja', this.selected); p.set('scenariusz', root.querySelector('#st-scenario').value); p.set('zaklocenia', root.querySelector('#st-level').value);
+      p.set('stacja', this.mission ? this.mission.station.id : this.selected); p.set('scenariusz', scId); p.set('zaklocenia', root.querySelector('#st-level').value);
       if (!root.querySelector('#st-district-wrap').classList.contains('hidden')) p.set('okreg', root.querySelector('#st-district').value);
       const seed = root.querySelector('#st-seed').value.trim();
       if (seed) p.set('seed', seed);
@@ -176,8 +178,33 @@ export class StartScreen {
     b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>${t('start.tutorial')}${steps ? ` · ${t('start.steps', { n: steps })}` : ''}</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
     this.root.querySelector('#st-station-desc').textContent = m.scenario.description || '';
-    this.root.querySelector('.st-form').classList.add('hidden');
-    this.root.querySelector('#st-go').textContent = t('start.goMission');
+    // wybór zmiany: samouczek (domyślnie) albo pełne zmiany stacji szkoleniowej – po jednej na każde stanowisko
+    // (stacje szkoleniowe nie są na liście „Służba”, więc tu jest do nich wejście)
+    this.root.querySelector('.st-form').classList.remove('hidden');
+    this.root.querySelector('#st-district-wrap').classList.add('hidden');
+    this.root.querySelector('#st-district-desc').textContent = '';
+    const shifts = (m.station.scenarios || []).filter((sc) => !sc.tutorial);
+    this.#scenarioChoice([{ ...m.scenario, name: t('start.missionOption', { name: missionName(m.scenario) }), description: '' }, ...shifts], m.scenario.id, (sc) => {
+      const tut = sc.id === m.scenario.id;
+      this.root.querySelector('#st-go').textContent = t(tut ? 'start.goMission' : 'start.go');
+      this.root.querySelector('#st-seed').closest('label').classList.toggle('hidden', tut);
+    });
+  }
+
+  /** Lista scenariuszy w odprawie: opis wybranego, poziom zakłóceń (wymuszony przez scenariusz – zablokowany). */
+  #scenarioChoice(scs, selected, onChange = () => {}) {
+    const root = this.root;
+    const scSel = root.querySelector('#st-scenario'), lvSel = root.querySelector('#st-level');
+    scSel.innerHTML = scs.map((sc) => `<option value="${sc.id}">${esc(sc.name)}</option>`).join('');
+    scSel.value = scs.some((sc) => sc.id === selected) ? selected : scs[0]?.id;
+    const upd = () => {
+      const sc = scs.find((x) => x.id === scSel.value);
+      root.querySelector('#st-scenario-desc').textContent = sc?.description || '';
+      lvSel.disabled = !!sc?.disruptions;
+      if (sc?.disruptions) lvSel.value = sc.disruptions;
+      if (sc) onChange(sc);
+    };
+    scSel.onchange = upd; upd();
   }
 
   /** Zaznacza posterunek i pokazuje odprawę (briefing) z parametrami zmiany. */
@@ -191,6 +218,7 @@ export class StartScreen {
     b.querySelector('.st-bdiff').innerHTML = difficultyMark(st.difficulty, t('start.difficulty'));
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(st.location || '')}</div><div>${esc(st.traffic || '')}</div>`;
     root.querySelector('.st-form').classList.remove('hidden');
+    root.querySelector('#st-seed').closest('label').classList.remove('hidden');
     root.querySelector('#st-go').textContent = t('start.go');
     const narrow = window.innerWidth < 900;
     root.querySelector('#st-station-desc').textContent = `${st.description || ''} ${t('start.srkInfo', { info: st.srkInfo || getSrk(st.srk).name })}`;
@@ -205,19 +233,9 @@ export class StartScreen {
       };
       dSel.onchange = updD; updD();
     } else { dw.classList.add('hidden'); root.querySelector('#st-district-desc').textContent = ''; }
-    const scSel = root.querySelector('#st-scenario'), lvSel = root.querySelector('#st-level');
     // samouczki są na liście misji u góry – w wyborze scenariusza tylko zmiany
     const scs = (st.scenarios || [{ id: 'zmiana', name: t('start.fullShift') }]).filter((sc) => !sc.tutorial);
-    scSel.innerHTML = scs.map((sc) => `<option value="${sc.id}">${esc(sc.name)}</option>`).join('');
-    if (this.current.scenario && this.current.station === id && scs.some((sc) => sc.id === this.current.scenario)) scSel.value = this.current.scenario;
-    else if (scs[0]) scSel.value = scs[0].id;
-    const upd = () => {
-      const sc = scs.find((x) => x.id === scSel.value);
-      root.querySelector('#st-scenario-desc').textContent = sc?.description || '';
-      lvSel.disabled = !!sc?.disruptions;
-      if (sc?.disruptions) lvSel.value = sc.disruptions;
-    };
-    scSel.onchange = upd; upd();
+    this.#scenarioChoice(scs, this.current.station === id ? this.current.scenario : null);
     // na wąskim ekranie odprawa staje pod wybraną kartą; na szerokim – w swojej kolumnie obok listy
     if (narrow) card.after(this.briefing); else root.querySelector('.st-layout').appendChild(this.briefing);
     if (scroll && narrow) this.briefing.scrollIntoView({ block: 'start', behavior: 'smooth' });

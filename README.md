@@ -91,8 +91,9 @@ Play it: **https://budnix.github.io/SPRK/**
   decision.
 
 ### Stations
-The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny, Brzezina) are used only in the guided missions – they are
-not in the list of stations for a regular shift.
+The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny, Brzezina) are not in the list of stations for a
+regular shift; their full shifts on every workstation (type E, IZH-111, mechanical, computer, EBILock 950, MOR-3) are
+picked in the mission briefing, next to the tutorial.
 
 | Station | Equipment | Difficulty | What you get |
 |---|---|---|---|

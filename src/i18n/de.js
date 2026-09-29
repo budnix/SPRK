@@ -120,6 +120,7 @@ export default {
   'start.seedPh': 'z. B. 42',
   'start.go': 'Schicht beginnen',
   'start.goMission': 'Mission beginnen',
+  'start.missionOption': 'Tutorial – {name}',
   'start.mission': 'Mission {n}: {name}',
   'start.tutorial': 'Tutorial',
   'start.steps': '{n} Schritte',

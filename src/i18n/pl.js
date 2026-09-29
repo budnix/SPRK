@@ -124,6 +124,7 @@ export default {
   'start.seedPh': 'np. 42',
   'start.go': 'Rozpocznij zmianę',
   'start.goMission': 'Rozpocznij misję',
+  'start.missionOption': 'Samouczek – {name}',
   'start.mission': 'Misja {n}: {name}',
   'start.tutorial': 'samouczek',
   'start.steps': '{n} kroków',

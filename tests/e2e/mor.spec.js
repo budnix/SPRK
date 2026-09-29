@@ -96,3 +96,23 @@ test('mysz: przeciągnięcie prawym klawiszem od semafora do celu daje menu prze
   expect(await codes(page)).toEqual(['Pociąg']);
   expect(await page.evaluate(() => window.sim.input.armed.selection.map((r) => r.id))).toEqual(['A', 'D2']);
 });
+
+test('ekran startowy: w odprawie misji wybór zmiany – samouczek albo pełna zmiana stacji na każdym stanowisku, także MOR-3', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'load' });
+  // stacje szkoleniowe nie są na liście „Służba” – wejście do ich zmian jest w odprawie misji
+  await expect(page.locator('.st-card[data-id="szkolna"]')).toHaveCount(0);
+  await page.click('.st-mission[data-scenario="nauka-1"]');
+  const sel = page.locator('#st-scenario');
+  await expect(sel).toHaveValue('nauka-1');
+  await expect(page.locator('#st-go')).toContainText('misję');
+  const options = await sel.locator('option').evaluateAll((o) => o.map((x) => x.value));
+  expect(options).toEqual(['nauka-1', 'zmiana', 'zmiana-e', 'zmiana-izh', 'zmiana-mech', 'zmiana-ebi', 'zmiana-mor']);
+  await sel.selectOption('zmiana-mor');
+  await expect(page.locator('#st-scenario-desc')).toContainText('MOR-1');
+  await expect(page.locator('#st-level')).toBeEnabled();
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=szkolna.*scenariusz=zmiana-mor/);
+  await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
+  await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);
+  expect(await page.evaluate(() => !!window.tutorial?.active)).toBe(false);
+});

@@ -49,10 +49,13 @@ test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', 
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('.st-mission').first()).toContainText('Misja 1');
   await page.click('.st-mission[data-scenario="nauka-1"]');
-  // etap 2: odprawa misji po prawej – bez parametrów zmiany, z liczbą kroków i przyciskiem startu
+  // etap 2: odprawa misji po prawej – z liczbą kroków i przyciskiem startu; domyślnie wybrany samouczek (bez zakłóceń
+  // i ziarna), obok pełne zmiany stacji szkoleniowej na innych stanowiskach
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 1');
   await expect(page.locator('#st-briefing .st-bdiff')).toContainText('kroków');
-  await expect(page.locator('.st-form')).toBeHidden();
+  await expect(page.locator('#st-scenario')).toHaveValue('nauka-1');
+  await expect(page.locator('#st-level')).toBeDisabled();
+  await expect(page.locator('#st-seed')).toBeHidden();
   await expect(page.locator('#st-go')).toHaveText('Rozpocznij misję');
   await page.click('#st-go');
   await page.waitForURL(/stacja=szkolna.*scenariusz=nauka-1/);
