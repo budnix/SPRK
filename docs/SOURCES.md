@@ -19,7 +19,9 @@ Materiały:
 * Chyba A., „Symulator komputerowy przekaźnikowego systemu (typu E) sterowania ruchem kolejowym…”, Zeszyty SITK RP nr 158 (2011)
 
 Kolory lampek na kostkach (za opisami pulpitów typu E): żółte – położenie zwrotnicy,
-białe – utwierdzenie przebiegu, czerwone – zajętość odcinka.
+białe – utwierdzenie przebiegu, czerwone – zajętość odcinka. Przyjęte (uproszczenie gry, na wszystkich stanowiskach):
+w odcinku zwrotnicowym zajętość i utwierdzenie świecą tylko na drodze, w którą leżą zwrotnice – łącznica (albo tor
+za ramieniem), w którą zwrotnica nie jest ustawiona, zostaje ciemna, żeby nie wyglądała na drogę jazdy.
 
 Szybkość pociągu w okręgu zwrotnicowym (Ie-1 §3, wszystkie stanowiska): S10–S13 i Sr3 zezwalają na jazdę do 40 km/h
 „począwszy od semafora do końca okręgu zwrotnicowego osłanianego tym semaforem”. W grze ograniczenie obowiązuje od

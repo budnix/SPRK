@@ -761,6 +761,11 @@ export class Interlocking {
 
   refreshSignals() { this.#refreshSignals(); }
 
+  /** Kostka leży na drodze, w którą są ustawione zwrotnice jej odcinka (`Topology.branchGates`) – dla widoków. */
+  onSetBranch(tile) {
+    return (this.topo.branchGates.get(tile._key) || []).every((g) => this.points.get(g.id)?.position === g.position);
+  }
+
   #refreshSignals() {
     // Dwa przebiegi, aby uwzględnić zależność od następnego semafora
     for (let i = 0; i < 2; i++) {

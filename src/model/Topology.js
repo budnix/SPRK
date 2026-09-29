@@ -49,6 +49,31 @@ export class Topology {
     }
     this.#validateConnections();
     this.#assignTileLengths();
+    this.branchGates = this.#pointBranches();
+  }
+
+  /**
+   * Kostki odcinka zwrotnicowego za ramieniem zwrotnicy (łącznica, tor za iglicami): klucz kostki → lista
+   * { id, position } zwrotnic, które muszą leżeć w tym położeniu, aby kostka była na drodze jazdy. Kostki przed ostrzem
+   * (i poza odcinkami zwrotnic) nie mają wpisu. Widoki świecą zajętość i utwierdzenie odcinka tylko na drodze, w którą
+   * zwrotnice są ustawione – łącznica, w którą zwrotnica nie jest ustawiona, zostaje ciemna.
+   */
+  #pointBranches() {
+    const gates = new Map();
+    for (const pt of this.points.values()) {
+      for (const [port, position] of [[pt.straight, '+'], [pt.diverge, '-']]) {
+        let nb = this.neighbour(pt, port);
+        const seen = new Set();
+        while (nb && nb.tile.type === 'track' && nb.tile.section === pt.section && !seen.has(nb.tile._key)) {
+          seen.add(nb.tile._key);
+          if (!gates.has(nb.tile._key)) gates.set(nb.tile._key, []);
+          gates.get(nb.tile._key).push({ id: pt.id, position });
+          const out = nb.tile._def.exits(nb.tile, nb.inPort)[0];
+          nb = out ? this.neighbour(nb.tile, out) : null;
+        }
+      }
+    }
+    return gates;
   }
 
   tileAt(x, y) {

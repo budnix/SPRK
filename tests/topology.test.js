@@ -40,3 +40,28 @@ test('wykolejnica chroni tor główny i jest zdejmowana dla jazdy na tor 3', () 
   assert.deepEqual(sim.ilk.routes.get('D2-E').derailers.protect, [{ id: 'Wk1', position: 'on' }]);
   assert.deepEqual(sim.ilk.routes.get('D2-kT3m').derailers.onRoute, [{ id: 'Wk1', position: 'off' }]);
 });
+
+/* Łącznica w odcinku zwrotnicowym świeci tylko wtedy, gdy zwrotnica jest w nią ustawiona (Olszyny: Iz1 obejmuje
+   zwrotnicę 1, tor przed ostrzem i łącznicę do toru 2). */
+test('odcinek zwrotnicowy: kostki za ramieniem zwrotnicy mają warunek położenia, tor przed ostrzem – nie', async () => {
+  const { default: olszyny } = await import('../src/stations/olszyny.js');
+  const { Simulation } = await import('../src/model/Simulation.js');
+  const sim = new Simulation(olszyny, { scenario: 'zmiana-e', disruptions: 'none' });
+  const g = (x, y) => sim.ilk.topo.branchGates.get(`${x},${y}`) || [];
+  assert.deepEqual(g(4, 4), [], 'przed ostrzem Zw1');
+  assert.deepEqual(g(6, 5), [{ id: 'Zw1', position: '-' }]);
+  assert.deepEqual(g(7, 6), [{ id: 'Zw1', position: '-' }]);
+  assert.deepEqual(g(23, 4), [{ id: 'Zw2', position: '+' }], 'Iz2: tor za ramieniem prostym');
+  assert.deepEqual(g(22, 6), [{ id: 'Zw2', position: '-' }]);
+  assert.deepEqual(g(8, 8), [{ id: 'Zw3', position: '-' }]);
+  assert.deepEqual(g(12, 4), [], 'kostki poza odcinkami zwrotnic');
+  // każda kostka z warunkiem należy do odcinka zwrotnicy z warunku
+  for (const [k, gates] of sim.ilk.topo.branchGates) for (const x of gates) assert.equal(sim.ilk.topo.tiles.get(k).section, sim.ilk.topo.points.get(x.id).section, k);
+  const tile = sim.ilk.topo.tiles.get('6,5');
+  assert.equal(sim.ilk.onSetBranch(tile), false, 'Zw1 w „+”: łącznica poza drogą');
+  sim.execute({ type: 'point', id: 'Zw1' });
+  for (let i = 0; i < 20; i++) sim.step(0.5);
+  assert.equal(sim.ilk.points.get('Zw1').position, '-');
+  assert.equal(sim.ilk.onSetBranch(tile), true);
+  assert.equal(sim.ilk.onSetBranch(sim.ilk.topo.tiles.get('4,4')), true, 'przed ostrzem – zawsze');
+});

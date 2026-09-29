@@ -389,3 +389,22 @@ test('nazwy szlaków na pulpitach nie są zakryte przez sąsiednią kostkę (dł
   }
   expect(covered).toEqual([]);
 });
+
+test('zajęty odcinek zwrotnicowy świeci tylko na drodze, w którą leży zwrotnica – łącznica obok ciemna (wszystkie stanowiska)', async ({ page }) => {
+  // Olszyny: Iz1 = tor przed ostrzem Zw1 (4,4), zwrotnica 1 i łącznica do toru 2 (6,5), (7,6)
+  for (const scenariusz of ['zmiana', 'zmiana-e', 'zmiana-izh', 'zmiana-lcs']) {
+    await openShift(page, 'olszyny', { params: { scenariusz } });
+    const lit = () => page.evaluate(() => {
+      const refs = window.desk.sectionRefs.get('Iz1');
+      const on = (k) => refs.filter((r) => (r.tile ?? r._tile)?._key === k).map((r) => (r.el ?? r).getAttribute('class')).join(' ');
+      return { toe: on('4,4'), link: on('6,5') };
+    });
+    await page.evaluate(() => { window.sim.ilk.updateOccupancy(new Set(['Iz1'])); });
+    const straight = await lit();
+    expect(straight.toe, scenariusz).toMatch(/lamp-red|occ/);
+    expect(straight.link, scenariusz).not.toMatch(/lamp-red|occ/);
+    // zwrotnica przełożona na łącznicę – łącznica świeci zajętość
+    await page.evaluate(() => { const s = window.sim; s.ilk.updateOccupancy(new Set()); s.ilk.points.get('Zw1').position = '-'; s.ilk.points.get('Zw1').target = '-'; s.bus.emit('point', s.ilk.points.get('Zw1')); s.ilk.updateOccupancy(new Set(['Iz1'])); });
+    expect((await lit()).link, scenariusz).toMatch(/lamp-red|occ/);
+  }
+});

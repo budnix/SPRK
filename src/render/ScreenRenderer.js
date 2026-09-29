@@ -251,6 +251,7 @@ export class ScreenRenderer extends PanelView {
         case 'track': {
           const [a, b] = tile.ports;
           const s = this.#segment(`${this.#leg(tile, a)} ${this.#leg(tile, b)}`);
+          s._tile = tile;
           this.layerTracks.appendChild(s); addSec(tile.section, s);
           if (tile.derailer) {
             const g = this.#sym(cx, cy, 'scr-el derailer', [
@@ -620,7 +621,9 @@ export class ScreenRenderer extends PanelView {
   updateSection(id) {
     const sec = this.ilk.sections.get(id);
     const cls = this.#sectionClass(sec);
-    for (const e of this.sectionRefs.get(id) || []) setSeg(e, cls);
+    // łącznica, w którą zwrotnica nie jest ustawiona, nie pokazuje zajętości ani przebiegu (Topology.branchGates)
+    const gated = cls === 'occ' || cls === 'timed' || cls.startsWith('rt-');
+    for (const e of this.sectionRefs.get(id) || []) setSeg(e, gated && e._tile && !this.ilk.onSetBranch(e._tile) ? 'free' : cls);
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);
     for (const d of this.ilk.derailers.values()) if (d.section === id) this.updateDerailer(d.id);
   }

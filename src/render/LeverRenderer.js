@@ -258,8 +258,9 @@ export class LeverRenderer extends PanelView {
     if (!sec) return;
     const st = sec.occupied ? 'red' : sec.closed ? 'yellow blink' : 'off';
     for (const { el: e, tile } of this.sectionRefs.get(id) || []) {
-      setLamp(e, st);
-      for (const sc of this.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', st !== 'off');
+      const lit = sec.occupied && !this.ilk.onSetBranch(tile) ? 'off' : st; // łącznica poza drogą – ciemna
+      setLamp(e, lit);
+      for (const sc of this.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', lit !== 'off');
     }
     for (const [ex, r] of this.blockRefs) if (r.outSection === id || r.inSection === id) this.updateBlock(ex);
     for (const p of this.ilk.points.values()) if (p.section === id) this.updatePoint(p.id);

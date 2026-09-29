@@ -122,7 +122,7 @@ export class PanelView {
   bindModel() {
     const bus = this.sim.bus;
     bus.on('section', (s) => this.updateSection(s.id));
-    bus.on('point', (p) => this.updatePoint(p.id));
+    bus.on('point', (p) => this.updateSection(p.section)); // odcinek (łącznice) i zwrotnica – updateSection woła updatePoint
     bus.on('derailer', (d) => this.updateDerailer(d.id));
     bus.on('signal', (s) => this.updateSignal(s.id));
     bus.on('route', () => this.refreshAll());

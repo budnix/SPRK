@@ -277,8 +277,10 @@ export function updateSectionLamps(view, id) {
   if (!sec) return;
   const st = sectionLamp(sec);
   for (const { el: e, tile } of view.sectionRefs.get(id) || []) {
-    setLamp(e, st);
-    for (const sc of view.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', st !== 'off');
+    // łącznica, w którą zwrotnica nie jest ustawiona, nie świeci zajętości ani utwierdzenia (Topology.branchGates)
+    const lit = sec.closed && !sec.occupied && !sec.route ? st : view.ilk.onSetBranch(tile) ? st : 'off';
+    setLamp(e, lit);
+    for (const sc of view.tileRefs.get(tile._key)?.screws || []) sc.classList.toggle('lit', lit !== 'off');
   }
   for (const [ex, r] of view.blockRefs) if (r.outSection === id || r.inSection === id) view.updateBlock(ex);
   for (const p of view.ilk.points.values()) if (p.section === id) view.updatePoint(p.id);
