@@ -27,10 +27,10 @@ test('rozkaz „S”: odmowa, gdy zwrotnice nie są zamknięte; po Zz rozkaz wyd
   run(sim, 240, () => { vmax = Math.max(vmax, e.train.v * 3.6); if (e.train.occupiedSections().has('T1')) passed = true; });
   assert.ok(passed, 'pociąg nie minął semafora A');
   assert.ok(vmax <= 21, `prędkość ${vmax.toFixed(1)} km/h`);
-  // staje przed D1 (Stój) – rozkaz dotyczył tylko A
+  // czeka przed D1 (Stój) – rozkaz dotyczył tylko A; po postoju przy peronie nie podjeżdża pod semafor na „Stój”
   run(sim, 120);
   assert.equal(e.train.v, 0);
-  assert.equal(e.train.stoppedAt?.signal, 'D1');
+  assert.equal(e.train.nextSignal(), 'D1');
   assert.equal(sim.traffic.issueOrder({ nr: 5310, signal: 'A' }).ok, false, 'rozkaz na inny semafor niż ten, przed którym stoi');
 });
 

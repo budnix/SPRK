@@ -50,6 +50,16 @@ na Ms2 (M2) (Ie-1 §3 ust. 17–18). Przebieg manewrowy przez drogę ochronną p
 * Ms2 gaśnie, gdy zwolni się odcinek przed sygnalizatorem (cały skład za nim); na nastawni mechanicznej tarczę
   przestawia dźwignia jak dotąd.
 
+Odjazd i hamowanie (wszystkie stanowiska). Ze źródeł: pociąg rusza z peronu na sygnał zezwalający (Ie-1 §4 ust. 13
+pkt 1); droga hamowania pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4
+i zał. 1). Przyjęte (uproszczenia gry):
+
+* pociąg po postoju zostaje przy peronie, dopóki semafor tuż przed nim (do 60 m) wskazuje „Stój”; odjazd w dzienniku
+  i punktualność liczy się od faktycznego ruszenia, więc przetrzymanie to późny odjazd;
+* opóźnienie pociągu nie przekracza hamowania nagłego (`EMERGENCY_BRAKE` = 1,3 m/s²); sygnał „Stój” podany bliżej
+  niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary przy
+  usterce semafora), hamowanie nagłe do zatrzymania; dalej pociąg jedzie dopiero na nowe zezwolenie.
+
 Sygnał zastępczy i rozkaz „S” (wszystkie stanowiska). Ze źródeł: blokada liniowa dotyczy toru szlakowego, na który
 pociąg wyjeżdża (Ie-1 §4 ust. 13 pkt 18); przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza, a rozkaz „S”
 daje się, gdy Sz podać nie można (Ie-10 §35 ust. 1 pkt 1–2 i 6; Ir-1 §58 ust. 4); przy fałszywym wskazaniu zajętości

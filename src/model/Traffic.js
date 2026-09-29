@@ -208,13 +208,13 @@ export class Traffic {
     const train = new Train(e, this.ilk.topo, this.ilk, {
       lineSpeed: this.station.exits[e.to]?.lineSpeed ?? 100,
       onExit: (exitId, tr) => this.#onExit(e, exitId, tr),
-      onEvent: (ev, tr) => this.#onTrainEvent(e, ev, tr),
+      onEvent: (ev, tr, arg) => this.#onTrainEvent(e, ev, tr, arg),
       blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
     });
     return train;
   }
 
-  #onTrainEvent(e, ev, tr) {
+  #onTrainEvent(e, ev, tr, arg) {
     const t = this.time;
     switch (ev) {
       case 'enter':
@@ -250,6 +250,14 @@ export class Traffic {
         const late = Math.round((t - earliest) / 60);
         if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
         else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
+        break;
+      }
+      case 'spad': {
+        // pociąg przejechał semafor „Stój” – sygnał zmieniony bliżej niż droga hamowania (odwołanie, SSS; usterka semafora)
+        const sig = this.ilk.signals.get(arg);
+        this.bus.emit('log', { time: t, level: 'alarm', msg: `Pociąg ${e.nr} przejechał semafor ${arg} wskazujący „Stój” – hamowanie nagłe` });
+        this.bus.emit('alarm', { type: 'spad', nr: e.nr, signal: arg });
+        if (!sig?.failed) this.bus.emit('score', { time: t, code: 'spad', points: -20, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
         break;
       }
       case 'order-used':

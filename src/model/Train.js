@@ -3,6 +3,8 @@ import { Interlocking } from './Interlocking.js';
 import { OPPOSITE } from '../tiles/directions.js';
 
 const KMH = 1 / 3.6;
+/** Opóźnienie hamowania nagłego (m/s²) – większego pociąg nie osiąga (Dz.U. 2015 poz. 360 zał. 1: setki metrów drogi). */
+export const EMERGENCY_BRAKE = 1.3;
 
 /**
  * Pociąg poruszający się po topologii toru według rzeczywistych położeń zwrotnic
@@ -51,11 +53,12 @@ export class Train {
     this.authority = false;
     this.exitAuth = null;        // wyjazd na szlak: id wyjazdu z przebiegu minionego semafora, '*' po Sz / rozkazie
     this.shuntRoute = null;      // przebieg manewrowy, na którego sygnał Ms2 skład minął sygnalizator
+    this.spad = null;            // przejechany semafor „Stój” – hamowanie nagłe do zatrzymania
   }
 
   /** Utrata zezwolenia (zmiana czoła, zmiana rodzaju jazdy) – dalsza jazda dopiero na nowy sygnał. */
   clearAuthority() {
-    this.authority = false; this.exitAuth = null; this.shuntRoute = null;
+    this.authority = false; this.exitAuth = null; this.shuntRoute = null; this.spad = null;
   }
 
   /** Czy pociąg ma niewykorzystany rozkaz pisemny na przejazd obok sygnalizatora. */
@@ -63,9 +66,9 @@ export class Train {
     return this.orders.some((o) => o.signal === signalId && !o.used);
   }
 
-  /** Ograniczenia przed czołem (do diagnostyki). */
-  constraintsAhead(maxDist = 1500) {
-    return this.#lookahead(maxDist);
+  /** Ograniczenia przed czołem (do diagnostyki); `listSignals` – także mijane sygnalizatory z sygnałem zezwalającym. */
+  constraintsAhead(maxDist = 1500, listSignals = false) {
+    return this.#lookahead(maxDist, listSignals);
   }
 
   /** Identyfikator najbliższego sygnalizatora przed czołem (ważnego dla tej jazdy) lub null. */
@@ -264,7 +267,8 @@ export class Train {
     if (this.def.terminates && this.hasStopped && this.mode === 'train') return; // zakończył bieg – czeka na manewry
     if (this.holdUntil && this.mode === 'train' && this.v === 0 && time < this.holdUntil) return; // pociąg gotowy, czeka na czas odjazdu
     if (this.state === 'dwell') {
-      if (time >= this.dwellUntil && this.#canDepart(time)) {
+      // odjazd z peronu dopiero na sygnał zezwalający (Sz, rozkaz) – nie podjazd pod semafor na „Stój”
+      if (time >= this.dwellUntil && this.#canDepart(time) && this.#clearToLeave()) {
         this.state = 'moving'; this.departedAt = time;
         this.onEvent('depart', this);
       } else return;
@@ -277,26 +281,40 @@ export class Train {
     if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
     if (this.mode === 'train' && this.v === 0 && !this.authority && !this.#mayStart()) return; // pociąg bez zezwolenia – czeka na sygnał
     let stopC = null;
+    // hamowanie służbowe; gdy ograniczenie pojawi się bliżej niż droga hamowania (sygnał odwołany, usterka) – mocniej,
+    // najwyżej hamowaniem nagłym: pociąg nie staje „w miejscu”
+    let decel = this.brake;
     for (const c of constraints) {
       const v = Math.sqrt(c.speed * c.speed + 2 * this.brake * Math.max(0, c.dist));
       if (c.speed === 0 && c.dist <= 0.5 && (!stopC || c.dist < stopC.dist)) stopC = c;
       if (v < allowed) allowed = v;
       if (c.speed === 0 && (!stopC || c.dist < stopC.dist)) stopC = c;
+      if (c.speed < this.v) decel = Math.max(decel, (this.v * this.v - c.speed * c.speed) / (2 * Math.max(0.5, c.dist)));
     }
+    if (this.spad) { allowed = 0; decel = EMERGENCY_BRAKE; }
+    decel = Math.min(decel, Math.max(this.brake, EMERGENCY_BRAKE));
+    const v0 = this.v;
     if (this.v < allowed) this.v = Math.min(allowed, this.v + this.accel * dt);
-    else this.v = Math.max(allowed, this.v - this.brake * dt);
+    else this.v = Math.max(allowed, this.v - decel * dt);
     // pociąg utworzony ze składu (holdUntil) rusza bez postoju handlowego – odjazd rejestruje się przy pierwszym ruchu
     if (this.holdUntil && this.mode === 'train' && !this.departedAt && this.v > 0) { this.departedAt = time; this.onEvent('depart', this); }
     if (this.v < 0.05 && allowed < 0.1) this.v = 0;
 
     let move = this.v * dt;
-    if (stopC && stopC.dist >= 0 && move >= stopC.dist - 0.01 && stopC.dist < 3) {
+    // dojazd do miejsca zatrzymania (ostatnie metry, mała prędkość); szybszy pociąg go przejeżdża
+    if (stopC && stopC.dist >= 0 && move >= stopC.dist - 0.01 && stopC.dist < 3 && this.v <= 4) {
       move = Math.max(0, stopC.dist - 0.01);
-      this.v = 0;
+      this.v = Math.min(this.v, Math.max(0, v0 - EMERGENCY_BRAKE * dt)); // stoi w miejscu zatrzymania, prędkość wygasa
+      if (this.v < 0.05) this.v = 0;
     }
     if (move > 0) this.#advance(move);
 
-    if (this.v === 0) {
+    if (this.v === 0 && this.spad) {
+      // zatrzymanie po przejechaniu „Stój” – dalej tylko na nowe zezwolenie (sygnał następnego semafora, rozkaz)
+      this.state = 'stopped'; this.stoppedAt = { kind: 'spad', signal: this.spad, reason: `za semaforem ${this.spad}` };
+      this.spad = null;
+      this.onEvent('stop', this);
+    } else if (this.v === 0) {
       if (this.state === 'moving' && stopC) {
         this.state = 'stopped';
         this.stoppedAt = stopC;
@@ -412,6 +430,12 @@ export class Train {
     return null;
   }
 
+  /** Przed czołem nie stoi tuż semafor (albo granica stacji) nakazujący zatrzymanie – pociąg może ruszyć z peronu. */
+  #clearToLeave() {
+    const stop = this.#lookahead(200).find((c) => c.speed === 0);
+    return !(stop && stop.kind === 'signal' && stop.dist < 60);
+  }
+
   #canDepart(time) {
     if (this.def.dep == null) return true;
     return time >= this.def.depTime;
@@ -431,7 +455,11 @@ export class Train {
           if (this.mode === 'train' && sig.kind !== 'semafor') continue;
           const order = this.orders.find((o) => o.signal === sig.id && !o.used);
           if (order && !Interlocking.isTrainProceed(sig.aspect)) { order.used = true; this.onEvent('order-used', this, sig.id); }
-          if (this.mode === 'train') {
+          if (this.mode === 'train' && !order && !Interlocking.isTrainProceed(sig.aspect)) {
+            // przejechanie semafora wskazującego „Stój” (sygnał zmieniony bliżej niż droga hamowania) – hamowanie nagłe
+            this.authority = false; this.exitAuth = null; this.spad = sig.id;
+            this.onEvent('spad', this, sig.id);
+          } else if (this.mode === 'train') {
             // zezwolenie od minionego semafora: przebieg (i ewentualny wyjazd na szlak), Sz albo rozkaz – na dowolny wyjazd
             const act = sig.route && this.ilk.active.get(sig.route);
             this.authority = true;
