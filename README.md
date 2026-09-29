@@ -36,17 +36,23 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Type E relay desk** – cube tiles, two-button operation (press the first button, then the second within 6 s),
   pull a button to put a signal to stop, group buttons Zw / Zz / Pz / dPz / Sz with sealed counters, Eap line-block
   panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow).
-* **Computer workstation** – black schematic per Ie-104: grey / green / yellow / red / purple sections, signals drawn
-  on the track line as chevrons pointing in the running direction, track numbers in frames on the line, named
-  platforms, point fields with "+" at the normal leg, pink individual locks, blue selection frames, red train-number
-  boxes. Commands from the command bar (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZWOLNIENIE PRZEBIEGU, dPz, ZWROTNICA,
-  Zz, Sz, STOP, OPS) or from the element menu; special commands are confirmed with WYKONAJ and registered.
+* **Computer workstation** – black schematic per Ie-104.1: grey / green / yellow / red / pink sections (a closed track
+  is a double line in its state colour), signals on the track line – a filled triangle (with shunting aspects plus an
+  open arrowhead, a shunting signal only an open arrowhead with a turquoise number), plain track numbers on the line,
+  named platforms, point Z fields ("+" at the normal leg, empty while moving, white / red flashing without detection /
+  after a run-through), derailers as Z fields, route ends as a rectangle (train) or half circle (shunting), line-block
+  arrows grey / yellow / red, one synchronous 1 Hz blink, train numbers on the track axis. Commands per Ie-104.1 §12
+  from the command bar (PRZEBIEG POCIĄGOWY, PRZEBIEG MANEWROWY, ZCZ, ZD – ZDP / ZDM, Plus / Minus, Zmk / oZmk, SZ,
+  Stój, Stop / oStop, OPS) or from the element menu; special commands (SZ, ZDP, dPo, dKo) mark the element orange (the
+  picture turns grey before SZ), can be confirmed with WYKONAJ only after 5 s, cancel themselves after 60 s and block
+  other commands meanwhile.
 * Each station declares its real interlocking type; stations that exist in both forms offer a shift for each
   workstation (pick the scenario on the start screen). Symbol size (100–150 %) and track spacing are adjustable.
 
 * **Type IZH-111 relay desk** – a dark desk (lamps are off in the normal state): one address button per element and
   a separate group of order buttons (P, M, +, −, STOP, Zw, Zcz, Sz). A route is the start address, the end address and
-  an order; Zcz releases a train route after 120 s. Available as a shift on the training station.
+  an order; Zcz releases a train route after 120 s; STOP with a signal address closes the signal (red flashing lamp)
+  until Zw cancels it. Available as a shift on the training station.
 * **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
   and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
   route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
@@ -55,7 +61,8 @@ Play it: **https://budnix.github.io/SPRK/**
   Played in mission 4 at Olszyny.
 * **EBILock 950 workstation (EBIScreen)** – the same Ie-104 picture, operated the EBIScreen way: right click on an
   object (tablet: hold) opens its command menu, left click on the start signal and right click on the end set up a
-  route; every command lands in a text command line (`POC A D1`, `ZWP Zw3`, `SES A`, `ITS T2`…) and is sent only with
+  route; every command lands in a text command line (`POC A D1`, `ZWP 3`, `SES A`, `ITS 2` – objects named as on the
+  picture; station identifiers work too) and is sent only with
   *Execute* (or Enter, F12 jumps to the line). Alternative ways are chosen with an intermediate point (light blue frame).
   The substitute signal is a two-part special command (SZI marks the signal, SZW 5–30 s later). An events and alarms
   window lists events and alarms (active / cleared, acknowledged / not). Played in mission 5 at Brzezina and available as
@@ -185,11 +192,11 @@ Guided mission: `?stacja=szkolna&scenariusz=nauka-1`.
 |---|---|---|
 | Train route | green button of the start signal → green button of the end (signal or line exit) | PRZEBIEG POCIĄGOWY → start signal → end signal or line arrow |
 | Shunting route | white button of the start → white button of the end | PRZEBIEG MANEWROWY → start → end |
-| Signal to stop | pull the signal button | STOP → signal |
-| Cancel a route | `Pz` + signal button | ZWOLNIENIE PRZEBIEGU → signal |
-| Emergency release | `dPz` + signal button (counted) | dPz → signal → WYKONAJ |
-| Substitute signal | `Sz` + green signal button (counted) | Sz → signal → WYKONAJ |
-| Point | `Zw` + point button; lock with `Zz` | ZWROTNICA → point; Zz → point → WYKONAJ |
+| Signal to stop | pull the signal button | Stój → signal (Stop / oStop – signal stopping) |
+| Cancel a route | `Pz` + signal button | ZCZ → signal |
+| Emergency release | `dPz` + signal button (counted) | ZD → signal (ZDP: → WYKONAJ after 5 s, counted; ZDM: ordinary) |
+| Substitute signal | `Sz` + green signal button (counted) | SZ → signal → WYKONAJ after 5 s |
+| Point | `Zw` + point button; lock with `Zz` | Plus / Minus → point; Zmk / oZmk → point |
 | Line block | tiles at the end of the line track: arrows on the track, `Wbl` request, `Poz` grant, `Ko` confirm arrival, `Zk` on automatic block | click the line arrow: Wbl / Poz / Ko, or Zk on automatic block |
 
 On the EBILock 950 workstation every action is a typed (or menu-picked) command sent with *Execute*: `POC` / `MAN`

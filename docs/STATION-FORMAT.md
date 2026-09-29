@@ -38,7 +38,7 @@ port `SE` łączy się z `(6,5)` posiadającą port `NW`.
 | `buffer` | torowa | `port`, `section`, `endButton?` | kozioł oporowy |
 | `point` | torowa | `id`, `toe`, `straight`, `diverge`, `section`, `label?`, `speedDiverging?` | zwrotnica: ostrze, tor zasadniczy (+), tor zwrotny (−) |
 | `crossing` | torowa | `pairs:[[a,b],[c,d]]`, `section` | skrzyżowanie torów |
-| `signal` | sygnał | `id`, `kind:'semafor'|'tm'`, `at:{x,y}`, `dir:'E'|'W'`, `shunting?`, `substitute?`, `overlap?`, `entry?` | powtarzacz sygnalizatora z przyciskami; stoi na granicy wyjścia z kostki `at` w kierunku `dir`; `entry` – semafor wjazdowy (w nastawni mechanicznej z tarczą ostrzegawczą kształtową) |
+| `signal` | sygnał | `id`, `kind:'semafor'|'tm'`, `at:{x,y}`, `dir:'E'|'W'`, `shunting?`, `substitute?`, `overlap?`, `entry?` | powtarzacz sygnalizatora z przyciskami; stoi na granicy wyjścia z kostki `at` w kierunku `dir`; `entry` – semafor wjazdowy (w nastawni mechanicznej z tarczą ostrzegawczą kształtową); na monitorze (Ie-104.1 §8 pkt 4): semafor – pełny trójkąt, z `shunting` – z otwartym grotem, tarcza (`tm`) – otwarty grot z numerem bez „Tm”, `entry` będący końcem przebiegu wyjazdowego – z małym trójkątem przeciwnym |
 | `button` | sterownicza | `id`, `label`, `role`, `color?`, `counter?` | **przestarzała w definicji stacji** – przyciski grupowe rysuje stanowisko (niżej „Przyciski stanowiska”); stary plik z tymi kostkami działa i dostaje ostrzeżenie walidacji |
 | `label` | opis | `text`, `size?`, `span?` | napis; na monitorze z opisu „tor N · …” zostaje tylko reszta (numery torów są rysowane w ramkach na linii toru, perony na prostokącie) |
 | `blank` | – | – | pusta kostka (uzupełniana automatycznie) |

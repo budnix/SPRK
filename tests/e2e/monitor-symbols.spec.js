@@ -90,6 +90,7 @@ test('miganie synchroniczne 1 Hz na całym obrazie: bez osobnych animacji, wspó
   await page.evaluate(() => window.sim.execute({ type: 'substitute', signal: 'A' }));
   const anim = await sig(page, 'A').locator('.sig-body path').first().evaluate((p) => getComputedStyle(p).animationName);
   expect(anim).toBe('none');
-  const phases = await page.evaluate(async () => { const svg = document.querySelector('#desk svg.screen'); const a = svg.classList.contains('ph'); await new Promise((r) => setTimeout(r, 600)); return [a, svg.classList.contains('ph')]; });
-  expect(phases[0]).not.toBe(phases[1]); // faza przełącza się co 0,5 s
+  // faza przełącza się co 0,5 s – czekamy na pierwszą zmianę (stałe odczekanie mogłoby trafić w dwie zmiany)
+  const initial = await page.evaluate(() => document.querySelector('#desk svg.screen').classList.contains('ph'));
+  await page.waitForFunction((a) => document.querySelector('#desk svg.screen').classList.contains('ph') !== a, initial, { timeout: 1500 });
 });

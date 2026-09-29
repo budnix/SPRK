@@ -49,7 +49,7 @@ export class ScreenRenderer extends ScreenBase {
     for (const [id, label, special] of CMDS) {
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = label; b.dataset.cmd = id;
-      b.title = tip({ train: 'przebieg pociągowy', shunt: 'przebieg manewrowy', pz: 'Pz', dpz: 'dPz', zw: 'Zw', zz: 'Zz', sz: 'Sz', stop: 'STOP', sstop: 'STOP', ops: 'OPS' }[id]);
+      b.title = tip({ train: 'przebieg pociągowy', shunt: 'przebieg manewrowy', pz: 'ZCZ', dpz: 'ZD', zw: 'Plus / Minus', zz: 'Zmk', sz: 'Sz', stop: 'STOP', sstop: 'STOP', ops: 'OPS' }[id]);
       if (special) b.classList.add('special');
       b.addEventListener('click', () => this.#setMode(id === 'ops' ? null : id, id === 'ops'));
       bar.appendChild(b); this.cmdButtons.set(id, b);

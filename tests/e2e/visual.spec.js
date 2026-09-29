@@ -6,6 +6,8 @@ import { openShift } from './helpers.js';
    o piksel między środowiskami, a porównanie obrazów o różnych wymiarach zawsze pada. */
 
 async function shot(page, selector, width, height) {
+  // miganie monitora to przełączana klasa (wspólna faza, Ie-104.1 §4 ust. 17) – zatrzymana w fazie jasnej przed zrzutem
+  await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); });
   const r = await page.locator(selector).boundingBox();
   return page.screenshot({ clip: { x: Math.round(r.x), y: Math.round(r.y), width, height } });
 }
