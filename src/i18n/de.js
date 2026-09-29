@@ -24,6 +24,25 @@ export default {
       <p>Dies ist ein <b>Dunkelpult</b>: im Grundzustand sind die Lampen aus. Ein dunkler Signalmelder bedeutet Halt. Die Weichenschlitze leuchten, wenn die Weichenadresse gewählt ist, wenn die Weiche gesperrt ist und wenn der Abschnitt festgelegt (weiß) oder besetzt (rot) ist. Der Streckenblock wird mit den Tasten auf den Feldern am Gleisende bedient.</p>`,
   'hint.lever': 'Weichenhebel → Fahrstraßenhebel → Fahrstraßenblock → Signalhebel · nach der Fahrt: Signalhebel zurück auf Halt, Fahrstraßenhebel zurück',
   'start.srkMech': 'mechanisch · Hebelbank',
+  'start.srkEbi': 'EBILock 950 · Befehlszeile',
+  'hint.ebi': 'rechte Maustaste (Tablet: halten) = Objektmenü · Fahrstraße: links auf Start, rechts auf Ziel · Befehl → Ausführen · F12 = Befehlszeile',
+  'arm.ebi.route': 'Fahrstraße {path} – POC / MAN im Menü wählen (rechte Taste auf dem Ziel) und Ausführen drücken',
+  'arm.ebi.start': 'Fahrstraßenstart {id} – rechte Taste (Tablet: halten) auf dem Ziel',
+  'arm.ebi.via': 'Mehrere Wege {path} – Zwischenelement wählen (hellblauer Rahmen) oder Befehl für den Regelweg',
+  'arm.ebi.object': 'Objekt {id} – Befehl im Menü wählen, dann Ausführen',
+  'ebi.line': 'Befehl',
+  'ebi.placeholder': 'z. B. POC A D1 · F12',
+  'ebi.exec': 'Ausführen',
+  'ebi.clear': 'Löschen',
+  'ebi.log': 'Ereignisse und Alarme',
+  'ebi.closeLog': 'Fenster Ereignisse und Alarme schließen',
+  'ebi.events': 'Ereignisse',
+  'ebi.alarms': 'Alarme',
+  'ebi.ack': 'Quittieren',
+  'ebi.ackAll': 'Alle quittieren',
+  'ebi.noAlarms': 'Keine Alarme',
+  'ebi.pressExec': 'Ausführen drücken',
+  'ebi.marked': '{cmd} – Objekt markiert; Ausführungsbefehl nach 5–30 s',
   'help.lever': `<h2>Bedienung des mechanischen Stellwerks</h2>
       <p>Unter dem Gleisbild liegt die <b>Hebelbank</b>: oben das Blockwerk und die <b>Fahrstraßenhebel</b>, unten die nummerierten <b>Stellhebel</b>. Blaue Hebel stellen Weichen und Gleissperren, rote stellen ein Hauptsignal auf Fahrt, blau-rote ein Rangiersignal. Nach links geneigter Hebel ist in Grundstellung, nach rechts geneigt umgelegt. Markierungen neben dem Hebelbock zeigen die Stellungen – die aktuelle leuchtet: bei Weichen „+“ (links) und „−“ (rechts), bei der Gleissperre „nał.“ (aufgelegt) und „zdj.“ (abgelegt), beim Signal ein kleiner Flügel waagerecht (Halt) und schräg nach oben (Fahrt), beim Rangiersignal die Scheibe senkrecht (M1) und waagerecht (M2). Eine dunkle Leiste unter dem Hebel heißt: verschlossen (z. B. durch einen Fahrstraßenhebel).</p>
       <p><b>Formsignale</b> im Gleisbild: Flügel waagerecht – <b>Sr1</b> Halt, schräg nach oben – <b>Sr2</b> Fahrt, zwei Flügel schräg – <b>Sr3</b> (bis 40 km/h, Fahrt in den abzweigenden Strang). Am Einfahrsignal steht die Vorsignalscheibe: senkrecht – das Signal zeigt Halt, waagerecht – Fahrt; schräger Pfeil – Sr3. Rangierscheibe: blau und senkrecht – M1 (Rangieren verboten), waagerecht gedreht – M2. Eine Weiche zeigt im Gleisbild den gestellten Strang gedämpft gelb; im anderen Strang ist eine Lücke.</p>
@@ -351,6 +370,11 @@ export default {
   'help.desk': `<h2>Bedienung des Drucktastenpults (Technik Typ E)</h2>
       <p><b>Drücken</b> einer Taste – Klick / Tippen. <b>Ziehen</b> – gedrückt halten (0,5 s) oder rechte Maustaste.
       Zweitastenbedienung: erste Taste drücken, innerhalb von 6 s die zweite (die „vorgewählte“ Taste leuchtet).</p>`,
+  'help.ebi': `<h2>Bedienung des Arbeitsplatzes EBILock 950 (EBIScreen)</h2>
+      <p>Das Bild ist wie auf anderen Rechnerarbeitsplätzen (Ie-104). Jeder Befehl kommt in die <b>Befehlszeile</b> über dem Gleisbild und erst <b>Ausführen</b> (oder Enter) sendet ihn. <b>F12</b> springt in die Befehlszeile – man kann tippen: Befehlsname, dann Objektnamen, z. B. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Löschen</b>, Esc oder ein Klick auf eine leere Stelle hebt die Auswahl auf.</p>
+      <p><b>Objekt</b>: rechte Maustaste (Tablet: Finger halten) – grüner pulsierender Rahmen und das Befehlsmenü; Überfahren erklärt den Befehl, Klick schreibt ihn in die Zeile. <b>Fahrstraße</b>: linke Taste auf dem Startsignal, rechte auf dem Ziel (Signal oder Dreieck am Gleisende), dann <b>POC</b> (Zug) oder <b>MAN</b> (Rangieren) im Menü. Gibt es zwei Wege, haben die wählbaren Weichen einen hellblauen Rahmen – ein Rechtsklick auf eine wählt den Umweg.</p>
+      <p>Befehle: Gleis – <b>ITS</b> / <b>ITO</b> (sperren / freigeben; Rechtsklick auf das Gleis); Weiche – <b>ZWP</b> / <b>ZWM</b> (Lage + / −), <b>ZWS</b> / <b>ZWO</b> (sperren / entsperren); Signal – <b>SES</b> / <b>SEO</b> (Halt-Sperre), <b>PZW</b> (Fahrstraße auflösen), <b>KZW</b> (Zeitauflösung abbrechen); Fahrstraße – <b>POC</b>, <b>MAN</b>, <b>PZA</b> (Hilfsauflösung, Zähler); Bahnhof (Name im Gleisbild) – <b>SSS</b> / <b>SSO</b>, <b>SZO</b>; Strecke (Dreieck an der Ausfahrt) – <b>WBL</b>, <b>POZ</b>, <b>KO</b>, <b>DPO</b>, <b>DKO</b>.</p>
+      <p>Das <b>Ersatzsignal</b> ist ein Sonderbefehl: <b>SZI</b> markiert das Signal rot, <b>SZW</b> sendet man nach der Prüfung – 5 bis 30 s nach SZI. Die Taste <b>Ereignisse und Alarme</b> öffnet ein Fenster: Ereignisse oben, Alarme unten (rotes Quadrat – aktiv, grün – behoben, blinkend – nicht quittiert); Alarm wählen und <b>Quittieren</b> oder <b>Alle quittieren</b>.</p>`,
   'help.screen': `<h2>Bedienung des Rechnerarbeitsplatzes (Darstellung nach Ie-104)</h2>
       <p>Gleisabschnitte: <span class="sw g"></span> grau – frei, <span class="sw grn"></span> grün – in einer Zugstraße verschlossen,
       <span class="sw y"></span> gelb – in einer Rangierstraße, <span class="sw r"></span> rot – besetzt, <span class="sw v"></span> violett – Zeitauflösung,

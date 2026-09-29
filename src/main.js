@@ -63,6 +63,7 @@ sim.bus.on('shift-end', () => report.show());
 const handlers = {
   onPress: (ref) => sim.press(ref), onPull: (ref) => sim.pull(ref), onCompound: (ref) => sim.pressCompound(ref),
   onCommand: (cmd) => sim.execute(cmd), onCancel: () => sim.cancelSelection(),
+  onSubmit: (text) => sim.submitCommand(text), onAck: (ids) => sim.ackAlarms(ids), // linia poleceń EBILock
 };
 const deskRoot = document.getElementById('desk');
 const desks = [];

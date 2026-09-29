@@ -274,7 +274,9 @@ Standardem dla komputerowych stanowisk obsługi w PKP PLK są wytyczne **Ie-104*
 wprowadzania poleceń oraz rejestracji zdarzeń dla komputerowych stanowisk obsługi urządzeń srk”, z załącznikami
 Ie-104.1 – symbole i kolory, Ie-104.2 – polecenia) oraz instrukcja **Ie-20** (obsługa komputerowych urządzeń srk).
 Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustalono z ich streszczeń i cytowań
-(wyszukiwarka, dokumentacja SCS-1 TD2 i opisy stanowisk EbiScreen/SimRail wzorowanych na Ie-104). Zastosowano:
+(wyszukiwarka, dokumentacja SCS-1 TD2 i opisy stanowisk EbiScreen/SimRail wzorowanych na Ie-104). Ten obraz
+rysują oba stanowiska komputerowe gry: `komputerowe` (pasek poleceń i menu elementu – obsługa własna gry, w duchu
+Ie-104.2) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sposobem wydawania poleceń. Zastosowano:
 
 * odcinki toru (tab. 8 Ie-104): szary – stan podstawowy, czerwony – zajęty, zielony – utwierdzony w przebiegu
   pociągowym, żółty – w przebiegu manewrowym, fioletowy – zwalnianie czasowe, podwójna szara linia – tor zamknięty,
@@ -288,7 +290,7 @@ Serwis plk-sa.pl nie był dostępny z tego środowiska; treść wytycznych ustal
   położenia zasadniczego, różowy – zamknięcie indywidualne, seledynowe numery (EbiScreen);
 * grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
   czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
-* polecenia (Ie-104.2 / EbiScreen): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
+* polecenia (Ie-104.2; stanowisko `komputerowe`): pasek poleceń (rodzaj → element początkowy → końcowy), polecenia specjalne
   inicjowane i potwierdzane, rejestrowane w licznikach, odwołanie OPS.
 
 Numery torów są rysowane w ramkach „tor N” na linii toru, perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
@@ -298,9 +300,52 @@ podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne
 
 Nieodwzorowane lub uproszczone: stany „ciemnoczerwony – w ochronie bocznej”, „turkusowy – nastawianie miejscowe”,
 dokładna geometria symbolu blokady wg Ie-104.1 (własna: strzałka szlaku, strzałka kierunku, napis stanu), dokładne
-skróty poleceń EbiScreen (ZD, ZDM, ZW, ZWP, SZP, NSZ, WTAB, KTAB – nazwy własne producenta, w symulatorze opisowe),
-tabele zdarzeń i alarmów u dołu ekranu (rolę pełni zakładka Dziennik).
+skróty poleceń na stanowisku `komputerowe` (opisowe; skróty EBILock 950 ma stanowisko `ebilock` – sekcja niżej),
+tabele zdarzeń i alarmów u dołu ekranu (na stanowisku `komputerowe` rolę pełni zakładka Dziennik).
 
+
+## Stanowisko EBILock 950 z pulpitem EBIScreen 3 (`srk: 'ebilock'`)
+
+Źródło: P. Okrzesik, „Obsługa komputerowych urządzeń stacyjnych typu EBILock 950 z pulpitem komputerowym EBIScreen 3”,
+wersja 2021.03.04, do użytku LIRK WIL PK (lirk.isdr.pl, instrukcje obsługi). To opis dla symulatora i – jak zaznacza
+sam autor – działanie niektórych funkcji jest w nim uproszczone względem systemu rzeczywistego; znaczenie symboli
+zobrazowania jest według autora zgodne z Ie-20 (wytycznymi Ie-104). Pomocniczo: Beskidzka Strona Kolejowa
+(bsk.isdr.pl, „Urządzenia typu Ebilock 950”) – barwy obrazu i przykłady poleceń (POC A G, MAN 11 C, SZI / SZW,
+ZWP / ZWM). Z instrukcji wzięto:
+
+* polecenie dla obiektu: prawy klawisz myszy na obiekcie – zielona pulsująca ramka i menu poleceń; najechanie na
+  polecenie – objaśnienie na dole ekranu; lewy klawisz na poleceniu – wpis do tekstowej linii poleceń; wysłanie
+  przyciskiem „Wykonaj”; alternatywnie F12 / klik w linię, wpisanie polecenia (nazwa polecenia przed nazwami
+  obiektów, rozdzielone spacjami) i Enter; odznaczenie – klik w puste pole albo „Wyczyść”;
+* przebieg: lewy klawisz na początku (sygnalizator), prawy na końcu (sygnalizator na końcu toru albo mały trójkąt
+  na końcu toru / przy sygnalizatorze przeciwnego kierunku), możliwe elementy pośrednie – błękitna migająca ramka,
+  potem menu poleceń przebiegu (POC, MAN, PZA);
+* polecenia specjalne: polecenie inicjujące markuje obiekt tłem w barwie polecenia (SZI – czerwonym, ZWB – zielonym,
+  ZRI – białym), polecenie wykonania wolno wysłać od 5 s do 30 s po inicjującym;
+* wykaz poleceń: tor – ITS, ITO; zwrotnica / wykolejnica – ZWP, ZWM, ZWS, ZWO, ZWB, ZBP, ZBM, ZRI, ZRK, ITS, ITO;
+  sygnalizator – SES, SEO, PZW, KZW, SZI, SZW, SZN; przebieg – POC, MAN, PZA; stacja (zaznaczyć nazwę stacji) –
+  SSS, SSO, SZO; polecenia blokad liniowych – „w oddzielnej instrukcji na stanowisku”;
+* okno zdarzeń i alarmów: górna część – zdarzenia, dolna – alarmy; aktywny alarm – czerwony kwadrat, nieaktywny –
+  zielony, miganie – niepotwierdzony; „Potwierdź”, „Potwierdź wszystkie”, „Wyłącz” (alarm dźwiękowy).
+
+Uproszczenia i założenia w grze (przyjęte – instrukcja ich nie podaje albo gra upraszcza obsługę):
+
+* linia poleceń jest nad planem (w EBIScreen – na dole ekranu), a okno zdarzeń i alarmów otwiera się przyciskiem
+  (w EBIScreen to osobne okno na innym monitorze);
+* nazwy obiektów w poleceniach to identyfikatory z definicji stacji (sygnalizator „A”, zwrotnica „Zw3”, odcinek
+  „T2”, trójkąt końca toru „kE”); stację wskazuje jej nazwa albo identyfikator;
+* polecenia blokady liniowej – skróty przycisków blokady: WBL, POZ, KO, ZK, DPO, DKO (dPo i dKo jak na innych
+  stanowiskach: z licznikiem, bez polecenia inicjującego);
+* ZWP / ZWM dla wykolejnicy: „+” – nałożona, „−” – zdjęta;
+* bez wybranego elementu pośredniego przebieg idzie drogą zasadniczą (pierwszą w tablicy przebiegów); elementami
+  pośrednimi są zwrotnice leżące tylko na części dróg;
+* lewy klawisz na obiekcie innym niż sygnalizator działa jak prawy, a na tablecie przytrzymanie palca (0,45 s) zastępuje
+  prawy klawisz – tablet nie ma drugiego klawisza;
+* alarmami są usterki urządzeń i rozprucie zwrotnicy; żądania blokady i łączność to zdarzenia; zamknięcie ruchowe
+  zwrotnicy (ITS / ITO dla zwrotnicy) jest zastąpione stopowaniem (ZWS / ZWO), a ITS / ITO dotyczy torów;
+* pominięte: ZWB / ZBP / ZBM (przestawienie bez kontroli niezajętości), ZRI / ZRK (kasowanie rozprucia – w grze
+  rozprucie znika po przestawieniu zwrotnicy), SZN (sygnał zastępczy na tor lewy), alarm dźwiękowy i „Wyłącz”,
+  pola numerów pociągów (PIP) – numery pociągów rysuje się jak na innych monitorach.
 ## Systemy srk stacji – stan rzeczywisty
 
 Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego środowiska):

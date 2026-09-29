@@ -334,6 +334,29 @@ export class Simulation {
     }
   }
 
+  /**
+   * Linia poleceń stanowiska komputerowego (EBILock 950): protokół zamienia tekst („POC A D1”) na polecenie i je
+   * wykonujemy jak każde inne (`execute` – okręg nastawczy, blokada). Stanowisko bez linii poleceń odmawia.
+   */
+  submitCommand(text) {
+    if (typeof this.buttons.submit !== 'function') return { ok: false, reason: 'To stanowisko nie ma linii poleceń' };
+    const r = this.buttons.submit(text);
+    if (!r.ok || !r.cmd) return r;
+    return this.execute(r.cmd);
+  }
+
+  /** Potwierdzenie alarmów w oknie alarmów stanowiska komputerowego: lista numerów albo 'all'. */
+  ackAlarms(ids) {
+    if (typeof this.buttons.ack !== 'function') return { ok: false };
+    if (ids === 'all') this.buttons.ackAll(); else this.buttons.ack(ids);
+    return { ok: true };
+  }
+
+  /** Protokół obsługi stanowiska (stan wyboru, menu poleceń, okno zdarzeń i alarmów) – tylko do odczytu przez widok. */
+  get input() {
+    return this.buttons;
+  }
+
   /** Odwołanie wskazanego początku polecenia / uzbrojonego przycisku (OPS na monitorze). */
   cancelSelection() {
     this.buttons.cancel();

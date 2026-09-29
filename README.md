@@ -2,8 +2,8 @@
 
 **Symulator Prowadzenia Ruchu Kolejowego**: a browser game in which you are the train dispatcher of a Polish
 station. You work either at a **type E relay interlocking desk** (*pulpit kostkowy*, modelled on the ISDR simulator)
-or at a **computer-based interlocking workstation** (a monitor in the style of EbiScreen / ISKRA, drawn according to
-the PKP PLK Ie-104 guidelines). Real Tricity stations, Polish signalling rules (Ie-1, Ir-1), guided missions for
+or at a **computer-based interlocking workstation** (a monitor drawn according to the PKP PLK Ie-104 guidelines,
+with a command bar, or as an **EBILock 950 / EBIScreen** workstation with a text command line). Real Tricity stations, Polish signalling rules (Ie-1, Ir-1), guided missions for
 beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) and SVG, no frameworks. One bundled typeface
 (Inter, SIL OFL) so the desk, the monitor and the interface look the same on every system.
 
@@ -52,6 +52,12 @@ Play it: **https://budnix.github.io/SPRK/**
   the route lever go back. Semaphore signals with moving arms (Sr1 / Sr2 / Sr3), distant discs at entry signals and
   shunting discs; arms, discs and levers move with a short animation (off when the system asks for reduced motion).
   Played in mission 4 at Olszyny.
+* **EBILock 950 workstation (EBIScreen)** – the same Ie-104 picture, operated the EBIScreen way: right click on an
+  object (tablet: hold) opens its command menu, left click on the start signal and right click on the end set up a
+  route; every command lands in a text command line (`POC A D1`, `ZWP Zw3`, `SES A`, `ITS T2`…) and is sent only with
+  *Execute* (or Enter, F12 jumps to the line). Alternative ways are chosen with an intermediate point (light blue frame).
+  The substitute signal is a two-part special command (SZI marks the signal, SZW 5–30 s later). An events and alarms
+  window lists events and alarms (active / cleared, acknowledged / not). Available as a shift on the training stations.
 
 ### Interlocking and line blocks
 * Routes derived automatically from the track topology: point setting, route locking, flank protection, overlaps,
@@ -159,6 +165,11 @@ Guided mission: `?stacja=szkolna&scenariusz=nauka-1`.
 | Point | `Zw` + point button; lock with `Zz` | ZWROTNICA → point; Zz → point → WYKONAJ |
 | Line block | tiles at the end of the line track: arrows on the track, `Wbl` request, `Poz` grant, `Ko` confirm arrival, `Zk` on automatic block | click the line arrow: Wbl / Poz / Ko, or Zk on automatic block |
 
+On the EBILock 950 workstation every action is a typed (or menu-picked) command sent with *Execute*: `POC` / `MAN`
+(route), `PZW` (release), `PZA` (emergency release), `SES` / `SEO` (signal to stop / back), `ZWP` / `ZWM` (point),
+`ZWS` / `ZWO` (point lock), `SZI` → `SZW` (substitute signal), `ITS` / `ITO` (close / reopen a track), `SSS` / `SSO`,
+`SZO` (whole station), `WBL` / `POZ` / `KO` (line block).
+
 Full manual and glossary: the **?** button in the app (Polish, as is the whole UI, since the simulator follows
 Polish railway rules and terminology).
 
@@ -166,7 +177,7 @@ Polish railway rules and terminology).
 
 * `src/model/` – simulation (interlocking, line block, trains, traffic, faults, communication, scoring); no DOM,
 * `src/render/` – desk and monitor renderers, screen split, station thumbnails,
-* `src/srk/` – control-system strategies (type E desk, computer workstation) and the type E button protocol,
+* `src/srk/` – control-system strategies (type E, IZH-111, mechanical, computer, EBILock 950) and their operating protocols,
 * `src/tutorial/` – guided missions (steps, progress engine, popups),
 * `src/stations/` – station definitions (`docs/STATION-FORMAT.md`),
 * `tests/` – Node tests (route matrices, full shifts, missions) and Playwright e2e tests with screenshot baselines,

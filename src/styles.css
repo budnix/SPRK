@@ -59,6 +59,8 @@
   --mon-train: #c81e14; --mon-train-border: #ff6a60; --mon-on-train: #fff;
   --mon-confirm-bg: #3a2a00; --mon-confirm-text: #ffe2b0; --mon-on-special: #1c1300; --mon-shadow: rgba(0,0,0,0.6);
   --mon-screen: #000;
+  /* EBIScreen (EBILock 950): wybór – zielona pulsująca ramka, elementy pośrednie – błękitna, markowanie – tło */
+  --mon-ebi-sel: #2fe05a; --mon-ebi-cand: #5cc8ff; --mon-ebi-mark-red: #b3160e; --mon-ebi-alarm: #ff2419; --mon-ebi-ok: #21d04a;
   /* grupa przycisków rozkazów pulpitu IZH-111 – barwy urządzenia, niezależne od motywu */
   --desk-izh-bar: #3b3d3f; --desk-izh-key: #1e1f20; --desk-izh-key-edge: #6f7578; --desk-izh-key-text: #f4f4f4; --desk-izh-ready: #ffd23f;
   --desk-izh-counter: #101112; --desk-izh-counter-text: #f4f4f4;
@@ -718,7 +720,7 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .screen.picking .hit { cursor: crosshair; }
 .scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }
-/* pasek poleceń (układ EbiScreen) */
+/* pasek poleceń stanowiska komputerowego (także linia poleceń EBILock – .ebi-bar) */
 #cmd-host { flex: 0 0 auto; }
 .scr-cmdbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; padding: 4px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
 .scr-cmdbar button { background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 3px 8px; font: 600 11px var(--font); cursor: pointer; }
@@ -741,6 +743,43 @@ svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazw
 .scr-confirm .confirm-actions { flex: 0 0 auto; display: flex; gap: 8px; margin-left: auto; }
 .scr-confirm .tb { flex: 0 0 auto; height: calc(var(--ctl-h) + 8px); /* cel dla palca */ padding: 0 14px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; line-height: 1; white-space: nowrap; }
 .scr-confirm .tb.warn { background: var(--mon-special); color: var(--mon-on-special); border-color: var(--mon-special); font-weight: 600; }
+/* EBIScreen (EBILock 950): linia poleceń, ramki wyboru, markowanie, okno zdarzeń i alarmów */
+.ebi-bar { justify-content: flex-start; }
+.ebi-bar .ebi-label { color: var(--muted); font-size: 12px; font-weight: 600; }
+.ebi-bar .ebi-line { flex: 0 1 260px; min-width: 120px; height: calc(var(--ctl-h) - 4px); box-sizing: border-box; padding: 0 8px; background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); font: 600 13px var(--font); letter-spacing: 0.5px; text-transform: uppercase; }
+.ebi-bar .ebi-line:focus { outline: 2px solid var(--mon-active-border); outline-offset: 0; }
+.ebi-bar .ebi-line::placeholder { text-transform: none; letter-spacing: 0; color: var(--mon-muted); font-weight: 400; }
+.ebi-bar button.ebi-exec.ready { background: var(--mon-active); border-color: var(--mon-active-border); color: var(--mon-on-active); }
+.ebi-bar button.ebi-log.alarm { color: var(--mon-ebi-alarm); border-color: var(--mon-ebi-alarm); animation: blink 1s steps(1) infinite; }
+.ebi-bar .ebi-info { order: 0; margin: 0 0 0 6px; flex: 1 1 200px; }
+.ebi-menu button b { display: inline-block; min-width: 3.2em; color: var(--mon-title); }
+.screen.ebi .scr-el.ebi-sel .sel-frame { stroke: var(--mon-ebi-sel); stroke-width: 1.4; stroke-dasharray: none; animation: ebi-pulse 1s ease-in-out infinite; }
+.screen.ebi .scr-el.ebi-cand .sel-frame { stroke: var(--mon-ebi-cand); stroke-width: 1.4; stroke-dasharray: none; animation: blink 0.8s steps(1) infinite; }
+.screen.ebi .hit-seg { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
+.screen.ebi .hit-seg.ebi-sel { stroke: var(--mon-ebi-sel); stroke-opacity: 0.35; animation: ebi-pulse 1s ease-in-out infinite; }
+.screen.ebi .hit-station.ebi-sel { stroke: var(--mon-ebi-sel); stroke-width: 1.4; fill: transparent; animation: ebi-pulse 1s ease-in-out infinite; }
+.screen.ebi .scr-el.ebi-mark[data-mark="red"] .sig-back { fill: var(--mon-ebi-mark-red); }   /* markowanie do polecenia specjalnego (SZI) */
+@keyframes ebi-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.ebi-win { position: fixed; z-index: var(--z-cmd-menu); right: 16px; top: 96px; width: min(420px, calc(100vw - 32px)); max-height: min(70vh, 560px); display: flex; flex-direction: column; background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius); box-shadow: 0 8px 24px var(--mon-shadow); font-size: 12px; overflow: hidden; }
+.ebi-win-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: var(--mon-bg2); color: var(--mon-title); }
+.ebi-win-close { display: inline-flex; align-items: center; justify-content: center; width: var(--ctl-h); height: var(--ctl-h); background: none; border: 0; color: inherit; cursor: pointer; border-radius: var(--radius-sm); }
+.ebi-win-close:hover { background: var(--mon-hover); }
+.ebi-win h6 { margin: 0; padding: 5px 10px; font-size: 11px; font-weight: 600; color: var(--mon-muted); border-top: 1px solid var(--mon-border); }
+.ebi-events, .ebi-alarms { overflow: auto; padding: 0 10px 6px; min-height: 48px; }
+.ebi-events { flex: 1 1 55%; }
+.ebi-alarms { flex: 1 1 45%; }
+.ebi-event, .ebi-alarm { padding: 2px 0; line-height: 1.35; }
+.ebi-event time, .ebi-alarm time { color: var(--mon-muted); font-variant-numeric: tabular-nums; margin-right: 4px; }
+.ebi-event.cmd { color: var(--mon-title); }
+.ebi-event.refused { color: var(--mon-special); }
+.ebi-alarm { display: flex; gap: 6px; align-items: baseline; cursor: pointer; border-radius: var(--radius-sm); padding: 2px 4px; }
+.ebi-alarm.picked { background: var(--mon-active); }
+.ebi-alarm .sq { flex: 0 0 auto; width: 9px; height: 9px; display: inline-block; background: var(--mon-ebi-ok); }
+.ebi-alarm .sq.on { background: var(--mon-ebi-alarm); }
+.ebi-alarm.unacked .sq { animation: blink 0.8s steps(1) infinite; }
+.ebi-empty { color: var(--mon-muted); padding: 4px 0; }
+.ebi-win-actions { display: flex; gap: 6px; justify-content: flex-end; padding: 6px 10px; border-top: 1px solid var(--mon-border); }
+.ebi-win-actions button { background: var(--mon-bg2); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 4px 10px; font: 600 12px var(--font); cursor: pointer; }
 .sw.g { background: #8a949e; } .sw.grn { background: #21d04a; } .sw.v { background: #c04cff; } .sw.p { background: #ff7ad9; }
 
 
@@ -784,6 +823,7 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) {
   .tut-hl, svg .tut-hl, .panel-tabs .tb.flash { animation: none; }
   #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card { transition: none; }
+  .screen.ebi .ebi-sel, .screen.ebi .ebi-sel .sel-frame { animation: none; }
   * { scroll-behavior: auto !important; }
 }
 

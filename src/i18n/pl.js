@@ -25,6 +25,25 @@ export default {
       <p>To <b>pulpit ciemny</b>: w stanie zasadniczym lampki są wygaszone. Ciemny powtarzacz oznacza sygnał „Stój”. Szczeliny zwrotnicy świecą po wybraniu jej adresu, przy zamknięciu oraz gdy odcinek jest utwierdzony (białe) lub zajęty (czerwone). Blokadę liniową obsługuje się przyciskami na kostkach przy końcu toru.</p>`,
   'hint.lever': 'dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia sygnałowa · po przejeździe: dźwignia na „Stój”, drążek z powrotem',
   'start.srkMech': 'mechaniczna · ława dźwigniowa',
+  'start.srkEbi': 'EBILock 950 · linia poleceń',
+  'hint.ebi': 'prawy klawisz (na tablecie: przytrzymaj) = menu obiektu · przebieg: lewy na początku, prawy na końcu · polecenie → Wykonaj · F12 = linia poleceń',
+  'arm.ebi.route': 'Przebieg {path} – wybierz POC / MAN z menu (prawy klawisz na końcu) i naciśnij Wykonaj',
+  'arm.ebi.start': 'Początek przebiegu {id} – prawym klawiszem (na tablecie: przytrzymaj) wskaż koniec przebiegu',
+  'arm.ebi.via': 'Kilka dróg {path} – wskaż element pośredni (błękitna ramka) albo wybierz polecenie dla drogi zasadniczej',
+  'arm.ebi.object': 'Obiekt {id} – wybierz polecenie z menu, potem Wykonaj',
+  'ebi.line': 'Polecenie',
+  'ebi.placeholder': 'np. POC A D1 · F12',
+  'ebi.exec': 'Wykonaj',
+  'ebi.clear': 'Wyczyść',
+  'ebi.log': 'Zdarzenia i alarmy',
+  'ebi.closeLog': 'Zamknij okno zdarzeń i alarmów',
+  'ebi.events': 'Zdarzenia',
+  'ebi.alarms': 'Alarmy',
+  'ebi.ack': 'Potwierdź',
+  'ebi.ackAll': 'Potwierdź wszystkie',
+  'ebi.noAlarms': 'Brak alarmów',
+  'ebi.pressExec': 'naciśnij Wykonaj',
+  'ebi.marked': '{cmd} – obiekt zamarkowany; polecenie wykonania po 5–30 s',
   'help.lever': `<h2>Obsługa nastawni mechanicznej</h2>
       <p>Pod planem świetlnym jest <b>ława</b>: u góry aparat blokowy i <b>drążki przebiegowe</b>, na dole <b>dźwignie nastawcze</b> z numerami. Niebieskie dźwignie przestawiają zwrotnice i wykolejnice, czerwone – podają sygnał na semaforze, niebiesko-czerwone – na tarczy manewrowej. Dźwignia odchylona w lewo jest w położeniu zasadniczym, odchylona w prawo – przełożona. Obok koziołka są oznaczenia położeń – jasno świeci bieżące: przy zwrotnicy „+” (lewo) i „−” (prawo), przy wykolejnicy „nał.” i „zdj.”, przy semaforze małe ramię poziomo („Stój”) i wzniesione (sygnał zezwalający), przy tarczy manewrowej tarcza pionowo (M1) i poziomo (M2). Ciemna listwa pod dźwignią znaczy, że jest zamknięta (np. przez drążek).</p>
       <p><b>Semafory kształtowe</b> na planie: ramię poziomo – <b>Sr1</b> „Stój”, wzniesione – <b>Sr2</b> „Wolna droga”, dwa ramiona wzniesione – <b>Sr3</b> (do 40 km/h, przebieg na tor zwrotny). Przy semaforze wjazdowym jest tarcza ostrzegawcza: pionowo – semafor wskazuje „Stój”, poziomo – sygnał zezwalający; strzała ukośnie – Sr3. Tarcza manewrowa: niebieska pionowo – M1 (zabroniona), obrócona do poziomu – M2. Na planie zwrotnica ma przygaszone żółte ramię, w które jest ustawiona; w drugim ramieniu jest przerwa.</p>
@@ -360,6 +379,11 @@ export default {
   'help.desk': `<h2>Obsługa pulpitu kostkowego (urządzenia typu E)</h2>
       <p><b>Naciśnięcie</b> przycisku – kliknięcie / dotknięcie. <b>Wyciągnięcie</b> – przytrzymanie (0,5 s) lub prawy przycisk myszy.
       Operacje dwuprzyciskowe: naciśnij pierwszy przycisk, a w ciągu 6 s drugi (przycisk „uzbrojony” jest podświetlony).</p>`,
+  'help.ebi': `<h2>Obsługa stanowiska EBILock 950 (pulpit EBIScreen)</h2>
+      <p>Obraz jak na innych stanowiskach komputerowych (Ie-104). Każde polecenie trafia do <b>linii poleceń</b> nad planem i dopiero <b>Wykonaj</b> (albo Enter) je wysyła. <b>F12</b> przechodzi do linii poleceń – można pisać: nazwa polecenia, potem nazwy obiektów, np. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Wyczyść</b>, Esc albo klik w puste pole odznacza.</p>
+      <p><b>Obiekt</b>: prawy klawisz myszy (na tablecie: przytrzymaj palec) – zielona pulsująca ramka i menu poleceń; najechanie na polecenie pokazuje objaśnienie, kliknięcie wpisuje je do linii. <b>Przebieg</b>: lewy klawisz na sygnalizatorze początkowym, prawy na końcu (sygnalizator albo trójkąt końca toru), potem z menu <b>POC</b> (pociągowy) lub <b>MAN</b> (manewrowy). Gdy są dwie drogi, zwrotnice do wyboru mają błękitną ramkę – prawy klawisz na jednej wybiera drogę alternatywną.</p>
+      <p>Polecenia: tor – <b>ITS</b> / <b>ITO</b> (zamknięcie ruchowe / odwołanie; prawy klawisz na torze); zwrotnica – <b>ZWP</b> / <b>ZWM</b> (położenie + / −), <b>ZWS</b> / <b>ZWO</b> (stopowanie / odwołanie); sygnalizator – <b>SES</b> / <b>SEO</b> (stopowanie – „Stój”), <b>PZW</b> (zwolnienie przebiegu), <b>KZW</b> (odwołanie zwalniania czasowego); przebieg – <b>POC</b>, <b>MAN</b>, <b>PZA</b> (awaryjne zwolnienie, licznik); stacja (nazwa stacji na planie) – <b>SSS</b> / <b>SSO</b>, <b>SZO</b>; szlak (trójkąt przy wyjeździe) – <b>WBL</b>, <b>POZ</b>, <b>KO</b>, <b>DPO</b>, <b>DKO</b>.</p>
+      <p><b>Sygnał zastępczy</b> to polecenie specjalne: <b>SZI</b> markuje semafor czerwonym tłem, a <b>SZW</b> wysyła się po sprawdzeniu – od 5 do 30 s po SZI. Przycisk <b>Zdarzenia i alarmy</b> otwiera okno: zdarzenia u góry, alarmy u dołu (czerwony kwadrat – aktywny, zielony – ustąpił, miga – niepotwierdzony); zaznacz alarm i <b>Potwierdź</b> albo <b>Potwierdź wszystkie</b>.</p>`,
   'help.screen': `<h2>Obsługa stanowiska komputerowego (zobrazowanie wg Ie-104)</h2>
       <p>Odcinki toru: <span class="sw g"></span> szary – wolny, <span class="sw grn"></span> zielony – utwierdzony w przebiegu pociągowym,
       <span class="sw y"></span> żółty – w przebiegu manewrowym, <span class="sw r"></span> czerwony – zajęty, <span class="sw v"></span> fioletowy – zwalnianie czasowe,

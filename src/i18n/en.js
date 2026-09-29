@@ -24,6 +24,25 @@ export default {
       <p>This is a <b>dark desk</b>: in the normal state the lamps are off. A dark repeater means the signal is at stop. Point slits light up when the point address is selected, when the point is locked and when the section is locked in a route (white) or occupied (red). The line block is operated with the buttons on the tiles at the end of the track.</p>`,
   'hint.lever': 'point levers → route lever → route block → signal lever · after the train: signal lever back to stop, route lever back',
   'start.srkMech': 'mechanical · lever frame',
+  'start.srkEbi': 'EBILock 950 · command line',
+  'hint.ebi': 'right button (tablet: hold) = object menu · route: left on start, right on end · command → Execute · F12 = command line',
+  'arm.ebi.route': 'Route {path} – pick POC / MAN from the menu (right button on the end) and press Execute',
+  'arm.ebi.start': 'Route start {id} – right button (tablet: hold) on the route end',
+  'arm.ebi.via': 'Several ways {path} – pick an intermediate element (light blue frame) or a command for the main way',
+  'arm.ebi.object': 'Object {id} – pick a command from the menu, then Execute',
+  'ebi.line': 'Command',
+  'ebi.placeholder': 'e.g. POC A D1 · F12',
+  'ebi.exec': 'Execute',
+  'ebi.clear': 'Clear',
+  'ebi.log': 'Events and alarms',
+  'ebi.closeLog': 'Close the events and alarms window',
+  'ebi.events': 'Events',
+  'ebi.alarms': 'Alarms',
+  'ebi.ack': 'Acknowledge',
+  'ebi.ackAll': 'Acknowledge all',
+  'ebi.noAlarms': 'No alarms',
+  'ebi.pressExec': 'press Execute',
+  'ebi.marked': '{cmd} – object marked; send the execute command after 5–30 s',
   'help.lever': `<h2>Operating the mechanical signal box</h2>
       <p>Below the illuminated diagram is the <b>lever frame</b>: the block instrument and <b>route levers</b> at the top, the numbered <b>levers</b> at the bottom. Blue levers move points and derailers, red ones clear a main signal, blue-and-red ones a shunting signal. A lever tilted left is normal, tilted right is reversed. Marks beside the lever base show the positions – the current one is lit: for points “+” (left) and “−” (right), for the derailer “nał.” (on) and “zdj.” (off), for a signal a small arm horizontal (stop) and raised (proceed), for a shunting signal the disc upright (M1) and flat (M2). A dark bar under a lever means it is locked (for example by a route lever).</p>
       <p><b>Semaphore signals</b> on the diagram: arm horizontal – <b>Sr1</b> stop, raised – <b>Sr2</b> clear, two arms raised – <b>Sr3</b> (up to 40 km/h, route into a diverging track). An entry signal has a distant disc: upright – the signal shows stop, flat – it shows proceed; a slanted arrow – Sr3. Shunting disc: blue and upright – M1 (shunting prohibited), turned flat – M2. On the diagram a point shows a dim yellow branch for the way it is set; the other branch has a gap.</p>
@@ -351,6 +370,11 @@ export default {
   'help.desk': `<h2>Operating the push-button desk (type E equipment)</h2>
       <p><b>Pressing</b> a button – click / tap. <b>Pulling</b> – hold (0.5 s) or right mouse button.
       Two-button operations: press the first button, then the second within 6 s (the “armed” button is highlighted).</p>`,
+  'help.ebi': `<h2>Operating the EBILock 950 workstation (EBIScreen)</h2>
+      <p>The picture is the same as on other computer workstations (Ie-104). Every command goes to the <b>command line</b> above the diagram and only <b>Execute</b> (or Enter) sends it. <b>F12</b> moves to the command line – you can type: command name, then object names, e.g. <code>POC A D1</code>, <code>ZWP Zw3</code>. <b>Clear</b>, Esc or a click on an empty spot deselects.</p>
+      <p><b>Object</b>: right mouse button (tablet: hold your finger) – green pulsing frame and the command menu; hovering a command explains it, clicking puts it into the line. <b>Route</b>: left button on the start signal, right button on the end (signal or end-of-track triangle), then <b>POC</b> (train) or <b>MAN</b> (shunting) from the menu. When there are two ways, the points you can choose have a light blue frame – a right click on one picks the alternative way.</p>
+      <p>Commands: track – <b>ITS</b> / <b>ITO</b> (close / reopen; right click on the track); point – <b>ZWP</b> / <b>ZWM</b> (+ / − position), <b>ZWS</b> / <b>ZWO</b> (lock / unlock); signal – <b>SES</b> / <b>SEO</b> (stop lock), <b>PZW</b> (route release), <b>KZW</b> (cancel timed release); route – <b>POC</b>, <b>MAN</b>, <b>PZA</b> (emergency release, counter); station (station name on the diagram) – <b>SSS</b> / <b>SSO</b>, <b>SZO</b>; line (triangle at the exit) – <b>WBL</b>, <b>POZ</b>, <b>KO</b>, <b>DPO</b>, <b>DKO</b>.</p>
+      <p>The <b>substitute signal</b> is a special command: <b>SZI</b> marks the signal with a red background, and <b>SZW</b> is sent after checking – 5 to 30 s after SZI. The <b>Events and alarms</b> button opens a window: events at the top, alarms at the bottom (red square – active, green – cleared, blinking – not acknowledged); select an alarm and <b>Acknowledge</b>, or <b>Acknowledge all</b>.</p>`,
   'help.screen': `<h2>Operating the computer workstation (Ie-104 picture)</h2>
       <p>Track sections: <span class="sw g"></span> grey – clear, <span class="sw grn"></span> green – locked in a train route,
       <span class="sw y"></span> yellow – in a shunting route, <span class="sw r"></span> red – occupied, <span class="sw v"></span> violet – timed release,

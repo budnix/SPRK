@@ -7,6 +7,7 @@ import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
 import { IzhRenderer } from '../render/IzhRenderer.js';
 import { LeverRenderer } from '../render/LeverRenderer.js';
+import { EbiRenderer } from '../render/EbiRenderer.js';
 import { getSrk } from './registry.js';
 import { t } from '../i18n/index.js';
 
@@ -66,6 +67,21 @@ registerView('lever', {
   View: LeverRenderer,
   hint: () => t('hint.lever'),
   help: () => t('help.lever'),
+});
+
+/** EBILock 950: podpowiedź zależy od wyboru – początek przebiegu, cały przebieg, elementy pośrednie albo obiekt. */
+function ebiHint(a) {
+  const path = (a.selection || []).map((r) => r.id).join(' → ');
+  if (a.role !== 'route') return t('arm.ebi.object', { id: a.id });
+  if (a.candidates?.length) return t('arm.ebi.via', { path });
+  return a.selection.length > 1 ? t('arm.ebi.route', { path }) : t('arm.ebi.start', { id: a.id });
+}
+
+registerView('ebi', {
+  View: EbiRenderer,
+  hint: () => t('hint.ebi'),
+  armHint: { signal: ebiHint, end: ebiHint, point: ebiHint, derailer: ebiHint, section: ebiHint, station: ebiHint },
+  help: () => t('help.ebi'),
 });
 
 function viewOf(srk) {

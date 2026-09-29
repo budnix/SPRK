@@ -101,7 +101,7 @@ test('zakładki ekranów nie są wymieniane przy ponownym planowaniu (start, zmi
   await expect.poll(() => page.evaluate(() => window.__tabs.some((b) => !b.isConnected))).toBe(true);
 });
 
-for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk'], ['pulpit IZH-111', 'zmiana-izh', 'desk izh'], ['nastawnia mechaniczna', 'zmiana-mech', 'desk mech']]) {
+for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pulpit kostkowy', 'zmiana-e', 'desk'], ['pulpit IZH-111', 'zmiana-izh', 'desk izh'], ['nastawnia mechaniczna', 'zmiana-mech', 'desk mech'], ['EBILock 950', 'zmiana-ebi', 'screen ebi']]) {
   test(`widok stanowiska (${name}) spełnia kontrakt PanelView: rysunek, margines, wycinek, elementy obsługi, etykiety pociągów`, async ({ page }) => {
     await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
     const v = await page.evaluate(() => {
@@ -129,7 +129,7 @@ for (const [name, scenario, svgClass] of [['monitor', 'zmiana', 'screen'], ['pul
     expect(v.part).toBe(`80 0 ${4 * 40 + 2 * v.pad} ${v.size.h}`);
     expect(v.back).toBe(v.full);
     expect(v.signal).toBe(true); expect(v.block).toBe(true); expect(v.none).toBe(null);
-    expect(v.cmd).toBe(svgClass === 'screen');
+    expect(v.cmd).toBe(svgClass === 'screen'); // EBIScreen nie ma paska „train” – linia poleceń (cmdButton('line'))
     // etykieta pociągu pojawia się z pociągiem na planie i znika razem z nim
     await page.evaluate(() => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && !s.traffic.trains.some((t) => t.occupiedTiles().length); i++) { window.sim.press({ kind: 'block', exit: 'W', btn: 'Poz' }); s.step(0.5); } s.clock.paused = true; });
     const labels = await page.evaluate(() => ({ dom: document.querySelectorAll('#desk .layer-trains > g').length, map: window.desk.trainLabels.size, onPlan: window.sim.traffic.trains.filter((t) => t.occupiedTiles().length).length }));

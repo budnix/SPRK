@@ -40,7 +40,7 @@ export function stationViews(station) {
 }
 
 /** Etykieta karty posterunku dla rodzaju stanowiska (`view` strategii srk). */
-const VIEW_BADGE = { screen: 'start.srkScreen', desk: 'start.srkDesk', izh: 'start.srkIzh', lever: 'start.srkMech' };
+const VIEW_BADGE = { screen: 'start.srkScreen', desk: 'start.srkDesk', izh: 'start.srkIzh', lever: 'start.srkMech', ebi: 'start.srkEbi' };
 
 /** Krótka etykieta stanowiska na karcie posterunku; przy różnych stanowiskach w zmianach – „do wyboru”. */
 export function srkBadge(station) {

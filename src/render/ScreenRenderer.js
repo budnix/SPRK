@@ -34,7 +34,7 @@ export class ScreenRenderer extends ScreenBase {
   /** Przycisk paska poleceń (np. 'train') – do wskazywania w samouczku. */
   cmdButton(id) { return this.cmdButtons?.get(id) || null; }
 
-  /** Pasek poleceń (układ EbiScreen): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
+  /** Pasek poleceń (obsługa własna gry, w duchu Ie-104.2): rodzaj polecenia → element(y). OPS odwołuje polecenie. */
   #buildCmdBar(container) {
     const bar = document.createElement('div');
     bar.className = 'scr-cmdbar';

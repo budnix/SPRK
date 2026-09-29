@@ -14,6 +14,7 @@
  * przebiegowy, blok przebiegowy, dźwignia sygnałowa). Nowe systemy to nowy wpis tutaj + widok w views.js.
  */
 import { AddressOrderProtocol } from './address.js';
+import { EbiLockProtocol } from './ebilock.js';
 
 const SRK = new Map();
 
@@ -71,4 +72,14 @@ registerSrk({
   description: 'Ława dźwigniowa: zwrotnice i wykolejnice przestawia się dźwigniami, przebieg zamyka drążek przebiegowy, blok przebiegowy utwierdzający (zwalnia go pociąg), sygnał – dźwignią sygnałową; po przejeździe dźwignia na „Stój” i drążek z powrotem.',
   view: 'lever',
   model: { armTimeout: 60, pointSwitchTime: 2, timedRelease: 0, shuntTimedRelease: 0, manualPoints: true, manualSignal: true, routeBlock: true, holdRoute: true, shapedSignals: true },
+});
+
+registerSrk({
+  id: 'ebilock',
+  name: 'Komputerowe urządzenia stacyjne typu EBILock 950 (pulpit EBIScreen)',
+  short: 'komputerowe EBILock 950',
+  description: 'Monitor wg Ie-104 z tekstową linią poleceń: prawy klawisz na obiekcie – menu poleceń, lewy na sygnalizatorze i prawy na końcu – przebieg; każde polecenie (POC, MAN, ZWP, SES…) zatwierdza „Wykonaj”; polecenia specjalne dwuczęściowe (SZI → SZW po 5–30 s); okno zdarzeń i alarmów z potwierdzaniem.',
+  view: 'ebi',
+  model: { armTimeout: 60 },
+  input: (ilk, bus) => new EbiLockProtocol(ilk, bus),
 });

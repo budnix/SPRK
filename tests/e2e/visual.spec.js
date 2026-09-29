@@ -59,3 +59,18 @@ test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek,
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mech-szkolna.png');
 });
+
+test('wygląd stanowiska EBILock 950 (Szkolna): przebieg nastawiony z linii poleceń, semafor zamarkowany SZI, wybrana zwrotnica', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-ebi' } });
+  await page.evaluate(() => {
+    const s = window.sim;
+    s.clock.paused = false;
+    s.submitCommand('POC A D2');
+    for (let i = 0; i < 16; i++) s.step(0.5);
+    s.submitCommand('SZI B');
+    s.pull({ kind: 'point', id: 'Zw4' });
+    s.clock.paused = true;
+  });
+  await page.waitForTimeout(200);
+  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-ebi-szkolna.png');
+});

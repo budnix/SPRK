@@ -305,7 +305,7 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
 test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku – pociągi o czasie, bez kolizji', () => {
   for (const id of ['jodlowa', 'zacisze', 'olszyny']) {
     const st = STATIONS.find((s) => s.id === id);
-    assert.deepEqual(st.scenarios.filter((s) => !s.tutorial).map((s) => s.srk).sort(), ['E', 'izh111', 'komputerowe', 'mech'], `${id}: zmiana na każdym stanowisku`);
+    assert.deepEqual(st.scenarios.filter((s) => !s.tutorial).map((s) => s.srk).sort(), ['E', 'ebilock', 'izh111', 'komputerowe', 'mech'], `${id}: zmiana na każdym stanowisku`);
     for (const sc of st.scenarios.filter((s) => !s.tutorial)) {
       const sim = new Simulation(st, { scenario: sc.id, disruptions: 'none', seed: 5 });
       assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, `${id}: urwane porty toru`);

@@ -17,7 +17,8 @@ src/
   render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
                DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), LeverRenderer
                (nastawnia mechaniczna: plan świetlny i ława dźwigniowa), leverFrame (dźwignie i drążki ławy, bez DOM), ScreenBase
-               (wspólny obraz monitorów wg Ie-104), ScreenRenderer (monitor: pasek poleceń i menu elementu), deskParts (części wspólne pulpitów kostkowych: rama,
+               (wspólny obraz monitorów wg Ie-104), ScreenRenderer (monitor: pasek poleceń i menu elementu), EbiRenderer
+               (EBILock 950 / EBIScreen: linia poleceń, okno zdarzeń i alarmów), deskParts (części wspólne pulpitów kostkowych: rama,
                kostki z planu, perony, blokada, przyciski pod palcem), tileArt / izhArt (grafika kostek),
                refKey (klucz elementu obsługi, wspólny dla widoków), screens (podział szerokiego pulpitu na ekrany),
                platforms (geometria peronów, bez DOM), blockLayout (kostki blokady liniowej, bez DOM),
@@ -61,7 +62,7 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 
 ## Strategie systemów srk (`src/srk/`)
 
-Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111' | 'mech'` (domyślnie `E`). Strategia to wpis w rejestrze
+Stacja deklaruje `srk: 'E' | 'komputerowe' | 'ebilock' | 'izh111' | 'mech'` (domyślnie `E`). Strategia to wpis w rejestrze
 (`registerSrk({ id, name, description, view, model, input? })`):
 
 * `model` – parametry przekazywane do `Interlocking` (np. `armTimeout`: 6 s na drugi przycisk pulpitu,
@@ -72,10 +73,16 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'izh111' | 'mech'` (domyślnie `E`)
   rozkaz” (`src/srk/address.js`). Opcje zależności tej strategii: `timedRelease`, `shuntTimedRelease`,
   `timedReleaseAlways` (IZH-111: Zcz zwalnia po 120 s, przebieg manewrowy bezzwłocznie). Nastawnia mechaniczna (`mech`)
   nie ma protokołu – ława wydaje polecenia wprost – i włącza opcje `manualPoints`, `manualSignal`, `routeBlock`,
-  `holdRoute`, `shapedSignals`, `pointSwitchTime` (opis w nagłówku `Interlocking.js`).
+  `holdRoute`, `shapedSignals`, `pointSwitchTime` (opis w nagłówku `Interlocking.js`). EBILock 950 (`ebilock`) ma
+  protokół linii poleceń `src/srk/ebilock.js`: `press` (lewy klawisz – początek przebiegu), `pull` (prawy – koniec,
+  element pośredni albo obiekt), `menu()` (treści poleceń dla wyboru), `submit(text)` → polecenie dla
+  `Simulation.execute` (wykonuje `Simulation.submitCommand`), znaczniki poleceń specjalnych z oknem 5–30 s,
+  zdarzenia i alarmy z potwierdzaniem (`Simulation.ackAlarms`); widok czyta stan przez `sim.input`.
 * `view` – rodzaj stanowiska: `desk` (DeskRenderer, przyciski dwuprzyciskowe), `izh` (IzhRenderer: pulpit ciemny,
-  przyciski adresowe i grupa rozkazów), `lever` (LeverRenderer: plan świetlny i ława dźwigniowa) lub `screen`
-  (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem).
+  przyciski adresowe i grupa rozkazów), `lever` (LeverRenderer: plan świetlny i ława dźwigniowa), `screen`
+  (ScreenRenderer: schemat na ciemnym tle, menu poleceń elementu, polecenia specjalne z potwierdzeniem) lub `ebi`
+  (EbiRenderer: ten sam obraz – `ScreenBase` – z linią poleceń, menu pod prawym klawiszem, ramkami wyboru EBIScreen
+  i oknem zdarzeń i alarmów).
   Widoki są w rejestrze `src/srk/views.js` (`registerView`, `createView`, `viewSize`, `armHint`, `viewHelp`);
   model ich nie importuje.
 * Każdy widok rozszerza `PanelView` (`src/render/PanelView.js`). Baza trzyma to, co wspólne: okno kolumn i tryb
@@ -195,7 +202,7 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
 Obraz monitora rysuje `ScreenBase` (rozszerza `PanelView`); stanowiska komputerowe różnią się tylko obsługą
-i dziedziczą po nim (`ScreenRenderer` – pasek poleceń i menu elementu). Kontrakt widoków (`tests/views.test.js`)
+i dziedziczą po nim (`ScreenRenderer` – pasek poleceń i menu elementu, `EbiRenderer` – linia poleceń EBILock 950). Kontrakt widoków (`tests/views.test.js`)
 czyta widok razem z jego bazą. Zobrazowanie wg Ie-104 (kolory odcinków, stany sygnalizatorów, pole „Z” zwrotnicy, ramki selekcji i alarmu).
 Uproszczenia dla czytelności: semafory i tarcze rysowane na linii toru w miejscu ustawienia (grot w kierunku jazdy,
 bez masztu, nazwa po prawej stronie toru w kierunku jazdy), numery torów w ramkach „tor N” na linii (opisy kostek
