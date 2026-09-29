@@ -168,8 +168,10 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   bez `cat` kategoria bierze się z nazwy („IC …”, „TLK …”, „Regio …”, „SKM …”, „Zdawczy”, „Skład EZT …”, „próżny”) i z `kind`.
   Kategoria daje domyślną prędkość maksymalną (EIP 200, IC/EIC 160, TLK 140, R/SKM 120, towarowy 80, próżny 100,
   zdawczy 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`); `vmax`, `accel`, `brake` wpisu nadpisują.
-  Na szlaku i na stacji obowiązuje mniejsza z prędkości pociągu i szlaku (`lineSpeed` wyjazdu), na rozjazdach –
-  rozjazdu, przy Sz – 20 km/h.
+  Obowiązuje mniejsza z prędkości pociągu i szlaku: na szlaku wjazdowym – `lineSpeed` wyjazdu `from`, dopóki cały
+  pociąg nie wjedzie na stację; dalej – `lineSpeed` wyjazdu `to` (pociąg kończący bieg – `from`). Na rozjazdach –
+  prędkość rozjazdu, przy Sz i rozkazie „S” – 40 km/h do następnego semafora (przy wyjeździe na szlak do końca
+  rozjazdów, na SBL – przez umowny pierwszy odstęp 1000 m).
 * `name` – relacja pełna, jak w rozkładzie („Regio Gdańsk Gł. – Słupsk”, „IC „Kaszub” Kraków Gł. – Gdynia Gł.”);
   przedrostek kategorii i nazwa handlowa w cudzysłowie są z niej wycinane do wyświetlenia (`relationOf`, `brandOf`).
   Rozkład pokazuje etykietę „IC 5100” i relację; sąsiednie posterunki (`from` → `to`) w drugiej linii.

@@ -37,7 +37,7 @@ test('pociąg zatrzymuje się przed semaforem Stój i rusza po nastawieniu przeb
   assert.ok(e.train.v > 0, 'pociąg ruszył');
 });
 
-test('sygnał zastępczy prowadzi pociąg po ustawionych zwrotnicach z prędkością 20 km/h', () => {
+test('sygnał zastępczy prowadzi pociąg po ustawionych zwrotnicach z prędkością do 40 km/h', () => {
   const sim = makeSim();
   const b = sim.blocks.get('W');
   run(sim, 60 * 16, (s) => { if (b.request === 'theirs') b.press('Poz'); });
@@ -48,7 +48,7 @@ test('sygnał zastępczy prowadzi pociąg po ustawionych zwrotnicach z prędkoś
   let vmax = 0;
   run(sim, 60, () => { vmax = Math.max(vmax, e.train.v * 3.6); });
   assert.ok(e.train.head > 0 && vmax > 5, 'pociąg jedzie');
-  assert.ok(vmax <= 21, `prędkość ${vmax.toFixed(1)} km/h`);
+  assert.ok(vmax <= 40.5, `prędkość ${vmax.toFixed(1)} km/h`); // Ie-1 od 17.01.2026: Sz – 40 km/h
 });
 
 test('rozkład jest posortowany po czasie na każdej stacji, niezależnie od kolejności w definicji (SKM i dalekobieżne przemieszane)', async () => {

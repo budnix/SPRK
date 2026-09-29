@@ -46,13 +46,13 @@ export class Traffic {
 
   /**
    * Szablon treści rozkazu pisemnego „S” (wg wzoru Ir-1): pozwolenie na przejazd obok
-   * semafora wskazującego sygnał „Stój” z prędkością do 20 km/h do następnego semafora.
+   * semafora wskazującego sygnał „Stój” z prędkością do 40 km/h do następnego semafora.
    */
   orderTemplate(nr, signalId, reason = 'usterki urządzeń srk') {
     const st = this.station.name;
     return `Rozkaz pisemny „S”. Do pociągu nr ${nr}. Semafor ${signalId} na stacji ${st} wskazuje sygnał „Stój” z powodu ${reason}. `
       + `Pociąg nr ${nr} ma pozwolenie na przejechanie obok semafora ${signalId} wskazującego sygnał „Stój” i jazdę do następnego semafora `
-      + `z prędkością nieprzekraczającą 20 km/h. Droga przebiegu jest przygotowana, zwrotnice zamknięte.`;
+      + `z prędkością nieprzekraczającą 40 km/h. Droga przebiegu jest przygotowana, zwrotnice zamknięte.`;
   }
 
   /**
@@ -106,8 +106,8 @@ export class Traffic {
     tr.orders.push({ signal, used: false, id: order.id });
     const justified = this.ilk.faultOnPath(signal, path);
     this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
-    this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 20 km/h.` });
-    this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (20 km/h)` });
+    this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 40 km/h.` });
+    this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (40 km/h)` });
     this.bus.emit('orders', this.orders);
     return { ok: true, order };
   }
@@ -207,7 +207,8 @@ export class Traffic {
 
   #makeTrain(e) {
     const train = new Train(e, this.ilk.topo, this.ilk, {
-      lineSpeed: this.station.exits[e.to]?.lineSpeed ?? 100,
+      lineSpeed: this.station.exits[e.to]?.lineSpeed ?? this.station.exits[e.from]?.lineSpeed ?? 100,
+      inLineSpeed: this.station.exits[e.from]?.lineSpeed,
       onExit: (exitId, tr) => this.#onExit(e, exitId, tr),
       onEvent: (ev, tr, arg) => this.#onTrainEvent(e, ev, tr, arg),
       blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
@@ -262,7 +263,7 @@ export class Traffic {
         break;
       }
       case 'order-used':
-        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (20 km/h)` });
+        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (40 km/h)` });
         break;
       case 'stop':
         if (tr.stoppedAt?.kind === 'signal') {

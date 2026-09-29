@@ -60,7 +60,7 @@ export function steps() {
       (sim) => !!T2(sim).resetPending || !T2(sim).axleFault && !!sim.faults.list.find((f) => f.type === 'axle-counter')?.done),
     act('fault-points', 'Droga ręcznie: Minus i Stop', `Przebiegu na tor 2 nie nastawisz, bo tor wciąż „jest zajęty”. Ułóż drogę z Lipnik ręcznie: <b>zwrotnica 3</b> → <b>Minus</b>, <b>zwrotnica 2</b> → <b>Minus</b> (jeśli już stoją w minusie – pomiń), a potem każda → <b>Stop</b> (zablokowanie – nikt jej nie przestawi pod pociągiem).`, { ref: { kind: 'point', id: 'Zw3' } },
       (sim) => ['Zw3', 'Zw2'].every((id) => { const p = pt(sim, id); return p.position === '-' && !p.moving && p.individualLock; }) || arrived(sim, 7205)),
-    act('fault-sz', 'Przejazd kontrolny na SZ', `Lipniki zgłoszą osobowy <b>7205</b> (07:58) – daj <b>Poz</b>. Pociąg stanie przed semaforem C. Wtedy: semafor <b>C</b> → <b class="mor-red">SZ</b> → <b>Potwierdź</b>. Pociąg wjedzie na tor 2 z prędkością do 20 km/h. Sygnał zastępczy przy usterce nie kosztuje punktów.`, sig('C'),
+    act('fault-sz', 'Przejazd kontrolny na SZ', `Lipniki zgłoszą osobowy <b>7205</b> (07:58) – daj <b>Poz</b>. Pociąg stanie przed semaforem C. Wtedy: semafor <b>C</b> → <b class="mor-red">SZ</b> → <b>Potwierdź</b>. Pociąg wjedzie na tor 2 z prędkością do 40 km/h. Sygnał zastępczy przy usterce nie kosztuje punktów.`, sig('C'),
       (sim, ctx) => ctx.seen.has('sz:C') || arrived(sim, 7205)),
     act('fault-out', 'Wyjazd – tor 2 wolny', `Po postoju: <b>Ko</b> (Lipniki), <b>Wbl</b> (Jesionka), wyjazd <b>D2 → Jesionka</b>. Gdy 7205 zjedzie z toru 2, licznik się wyzeruje i tor zgaśnie – koniec usterki.`, sig('D2'),
       (sim) => atNeighbour(sim, 7205) && !T2(sim).axleFault),

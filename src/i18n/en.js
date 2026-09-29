@@ -315,7 +315,7 @@ export default {
   'sp.order.reasonDefault': 'an interlocking fault',
   'sp.order.text': 'Order text',
   'sp.order.issue': 'Issue order',
-  'sp.order.rules': 'Conditions (Ir-1): the train stands at the signal, points in the route locked (Zz) or held in a route, derailers off, sections clear, for a departure – block permission. The train runs to the next signal at up to 20 km/h.',
+  'sp.order.rules': 'Conditions (Ir-1): the train stands at the signal, points in the route locked (Zz) or held in a route, derailers off, sections clear, for a departure – block permission. The train runs to the next signal at up to 40 km/h.',
   'sp.order.issued': 'Issued orders',
   'sp.order.ok': 'Order no. {id} issued.',
   'sp.order.before': 'at',
@@ -427,7 +427,7 @@ export default {
         <li><b>Cancelling the aspect</b>: pull the signal button. The route stays locked.</li>
         <li><b>Route release</b>: <b>Pz</b> + signal button. With the approach section occupied – timed release (90 s).</li>
         <li><b>Emergency release</b>: <b>dPz</b> + signal button (sealed counter). Use only in case of a fault.</li>
-        <li><b>Substitute signal</b>: <b>Sz</b> + green button of the main signal (counter). The train runs at 20 km/h over the points as currently set.</li>
+        <li><b>Substitute signal</b>: <b>Sz</b> + green button of the main signal (counter). The train runs at 40 km/h over the points as currently set.</li>
         <li>After the train has passed, the route releases section by section.</li>
       </ul>
       <h3>Points and derailers</h3>
@@ -446,7 +446,7 @@ export default {
       </ul>
       <h3>Written orders</h3>
       <ul>
-        <li><i>Orders</i> tab: order “S” lets a train standing at a signal at “Stop” pass it to the next signal at up to 20 km/h (e.g. with a signal fault).</li>
+        <li><i>Orders</i> tab: order “S” lets a train standing at a signal at “Stop” pass it to the next signal at up to 40 km/h (e.g. with a signal fault).</li>
         <li>Conditions (Ir-1): the train stands at that signal, points in the route locked <b>Zz</b> or held in a route, derailers off, sections clear, for a departure block permission.</li>
       </ul>
       <h3>Disruptions, communication and scoring</h3>

@@ -5,6 +5,10 @@ import { OPPOSITE } from '../tiles/directions.js';
 const KMH = 1 / 3.6;
 /** Opóźnienie hamowania nagłego (m/s²) – większego pociąg nie osiąga (Dz.U. 2015 poz. 360 zał. 1: setki metrów drogi). */
 export const EMERGENCY_BRAKE = 1.3;
+/** Sygnał zastępczy i rozkaz „S”: do 40 km/h (Ie-1 od 17.01.2026 §4 ust. 13 pkt 18; Ir-1 §63 ust. 5). */
+export const SUBSTITUTE_SPEED = 40;
+/** Umowny pierwszy odstęp SBL za semaforem wyjazdowym (m) – do niego obowiązuje ograniczenie z Sz / rozkazu. */
+export const SBL_FIRST_BLOCK = 1000;
 
 /**
  * Pociąg poruszający się po topologii toru według rzeczywistych położeń zwrotnic
@@ -44,8 +48,10 @@ export class Train {
     this.onEvent = opts.onEvent || (() => {});
     this.entered = false;     // czoło wjechało na pulpit
     this.fullyIn = false;     // cały pociąg na pulpicie
-    this.lineSpeed = (opts.lineSpeed ?? 100) * KMH;
-    this.activeLimit = Infinity; // ograniczenie obowiązujące do następnego sygnalizatora (np. Sz – 20 km/h)
+    this.lineSpeed = (opts.lineSpeed ?? 100) * KMH;   // szlak wyjazdowy (i stacja)
+    this.inLineSpeed = (opts.inLineSpeed ?? opts.lineSpeed ?? 100) * KMH; // szlak wjazdowy – do wjazdu całego pociągu
+    this.activeLimit = Infinity; // ograniczenie obowiązujące do następnego sygnalizatora (np. Sz – 40 km/h)
+    this.substituteLimit = false; // `activeLimit` z Sz / rozkazu – przy wyjeździe na szlak zdejmowane wcześniej
     this.zoneLimit = null;       // ograniczenie z obrazu semafora do końca okręgu zwrotnicowego ({ speed, sections, entered })
     this.orders = [];            // rozkazy pisemne: { signal, used }
     // zezwolenie na jazdę pociągu: mija semafor na sygnał zezwalający (albo Sz / rozkaz) – do tej chwili pociąg utworzony
@@ -81,7 +87,7 @@ export class Train {
   placeOnLine(exitId, lineLength) {
     this.trail = [{ tile: null, inPort: null, outPort: null, len: lineLength, start: 0, virtual: exitId, entering: true }];
     this.head = this.length; // cały pociąg na szlaku
-    this.v = Math.min(this.vmax, this.lineSpeed);
+    this.v = Math.min(this.vmax, this.inLineSpeed);
     this.state = 'moving';
     this.authority = true; // jazda po szlaku na podstawie blokady / sygnału semafora odstępowego
   }
@@ -172,6 +178,10 @@ export class Train {
       constraints.push({ dist: 0, speed: 0, reason: 'kozioł', kind: 'end' });
       return constraints;
     }
+    // na szlaku wjazdowym: niższa prędkość stacji / szlaku wyjazdowego obowiązuje od wjazdu całego pociągu
+    if (seg.virtual && seg.entering && this.lineSpeed < this.inLineSpeed) {
+      constraints.push({ dist: distToSegEnd + this.length, speed: Math.min(this.lineSpeed, this.vmax), reason: 'prędkość stacji', kind: 'limit' });
+    }
     // Sygnalizator na końcu bieżącej kostki
     let guard = 0;
     while (dist < maxDist && guard++ < 200) {
@@ -205,8 +215,8 @@ export class Train {
             : Interlocking.isTrainProceed(sig.aspect);
           if (!proceed) {
             if (this.hasOrderFor(sig.id)) {
-              // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 20 km/h
-              constraints.push({ dist, speed: 20 * KMH, reason: `rozkaz pisemny ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id });
+              // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 40 km/h
+              constraints.push({ dist, speed: SUBSTITUTE_SPEED * KMH, reason: `rozkaz pisemny ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id });
               continue;
             }
             constraints.push({ dist, speed: 0, reason: sig.id, kind: 'signal', signal: sig.id });
@@ -278,7 +288,7 @@ export class Train {
     const constraints = this.#lookahead(Math.max(1500, (this.v * this.v) / (2 * this.brake) + 300));
     // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s; na stacji nie szybciej niż prędkość szlaku
     // (prędkość drogowa) – rozjazdy i sygnały ograniczają dalej
-    let allowed = Math.min(this.vmax, this.activeLimit, this.lineSpeed, this.#pointsUnderTrain(), this.#zoneSpeed());
+    let allowed = Math.min(this.vmax, this.#activeSpeed(), this.#lineSpeedNow(), this.#pointsUnderTrain(), this.#zoneSpeed());
     if (this.mode === 'shunt' && this.v === 0 && !this.#shuntPermitted()) return; // manewry tylko na sygnał Ms2 (lub w nastawionym przebiegu manewrowym)
     if (this.mode === 'train' && this.v === 0 && !this.authority && !this.#mayStart()) return; // pociąg bez zezwolenia – czeka na sygnał
     let stopC = null;
@@ -339,6 +349,30 @@ export class Train {
     } else if (this.state === 'stopped') {
       this.state = 'moving';
     }
+  }
+
+  /**
+   * Prędkość szlaku pod pociągiem: na szlaku wjazdowym – jego prędkość, dopóki cały pociąg nie wjedzie na stację; dalej
+   * prędkość szlaku wyjazdowego (Ie-1 §4 ust. 13 pkt 2: największa prędkość dozwolona na odcinku, na którym jest pociąg).
+   */
+  #lineSpeedNow() {
+    return this.fullyIn ? this.lineSpeed : this.inLineSpeed;
+  }
+
+  /**
+   * Ograniczenie do następnego sygnalizatora. Z Sz / rozkazu przy wyjeździe na szlak: bez SBL – do końca rozjazdów (cały
+   * pociąg zjechał ze zwrotnic), z SBL – do końca umownego pierwszego odstępu.
+   */
+  #activeSpeed() {
+    if (!this.substituteLimit) return this.activeLimit;
+    const seg = this.trail[this.trail.length - 1];
+    if (seg?.virtual && !seg.entering) {
+      const sbl = this.topo.station.exits[seg.virtual]?.block === 'sbl';
+      const past = sbl ? this.head - seg.start >= Math.min(SBL_FIRST_BLOCK, seg.len)
+        : !this.trail.some((s) => s.tile?.type === 'point' && s.start < this.head && s.start + s.len > this.tail);
+      if (past) { this.substituteLimit = false; this.activeLimit = Infinity; }
+    }
+    return this.activeLimit;
   }
 
   /** Zwrotnice pod pociągiem: kierunek zwrotny ogranicza szybkość, dopóki ostatni wagon nie zjedzie z rozjazdu. */
@@ -466,7 +500,8 @@ export class Train {
             this.authority = true;
             this.exitAuth = (order || sig.aspect === 'Sz') ? '*' : act?.route.kind === 'train' ? (act.route.exit ?? null) : null;
           } else if (Interlocking.isShuntProceed(sig.aspect)) this.shuntRoute = sig.route;
-          this.activeLimit = (sig.aspect === 'Sz' || order) ? 20 * KMH : Infinity;
+          this.substituteLimit = sig.aspect === 'Sz' || !!order;
+          this.activeLimit = this.substituteLimit ? SUBSTITUTE_SPEED * KMH : Infinity;
           const sp = Interlocking.aspectSpeed(sig.aspect);
           const restricted = this.mode === 'train' && !order && sig.aspect !== 'Sz' && Interlocking.isProceed(sig.aspect) && sp < Infinity;
           this.zoneLimit = restricted ? this.#zoneOf(sig, sp) : null;

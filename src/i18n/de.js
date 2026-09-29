@@ -315,7 +315,7 @@ export default {
   'sp.order.reasonDefault': 'Störung der Stellwerkstechnik',
   'sp.order.text': 'Befehlstext',
   'sp.order.issue': 'Befehl erteilen',
-  'sp.order.rules': 'Bedingungen (Ir-1): der Zug steht vor dem Signal, Weichen im Fahrweg gesperrt (Zz) oder in einer Fahrstraße verschlossen, Gleissperren abgelegt, Abschnitte frei, bei Ausfahrt – Erlaubnis des Streckenblocks. Der Zug fährt mit höchstens 20 km/h bis zum nächsten Signal.',
+  'sp.order.rules': 'Bedingungen (Ir-1): der Zug steht vor dem Signal, Weichen im Fahrweg gesperrt (Zz) oder in einer Fahrstraße verschlossen, Gleissperren abgelegt, Abschnitte frei, bei Ausfahrt – Erlaubnis des Streckenblocks. Der Zug fährt mit höchstens 40 km/h bis zum nächsten Signal.',
   'sp.order.issued': 'Erteilte Befehle',
   'sp.order.ok': 'Befehl Nr. {id} erteilt.',
   'sp.order.before': 'vor',
@@ -427,7 +427,7 @@ export default {
         <li><b>Signal auf Halt stellen</b>: Signaltaste ziehen. Die Fahrstraße bleibt verschlossen.</li>
         <li><b>Fahrstraßenauflösung</b>: <b>Pz</b> + Signaltaste. Bei besetztem Annäherungsabschnitt – Zeitauflösung (90 s).</li>
         <li><b>Hilfsauflösung</b>: <b>dPz</b> + Signaltaste (plombierter Zähler). Nur bei Störung verwenden.</li>
-        <li><b>Ersatzsignal</b>: <b>Sz</b> + grüne Taste des Hauptsignals (Zähler). Der Zug fährt mit 20 km/h über die aktuell eingestellten Weichen.</li>
+        <li><b>Ersatzsignal</b>: <b>Sz</b> + grüne Taste des Hauptsignals (Zähler). Der Zug fährt mit 40 km/h über die aktuell eingestellten Weichen.</li>
         <li>Nach der Zugfahrt löst sich die Fahrstraße abschnittsweise auf.</li>
       </ul>
       <h3>Weichen und Gleissperren</h3>
@@ -446,7 +446,7 @@ export default {
       </ul>
       <h3>Schriftliche Befehle</h3>
       <ul>
-        <li>Reiter <i>Befehle</i>: Befehl „S“ erlaubt einem vor einem Halt zeigenden Signal stehenden Zug die Vorbeifahrt bis zum nächsten Signal mit höchstens 20 km/h (z. B. bei Signalstörung).</li>
+        <li>Reiter <i>Befehle</i>: Befehl „S“ erlaubt einem vor einem Halt zeigenden Signal stehenden Zug die Vorbeifahrt bis zum nächsten Signal mit höchstens 40 km/h (z. B. bei Signalstörung).</li>
         <li>Bedingungen (Ir-1): der Zug steht vor diesem Signal, Weichen im Fahrweg mit <b>Zz</b> gesperrt oder in einer Fahrstraße verschlossen, Gleissperren abgelegt, Abschnitte frei, bei Ausfahrt Erlaubnis des Streckenblocks.</li>
       </ul>
       <h3>Störungen, Kommunikation und Bewertung</h3>

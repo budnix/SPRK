@@ -73,6 +73,14 @@ i zał. 1). Przyjęte (uproszczenia gry):
   niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary przy
   usterce semafora), hamowanie nagłe do zatrzymania; dalej pociąg jedzie dopiero na nowe zezwolenie.
 
+Prędkości szlaku, Sz i rozkazu (wszystkie stanowiska). Ze źródeł: pociąg jedzie z największą prędkością dozwoloną na
+odcinku, na którym jest (Ie-1 od 17.01.2026 §4 ust. 13 pkt 2); sygnał zastępczy i rozkaz „S” zezwalają na jazdę do
+40 km/h do następnego semafora (Ie-1 od 17.01.2026 §4 ust. 13 pkt 18 – starsze wydania podawały 20 km/h; Ir-1 §63
+ust. 5); przy wyjeździe na szlak ograniczenie obowiązuje do końca rozjazdów, na szlaku z SBL – do pierwszego semafora
+odstępowego (Dz.U. 2015 poz. 360 §65). Przyjęte (uproszczenia gry): szlak ma jedną prędkość `lineSpeed`; na szlaku
+wjazdowym obowiązuje ona do wjazdu całego pociągu na stację; gra nie rysuje semaforów odstępowych, więc na SBL
+ograniczenie z Sz / rozkazu trwa przez umowny pierwszy odstęp 1000 m (`SBL_FIRST_BLOCK`).
+
 Zwrotnica bez kontroli położenia (wszystkie stanowiska). Ze źródeł: zwrotnicę bez kontroli (także rozprutą)
 zabezpiecza się na miejscu zamkiem trzpieniowym albo sponą, potem pociąg jedzie przez nią na Sz albo rozkaz „S”
 (Ie-10 §32 ust. 2, 4, 8, 9; §35 ust. 1 pkt 1–3 i 6; Ir-1 §41 ust. 6). Przyjęte (uproszczenia gry): zabezpieczenie

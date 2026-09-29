@@ -11,7 +11,7 @@ function trainAtA(sim) {
   return e;
 }
 
-test('rozkaz „S”: odmowa, gdy zwrotnice nie są zamknięte; po Zz rozkaz wydany, pociąg jedzie ≤20 km/h do następnego semafora', () => {
+test('rozkaz „S”: odmowa, gdy zwrotnice nie są zamknięte; po Zz rozkaz wydany, pociąg jedzie ≤40 km/h do następnego semafora', () => {
   const sim = makeSim();
   const e = trainAtA(sim);
   assert.equal(sim.traffic.standingTrains()[0].signal, 'A');
@@ -26,7 +26,7 @@ test('rozkaz „S”: odmowa, gdy zwrotnice nie są zamknięte; po Zz rozkaz wyd
   let vmax = 0; let passed = false;
   run(sim, 240, () => { vmax = Math.max(vmax, e.train.v * 3.6); if (e.train.occupiedSections().has('T1')) passed = true; });
   assert.ok(passed, 'pociąg nie minął semafora A');
-  assert.ok(vmax <= 21, `prędkość ${vmax.toFixed(1)} km/h`);
+  assert.ok(vmax <= 40.5, `prędkość ${vmax.toFixed(1)} km/h`); // rozkaz „S”: do 40 km/h (Ir-1 §63 ust. 5)
   // czeka przed D1 (Stój) – rozkaz dotyczył tylko A; po postoju przy peronie nie podjeżdża pod semafor na „Stój”
   run(sim, 120);
   assert.equal(e.train.v, 0);

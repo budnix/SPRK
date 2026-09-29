@@ -322,7 +322,7 @@ export default {
   'sp.order.reasonDefault': 'usterki urządzeń srk',
   'sp.order.text': 'Treść rozkazu',
   'sp.order.issue': 'Wydaj rozkaz',
-  'sp.order.rules': 'Warunki (Ir-1): pociąg stoi przed semaforem, zwrotnice w drodze jazdy zamknięte (Zz) lub utwierdzone, wykolejnice zdjęte, odcinki wolne, przy wyjeździe – pozwolenie blokady. Pociąg jedzie do następnego semafora z prędkością do 20 km/h.',
+  'sp.order.rules': 'Warunki (Ir-1): pociąg stoi przed semaforem, zwrotnice w drodze jazdy zamknięte (Zz) lub utwierdzone, wykolejnice zdjęte, odcinki wolne, przy wyjeździe – pozwolenie blokady. Pociąg jedzie do następnego semafora z prędkością do 40 km/h.',
   'sp.order.issued': 'Wydane rozkazy',
   'sp.order.ok': 'Rozkaz nr {id} wydany.',
   'sp.order.before': 'przed',
@@ -436,7 +436,7 @@ export default {
         <li><b>Wygaszenie sygnału</b>: wyciągnij przycisk sygnałowy. Przebieg pozostaje utwierdzony.</li>
         <li><b>Zwolnienie przebiegu</b>: <b>Pz</b> + przycisk sygnałowy. Gdy odcinek zbliżania jest zajęty – zwalnianie czasowe (90 s).</li>
         <li><b>Doraźne zwolnienie</b>: <b>dPz</b> + przycisk sygnałowy (licznik, plombowany). Używaj tylko w razie usterki.</li>
-        <li><b>Sygnał zastępczy</b>: <b>Sz</b> + zielony przycisk semafora (licznik). Pociąg jedzie 20 km/h po aktualnie ustawionych zwrotnicach.</li>
+        <li><b>Sygnał zastępczy</b>: <b>Sz</b> + zielony przycisk semafora (licznik). Pociąg jedzie 40 km/h po aktualnie ustawionych zwrotnicach.</li>
         <li>Po przejeździe pociągu przebieg rozwiązuje się odcinkowo.</li>
       </ul>
       <h3>Zwrotnice i wykolejnice</h3>
@@ -455,7 +455,7 @@ export default {
       </ul>
       <h3>Rozkazy pisemne</h3>
       <ul>
-        <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 20 km/h (np. przy usterce semafora).</li>
+        <li>Zakładka <i>Rozkazy</i>: rozkaz „S” pozwala pociągowi stojącemu przed semaforem „Stój” przejechać obok niego do następnego semafora z prędkością do 40 km/h (np. przy usterce semafora).</li>
         <li>Warunki wydania (Ir-1): pociąg stoi przed tym semaforem, zwrotnice w drodze jazdy zamknięte <b>Zz</b> lub utwierdzone w przebiegu, wykolejnice zdjęte, odcinki wolne, przy wyjeździe pozwolenie blokady.</li>
       </ul>
       <h3>Zakłócenia, łączność i ocena</h3>

@@ -931,7 +931,7 @@ export class Interlocking {
   static aspectSpeed(aspect) {
     switch (aspect) {
       case 'S1': case 'Sr1': case 'Ms1': case 'M1': return 0;
-      case 'Sz': return 20;
+      case 'Sz': return 40; // Ie-1 od 17.01.2026 §4 ust. 13 pkt 18 (wcześniej 20 km/h)
       case 'Ms2': case 'M2': return 25;
       case 'S10': case 'S11': case 'S12': case 'S13': case 'Sr3': return 40;
       default: return Infinity;
