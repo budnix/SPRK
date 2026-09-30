@@ -188,6 +188,7 @@ npm install
 npm run dev        # http://localhost:5173  (Vite; add --host to reach it from an iPad on the LAN)
 npm test           # logic tests (node --test)
 npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2e/__screenshots__
+npm run survey     # engine survey: every station × scenario × seed run by the automatic dispatcher (jams, safety checks)
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
@@ -222,7 +223,9 @@ Polish railway rules and terminology).
 * `src/srk/` – control-system strategies (type E, IZH-111, mechanical, computer, EBILock 950, MOR-3) and their operating protocols,
 * `src/tutorial/` – guided missions (steps, progress engine, popups),
 * `src/stations/` – station definitions (`docs/STATION-FORMAT.md`),
-* `tests/` – Node tests (route matrices, full shifts, missions) and Playwright e2e tests with screenshot baselines,
+* `tests/` – Node tests (route matrices, full shifts, missions, faults at fixed moments of a train's journey) and Playwright e2e tests with screenshot baselines,
+* `scripts/survey.mjs` – engine survey (`npm run survey -- --help`): full shifts under disruptions run by the automatic dispatcher;
+  reports trains that never reached their destination and safety-check violations; `--json` / `--compare` compare results before and after an engine change,
 * `docs/ARCHITECTURE.md` – architecture and design rules, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans).
 
 The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published

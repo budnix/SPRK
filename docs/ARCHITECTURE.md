@@ -518,6 +518,31 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`),
   polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
+* `tests/invariants.js` – niezmienniki bezpieczeństwa sprawdzane w każdym takcie (dwa pociągi na odcinku, odcinek
+  w dwóch przebiegach, sygnał zezwalający bez przebiegu albo na zajęty odcinek – poza nastawnią mechaniczną,
+  zwrotnica przestawiana pod taborem) oraz zdarzenia „spad” i „rozprucie”. Wspólne dla macierzy, testów usterek
+  i przeglądu.
+* Usterki w ustalonej chwili jazdy pociągu (`tests/fault-harness.js`): usterka zaczyna się przy zdarzeniu (pociąg
+  zgłoszony, przebieg nastawiony, pociąg w przebiegu, przy peronie, wyjazd, na szlaku) – `Faults.add` – a cel wskazuje
+  się względem pociągu. Ruch prowadzi automat; czynności, których automat nie robi (Sz, rozkaz „S”, ZeroLO, ITS / ITO),
+  wykonuje w teście „dyżurny”. Sprawdzane są reguły urządzeń: niezmienniki, brak kar za czynności wymuszone usterką,
+  stan po naprawie, żaden pociąg ani zgłoszenie nie przepada. Pliki:
+  – `faults-signals-points.test.js` – usterka semafora i napędu zwrotnicy (zgłoszony, przebieg nastawiony, stoi przed
+    semaforem, tuż przed pociągiem, przy peronie, wyjazd), pięć stanowisk Szkolnej i MOR-3 (Kalinowo), oba kierunki;
+  – `faults-track.test.js` – fałszywa zajętość (przed i pod pociągiem, tor docelowy, przebieg wyjazdowy), blok
+    przebiegowy niezwolniony przez pociąg (nastawnia mechaniczna), licznik osi z ZeroLO (MOR-3), pęknięta szyna z ITS / ITO;
+  – `faults-block.test.js` – usterka blokady liniowej w każdej chwili wjazdu i wyjazdu, z naprawą w następnej chwili,
+    na Eap dwukierunkowej (Szkolna, Kalinowo), jednokierunkowej (Jodłowa) i SBL (Brzezina), przy krzyżowaniu, pociągach
+    po sobie i pociągu przelotowym; pilnuje też szlaku (jeden pociąg na torze szlakowym, pozwolenie).
+  Znane błędy silnika są testami `todo` (uruchamiają się, ale nie psują wyniku) – poprawka błędu zmienia test na zwykły.
+* `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
+  (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
+  zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
+  dojechały, naruszenia niezmienników (w każdym takcie), spad i rozprucie, liczniki dPz i Sz, wynik oraz odcisk
+  przebiegu ruchu (`fingerprint`). `--json` zapisuje wyniki, `--compare` porównuje je z zapisanymi (gorzej / lepiej /
+  nowe zatory / inny przebieg przy tych samych wskaźnikach) – przed zmianą w silniku i po niej. Kod wyjścia 1 przy
+  zatorze, naruszeniu, spad albo rozpruciu. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
+  jego czyste funkcje sprawdza `tests/survey.test.js`.
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
   ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
   skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,

@@ -38,9 +38,10 @@ export function violations(sim) {
       for (const s of act.lockedSections) if (ilk.sections.get(s).occupied) out.push(`${sig.id} (${sig.aspect}) zezwala na zajęty odcinek ${s}`);
     }
   }
-  // 4. Zwrotnica nie przestawia się na zajętym odcinku (także zajętym z usterki – urządzenie widzi tabor)
+  // 4. Zwrotnica nie przestawia się pod taborem. Zajętość z usterki, która pojawi się w trakcie przestawiania, nie
+  //    przerywa ruchu napędu (zależność nie pozwala tylko zacząć przestawiania na zajętym odcinku)
   for (const p of ilk.points.values()) {
-    if (p.moving && ilk.sections.get(p.section)?.occupied) out.push(`zwrotnica ${p.id} przestawiana na zajętym odcinku ${p.section}`);
+    if (p.moving && ilk.sections.get(p.section)?.physical) out.push(`zwrotnica ${p.id} przestawiana pod taborem (${p.section})`);
   }
   return out;
 }

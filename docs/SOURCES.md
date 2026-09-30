@@ -129,6 +129,9 @@ i zał. 1). Przyjęte (uproszczenia gry):
   się ruszyć, gdy między nim a następnym semaforem była zwrotnica;
 * przebieg, który nie rozwiązał się za pociągiem, bo odcinek wykazywał zajętość z usterki w chwili przejazdu, zwalnia
   się doraźnie (dPz / ZDP / PZA) – takie zwolnienie jest uzasadnione usterką i nie kosztuje punktów (przyjęte);
+* po usunięciu usterki semafora (żarówka / obwód) przy wciąż nastawionym przebiegu sygnał zezwalający wraca sam –
+  inaczej niż po spadku sygnału ze stałej kontroli (zajętość odcinka, utrata kontroli zwrotnicy), po którym sygnał
+  sam nie wraca (przyjęte; sprawdzają to testy `tests/faults-signals-points.test.js`);
 * tor szlakowy z blokadą półsamoczynną nie jest wolny, dopóki pociąg sąsiada stoi przed semaforem wjazdowym – także
   gdy zjechał już w całości na odcinek przed semaforem: sąsiad nie wyprawia następnego pociągu (blokada
   jednokierunkowa), a przy zapowiadaniu telefonicznym „droga wolna” się nie należy (przyjęte: pociąg „przybył
