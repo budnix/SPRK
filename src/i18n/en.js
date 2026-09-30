@@ -444,7 +444,7 @@ export default {
         <li><b>Throwing</b>: <b>Zw</b> + point button (black on the tile). An occupied, locked or individually locked point cannot be thrown.</li>
         <li><b>Individual lock</b>: <b>Zz</b> + point button (white lamp at the button).</li>
         <li>Lamps: <span class="sw y"></span> yellow – position, <span class="sw w"></span> white – locked in a route, <span class="sw r"></span> red – occupied. No light – point moving / no detection.</li>
-        <li>Derailer Wk: yellow – on (protects the main track), white – off.</li>
+        <li>Derailer Wk: yellow lamp – off the rail; dark – on the rail (protects the main track) or moving.</li>
       </ul>
       <h3>Eap block system</h3>
       <ul>

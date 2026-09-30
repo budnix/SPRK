@@ -7,12 +7,14 @@
  * pulpit IZH-111 (zostawia pola puste – rozkazy ma w osobnej grupie) oraz podział na ekrany i układ peronów
  * (pola są zajęte).
  */
+// przyciski grupowe (także doraźne) czarne – ISDR 2.3.2.1.1 i 2.3.2.3 („typowo”); biel i czerwień mają przyciski
+// sygnałowe i blokady, niebieskiej i szarej w tym zestawie nie ma
 export const E_GROUP_BUTTONS = [
   { id: 'Zw', label: 'Zw', role: 'group-point', color: 'black', dx: 0 },
-  { id: 'Zz', label: 'Zz', role: 'point-lock', color: 'blue', dx: 1 },
-  { id: 'Pz', label: 'Pz', role: 'route-release', color: 'grey', dx: 3 },
-  { id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'red', counter: true, dx: 4 },
-  { id: 'Sz', label: 'Sz', role: 'substitute', color: 'white', counter: true, dx: 6 },
+  { id: 'Zz', label: 'Zz', role: 'point-lock', color: 'black', dx: 1 },
+  { id: 'Pz', label: 'Pz', role: 'route-release', color: 'black', dx: 3 },
+  { id: 'dPz', label: 'dPz', role: 'emergency-release', color: 'black', counter: true, dx: 4 },
+  { id: 'Sz', label: 'Sz', role: 'substitute', color: 'black', counter: true, dx: 6 },
 ];
 
 /** Szerokość grupy w kostkach (z odstępami między parami przycisków). */

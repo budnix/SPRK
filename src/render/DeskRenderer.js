@@ -2,6 +2,7 @@ import { refKey } from './refKey.js';
 import { PanelView } from './PanelView.js';
 import * as art from './tileArt.js';
 import { FRAME, setLamp, sectionLamp, buildDesk, bindDeskButtons, updateBlockLamps, updateSectionLamps, deskTrainLabel, placeDeskTrainLabel } from './deskParts.js';
+import { repeaterLamps } from '../tiles/repeater.js';
 
 /**
  * Pulpit kostkowy urządzeń przekaźnikowych typu E (SVG): plan półciemny – żółte szczeliny pokazują położenie
@@ -57,7 +58,8 @@ export class DeskRenderer extends PanelView {
     const d = this.ilk.derailers.get(id);
     const r = this.derailerRefs.get(id);
     if (!d || !r) return;
-    setLamp(r.derailerLamp, d.moving ? 'off' : (d.position === 'on' ? 'yellow' : 'white'));
+    // lampka położenia świeci tylko przy wykolejnicy zdjętej, na żółto (ISDR 2.3.2.2.1.2) – biel na pulpicie to utwierdzenie
+    setLamp(r.derailerLamp, !d.moving && d.position === 'off' ? 'yellow' : 'off');
     r.derailerBtn?.classList.toggle('locked', d.individualLock);
   }
 
@@ -66,20 +68,13 @@ export class DeskRenderer extends PanelView {
     const r = this.signalRefs.get(id);
     if (!s || !r) return;
     const a = s.aspect;
+    // powtarzacz typowy dla pulpitów typu E: jedna zielona lampka dla sygnałów zezwalających (src/tiles/repeater.js)
+    const m = repeaterLamps(a, s.kind);
+    for (const [c, e] of Object.entries(r.lamps)) setLamp(e, m[c] || 'off');
     if (s.kind === 'tm') {
-      setLamp(r.lamps.blue, a === 'Ms2' ? 'off' : 'blue');
-      setLamp(r.lamps.white, a === 'Ms2' ? 'white' : 'off');
       r.btnWhite?.classList.toggle('active', a === 'Ms2');
       return;
     }
-    // Powtarzacz: lampki pomarańczowa / zielona / czerwona / biała (obrazy dwuświatłowe – uproszczenie)
-    const map = {
-      S1: { red: 'red' }, S2: { green: 'green' }, S3: { green: 'green blink' }, S4: { orange: 'orange blink' }, S5: { orange: 'orange' },
-      S10: { orange: 'orange', green: 'green' }, S11: { orange: 'orange', green: 'green blink' }, S12: { orange: 'orange blink', green: 'green' },
-      S13: { orange: 'orange' }, Sz: { red: 'red', white: 'white blink' }, Ms2: { white: 'white' },
-    };
-    const m = map[a] || {};
-    for (const [c, e] of Object.entries(r.lamps)) setLamp(e, m[c] || 'off');
     r.btnGreen?.classList.toggle('active', s.route != null && a !== 'S1' && a !== 'Ms2');
     r.btnWhite?.classList.toggle('active', a === 'Ms2');
   }

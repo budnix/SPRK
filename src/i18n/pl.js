@@ -453,7 +453,7 @@ export default {
         <li><b>Przestawienie</b>: <b>Zw</b> + przycisk zwrotnicy (czarny na kostce). Nie da się przestawić zwrotnicy zajętej, utwierdzonej lub zamkniętej.</li>
         <li><b>Zamknięcie indywidualne</b>: <b>Zz</b> + przycisk zwrotnicy (biała lampka przy przycisku).</li>
         <li>Lampki: <span class="sw y"></span> żółta – położenie, <span class="sw w"></span> biała – utwierdzona w przebiegu, <span class="sw r"></span> czerwona – zajęta. Brak światła – zwrotnica w ruchu / brak kontroli.</li>
-        <li>Wykolejnica Wk: żółta – nałożona (chroni tor główny), biała – zdjęta.</li>
+        <li>Wykolejnica Wk: żółta lampka – zdjęta; zgaszona – nałożona (chroni tor główny) albo w ruchu.</li>
       </ul>
       <h3>Blokada liniowa Eap</h3>
       <ul>

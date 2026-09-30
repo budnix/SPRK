@@ -444,7 +444,7 @@ export default {
         <li><b>Umstellen</b>: <b>Zw</b> + Weichentaste (schwarz auf dem Feld). Eine besetzte, verschlossene oder gesperrte Weiche lässt sich nicht umstellen.</li>
         <li><b>Einzelsperre</b>: <b>Zz</b> + Weichentaste (weiße Lampe an der Taste).</li>
         <li>Lampen: <span class="sw y"></span> gelb – Lage, <span class="sw w"></span> weiß – in einer Fahrstraße verschlossen, <span class="sw r"></span> rot – besetzt. Kein Licht – Weiche läuft um / keine Überwachung.</li>
-        <li>Gleissperre Wk: gelb – aufgelegt (schützt das Hauptgleis), weiß – abgelegt.</li>
+        <li>Gleissperre Wk: gelbe Lampe – abgelegt; dunkel – aufgelegt (schützt das Hauptgleis) oder in Bewegung.</li>
       </ul>
       <h3>Streckenblock Eap</h3>
       <ul>

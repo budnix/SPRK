@@ -35,7 +35,9 @@ Play it: **https://budnix.github.io/SPRK/**
 ### Six workstations, one interlocking model
 * **Type E relay desk** – cube tiles, two-button operation (press the first button, then the second within 6 s),
   pull a button to put a signal to stop, group buttons Zw / Zz / Pz / dPz / Sz with sealed counters, Eap line-block
-  panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow).
+  panels with Wbl / Poz / Ko / dPo / dKo, lamps for route locking (white), occupancy (red) and point position (yellow); signal repeaters with one green
+  lamp for every proceed aspect, a red lamp for stop and a white one for Ms2 / Sz (flashing); black group buttons;
+  a derailer lamp that shows yellow only when the derailer is off the rail.
 * **Computer workstation** – black schematic per Ie-104.1: grey / green / yellow / red / pink sections (a closed track
   is a double line in its state colour), signals on the track line – a filled triangle (with shunting aspects plus an
   open arrowhead, a shunting signal only an open arrowhead with a turquoise number), plain track numbers on the line,

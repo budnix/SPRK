@@ -23,6 +23,22 @@ białe – utwierdzenie przebiegu, czerwone – zajętość odcinka. Przyjęte (
 w odcinku zwrotnicowym zajętość i utwierdzenie świecą tylko na drodze, w którą leżą zwrotnice – łącznica (albo tor
 za ramieniem), w którą zwrotnica nie jest ustawiona, zostaje ciemna, żeby nie wyglądała na drogę jazdy.
 
+Pulpit typu E – powtarzacze, przyciski grupowe, wykolejnice (`src/tiles/repeater.js`, `src/tiles/controls.js`,
+`src/render/DeskRenderer.js`):
+
+* powtarzacz semafora ma albo światła takie jak semafor, albo jedną zieloną lampkę dla wszystkich sygnałów
+  zezwalających – to drugie jest typowe dla pulpitów typu E (Ie-10 (E18) rozdz. II §7 ust. 7; ISDR 2.3.2.2.1.5;
+  bsk.isdr.pl/usrk_pulpity.php). Gra stosuje wariant typowy: zielona – każdy sygnał zezwalający dla pociągu (S2–S13),
+  czerwona – „Stój”, biała – Ms2 (ciągła) i sygnał zastępczy Sz (migająca, razem z czerwoną); tarcza manewrowa –
+  niebieska (Ms1) i biała (Ms2). Obraz sygnału (S5, S12, S13…) widać na semaforze, nie na powtarzaczu. Wcześniej gra
+  miała lampkę pomarańczową i przez to pokazywała S12 jako pomarańczową z zieloną, a S13 tak samo jak S5;
+* przyciski grupowe (Zw, Zz, Pz) i doraźne (dPz, Sz) są czarne – ISDR 2.3.2.1.1 i 2.3.2.3 pisze „typowo”, więc to
+  wzór, nie przepis; biel i czerwień zostają przy przyciskach sygnałowych i blokady. Kostki przycisków zapisane
+  w starych plikach stacji (`type: 'button'`) zachowują swoją barwę;
+* lampka wykolejnicy świeci na żółto tylko przy wykolejnicy zdjętej; nałożona albo w ruchu – zgaszona (ISDR
+  2.3.2.2.1.2; źródło podaje też wariant z żółtymi szczelinami – w osi toru zdjęta, ukośna nałożona). Biel na pulpicie
+  oznacza utwierdzenie, więc nie pokazuje położenia wykolejnicy.
+
 Szybkość pociągu w okręgu zwrotnicowym (Ie-1 §3, wszystkie stanowiska): S10–S13 i Sr3 zezwalają na jazdę do 40 km/h
 „począwszy od semafora do końca okręgu zwrotnicowego osłanianego tym semaforem”. W grze ograniczenie obowiązuje od
 semafora, aż cały pociąg zjedzie z odcinków zwrotnicowych przebiegu (przyjęte: okręg zwrotnicowy = odcinki zwrotnic

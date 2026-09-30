@@ -78,6 +78,32 @@ test('przebieg pociągowy dwoma przyciskami, wyciągnięcie gasi sygnał, Zw + z
   expect((await simState(page)).points[free]).not.toBe(before);
 });
 
+test('lampki pulpitu typu E: powtarzacz – czerwona przy „Stój”, sama zielona przy sygnale zezwalającym; wykolejnica – żółta tylko zdjęta; przyciski grupowe czarne', async ({ page }) => {
+  await openShift(page, 'sopot', { params: { srk: 'E' } });
+  const lamps = (id) => page.evaluate((i) => Object.fromEntries(Object.entries(window.desk.signalRefs.get(i).lamps)
+    .map(([c, e]) => [c, e.classList.contains('on') ? e.getAttribute('class').match(/lamp-(\w+)/)?.[1] : null])), id);
+  const sig = await page.evaluate(() => [...window.sim.ilk.signals.values()].find((s) => s.kind === 'semafor' && !s.shunting && s.aspect === 'S1' && window.desk.signalRefs.has(s.id)).id);
+  expect(Object.keys(await lamps(sig)).sort()).toEqual(['green', 'red', 'white']);
+  expect(await lamps(sig)).toEqual({ green: null, red: 'red', white: null });
+  // S1 → sygnał zezwalający (jakikolwiek: S2, S5, S10…): świeci tylko zielona
+  await page.evaluate((i) => { const s = window.sim.ilk.signals.get(i); s.aspect = 'S12'; window.desk.updateSignal(i); }, sig);
+  expect(await lamps(sig)).toEqual({ green: 'green', red: null, white: null });
+  // wykolejnica nałożona – lampka zgaszona; Zw + Wk zdejmuje – żółta
+  const wk = (await page.evaluate(() => [...window.sim.ilk.derailers.values()].find((d) => d.position === 'on' && window.desk.derailerRefs.has(d.id))?.id));
+  expect(wk).toBeTruthy();
+  const wkLamp = () => page.evaluate((i) => { const e = window.desk.derailerRefs.get(i).derailerLamp; return e.classList.contains('on') ? e.getAttribute('class') : 'off'; }, wk);
+  expect(await wkLamp()).toBe('off');
+  await btn(page, { kind: 'group', id: 'Zw', role: 'group-point' }).click();
+  await btn(page, { kind: 'derailer', id: wk }).click();
+  await advance(page, 8);
+  expect(await page.evaluate((i) => window.sim.ilk.derailers.get(i).position, wk)).toBe('off');
+  expect(await wkLamp()).toMatch(/lamp-yellow/);
+  // przyciski grupowe – wszystkie czarne
+  const groupColors = await page.locator('#desk .btn[data-ref*=\'"kind":"group"\']').evaluateAll((els) => els.map((e) => [...e.classList].find((c) => /^btn-/.test(c))));
+  expect(groupColors.length).toBeGreaterThanOrEqual(5);
+  expect(new Set(groupColors)).toEqual(new Set(['btn-black']));
+});
+
 test('blokada liniowa: kostki przy końcu toru (strzałki na torze, Ko|Poz|Wbl obok, liczniki wyżej); Wbl wysyła żądanie, po odpowiedzi sąsiada pozwolenie', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
   // brak osobnego pola blokady; kostki blokady leżą w rzędach 2–3 przy prawym krańcu, strzałki na dwóch skrajnych kostkach toru

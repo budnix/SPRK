@@ -1,6 +1,7 @@
 import { el, text, CELL } from './svg.js';
 import { trackLabelText } from './platforms.js';
 import { PORT_XY } from '../tiles/directions.js';
+import { SEMAPHORE_REPEATER_LAMPS } from '../tiles/repeater.js';
 
 /**
  * Grafika kostek pulpitu (SVG) wzorowana na pulpitach kostkowych ISDR / AC-20.
@@ -226,7 +227,8 @@ export function signalArt(tile) {
   const refs = {};
   const hasShunt = tile.kind === 'tm' || tile.shunting;
   const py = 11;
-  const lampsN = tile.kind === 'tm' ? 2 : (hasShunt ? 4 : 3);
+  // semafor: zielona / czerwona / biała (Sz, Ms2) – jedna zielona dla wszystkich sygnałów zezwalających (src/tiles/repeater.js)
+  const lampsN = tile.kind === 'tm' ? 2 : SEMAPHORE_REPEATER_LAMPS.length;
   const pw = 8 + lampsN * 7;
   const px = C - pw / 2;
   g.appendChild(el('rect', { class: 'pill', x: px, y: py - 5.5, width: pw, height: 11, rx: 5.5 }));
@@ -235,8 +237,7 @@ export function signalArt(tile) {
   g.appendChild(el('path', { class: 'mast', d: `M${mx},${py - 4} L${mx},${py + 4} M${mx},${py} L${mx + (east ? 3 : -3)},${py}`, 'stroke-width': 1.2 }));
   const lx = (i) => px + 7.5 + i * 7;
   if (tile.kind === 'semafor') {
-    const order = east ? ['orange', 'green', 'red', 'white'] : ['white', 'red', 'green', 'orange'];
-    const use = hasShunt ? order : order.filter((c) => c !== 'white');
+    const use = east ? SEMAPHORE_REPEATER_LAMPS : [...SEMAPHORE_REPEATER_LAMPS].reverse();
     refs.lamps = {};
     use.forEach((c, i) => { refs.lamps[c] = lamp(lx(i), py, 2.8, ''); g.appendChild(refs.lamps[c]); });
     // semafor z sygnałem manewrowym: zielony przycisk z opisem po lewej, biały (manewrowy, „m” nad nim) przy prawej
