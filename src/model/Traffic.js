@@ -74,10 +74,36 @@ export class Traffic {
    *    wykolejnice zdjęte, odcinki wolne i nieutwierdzone w innym przebiegu,
    *  - wyjazd na szlak tylko z pozwoleniem blokady liniowej.
    */
+  /**
+   * Zezwolenie dyżurnego na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15–16, § 6 ust. 2 pkt 2):
+   * przebieg manewrowy od tego sygnalizatora nastawiony, sygnalizator nie daje Ms2 / M2 z powodu usterki – zezwolenie
+   * ustne albo przez radiotelefon, dla tego jednego przebiegu, jazda z prędkością manewrową. Przy sprawnym sygnalizatorze
+   * zezwolenie daje się sygnałem – odmowa.
+   */
+  shuntPermit(nr) {
+    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const tr = e?.train;
+    if (!tr || tr.finished || !tr.entered) return { ok: false, reason: `skład nr ${nr} nie stoi na stacji` };
+    if (tr.mode !== 'shunt') return { ok: false, reason: `pociąg nr ${nr} nie jest w jeździe manewrowej` };
+    if (tr.v > 0.05) return { ok: false, reason: `skład nr ${nr} jest w ruchu` };
+    // przebieg manewrowy czekający na ten skład: od sygnalizatora przed nim albo takiego, przed którym skład stoi
+    const occ = tr.occupiedSections(), next = tr.nextSignal();
+    const act = [...this.ilk.active.values()].find((a) => a.route.kind === 'shunt' && !a.trainEntered && (a.route.start === next || occ.has(a.route.approach)));
+    if (!act) return { ok: false, reason: `przed składem nr ${nr} nie ma nastawionego przebiegu manewrowego` };
+    const sig = this.ilk.signals.get(act.route.start);
+    if (!sig?.failed) return { ok: false, reason: `sygnalizator ${act.route.start} jest sprawny – zezwolenie daje się sygnałem na sygnalizatorze` };
+    tr.shuntPermit = { signal: sig.id, route: act.id };
+    this.bus.emit('log', { time: this.time, level: 'warn', msg: `Zezwolenie na jazdę manewrową składu ${nr} obok uszkodzonego sygnalizatora ${sig.id} (przebieg ${act.id}, Ir-9 § 10 ust. 15)` });
+    this.bus.emit('comms', { time: this.time + 4, from: `maszynista poc. ${nr}`, kind: 'radio', nr, text: `Zezwolenie przyjąłem. Jadę obok sygnalizatora ${sig.id} z prędkością manewrową.` });
+    return { ok: true, signal: sig.id, route: act.id };
+  }
+
   issueOrder({ nr, signal, text, reason }) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
     if (!e?.train || e.train.finished || !e.train.entered) return { ok: false, reason: `Pociąg ${nr} nie stoi na stacji` };
     const tr = e.train;
+    // rozkaz „S” dotyczy pociągu; skład manewrowy mija uszkodzony sygnalizator na zezwolenie dyżurnego (Ir-9 § 10 ust. 15)
+    if (tr.mode === 'shunt') return { ok: false, reason: `Skład ${nr} jest w jeździe manewrowej – rozkaz „S” dotyczy pociągu; obok uszkodzonego sygnalizatora skład jedzie na zezwolenie dyżurnego (Łączność)` };
     if (tr.v > 0) return { ok: false, reason: `Pociąg ${nr} jest w ruchu – rozkaz doręcza się na postoju` };
     const behind = tr.stoppedAt?.kind === 'spad' && tr.stoppedAt.signal === signal; // stoi za semaforem miniętym na „Stój”
     const next = tr.nextSignal();

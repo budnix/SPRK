@@ -337,6 +337,7 @@ export class Simulation {
    *  { type: 'point', id } | { type: 'derailer', id } – przestawienie
    *  { type: 'lock', id, derailer? }          – zamknięcie indywidualne (Zz) – założenie / zdjęcie
    *  { type: 'point-secure', id, on }         – zabezpieczenie zwrotnicy na miejscu (zamek / spona) – polecenie dla pracownika
+   *  { type: 'shunt-permit', nr }              – zezwolenie na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15)
    *  { type: 'block', exit, btn }             – blokada liniowa (Wbl, oWbl, Poz, Ko, Zk, dPo, dKo)
    *  { type: 'close-section', section, closed } – zamknięcie ruchowe toru (ITS) / odwołanie (ITO)
    *  { type: 'signal-stop', signal, on }      – stopowanie sygnalizatora (SES) / odwołanie (SEO)
@@ -378,6 +379,8 @@ export class Simulation {
         return this.#allowed(cmd.derailer ? 'derailer' : 'point', cmd.id) ? ilk.toggleIndividualLock(cmd.id, !!cmd.derailer) : refuse(OTHER_DISTRICT);
       case 'point-secure':
         return this.#allowed('point', cmd.id) ? ilk.securePoint(cmd.id, !!cmd.on) : refuse(OTHER_DISTRICT);
+      case 'shunt-permit':
+        return this.traffic.shuntPermit(cmd.nr);
       case 'block':
         if (!this.#allowed('block', cmd.exit)) return refuse(OTHER_DISTRICT);
         return this.blocks.get(cmd.exit)?.press(cmd.btn) ?? refuse(`Brak blokady liniowej ${cmd.exit}`);

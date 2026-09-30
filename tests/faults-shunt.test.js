@@ -62,19 +62,19 @@ const moment = {
 /**
  * Przypadki: `move` – zadanie, które usterka wstrzymuje (`null` – żadne), `dPz` – przebieg manewrowy, który nie rozwiązuje
  * się za składem (zajętość z usterki) i automat zwalnia go doraźnie: na pulpicie E dPz (licznik, 0 pkt – uzasadnione
- * usterką), na stanowisku komputerowym ZDM – polecenie zwykłe, bez licznika i bez pozycji w ocenie; `leftLong` – stan po
- * długiej usterce inny niż czysty (ograniczenie automatu, patrz niżej).
+ * usterką), na stanowisku komputerowym ZDM – polecenie zwykłe, bez licznika i bez pozycji w ocenie; `permit` –
+ * sygnalizator uszkodzony przy nastawionym przebiegu: skład jedzie na zezwolenie dyżurnego (Ir-9 § 10 ust. 15, automat
+ * daje je radiem), nie czeka na naprawę.
  */
 const CASES = [
   // odstawienie: przebieg D2-kT3m
-  { when: 'entering', type: 'signal-fail', target: 'D2', move: 'odstaw-90201', what: 'semafor D2 bez Ms2 (przebieg nastawiony, D2 na „Stój”)',
-    leftLong: ['przebieg D2-kT3m czynny', 'D2: Ms2'] },
+  { when: 'entering', type: 'signal-fail', target: 'D2', move: 'odstaw-90201', permit: true, what: 'semafor D2 bez Ms2 (przebieg nastawiony, D2 na „Stój”)' },
   { when: 'entering', type: 'point-control', target: 'Zw3', move: 'odstaw-90201', what: 'zwrotnica Zw3 po przestawieniu bez kontroli (przebieg się nie nastawia)' },
   { when: 'entering', type: 'false-occupancy', target: 'T2e', move: 'odstaw-90201', what: 'zajętość T2e (pierwszy odcinek za D2)' },
   { when: 'entering', type: 'false-occupancy', target: 'Iz3', move: 'odstaw-90201', what: 'zajętość Iz3 (rozjazd Zw3)' },
   { when: 'entering', type: 'false-occupancy', target: 'T3', move: 'odstaw-90201', what: 'zajętość T3 (tor docelowy)' },
   // podstawienie: przebieg Tm1-Tm2
-  { when: 'away', type: 'signal-fail', target: 'Tm1', move: 'podstaw-90202', what: 'tarcza Tm1 bez Ms2 (przebieg nastawiony, Tm1 na Ms1)' },
+  { when: 'away', type: 'signal-fail', target: 'Tm1', move: 'podstaw-90202', permit: true, what: 'tarcza Tm1 bez Ms2 (przebieg nastawiony, Tm1 na Ms1)' },
   { when: 'away', type: 'false-occupancy', target: 'Iz3', move: 'podstaw-90202', what: 'zajętość Iz3 (rozjazd Zw3)' },
   { when: 'away', type: 'false-occupancy', target: 'T2', move: 'podstaw-90202', what: 'zajętość T2 (tor docelowy)' },
   // usterka napędu objawia się dopiero po przestawieniu – Zw3 zostaje na „−” po odstawieniu
@@ -85,13 +85,22 @@ const CASES = [
   { when: 'backMoving', type: 'false-occupancy', target: 'T2e', move: null, dPz: 'Tm1-Tm2', what: 'zajętość T2e przed czołem jadącego składu (podstawienie)' },
 ];
 
+/** Sygnalizator uszkodzony: zezwolenie dyżurnego radiem (raz, dla przebiegu od tego sygnalizatora), manewr przed naprawą. */
+function checkPermit({ sim, msg, permits }, c, repaired) {
+  assert.deepEqual(permits.map((p) => p.signal), [c.target], `${msg}: zezwolenie na jazdę obok ${c.target}`);
+  assert.ok(taskOf(sim, c.move).doneAt < repaired, `${msg}: ${c.move} na zezwolenie, przed naprawą`);
+}
+
 function shuntRun(srk, c, duration) {
   const sim = shuntSim(srk);
-  const released = [];
-  sim.bus.on('log', (l) => { const m = /^Doraźne zwolnienie przebiegu (?:manewrowego )?(\S+)/.exec(l.msg); if (m) released.push(m[1]); });
+  const released = [], permits = [];
+  sim.bus.on('log', (l) => {
+    const m = /^Doraźne zwolnienie przebiegu (?:manewrowego )?(\S+)/.exec(l.msg); if (m) released.push(m[1]);
+    const z = /^Zezwolenie na jazdę manewrową składu \S+ obok uszkodzonego sygnalizatora (\S+)/.exec(l.msg); if (z) permits.push({ signal: z[1] });
+  });
   const r = runWithFault(sim, { when: moment[c.when], fault: { type: c.type, target: c.target, duration }, until: '09:00' });
   const msg = `Szkolna ${srk}, ${c.type} ${c.target} (${c.what}), ${duration} min od ${r.fault ? Clock.format(r.fault.since ?? r.fault.at, true) : '–'}`;
-  return { sim, r, msg, released };
+  return { sim, r, msg, released, permits };
 }
 
 /** Wspólne: usterka wystąpiła, bez naruszeń niezmienników, bez spadu i rozprucia, wszystkie pociągi dojechały. */
@@ -116,8 +125,10 @@ test('manewry przy krótkiej usterce na drodze manewru: zadania wykonane w termi
       assert.ok(t.done && t.doneAt <= t.deadlineTime, `${msg}: ${id} wykonane w terminie (${t.done ? Clock.format(t.doneAt, true) : t.failed ? 'przepadło' : 'w toku'})`);
     }
     // usterka naprawdę wstrzymała manewr: zadanie zaliczone dopiero po naprawie; bez wpływu (`move: null`) – zwrotnica
-    // już w położeniu albo zajętość przed składem, który jedzie w nastawionym przebiegu
-    if (c.move) assert.ok(taskOf(sim, c.move).doneAt > repaired, `${msg}: ${c.move} wykonane przed naprawą – usterka nie trafiła w drogę manewru`);
+    // już w położeniu albo zajętość przed składem, który jedzie w nastawionym przebiegu; sygnalizator uszkodzony
+    // (`permit`) – skład jedzie na zezwolenie dyżurnego przed naprawą
+    if (c.permit) checkPermit(x, c, repaired);
+    else if (c.move) assert.ok(taskOf(sim, c.move).doneAt > repaired, `${msg}: ${c.move} wykonane przed naprawą – usterka nie trafiła w drogę manewru`);
     else assert.ok(taskOf(sim, 'podstaw-90202').doneAt < repaired, `${msg}: podstawienie czekało na naprawę`);
     assert.deepEqual(points(sim, 'task'), [10, 10], `${msg}: punkty za zadania`);
     assert.deepEqual(penalties(sim), [], `${msg}: kary`);
@@ -127,26 +138,28 @@ test('manewry przy krótkiej usterce na drodze manewru: zadania wykonane w termi
 });
 
 /*
- * Długa usterka (25 min) – obecne zachowanie. Automat nie ma jak minąć sygnalizatora manewrowego bez Ms2 ani drogi bez
- * przebiegu (silnik nie zna zezwolenia na manewry przy usterce), więc czeka na naprawę:
+ * Długa usterka (25 min). Sygnalizator uszkodzony przy nastawionym przebiegu – skład jedzie na zezwolenie dyżurnego
+ * (Ir-9 § 10 ust. 15), zadania w terminie. Usterka zwrotnicy albo zajętość z usterki – Ir-9 zezwolenia przy nich nie
+ * przewiduje (przebieg się nie nastawia), więc automat czeka na naprawę:
  *  - usterka na drodze odstawienia: odstawienie przepada o 08:14 (termin + 10 min, −10), podstawienie po nim też (−10);
  *    automat czeka na zadanie do chwili, gdy przepadnie – 90202 odjeżdża wprost z toru 2 o ok. 08:14:30 (późny odjazd),
  *    choć skład cały czas stał na torze 2. Gracz widzi: alarm usterki, zadanie w toku, potem „niewykonane w terminie”;
- *  - semafor D2: automat nastawia D2-kT3m (D2 na „Stój”) i nie zwalnia go, gdy zadanie przepada – po naprawie D2 pokazuje
- *    Ms2 w stronę toru 3, choć żaden skład już tam nie jedzie (ograniczenie automatu: `Operator` nie zwalnia przebiegu
- *    manewrowego zadania, które przepadło);
  *  - usterka na drodze podstawienia: naprawa ok. 08:17:40, podstawienie ok. 08:19 – po terminie (0 pkt), ale przed
  *    08:20, kiedy by przepadło (zapas niecała minuta – przesunięcie przyjazdu 90201 zmieni wynik na „przepadło”);
  *    90202 odjeżdża po podstawieniu z opóźnieniem.
  */
-test('manewry przy długiej usterce (25 min) na drodze manewru: automat czeka na naprawę – zadania przepadają albo są po terminie (obecne zachowanie)', () => {
+test('manewry przy długiej usterce (25 min) na drodze manewru: sygnalizator – zezwolenie dyżurnego; zwrotnica i zajętość – automat czeka na naprawę', () => {
   for (const srk of SRK) for (const c of CASES) {
     const x = shuntRun(srk, c, LONG);
     const { sim, r, msg } = x;
     common(x, c);
     const repaired = r.fault.since + r.fault.duration;
     const away = taskOf(sim, 'odstaw-90201'), back = taskOf(sim, 'podstaw-90202');
-    if (c.move === 'odstaw-90201') {
+    if (c.permit) {
+      checkPermit(x, c, repaired);
+      assert.deepEqual(points(sim, 'task'), [10, 10], `${msg}: zadania w terminie na zezwolenie`);
+      assert.deepEqual(penalties(sim), [], `${msg}: kary`);
+    } else if (c.move === 'odstaw-90201') {
       assert.deepEqual([away.failed, back.failed], [true, true], `${msg}: odstawienie i podstawienie przepadły`);
       assert.deepEqual(penalties(sim), ['late-depart', 'task-failed', 'task-failed'], `${msg}: kary`);
       assert.ok(entryOf(sim, 90202).actualDep > entryOf(sim, 90202).depTime, `${msg}: 90202 odjeżdża z opóźnieniem`);
@@ -179,6 +192,9 @@ const waitsAtDark = (sim, sig) => {
  */
 function tryAtDark(srk, sig, when, act) {
   const sim = shuntSim(srk);
+  // bez zezwolenia dyżurnego (automat daje je sam) – sprawdzamy, co robią same Sz i rozkaz
+  const send = sim.comms.send.bind(sim.comms);
+  sim.comms.send = (id, p, o) => (id === 'shunt-permit' ? { ok: false, reason: 'test: bez zezwolenia' } : send(id, p, o));
   const radio = [];
   sim.bus.on('comms', (m) => { if (m.kind === 'radio') radio.push(m.text); });
   const st = { res: null, at: 0, head: 0, moved: null, aspect: null };
@@ -192,7 +208,7 @@ function tryAtDark(srk, sig, when, act) {
   return { sim, st, radio };
 }
 
-test('Sz i rozkaz „S” przy sygnalizatorze manewrowym z usterką nie ruszają składu manewrowego (obecne zachowanie – brak zezwolenia na manewry)', () => {
+test('Sz i rozkaz „S” przy sygnalizatorze manewrowym z usterką nie ruszają składu manewrowego – manewry jadą na zezwolenie dyżurnego', () => {
   for (const srk of SRK) {
     // semafor D2: Sz przyjęty (uzasadniony usterką, 0 pkt), ale Sz nie jest sygnałem dla manewrów – skład stoi
     let x = tryAtDark(srk, 'D2', moment.entering, (s) => s.execute({ type: 'substitute', signal: 'D2' }));
@@ -200,19 +216,19 @@ test('Sz i rozkaz „S” przy sygnalizatorze manewrowym z usterką nie ruszają
     assert.equal(x.st.aspect, 'Sz');
     assert.deepEqual(points(x.sim, 'Sz'), [0], `${srk}: Sz uzasadniony usterką`);
     assert.equal(x.st.moved, 0, `${srk}: skład ruszył na Sz`);
-    // semafor D2: rozkaz „S” przyjęty (0 pkt), maszynista potwierdza jazdę obok D2 – a skład stoi (`Train.#shuntPermitted`
-    // nie uwzględnia rozkazu). Gracz widzi potwierdzenie maszynisty i stojący skład.
+    // semafor D2: rozkaz „S” dotyczy pociągu – dla składu manewrowego odmowa ze wskazaniem zezwolenia (wcześniej rozkaz był
+    // przyjmowany, maszynista potwierdzał jazdę, a skład stał)
     x = tryAtDark(srk, 'D2', moment.entering, (s) => s.traffic.issueOrder({ nr: 90201, signal: 'D2' }));
-    assert.equal(x.st.res?.ok, true, `${srk}: rozkaz „S” na D2 (${x.st.res?.reason})`);
-    assert.deepEqual(points(x.sim, 'order'), [0], `${srk}: rozkaz uzasadniony usterką`);
-    assert.ok(x.radio.some((t) => /Jadę obok semafora D2/.test(t)), `${srk}: maszynista potwierdza rozkaz`);
-    assert.equal(x.st.moved, 0, `${srk}: skład ruszył na rozkaz`);
+    assert.equal(x.st.res?.ok, false, `${srk}: rozkaz „S” dla składu manewrowego`);
+    assert.match(x.st.res.reason, /zezwolenie dyżurnego/);
+    assert.deepEqual(points(x.sim, 'order'), [], `${srk}: rozkaz nie wydany`);
+    assert.equal(x.st.moved, 0, `${srk}: skład ruszył bez zezwolenia`);
     // tarcza manewrowa Tm1: Sz i rozkaz tylko na semaforze – odmowa
     x = tryAtDark(srk, 'Tm1', moment.away, (s) => ({ sz: s.execute({ type: 'substitute', signal: 'Tm1' }), order: s.traffic.issueOrder({ nr: 90201, signal: 'Tm1' }) }));
     assert.equal(x.st.res?.sz.ok, false, `${srk}: Sz na tarczy Tm1`);
     assert.match(x.st.res.sz.reason, /tylko na semaforze/);
     assert.equal(x.st.res.order.ok, false, `${srk}: rozkaz na tarczy Tm1`);
-    assert.match(x.st.res.order.reason, /nie jest semaforem/);
+    assert.match(x.st.res.order.reason, /jeździe manewrowej/);
     assert.equal(x.st.moved, 0, `${srk}: skład przed Tm1 ruszył`);
   }
 });
@@ -223,19 +239,17 @@ test('Sz i rozkaz „S” przy sygnalizatorze manewrowym z usterką nie ruszają
  * – jedyny dziś sposób na minięcie sygnalizatora na „Stój”; kształt polecenia (zezwolenie ustne / radiowe, osobne
  * polecenie) to decyzja właściciela.
  */
-const SHUNT_PERMIT_TODO = 'brak w silniku: skład manewrowy nie minie sygnalizatora manewrowego z usterką na zezwolenie dyżurnego '
-  + '(Train.#shuntPermitted uwzględnia tylko Ms2 / M2; Traffic.issueOrder odrzuca tarczę manewrową, a rozkaz na semafor przyjmuje bez skutku; '
-  + 'Sz nie jest sygnałem dla manewrów). Reguły (Ir-9: minięcie niedziałającego sygnalizatora manewrowego na zezwolenie ustne / przez '
-  + 'radiotelefon) nie ma w docs/SOURCES.md – założenie do potwierdzenia przez właściciela';
+// Ir-9 § 10 ust. 15–16: przebieg manewrowy nastawiony, sygnalizator uszkodzony – dyżurny zezwala na jazdę ustnie albo przez
+// radiotelefon, dla tego jednego przebiegu (telefonogram „shunt-permit” w zakładce Łączność)
 
 for (const srk of SRK) for (const [sig, when, label] of [['D2', 'entering', 'semafor D2 (odstawienie)'], ['Tm1', 'away', 'tarcza Tm1 (podstawienie)']]) {
-  test(`długa usterka sygnalizatora manewrowego – ${label}, ${srk}: skład jedzie na zezwolenie dyżurnego, zadania w terminie, bez kar`, { todo: SHUNT_PERMIT_TODO }, () => {
+  test(`długa usterka sygnalizatora manewrowego – ${label}, ${srk}: skład jedzie na zezwolenie dyżurnego, zadania w terminie, bez kar`, () => {
     const sim = shuntSim(srk);
     let permit = null;
     const r = runWithFault(sim, {
       when: moment[when], fault: { type: 'signal-fail', target: sig, duration: LONG }, until: '09:00',
       dispatch: (s) => {
-        if (!permit && waitsAtDark(s, sig)) permit = s.traffic.issueOrder({ nr: 90201, signal: sig, reason: 'usterki sygnalizatora manewrowego' });
+        if (!permit && waitsAtDark(s, sig)) permit = s.comms.send('shunt-permit', { nr: 90201 });
         autoDispatch(s);
       },
     });
@@ -365,3 +379,25 @@ for (const srk of SRK) for (const how of ['Sz', 'S']) {
     assert.deepEqual(out, [], x.log.join('; '));
   });
 }
+
+test('zezwolenie na jazdę manewrową (Ir-9 § 10 ust. 15): tylko dla składu manewrowego, przy nastawionym przebiegu i uszkodzonym sygnalizatorze; inaczej odmowa i kara za zły telefonogram', () => {
+  const sim = shuntSim('E');
+  const u = sim.traffic.timetable().find((e) => e.nr === 90201);
+  let n = 0;
+  while (sim.clock.time < Clock.parse('08:30') && !(u.actualArr != null && u.train?.v === 0)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  assert.ok(u.actualArr != null, '90201 na torze 2');
+  // pociąg (nie skład manewrowy) – zezwolenia na manewr nie daje się
+  assert.match(sim.traffic.shuntPermit(90201).reason, /nie jest w jeździe manewrowej/);
+  sim.traffic.toShunting(90201);
+  assert.match(sim.traffic.shuntPermit(90201).reason, /nie ma nastawionego przebiegu/, 'bez przebiegu manewrowego');
+  // sprawny sygnalizator: przebieg nastawiony, zezwolenie daje się sygnałem Ms2 – odmowa i −5 za zły telefonogram
+  assert.ok(sim.ilk.setRoute('D2-kT3m').pending || sim.ilk.active.has('D2-kT3m'));
+  for (let i = 0; i < 40 && !sim.ilk.active.has('D2-kT3m'); i++) sim.step(0.5);
+  assert.ok(sim.ilk.active.has('D2-kT3m'), 'przebieg D2-kT3m nastawiony');
+  assert.equal(u.train.v, 0, 'skład jeszcze stoi');
+  const res = sim.comms.send('shunt-permit', { nr: 90201 });
+  assert.equal(res.ok, false);
+  assert.match(res.reason, /jest sprawny/);
+  assert.deepEqual(sim.score.items.filter((i) => i.code === 'comms-wrong').map((i) => i.points), [-5]);
+  assert.equal(u.train.shuntPermit, null);
+});

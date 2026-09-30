@@ -389,9 +389,11 @@ export class AutoOperator {
         if (fullyOn(tr, target)) continue;
         if (tr.mode !== 'shunt') sim.traffic.toShunting(e.nr);
         const occ = tr.occupiedSections();
-        // przebieg dla tego składu już czeka – skład zaraz ruszy
+        // przebieg dla tego składu już czeka – skład zaraz ruszy; sygnalizator uszkodzony (nie da Ms2) – zezwolenie radiem
         const mine = (x) => x.kind === 'shunt' && (x.start === tr.nextSignal() || occ.has(x.approach));
-        if (routes.some((x) => mine(x) && ((ilk.active.has(x.id) && !ilk.active.get(x.id).trainEntered) || ilk.pending.some((p) => p.route.id === x.id)))) continue;
+        const waiting = routes.find((x) => mine(x) && ilk.active.has(x.id) && !ilk.active.get(x.id).trainEntered);
+        if (waiting && ilk.signals.get(waiting.start)?.failed && !tr.shuntPermit && tr.v === 0) sim.comms.send('shunt-permit', { nr: e.nr }, { silent: true });
+        if (waiting || routes.some((x) => mine(x) && ilk.pending.some((p) => p.route.id === x.id))) continue;
         const head = ['E', 'NE', 'SE'].includes(tr.direction) ? 'E' : 'W';
         const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
         // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg

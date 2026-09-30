@@ -165,7 +165,11 @@ export class Faults {
         const s = sim.ilk.signals.get(f.target);
         if (!s) return;
         s.failed = true; sim.ilk.refreshSignals();
-        this.#log('alarm', `USTERKA: semafor ${f.target} nie podaje sygnału zezwalającego (żarówka / obwód). Podaj Sz; gdy nie można – rozkaz „S”.`);
+        // semafor: dla pociągu Sz albo rozkaz „S”; dla manewrów (także tarcza) – zezwolenie dyżurnego (Ir-9 § 10 ust. 15)
+        const shunt = 'Manewry: po nastawieniu przebiegu – zezwolenie radiem (Łączność).';
+        this.#log('alarm', s.kind === 'semafor'
+          ? `USTERKA: semafor ${f.target} nie podaje sygnału zezwalającego (żarówka / obwód). Pociąg: Sz; gdy nie można – rozkaz „S”. ${shunt}`
+          : `USTERKA: tarcza manewrowa ${f.target} nie podaje sygnału Ms2 (żarówka / obwód). ${shunt}`);
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
       }

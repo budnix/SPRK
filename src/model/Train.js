@@ -62,12 +62,13 @@ export class Train {
     this.authority = false;
     this.exitAuth = null;        // wyjazd na szlak: id wyjazdu z przebiegu minionego semafora, '*' po Sz / rozkazie
     this.shuntRoute = null;      // przebieg manewrowy, na którego sygnał Ms2 skład minął sygnalizator
+    this.shuntPermit = null;     // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora manewrowego { signal, route }
     this.spad = null;            // przejechany semafor „Stój” – hamowanie nagłe do zatrzymania
   }
 
   /** Utrata zezwolenia (zmiana czoła, zmiana rodzaju jazdy) – dalsza jazda dopiero na nowy sygnał. */
   clearAuthority() {
-    this.authority = false; this.exitAuth = null; this.shuntRoute = null; this.spad = null;
+    this.authority = false; this.exitAuth = null; this.shuntRoute = null; this.shuntPermit = null; this.spad = null;
   }
 
   /** Czy pociąg ma niewykorzystany rozkaz pisemny na przejazd obok sygnalizatora. */
@@ -247,6 +248,11 @@ export class Train {
           const proceed = this.mode === 'shunt' ? (sig.kind === 'semafor' ? Interlocking.isShuntProceed(sig.aspect) : Interlocking.isProceed(sig.aspect))
             : Interlocking.isTrainProceed(sig.aspect);
           if (!proceed) {
+            if (this.mode === 'shunt' && this.shuntPermit?.signal === sig.id) {
+              // zezwolenie dyżurnego (Ir-9 § 10 ust. 15): obok uszkodzonego sygnalizatora z prędkością manewrową 25 km/h
+              constraints.push({ dist, speed: 25 * KMH, reason: `zezwolenie na manewr obok ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id, until: 'next-signal' });
+              continue;
+            }
             if (this.hasOrderFor(sig.id)) {
               // Rozkaz pisemny: przejazd obok semafora „Stój” z prędkością do 40 km/h
               constraints.push({ dist, speed: SUBSTITUTE_SPEED * KMH, reason: `rozkaz pisemny ${sig.id}`, kind: listSignals ? 'passed-signal' : 'limit', signal: sig.id });
@@ -470,6 +476,12 @@ export class Train {
    * stoi, nie jest zezwoleniem (Ie-1 §3).
    */
   #shuntPermitted() {
+    // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora – dla jednego przebiegu manewrowego (Ir-9 § 10 ust. 16)
+    if (this.shuntPermit) {
+      const pa = this.ilk.active.get(this.shuntPermit.route);
+      if (pa && !pa.trainEntered) { this.shuntRoute = pa.id; return true; }
+      this.shuntPermit = null;
+    }
     const act = this.shuntRoute && this.ilk.active.get(this.shuntRoute);
     if (act) {
       const occ = this.occupiedSections();
@@ -560,6 +572,7 @@ export class Train {
             this.authority = true;
             this.exitAuth = (order || sig.aspect === 'Sz') ? '*' : act?.route.kind === 'train' ? (act.route.exit ?? null) : null;
           } else if (Interlocking.isShuntProceed(sig.aspect)) this.shuntRoute = sig.route;
+          else if (this.shuntPermit?.signal === sig.id) { this.shuntRoute = this.shuntPermit.route; this.shuntPermit = null; } // zezwolenie wykorzystane
           this.substituteLimit = sig.aspect === 'Sz' || !!order;
           this.activeLimit = this.substituteLimit ? SUBSTITUTE_SPEED * KMH : Infinity;
           const sp = Interlocking.aspectSpeed(sig.aspect);

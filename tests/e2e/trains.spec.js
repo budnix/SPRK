@@ -138,3 +138,36 @@ test('Łączność: „Stój pociąg nr …” wstrzymuje pociąg, o który pyta
   // kierunek wolny – działa nasze Wbl
   expect(await page.evaluate(() => window.sim.blocks.get('W').press('Wbl').ok)).toBe(true);
 });
+
+test('Łączność: zezwolenie na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15) – skład rusza w nastawionym przebiegu', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
+  await advance(page, 30); // Lipno zgłasza 6101
+  await btn(page, { kind: 'block', exit: 'W', btn: 'Poz' }).click();
+  await btn(page, { kind: 'signal', id: 'A', color: 'green' }).click();
+  await btn(page, { kind: 'signal', id: 'D2', color: 'green' }).click(); // przyjęcie na tor 2
+  const stopped = () => page.evaluate(() => { const e = window.sim.traffic.timetable().find((x) => x.nr === 6101); return !!e.train && e.train.v === 0 && e.train.hasStopped; });
+  for (let i = 0; i < 40 && !(await stopped()); i++) await advance(page, 20);
+  // skład manewrowy przed D2, semafor D2 uszkodzony (nie da Ms2), przebieg manewrowy D2 → tor 3 nastawiony
+  await page.evaluate(() => { window.sim.traffic.toShunting(6101); window.sim.faults.add({ type: 'signal-fail', target: 'D2', duration: 30 }); });
+  await advance(page, 1);
+  await page.evaluate(() => window.sim.ilk.setRoute('D2-kT3m'));
+  for (let i = 0; i < 10 && !(await page.evaluate(() => window.sim.ilk.active.has('D2-kT3m'))); i++) await advance(page, 2);
+  await advance(page, 20);
+  const head = () => page.evaluate(() => window.sim.traffic.timetable().find((x) => x.nr === 6101).train.head);
+  const before = await head();
+  // radio do maszynisty: zezwolenie na jazdę manewrową
+  await page.click('#panel-tabs button[data-tab=lacznosc]');
+  await page.selectOption('#comms-to', 'driver');
+  const formulas = await page.locator('#comms-formula option').allTextContents();
+  expect(formulas).toContain('Skład nr …, zezwalam na jazdę manewrową – sygnalizator uszkodzony.');
+  await page.selectOption('#comms-formula', 'shunt-permit');
+  await page.fill('#comms-nr', '6101');
+  await page.locator('#comms-form button[type=submit]').click();
+  await expect(page.locator('#comms-msg')).toHaveClass(/ok/);
+  await advance(page, 30);
+  expect(await head()).toBeGreaterThan(before + 10);
+  // zezwolenie przy uszkodzonym sygnalizatorze – bez kary za telefonogram (kara „tor inny niż planowy” pochodzi z przyjęcia
+  // 6101 na tor 2, potrzebnego tylko do ustawienia sytuacji)
+  expect(await page.evaluate(() => window.sim.score.items.filter((i) => i.code === 'comms-wrong').length)).toBe(0);
+  await expect(page.locator('#comms-log')).toContainText('Zezwolenie przyjąłem');
+});

@@ -107,7 +107,8 @@ Play it: **https://budnix.github.io/SPRK/**
   mode / direction), written orders "S" for passing a signal at Stop, telephone messages per Ir-1 forms (1a / 4a on
   single-track lines for every train, departure notices on double-track lines – sent automatically or by you, see
   Settings), telephone block working when a block loses communication, holding a neighbour's train with „Stój pociąg nr …” when
-  you have no track for it, radio calls from drivers.
+  you have no track for it, radio calls from drivers, a radio permission for a shunt move past a damaged shunting signal
+  once its route is set (Ir-9 §10(15)).
 * Disruptions: inbound delays, random faults during the shift (dark signal, point without detection, false occupancy,
   block without communication), extra trains; seeded so a shift can be replayed. A signal that drops in front of a
   train because of a device fault costs no points; a train that stopped past such a signal continues on a written

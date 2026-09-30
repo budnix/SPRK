@@ -15,6 +15,8 @@ Materiały:
 * Instrukcja sygnalizacji Ie-1 (E-1), PKP PLK – obrazy sygnałowe S1–S5, S10–S13, Ms1/Ms2, Sz
 * Instrukcja o prowadzeniu ruchu pociągów Ir-1 (R-1), PKP PLK – § o blokadzie półsamoczynnej, pozwolenia, potwierdzenia
 * Instrukcja Ie-10 (E18) – obsługa urządzeń przekaźnikowych
+* Instrukcja o technice wykonywania manewrów Ir-9, PKP PLK (tekst ujednolicony, zarządzenie 6/2012 ze zmianami do
+  uchwały 376/2025 z 13.05.2025; plk-sa.pl, Akty prawne i przepisy → Instrukcje → Ir) – zezwolenia na jazdę manewrową
 * automatyka.ndl.pl – opis blokady Eap; trainbrains.eu – elementy i obsługa blokady Eap
 * Chyba A., „Symulator komputerowy przekaźnikowego systemu (typu E) sterowania ruchem kolejowym…”, Zeszyty SITK RP nr 158 (2011)
 
@@ -94,6 +96,17 @@ metry do 3 km/h). Sygnał manewrowy gaśnie dopiero po minięciu sygnalizatora p
 * skład manewrowy rusza, gdy sygnalizator przed nim (przed najbliższą zwrotnicą) albo pod nim, zwrócony w kierunku
   jazdy, wskazuje Ms2 / M2; po minięciu sygnalizatora jedzie dalej w obrębie tego przebiegu – przebieg manewrowy innej
   jazdy nie jest zezwoleniem;
+* sygnalizator manewrowy uszkodzony – ze źródła: po nastawieniu drogi przebiegu dla manewru pracownik posterunku
+  nastawczego daje zezwolenie na jazdę sygnałem na sygnalizatorze, a jeżeli sygnalizatora nie ma albo jest uszkodzony –
+  sygnałami ręcznymi albo za pomocą urządzeń łączności (Ir-9 § 10 ust. 15); zezwolenie daje się dla każdego przebiegu
+  manewrowego oddzielnie (§ 10 ust. 16), a dla maszynisty jest ono poleceniem jazdy (§ 6 ust. 2 pkt 2); zasadnicza
+  prędkość jazdy manewrowej to 25 km/h (§ 10). W grze: telefonogram radiowy do maszynisty „zezwalam na jazdę manewrową
+  – sygnalizator uszkodzony” (Łączność), przyjmowany tylko przy uszkodzonym sygnalizatorze (usterka semafora albo tarczy)
+  i nastawionym przebiegu manewrowym od niego; skład jedzie obok niego z prędkością 25 km/h w tym jednym przebiegu.
+  Przy sprawnym sygnalizatorze zezwolenie daje się sygnałem – telefonogram jest odrzucany (−5 jak każdy niewłaściwy);
+  zwrotnicy bez kontroli ani zajętości z usterki ten przepis nie obejmuje (przebieg się nie nastawia);
+* rozkaz pisemny „S” dotyczy pociągu – dla składu manewrowego jest odrzucany ze wskazaniem zezwolenia na manewr
+  (przyjęte; wcześniej był przyjmowany, maszynista potwierdzał jazdę, a skład stał);
 * przebieg manewrowy z semafora końcowego przebiegu pociągowego nie jest jego kontynuacją: nie zastępuje drogi
   ochronnej (wjazd i manewr przez drogę ochronną wykluczają się), a semafor przed semaforem z Ms2 zapowiada „Stój”;
 * Ms2 gaśnie, gdy zwolni się odcinek przed sygnalizatorem (cały skład za nim); na nastawni mechanicznej tarczę

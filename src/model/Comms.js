@@ -13,6 +13,7 @@ export const FORMULAS = [
   { id: 'arrived', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} przyjechał o ${p.time}.`, doc: 'Zawiadomienie o przyjeździe pociągu od sąsiada (wzór 14)' },
   { id: 'ask-arrived', to: 'neighbour', text: (p) => `Czy pociąg nr ${p.nr} przyjechał?`, doc: 'Pytanie o przyjazd naszego pociągu do sąsiada' },
   { id: 'driver-wait', to: 'driver', text: (p) => `Pociąg nr ${p.nr}, proszę czekać przed semaforem.`, doc: 'Radio: polecenie oczekiwania' },
+  { id: 'shunt-permit', to: 'driver', text: (p) => `Skład nr ${p.nr}, zezwalam na jazdę manewrową – sygnalizator uszkodzony.`, doc: 'Radio: zezwolenie na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15)' },
 ];
 
 export class Comms {
@@ -90,6 +91,7 @@ export class Comms {
         this.#incoming({ time: this.time + 4, from: `maszynista poc. ${nr}`, kind: 'info', text: 'Zrozumiałem, czekam.' });
         return { ok: true };
       }
+      case 'shunt-permit': return this.sim.traffic.shuntPermit(nr);
       default: return { ok: false, reason: 'formuła nieobsługiwana' };
     }
   }

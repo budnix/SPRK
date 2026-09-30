@@ -574,8 +574,13 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   Stan po naprawie (`leftovers`) obejmuje też blok początkowy zablokowany bez pociągu i niewykorzystane pozwolenie
   albo kierunek Eap.
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
-  zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): brak zezwolenia dyżurnego na minięcie
-  sygnalizatora manewrowego z usterką (reguła do potwierdzenia).
+  zmienia go na zwykły test.
+* Zezwolenie na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15): `Traffic.shuntPermit(nr)` –
+  telefonogram radiowy `shunt-permit` (Łączność) albo polecenie `{ type: 'shunt-permit', nr }`; wymaga składu
+  manewrowego na postoju, nastawionego przebiegu manewrowego od sygnalizatora przed nim i usterki tego sygnalizatora.
+  `Train.shuntPermit` ({ signal, route }) pozwala minąć ten sygnalizator z prędkością 25 km/h w tym jednym przebiegu.
+  Automat daje zezwolenie sam, gdy skład czeka przed uszkodzonym sygnalizatorem. Rozkaz „S” dla składu manewrowego –
+  odmowa. Testy: `tests/faults-shunt.test.js`, `tests/e2e/trains.spec.js`.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
