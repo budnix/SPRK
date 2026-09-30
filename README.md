@@ -113,7 +113,9 @@ Play it: **https://budnix.github.io/SPRK/**
   block without communication), extra trains; seeded so a shift can be replayed. A signal that drops in front of a
   train because of a device fault costs no points; a train that stopped past such a signal continues on a written
   order „S”; a route that did not release behind a train because of a faulty track circuit is released with the
-  emergency release at no cost. Shift report with a score for every procedural
+  emergency release at no cost. Waiting you could not avoid costs nothing: a shunting task's deadline moves by the
+  unit's inbound delay (once the neighbour reports it) and by the time a fault with no way around blocked every
+  shunting path to the target track. Shift report with a score for every procedural
   decision.
 
 ### Stations

@@ -139,16 +139,13 @@ test('manewry przy krótkiej usterce na drodze manewru: zadania wykonane w termi
 
 /*
  * Długa usterka (25 min). Sygnalizator uszkodzony przy nastawionym przebiegu – skład jedzie na zezwolenie dyżurnego
- * (Ir-9 § 10 ust. 15), zadania w terminie. Usterka zwrotnicy albo zajętość z usterki – Ir-9 zezwolenia przy nich nie
- * przewiduje (przebieg się nie nastawia), więc automat czeka na naprawę:
- *  - usterka na drodze odstawienia: odstawienie przepada o 08:14 (termin + 10 min, −10), podstawienie po nim też (−10);
- *    automat czeka na zadanie do chwili, gdy przepadnie – 90202 odjeżdża wprost z toru 2 o ok. 08:14:30 (późny odjazd),
- *    choć skład cały czas stał na torze 2. Gracz widzi: alarm usterki, zadanie w toku, potem „niewykonane w terminie”;
- *  - usterka na drodze podstawienia: naprawa ok. 08:17:40, podstawienie ok. 08:19 – po terminie (0 pkt), ale przed
- *    08:20, kiedy by przepadło (zapas niecała minuta – przesunięcie przyjazdu 90201 zmieni wynik na „przepadło”);
- *    90202 odjeżdża po podstawieniu z opóźnieniem.
+ * (Ir-9 § 10 ust. 15), zadania w terminie. Usterka zwrotnicy albo zajętość z usterki na drodze manewru – obejścia nie ma
+ * (przebieg się nie nastawia, Ir-9 zezwolenia nie przewiduje), więc termin zadania przesuwa się o czas usterki (także
+ * zadania, które na nie czeka), a 90202 nie ma kary za późny odjazd z tego powodu (przyjęte: kara tylko za czekanie,
+ * którego dało się uniknąć; pociąg ma obejście – Sz, rozkaz, inny tor – więc czekanie pociągu przed semaforem liczy
+ * się jak dotąd, a termin zaczyna się przesuwać dopiero, gdy skład stoi na torze stacyjnym).
  */
-test('manewry przy długiej usterce (25 min) na drodze manewru: sygnalizator – zezwolenie dyżurnego; zwrotnica i zajętość – automat czeka na naprawę', () => {
+test('manewry przy długiej usterce (25 min): sygnalizator – zezwolenie dyżurnego; zwrotnica i zajętość bez obejścia – termin przesunięty, bez kar', () => {
   for (const srk of SRK) for (const c of CASES) {
     const x = shuntRun(srk, c, LONG);
     const { sim, r, msg } = x;
@@ -159,15 +156,13 @@ test('manewry przy długiej usterce (25 min) na drodze manewru: sygnalizator –
       checkPermit(x, c, repaired);
       assert.deepEqual(points(sim, 'task'), [10, 10], `${msg}: zadania w terminie na zezwolenie`);
       assert.deepEqual(penalties(sim), [], `${msg}: kary`);
-    } else if (c.move === 'odstaw-90201') {
-      assert.deepEqual([away.failed, back.failed], [true, true], `${msg}: odstawienie i podstawienie przepadły`);
-      assert.deepEqual(penalties(sim), ['late-depart', 'task-failed', 'task-failed'], `${msg}: kary`);
-      assert.ok(entryOf(sim, 90202).actualDep > entryOf(sim, 90202).depTime, `${msg}: 90202 odjeżdża z opóźnieniem`);
-    } else if (c.move === 'podstaw-90202') {
-      assert.ok(away.done && away.doneAt <= away.deadlineTime, `${msg}: odstawienie w terminie`);
-      assert.ok(back.done && back.doneAt > repaired && back.doneAt > back.deadlineTime, `${msg}: podstawienie po naprawie, po terminie (${back.done ? Clock.format(back.doneAt, true) : back.failed ? 'przepadło' : 'w toku'})`);
-      assert.deepEqual(points(sim, 'task'), [10, 0], `${msg}: punkty za zadania (podstawienie po terminie – 0)`);
-      assert.deepEqual(penalties(sim), ['late-depart'], `${msg}: kary`);
+    } else if (c.move) {
+      // droga manewru zablokowana bez obejścia – termin przesunięty o czas usterki, zadania w nowym terminie, bez kar
+      const task = taskOf(sim, c.move);
+      assert.ok(task.shift >= 20 * 60, `${msg}: termin ${c.move} przesunięty (${Math.round((task.shift ?? 0) / 60)} min)`);
+      assert.ok(away.done && back.done && away.doneAt <= away.deadlineTime && back.doneAt <= back.deadlineTime, `${msg}: zadania w (przesuniętym) terminie`);
+      assert.deepEqual(points(sim, 'task'), [10, 10], `${msg}: punkty za zadania`);
+      assert.deepEqual(penalties(sim), [], `${msg}: kary`);
     } else {
       assert.deepEqual(points(sim, 'task'), [10, 10], `${msg}: zadania w terminie – usterka nie na drodze manewru`);
       assert.deepEqual(penalties(sim), [], `${msg}: kary`);

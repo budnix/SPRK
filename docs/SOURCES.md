@@ -253,6 +253,13 @@ Przyjęte (uproszczenia gry):
   odcinki, przebieg na niego od strony wjazdu, przebieg z niego w stronę wyjazdu (zajętość z usterki, licznik osi,
   pęknięta szyna, zwrotnica bez kontroli, semafor tych przebiegów bez sygnału) – czynnej między zgłoszeniem pociągu
   a jego przyjazdem; usterka gdzie indziej na stacji – −5 (przyjęte; wcześniej uzasadniała każda usterka na stacji);
+* bez kary za czekanie, którego dyżurny nie mógł uniknąć (przyjęte): termin zadania manewrowego przesuwa się
+  o opóźnienie składu od sąsiada (gdy sąsiad je zgłasza, najpóźniej przy przyjeździe; tylko w przód) i o czas, przez
+  który każda droga manewrowa do toru docelowego była zamknięta usterką bez obejścia (zwrotnica bez kontroli albo
+  nie w położeniu, zajętość z usterki, licznik osi, pęknięta szyna); zadanie czekające na to zadanie przesuwa się
+  o tyle samo. Skład stojący z tego powodu nie jest „przetrzymany”, a pociąg utworzony z tego składu nie traci punktów
+  za późny odjazd o te minuty. Sygnalizator manewrowy bez sygnału terminu nie przesuwa – dyżurny daje zezwolenie
+  (Ir-9 § 10 ust. 15); pociągi też mają obejście usterki (Sz, rozkaz, inny tor), więc ich postój niczego nie przesuwa;
 * Sz przy zwrotnicy na drodze ani utwierdzonej w przebiegu, ani zamkniętej Zz – dodatkowo −10 (urządzenie Sz nie
   blokuje – odpowiada dyżurny); rozkaz w takiej sytuacji jest odrzucany jak dotąd;
 * po Sz i po rozkazie „S” zwrotnic i wykolejnic na drodze pociągu nie da się otworzyć (Zz), przestawić, odbezpieczyć ani

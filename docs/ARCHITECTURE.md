@@ -479,7 +479,11 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   odstawieniem, niezależnie od godziny; automat bierze zadanie gotowe do wykonania, nie pierwsze z listy. Każde
   kolejne zadanie tego samego składu ma `afterTask` (test treści w `tests/unit-handover.test.js`). Termin zadania czekającego biegnie: gdy poprzednie nie zostało wykonane,
   zadanie przepada 10 min po swoim terminie (inaczej zostawałoby w toku do końca zmiany, a automat czekałby na nie
-  bez końca). Skład przekazany jako nowy pociąg (`unit`) traci zezwolenie pociągu, którym przyjechał
+  bez końca). Termin przesuwa `Traffic.#shiftTask` (w dzienniku z powodem): o opóźnienie składu od sąsiada – gdy
+  sąsiad je zgłasza – i o czas, gdy `Traffic.#taskBlocked` widzi, że każda droga manewrowa do toru docelowego jest
+  zamknięta usterką bez obejścia (`task.faultShift`; zadanie z `afterTask` przesuwa się razem z nim). Skład stojący
+  wtedy ma `faultBlocked` (bez kary za przetrzymanie), a późny odjazd pociągu z tego składu liczy się bez tych minut.
+  Skład przekazany jako nowy pociąg (`unit`) traci zezwolenie pociągu, którym przyjechał
   (`Train.clearAuthority`) – rusza dopiero na sygnał semafora wyjazdowego. Test: `tests/unit-handover.test.js`.
 * Stacja treningowa `src/stations/szkolna.js`; scenariusz z polem `tutorial` uruchamia misję (main.js).
 
@@ -566,8 +570,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
     przy zajętości toru docelowego z usterki, usterka semafora i bloku przebiegowego tego samego semafora (Sz
     i zwalniacz), usterka napędu zwrotnicy w Olszynach;
   – `faults-shunt.test.js` – zadania manewrowe Szkolnej przy usterce na drodze manewru (sygnalizator bez Ms2, napęd
-    zwrotnicy, fałszywa zajętość – przed manewrem i w czasie jazdy): krótka bez kar, długa – obecne zachowanie (automat
-    czeka na naprawę); ochrona drogi pociągu na Sz / rozkaz „S” (zwrotnicę trzyma utwierdzenie przebiegu albo Zz);
+    zwrotnicy, fałszywa zajętość – przed manewrem i w czasie jazdy): krótka bez kar; długa – przy sygnalizatorze
+    zezwolenie dyżurnego, przy zwrotnicy i zajętości bez obejścia termin przesunięty, bez kar; ochrona drogi pociągu na Sz / rozkaz „S” (zwrotnicę trzyma utwierdzenie przebiegu albo Zz);
   – `faults-stations.test.js` – usterki na pozostałych stacjach: przebiegi wieloetapowe (Sopot A → H → O i L → C,
     Chylonia G502 → A502 – semafor pośredni, zajętość drugiego stopnia, semafor wyjazdowy), Rumia / Jodłowa / Brzezina
     (Eap jednokierunkowa i SBL: semafor wjazdowy i wyjazdowy, tor docelowy, napęd zwrotnicy, dKo / dPo przy Sz

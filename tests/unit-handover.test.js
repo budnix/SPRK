@@ -10,11 +10,17 @@ import { autoDispatch, allArrived, run, Clock } from './helpers.js';
 /*
  * Szkolna: osobowy 90201 kończy bieg na torze 2, skład ma być odstawiony na tor 3 (zadanie 1) i podstawiony z powrotem
  * (zadanie 2), a potem odjeżdża do Lipna jako 90202. Przy dużym opóźnieniu 90201 oba zadania są już po terminie.
+ *
+ * Termin zadania przesuwa się o opóźnienie składu od sąsiada (dyżurny nie mógł go wykorzystać). Testy zadań, które
+ * przepadły, mają więc terminy wcześniejsze o to opóźnienie – po przesunięciu wracają do godzin z definicji stacji
+ * i sytuacja jest ta sama co dawniej (skład przyjeżdża już po terminie).
  */
+const earlier = (tasks, min) => tasks.map((t) => ({ ...t, deadline: Clock.format(Clock.parse(t.deadline) - min * 60) }));
 
 const late = (min, all = false) => {
   // bez innych pociągów (test ręczny) albo pełny rozkład (automat)
-  const scenario = all ? 'zmiana-e' : { id: 't', name: 't', endTime: '10:00', srk: 'E', trains: [90201, 90202], tasks: szkolna.tasks };
+  const tasks = earlier(szkolna.tasks, min);
+  const scenario = all ? { ...szkolna.scenarios.find((s) => s.id === 'zmiana-e'), tasks } : { id: 't', name: 't', endTime: '10:00', srk: 'E', trains: [90201, 90202], tasks };
   const sim = new Simulation(szkolna, { scenario, disruptions: 'none' });
   sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 90201), min);
   return sim;
@@ -27,6 +33,25 @@ test('zadanie zależne od zadania, które przepadło, samo też przepada po term
   assert.equal(t1.failed, true, 'odstawienie przepadło');
   assert.equal(t2.failed, true, 'podstawienie po odstawieniu, które przepadło – też przepadło');
   assert.equal(sim.score.items.filter((i) => i.code === 'task-failed').length, 2);
+});
+
+test('opóźnienie składu od sąsiada przesuwa termin zadań od chwili zgłoszenia – zadania zdążone, 90202 bez kary', () => {
+  const scenario = { id: 't', name: 't', endTime: '10:00', srk: 'E', trains: [90201, 90202], tasks: szkolna.tasks };
+  const sim = new Simulation(szkolna, { scenario, disruptions: 'none' });
+  sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 90201), 20);
+  const [t1, t2] = ['odstaw-90201', 'podstaw-90202'].map((id) => sim.traffic.tasks.find((t) => t.id === id));
+  let n = 0;
+  const until = (hhmm) => { while (sim.clock.time < Clock.parse(hhmm) && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); } };
+  // 90201 planowo 07:52 – sąsiad zgłasza opóźnienie 12 min wcześniej (07:40); dyżurny nie zna go przed zgłoszeniem
+  until('07:39');
+  assert.deepEqual([t1.deadline, t2.deadline], ['08:04', '08:10'], 'przed zgłoszeniem termin bez zmian');
+  until('07:41');
+  assert.deepEqual([t1.deadline, t2.deadline], ['08:24', '08:30'], 'po zgłoszeniu – termin przesunięty o 20 min');
+  until('09:30');
+  assert.deepEqual([t1.done, t2.done], [true, true]);
+  assert.deepEqual(sim.score.items.filter((i) => i.code === 'task').map((i) => i.points), [10, 10], 'zadania w terminie – pełne punkty');
+  assert.deepEqual(sim.score.items.filter((i) => ['task-failed', 'late-depart'].includes(i.code)).map((i) => i.msg), []);
+  assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).status, 'na następnym posterunku');
 });
 
 test('pociąg utworzony ze składu nie jedzie na dawnym zezwoleniu: 90202 stoi przy peronie, dopóki nie dostanie sygnału', () => {
@@ -84,7 +109,8 @@ test('zadania tego samego składu idą po kolei: każde następne czeka na poprz
 test('skład opóźniony po godzinie „podstaw”: najpierw odstawienie, potem podstawienie, nowy pociąg odjeżdża z toru planowego', () => {
   for (const { st, unit, next, back, away, delay, done, reversed } of PAIRS) {
     const name = `${st.id} ${unit}${reversed ? ' (zadania w odwrotnej kolejności)' : ''}`;
-    const tasks = st.tasks.filter((x) => String(x.unit) === String(unit));
+    const own = st.tasks.filter((x) => String(x.unit) === String(unit));
+    const tasks = done ? own : earlier(own, delay); // zadania, które mają przepaść: termin po przesunięciu jak w stacji
     const scenario = { id: 't', name: 't', endTime: '10:00', trains: [unit, next], tasks: reversed ? tasks.reverse() : tasks };
     const sim = new Simulation(st, { scenario, disruptions: 'none' });
     const u = sim.traffic.timetable().find((e) => e.nr === unit), e = sim.traffic.timetable().find((x) => x.nr === next);
@@ -107,7 +133,7 @@ test('skład opóźniony po godzinie „podstaw”: najpierw odstawienie, potem 
 test('Chylonia: oba zadania przepadły, gdy skład był w drodze na tor 22 – automat podstawia go na tor 501, 93202 odjeżdża', () => {
   // 93151 opóźniony o 30 min: odstawienie przepada (07:25) w trakcie jazdy na tor 22, podstawienie czeka na nie i też
   // przepada; skład na torze odstawczym nie może być przekazany jako pociąg – z toru 22 nie ma przebiegu pociągowego
-  const scenario = { id: 't', name: 't', endTime: '10:00', trains: [93151, 93202], tasks: chylonia.tasks.filter((x) => x.unit === 93151) };
+  const scenario = { id: 't', name: 't', endTime: '10:00', trains: [93151, 93202], tasks: earlier(chylonia.tasks.filter((x) => x.unit === 93151), 30) };
   const sim = new Simulation(chylonia, { scenario, disruptions: 'none' });
   sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 93151), 30);
   let n = 0;

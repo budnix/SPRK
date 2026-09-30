@@ -74,6 +74,39 @@ export class Traffic {
    *    wykolejnice zdjęte, odcinki wolne i nieutwierdzone w innym przebiegu,
    *  - wyjazd na szlak tylko z pozwoleniem blokady liniowej.
    */
+  /** Przesunięcie terminu zadania (także napisu `deadline`, który pokazuje panel) i wpis w dzienniku z przyczyną. */
+  #shiftTask(task, sec, why) {
+    if (!(sec > 0)) return;
+    task.deadlineTime += sec;
+    task.shift = (task.shift || 0) + sec;
+    task.deadline = Clock.format(task.deadlineTime);
+    if (why) this.bus.emit('log', { time: this.time, level: 'info', msg: `Termin zadania „${task.id}” przesunięty o ${Math.round(sec / 60)} min – ${why}; nowy termin ${task.deadline}` });
+    this.bus.emit('tasks', this.tasks);
+  }
+
+  /**
+   * Zadanie manewrowe zablokowane usterką bez obejścia: każdy przebieg manewrowy z toru, na którym stoi skład, na tor
+   * docelowy (albo – gdy takiego nie ma – każdy przebieg na tor docelowy) ma na drodze odcinek zajęty z usterki (fałszywa
+   * zajętość, licznik osi), pękniętą szynę albo zwrotnicę z usterką napędu, która nie da się ustawić z kontrolą. Usterka
+   * sygnalizatora ma obejście – zezwolenie dyżurnego (Ir-9 § 10 ust. 15) – więc terminu nie przesuwa.
+   */
+  #taskBlocked(task, tr) {
+    const ilk = this.ilk, time = this.time;
+    const trackOf = (sid) => String(ilk.sections.get(sid)?.track ?? '');
+    const here = String(this.#trackOf(tr) ?? ''), goal = String(task.toTrack);
+    // skład jeszcze nie stoi na torze stacyjnym (np. pociąg czeka przed semaforem wjazdowym) – to nie droga manewru
+    if (!here || here === goal) return false;
+    const shunts = ilk.routeList().filter((r) => r.kind === 'shunt' && r.sections.length);
+    const into = shunts.filter((r) => trackOf(r.sections.at(-1)) === goal);
+    const direct = into.filter((r) => trackOf(r.approach) === here);
+    const candidates = direct.length ? direct : into;
+    if (!candidates.length) return false;
+    const occ = tr.occupiedSections();
+    const routeBlocked = (r) => r.sections.some((sid) => { if (occ.has(sid)) return false; const s = ilk.sections.get(sid); return !!(s?.forced || s?.axleFault || s?.defect); })
+      || [...r.points, ...r.flank].some((q) => { const p = ilk.points.get(q.id); return p && p.faultUntil > time && (p.position !== q.position || !p.control); });
+    return candidates.every(routeBlocked);
+  }
+
   /**
    * Usterka na drodze toru planowego pociągu `e`, czynna między zgłoszeniem pociągu a jego przyjazdem (dyżurny decyduje
    * o torze wcześniej, niż pociąg przyjedzie): odcinki toru, przebiegi na niego od strony wjazdu (także wieloetapowe),
@@ -360,8 +393,14 @@ export class Traffic {
         e.actualDep = t; e.status = 'odjeżdża';
         this.#journal(e, 'odjazd', t, e.actualTrack);
         this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} odjazd` });
-        // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój)
-        const earliest = Math.max(e.depTime ?? 0, (e.actualArr ?? 0) + (e.dwell ?? 40));
+        // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój); pociąg ze składu innego pociągu –
+        // także bez minut, które skład stracił bez winy dyżurnego (opóźnienie od sąsiada, manewry zablokowane usterką)
+        let earliest = Math.max(e.depTime ?? 0, (e.actualArr ?? 0) + (e.dwell ?? 40));
+        if (e.unit) {
+          const u = this.entries.find((x) => String(x.nr) === String(e.unit));
+          const lost = (u?.delayIn || 0) * 60 + this.tasks.filter((k) => String(k.unit) === String(e.unit)).reduce((a, k) => a + (k.faultShift || 0), 0);
+          earliest += lost;
+        }
         const late = Math.round((t - earliest) / 60);
         if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
         else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
@@ -507,6 +546,27 @@ export class Traffic {
       const waiting = task.afterTask && !this.tasks.find((x) => x.id === task.afterTask)?.done;
       const u = this.entries.find((x) => String(x.nr) === String(task.unit));
       const tr = u?.train || this.entries.find((x) => String(x.unit) === String(task.unit))?.train;
+      // termin przesuwa się o czas, którego dyżurny nie mógł wykorzystać (przyjęte): opóźnienie składu od sąsiada
+      // i usterka bez obejścia na drodze manewru (zwrotnica bez kontroli, zajętość z usterki, licznik osi, pęknięta szyna)
+      // opóźnienie od sąsiada – termin przesuwa się, gdy sąsiad je zgłasza (12 min przed planowym przyjazdem), najpóźniej
+      // przy przyjeździe; tylko w przód (dyżurny nie traci już podanego terminu)
+      const known = u && (u.actualArr != null || time >= (u.arrTime ?? u.depTime) - 12 * 60);
+      if (known && u.delayIn > (task.inboundShifted || 0)) {
+        this.#shiftTask(task, (u.delayIn - (task.inboundShifted || 0)) * 60, `opóźnienie składu ${u.nr} od sąsiada`);
+        task.inboundShifted = u.delayIn;
+      }
+      const blocked = !waiting && time >= task.afterTime && tr && !tr.finished && tr.entered && this.#taskBlocked(task, tr);
+      if (tr && !waiting) tr.faultBlocked = !!blocked; // skład stoi przez usterkę bez obejścia – nie „przetrzymany”
+      if (blocked) {
+        task.blockedFor = (task.blockedFor || 0) + dt; task.faultShift = (task.faultShift || 0) + dt;
+        this.#shiftTask(task, dt, null);
+        // zadanie czekające na to (np. „podstaw” po „odstaw”) zaczyna się później o tyle samo
+        for (const next of this.tasks) if (next.afterTask === task.id && !next.done && !next.failed) this.#shiftTask(next, dt, null);
+      }
+      else if (task.blockedFor) {
+        this.bus.emit('log', { time, level: 'info', msg: `Termin zadania „${task.id}” przesunięty o ${Math.round(task.blockedFor / 60)} min – usterka bez obejścia na drodze manewru; nowy termin ${task.deadline}` });
+        task.blockedFor = 0;
+      }
       if (!waiting && time >= task.afterTime && tr && !tr.finished && tr.entered && tr.v === 0) {
         const secs = [...tr.occupiedSections()].map((sid) => this.ilk.sections.get(sid));
         if (secs.length && secs.every((sec) => String(sec.track) === String(task.toTrack))) {
@@ -540,7 +600,7 @@ export class Traffic {
           e.delay = Math.round((time - e.depTime) / 60);
         }
         const waitingForDep = e.depTime != null && time < e.depTime + 240; // skład czeka na planowy odjazd – to nie przetrzymanie
-        if (!ended && !waitingForDep && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
+        if (!ended && !waitingForDep && !e.train.faultBlocked && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
           e.holdScored = true;
           this.bus.emit('score', { time, code: 'held', points: -5, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
         }
