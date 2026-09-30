@@ -77,3 +77,32 @@ test('przebieg wyjazdowy nastawiony przy usterce blokady: po naprawie i pozwolen
   run(sim, 2);
   assert.ok(Interlocking.isTrainProceed(sim.ilk.signals.get('D1').aspect), `semafor D1: ${sim.ilk.signals.get('D1').aspect}`);
 });
+
+/*
+ * Rozkład w panelu (zdarzenie `timetable`) odświeża się, gdy zgłoszenie pociągu przez sąsiada przepada i sąsiad
+ * nie zgłasza go od razu (np. po „Stój pociąg nr …” – ponowi dopiero po kilku minutach). Bez zdarzenia panel
+ * pokazywał „żądanie pozwolenia”, choć pociąg był już „oczekiwany”.
+ */
+
+const untilCond = (sim, cond, max = 8000) => { for (let i = 0; i < max && !cond(); i++) sim.step(0.5); return cond(); };
+
+for (const mode of ['blokada sprawna', 'zapowiadanie telefoniczne']) {
+  test(`zgłoszenie pociągu wycofane (${mode}): zdarzenie „timetable” niesie stan „oczekiwany” w tym samym takcie`, () => {
+    const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
+    const b = sim.blocks.get('W');
+    const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    if (mode === 'zapowiadanie telefoniczne') {
+      b.setFault(true);
+      assert.ok(untilCond(sim, () => String(b.phone.askedByThem) === '6101'), 'sąsiad pyta telefonicznie');
+    } else {
+      assert.ok(untilCond(sim, () => b.request === 'theirs'), 'sąsiad żąda pozwolenia');
+    }
+    assert.equal(e.status, 'żądanie pozwolenia');
+    let last = null; // stan 6101 przy ostatnim zdarzeniu „timetable” – to widzi panel
+    sim.bus.on('timetable', (entries) => { last = entries.find((x) => x.nr === 6101).status; });
+    assert.deepEqual(sim.comms.send('hold', { exit: 'W', nr: 6101 }), { ok: true });
+    sim.step(0.5);
+    assert.equal(e.status, 'oczekiwany', 'zgłoszenie przepadło');
+    assert.equal(last, 'oczekiwany', 'panel dostał zdarzenie z nowym stanem pociągu');
+  });
+}

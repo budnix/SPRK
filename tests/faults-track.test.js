@@ -568,3 +568,25 @@ test('track-defect pod stojącym pociągiem: zgłaszający zjeżdża bez kary, n
     if (dur === 20) assert.notEqual(String(entryOf(sim, b[0]).actualTrack), track, `${msg}: ${b[0]} przyjęty na inny tor`);
   }
 });
+
+/*
+ * Semafor wjazdowy gaśnie z powodu zajętości z usterki bliżej niż droga hamowania, a usterka mija, zanim dyżurny wypisze
+ * rozkaz „S” na dalszą jazdę zza semafora. Na drodze nie ma już usterki (`faultOnPath` – nie), ale przebieg zgasł z przyczyny
+ * po stronie urządzeń (`faultDrop`) – rozkaz wymuszony przejazdem „Stój” z usterki jest uzasadniony (0 pkt).
+ */
+test('false-occupancy drogi wjazdu tuż przed pociągiem, naprawiona przed rozkazem: rozkaz „S” zza semafora bez kary (faultDrop)', () => {
+  for (const [st, srk, dir, track] of cases(LIVE)) for (const tgt of ['dest', 'entryFirst']) {
+    // automat wypisuje rozkaz dopiero po naprawie: póki pociąg stoi za semaforem, a usterka trwa – czeka
+    const writing = (s) => s.traffic.trains.some((tr) => tr.stoppedAt?.kind === 'spad') && !!faultOf(s, 'false-occupancy')?.active;
+    const { r, sim, msg, ctx } = one(st, srk, dir, track, 'entryTooClose', 'false-occupancy', tgt, 1, {
+      dispatch: (s) => { if (!writing(s)) autoDispatch(s); },
+      setup: (s) => { const c = { spad: [], faultAtOrder: null }; s.bus.on('alarm', (a) => { if (a.type === 'spad') c.spad.push(a.signal); }); s.bus.on('score', (i) => { if (i.code === 'order') c.faultAtOrder ??= !!faultOf(s, 'false-occupancy')?.active; }); return c; },
+    });
+    assert.equal(r.fired, true, `${msg}: chwila nie nastąpiła`);
+    assert.equal(ctx.spad.length, 1, `${msg}: pociąg przejechał semafor wjazdowy na „Stój”`);
+    assert.equal(ctx.faultAtOrder, false, `${msg}: rozkaz wypisany po naprawie`);
+    assert.deepEqual(scores(sim, 'spad').map((i) => i.msg), [], `${msg}: przejazd „Stój” z usterki bez kary`);
+    assert.deepEqual(scores(sim, 'order').map((i) => i.points), [0], `${msg}: rozkaz „S” zza semafora uzasadniony (faultDrop)`);
+    assert.deepEqual(stuck(sim), [], `${msg}: pociągi, które nie dojechały`);
+  }
+});
