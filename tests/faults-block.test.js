@@ -391,7 +391,7 @@ test('przelot: usterka blokady, gdy semafor wyjazdowy zezwala, a pociąg jest da
   assert.equal(runAll(throughCases(exitProceed, 'sygnał wyjazdowy podany, pociąg w drodze')), 24);
 });
 
-test('przelot: usterka blokady tuż przed semaforem wyjazdowym nie kończy się minięciem „Stój” z karą (pozwolenie było u nas)', { todo: 'błąd silnika: przy usterce LineBlock.gate() wymaga zapowiedzi telefonicznej także dla sygnału z pozwoleniem sprzed usterki – semafor wyjazdowy gaśnie przed pociągiem bliżej niż droga hamowania, a Traffic (zdarzenie „spad”) nie uznaje tego za usterkę urządzeń (−20 pkt)' }, () => {
+test('przelot: usterka blokady tuż przed semaforem wyjazdowym nie kończy się minięciem „Stój” z karą (pozwolenie było u nas)', () => {
   assert.equal(runAll(throughCases(atExitSignal, 'czoło na ostatniej kostce przed semaforem wyjazdowym')), 24);
 });
 

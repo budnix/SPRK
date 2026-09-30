@@ -84,6 +84,9 @@ export class LineBlock {
     if (this.fixed === 'in' && !this.auto) return { ok: false, reason: `Tor szlakowy do ${this.neighbour} jest torem wjazdowym (ruch jednokierunkowy)` };
     if (this.occupied) return { ok: false, reason: `Tor szlakowy do ${this.neighbour} zajęty` };
     if (this.fault) {
+      // sygnał wyjazdowy podany przed usterką na niewykorzystanym pozwoleniu zostaje – pozwolenie trzymają urządzenia
+      // naszej stacji (wcześniej gasł tuż przed pociągiem i pociąg przejeżdżał „Stój”)
+      if (mode === 'signal' && this.faultDir === 'out' && this.pwl && this.pwlRoute != null && this.pwlRoute === routeId) return { ok: true, fault: true };
       // zapowiadanie telefoniczne: blok początkowy zostaje zablokowany do naprawy – o drodze decyduje telefonogram
       // tor właściwy linii dwutorowej: wyjazd po potwierdzeniu przyjazdu poprzedniego pociągu (tor wolny), bez zapytania
       if (!this.phone.permissionFor && this.fixed !== 'out') return { ok: false, fault: true, reason: `Blokada bez łączności – zapytaj ${this.neighbour} telefonicznie, czy droga jest wolna` };

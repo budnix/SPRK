@@ -186,7 +186,9 @@ blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywra
 chyba że droga była nasza (zapowiedź „droga wolna” dla naszego pociągu albo niewykorzystane pozwolenie sprzed usterki),
 a pociąg jeszcze nie wjechał na szlak: wtedy pozwolenie zostaje u nas, bo pociąg może właśnie mijać semafor wyjazdowy
 (przyjęte); pozwolenie „u nas” przy usterce – niewykorzystane pozwolenie w chwili utraty łączności (pociąg, który na
-nim wyjechał, zużywa je – następny wyjeżdża na Sz / rozkaz); na szlaku jednotorowym „droga wolna” dla naszego pociągu
+nim wyjechał, zużywa je – następny wyjeżdża na Sz / rozkaz); sygnał wyjazdowy podany przed usterką na takim pozwoleniu
+nie gaśnie z utratą łączności (pozwolenie trzymają urządzenia naszej stacji – przyjęte; zgaszony tuż przed pociągiem
+kończył się minięciem „Stój”); na szlaku jednotorowym „droga wolna” dla naszego pociągu
 wyklucza „droga wolna” dla pociągu sąsiada, także gdy blokada nie ma ustawionego kierunku (telefonogram go nie
 przestawia). Stanowisko MOR-1 ma w menu
 trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
