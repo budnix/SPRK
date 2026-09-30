@@ -375,7 +375,9 @@ zezwalający – `Interlocking.#computeAspect` woła go dla przebiegów na szlak
 przeciwwtórność `pwl`); `fault: true` w wyniku uzasadnia Sz / rozkaz (`faultOnPath`). Pwl włącza `onExitSignal`
 z `Interlocking` przy pierwszym sygnale zezwalającym przebiegu na szlak. Stwierdzenie przejazdu (`zpg`): `Train`
 zgłasza minięcie pierwszego semafora stacji (`entry-signal`) → `Traffic` → `entryPassed(onSignal)`; wyjazd na Sz /
-rozkaz (`exitAuth === '*'`) nie blokuje bloku początkowego (`needPo` → dPo). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
+rozkaz (`exitAuth === '*'`) nie blokuje bloku początkowego (`needPo` → dPo). Czasy odpowiedzi sąsiada (Poz, potwierdzenie
+przyjazdu, telefonogramy) losuje `opts.random` – `Simulation` daje każdemu szlakowi własny ciąg z ziarna zmiany, więc
+to samo ziarno daje tę samą zmianę (test w `tests/disruptions.test.js`). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
 sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strzałki szlaku pod separatorem, po
 poleceniach, jako czerwone kasetki z samymi numerami (`lineTrains`: pociąg na szlaku pełną kasetką, potem w kolejce
 pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śledzenia numerów w komputerowych srk, tylko na

@@ -31,7 +31,6 @@ import { createHash } from 'node:crypto';
 import { Simulation } from '../src/model/Simulation.js';
 import { AutoOperator } from '../src/model/Operator.js';
 import { Clock } from '../src/core/Clock.js';
-import { Random } from '../src/core/Random.js';
 import { STATIONS } from '../src/stations/index.js';
 import { violations } from '../tests/invariants.js';
 
@@ -179,22 +178,7 @@ export function listShifts({ levels = ['high', 'low'], seeds = [1, 2, 3, 4], onl
  *    niezależnie od wątku; inny przy tych samych wskaźnikach znaczy, że zmiana w silniku zmieniła ruch,
  *  - `log` – dziennik (tylko z `log` i tylko dla zmiany z problemem).
  */
-export function surveyShift(job) {
-  // Blokada liniowa (src/model/Block.js – odpowiedzi sąsiada, potwierdzenia przyjazdu) losuje czas przez `Math.random`,
-  // a nie przez generator symulacji. Bez podmiany ta sama zmiana z tym samym ziarnem dawała różne czasy pociągów
-  // (np. Szkolna, Jodłowa, Kalinowo – szlaki Eap dwukierunkowe), inne przy każdym uruchomieniu i w każdym wątku.
-  // Podmiana na czas jednej zmiany, z ziarna zmiany (bez stacji i poziomu – powtórka odtwarza zmianę).
-  const random = Math.random;
-  const rng = new Random(Math.imul(job.seed, 0x9e3779b1) >>> 0);
-  Math.random = () => rng.next();
-  try {
-    return runShift(job);
-  } finally {
-    Math.random = random;
-  }
-}
-
-function runShift({ stationId, scenarioId, seed, level = 'none', extra = 120, log = false }) {
+export function surveyShift({ stationId, scenarioId, seed, level = 'none', extra = 120, log = false }) {
   const station = STATIONS.find((s) => s.id === stationId);
   if (!station) throw new Error(`Nieznana stacja: ${stationId}`);
   const scenario = (station.scenarios || []).find((s) => s.id === scenarioId);

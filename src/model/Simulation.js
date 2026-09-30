@@ -45,7 +45,11 @@ export class Simulation {
     this.phoneRoutine = opts.phoneRoutine === 'manual' && !this.scenario.tutorial ? 'manual' : 'auto';
     const nextTrain = (exitId) => this.traffic?.timetable().filter((e) => e.to === exitId && e.actualDep == null && e.status !== 'na następnym posterunku')
       .sort((a, b) => (a.depTime ?? a.arrTime ?? 0) - (b.depTime ?? b.arrTime ?? 0))[0]?.nr ?? null;
-    for (const [id, e] of Object.entries(station.exits || {})) this.blocks.set(id, new LineBlock(id, e, this.bus, { phoneRoutine: this.phoneRoutine, nextTrain }));
+    // każdy szlak ma własny ciąg losowy z ziarna zmiany – losowania blokady nie przesuwają opóźnień ani usterek
+    Object.keys(station.exits || {}).forEach((id, i) => {
+      const rng = new Random((Math.imul(this.seed, 0x9e3779b1) + (i + 1) * 0x85ebca6b) >>> 0);
+      this.blocks.set(id, new LineBlock(id, station.exits[id], this.bus, { phoneRoutine: this.phoneRoutine, nextTrain, random: () => rng.next() }));
+    });
     this.ilk = new Interlocking(this.station, this.bus, {
       blockGate: (exitId, mode, routeId) => this.blocks.get(exitId)?.gate(mode, routeId) ?? { ok: true },
       // sygnał wyjazdowy podany / przebieg z nim rozwiązany bez wyjazdu – przeciwwtórność liniowa Eap (Pwl)

@@ -107,12 +107,9 @@ test('survey: jedna zmiana (Szkolna, zmiana-e, bez zakłóceń) – wszystkie po
 
 const noMs = ({ ms, ...r }) => r;
 
-test('survey: to samo ziarno – ten sam przebieg zmiany (także na szlakach Eap, gdzie blokada losuje przez Math.random)', () => {
-  // Szkolna: szlaki Eap dwukierunkowe – odpowiedzi sąsiada i potwierdzenia przyjazdu z Math.random (src/model/Block.js)
+test('survey: to samo ziarno – ten sam przebieg zmiany (także na szlakach Eap, gdzie blokada losuje odpowiedzi sąsiada)', () => {
   const job = { stationId: 'szkolna', scenarioId: 'zmiana', seed: 1, level: 'high', extra: 10 };
-  const random = Math.random;
   const a = surveyShift(job);
-  assert.equal(Math.random, random, 'Math.random przywrócone po zmianie');
   const b = surveyShift(job);
   assert.deepEqual(noMs(b), noMs(a));
   assert.notEqual(surveyShift({ ...job, seed: 2 }).fingerprint, a.fingerprint, 'inne ziarno – inny przebieg');

@@ -35,6 +35,9 @@ export class LineBlock {
     this.id = exitId;
     this.phoneRoutine = opts.phoneRoutine || 'auto';
     this.nextTrain = opts.nextTrain || (() => null);
+    // czasy odpowiedzi sąsiada (Poz, potwierdzenie przyjazdu, telefonogramy): generator zmiany – to samo ziarno daje tę
+    // samą zmianę; bez niego (blokada tworzona osobno, np. w testach jednostkowych) – Math.random
+    this.random = opts.random || Math.random;
     this.talk = { askedFor: null, clearedFor: null, theirAsk: null, answered: null }; // rozmowy 1a / 4a przy sprawnej blokadzie
     this.def = exitDef;
     this.bus = bus;
@@ -208,7 +211,7 @@ export class LineBlock {
     if (this.request === 'theirs') return this.#fail(`Sąsiad żąda pozwolenia – najpierw obsłuż Poz (lub poczekaj)`);
     if (this.request === 'ours') return { ok: true, noop: true };
     this.request = 'ours'; this.requestSince = this.time;
-    this.neighbourReply = { at: this.time + 8 + Math.random() * 20, nr: this.nextTrain(this.id) };
+    this.neighbourReply = { at: this.time + 8 + this.random() * 20, nr: this.nextTrain(this.id) };
     // żądanie pozwolenia na szlaku jednotorowym poprzedza zapytanie telefoniczne (wzór 1a)
     const nr = this.neighbourReply.nr;
     if (nr != null) {
@@ -238,7 +241,7 @@ export class LineBlock {
     if (this.direction === 'out' && this.permission && !this.occupied) {
       if (this.pwl) return this.#fail(`Pwl – sygnał wyjazdowy już był podany; pozwolenia nie da się zwrócić`);
       if (this.neighbourReply?.giveBack) return { ok: true, noop: true };
-      this.neighbourReply = { at: this.time + 5 + Math.random() * 10, giveBack: true };
+      this.neighbourReply = { at: this.time + 5 + this.random() * 10, giveBack: true };
       this.log('info', `Zwrot pozwolenia (oWbl) – ${this.neighbour} wyciąga Wbl`);
       this.#emit();
       return { ok: true };
@@ -262,7 +265,7 @@ export class LineBlock {
     }
     if (this.request === 'ours') return { ok: true, noop: true };
     this.request = 'ours'; this.requestSince = this.time;
-    this.neighbourReply = { at: this.time + 8 + Math.random() * 12, dirChange: true };
+    this.neighbourReply = { at: this.time + 8 + this.random() * 12, dirChange: true };
     this.log('info', `Prośba o zmianę kierunku blokady samoczynnej do ${this.neighbour} (Zk) – czekaj na zgodę`);
     this.#emit();
     return { ok: true };
@@ -400,13 +403,13 @@ export class LineBlock {
       if (!this.#single()) return { ok: false, reason: `tor szlakowy linii dwutorowej – zapytanie o drogę zbędne` };
       this.talk.askedFor = nr;
       const free = !this.occupied && this.direction !== 'in' && this.request !== 'theirs';
-      this.#phoneIn(free ? `Dla pociągu nr ${nr} droga jest wolna.` : `Stój pociąg nr ${nr} – tor szlakowy zajęty.`, 6 + Math.random() * 8);
+      this.#phoneIn(free ? `Dla pociągu nr ${nr} droga jest wolna.` : `Stój pociąg nr ${nr} – tor szlakowy zajęty.`, 6 + this.random() * 8);
       return { ok: true };
     }
     if (this.fixed === 'out') return { ok: false, reason: `tor właściwy linii dwutorowej – zapytanie zbędne, wystarczy potwierdzony przyjazd poprzedniego pociągu` };
     // przy zapowiadaniu blok początkowy zostaje zablokowany do naprawy – o wolnej drodze decyduje telefonogram
     if (this.occupied) return { ok: false, reason: `tor szlakowy zajęty` };
-    this.neighbourReply = { at: this.time + 8 + Math.random() * 15, phoneFor: nr };
+    this.neighbourReply = { at: this.time + 8 + this.random() * 15, phoneFor: nr };
     return { ok: true };
   }
 
@@ -486,7 +489,7 @@ export class LineBlock {
       this.phone.departedReported = true;
       return;
     }
-    this.pendingArrivalAck = this.time + 10 + Math.random() * 20;
+    this.pendingArrivalAck = this.time + 10 + this.random() * 20;
   }
 
   /** Pociąg sąsiada wjechał na tor szlakowy (w naszym kierunku). */

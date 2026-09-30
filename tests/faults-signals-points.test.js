@@ -419,9 +419,9 @@ test('usterka napędu zwrotnicy poza drogą pociągu albo w drodze bez przestawi
 /* ---------------- powtarzalność ---------------- */
 
 // Chwila usterki zależy od stanu zmiany, więc przypadki są powtarzalne tylko przy powtarzalnej zmianie. Sąsiad odpowiada
-// na Wbl, potwierdza przyjazd itd. po czasie z `Math.random()` (Block.js), a nie z generatora zmiany (`seed`) – ta sama
-// zmiana z tym samym ziarnem daje za każdym razem inną chwilę nastawienia wyjazdu pociągu przelotowego.
-test('ta sama zmiana z tym samym ziarnem: ta sama chwila usterki i ten sam przebieg ruchu', { todo: 'błąd silnika: Block.js losuje czasy odpowiedzi sąsiada przez Math.random, nie przez generator zmiany (seed)' }, () => {
+// na Wbl, potwierdza przyjazd itd. po czasie losowanym z generatora zmiany (każdy szlak ma własny ciąg z ziarna) –
+// wcześniej z `Math.random()`, więc ta sama zmiana dawała za każdym razem inną chwilę nastawienia wyjazdu.
+test('ta sama zmiana z tym samym ziarnem: ta sama chwila usterki i ten sam przebieg ruchu', () => {
   const runs = new Set();
   for (let i = 0; i < 8; i++) {
     const r = shift({ st: szkolna, srk: 'E', timetable: [tow(2, 'E', 'W', '07:08', '1')], when: moment.exitSet(2), fault: { type: 'signal-fail', target: on.exitSignal(2), duration: 1 } });

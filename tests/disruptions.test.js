@@ -19,6 +19,31 @@ test('poziom zakłóceń: opóźnienia od sąsiadów są deterministyczne dla zi
   assert.ok(a.faults.list.length >= 3);
 });
 
+test('zmiana z ziarnem nie losuje przez Math.random – ta sama zmiana przy tym samym ziarnie (także odpowiedzi sąsiada na Eap)', async () => {
+  const { default: szkolna } = await import('../src/stations/szkolna.js');
+  const { AutoOperator } = await import('../src/model/Operator.js');
+  const random = Math.random;
+  let calls = 0;
+  Math.random = () => { calls++; return random(); };
+  try {
+    const journal = () => {
+      const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'high', seed: 3 });
+      const op = new AutoOperator(sim, { district: null, role: 'full' });
+      const log = [];
+      sim.bus.on('log', (m) => log.push(`${Clock.format(m.time, true)} ${m.msg}`));
+      let n = 0;
+      while (sim.clock.time < sim.endTime) { sim.step(0.5); if (n++ % 4 === 0) op.tick(); }
+      return log;
+    };
+    const a = journal();
+    assert.ok(a.some((l) => /Poz|pozwolenie/i.test(l)), 'sąsiad odpowiadał na blokadzie');
+    assert.deepEqual(journal(), a);
+    assert.equal(calls, 0, 'Math.random w silniku');
+  } finally {
+    Math.random = random;
+  }
+});
+
 test('poziom zakłóceń: losowe usterki mają czas wystąpienia w obrębie zmiany i naprawdę się pojawiają', () => {
   // scenariusze gry podają koniec zmiany jako napis „GG:MM” – z niego ma się brać okno losowania usterek
   for (const seed of [1, 7, 42]) {
