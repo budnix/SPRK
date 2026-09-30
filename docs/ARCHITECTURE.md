@@ -241,7 +241,8 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa (poza nastawnią
   mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg z `routeStuck` (na nastawni mechanicznej
   najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
-  przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak. Testy: `tests/rumia.test.js`,
+  przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak (na którymkolwiek odcinku
+  przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3). Testy: `tests/rumia.test.js`,
   `tests/operator.test.js`.
 * Manewry automatu (`Operator.#shuntPath`): drogę do toru docelowego zadania szuka BFS po przebiegach manewrowych,
   także z kilkoma zmianami kierunku (Chylonia: z toru 2 przez tor 503 na tor 1 i do Postojowej). Pierwszy przebieg

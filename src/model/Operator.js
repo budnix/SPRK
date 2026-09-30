@@ -338,10 +338,11 @@ export class AutoOperator {
         // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
         // ten pociąg nadjeżdża – żaden nie ruszy, dopóki ten nie wjedzie na inny tor
         // (nastawnia wykonawcza przyjmuje na tor z polecenia dyżurnego – toru sama nie zmienia)
+        // (pociąg stoi na którymkolwiek odcinku przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3)
         const crossing = (r) => {
           if (this.role === 'executive') return false;
-          const sid = r.sections.at(-1);
-          return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0 && o.train.occupiedSections().has(sid));
+          return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0
+            && r.sections.some((sid) => o.train.occupiedSections().has(sid)));
         };
         // Ten pociąg odjedzie na szlak jednotorowy, z którego nadjeżdża inny (sąsiad ma pozwolenie albo pociąg już jedzie).
         // Wjazd na tor `r` jest zły, gdy potem pociąg z przeciwka nie miałby gdzie wjechać: każdy inny tor dostępny z tego

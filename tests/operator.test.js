@@ -25,6 +25,32 @@ test('krzyżowanie na szlaku jednotorowym: tor planowy zajęty przez pociąg, kt
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
 });
 
+test('krzyżowanie, gdy tor planowy ma dwa odcinki (Reda: peron I na T23, dalej T3) – pociąg czekający na szlak stoi na pierwszym', async () => {
+  // 56710 do Helu stoi przy peronie I (odcinek T23 toru 3); 55711 z Helu ma w rozkładzie tor 3, a przebieg R-C2 kończy
+  // się dalej, na T3. Automat sprawdzał tylko ostatni odcinek przebiegu – nie widział krzyżowania i 55711 czekał przed R
+  // bez końca, a 56710 nie mógł wyjechać na zajęty szlak.
+  const { default: reda } = await import('../src/stations/reda.js');
+  const sim = new Simulation(reda, { srk: 'E', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:30', tasks: [], timetable: [
+    // 56710 przyjeżdża pierwszy i długo stoi; Puck zgłasza 55711, gdy 56710 już jest na torze 3 (tory 1, 2, 11 wolne – Poz)
+    { nr: 56710, kind: 'os', name: 'Regio Gdynia Gł. – Hel', from: 'RM1', to: 'HL', arr: '07:05', dep: '07:35', track: '3', stop: true, length: 130, vmax: 100, dwell: 40 },
+    { nr: 55711, kind: 'os', name: 'Regio Hel – Gdynia Gł.', from: 'HL', to: 'RM2', arr: '07:30', dep: '07:32', track: '3', stop: true, length: 130, vmax: 100, dwell: 40 },
+  ] } });
+  let n = 0, met = false;
+  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) {
+    sim.step(0.5);
+    if (n++ % 4 === 0) autoDispatch(sim);
+    const [a, b] = [56710, 55711].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr).train);
+    // krzyżowanie naprawdę zachodzi: 56710 stoi na T23, a 55711 jest już na szlaku od Helu
+    if (a?.entered && a.v === 0 && a.occupiedSections().has('T23') && b && !b.entered) met = true;
+  }
+  assert.ok(met, 'pociągi się krzyżują');
+  const tt = sim.traffic.timetable();
+  for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+  assert.equal(String(tt.find((e) => e.nr === 56710).actualTrack), '3');
+  assert.notEqual(String(tt.find((e) => e.nr === 55711).actualTrack), '3', 'krzyżowanie na innym torze');
+  assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
+});
+
 test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nastawić od nowa: automat wyprawia pociąg na sygnał zastępczy', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
