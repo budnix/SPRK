@@ -320,7 +320,7 @@ test('semafor wjazdowy gaśnie tuż przed pociągiem: przejazd „Stój” bez k
 // Rozkaz „S” na dalszą jazdę zza semafora miniętego na „Stój” jest uzasadniony, gdy usterka trwa w chwili rozkazu
 // (`faultOnPath`) albo przebieg zgasł z usterki drogi (`faultDrop`). Usterka semafora naprawiona, zanim dyżurny wypisał
 // rozkaz, nie zostawia śladu – rozkaz wymuszony przez przejazd „Stój” z usterki kosztuje −10.
-test('semafor gaśnie tuż przed pociągiem i zostaje naprawiony przed rozkazem: rozkaz „S” zza semafora bez kary', { todo: 'błąd silnika: rozkaz „S” po przejeździe „Stój” z usterki semafora naprawionej przed rozkazem kosztuje −10 (Traffic.issueOrder)' }, () => {
+test('semafor gaśnie tuż przed pociągiem i zostaje naprawiony przed rozkazem: rozkaz „S” zza semafora bez kary', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) {
     const timetable = [tow(2, from, to, '07:08', '1'), os(st, 3, from, to, '07:26', '07:28', '1')];
     // dyżurny wypisuje rozkaz (automat) dopiero po naprawie semafora
@@ -379,7 +379,7 @@ test('nastawnia mechaniczna: usterka napędu zwrotnicy – drążek nie zamyka p
 // „naprawia się” o `at` + `duration` (Faults #apply: `faultUntil = f.at + f.duration`). Usterka ze scenariusza z `at` przed
 // początkiem zmiany (albo dopisana w trakcie – o takt) trwa dłużej niż brak kontroli: zwrotnica przestawiona w czasie
 // aktywnej usterki odzyskuje kontrolę.
-test('usterka napędu zwrotnicy trwa od `since`: zwrotnica przestawiona w czasie aktywnej usterki nie ma kontroli', { todo: 'błąd silnika: Faults #apply point-control liczy faultUntil od `at`, nie od `since`' }, () => {
+test('usterka napędu zwrotnicy trwa od `since`: zwrotnica przestawiona w czasie aktywnej usterki nie ma kontroli', () => {
   const sim = faultSim(szkolna, { srk: 'E', timetable: [], faults: [{ type: 'point-control', target: 'Zw1', at: '06:50', duration: 15 }] });
   const f = sim.faults.list[0], zw1 = sim.ilk.points.get('Zw1');
   const until = (t) => { while (sim.clock.time < Clock.parse(t)) sim.step(0.5); };

@@ -53,7 +53,7 @@ export class Simulation {
     this.ilk = new Interlocking(this.station, this.bus, {
       blockGate: (exitId, mode, routeId) => this.blocks.get(exitId)?.gate(mode, routeId) ?? { ok: true },
       // sygnał wyjazdowy podany / przebieg z nim rozwiązany bez wyjazdu – przeciwwtórność liniowa Eap (Pwl)
-      onExitSignal: (exitId, routeId, on) => { const b = this.blocks.get(exitId); if (b) { if (on) b.exitSignalGiven(routeId); else b.exitSignalCancelled(routeId); } },
+      onExitSignal: (exitId, routeId, on, byFault) => { const b = this.blocks.get(exitId); if (b) { if (on) b.exitSignalGiven(routeId); else b.exitSignalCancelled(routeId, byFault); } },
       ...this.srk.model,
     });
     // obsługa przyciskami (press / pull): protokół systemu srk, domyślnie przyciski typu E

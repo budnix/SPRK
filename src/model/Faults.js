@@ -89,6 +89,8 @@ export class Faults {
   tick(time) {
     this.time = time;
     for (const f of this.list) {
+      // licznik osi: od `at` odcinek jest „uzbrojony” – zależność ustawia usterkę w chwili zjazdu taboru, bez taktu przerwy
+      if (f.type === 'axle-counter' && !f.active && !f.done && time >= f.at) { const s = this.sim.ilk.sections.get(f.target); if (s) s.axleArmed = true; }
       if (!f.active && !f.done && time >= f.at && this.#ready(f)) { f.active = true; f.since = time; this.#apply(f); }
       if (f.active && time >= (f.since ?? f.at) + f.duration) { f.active = false; f.done = true; this.#clear(f); }
       if (f.active && f.type === 'track-defect') this.#defectRide(f);
@@ -101,6 +103,7 @@ export class Faults {
     if (f.type !== 'axle-counter') return true;
     const s = this.sim.ilk.sections.get(f.target);
     if (!s) return false;
+    if (s.axleFault) return true; // zależność już wykazała zajętość przy zjeździe pociągu (odcinek uzbrojony)
     if (s.physical) { f.trainSeen = true; return false; }
     return !!f.trainSeen;
   }
@@ -157,7 +160,7 @@ export class Faults {
       case 'point-control': {
         const p = sim.ilk.points.get(f.target);
         if (!p) return;
-        p.faultUntil = f.at + f.duration;
+        p.faultUntil = (f.since ?? f.at) + f.duration; // od chwili wystąpienia (usterka ze scenariusza może zacząć się później niż `at`)
         this.#log('alarm', `USTERKA: zwrotnica ${f.target} – po przestawieniu nie uzyska kontroli położenia (napęd). Wezwano automatyka.`);
         sim.bus.emit('alarm', { type: 'fault', fault: f });
         break;
@@ -238,7 +241,7 @@ export class Faults {
       case 'axle-counter': {
         const s = sim.ilk.sections.get(f.target);
         const pilot = f.pilot === 'done'; // po przejeździe kontrolnym; inaczej – upłynął czas usterki (automatyk)
-        if (s) { s.axleFault = false; s.resetPending = false; sim.ilk.refreshOccupancy(); sim.bus.emit('section', s); }
+        if (s) { s.axleFault = false; s.axleArmed = false; s.resetPending = false; sim.ilk.refreshOccupancy(); sim.bus.emit('section', s); }
         this.#log('info', pilot ? `Odcinek ${f.target} – przejazd kontrolny po zerowaniu licznika osi, odcinek wolny.` : `Licznik osi odcinka ${f.target} naprawiony (automatyk).`);
         break;
       }

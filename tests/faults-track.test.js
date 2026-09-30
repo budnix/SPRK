@@ -298,7 +298,7 @@ test('false-occupancy drogi nastawionego wjazdu: semafor na „Stój”, Sz uzas
  * rozkaz „S” (0 pkt). Blokada Eap nie stwierdziła przejazdu, więc Ko wymaga dKo – a dKo po wjeździe kosztuje −10, choć
  * dyżurny nie miał kiedy użyć go przed wjazdem; ten sam błąd przy usterce semafora: `tests/faults-signals-points.test.js`.
  */
-test('false-occupancy drogi wjazdu tuż przed pociągiem: przejazd „Stój” bez kary, rozkaz „S” i dKo bez kary', { todo: 'błąd silnika: dKo po przejeździe „Stój” (semafor zgasł z usterki) kosztuje −10 – jak przy usterce semafora (Block #prepareKo)' }, () => {
+test('false-occupancy drogi wjazdu tuż przed pociągiem: przejazd „Stój” bez kary, rozkaz „S” i dKo bez kary', () => {
   for (const [st, srk, dir, track] of cases(LIVE)) for (const tgt of ['dest', 'entryFirst']) {
     const { r, sim, msg, ctx } = one(st, srk, dir, track, 'entryTooClose', 'false-occupancy', tgt, 12, {
       setup: (s) => { const c = { spad: [], sig: null }; s.bus.on('alarm', (a) => { if (a.type === 'spad') c.spad.push(a.signal); }); return c; },
@@ -406,7 +406,7 @@ test('false-occupancy przebiegu wyjazdowego na blokadzie samoczynnej (Brzezina, 
  * jest wymuszony usterką (jak rozkaz „S” po spadku z usterki – `faultDrop` w `Traffic.issueOrder`), ale po jej ustaniu
  * `faultOnPath` go nie uzasadnia: −5 pkt „bez usterki urządzeń”.
  */
-test('false-occupancy przebiegu wyjazdowego: Sz wymuszony przez Pwl po spadku sygnału z usterki – bez kary', { todo: 'błąd silnika: Sz po Pwl, gdy sygnał wyjazdowy zgasł przez usterkę, liczony jako Sz bez usterki (−5)' }, () => {
+test('false-occupancy przebiegu wyjazdowego: Sz wymuszony przez Pwl po spadku sygnału z usterki – bez kary', () => {
   for (const [st, srk, dir, track] of cases([...LIVE, ['jodlowa', 'E']])) for (const dur of [2, 12]) {
     const { r, msg } = one(st, srk, dir, track, 'exitSet', 'false-occupancy', 'exitFirst', dur);
     check(r, msg);
@@ -475,7 +475,7 @@ test('axle-counter: usterka po zjeździe pociągu z odcinka, po naprawie stan za
  * nie pokazuje się wolny po zjeździe pociągu. Dziś usterka pojawia się takt później (`Faults.tick` biegnie przed ruchem
  * i zajętością), a w tym takcie odcinek jest wolny – przebieg zwalnia go jak po zwykłym przejeździe.
  */
-test('axle-counter: odcinek nie pokazuje się wolny między zjazdem pociągu a usterką licznika', { todo: 'błąd silnika: usterka licznika osi pojawia się takt po zjeździe pociągu – odcinek na chwilę wolny, przebieg go zwalnia' }, () => {
+test('axle-counter: odcinek nie pokazuje się wolny między zjazdem pociągu a usterką licznika', () => {
   for (const dir of LINES.kalinowo.dirs) for (const track of TRACKS) for (const [moment, tgt] of AXLE_CASES.slice(0, 2)) {
     const { r, msg, ctx } = one('kalinowo', 'mor3', dir, track, moment, 'axle-counter', tgt, 10, {
       setup: () => ({ bad: [], was: false }),

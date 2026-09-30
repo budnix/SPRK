@@ -548,7 +548,7 @@ export class Train {
           if (this.mode === 'train' && this.entryPending) {
             // semafor wjazdowy: na sygnał zezwalający (nie Sz, nie rozkaz) urządzenie stwierdza przejazd – blokada Eap
             this.entryPending = false;
-            this.onEvent('entry-signal', this, { signal: sig.id, onSignal: !order && sig.aspect !== 'Sz' && Interlocking.isTrainProceed(sig.aspect) });
+            this.onEvent('entry-signal', this, { signal: sig.id, onSignal: !order && sig.aspect !== 'Sz' && Interlocking.isTrainProceed(sig.aspect), byOrder: !!order });
           }
           if (this.mode === 'train' && !order && !Interlocking.isTrainProceed(sig.aspect)) {
             // przejechanie semafora wskazującego „Stój” (sygnał zmieniony bliżej niż droga hamowania) – hamowanie nagłe

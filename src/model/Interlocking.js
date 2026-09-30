@@ -914,7 +914,7 @@ export class Interlocking {
 
   #dissolve(act) {
     const preds = this.#continuedBy(act.route);
-    if (act.exitSignal && !act.trainEntered) this.opts.onExitSignal?.(act.route.exit, act.id, false);
+    if (act.exitSignal && !act.trainEntered) this.opts.onExitSignal?.(act.route.exit, act.id, false, !!act.faultDrop);
     for (const sid of act.lockedSections) this.#unlockSection(sid, act);
     const sig = this.signals.get(act.route.start);
     if (sig.route === act.id) sig.route = null;
@@ -1181,6 +1181,8 @@ export class Interlocking {
     for (const s of this.sections.values()) {
       const phys = occupiedSet.has(s.id);
       if (phys && !s.physical) s.wasOccupied = true; // wjazd taboru (tabor stojący przy utwierdzeniu się nie liczy)
+      // usterka licznika osi (uzbrojona przez Faults): tabor zjechał, a licznik dalej wskazuje zajętość – bez chwili „wolny”
+      if (s.axleArmed && s.physical && !phys) { s.axleFault = true; s.axleArmed = false; }
       s.physical = phys;
       const occ = phys || Interlocking.faultOccupied(s);
       if (occ !== s.occupied) {

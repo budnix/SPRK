@@ -64,6 +64,7 @@ export class LineBlock {
     this.lineTrain = null;         // numer pociągu na torze szlakowym (nasz wyprawiony albo sąsiada jadący do nas)
     this.pwl = false;              // przeciwwtórność liniowa: sygnał wyjazdowy na ten szlak podany (przebieg `pwlRoute`)
     this.pwlRoute = null;
+    this.pwlFault = false;         // Pwl po sygnale, który zgasł z usterki – Sz / rozkaz uzasadnione
     this.needPo = false;           // nasz pociąg wyjechał bez sygnału zezwalającego – blok początkowy zablokować dPo
     this.zpg = false;              // stwierdzenie przejazdu pociągu sąsiada przy semaforze wjazdowym (sygnał zezwalający)
     this.koPrepared = false;       // dKo przed wjazdem na Sz / rozkaz – Ko zadziała bez stwierdzenia przejazdu
@@ -96,10 +97,12 @@ export class LineBlock {
     }
     if (this.poBlocked) return { ok: false, reason: this.auto ? `Odstęp do ${this.neighbour} zajęty` : `Blok początkowy do ${this.neighbour} zablokowany` };
     if (this.auto) return this.direction === 'out' ? { ok: true } : { ok: false, reason: `Kierunek blokady samoczynnej do ${this.neighbour} na wjazd – zmień kierunek (Zk)` };
-    if (mode === 'signal' && this.pwl && this.pwlRoute !== routeId) return { ok: false, reason: `Pwl – sygnał wyjazdowy do ${this.neighbour} już był podany; wypraw pociąg na Sz lub rozkaz „S”` };
-    if (this.fixed === 'out') return { ok: true };
+    if (mode === 'signal' && this.pwl && this.pwlRoute !== routeId) return { ok: false, fault: this.pwlFault, reason: `Pwl – sygnał wyjazdowy do ${this.neighbour} już był podany; wypraw pociąg na Sz lub rozkaz „S”` };
+    // Pwl po sygnale zgaszonym przez usterkę – Sz / rozkaz wymusiła usterka
+    const ok = this.pwl && this.pwlFault ? { ok: true, fault: true } : { ok: true };
+    if (this.fixed === 'out') return ok;
     if (this.direction !== 'out' || !this.permission) return { ok: false, reason: `Brak pozwolenia na wyjazd do ${this.neighbour} (blokada Eap)` };
-    return { ok: true };
+    return ok;
   }
 
   /** Sygnał zezwalający semafora wyjazdowego przebiegu `routeId` na ten szlak – włącza się przeciwwtórność (Pwl). */
@@ -109,18 +112,23 @@ export class LineBlock {
     this.#emit();
   }
 
-  /** Przebieg z podanym sygnałem rozwiązany bez wyjazdu pociągu – Pwl zostaje, nowego sygnału już nie będzie. */
-  exitSignalCancelled(routeId) {
-    if (this.pwlRoute === routeId) { this.pwlRoute = null; this.#emit(); }
+  /**
+   * Przebieg z podanym sygnałem rozwiązany bez wyjazdu pociągu – Pwl zostaje, nowego sygnału już nie będzie. `byFault` –
+   * sygnał zgasł z usterki (zajętość, kontrola zwrotnicy): Sz wymuszony przez taki Pwl jest uzasadniony usterką.
+   */
+  exitSignalCancelled(routeId, byFault = false) {
+    if (this.pwlRoute === routeId) { this.pwlRoute = null; if (byFault) this.pwlFault = true; this.#emit(); }
   }
 
   /**
    * Pociąg sąsiada minął nasz semafor wjazdowy – na sygnał zezwalający urządzenie stwierdza przejazd (ZPG). Ko jest do
    * obsłużenia, gdy pociąg minął semafor wjazdowy i zjechał w całości ze szlaku (kolejność zależy od długości pociągu).
    */
-  entryPassed(onSignal) {
+  entryPassed(onSignal, faultOverrun = false) {
     this.entrySeen = true; this.beforeEntry = null;
     if (onSignal) this.zpg = true;
+    // semafor wjazdowy zgasł z usterki tuż przed pociągiem – dKo przed wjazdem nie było kiedy nacisnąć
+    if (faultOverrun) this.overrunByFault = true;
     // SBL tylko przy usterce – przyjazd do zawiadomienia telefonicznego (krótki pociąg zjeżdża ze szlaku przed semaforem)
     if (this.arrivedFully && (!this.auto || this.fault) && !this.koPending) this.#arrivalComplete();
   }
@@ -163,7 +171,7 @@ export class LineBlock {
       else {
         // Eap – automatyk po naprawie ustawia blokadę zgodnie ze stanem szlaku: wolny – stan zasadniczy; nasz pociąg
         // w drodze – blok początkowy zablokowany do Ko sąsiada; pociąg sąsiada – kierunek wjazdu (Ko po przyjeździe)
-        this.pwl = false; this.pwlRoute = null; this.needPo = false; this.permission = false;
+        this.pwl = false; this.pwlRoute = null; this.pwlFault = false; this.needPo = false; this.permission = false;
         if (this.awaitingEntry) { this.direction = this.fixed || 'in'; } // pociąg sąsiada stoi przed semaforem wjazdowym
         else if (oursPending != null && !this.fixed) {
           this.direction = 'out'; this.permission = true; this.poBlocked = false; this.koPending = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false;
@@ -335,7 +343,7 @@ export class LineBlock {
     if (this.koPrepared) return { ok: true, noop: true };
     this.counters.dKo++;
     this.koPrepared = true;
-    const late = this.koPending && !this.zpg;
+    const late = this.koPending && !this.zpg && !this.overrunByFault;
     const points = this.zpg ? -15 : late ? -10 : 0;
     this.log('warn', `Doraźne przygotowanie bloku końcowego dKo (licznik ${this.counters.dKo})`);
     this.bus.emit('score', { time: this.time, code: 'dKo', points, msg: `dKo na blokadzie do ${this.neighbour}${points === 0 ? ' przed wjazdem na Sz / rozkaz' : late ? ' po wjeździe – należało przed podaniem Sz' : ' bez uzasadnienia (przejazd stwierdzony)'}` });
@@ -359,7 +367,7 @@ export class LineBlock {
     this.direction = this.auto ? this.direction : this.fixed; this.permission = false; this.occupied = false;
     this.poBlocked = false; this.koPending = false; this.arrivedFully = false; this.request = null;
     this.pendingArrivalAck = null; this.lineTrain = null; this.beforeEntry = null;
-    this.pwl = false; this.pwlRoute = null; this.needPo = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false;
+    this.pwl = false; this.pwlRoute = null; this.pwlFault = false; this.needPo = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false; this.overrunByFault = false;
     this.phone.permissionFor = null; this.phone.arrivalConfirmed = null; this.phone.arrivedTrain = null;
     this.phone.askedByThem = null; this.phone.clearedFor = null; this.phone.departedTrain = null;
     this.talk = { askedFor: null, clearedFor: null, theirAsk: null, answered: null };
@@ -482,7 +490,7 @@ export class LineBlock {
     if (this.auto) { this.poBlocked = true; this.log('info', `Pociąg ${train.nr} wyjechał na szlak – odstęp zajęty`); }
     else if (onSignal) { this.poBlocked = true; this.log('info', `Pociąg ${train.nr} wyjechał na szlak – blok początkowy zablokowany`); }
     else { this.needPo = true; this.log('warn', `Pociąg ${train.nr} wyjechał na szlak bez sygnału zezwalającego – zablokuj blok początkowy (dPo)`); }
-    this.pwl = false; this.pwlRoute = null;
+    this.pwl = false; this.pwlRoute = null; this.pwlFault = false;
     this.#emit();
   }
 
@@ -519,7 +527,7 @@ export class LineBlock {
 
   /** Pociąg sąsiada wjechał na tor szlakowy (w naszym kierunku). */
   neighbourTrainEntered(train) {
-    this.occupied = true; this.arrivedFully = false; this.koPending = false; this.lineTrain = train.nr; this.lineOurs = false; this.zpg = false; this.entrySeen = false;
+    this.occupied = true; this.arrivedFully = false; this.koPending = false; this.lineTrain = train.nr; this.lineOurs = false; this.zpg = false; this.entrySeen = false; this.overrunByFault = false;
     this.log('info', `Pociąg ${train.nr} wyjechał z ${this.neighbour} – tor szlakowy zajęty`);
     if (this.fault || this.fixed || this.auto) this.#phoneIn(`Pociąg nr ${train.nr} odjechał o ${Clock.format(this.time)}.`);
     this.#emit();
@@ -640,7 +648,7 @@ export class LineBlock {
       this.pendingArrivalAck = null;
       this.log('info', this.auto ? `Odstęp do ${this.neighbour} wolny` : `${this.neighbour} potwierdził przyjazd (Ko) – tor szlakowy wolny`);
       this.occupied = false; this.poBlocked = false; this.lineTrain = null; this.direction = this.auto ? this.direction : this.fixed; this.permission = false;
-      this.needPo = false; this.pwl = false; this.pwlRoute = null;
+      this.needPo = false; this.pwl = false; this.pwlRoute = null; this.pwlFault = false;
       this.#emit();
     }
   }

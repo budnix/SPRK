@@ -132,6 +132,9 @@ i zał. 1). Przyjęte (uproszczenia gry):
 * po usunięciu usterki semafora (żarówka / obwód) przy wciąż nastawionym przebiegu sygnał zezwalający wraca sam –
   inaczej niż po spadku sygnału ze stałej kontroli (zajętość odcinka, utrata kontroli zwrotnicy), po którym sygnał
   sam nie wraca (przyjęte; sprawdzają to testy `tests/faults-signals-points.test.js`);
+* czynność wymuszona usterką jest bez kary także wtedy, gdy wykonuje się ją po naprawie: rozkaz „S” dla pociągu, który
+  przejechał „Stój” z usterki semafora (dyżurny wypisuje go minuty później), i Sz, gdy sygnału wyjazdowego nie da się
+  podać przez Pwl po sygnale zgaszonym z usterki (przyjęte);
 * tor szlakowy z blokadą półsamoczynną nie jest wolny, dopóki pociąg sąsiada stoi przed semaforem wjazdowym – także
   gdy zjechał już w całości na odcinek przed semaforem: sąsiad nie wyprawia następnego pociągu (blokada
   jednokierunkowa), a przy zapowiadaniu telefonicznym „droga wolna” się nie należy (przyjęte: pociąg „przybył
@@ -179,7 +182,8 @@ trainbrains.eu; DTR Eap-94 (M. Grot); Ir-1 §28 ust. 8–9, 16, 18. Ze źródeł
 
 Przyjęte (uproszczenia gry): stwierdzenie przejazdu – gdy pociąg sąsiada minie pierwszy semafor stacji na sygnale
 zezwalającym (nie Sz, nie rozkaz); Ko jest do obsłużenia, gdy pociąg minął ten semafor i zjechał w całości ze szlaku;
-dKo przed wjazdem – 0 pkt, po wjeździe – −10, bez pociągu przyjmowanego – odmowa; dPo – tylko po wyjeździe naszego
+dKo przed wjazdem – 0 pkt, po wjeździe – −10 (bez kary, gdy pociąg przejechał semafor wjazdowy „Stój” zgaszony przez
+usterkę tuż przed nim – dKo nie było kiedy nacisnąć), bez pociągu przyjmowanego – odmowa; dPo – tylko po wyjeździe naszego
 pociągu bez sygnału (0 pkt), brak dPo do przyjazdu – −10; oWbl – od razu przy żądaniu, zwrot pozwolenia po
 odpowiedzi sąsiada; przy zapowiadaniu telefonicznym telefonogram o przyjeździe zastępuje Ko (dKo się nie używa),
 blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywraca blokadę do stanu zasadniczego –
