@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeSim, run, Clock, autoDispatch } from './helpers.js';
+import { safety } from './invariants.js';
 
 /** Dyżurny automatyczny z wyborem toru dla danego pociągu. */
 function dispatcher(sim, trackFor) {
@@ -21,39 +22,6 @@ function dispatcher(sim, trackFor) {
         if (ilk.requestRoute({ kind: 'signal', id: startSig, color: 'green' }, { kind: 'end', id: e.to === 'E' ? 'kE' : 'kW' }).ok) e.exitRouteSet = true;
       }
     }
-  }
-}
-
-/** Niezmienniki bezpieczeństwa sprawdzane w każdym takcie. */
-function safety(sim, where) {
-  // 1. Dwa pociągi nigdy na tym samym odcinku (jazdy pociągowe)
-  const occ = new Map();
-  for (const tr of sim.traffic.trains) {
-    if (tr.mode !== 'train') continue;
-    for (const s of tr.occupiedSections()) {
-      assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `${where}: pociągi ${occ.get(s)} i ${tr.nr} na odcinku ${s}`);
-      occ.set(s, tr.nr);
-    }
-  }
-  // 2. Odcinek utwierdzony najwyżej w jednym przebiegu
-  const owners = new Map();
-  for (const act of sim.ilk.active.values()) for (const s of act.lockedSections) {
-    if (act.released.has(s)) continue;
-    assert.ok(!owners.has(s), `${where}: odcinek ${s} w dwóch przebiegach`);
-    owners.set(s, act.id);
-  }
-  // 3. Semafor z sygnałem zezwalającym (poza Sz) ma utwierdzony przebieg i wolne odcinki przed pociągiem
-  for (const sig of sim.ilk.signals.values()) {
-    if (sig.aspect === 'S1' || sig.aspect === 'Ms1' || sig.aspect === 'Sz') continue;
-    const act = sim.ilk.active.get(sig.route);
-    assert.ok(act, `${where}: ${sig.id} pokazuje ${sig.aspect} bez przebiegu`);
-    if (!act.trainEntered && act.route.kind === 'train') {
-      for (const s of act.lockedSections) assert.equal(sim.ilk.sections.get(s).occupied, false, `${where}: ${sig.id} zezwala na zajęty ${s}`);
-    }
-  }
-  // 4. Zwrotnica nie przestawia się pod pociągiem
-  for (const p of sim.ilk.points.values()) {
-    if (p.moving) assert.equal(sim.ilk.sections.get(p.section).occupied, false, `${where}: ${p.id} przestawiana pod pociągiem`);
   }
 }
 

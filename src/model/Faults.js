@@ -70,6 +70,17 @@ export class Faults {
     }
   }
 
+  /**
+   * Usterka dopisana w trakcie zmiany – jak w scenariuszu (`at`: „GG:MM” albo sekundy, `duration` w minutach). Zaczyna się
+   * przy najbliższym takcie po `at`; bez `at` – przy najbliższym takcie.
+   */
+  add(f) {
+    const n = this.#normalize({ ...f, at: f.at ?? this.sim.clock.time });
+    this.list.push(n);
+    this.list.sort((a, b) => a.at - b.at);
+    return n;
+  }
+
   /** Aktywne usterki (do panelu). */
   active() {
     return this.list.filter((f) => f.active);

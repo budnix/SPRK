@@ -36,6 +36,24 @@ test('poziom zakłóceń: losowe usterki mają czas wystąpienia w obrębie zmia
   }
 });
 
+test('usterka dopisana w trakcie zmiany (Faults.add): zaczyna się przy najbliższym takcie po `at`, trwa `duration` min', () => {
+  const sim = new Simulation(station, { scenario: { id: 't', name: 't' }, disruptions: 'none' });
+  const now = sim.clock.time;
+  const f = sim.faults.add({ type: 'signal-fail', target: 'A', duration: 2 });
+  const later = sim.faults.add({ type: 'point-control', target: 'Zw1', at: now + 60, duration: 1 });
+  assert.equal(f.at, now);
+  assert.deepEqual(sim.faults.list.map((x) => x.target), ['A', 'Zw1'], 'lista w kolejności czasu');
+  sim.step(0.5);
+  assert.equal(f.active, true);
+  assert.equal(sim.ilk.signals.get('A').failed, true);
+  assert.equal(later.active, false);
+  run(sim, 61);
+  assert.equal(later.active, true);
+  run(sim, 2 * 60);
+  assert.equal(f.done, true);
+  assert.equal(sim.ilk.signals.get('A').failed, false);
+});
+
 test('usterka semafora: brak sygnału mimo przebiegu, Sz uzasadniony (0 pkt), po usunięciu semafor działa', () => {
   const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: [{ type: 'signal-fail', target: 'A', at: '05:53', duration: 2 }] } });
   run(sim, 90);
