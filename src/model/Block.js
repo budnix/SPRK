@@ -515,6 +515,16 @@ export class LineBlock {
     this.#emit();
   }
 
+  /**
+   * Czy zgłoszenie pociągu `nr` przez sąsiada jest nadal w toku. Zmiana trybu blokady (usterka łączności, naprawa)
+   * kasuje żądanie pozwolenia albo telefonogram – sąsiad musi wtedy zgłosić pociąg od nowa, właściwą drogą.
+   */
+  neighbourRequestAlive(nr) {
+    if (this.auto || this.fixed === 'in') return true; // SBL i blokada jednokierunkowa: sąsiad nie żąda pozwolenia
+    if (this.fault) return String(this.phone.askedByThem) === String(nr) || String(this.phone.clearedFor) === String(nr);
+    return this.request === 'theirs' || this.direction === 'in';
+  }
+
   canNeighbourDispatch(nr) {
     if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : String(this.phone.clearedFor) === String(nr) && !this.occupied && !this.awaitingEntry;
     // SBL: sąsiad z pociągiem do wyprawienia prosi o kierunek przyjazdu (np. po naszej jeździe po torze lewym) i czeka

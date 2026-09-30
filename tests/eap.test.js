@@ -65,6 +65,9 @@ function beforeExit(sim, hold = false) {
   run(sim, 5 * 60, () => { const w = sim.blocks.get('W'); if (w.koPending) w.press('Ko'); });
   assert.equal(e.train.nextSignal(), 'D1');
   const b = sim.blocks.get('E'); b.request = null; b.direction = 'out'; b.permission = true;
+  // stan blokady ustawiony ręcznie: pociągi sąsiada z tego szlaku odsunięte, żeby nie zgłosił ich od nowa
+  for (const x of sim.traffic.timetable()) if (x.from === 'E' && !x.dispatched) { x.requested = false; x.requestAt = Infinity; }
+  b.phone.askedByThem = null;
   if (hold) e.train.def.depTime = sim.clock.time + 3600; // pociąg czeka – obraz semafora widać przed odjazdem
   return { e, b };
 }

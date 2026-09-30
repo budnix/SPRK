@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
+import { Interlocking } from '../src/model/Interlocking.js';
 import { autoDispatch, allArrived, Clock } from './helpers.js';
 
 /* Automat dyżurnego (AutoOperator) – decyzje, które nie mogą kończyć się zatorem. */
@@ -22,4 +23,26 @@ test('krzyżowanie na szlaku jednotorowym: tor planowy zajęty przez pociąg, kt
   assert.equal(String(tt.find((e) => e.nr === 1002).actualTrack), '2', 'krzyżowanie na torze 2');
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
+});
+
+test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nastawić od nowa: automat wyprawia pociąg na sygnał zastępczy', () => {
+  const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
+  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const end = Clock.parse('10:30');
+  let n = 0, cancelled = false;
+  while (sim.clock.time < end && !allArrived(sim)) {
+    sim.step(0.5);
+    if (n++ % 4 === 0) autoDispatch(sim);
+    // semafor wyjazdowy D1 podał sygnał dla 6101, pociąg jeszcze stoi – sygnał odwołany, przebieg zwolniony (raz)
+    if (!cancelled && e.train && e.train.v === 0 && e.train.hasStopped && sim.ilk.signals.get('D1').route === 'D1-E' && Interlocking.isTrainProceed(sim.ilk.signals.get('D1').aspect)) {
+      sim.ilk.cancelSignal('D1');
+      assert.ok(sim.ilk.releaseRoute('D1', false).ok);
+      cancelled = true;
+      assert.equal(sim.blocks.get('E').pwl, true, 'przeciwwtórność – drugiego sygnału na to pozwolenie nie będzie');
+    }
+  }
+  assert.ok(cancelled, 'sygnał wyjazdowy był podany i odwołany');
+  assert.equal(e.status, 'na następnym posterunku', `6101: ${e.status}`);
+  assert.ok(sim.ilk.counters.Sz >= 1, 'wyjazd na Sz');
+  for (const x of sim.traffic.timetable()) assert.ok(x.status === 'na następnym posterunku' || x.status === 'zakończył bieg' || x.status.startsWith('przekazany'), `${x.nr}: ${x.status}`);
 });

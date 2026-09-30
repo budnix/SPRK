@@ -371,6 +371,8 @@ export class Traffic {
         this.bus.emit('comms', { time, from: block.neighbour, kind: 'info', text: `Pociąg nr ${e.nr} opóźniony około ${e.delayIn} min.` });
         this.bus.emit('log', { time, level: 'warn', msg: `${block.neighbour}: pociąg ${e.nr} opóźniony ok. ${e.delayIn} min` });
       }
+      // zgłoszenie przepadło przy zmianie trybu blokady (usterka / naprawa) – sąsiad zgłasza pociąg od nowa
+      if (e.requested && !block.neighbourRequestAlive(e.nr)) { e.requested = false; e.waitLogged = false; e.status = 'oczekiwany'; }
       if (!e.requested && time >= e.requestAt) {
         // Jeden pociąg naraz na szlaku – żądanie, gdy blokada wolna
         const earlier = this.entries.some((o) => o !== e && o.from === e.from && !o.dispatched && o.requestAt < e.requestAt);

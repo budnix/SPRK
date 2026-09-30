@@ -191,10 +191,13 @@ export class AutoOperator {
       // pociąg ma wyjazd za sobą, gdy minął semafor wyjazdowy: zezwolenie na ten szlak albo – po Sz / rozkazie – brak
       // kolejnego semafora przed granicą stacji
       const leaving = tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal());
-      if (e.to && sim.blocks.get(e.to)?.fault && tr.v === 0 && !leaving && (e.depTime == null || t >= e.depTime)) {
+      // tak samo, gdy blokada daje drogę, ale sygnału już nie (Pwl: sygnał wyjazdowy był raz podany i odwołany)
+      const xb = e.to ? sim.blocks.get(e.to) : null;
+      if (xb && tr.v === 0 && !leaving && (e.depTime == null || t >= e.depTime)) {
         const act = [...ilk.active.values()].find((a) => a.route.exit === e.to && a.route.kind === 'train' && !a.trainEntered);
         const sig = act && ilk.signals.get(act.route.start);
-        if (sig && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
+        const noSignal = xb.fault || (xb.gate('route').ok && !xb.gate('signal', act?.id).ok);
+        if (sig && noSignal && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
       }
 
       // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----

@@ -56,6 +56,9 @@ export class Simulation {
     this.buttons = this.ilk.attachInput(this.srk.input
       ? this.srk.input(this.ilk, this.bus, this.srk.model, { blocks: (exit) => this.blocks.get(exit) })
       : new ButtonProtocol(this.ilk, this.bus, { armTimeout: this.srk.model.armTimeout }));
+    // obraz semafora wyjazdowego zależy od blokady (pozwolenie, Pwl, usterka łączności) – zmiana stanu blokady odświeża
+    // sygnały; inaczej przebieg nastawiony przy usterce zostawał na „Stój” także po naprawie i pozwoleniu
+    this.bus.on('block', () => this.ilk.refreshSignals());
     // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
     this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
     const timetable = this.scenario.timetable
