@@ -268,16 +268,21 @@ export class AutoOperator {
           const sid = r.sections.at(-1);
           return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0 && o.train.occupiedSections().has(sid));
         };
-        // Ten pociąg odjedzie na szlak jednotorowy, z którego właśnie nadjeżdża inny, a ten inny może wjechać tylko na
-        // ten sam tor – najpierw wjeżdża tamten (inaczej ten zająłby tor i czekał na szlak zajęty przez tamtego)
+        // Ten pociąg odjedzie na szlak jednotorowy, z którego nadjeżdża inny (sąsiad ma pozwolenie albo pociąg już jedzie).
+        // Wjazd na tor `r` jest zły, gdy potem pociąg z przeciwka nie miałby gdzie wjechać: każdy inny tor dostępny z tego
+        // szlaku zajmuje pociąg, który też czeka na ten szlak (albo skład bez dalszej jazdy). Wtedy najpierw wjeżdża
+        // pociąg z przeciwka – ten czeka przed semaforem wjazdowym.
         const meetsOpposing = (r) => {
           const xb = e.to ? sim.blocks.get(e.to) : null;
           if (!xb || xb.auto || xb.fixed || this.role === 'executive') return false;
+          const coming = xb.direction === 'in' || xb.phone.clearedFor != null || xb.awaitingEntry || (xb.occupied && !xb.lineOurs);
+          if (!coming) return false;
           const tk = routeTrack(r), xapp = approachOf(e.to);
-          const theirs = routes.filter((x) => x.kind === 'train' && x.approach === xapp).map(routeTrack).filter(Boolean);
-          if (!theirs.length || !theirs.every((x) => x === tk)) return false;
-          // sąsiad ma już pozwolenie (albo „droga wolna”), jego pociąg jest na szlaku albo stoi przed semaforem wjazdowym
-          return xb.direction === 'in' || xb.phone.clearedFor != null || xb.awaitingEntry || (xb.occupied && !xb.lineOurs);
+          const theirs = [...new Set(routes.filter((x) => x.kind === 'train' && x.approach === xapp).map(routeTrack).filter(Boolean))];
+          if (!theirs.includes(tk)) return false; // na ten tor pociąg z przeciwka i tak nie wjeżdża
+          const held = (t) => sim.traffic.timetable().some((o) => o !== e && (o.to === e.to || o.to == null) && o.train && !o.train.finished
+            && o.train.entered && !o.train.entryPending && trackOf(o.train) === t);
+          return !theirs.some((t) => t !== tk && !held(t));
         };
         let closed = false;
         for (const pick of order) {

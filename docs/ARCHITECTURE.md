@@ -252,8 +252,12 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   potwierdza przyjazd telefonicznie (`tests/block.test.js`).
 * Wstrzymanie pociągu sąsiada: telefonogram `hold` („Stój pociąg nr …”, `Block.phoneHold`) kasuje żądanie pozwolenia
   albo zapytanie o drogę na `HOLD_TIME`. Automat używa go na szlaku jednotorowym, gdy każdy tor wjazdu z tego szlaku
-  zajmuje pociąg czekający na ten sam szlak; a gdy sąsiad ma już pozwolenie, nie wpuszcza na taki tor własnego pociągu
-  przed pociągiem sąsiada. Test: `tests/hold.test.js`.
+  zajmuje pociąg czekający na ten sam szlak; a gdy sąsiad ma już pozwolenie, nie wpuszcza własnego pociągu na tor,
+  po którego zajęciu pociąg sąsiada nie miałby gdzie wjechać (mijanka z jednym torem albo z kilkoma – liczą się tory
+  zajęte przez pociągi czekające na ten sam szlak). Testy: `tests/hold.test.js`, `tests/operator.test.js`.
+* Tor docelowy z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): przebieg pociągowy jest
+  zakończony, gdy zwolniły się wszystkie odcinki przed torem docelowym i pociąg stoi na tym torze – także wtedy, gdy
+  do ostatniego odcinka nie dojechał (`tests/mech.test.js`).
 * Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy).
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).

@@ -46,3 +46,23 @@ test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nast
   assert.ok(sim.ilk.counters.Sz >= 1, 'wyjazd na Sz');
   for (const x of sim.traffic.timetable()) assert.ok(x.status === 'na następnym posterunku' || x.status === 'zakończył bieg' || x.status.startsWith('przekazany'), `${x.nr}: ${x.status}`);
 });
+
+test('mijanka z dwoma torami (Olszyny): gdy z przeciwka nadjeżdża pociąg, automat nie zajmuje ostatniego wolnego toru pociągiem, który czeka na ten sam szlak', async () => {
+  const { default: olszyny } = await import('../src/stations/olszyny.js');
+  // 3001 stoi na torze 2 i odjedzie do Grabowca; 3002 jedzie z Grabowca (ma pozwolenie) na tor 1; 3003 z Wierzbna też
+  // chce na tor 1 i też do Grabowca. Gdyby wjechał, oba tory zajęłyby pociągi czekające na szlak, z którego jedzie 3002.
+  const sim = new Simulation(olszyny, { srk: 'E', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:30', tasks: [], timetable: [
+    { nr: 3001, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:10', dep: '07:40', track: '2', stop: true, length: 100, vmax: 100, dwell: 60 },
+    { nr: 3003, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:20', dep: '07:44', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 },
+    { nr: 3002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:22', dep: '07:24', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 },
+  ] } });
+  const end = Clock.parse('10:00');
+  let n = 0;
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  const tt = sim.traffic.timetable();
+  for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+  const by = (nr) => tt.find((e) => e.nr === nr);
+  assert.ok(by(3002).actualArr < by(3003).actualArr, 'najpierw wjeżdża pociąg z przeciwka');
+  assert.equal(sim.ilk.counters.rozprucie, 0);
+  assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
+});
