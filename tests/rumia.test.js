@@ -63,6 +63,75 @@ test('Rumia: pełna zmiana – SKM co 15 min w obu kierunkach na torze 5, region
   assert.ok(sim.ended);
 });
 
+test('Rumia: pociąg opóźniony u sąsiada i wyprzedzony na szlaku – automat przyjmuje pociągi w kolejności przyjazdu, każdy na swój tor', () => {
+  // SKM 93205 z Cisowej opóźniony o 21 min jedzie szlakiem (blokada samoczynna) za następnym z rozkładu, 93207; ten
+  // czeka przed semaforem A2, bo tor 5 zajmuje spóźniony SKM 93204 z Redy. Przebieg wjazdowy należy się pociągowi,
+  // który stoi pierwszy przed semaforem – nie pierwszemu w rozkładzie.
+  const sim = new Simulation(rumia, { disruptions: 'none' });
+  const tt = sim.traffic.timetable();
+  for (const [nr, min] of [[93204, 26], [93205, 21], [93207, 5]]) sim.traffic.setInboundDelay(tt.find((e) => e.nr === nr), min);
+  const end = Clock.parse('08:20');
+  let n = 0;
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  for (const e of tt) {
+    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
+    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
+  }
+  const by = (nr) => tt.find((e) => e.nr === nr);
+  assert.ok(by(93207).actualArr < by(93205).actualArr, 'pierwszy wjechał pociąg, który pierwszy stał przed semaforem');
+  assert.ok(!sim.score.items.some((i) => i.code === 'unfinished' || i.code === 'wrong-track'), sim.score.items.filter((i) => i.points < 0).map((i) => i.msg).join('; '));
+  assert.ok(sim.ended);
+});
+
+/** Pełna zmiana z automatem i jedną usterką ze scenariusza; zwraca symulację po przejechaniu wszystkich pociągów. */
+function shiftWithFault(fault) {
+  const sim = new Simulation(rumia, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:15', faults: [fault] } });
+  const end = Clock.parse('09:30');
+  let n = 0;
+  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  return sim;
+}
+const stuckTrains = (sim) => sim.traffic.timetable().filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'))).map((e) => `${e.nr}: ${e.status}`);
+
+test('Rumia: usterka obwodu torowego gasi semafor nastawionego przebiegu – automat zwalnia przebieg i nastawia go od nowa po naprawie', () => {
+  // 06:20: odcinek Iz38 na drodze nastawionego przebiegu R-C wskazuje zajętość – semafor R sam staje na „Stój” i sam nie wraca
+  const sim = shiftWithFault({ type: 'false-occupancy', target: 'Iz38', at: '06:20', duration: 8 });
+  assert.deepEqual(stuckTrains(sim), []);
+  assert.equal(sim.ilk.active.size, 0);
+  assert.equal(sim.ilk.counters.dPz, 0, 'zwykłe zwolnienie (Pz), bez licznika');
+});
+
+test('Rumia: usterka obwodu torowego pod pociągiem – przebieg nie rozwiązuje się sam; automat zwalnia go doraźnie, bez kary (uzasadnione usterką)', () => {
+  const sim = new Simulation(rumia, { disruptions: 'none' });
+  const from = sim.traffic.timetable().filter((e) => e.from === 'RD2');
+  const end = Clock.parse('09:30');
+  let n = 0, faulty = null, stuckSeen = false, repaired = false;
+  while (sim.clock.time < end && !allArrived(sim)) {
+    sim.step(0.5);
+    if (n++ % 4 === 0) autoDispatch(sim);
+    // pierwszy pociąg od Redy jest na pierwszym odcinku przebiegu od semafora R: środkowy odcinek wykazuje zajętość
+    if (!faulty) {
+      const act = [...sim.ilk.active.values()].find((a) => a.route.start === 'R' && a.trainEntered && a.lockedSections.length >= 3);
+      if (act && from[0].train?.occupiedSections().has(act.lockedSections[0])) {
+        faulty = sim.ilk.sections.get(act.lockedSections[1]);
+        faulty.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy());
+      }
+    } else if (!repaired) {
+      const act = [...sim.ilk.active.values()].find((a) => a.route.start === 'R');
+      if (act && sim.ilk.routeStuck(act)) stuckSeen = true;
+      // obwód torowy naprawiony dopiero po doraźnym zwolnieniu przebiegu
+      if (stuckSeen && !act) { faulty.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); repaired = true; }
+    }
+  }
+  assert.ok(faulty && stuckSeen, 'usterka pod pociągiem zatrzymała rozwiązanie przebiegu');
+  assert.deepEqual(stuckTrains(sim), []);
+  assert.equal(sim.ilk.active.size, 0);
+  assert.ok(sim.ilk.counters.dPz >= 1, 'doraźne zwolnienie z licznikiem');
+  const dpz = sim.score.items.filter((i) => i.code === 'dPz');
+  assert.ok(dpz.length >= 1 && dpz.every((i) => i.points === 0 && /uzasadnione usterką/.test(i.msg)), JSON.stringify(dpz));
+});
+
 test('Rumia: kontynuacja wyjazdu (G311 → szlak) nie żąda ochrony bocznej zza własnego semafora – po C-G311 da się nastawić G311-GS2', () => {
   const sim = new Simulation(rumia, { disruptions: 'none' });
   const cont = sim.ilk.routes.get('G311-GS2');

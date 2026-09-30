@@ -37,19 +37,30 @@ export class Traffic {
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
   }
 
-  /** Stojące pociągi, którym można wydać rozkaz pisemny (wraz z najbliższym semaforem). */
+  /**
+   * Stojące pociągi, którym można wydać rozkaz pisemny, wraz z semaforem: najbliższym przed czołem albo – gdy pociąg
+   * stanął za semaforem miniętym na „Stój” (`behind`) – tym miniętym.
+   */
   standingTrains() {
     return this.entries
       .filter((e) => e.train && !e.train.finished && e.train.entered && e.train.v === 0)
-      .map((e) => ({ nr: e.nr, name: e.name, signal: e.train.nextSignal(), entry: e }));
+      .map((e) => {
+        const behind = e.train.stoppedAt?.kind === 'spad';
+        return { nr: e.nr, name: e.name, signal: behind ? e.train.stoppedAt.signal : e.train.nextSignal(), behind, entry: e };
+      });
   }
 
   /**
    * Szablon treści rozkazu pisemnego „S” (wg wzoru Ir-1): pozwolenie na przejazd obok
    * semafora wskazującego sygnał „Stój” z prędkością do 40 km/h do następnego semafora.
    */
-  orderTemplate(nr, signalId, reason = 'usterki urządzeń srk') {
+  orderTemplate(nr, signalId, reason = 'usterki urządzeń srk', behind = false) {
     const st = this.station.name;
+    if (behind) {
+      return `Rozkaz pisemny „S”. Do pociągu nr ${nr}. Pociąg nr ${nr} zatrzymał się za semaforem ${signalId} na stacji ${st}, który wskazał sygnał „Stój” z powodu ${reason}. `
+        + `Pociąg nr ${nr} ma pozwolenie na dalszą jazdę do następnego semafora z prędkością nieprzekraczającą 40 km/h. `
+        + `Droga przebiegu jest przygotowana, zwrotnice zamknięte.`;
+    }
     return `Rozkaz pisemny „S”. Do pociągu nr ${nr}. Semafor ${signalId} na stacji ${st} wskazuje sygnał „Stój” z powodu ${reason}. `
       + `Pociąg nr ${nr} ma pozwolenie na przejechanie obok semafora ${signalId} wskazującego sygnał „Stój” i jazdę do następnego semafora `
       + `z prędkością nieprzekraczającą 40 km/h. Droga przebiegu jest przygotowana, zwrotnice zamknięte.`;
@@ -57,7 +68,8 @@ export class Traffic {
 
   /**
    * Wydanie rozkazu pisemnego „S”. Warunki (Ir-1, uproszczone):
-   *  - pociąg stoi na stacji przed semaforem `signalId` wskazującym „Stój”,
+   *  - pociąg stoi na stacji przed semaforem `signalId` wskazującym „Stój” albo – po minięciu go na „Stój” (semafor
+   *    zgasł tuż przed pociągiem) – stoi za nim; wtedy rozkaz pozwala jechać dalej do następnego semafora,
    *  - droga jazdy do następnego semafora: zwrotnice utwierdzone w przebiegu lub zamknięte indywidualnie (Zz),
    *    wykolejnice zdjęte, odcinki wolne i nieutwierdzone w innym przebiegu,
    *  - wyjazd na szlak tylko z pozwoleniem blokady liniowej.
@@ -67,15 +79,17 @@ export class Traffic {
     if (!e?.train || e.train.finished || !e.train.entered) return { ok: false, reason: `Pociąg ${nr} nie stoi na stacji` };
     const tr = e.train;
     if (tr.v > 0) return { ok: false, reason: `Pociąg ${nr} jest w ruchu – rozkaz doręcza się na postoju` };
+    const behind = tr.stoppedAt?.kind === 'spad' && tr.stoppedAt.signal === signal; // stoi za semaforem miniętym na „Stój”
     const next = tr.nextSignal();
-    if (next !== signal) return { ok: false, reason: `Pociąg ${nr} stoi przed ${next ?? 'brakiem semafora'}, nie przed ${signal}` };
+    if (!behind && next !== signal) return { ok: false, reason: `Pociąg ${nr} stoi przed ${next ?? 'brakiem semafora'}, nie przed ${signal}` };
     const sig = this.ilk.signals.get(signal);
     if (!sig || sig.kind !== 'semafor') return { ok: false, reason: `${signal} nie jest semaforem` };
-    if (!Interlocking.isStop(sig.aspect)) return { ok: false, reason: `Semafor ${signal} nie wskazuje „Stój” – rozkaz zbędny` };
+    if (!behind && !Interlocking.isStop(sig.aspect)) return { ok: false, reason: `Semafor ${signal} nie wskazuje „Stój” – rozkaz zbędny` };
     if (tr.hasOrderFor(signal)) return { ok: false, reason: `Pociąg ${nr} ma już rozkaz na ${signal}` };
-    // Droga jazdy za semaforem do następnego semafora
+    // Droga jazdy za semaforem do następnego semafora; pociąg stojący za semaforem – od jego czoła
     const problems = [];
-    const path = this.ilk.pathBeyond(signal);
+    const at = behind ? tr.headTile() : null;
+    const path = at ? this.ilk.pathFrom(at.tile, at.outPort, at.inPort) : this.ilk.pathBeyond(signal);
     for (const { id, trailing } of path.points) {
       const p = this.ilk.points.get(id);
       if (!p.individualLock && !p.secured && !this.ilk.pointLockedByRoute(id)) problems.push(`zwrotnica ${id} niezamknięta (Zz) ani nieutwierdzona`);
@@ -86,8 +100,9 @@ export class Traffic {
     for (const id of path.derailers) if (this.ilk.derailers.get(id).position !== 'off') problems.push(`wykolejnica ${id} nałożona`);
     for (const sid of path.sections) {
       const s = this.ilk.sections.get(sid);
-      // zajętość z usterki (fałszywa, licznik osi) dyżurny sprawdza na miejscu – nie przeszkadza, uzasadnia rozkaz
-      if (s.physical) problems.push(`odcinek ${sid} zajęty`);
+      // zajętość z usterki (fałszywa, licznik osi) dyżurny sprawdza na miejscu – nie przeszkadza, uzasadnia rozkaz;
+      // pociąg stojący za semaforem sam zajmuje początek tej drogi
+      if (behind ? this.occupiedByOther(sid, e.nr) : s.physical) problems.push(`odcinek ${sid} zajęty`);
       if (s.route) {
         const act = this.ilk.active.get(s.route);
         if (act && act.route.start !== signal) problems.push(`odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
@@ -100,14 +115,16 @@ export class Traffic {
     if (problems.length) return { ok: false, reason: `Rozkaz dla ${nr} na ${signal}: ${problems.join('; ')}` };
     const order = {
       id: this.orders.length + 1, time: this.time, nr: e.nr, signal, type: 'S',
-      text: text || this.orderTemplate(e.nr, signal, reason), reason: reason || '',
+      text: text || this.orderTemplate(e.nr, signal, reason || undefined, behind), reason: reason || '',
     };
     this.orders.push(order);
-    tr.orders.push({ signal, used: false, id: order.id });
-    const justified = this.ilk.faultOnPath(signal, path);
+    if (behind) tr.resumeAfterStop();
+    else tr.orders.push({ signal, used: false, id: order.id });
+    // semafor zgasł przed pociągiem z przyczyny po stronie urządzeń – rozkaz uzasadniony
+    const justified = this.ilk.faultOnPath(signal, path) || (behind && !!(sig.route && this.ilk.active.get(sig.route)?.faultDrop));
     this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
-    this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 40 km/h.` });
-    this.bus.emit('log', { time: this.time, level: 'warn', msg: `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (40 km/h)` });
+    this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: behind ? `Rozkaz „S” nr ${order.id} przyjąłem. Jadę dalej do następnego semafora z prędkością do 40 km/h.` : `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 40 km/h.` });
+    this.bus.emit('log', { time: this.time, level: 'warn', msg: behind ? `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: dalsza jazda zza semafora ${signal} (40 km/h)` : `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (40 km/h)` });
     this.bus.emit('orders', this.orders);
     return { ok: true, order };
   }
@@ -285,7 +302,10 @@ export class Traffic {
         const sig = this.ilk.signals.get(arg);
         this.bus.emit('log', { time: t, level: 'alarm', msg: `Pociąg ${e.nr} przejechał semafor ${arg} wskazujący „Stój” – hamowanie nagłe` });
         this.bus.emit('alarm', { type: 'spad', nr: e.nr, signal: arg });
-        if (!sig?.failed) this.bus.emit('score', { time: t, code: 'spad', points: -20, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
+        // bez kary, gdy semafor zgasł z przyczyny po stronie urządzeń: usterka semafora albo – przy nastawionym
+        // przebiegu – zajętość odcinka bez taboru lub utrata kontroli zwrotnicy
+        const act = sig?.route ? this.ilk.active.get(sig.route) : null;
+        if (!sig?.failed && !act?.faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
         break;
       }
       case 'order-used':

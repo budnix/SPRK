@@ -107,8 +107,11 @@ Play it: **https://budnix.github.io/SPRK/**
   mode / direction), written orders "S" for passing a signal at Stop, telephone messages per Ir-1 forms (1a / 4a on
   single-track lines for every train, departure notices on double-track lines – sent automatically or by you, see
   Settings), telephone block working when a block loses communication, radio calls from drivers.
-* Disruptions: inbound delays, faults (dark signal, point without detection, false occupancy, block without
-  communication), extra trains; seeded so a shift can be replayed. Shift report with a score for every procedural
+* Disruptions: inbound delays, random faults during the shift (dark signal, point without detection, false occupancy,
+  block without communication), extra trains; seeded so a shift can be replayed. A signal that drops in front of a
+  train because of a device fault costs no points; a train that stopped past such a signal continues on a written
+  order „S”; a route that did not release behind a train because of a faulty track circuit is released with the
+  emergency release at no cost. Shift report with a score for every procedural
   decision.
 
 ### Stations

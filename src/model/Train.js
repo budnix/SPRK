@@ -80,6 +80,24 @@ export class Train {
     return this.#lookahead(maxDist, listSignals);
   }
 
+  /**
+   * Dalsza jazda pociągu, który stanął za semaforem miniętym na „Stój”: na rozkaz pisemny – do następnego semafora,
+   * z prędkością jak po rozkazie „S” (do 40 km/h).
+   */
+  resumeAfterStop() {
+    if (this.stoppedAt?.kind !== 'spad') return false;
+    this.authority = true; this.exitAuth = '*';
+    this.substituteLimit = true; this.activeLimit = SUBSTITUTE_SPEED * KMH;
+    this.stoppedAt = null;
+    return true;
+  }
+
+  /** Kostka pod czołem pociągu z portami wjazdu i wyjazdu albo null, gdy czoło jest na szlaku. */
+  headTile() {
+    const seg = this.trail[this.trail.length - 1];
+    return seg?.tile ? { tile: seg.tile, inPort: seg.inPort, outPort: seg.outPort } : null;
+  }
+
   /** Identyfikator najbliższego sygnalizatora przed czołem (ważnego dla tej jazdy) lub null. */
   nextSignal() {
     const c = this.#lookahead(3000, true).find((x) => x.kind === 'signal' || x.kind === 'passed-signal');
@@ -364,7 +382,7 @@ export class Train {
             this.state = 'dwell';
           }
           this.onEvent('arrive', this);
-        } else if (stopC.kind === 'end' && this.def.terminates && !this.hasStopped) {
+        } else if (stopC.kind === 'end' && this.def.terminates && !this.hasStopped && this.#onStationTrack()) {
           this.hasStopped = true; this.arrivedAt = time; this.state = 'stopped';
           this.onEvent('arrive', this);
         } else {
@@ -374,6 +392,13 @@ export class Train {
     } else if (this.state === 'stopped') {
       this.state = 'moving';
     }
+  }
+
+  /** Czoło stoi na torze stacyjnym (także bocznym) – nie na odcinku przed semaforem wjazdowym ani na rozjazdach. */
+  #onStationTrack() {
+    const tile = this.trail[this.trail.length - 1]?.tile;
+    const kind = tile && this.ilk.sections.get(tile.section)?.kind;
+    return kind === 'station' || kind === 'siding';
   }
 
   /**

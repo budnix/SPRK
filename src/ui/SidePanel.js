@@ -282,7 +282,7 @@ export class SidePanel {
       const nr = sel.value;
       const st = this.sim.traffic.standingTrains().find((t) => String(t.nr) === nr);
       sigEl.value = st?.signal ?? '';
-      textEl.value = st?.signal ? this.sim.traffic.orderTemplate(st.nr, st.signal, reasonEl.value) : '';
+      textEl.value = st?.signal ? this.sim.traffic.orderTemplate(st.nr, st.signal, reasonEl.value || undefined, st.behind) : '';
     };
     sel.addEventListener('change', fill);
     reasonEl.addEventListener('input', fill);
@@ -297,7 +297,7 @@ export class SidePanel {
     this.refreshOrderTrains = () => {
       const standing = this.sim.traffic.standingTrains();
       const cur = sel.value;
-      const opts = standing.map((x) => `<option value="${x.nr}">${x.label ?? x.nr} ${relationOf(x)} – ${t('sp.order.before')} ${x.signal ?? '–'}</option>`).join('');
+      const opts = standing.map((x) => `<option value="${x.nr}">${escapeHtml(String(x.label ?? x.nr))} ${escapeHtml(relationOf(x))} – ${t(x.behind ? 'sp.order.behind' : 'sp.order.before')} ${escapeHtml(x.signal ?? '–')}</option>`).join('');
       if (sel.innerHTML !== opts) { sel.innerHTML = opts || `<option value="">${t('sp.order.noTrains')}</option>`; if ([...sel.options].some((o) => o.value === cur)) sel.value = cur; fill(); }
     };
     this.refreshOrderTrains();

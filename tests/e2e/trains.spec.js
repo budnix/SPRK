@@ -86,3 +86,37 @@ test('strona nie przesuwa się ani nie odświeża gestem: touchmove poza przewij
   expect(await gesture('#tab-rj table', -40)).toBe(false);
   expect(await gesture('#tab-rj table', 40)).toBe(true);
 });
+
+test('rozkaz pisemny dla pociągu, który stanął za semaforem miniętym na „Stój”: lista podaje „za A”, treść mówi o dalszej jeździe, po wydaniu pociąg rusza', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
+  // pociąg 6101 jedzie na przebieg A-D2; tuż przed semaforem A obwód toru 2 wykazuje zajętość – semafor gaśnie, pociąg go mija
+  const stopped = await page.evaluate(() => {
+    const sim = window.sim, c = sim.clock, e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    c.paused = false; c.speed = 1;
+    let set = false, dropped = false;
+    for (let i = 0; i < 6000 && !(dropped && e.train?.v === 0); i++) {
+      sim.step(0.5);
+      const b = sim.blocks.get('W');
+      if (b.request === 'theirs') b.press('Poz');
+      if (!set && e.train) set = sim.ilk.setRoute('A-D2').ok;
+      if (set && !dropped && e.train) {
+        const x = e.train.constraintsAhead(3000, true).find((q) => q.signal === 'A')?.dist;
+        if (x != null && x <= 8 && e.train.v > 8) { sim.ilk.sections.get('T2').forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); dropped = true; }
+      }
+    }
+    c.paused = true;
+    return { kind: e.train.stoppedAt?.kind, signal: e.train.stoppedAt?.signal, spad: sim.score.items.filter((i) => i.code === 'spad').length };
+  });
+  expect(stopped).toEqual({ kind: 'spad', signal: 'A', spad: 0 }); // usterka urządzeń – bez kary
+  await page.click('#panel-tabs button[data-tab=pociagi]');
+  await expect(page.locator('#trains')).toContainText('stoi za semaforem A');
+  await page.click('#panel-tabs button[data-tab=rozkazy]');
+  await expect(page.locator('#order-train option').first()).toContainText('za A');
+  await expect(page.locator('#order-signal')).toHaveValue('A');
+  await expect(page.locator('#order-text')).toHaveValue(/zatrzymał się za semaforem A.*dalszą jazdę do następnego semafora/);
+  await page.locator('#order-form button[type=submit], #order-form .tb.primary').first().click();
+  await expect(page.locator('#order-msg')).toHaveClass(/ok/);
+  await expect(page.locator('#orders li').first()).toContainText('6101');
+  await advance(page, 40);
+  expect(await page.evaluate(() => { const tr = window.sim.traffic.timetable().find((x) => x.nr === 6101).train; return [tr.authority, tr.stoppedAt?.kind ?? null, tr.v > 0 || tr.hasStopped]; })).toEqual([true, null, true]);
+});

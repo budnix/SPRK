@@ -368,13 +368,26 @@ export class Interlocking {
    */
   pathBeyond(signalId) {
     const sig = this.signals.get(signalId);
-    const path = { sections: [], points: [], derailers: [], exit: null };
-    if (!sig) return path;
-    const positions = this.positions();
+    if (!sig) return { sections: [], points: [], derailers: [], exit: null };
     const start = this.topo.trackAt(sig.tile.at.x, sig.tile.at.y);
-    let outPort = start._def.ports(start).find((p) => (p.includes('E') ? 'E' : p.includes('W') ? 'W' : null) === sig.dir);
-    let tile = start;
+    const outPort = start._def.ports(start).find((p) => (p.includes('E') ? 'E' : p.includes('W') ? 'W' : null) === sig.dir);
+    return this.pathFrom(start, outPort);
+  }
+
+  /**
+   * Droga jazdy od wyjścia `outPort` z kostki `tile` – jak `pathBeyond`. `inPort` podaje się, gdy droga zaczyna się
+   * na samej kostce (czoło pociągu stojącego za semaforem): wtedy liczy się też jej odcinek, zwrotnica i wykolejnica.
+   */
+  pathFrom(tile, outPort, inPort = null) {
+    const path = { sections: [], points: [], derailers: [], exit: null };
+    const positions = this.positions();
     const sections = new Set();
+    if (inPort) {
+      if (tile.section) sections.add(tile.section);
+      if (tile.derailer) path.derailers.push(tile.derailer);
+      if (tile.type === 'point') path.points.push({ id: tile.id, trailing: !!this.topo.step(tile, inPort, positions).trailing });
+      if (outPort && this.topo.signalsAt(tile, outPort).some((sg) => sg.kind === 'semafor')) outPort = null;
+    }
     for (let guard = 0; guard < 100 && outPort; guard++) {
       const exit = this.topo.exitAt(tile, outPort);
       if (exit) { path.exit = exit.id; break; }
@@ -816,6 +829,7 @@ export class Interlocking {
       this.#dissolve(act);
       return { ok: true };
     }
+    const wasStuck = this.routeStuck(act);
     act.lever = false;
     act.signalOff = true;
     this.#refreshSignals();
@@ -827,8 +841,10 @@ export class Interlocking {
     if (emergency) {
       this.counters.dPz++;
       this.#log('warn', `Doraźne zwolnienie przebiegu ${act.id} (${this.emergencyReleaseName ?? 'dPz'}, licznik ${this.counters.dPz})`);
-      // zwalniacz przy bloku, którego nie zwolnił pociąg (usterka urządzenia oddziaływania) jest uzasadniony
-      this.bus.emit('score', { time: this.time, code: 'dPz', points: act.stuck ? 0 : -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (${this.emergencyReleaseName ?? 'dPz'})${act.stuck ? ' – uzasadnione usterką' : ''}` });
+      // uzasadnione: zwalniacz przy bloku, którego nie zwolnił pociąg (usterka urządzenia oddziaływania), i przebieg,
+      // który nie rozwiązał się za pociągiem przez usterkę kontroli zajętości
+      const justified = wasStuck || !!act.stuck;
+      this.bus.emit('score', { time: this.time, code: 'dPz', points: justified ? 0 : -20, msg: `Doraźne zwolnienie przebiegu ${act.id} (${this.emergencyReleaseName ?? 'dPz'})${justified ? ' – uzasadnione usterką' : ''}` });
       this.#dissolve(act);
       return { ok: true };
     }
@@ -851,6 +867,20 @@ export class Interlocking {
     this.#log('info', `Przebieg ${act.id} zwolniony`);
     this.#dissolve(act);
     return { ok: true };
+  }
+
+  /**
+   * Przebieg, który sam się już nie rozwiąże: pociąg przejechał odcinek, który wykazywał wtedy zajętość z usterki, więc
+   * odcinek nie zwolnił się za pociągiem – także po naprawie. Zostaje doraźne zwolnienie (uzasadnione usterką).
+   * Ostatni odcinek się nie liczy: zwalnia się sam, gdy pociąg go opuści albo usterka ustąpi.
+   */
+  routeStuck(act) {
+    if (!act?.trainEntered || act.passed) return false;
+    const secs = act.lockedSections;
+    const mid = secs.slice(0, -1).map((id, i) => ({ i, s: this.sections.get(id) })).filter((x) => !act.released.has(x.s.id));
+    if (!mid.length) return false;
+    // pociąg jeszcze jedzie przez przebieg: stoi na którymś z tych odcinków albo do niego nie dojechał
+    return !mid.some((x) => x.s.physical || x.i > (act.front ?? -1));
   }
 
   /** Przebieg (nastawiony lub nastawiany), który kończy się na elemencie `endId` – semaforze albo przycisku końca. */
@@ -1246,6 +1276,8 @@ export class Interlocking {
       if (!act.trainEntered && !act.signalOff && !this.manualSignal && act.route.kind === 'train') {
         const why = this.#signalCondition(act);
         if (why) {
+          // przyczyna po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli), a nie tabor na drodze przebiegu
+          act.faultDrop = ![...act.lockedSections, ...act.overlap].some((sid) => this.sections.get(sid)?.physical);
           act.signalOff = true; this.#refreshSignals();
           this.#log('warn', `Semafor ${sig.id} samoczynnie na „Stój”: ${why} – przebieg ${act.id} utwierdzony`);
         }

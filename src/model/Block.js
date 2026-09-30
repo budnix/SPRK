@@ -62,6 +62,7 @@ export class LineBlock {
     this.zpg = false;              // stwierdzenie przejazdu pociągu sąsiada przy semaforze wjazdowym (sygnał zezwalający)
     this.koPrepared = false;       // dKo przed wjazdem na Sz / rozkaz – Ko zadziała bez stwierdzenia przejazdu
     this.entrySeen = false;        // pociąg sąsiada minął nasz semafor wjazdowy (na sygnał albo Sz / rozkaz)
+    this.beforeEntry = null;       // numer pociągu sąsiada, który zjechał ze szlaku i stoi przed semaforem wjazdowym
     this.faultDir = null;          // kierunek z pozwoleniem w chwili utraty łączności
     this.log = (level, msg) => bus.emit('log', { time: this.time, level, msg: `[${this.neighbour}] ${msg}` });
   }
@@ -108,7 +109,7 @@ export class LineBlock {
    * obsłużenia, gdy pociąg minął semafor wjazdowy i zjechał w całości ze szlaku (kolejność zależy od długości pociągu).
    */
   entryPassed(onSignal) {
-    this.entrySeen = true;
+    this.entrySeen = true; this.beforeEntry = null;
     if (onSignal) this.zpg = true;
     if (this.arrivedFully && !this.auto && !this.koPending) this.#arrivalComplete();
   }
@@ -138,7 +139,8 @@ export class LineBlock {
         // Eap – automatyk po naprawie ustawia blokadę zgodnie ze stanem szlaku: wolny – stan zasadniczy; nasz pociąg
         // w drodze – blok początkowy zablokowany do Ko sąsiada; pociąg sąsiada – kierunek wjazdu (Ko po przyjeździe)
         this.pwl = false; this.pwlRoute = null; this.needPo = false; this.permission = false;
-        if (!this.occupied) { this.direction = this.fixed; this.poBlocked = false; this.koPending = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false; }
+        if (this.awaitingEntry) { this.direction = this.fixed || 'in'; } // pociąg sąsiada stoi przed semaforem wjazdowym
+        else if (!this.occupied) { this.direction = this.fixed; this.poBlocked = false; this.koPending = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false; }
         else if (this.lineOurs) { this.direction = this.fixed || 'out'; this.poBlocked = true; }
         else { this.direction = this.fixed || 'in'; }
       }
@@ -165,6 +167,13 @@ export class LineBlock {
 
   /** Szlak jednotorowy z Eap – rozmowa 1a / 4a przy każdym pociągu (Ir-1 §28 ust. 3, §24 ust. 5, 9). */
   #single() { return !this.auto && !this.fixed; }
+
+  /**
+   * Pociąg sąsiada zjechał w całości ze szlaku na odcinek przed semaforem wjazdowym, ale semafora jeszcze nie minął.
+   * Tor szlakowy nie jest wtedy wolny: sąsiad nie wyprawi następnego pociągu, a „droga wolna” się nie należy. Blokada
+   * samoczynna ma własne odstępy – jej to nie dotyczy.
+   */
+  get awaitingEntry() { return !this.auto && this.beforeEntry != null; }
 
   #phoneOut(text) { this.bus.emit('phone-out', { to: this.neighbour, text }); }
 
@@ -319,7 +328,7 @@ export class LineBlock {
   #reset() {
     this.direction = this.auto ? this.direction : this.fixed; this.permission = false; this.occupied = false;
     this.poBlocked = false; this.koPending = false; this.arrivedFully = false; this.request = null;
-    this.pendingArrivalAck = null; this.lineTrain = null;
+    this.pendingArrivalAck = null; this.lineTrain = null; this.beforeEntry = null;
     this.pwl = false; this.pwlRoute = null; this.needPo = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false;
     this.phone.permissionFor = null; this.phone.arrivalConfirmed = null; this.phone.arrivedTrain = null;
     this.phone.askedByThem = null; this.phone.clearedFor = null; this.phone.departedTrain = null;
@@ -331,7 +340,7 @@ export class LineBlock {
 
   /** Sąsiad pyta telefonicznie o drogę dla swojego pociągu. */
   phoneAskFromNeighbour(nr) {
-    if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return false;
+    if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.awaitingEntry || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return false;
     this.phone.askedByThem = nr;
     this.bus.emit('comms', { time: this.time, from: this.neighbour, kind: 'ask', exit: this.id, nr, text: `Czy droga dla pociągu nr ${nr} jest wolna?` });
     this.bus.emit('alarm', { type: 'phone', exit: this.id });
@@ -348,7 +357,7 @@ export class LineBlock {
       return { ok: true };
     }
     if (String(this.phone.askedByThem) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
-    if (this.occupied || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return { ok: false, reason: `Droga nie jest wolna` };
+    if (this.occupied || this.awaitingEntry || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return { ok: false, reason: `Droga nie jest wolna` };
     this.phone.askedByThem = null;
     this.phone.clearedFor = nr; // telefonogram nie przestawia kierunku blokady
     this.log('info', `Zapowiedziano telefonicznie: droga dla pociągu ${nr} wolna`);
@@ -464,6 +473,7 @@ export class LineBlock {
   neighbourTrainArrived(train) {
     if (!this.occupied) return;
     this.occupied = false; this.arrivedFully = true; this.lineTrain = null; this.phone.arrivedTrain = train.nr; this.phone.clearedFor = null;
+    this.beforeEntry = this.entrySeen ? null : train.nr; // stoi jeszcze przed semaforem wjazdowym
     if (this.auto && !this.fault) {
       // blokada samoczynna: odstęp zwalnia się po zjeździe pociągu, bez obsługi
       this.koPending = false;
@@ -477,9 +487,9 @@ export class LineBlock {
   /** Żądanie pozwolenia od sąsiada (AI). */
   neighbourRequests(nr) {
     // przy zapowiadaniu na torze właściwym linii dwutorowej sąsiad nie pyta – wyprawia po potwierdzonym przyjeździe
-    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.koPending : this.phoneAskFromNeighbour(nr);
+    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : this.phoneAskFromNeighbour(nr);
     if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked; }
-    if (this.fixed === 'in') return !this.occupied && !this.koPending; // blokada jednokierunkowa: bez pozwolenia
+    if (this.fixed === 'in') return !this.occupied && !this.awaitingEntry && !this.koPending; // blokada jednokierunkowa: bez pozwolenia
     if (this.fixed === 'out') return false;
     if (this.request || this.direction || this.occupied) return false;
     this.request = 'theirs'; this.requestSince = this.time;
@@ -506,15 +516,15 @@ export class LineBlock {
   }
 
   canNeighbourDispatch(nr) {
-    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.koPending : String(this.phone.clearedFor) === String(nr) && !this.occupied;
+    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : String(this.phone.clearedFor) === String(nr) && !this.occupied && !this.awaitingEntry;
     // SBL: sąsiad z pociągiem do wyprawienia prosi o kierunek przyjazdu (np. po naszej jeździe po torze lewym) i czeka
     // na zgodę
     if (this.auto) {
       if (this.direction !== 'in') { this.#neighbourWantsDirection(); return false; }
       return !this.occupied && !this.koPending && !this.poBlocked;
     }
-    if (this.fixed === 'in') return !this.occupied && !this.koPending;
-    return this.direction === 'in' && !this.occupied;
+    if (this.fixed === 'in') return !this.occupied && !this.awaitingEntry && !this.koPending;
+    return this.direction === 'in' && !this.occupied && !this.awaitingEntry;
   }
 
   tick(time) {

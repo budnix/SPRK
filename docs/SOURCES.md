@@ -117,8 +117,22 @@ i zał. 1). Przyjęte (uproszczenia gry):
 * pociąg po postoju zostaje przy peronie, dopóki semafor tuż przed nim (do 60 m) wskazuje „Stój”; odjazd w dzienniku
   i punktualność liczy się od faktycznego ruszenia, więc przetrzymanie to późny odjazd;
 * opóźnienie pociągu nie przekracza hamowania nagłego (`EMERGENCY_BRAKE` = 1,3 m/s²); sygnał „Stój” podany bliżej
-  niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary przy
-  usterce semafora), hamowanie nagłe do zatrzymania; dalej pociąg jedzie dopiero na nowe zezwolenie.
+  niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary, gdy
+  przyczyna jest po stronie urządzeń: usterka semafora albo – przy nastawionym przebiegu – zajętość odcinka bez taboru
+  lub utrata kontroli zwrotnicy), hamowanie nagłe do zatrzymania; dalej pociąg jedzie dopiero na nowe zezwolenie;
+* pociąg, który stanął za semaforem miniętym na „Stój”, jedzie dalej na rozkaz pisemny „S” wydany dla tego semafora:
+  do następnego semafora, z prędkością do 40 km/h; warunki jak dla rozkazu „S” (zwrotnice przed czołem utwierdzone
+  w przebiegu albo zamknięte, odcinki wolne od innego taboru). Przyjęte – gra używa tu tego samego rozkazu „S”;
+  w rzeczywistości dyżurny ruchu najpierw wyjaśnia okoliczności minięcia semafora. Wcześniej takiego pociągu nie dało
+  się ruszyć, gdy między nim a następnym semaforem była zwrotnica;
+* przebieg, który nie rozwiązał się za pociągiem, bo odcinek wykazywał zajętość z usterki w chwili przejazdu, zwalnia
+  się doraźnie (dPz / ZDP / PZA) – takie zwolnienie jest uzasadnione usterką i nie kosztuje punktów (przyjęte);
+* tor szlakowy z blokadą półsamoczynną nie jest wolny, dopóki pociąg sąsiada stoi przed semaforem wjazdowym – także
+  gdy zjechał już w całości na odcinek przed semaforem: sąsiad nie wyprawia następnego pociągu (blokada
+  jednokierunkowa), a przy zapowiadaniu telefonicznym „droga wolna” się nie należy (przyjęte: pociąg „przybył
+  w całości”, gdy cały minął semafor wjazdowy – dopiero wtedy potwierdza się przyjazd);
+* pociąg kończący bieg „przyjeżdża” dopiero na torze stacyjnym – postój za innym taborem przed semaforem wjazdowym
+  nie kończy biegu.
 
 Prędkości szlaku, Sz i rozkazu (wszystkie stanowiska). Ze źródeł: pociąg jedzie z największą prędkością dozwoloną na
 odcinku, na którym jest (Ie-1 od 17.01.2026 §4 ust. 13 pkt 2); sygnał zastępczy i rozkaz „S” zezwalają na jazdę do

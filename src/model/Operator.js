@@ -23,6 +23,7 @@ export class AutoOperator {
     this.delay = delay;            // opóźnienie reakcji (s) – realizm
     this.lastAction = -Infinity;
     this.issued = new Set();       // polecenia wydane graczowi (klucze)
+    this.stuckSince = new Map();   // przebieg, który nie rozwiązał się za pociągiem → od kiedy
   }
 
   #inDistrict(signalId) {
@@ -89,6 +90,41 @@ export class AutoOperator {
     }
   }
 
+  /**
+   * Przebiegi, które po usterce same nie wrócą do pracy (urządzenia przekaźnikowe i komputerowe):
+   *  - semafor zgasł przed pociągiem, bo odcinek drogi przebiegu wykazał zajętość albo zwrotnica straciła kontrolę –
+   *    sygnał sam nie wraca; automat zwalnia przebieg (Pz) i nastawia go od nowa, gdy droga będzie sprawna,
+   *  - pociąg przejechał, a przebieg się nie rozwiązał (`Interlocking.routeStuck`) – doraźne zwolnienie po chwili.
+   */
+  #recoverRoutes() {
+    const sim = this.sim, ilk = sim.ilk, t = sim.clock.time;
+    if (ilk.manualSignal) return; // nastawnia mechaniczna: sygnał trzyma dźwignia, przebieg zwalnia drążek
+    for (const id of this.stuckSince.keys()) if (!ilk.active.has(id)) this.stuckSince.delete(id);
+    for (const act of [...ilk.active.values()]) {
+      if (!this.#inDistrict(act.route.start) || act.timedRelease || ilk.signals.get(act.route.start).substitute) continue;
+      if (!act.trainEntered) {
+        if (act.route.kind === 'train' && act.signalOff && ilk.releaseRoute(act.route.start, false).ok) this.#forgetRoute(act.route);
+        continue;
+      }
+      if (!ilk.routeStuck(act)) { this.stuckSince.delete(act.id); continue; }
+      if (!this.stuckSince.has(act.id)) { this.stuckSince.set(act.id, t); continue; }
+      if (t - this.stuckSince.get(act.id) >= 20) ilk.releaseRoute(act.route.start, true);
+    }
+  }
+
+  /** Przebieg zwolniony przed pociągiem: pociąg, który na niego czekał, dostanie go od nowa. */
+  #forgetRoute(route) {
+    for (const e of this.sim.traffic.timetable()) {
+      const tr = e.train;
+      if (!tr || tr.finished || tr.nextSignal() !== route.start) continue;
+      if (e.exitRouteSet && route.exit) e.exitRouteSet = false;
+      // pierwszy stopień wyjazdu dwustopniowego – wyjazd zacznie się od nowa
+      if (e._viaSignal && route.end.type === 'signal' && route.end.id === e._viaSignal) { e._viaSignal = null; continue; }
+      // kolejny stopień wjazdu wieloetapowego (pociąg minął już semafor wjazdowy)
+      if (e.from && !tr.entryPending && !route.exit) e._entryPath = [route.id, ...(e._entryPath || [])];
+    }
+  }
+
   tick() {
     const sim = this.sim;
     const t = sim.clock.time;
@@ -96,6 +132,7 @@ export class AutoOperator {
     this.lastAction = t;
     const ilk = sim.ilk, topo = ilk.topo;
     if (ilk.holdRoute) this.#releasePassed();
+    this.#recoverRoutes();
     const routes = ilk.routeList();
     const trackOf = (tr) => { for (const sid of tr.occupiedSections()) { const tk = ilk.sections.get(sid)?.track; if (tk) return String(tk); } return null; };
     const fullyOn = (tr, track) => { const secs = [...tr.occupiedSections()].map((s) => ilk.sections.get(s)); return secs.length && secs.every((s) => String(s.track) === String(track)); };
@@ -143,8 +180,17 @@ export class AutoOperator {
       }
       if (!tr || tr.finished) continue;
 
+      // ---- pociąg stanął za semaforem, który zgasł tuż przed nim: rozkaz pisemny na dalszą jazdę ----
+      if (tr.stoppedAt?.kind === 'spad' && tr.v === 0 && this.#inDistrict(tr.stoppedAt.signal)) {
+        sim.traffic.issueOrder({ nr: e.nr, signal: tr.stoppedAt.signal });
+        continue;
+      }
+
       // ---- wyjazd przy blokadzie bez łączności: przebieg nastawiony, semafor na „Stój” (pozwolenie u sąsiada) – Sz ----
-      if (e.exitRouteSet && e.to && sim.blocks.get(e.to)?.fault && tr.v === 0 && (e.depTime == null || t >= e.depTime)) {
+      // pociąg ma wyjazd za sobą, gdy minął semafor wyjazdowy: zezwolenie na ten szlak albo – po Sz / rozkazie – brak
+      // kolejnego semafora przed granicą stacji
+      const leaving = tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal());
+      if (e.to && sim.blocks.get(e.to)?.fault && tr.v === 0 && !leaving && (e.depTime == null || t >= e.depTime)) {
         const act = [...ilk.active.values()].find((a) => a.route.exit === e.to && a.route.kind === 'train' && !a.trainEntered);
         const sig = act && ilk.signals.get(act.route.start);
         if (sig && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
@@ -156,11 +202,19 @@ export class AutoOperator {
         continue;
       }
       // ---- wjazd ----
-      if (e.from && !e.entryRouteSet && this.#exitInDistrict(e.from)) {
+      // Przebiegu wjazdowego potrzebuje pociąg, który nie minął jeszcze semafora wjazdowego (`entryPending`), i to ten,
+      // który jedzie pierwszy: na szlaku z blokadą samoczynną jedzie ich kilka, a po opóźnieniach nie w kolejności
+      // rozkładu. Przebieg nastawiony „dla” dalszego pociągu zabrałby go pierwszy – na cudzy tor – a automat czekałby
+      // potem bez końca na wjazd, który już się odbył.
+      if (e.from && tr.entryPending && this.#exitInDistrict(e.from)) {
+        const ahead = sim.traffic.timetable().some((o) => o !== e && o.from === e.from && o.train && !o.train.finished && o.train.entryPending && o.train.head > tr.head);
+        if (ahead) continue;
         let want = this.trackFor ? this.trackFor(e) : e.track;
         if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) continue; want = c.track; e._cmdAccept = c; }
         const app = approachOf(e.from);
         const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
+        // przebieg od semafora wjazdowego już czeka na ten pociąg (nastawiony albo w nastawianiu)
+        if (cands.some((r) => (ilk.active.has(r.id) && !ilk.active.get(r.id).trainEntered) || ilk.pending.some((p) => p.route.id === r.id))) continue;
         // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
         // na których tor peronowy leży za semaforem pośrednim (np. Sopot: A → H → O).
         const pathTo = (track) => {
@@ -180,12 +234,17 @@ export class AutoOperator {
         // kolejność prób: tor planowy, potem inne tory peronowe, na końcu pozostałe (np. tor planowy zamknięty)
         const rank = (r) => (routeTrack(r) === String(want) ? 0 : ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 2);
         const order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
+        // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
+        // ten pociąg nadjeżdża – żaden nie ruszy, dopóki ten nie wjedzie na inny tor
+        const crossing = (r) => {
+          const sid = r.sections.at(-1);
+          return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0 && o.train.occupiedSections().has(sid));
+        };
         let closed = false;
         for (const pick of order) {
           const res = this.#setRoute(pick.id);
-          // inny tor tylko przy torze zamkniętym; chwilowo zajęty/utwierdzony tor planowy – czekać
-          if (!res.ok) { if (res.codes?.includes('section-closed')) closed = true; if (closed) continue; break; }
-          e.entryRouteSet = true;
+          // inny tor tylko przy torze zamkniętym albo przy krzyżowaniu; chwilowo zajęty/utwierdzony tor planowy – czekać
+          if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick)) closed = true; if (closed) continue; break; }
           if (path && pick === path[0] && path.length > 1) e._entryPath = path.slice(1).map((r) => r.id);
           if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
           break;
@@ -224,7 +283,10 @@ export class AutoOperator {
         else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) this.#wbl(b, e.nr);
       }
       // Wyjazd: przebieg nastawiany dopiero na ~2 min przed planowym odjazdem (nie blokować głowicy stojącym składem)
-      if (e.to && tr.entered && !e.exitRouteSet && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {
+      // Czy wyjazd jest już nastawiony, wynika ze stanu urządzeń, a nie z notatek automatu: przebieg w nastawianiu może
+      // przepaść (zwrotnica bez kontroli), a nastawiony – zostać zwolniony po usterce. Pociąg ma wyjazd za sobą, gdy minął
+      // semafor wyjazdowy (`leaving`).
+      if (e.to && tr.entered && !leaving && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {
         let exitId = e.to;
         let cmd = null;
         if (this.role === 'executive') { cmd = this.#command(e, 'dispatch'); if (!cmd) continue; exitId = cmd.exit || e.to; }
@@ -236,6 +298,9 @@ export class AutoOperator {
         // Wyjazd dwustopniowy: brak przebiegu wprost na szlak – najpierw do semafora pośredniego (np. G502 → A502 → szlak),
         // potem od niego na szlak.
         let staged = false;
+        const waiting = (pred) => [...ilk.active.values()].some((a) => !a.trainEntered && pred(a.route)) || ilk.pending.some((p) => pred(p.route));
+        // pierwszy stopień wyjazdu przepadł, zanim pociąg ruszył – wyjazd zaczyna się od nowa
+        if (e._viaSignal && tr.nextSignal() !== e._viaSignal && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === e._viaSignal)) e._viaSignal = null;
         if (e._viaSignal) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === e._viaSignal);
         else if (!cands.length) {
           const toExit = new Set(routes.filter((r) => r.kind === 'train' && r.exit === exitId).map((r) => r.start));
@@ -253,9 +318,10 @@ export class AutoOperator {
         else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) this.#wbl(b, e.nr);
         if (staged) {
-          for (const r of cands) if (this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
+          for (const r of cands) if (waiting((x) => x === r) || this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
           continue;
         }
+        if (waiting((r) => cands.includes(r))) continue; // przebieg wyjazdowy czeka na pociąg
         if (b.gate().ok) {
           for (const r of cands) if (this.#setRoute(r.id).ok) {
             e.exitRouteSet = true;

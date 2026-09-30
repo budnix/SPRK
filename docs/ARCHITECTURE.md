@@ -219,8 +219,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Jazda na tor zajęty: `Train.#lookahead` pyta `Traffic.stockAt(kostka, port)` o odległość do innego taboru na kostce
   odcinka zajętego – zatrzymanie 2 m przed taborem, ostatnie `STOCK_CREEP` m do 3 km/h (bez `stockAt` – przed złączem).
 * Hamowanie (`Train.tick`): służbowe z kategorii; gdy ograniczenie jest bliżej niż droga hamowania – mocniej, najwyżej
-  `EMERGENCY_BRAKE`. Minięcie semafora bez sygnału dla pociągu (i bez rozkazu) to `spad` (Traffic: alarm, kara), potem
-  hamowanie nagłe i utrata zezwolenia. Postój przy peronie trwa, dopóki semafor tuż przed pociągiem ma „Stój”
+  `EMERGENCY_BRAKE`. Minięcie semafora bez sygnału dla pociągu (i bez rozkazu) to `spad` (Traffic: alarm, kara – bez
+  kary przy `sig.failed` albo `act.faultDrop`, czyli gdy sygnał zgasł z przyczyny po stronie urządzeń), potem
+  hamowanie nagłe i utrata zezwolenia. Dalsza jazda: `Traffic.issueOrder` dla miniętego semafora (droga liczona od
+  czoła pociągu – `Train.headTile`, `Interlocking.pathFrom`) woła `Train.resumeAfterStop`. Test: `tests/spad.test.js`. Postój przy peronie trwa, dopóki semafor tuż przed pociągiem ma „Stój”
   (`depart` przy ruszeniu). Testy: `tests/braking.test.js`, `tests/departure.test.js`.
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania albo przebiegu poprzednim z sygnałem
   zezwalającym lub pociągiem), dPz (doraźne, licznik). Po zwolnieniu kontynuacji `#restoreOverlap` przywraca drogę
@@ -231,6 +233,17 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   (`#unlockSection`). Wjazd składu w taki przebieg poznaje się po odcinkach głowicy, nie po zajętości toru docelowego
   (zajmuje go też drugi skład). Pociąg widzi inny tabor także na kostce, na której stoi jego czoło
   (`Traffic.stockAt(…, from)`). Test: `tests/shared-track.test.js`.
+* Przebieg po usterce: `Interlocking.routeStuck(act)` – pociąg przejechał odcinek wykazujący zajętość z usterki, więc
+  przebieg sam się nie rozwiąże; doraźne zwolnienie jest wtedy bez kary.
+* Automat dyżurnego (`Operator.js`) nie prowadzi własnych notatek o przebiegach – pyta urządzenia: wjazd należy się
+  pociągowi, który nie minął semafora wjazdowego (`train.entryPending`) i jedzie pierwszy (na SBL pociągi bywają
+  w innej kolejności niż w rozkładzie); wyjazd jest „za pociągiem”, gdy minął semafor wyjazdowy (`exitAuth`). Po
+  usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa; zwalnia doraźnie przebieg
+  z `routeStuck`; wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
+  przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak. Testy: `tests/rumia.test.js`,
+  `tests/operator.test.js`.
+* Tor szlakowy zajęty do minięcia semafora wjazdowego: `Block.awaitingEntry` (`tests/line-busy.test.js`).
+* Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy).
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).
   Test: `tests/signal-safety.test.js`.
