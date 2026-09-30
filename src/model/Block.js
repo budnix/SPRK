@@ -365,6 +365,7 @@ export class LineBlock {
    * i ponawia je po `HOLD_TIME`. Do tego czasu kierunek jest wolny – można zażądać pozwolenia dla swojego pociągu.
    */
   phoneHold(nr) {
+    if (this.auto || this.fixed) return { ok: false, reason: `na tym szlaku ${this.neighbour} nie żąda pozwolenia – pociągu nie wstrzymuje się telefonogramem` };
     const asked = this.fault ? this.phone.askedByThem : (this.request === 'theirs' ? (this.talk.theirAsk ?? nr) : null);
     if (asked == null || String(asked) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
     if (this.fault) this.phone.askedByThem = null;

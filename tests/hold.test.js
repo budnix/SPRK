@@ -57,6 +57,15 @@ test('wstrzymanie przy zapowiadaniu telefonicznym: zapytanie o drogę znika, są
   assert.ok(until(sim, () => String(b.phone.askedByThem) === '6101', 400), 'po 3 min sąsiad pyta od nowa');
 });
 
+test('„Stój pociąg” dotyczy tylko szlaku z pozwoleniami: na blokadzie samoczynnej i jednokierunkowej to niewłaściwy telefonogram', () => {
+  const sim = new Simulation(jodlowa, { disruptions: 'none' });
+  for (const exit of ['K2', 'Z1']) { // blokady jednokierunkowe linii dwutorowej – sąsiad wyprawia bez pozwolenia
+    const res = sim.comms.send('hold', { exit, nr: 3301 }, { silent: true });
+    assert.equal(res.ok, false, exit);
+    assert.match(res.reason, /pozwole/);
+  }
+});
+
 for (const delay of [6, 10, 14]) {
   test(`Jodłowa: pociąg do Borków opóźniony o ${delay} min spotyka pociąg z Borków przy jedynym torze (3) – automat ustala kolejność, bez zatoru`, () => {
     const sim = new Simulation(jodlowa, { disruptions: 'none' });
