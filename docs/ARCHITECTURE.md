@@ -560,11 +560,19 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
     i zwalniacz), usterka napędu zwrotnicy w Olszynach;
   – `faults-shunt.test.js` – zadania manewrowe Szkolnej przy usterce na drodze manewru (sygnalizator bez Ms2, napęd
     zwrotnicy, fałszywa zajętość – przed manewrem i w czasie jazdy): krótka bez kar, długa – obecne zachowanie (automat
-    czeka na naprawę); ochrona drogi pociągu na Sz / rozkaz „S” (zwrotnicę trzyma utwierdzenie przebiegu albo Zz).
+    czeka na naprawę); ochrona drogi pociągu na Sz / rozkaz „S” (zwrotnicę trzyma utwierdzenie przebiegu albo Zz);
+  – `faults-stations.test.js` – usterki na pozostałych stacjach: przebiegi wieloetapowe (Sopot A → H → O i L → C,
+    Chylonia G502 → A502 – semafor pośredni, zajętość drugiego stopnia, semafor wyjazdowy), Rumia / Jodłowa / Brzezina
+    (Eap jednokierunkowa i SBL: semafor wjazdowy i wyjazdowy, tor docelowy, napęd zwrotnicy, dKo / dPo przy Sz
+    i rozkazie), dwa pociągi po sobie na SBL bez łączności, jazda po torze lewym w Sopocie jako odpowiedź na usterkę.
+  Stan po naprawie (`leftovers`) obejmuje też blok początkowy zablokowany bez pociągu i niewykorzystane pozwolenie
+  albo kierunek Eap.
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
   zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): zwrotnica na drodze pociągu jadącego na Sz /
   rozkaz „S” daje się otworzyć (Zz) i przestawić przed pociągiem; brak zezwolenia dyżurnego na minięcie sygnalizatora
-  manewrowego z usterką (reguła do potwierdzenia).
+  manewrowego z usterką (reguła do potwierdzenia). W `faults-stations.test.js`: odstęp SBL zostaje zajęty po naprawie,
+  gdy przy zapowiadaniu pojechał nasz pociąg torem lewym, a potem pociąg sąsiada (`poBlocked`); zapytanie o drogę
+  telefonogramem dla jazdy po torze lewym odrzucane (Comms szuka pociągu po szlaku z rozkładu).
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
