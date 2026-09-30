@@ -1,4 +1,4 @@
-import { CATEGORIES, brandOf, relationOf, speedFor } from '../model/categories.js';
+import { CATEGORIES, brandOf, categoryLabel, relationOf, speedFor } from '../model/categories.js';
 import { faultAlarm, faultListText } from './faultText.js';
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
@@ -389,7 +389,7 @@ export class SidePanel {
       const delay = e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : '';
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
       return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h">
-        <td class="nr"><span class="cat cat-${e.cat}">${cat.label}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
+        <td class="nr"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
         <td>${e.dep ?? (e.terminates ? t('rp.endsHere') : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>
         <td>${e.track ?? ''}</td><td class="st">${e.status}${delay}</td></tr>`;
@@ -444,7 +444,7 @@ export class SidePanel {
       const canControl = tr.v === 0;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
-        <div class="train-head"><span class="cat cat-${e.cat}">${CATEGORIES[e.cat]?.label ?? ''}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
+        <div class="train-head"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
         <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>
         <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CATEGORIES, categoryOf, speedFor, dynamicsFor, trainLabel, relationOf, brandOf } from '../src/model/categories.js';
+import { CATEGORIES, categoryOf, categoryLabel, speedFor, dynamicsFor, trainLabel, relationOf, brandOf } from '../src/model/categories.js';
 import { STATIONS } from '../src/stations/index.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { Train } from '../src/model/Train.js';
@@ -24,7 +24,17 @@ test('kategoria pociągu z pola cat albo z nazwy/rodzaju; prędkość i dynamika
   assert.equal(speedFor({ name: 'Towarowy', kind: 'tow', vmax: 60 }), 60);
   assert.ok(dynamicsFor({ name: 'Towarowy', kind: 'tow' }).accel < dynamicsFor({ name: 'SKM', kind: 'os' }).accel);
   assert.equal(trainLabel({ nr: 5100, name: 'IC Kraków – Gdynia', kind: 'os' }), 'IC 5100');
-  assert.equal(trainLabel({ nr: 44561, name: 'Towarowy', kind: 'tow' }), 'TOW 44561');
+  // towarowe: oznaczenia rodzaju pociągu PKP PLK (Regulamin sieci, zał. 6.3) – TM masowy, TN niemasowy, TK zdawczy,
+  // LT lokomotywa luzem; trzecia litera – trakcja (domyślnie E, `catLabel` wpisu nadpisuje)
+  assert.equal(trainLabel({ nr: 44561, name: 'Towarowy', kind: 'tow' }), 'TME 44561');
+  assert.equal(trainLabel({ nr: 44563, name: 'Towarowy próżny', kind: 'tow' }), 'TNE 44563');
+  assert.equal(trainLabel({ nr: 90201, name: 'Zdawczy', kind: 'tow' }), 'TKE 90201');
+  assert.equal(categoryOf({ name: 'Towarowy Tczew – Zajączkowo Tczewskie (zdawczy)', kind: 'tow' }), 'ZD', 'zdawczy także w nawiasie relacji');
+  assert.equal(trainLabel({ nr: 44660, name: 'Lokomotywa luzem Gdańsk Brzeźno – Gdańsk Gł.', kind: 'tow' }), 'LTE 44660');
+  assert.equal(relationOf({ name: 'Lokomotywa luzem Gdańsk Brzeźno – Gdańsk Gł.' }), 'Gdańsk Brzeźno – Gdańsk Gł.');
+  assert.equal(trainLabel({ nr: 44565, name: 'Towarowy', kind: 'tow', catLabel: 'TMS' }), 'TMS 44565');
+  assert.equal(categoryLabel({ nr: 1, name: 'IC X – Y', kind: 'os' }), 'IC');
+  for (const c of ['TOW', 'TOWP', 'ZD', 'LT']) assert.match(CATEGORIES[c].label, /^(T[MNK]|LT)E$/, `${c}: trzy litery z oznaczeniem trakcji`);
   assert.equal(relationOf({ name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.' }), 'Kraków Gł. – Gdynia Gł.');
   assert.equal(brandOf({ name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.' }), 'Kaszub');
   assert.equal(relationOf({ name: 'Osobowy' }), 'Osobowy');
@@ -37,6 +47,11 @@ test('rozkłady stacji trójmiejskich: pełne relacje, kategorie IC/TLK/R/SKM/TO
     for (const e of sim.traffic.timetable()) {
       assert.ok(CATEGORIES[e.cat], `${st.id}/${e.nr}: kategoria`);
       assert.equal(e.label, `${CATEGORIES[e.cat].label} ${e.nr}`);
+      assert.doesNotMatch(e.label, /^(TOW|ZD) /, `${st.id}/${e.nr}: „TOW” i „ZD” nie są kategoriami PKP PLK`);
+      if (/zdawcz/i.test(e.name)) assert.equal(e.cat, 'ZD', `${st.id}/${e.nr}: zdawczy`);
+      // skład towarowy ma lokomotywę na jednym końcu: nie wraca z toru jako nowy pociąg w drugą stronę bez jej
+      // przestawienia (Dz.U. 2015 poz. 360 §12 ust. 4; Ir-1 §66), a tego gra nie odwzorowuje – wolno tylko lokomotywie luzem
+      if (e.unit != null) assert.ok(e.kind !== 'tow' || e.cat === 'LT', `${st.id}/${e.nr}: pociąg towarowy z lokomotywą jako nowy pociąg ze składu ${e.unit}`);
       if (/gdynia|sopot/.test(st.id)) assert.ok(/ – /.test(relationOf(e)), `${st.id}/${e.nr}: relacja „${e.name}” bez stacji początkowej i końcowej`);
     }
   }

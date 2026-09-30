@@ -3,7 +3,7 @@
  * Punkty ujemne za odstępstwa od procedur (dPz, dKo/dPo bez uzasadnienia, Sz bez usterki,
  * rozprucie, błędne telefonogramy, opóźnienia zawinione), dodatnie za punktualne wyprawienia.
  */
-import { relationOf } from './categories.js';
+import { relationOf, categoryLabel } from './categories.js';
 import { Traffic } from './Traffic.js';
 
 export class Score {
@@ -31,7 +31,7 @@ export class Score {
   report(traffic, extra = {}) {
     const tt = traffic.timetable();
     const rows = tt.map((e) => ({
-      nr: e.nr, label: e.label ?? String(e.nr), cat: e.cat ?? null, relation: relationOf(e), from: e.from ?? null, to: e.to ?? null,
+      nr: e.nr, label: e.label ?? String(e.nr), cat: e.cat ?? null, catLabel: e.cat ? categoryLabel(e) : null, relation: relationOf(e), from: e.from ?? null, to: e.to ?? null,
       arr: e.arr ?? null, dep: e.dep ?? null, actualArr: e.actualArr ?? null, actualDep: e.actualDep ?? null,
       track: e.track ?? '', actualTrack: e.actualTrack ?? null, delay: e.delay || 0, delayIn: e.delayIn || 0,
       stop: !!e.stop, status: e.status, done: Traffic.isDone(e),

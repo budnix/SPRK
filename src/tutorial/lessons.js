@@ -98,12 +98,12 @@ export function lessonSteps(P) {
   act('cross-out', 'Wyprawienie obu pociągów', `Po przyjeździe obu: <b>Ko</b> na obu blokadach, <b>Wbl</b> w obu kierunkach, przebiegi <b>D2 → szlak do ${DEBa}</b> (odjazd 07:43) i <b>C1 → szlak do ${LIPa}</b> (07:44). Pamiętaj: Wbl da się dopiero, gdy szlak jest wolny i blokada nie ma kierunku – najpierw Ko.`, blockE,
     (sim) => atNeighbour(sim, 6103) && atNeighbour(sim, 6104) && !sim.blocks.get('W').occupied && !sim.blocks.get('E').occupied);
 
-  /* ---------------- 90201 zdawczy: kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
-  info('shunt-intro', 'Pociąg zdawczy', `O 07:52 przyjedzie ${A('pociąg zdawczy')} <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Zadania</b>.`, { tab: 'zadania' });
-  act('in-90201', 'Przyjęcie zdawczego', `Gdy ${LIP} zgłosi zdawczy (zamiga ${P.indicator} „żąd.”): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
+  /* ---------------- 90201 (zespół trakcyjny): kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
+  info('shunt-intro', 'Pociąg kończy bieg', `O 07:52 przyjedzie osobowy <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. To ${A('zespół trakcyjny')} – ma kabinę na obu końcach. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Zadania</b>.`, { tab: 'zadania' });
+  act('in-90201', 'Przyjęcie 90201', `Gdy ${LIP} zgłosi pociąg 90201 (zamiga ${P.indicator} „żąd.”): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
     { tip: `${LIP} zażąda pozwolenia dopiero, gdy 6104 tam dojedzie i szlak się zwolni – kilka minut po jego odjeździe. Do tego czasu Poz nie zadziała.`,
-      wrong: (sim) => (active(sim, 'A-D1') ? 'Zdawczy ma tor 2 (A → D2).' : null) });
+      wrong: (sim) => (active(sim, 'A-D1') ? 'Pociąg 90201 ma tor 2 (A → D2).' : null) });
   act('shunt-mode', 'Jazda manewrowa', `Skład stoi na torze 2 i zakończył bieg. Przełącz go w ${A('jazda manewrowa', 'jazdę manewrową')}: zakładka <b>Pociągi</b> → przycisk <b>„jazda manewrowa”</b> przy pociągu 90201.`, { tab: 'pociagi' },
     (sim) => entry(sim, 90201)?.train?.mode === 'shunt');
   act('shunt-route', 'Przebieg manewrowy na tor 3', `Nastaw ${A('przebieg manewrowy')} z semafora <b>D2</b> (ma ${A('Ms2')}) na koniec toru 3: ${P.shuntRoute('D2', P.shuntEndTrack3)}. Zwrotnica 3 ustawi się na tor 3, ${A('wykolejnica')} Wk1 zdejmie się sama, odcinki ${P.sectionsLocked}, a D2 pokaże Ms2. Skład ruszy sam.`, cmd('shunt', sig('D2', 'white')),

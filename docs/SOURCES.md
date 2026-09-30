@@ -48,6 +48,25 @@ nie zgaduje, które tory są dodatkowe) i Sr3 na kształtowym semaforze wjazdowy
 Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
 (`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
 
+Oznaczenia pociągów towarowych (wszystkie stanowiska). Ze źródła – PKP PLK, Regulamin sieci, zał. 6.3 „Klasyfikacja
+pociągów stosowana w konstrukcji rozkładów jazdy”: rodzaj pociągu oznaczają trzy litery; w ruchu krajowym TM – przewozy
+masowe, TN – niemasowe, TK – obsługa stacji i bocznic, LT – lokomotywa do i od pociągów towarowych; trzecia litera to
+trakcja (E – elektryczna lokomotywa, S – spalinowa lokomotywa, J – elektryczny zespół trakcyjny). Gra pokazuje TME,
+TNE, TKE, LTE. Przyjęte: towarowy ładowny to TM, próżny / lekki – TN (gra nie zna ładunku); trakcja zawsze „E”, bo gra
+jej nie odwzorowuje – wpis rozkładu może podać inną etykietę w polu `catLabel`; dynamika lokomotywy luzem. Pociągi
+pasażerskie mają w grze oznaczenia handlowe (IC, TLK, R, SKM), a próżny skład EZT – „EZT”, nie oznaczenia z załącznika
+(EIE, MPE, ROJ, PWJ…).
+
+Zmiana czoła (wszystkie stanowiska). Ze źródeł: pociąg prowadzi się z czynnej kabiny na czele (Dz.U. 2015 poz. 360
+§12 ust. 4; Ir-1 §66) – skład z lokomotywą na jednym końcu, żeby pojechać w drugą stronę, musi ją przestawić na drugi
+koniec (lokomotywa objeżdża skład sąsiednim torem); zespół trakcyjny ma kabinę na obu końcach. Gra nie odwzorowuje
+rozłączania ani oblotu: „zmiana czoła” odwraca skład na miejscu. Dlatego w scenariuszach pociągiem towarowym, który
+wraca z toru jako nowy pociąg, jest tylko lokomotywa luzem (Gdańsk Gł. 44660 / 44661), a skład kończący bieg na
+Szkolnej (90201 / 90202) to zespół trakcyjny – pilnuje tego `tests/categories.test.js`. Przyjęte: składy pasażerskie
+z lokomotywą, które wracają jako nowy pociąg (IC w Gdańsku Gł. i Gdyni Gł.), zmieniają czoło na miejscu – zastępuje to
+podstawienie lokomotywy na drugi koniec; zmiana czoła w trybie manewrowym oznacza pchanie składu, co przy manewrach
+jest dozwolone.
+
 Zezwolenie na jazdę (wszystkie stanowiska). Ze źródeł: pociąg mija semafor tylko na sygnał zezwalający dla pociągu
 (S2–S13, Sr2/Sr3), sygnał zastępczy Sz albo rozkaz pisemny; sygnał Ms2 na semaforze dotyczy wyłącznie jazdy
 manewrowej, dla pociągu znaczy „Stój” (Ie-1 §4 ust. 14 i 17; Ir-1 §11 ust. 1). Pociąg wyprawia się na szlak

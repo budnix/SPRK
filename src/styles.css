@@ -431,7 +431,7 @@ table.rj .cat-EIP { background: var(--cat-eip); }
 table.rj .cat-TLK { background: var(--cat-tlk); }
 table.rj .cat-R { background: var(--cat-r); }
 table.rj .cat-SKM { background: var(--cat-skm); }
-table.rj .cat-TOW, table.rj .cat-TOWP, table.rj .cat-ZD { background: var(--cat-tow); }
+table.rj .cat-TOW, table.rj .cat-TOWP, table.rj .cat-ZD, table.rj .cat-LT { background: var(--cat-tow); }
 table.rj .cat-EZT { background: var(--cat-ezt); }
 table.rj td.st { font-size: 11px; }
 table.rj .act { color: var(--accent); font-size: 10px; }

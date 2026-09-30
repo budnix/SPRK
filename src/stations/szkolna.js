@@ -25,7 +25,7 @@ export default {
   srkInfo: 'Stacja fikcyjna, treningowa: stanowisko komputerowe (zobrazowanie wg Ie-104) z samouczkiem; osobne zmiany na pulpicie kostkowym typu E i na pulpicie typu IZH-111.',
   description: 'Stacja treningowa na linii jednotorowej Lipno – Dębno. Dwa tory peronowe, bocznica z kozłem, blokada liniowa Eap. Misje wprowadzające prowadzą krok po kroku.',
   location: 'Stacja fikcyjna na linii jednotorowej Lipno – Dębno (poligon szkoleniowy).',
-  traffic: 'Kilka osobowych, towarowy przelotem, zdawczy z manewrami; rozkład liniowy pod samouczek.',
+  traffic: 'Kilka osobowych, towarowy przelotem, osobowy kończący bieg – manewry zespołem trakcyjnym; rozkład liniowy pod samouczek.',
   difficulty: 1,
   startTime: '07:00',
   desk: { cols: 32, rows: 10 },
@@ -138,14 +138,16 @@ export default {
     { nr: 42101, kind: 'tow', name: 'Towarowy', from: 'W', to: 'E', arr: '07:29', track: '1', stop: false, length: 380, vmax: 70 },
     { nr: 6103, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:40', dep: '07:43', track: '2', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6104, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:41', dep: '07:44', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
-    { nr: 90201, kind: 'tow', name: 'Zdawczy', from: 'W', to: null, arr: '07:52', track: '2', stop: true, terminates: true, length: 180, vmax: 60, dwell: 30 },
-    { nr: 90202, kind: 'tow', name: 'Zdawczy', unit: 90201, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 60 },
+    // 90201 / 90202: zespół trakcyjny (kabina na obu końcach) – zmienia czoło na miejscu; skład z lokomotywą musiałby
+    // ją przestawić na drugi koniec, czego gra nie odwzorowuje (docs/SOURCES.md)
+    { nr: 90201, kind: 'os', name: 'Osobowy', from: 'W', to: null, arr: '07:52', track: '2', stop: true, terminates: true, length: 180, vmax: 100, dwell: 30 },
+    { nr: 90202, kind: 'os', name: 'Osobowy', unit: 90201, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 100 },
     { nr: 6105, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '08:22', dep: '08:24', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6106, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '08:33', dep: '08:35', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
   ],
 
   tasks: [
-    { id: 'odstaw-90201', unit: 90201, type: 'move', toTrack: '3', deadline: '08:04', text: 'Skład zdawczego 90201 odstawić manewrami na tor 3.' },
+    { id: 'odstaw-90201', unit: 90201, type: 'move', toTrack: '3', deadline: '08:04', text: 'Skład pociągu 90201 (zespół trakcyjny) odstawić manewrami na tor 3.' },
     { id: 'podstaw-90202', unit: 90201, type: 'move', toTrack: '2', afterTask: 'odstaw-90201', deadline: '08:10', text: 'Skład podstawić z powrotem na tor 2 jako pociąg 90202 do Lipna (odjazd 08:12).' },
   ],
 };

@@ -51,7 +51,7 @@ export class Report {
       const res = !t.done ? [tr('rp.res.undone'), 'rp-bad'] : t.delay > 2 ? [tr('rp.res.late', { n: t.delay }), 'rp-warn'] : [tr('rp.res.ok'), 'rp-ok'];
       const wrongTrack = t.actualTrack && t.track && String(t.actualTrack) !== String(t.track);
       return `<tr class="${t.done ? '' : 'undone'}">
-        <td class="nr">${t.cat ? `<span class="cat cat-${t.cat}">${esc(t.cat)}</span> ` : ''}${t.nr}</td>
+        <td class="nr">${t.cat ? `<span class="cat cat-${t.cat}">${esc(t.catLabel ?? t.cat)}</span> ` : ''}${t.nr}</td>
         <td class="rel">${esc(t.relation)}</td>
         <td>${t.arr ? (t.stop ? esc(t.arr) : `<i>${esc(t.arr)}</i>`) : '–'}<div class="act">${t.actualArr != null ? hm(t.actualArr) : ''}</div></td>
         <td>${t.dep ? esc(t.dep) : (t.to ? '–' : tr('rp.endsHere'))}<div class="act">${t.actualDep != null ? hm(t.actualDep) : ''}</div></td>

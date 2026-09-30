@@ -193,7 +193,7 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   let n = 0;
   const until = (hhmm, auto) => { const t = Clock.parse(hhmm); while (sim.clock.time < t) { sim.step(0.5); if (auto && n++ % 4 === 0) autoDispatch(sim); } };
-  // ręcznie: przyjąć zdawczy na tor 2 i zostawić go tam stojącego
+  // ręcznie: przyjąć pociąg 90201 na tor 2 i zostawić go tam stojącego
   until('07:47', true);
   const W = sim.blocks.get('W');
   until('07:49', false); // bez automatu – nikt nie odstawia składu
@@ -201,7 +201,7 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
   sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });
   until('07:55', false); // skład stoi na torze 2; jeszcze przed 07:57, gdy pojawi się w rozkładzie jako 90202 (odjazd 08:12 − 15 min)
   const e = sim.traffic.timetable().find((x) => x.nr === 90201);
-  assert.equal(e.status, 'zakończył bieg', `zdawczy stoi na torze 2 po przyjeździe (${e.status})`);
+  assert.equal(e.status, 'zakończył bieg', `pociąg 90201 stoi na torze 2 po przyjeździe (${e.status})`);
   assert.equal(e.train.v, 0);
   const t1 = sim.traffic.tasks.find((t) => t.id === 'odstaw-90201'), t2 = sim.traffic.tasks.find((t) => t.id === 'podstaw-90202');
   assert.equal(t1.done, false);

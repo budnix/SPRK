@@ -155,10 +155,11 @@ export default {
     { nr: 93113, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'SR1', to: 'SK1', arr: '07:37', dep: '07:38', track: '501', stop: true, length: 130, dwell: 30 },
     { nr: 93114, kind: 'os', name: 'SKM Wejherowo – Gdańsk Śródmieście', from: 'SK2', to: 'SR2', arr: '07:45', dep: '07:46', track: '502', stop: true, length: 130, dwell: 30 },
     { nr: 93115, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'SR1', to: 'SK1', arr: '07:52', dep: '07:53', track: '501', stop: true, length: 130, dwell: 30 },
-    { nr: 44660, kind: 'tow', name: 'Towarowy Gdańsk Brzeźno – Gdańsk Gł. (zdawczy, kończy bieg)', from: 'BR', to: null, arr: '06:05', track: '7', stop: true, terminates: true, length: 200, vmax: 60 },
+    // lokomotywa luzem zmienia kabinę na miejscu; skład towarowy z toru czołowego by nie wrócił (docs/SOURCES.md)
+    { nr: 44660, kind: 'tow', name: 'Lokomotywa luzem Gdańsk Brzeźno – Gdańsk Gł. (kończy bieg)', from: 'BR', to: null, arr: '06:05', track: '7', stop: true, terminates: true, length: 20, vmax: 60 },
     { nr: 55600, kind: 'os', name: 'Regio Malbork – Gdynia Gł.', from: 'GP1', to: 'WR1', arr: '06:10', dep: '06:12', track: '1', stop: true, length: 160, vmax: 120, dwell: 60 },
     { nr: 55601, kind: 'os', name: 'Regio Gdynia Gł. – Malbork', from: 'WR2', to: 'GP2', arr: '06:18', dep: '06:20', track: '2', stop: true, length: 160, vmax: 120, dwell: 60 },
-    { nr: 44661, kind: 'tow', name: 'Towarowy Gdańsk Gł. – Gdańsk Brzeźno (zdawczy)', unit: 44660, from: null, to: 'BR', dep: '06:25', track: '7', stop: false, length: 200, vmax: 60 },
+    { nr: 44661, kind: 'tow', name: 'Lokomotywa luzem Gdańsk Gł. – Gdańsk Brzeźno', unit: 44660, from: null, to: 'BR', dep: '06:25', track: '7', stop: false, length: 20, vmax: 60 },
     { nr: 5300, kind: 'os', name: 'IC Warszawa Wsch. – Gdynia Gł.', from: 'GP1', to: 'WR1', arr: '06:28', dep: '06:31', track: '1', stop: true, length: 300, dwell: 120 },
     { nr: 5310, kind: 'os', name: 'IC Słupsk – Gdańsk Gł.', from: 'WR2', to: null, arr: '06:35', track: '7', stop: true, terminates: true, length: 260 },
     { nr: 55602, kind: 'os', name: 'Regio Elbląg – Gdynia Gł.', from: 'GP1', to: 'WR1', arr: '06:40', dep: '06:42', track: '1', stop: true, length: 160, vmax: 120, dwell: 60 },
