@@ -14,7 +14,8 @@ export const RELEASE_E = (start) => `zwolnij przebieg (ZCZ / Pz + ${start})`;
 
 /** Kostki blokady liniowej i wskazania wspólne dla pulpitów kostkowych (typ E, IZH-111). */
 export const DESK_BLOCK = {
-  indicator: 'lampka',
+  requestSign: 'miga na biało strzałka „przyjazd”',
+  koSign: 'świeci lampka <b>Ko</b>',
   blockPress: (exit, name, btn) => `naciśnij przycisk <b>${btn}</b> na kostkach blokady przy końcu toru szlakowego do <b>${name}</b> (lewy / prawy kraniec pulpitu)`,
   dpo: (name) => `naciśnij <b>dPo</b> na kostce licznika blokady do <b>${name}</b>`,
   dko: (name) => `naciśnij <b>dKo</b> na kostce licznika blokady do <b>${name}</b>`,

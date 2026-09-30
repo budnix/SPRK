@@ -6,7 +6,7 @@ import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
 import { autoDispatch, allArrived } from './helpers.js';
 import { MissionProgress } from '../src/tutorial/progress.js';
-import { missionSteps, MISSIONS } from '../src/tutorial/missions.js';
+import { missionSteps, MISSIONS, PHRASES } from '../src/tutorial/missions.js';
 import { GLOSSARY } from '../src/data/glossary.js';
 
 test('Szkolna: definicja poprawna, przebiegi potrzebne w misjach istnieją, scenariusze wskazują misje', () => {
@@ -33,11 +33,12 @@ test('Szkolna: kroki misji są spójne – unikalne id, teksty, kotwice, skróty
     const steps = missionSteps(view);
     assert.ok(steps.length > 30, `${view}: za mało kroków`);
     assert.equal(new Set(steps.map((s) => s.id)).size, steps.length, `${view}: powtórzone id kroku`);
-    // każdy krok z Poz uprzedza, że pozwolenie daje się dopiero na żądanie sąsiada (lampka / napis „żąd.”) –
-    // krok może zacząć się kilka minut przed zgłoszeniem pociągu
+    // każdy krok z Poz uprzedza, że pozwolenie daje się dopiero na żądanie sąsiada i mówi, jak je widać na stanowisku
+    // (monitor: strzałka kierunkowa z migającym grotem wg Ie-104; dawniej napis „żąd.”) – krok może zacząć się kilka minut
+    // przed zgłoszeniem pociągu
     for (const id of ['poz-6101', 'poz-6102', 'passing-42101', 'cross-poz', 'in-90201', 'in-6105-route', 'in-6106']) {
       const st = steps.find((s) => s.id === id);
-      assert.ok(st && /żąd\./.test(st.text + (st.tip || '')), `${view}: krok ${id} nie wspomina o żądaniu pozwolenia`);
+      assert.ok(st && (st.text + (st.tip || '')).includes(PHRASES[view].requestSign), `${view}: krok ${id} nie wspomina o żądaniu pozwolenia`);
     }
     // bez ćwiczeń przebiegów bez pociągu (przebieg bez pociągu wymagałby obsługi blokady z sąsiadem)
     assert.ok(!steps.some((s) => s.id.startsWith('lesson-')), `${view}: kroki ćwiczeń`);

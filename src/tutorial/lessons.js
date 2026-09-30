@@ -28,7 +28,7 @@ export function blockFree(b) { return !b.koPending && !b.occupied && b.direction
 export function active(sim, id) { return sim.ilk.active.has(id); }
 
 /** Klucze słownika tekstów, których wymagają wspólne lekcje. */
-export const LESSON_PHRASES = ['view', 'anchor', 'signal', 'release', 'releaseNames', 'indicator', 'blockPress', 'trainRoute', 'trainRouteMenu',
+export const LESSON_PHRASES = ['view', 'anchor', 'signal', 'release', 'releaseNames', 'requestSign', 'koSign', 'blockPress', 'trainRoute', 'trainRouteMenu',
   'trainRouteMenuTitle', 'trainRouteMenuLead', 'exitEnd', 'shuntRoute', 'shuntEndTrack3', 'shuntEndTm2', 'shuntEndC2', 'sectionsLocked', 'sz', 'dpo', 'dko',
   'permissionGiven', 'lineOccupied', 'blockIntro', 'blockCommands', 'blockSpecial', 'colours', 'intro', 'next'];
 
@@ -38,7 +38,7 @@ export function lessonSteps(P) {
   if (missing.length) throw new Error(`Słownik tekstów misji '${P.view}': brak ${missing.join(', ')}`);
   const cmd = (id, ref) => P.anchor(id, ref);
   const sig = (id, color = 'green') => P.signal(id, color);
-  const req = (name) => `gdy ${name} zgłosi pociąg – zamiga ${P.indicator} „żąd.”`;
+  const req = (name) => `gdy ${name} zgłosi pociąg (${P.requestSign})`;
   const LIP = 'Lipno', DEB = 'Dębno';            // mianownik: „Lipno żąda…”
   const LIPa = 'Lipna', DEBa = 'Dębna';           // dopełniacz: „od Lipna”, „do Dębna”, „z Lipna”, „dla Dębna”
   const n = { LIP, DEB, LIPa, DEBa };
@@ -53,14 +53,14 @@ export function lessonSteps(P) {
   info('block-intro', 'Blokada liniowa', `${P.blockIntro(n)}<p>${P.blockCommands}: ${A('Wbl')} – żądanie pozwolenia dla naszego pociągu, ${A('Poz')} – danie pozwolenia sąsiadowi, ${A('Ko')} – zwolnienie bloku końcowego po przyjeździe pociągu w całości; ${A('dPo')} – doraźne zablokowanie bloku początkowego po wyjeździe na Sz, ${A('dKo')} – doraźne przygotowanie bloku końcowego przed wjazdem na Sz (${P.blockSpecial}liczniki; żaden nie kasuje blokady).</p><p>Po „Dalej” zegar ruszy – ${LIP} zaraz zgłosi pierwszy pociąg.</p>`, blockW);
 
   /* ---------------- pociąg 1: 6101 z Lipna, tor 1, dalej do Dębna ---------------- */
-  act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – miga ${P.indicator} „żąd.”, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
-    (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: `Żądanie przychodzi kilka minut przed przyjazdem pociągu – ${P.indicator} „żąd.” miga wtedy przy strzałce szlaku. Jeśli go nie widać, odczekaj chwilę albo przyspiesz czas (5×) w nagłówku.` });
+  act('poz-6101', 'Danie pozwolenia (Poz)', `${LIP} <b>żąda pozwolenia</b> na wyprawienie pociągu <b>6101</b> (osobowy, planowo tor 1, przyjazd 07:06) – ${P.requestSign}, w dzienniku jest komunikat. Daj pozwolenie: ${P.blockPress('W', LIPa, 'Poz')}.<p>To jest właśnie ${A('Poz')}: dopiero po nim sąsiad może wyprawić pociąg w naszą stronę. Kierunek blokady ustawia się na <b>wjazd</b>.</p>`, blockW,
+    (sim) => sim.blocks.get('W').direction === 'in' || arrived(sim, 6101), { tip: `Żądanie przychodzi kilka minut przed przyjazdem pociągu – wtedy ${P.requestSign}. Jeśli żądania jeszcze nie ma, odczekaj chwilę albo przyspiesz czas (5×) w nagłówku.` });
   act('route-6101', 'Przebieg wjazdowy na tor 1', `Pociąg jest w drodze. Nastaw ${A('przebieg pociągowy')} od semafora wjazdowego <b>A</b> na tor 1, czyli do semafora wyjazdowego <b>D1</b>: ${P.trainRoute('A', 'D1')}.<p>Zwrotnica 1 ustawi się sama, odcinki zostaną ${A('utwierdzenie', 'utwierdzone')} i semafor A poda sygnał zezwalający.</p>`, cmd('train', sig('A')),
     (sim) => active(sim, 'A-D1') || arrived(sim, 6101),
     { wrong: (sim) => (active(sim, 'A-D2') ? `To przebieg na tor 2. Pociąg 6101 ma tor 1 – ${P.release('A', 'D2')} i nastaw A → D1.` : null) });
   act('watch-6101', 'Pociąg wjeżdża', `Obserwuj: zajęte odcinki są <b>czerwone</b>, a za pociągiem przebieg rozwiązuje się odcinkowo. Pociąg zatrzyma się przy peronie toru 1 (przyjazd planowy 07:06). Możesz przyspieszyć czas przyciskami <b>2×</b>, <b>5×</b> w nagłówku.`, { el: '#speed' },
     (sim) => arrived(sim, 6101));
-  act('ko-6101', 'Zwolnienie bloku końcowego (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIPa} miga ${P.indicator} <b>Ko</b>. Zwolnij blok końcowy, potwierdzając sąsiadowi przyjazd: ${P.blockPress('W', LIPa, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIPa} jest znów wolny dla następnych pociągów.</p>`, blockW,
+  act('ko-6101', 'Zwolnienie bloku końcowego (Ko)', `Pociąg 6101 jest w całości na stacji – na blokadzie do ${LIPa} ${P.koSign}. Zwolnij blok końcowy, potwierdzając sąsiadowi przyjazd: ${P.blockPress('W', LIPa, 'Ko')}.<p>${A('Ko')} zwalnia blokadę: szlak do ${LIPa} jest znów wolny dla następnych pociągów.</p>`, blockW,
     (sim) => blockFree(sim.blocks.get('W')));
   act('wbl-6101', 'Żądanie pozwolenia (Wbl)', `6101 odjeżdża o 07:08 do ${DEBa}. Zanim nastawisz przebieg wyjazdowy, musisz mieć <b>pozwolenie</b> od ${DEBa}: ${P.blockPress('E', DEBa, 'Wbl')}. Sąsiad odpowie po kilkunastu sekundach – ${P.permissionGiven(DEB)}.<p>To jest ${A('Wbl')} – lustrzane odbicie Poz, które dawałeś przed chwilą.</p>`, blockE,
     (sim) => { const b = sim.blocks.get('E'); return (b.direction === 'out' && b.permission) || atNeighbour(sim, 6101); },
@@ -71,7 +71,7 @@ export function lessonSteps(P) {
     (sim) => atNeighbour(sim, 6101) && !sim.blocks.get('E').occupied);
 
   /* ---------------- pociąg 2: 6102 z Dębna, tor 1, dalej do Lipna (menu elementu) ---------------- */
-  act('poz-6102', 'Pociąg z drugiej strony', `Zaraz ${DEB} zażąda pozwolenia dla pociągu <b>6102</b> (tor 1, przyjazd 07:17) – zamiga ${P.indicator} „żąd.”. Wtedy: ${P.blockPress('E', DEBa, 'Poz')}.`, blockE,
+  act('poz-6102', 'Pociąg z drugiej strony', `Zaraz ${DEB} zażąda pozwolenia dla pociągu <b>6102</b> (tor 1, przyjazd 07:17; ${P.requestSign}). Wtedy: ${P.blockPress('E', DEBa, 'Poz')}.`, blockE,
     (sim) => sim.blocks.get('E').direction === 'in' || arrived(sim, 6102));
   act('route-6102', P.trainRouteMenuTitle, `Wjazd od ${DEBa} prowadzi semafor <b>B</b>, tor 1 kończy semafor <b>C1</b>. ${P.trainRouteMenuLead}${P.trainRouteMenu('B', 'C1')}.`, sig('B'),
     (sim) => active(sim, 'B-C1') || arrived(sim, 6102),
@@ -90,7 +90,7 @@ export function lessonSteps(P) {
 
   /* ---------------- krzyżowanie: 6103 (tor 2) i 6104 (tor 1) ---------------- */
   info('crossing-intro', 'Krzyżowanie', `Zaraz przyjadą dwa pociągi naprzeciw siebie: <b>6103</b> z ${LIPa} (07:40, tor <b>2</b>) i <b>6104</b> z ${DEBa} (07:41, tor <b>1</b>). To ${A('krzyżowanie')} – każdy musi stanąć na innym torze, bo dalej pojadą tym samym torem szlakowym.<p>Zwrotnica 1 dla 6103 ustawi się na tor zwrotny (prędkość 40 km/h). Obsłuż oba pozwolenia i oba przebiegi – drugi dopiero, gdy pierwszy pociąg minie zwrotnicę 1.</p>`, { el: '#desk' });
-  act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB} – każdemu, gdy zgłosi swój pociąg (miga ${P.indicator} „żąd.”).`, blockW,
+  act('cross-poz', 'Dwa pozwolenia', `Daj ${A('Poz')} na obu blokadach: ${LIP} i ${DEB} – każdemu, gdy zgłosi swój pociąg (${P.requestSign}).`, blockW,
     (sim) => (sim.blocks.get('W').direction === 'in' || arrived(sim, 6103)) && (sim.blocks.get('E').direction === 'in' || arrived(sim, 6104)));
   act('cross-routes', 'Dwa przebiegi', `Nastaw oba wjazdy od razu: <b>A → D2</b> (6103 na tor 2) i <b>B → C1</b> (6104 na tor 1). ${A('droga ochronna', 'Drogi ochronne')} za semaforami D2 i C1 kończą się na osobnych odcinkach toru przed rozjazdami, więc przebiegi nie wykluczają się – jednoczesne wjazdy z obu kierunków są dozwolone. Kolejność dowolna.`, sig('A'),
     (sim, ctx) => (ctx.seen.has('route:A-D2:set') || arrived(sim, 6103)) && (ctx.seen.has('route:B-C1:set') || arrived(sim, 6104)),
@@ -100,7 +100,7 @@ export function lessonSteps(P) {
 
   /* ---------------- 90201 (zespół trakcyjny): kończy bieg, manewry na tor 3, powrót jako 90202 ---------------- */
   info('shunt-intro', 'Pociąg kończy bieg', `O 07:52 przyjedzie osobowy <b>90201</b> z ${LIPa} na tor <b>2</b> i tam <b>zakończy bieg</b>. To ${A('zespół trakcyjny')} – ma kabinę na obu końcach. Jego skład trzeba odstawić manewrami na tor 3, a o 08:12 wyprawić z powrotem do ${LIPa} jako pociąg <b>90202</b>. Zadania są w zakładce <b>Zadania</b>.`, { tab: 'zadania' });
-  act('in-90201', 'Przyjęcie 90201', `Gdy ${LIP} zgłosi pociąg 90201 (zamiga ${P.indicator} „żąd.”): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
+  act('in-90201', 'Przyjęcie 90201', `Gdy ${LIP} zgłosi pociąg 90201 (${P.requestSign}): <b>Poz</b>, przebieg <b>A → D2</b>, po przyjeździe <b>Ko</b>.`, blockW,
     (sim) => arrived(sim, 90201) && blockFree(sim.blocks.get('W')),
     { tip: `${LIP} zażąda pozwolenia dopiero, gdy 6104 tam dojedzie i szlak się zwolni – kilka minut po jego odjeździe. Do tego czasu Poz nie zadziała.`,
       wrong: (sim) => (active(sim, 'A-D1') ? 'Pociąg 90201 ma tor 2 (A → D2).' : null) });
@@ -121,7 +121,7 @@ export function lessonSteps(P) {
 
   /* ---------------- usterka semafora A → Sz ---------------- */
   info('fault-intro', 'Usterka semafora', `O 08:15 semafor <b>A</b> ulegnie usterce (obwód świateł): przebieg wjazdowy da się nastawić i utwierdzić jak zwykle, ale semafor <b>nie wyświetli sygnału zezwalającego</b> i zostanie na „Stój”. O 08:22 od ${LIPa} przyjedzie <b>6105</b> na tor 1 i zatrzyma się przed A.<p>W takiej sytuacji dyżurny podaje ${A('Sz', 'sygnał zastępczy Sz')}: białe migające światło, na które maszynista mija semafor z prędkością do 40 km/h. Warunek: droga przebiegu utwierdzona i sprawdzona. Każde użycie Sz jest liczone.</p>`, sig('A'));
-  act('in-6105-route', 'Przebieg mimo usterki', `Gdy ${LIP} zgłosi 6105 (zamiga ${P.indicator} „żąd.”): <b>Poz</b> i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
+  act('in-6105-route', 'Przebieg mimo usterki', `Gdy ${LIP} zgłosi 6105 (${P.requestSign}): <b>Poz</b> i przebieg <b>A → D1</b>. Zwróć uwagę: odcinki są utwierdzone, ale A dalej pokazuje „Stój”.`, blockW,
     (sim) => (active(sim, 'A-D1') && sim.ilk.signals.get('A').failed) || arrived(sim, 6105));
   act('dko-6105', 'Przygotowanie bloku końcowego (dKo)', `Na sygnał zastępczy blokada nie stwierdzi przejazdu pociągu przy semaforze A, więc po przyjeździe Ko by nie zadziałało. Dlatego <b>przed</b> podaniem Sz przygotuj blok końcowy doraźnie: ${P.dko(LIPa)}. Przy wjeździe na Sz to uzasadnione ${A('dKo')} – bez punktów ujemnych, ale licznik rośnie. dKo nie kasuje blokady: szlak zwolnisz zwykłym Ko po przyjeździe.`, blockW,
     (sim) => sim.blocks.get('W').koPrepared || arrived(sim, 6105)),
@@ -132,7 +132,7 @@ export function lessonSteps(P) {
 
   /* ---------------- usterka blokady do Lipna → zapowiadanie telefoniczne ---------------- */
   info('phone-intro', 'Blokada bez łączności', `O 08:26 blokada do ${LIPa} traci łączność. Pociąg <b>6106</b> z ${DEBa} (08:33, tor 1) ma jechać dalej do ${LIPa} – nie da się użyć Wbl. Ruch prowadzi się wtedy przez ${A('zapowiadanie telefoniczne')}: telefonogramy w zakładce <b>Łączność</b>, formuły wg Ir-1.`, { tab: 'lacznosc' });
-  act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie – gdy ${DEB} zgłosi 6106 (zamiga ${P.indicator} „żąd.”): <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
+  act('in-6106', 'Przyjęcie 6106 od Dębna', `Blokada do ${DEBa} działa normalnie – gdy ${DEB} zgłosi 6106 (${P.requestSign}): <b>Poz</b>, przebieg <b>B → C1</b>, po przyjeździe <b>Ko</b>.`, blockE,
     (sim) => arrived(sim, 6106) && blockFree(sim.blocks.get('E')));
   act('phone-ask', 'Pytanie o drogę', `Zakładka <b>Łączność</b>: Do: <b>${LIP}</b>, telefonogram <b>„Czy droga dla pociągu nr … jest wolna?”</b> (wzór 1a), numer <b>6106</b>, <b>Nadaj</b>. ${LIP} odpowie „Dla pociągu nr 6106 droga jest wolna” (wzór 4a) – to zastępuje pozwolenie z blokady.`, { tab: 'lacznosc' },
     (sim) => String(sim.blocks.get('W').phone.permissionFor) === '6106' || atNeighbour(sim, 6106),

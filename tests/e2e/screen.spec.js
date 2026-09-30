@@ -166,24 +166,24 @@ test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawęd
   }
 });
 
-test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, napis „żąd.” i strzałka kierunku; samoczynna (Sopot) – menu Zk bez pozwoleń, liczniki w zakładce Stan', async ({ page }) => {
+// Stan blokady pokazują strzałki kierunkowe wg Ie-104.1 (obraz B z migającym grotem – żądanie sąsiada; po Poz – stała
+// strzałka PRZYJAZD); dawniej własny napis „żąd.” i dwie strzałki kierunku w tym samym miejscu.
+test('blokada na krańcu toru: Eap (Szkolna) – menu Wbl/Poz/Ko, żądanie sąsiada i kierunek PRZYJAZD na strzałkach kierunkowych; samoczynna (Sopot) – menu Zk bez pozwoleń, liczniki w zakładce Stan', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await expect(page.locator('#desk .scr-el.block')).toHaveCount(0); // brak skrzynki Eap na monitorze
   const exitW = page.locator(`.hit[data-ref*='"id":"kW"']`);
   await advance(page, 3);
   expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
-  await expect(page.locator('.scr-el.exit').first().locator('.blk-status')).toHaveText('żąd.');
+  const dirW = page.locator(`.hit[data-ref*='"id":"kW"']`).locator('xpath=ancestor::*[contains(@class,"scr-el")][1]').locator('.blk-dir');
+  const segs = () => dirW.evaluate((d) => [d.dataset.pic, ...[...d.querySelector(`.blk-pic[data-pic="${d.dataset.pic}"]`).children].map((p) => `${p.dataset.seg}:${p.getAttribute('class').replace('blk-seg s-', '')}`)]);
+  expect(await segs()).toEqual(['B', 'b:yellow', 'a:yellow-blink']); // sąsiad żąda pozwolenia – grot do stacji miga
   await exitW.dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 60, clientY: 200 });
   await expect(page.locator('.scr-menu h5')).toContainText('Eap');
   await expect(page.locator('.scr-menu button:has-text("(Zk)")')).toHaveCount(0);
   await page.click('.scr-menu button:has-text("(Poz)")');
   expect(await page.evaluate(() => window.sim.blocks.get('W').direction)).toBe('in');
-  await expect(page.locator('.scr-el.exit').first().locator('.blk-status')).toHaveText('');
-  const dirs = await page.evaluate(() => [...document.querySelector(`.hit[data-ref*='"id":"kW"']`).closest('.scr-el').querySelectorAll('.blk-dir')].map((e) => e.getAttribute('class')));
-  // Ie-104.1 (blokada Eap): strzałki zawsze widoczne – ciemnoszare w stanie neutralnym, żółte (on) dla kierunku
-  // (dawniej kierunek pokazywała sama biała strzałka, a stanu neutralnego nie było)
-  expect(dirs[0]).not.toMatch(/\bon\b|used/); // strzałka „odjazd” – neutralna
-  expect(dirs[1]).toMatch(/\bon\b/); // strzałka „przyjazd” – kierunek po Poz
+  expect(await segs()).toEqual(['B', 'b:yellow', 'a:yellow']); // ustawiony kierunek PRZYJAZD
+  await expect(page.locator('#desk .blk-status')).toHaveCount(0);
   // Sopot: linia 202 z blokadą samoczynną
   await openShift(page, 'sopot', { params: { scenariusz: 'zmiana' } });
   await page.locator(`.hit[data-ref*='"id":"kOR1"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 300, clientY: 300 });
@@ -387,28 +387,20 @@ test('pasek polecenia specjalnego mieści się na tablecie: przyciski w jednej l
   }
 });
 
-test('napis stanu blokady („żąd.”) jest czytelny: większy niż nazwy semaforów, a wskazanie samouczka go nie przygasza', async ({ page }) => {
+// Symbol blokady z żądaniem sąsiada (migający grot strzałki kierunkowej) pod wskazaniem samouczka: wskazanie nie przygasza
+// symbolu (animacja bez krycia) – inaczej miganie wspólnej fazy byłoby trudne do odczytania (dawniej: napis „żąd.”).
+test('symbol blokady z żądaniem sąsiada jest czytelny: wskazanie samouczka go nie przygasza', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await page.evaluate(() => { const s = window.sim; s.clock.paused = false; for (let i = 0; i < 4000 && s.blocks.get('W').request !== 'theirs'; i++) s.step(0.5); s.clock.paused = true; });
-  const status = page.locator('.scr-el.exit .blk-status').first();
-  await expect(status).toHaveText('żąd.');
+  await expect(page.locator('.scr-el.exit .blk-dir[data-pic="B"] .blk-seg.s-yellow-blink')).toHaveCount(1);
   const m = await page.evaluate(() => {
-    const st = document.querySelector('.scr-el.exit .blk-status'), g = st.closest('.scr-el');
-    const c = getComputedStyle(st), sig = getComputedStyle(document.querySelector('svg.screen .sig-label'));
-    // najciemniejsza faza migania napisu (miganie synchroniczne: faza `ph` na całym obrazie)
-    const svg = st.closest('svg'), had = svg.classList.contains('ph');
-    svg.classList.add('ph');
-    const dim = parseFloat(getComputedStyle(st).opacity);
-    svg.classList.toggle('ph', had);
+    const g = document.querySelector('.scr-el.exit .blk-dir[data-pic="B"]').closest('.scr-el');
     g.classList.add('tut-hl');
     const hl = getComputedStyle(g);
-    const out = { size: parseFloat(c.fontSize), sig: parseFloat(sig.fontSize), weight: Number(c.fontWeight), dim, hlAnim: hl.animationName, hlKeys: [...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === hl.animationName).flatMap((r) => [...r.cssRules]).some((k) => k.style.opacity !== '') };
+    const out = { hlAnim: hl.animationName, hlKeys: [...document.styleSheets].flatMap((sh) => [...sh.cssRules]).filter((r) => r.type === CSSRule.KEYFRAMES_RULE && r.name === hl.animationName).flatMap((r) => [...r.cssRules]).some((k) => k.style.opacity !== '') };
     g.classList.remove('tut-hl');
     return out;
   });
-  expect(m.size).toBeGreaterThan(m.sig);
-  expect(m.weight).toBeGreaterThanOrEqual(600);
-  expect(m.dim).toBeGreaterThanOrEqual(0.4);
   expect(m.hlKeys, `animacja wskazania: ${m.hlAnim}`).toBe(false);
 });
 
@@ -456,15 +448,17 @@ test('monitor: sygnalizator stopowany (SES) i wszystkie po SSS są różowe (Ie-
   expect(await page.evaluate((id) => window.desk.sectionRefs.get(id).every((e) => e.getAttribute('class').includes('closed')), sec)).toBe(true);
 });
 
-// Przeciwwtórność liniowa Eap na monitorze: po podaniu sygnału wyjazdowego przy strzałce szlaku napis „Pwl” – gracz widzi,
-// dlaczego po odwołaniu sygnału drugi nie wyjdzie (audyt realizmu, grupa 4, W13).
-test('blokada Eap na monitorze: po sygnale wyjazdowym znacznik „Pwl” przy strzałce szlaku', async ({ page }) => {
+// Przeciwwtórność liniowa Eap na monitorze: po podaniu sygnału wyjazdowego strzałka WYJAZD ma grot żółty i trzon czerwony
+// (Ie-104.1 §8 pkt 22, tabela d, poz. 3) – gracz widzi, dlaczego po odwołaniu sygnału drugi nie wyjdzie (audyt realizmu,
+// grupa 4, W13; dawniej własny napis „Pwl”).
+test('blokada Eap na monitorze: po sygnale wyjazdowym strzałka WYJAZD – grot żółty, trzon czerwony', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await page.evaluate(() => { const b = window.sim.blocks.get('E'); b.direction = 'out'; b.permission = true; window.sim.ilk.setRoute('D1-E'); });
   await advance(page, 8);
   expect(await page.evaluate(() => [window.sim.ilk.signals.get('D1').aspect, window.sim.blocks.get('E').pwl])).toEqual(['S2', true]);
-  const mark = page.locator(`.hit[data-ref*='"id":"kE"']`).locator('xpath=ancestor::*[contains(@class,"scr-el")][1]').locator('.blk-status');
-  await expect(mark).toHaveText('Pwl');
+  const pic = page.locator(`.hit[data-ref*='"id":"kE"']`).locator('xpath=ancestor::*[contains(@class,"scr-el")][1]').locator('.blk-dir[data-pic="C"]');
+  await expect(pic.locator('.blk-pic[data-pic="C"] [data-seg="a"]')).toHaveClass('blk-seg s-yellow');
+  await expect(pic.locator('.blk-pic[data-pic="C"] [data-seg="b"]')).toHaveClass('blk-seg s-red');
 });
 
 // Ie-104.1 §12 rozróżnia „Stój” (sygnał „Stój”, przebieg zostaje) i Stop / oStop (zastopowanie sygnalizatora) – dawniej

@@ -89,8 +89,12 @@ Play it: **https://budnix.github.io/SPRK/**
   and **automatic block (SBL)** on double-track lines with a normal direction per track and direction change (Zk)
   agreed with the neighbour (our request, or our consent to theirs – the time goes to the log);
   neighbouring stations are driven by the simulator (they request, dispatch on time and confirm arrival).
-* Block state is shown on the monitor at the line exit: track arrow (red when the section is occupied), direction
-  arrow and a status label ("żąd.", "Wbl", "Ko", "tel."); dPo / dKo counters live in the *Stan* tab.
+* Block state is shown on the monitor at the line exit as in the PKP PLK Ie-104.1 guideline: track arrow (red when
+  the section is occupied) and the block direction arrows above the track – neutral head/box/head, one arrow towards
+  the station (ENTRY) or towards the line (EXIT), with the arrow head and shaft coloured per the guideline's tables
+  (blinking yellow head – permission requested, red – direction used, red shaft – exit signal cleared, white/red –
+  block fault) – and, on Eap blocks, the Ko/dKo symbol (green – arrival to confirm, blinking yellow – after dKo).
+  Everything blinks in one shared screen phase. dPo / dKo counters live in the *Stan* tab.
 
 ### Traffic
 * Trains run over the real topology and current point positions, brake for stop signals, 40 km/h over diverging points

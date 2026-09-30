@@ -71,7 +71,7 @@ test('bez martwych reguł i z ograniczeniem animacji ozdobnych', () => {
 // osobnych animacji o różnych okresach i fazach (dawniej 0,5–1 s, każda animacja startowała osobno). Wyjątek: EBIScreen.
 test('monitor: elementy obrazu migają wspólną fazą – bez własnych animacji', () => {
   const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  const monitor = /\.(z-field|sig-body|blk-status|pt-label|sel-frame|wk-z|end-mark|blk-dir|exit-arrow|seg)\b/;
+  const monitor = /\.(z-field|sig-body|blk-seg|blk-ko|pt-label|sel-frame|wk-z|end-mark|blk-dir|exit-arrow|seg)\b/;
   const bad = [];
   for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
     const [, sel, body] = m;
@@ -80,4 +80,13 @@ test('monitor: elementy obrazu migają wspólną fazą – bez własnych animacj
   }
   assert.deepEqual(bad, []);
   assert.match(css, /svg\.screen\.ph [^{]*\.z-field\.nocontrol/);
+});
+
+// Ogólna klasa `.blink` (animacja CSS z własną fazą) nie trafia na obraz monitora – reguła CSS nie wskazuje elementów
+// monitora, więc test wyżej jej nie widzi. Dawny napis stanu blokady miał `.blink` obok wspólnej fazy `ph` i migał nierówno.
+test('monitor: widoki nie nadają elementom obrazu ogólnej klasy .blink', () => {
+  for (const f of ['ScreenBase.js', 'ScreenRenderer.js', 'MorRenderer.js', 'EbiRenderer.js']) {
+    const src = readFileSync(new URL(`../src/render/${f}`, import.meta.url), 'utf8').replace(/\/\/.*$/gm, '');
+    assert.doesNotMatch(src, /['"`\s]blink['"`\s]/, f);
+  }
 });

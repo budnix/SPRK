@@ -713,16 +713,19 @@ svg.screen.special-sz .scr-bg { fill: var(--mon-special-sz); }
 svg.screen .sig-label { font-size: 6.5px; fill: #ffd21f; }      /* żółte nazwy semaforów */
 svg.screen .sig-label.tm { fill: var(--mon-turquoise); }       /* tarcze – sam numer, turkusowy */
 svg.screen .sig-label.stopped { fill: var(--mon-pink); }
-/* blokada liniowa na wyjeździe: strzałka szlaku (czerwona – odstęp zajęty), strzałki kierunku nad torem, napis stanu */
+/* blokada liniowa na wyjeździe: strzałka szlaku (czerwona – odstęp zajęty), strzałki kierunkowe nad torem, Ko/dKo */
 .exit-arrow { fill: #2d3a46; stroke: #8c98a4; stroke-width: 1; }
 .blk-occ .exit-arrow { fill: #ff2419; stroke: #ff2419; }
-.blk-fault .exit-arrow { stroke-dasharray: 2 1.5; stroke: #ffd21f; }
-/* strzałki kierunku blokady (Ie-104.1, blokada Eap): ciemnoszare – neutralny, żółte – kierunek, czerwone – wykorzystany */
-.blk-dir { fill: var(--mon-dark); stroke: none; }
-.blk-dir.on { fill: #ffd21f; }
-.blk-dir.used { fill: #ff2419; }
-.blk-status { fill: #ffd21f; font-size: 7.5px; font-weight: 600; }
-.blk-status.ko { fill: #21d04a; }                     /* Ko – zielony */
+/* strzałki kierunkowe blokady (Ie-104.1 §8 pkt 20–22): obraz A – ciemnoszary (neutralny) albo biały migający na przemian
+   z czerwonym (usterka); B / C – grot „a” i trzon „b”: żółty, żółty migający, czerwony. Ko/dKo (Eap): niewidoczny,
+   zielony – zależności zwolnienia blokady spełnione, żółty migający – dKo przed wjazdem na Sz / rozkaz */
+.blk-seg { fill: var(--mon-dark); stroke: none; }
+.blk-seg.s-yellow, .blk-seg.s-yellow-blink { fill: #ffd21f; }
+.blk-seg.s-red { fill: #ff2419; }
+.blk-seg.s-fault { fill: #ffffff; }
+.blk-ko { fill: none; stroke: none; }
+.blk-ko.s-green { fill: #21d04a; }
+.blk-ko.s-yellow-blink { fill: #ffd21f; }
 /* koniec przebiegu: prostokąt (pociągowy) / półkole (manewrowy) */
 .end-mark { fill: none; stroke: #b5bec7; stroke-width: 1.2; }
 .block-box { fill: #0c1218; stroke: #2f3d4a; stroke-width: 1; }
@@ -742,7 +745,9 @@ svg.screen .sig-label.stopped { fill: var(--mon-pink); }
    przełączana co 0,5 s przez widok; bez osobnych animacji o różnych okresach */
 svg.screen.ph .z-field.nocontrol, svg.screen.ph .z-field.trailed, svg.screen.ph .point.trailed .pt-label,
 svg.screen.ph .sig-body.st-sz path, svg.screen.picking.ph .scr-el.selected .sel-frame, svg.screen.ph .scr-el.alarm .sel-frame { visibility: hidden; }
-svg.screen.ph .blk-status.blink { opacity: 0.45; }    /* napis stanu – w ciemnej fazie nadal czytelny */
+svg.screen.ph .blk-seg.s-yellow-blink { fill: var(--mon-dark); }
+svg.screen.ph .blk-seg.s-fault { fill: #ff2419; }        /* usterka blokady: biały na przemian z czerwonym */
+svg.screen.ph .blk-ko.s-yellow-blink { fill: none; }
 .screen.picking .hit { cursor: crosshair; }
 .scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }

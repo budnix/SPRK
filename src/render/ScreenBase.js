@@ -6,6 +6,7 @@ import { PanelView } from './PanelView.js';
 import { t } from '../i18n/index.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
 import { relationOf } from '../model/categories.js';
+import { blockSymbol, blockSymbolShapes, hasKoSymbol, koSymbol } from './blockSymbol.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -333,10 +334,9 @@ export class ScreenBase extends PanelView {
 
   /**
    * Wyjazd na szlak (sąsiedni posterunek na krańcu) / koniec toru – element końca przebiegu.
-   * Na wyjeździe rysowany jest też stan blokady liniowej, jak na stanowiskach komputerowych (Ie-104): strzałka
-   * szlaku (czerwona – odstęp zajęty), strzałka kierunku blokady nad torem (wyjazd / wjazd) i napis stanu
-   * („żąd.” – sąsiad żąda pozwolenia, „Wbl” – czekamy na pozwolenie, „Ko” – potwierdzić przyjazd, „tel.” – bez
-   * łączności). Polecenia blokady są w menu tego elementu; liczniki dPo/dKo – w zakładce Stan.
+   * Na wyjeździe rysowany jest też stan blokady liniowej: strzałka szlaku (czerwona – odstęp zajęty), nad torem strzałki
+   * kierunkowe (obraz A / B / C, Ie-104.1 §8 pkt 20–22 – `blockSymbol.js`) i przy Eap symbol Ko/dKo. Polecenia blokady
+   * są w menu tego elementu; liczniki dPo/dKo – w zakładce Stan.
    */
   #exitMark(tile) {
     const [cx, cy] = this.#ctr(tile);
@@ -348,13 +348,19 @@ export class ScreenBase extends PanelView {
       const dir = ex[1].dir === 'E' ? 1 : -1;
       const x = dir * 4;
       refs.exitArrow = el('path', { class: 'exit-arrow', d: `M${x - dir * 8},-7 L${x + dir * 6},0 L${x - dir * 8},7 Z` });
-      // strzałki kierunku blokady nad torem: „wyjazd” (w stronę sąsiada) i „wjazd” (do nas)
-      refs.dirOut = el('path', { class: 'blk-dir off', d: `M${-dir * 8},-13 L${-dir * 8},-9 L${dir * 1},-9 L${dir * 1},-7 L${dir * 6},-11 L${dir * 1},-15 L${dir * 1},-13 Z` });
-      refs.dirIn = el('path', { class: 'blk-dir off', d: `M${dir * 6},-13 L${dir * 6},-9 L${-dir * 3},-9 L${-dir * 3},-7 L${-dir * 8},-11 L${-dir * 3},-15 L${-dir * 3},-13 Z` });
-      refs.status = text(-dir * 12, -8, '', { class: 'blk-status', 'text-anchor': dir > 0 ? 'end' : 'start' });
+      // strzałki kierunkowe nad torem: widoczny jeden obraz – A (neutralny / usterka), B (PRZYJAZD) albo C (WYJAZD)
+      const shape = blockSymbolShapes(dir);
+      const seg = (d, name) => el('path', { class: 'blk-seg', d, 'data-seg': name });
+      refs.pics = {
+        A: el('g', { class: 'blk-pic', 'data-pic': 'A' }, shape.A.map((d, i) => seg(d, ['line', 'box', 'station'][i]))),
+        B: el('g', { class: 'blk-pic', 'data-pic': 'B' }, [seg(shape.B.b, 'b'), seg(shape.B.a, 'a')]),
+        C: el('g', { class: 'blk-pic', 'data-pic': 'C' }, [seg(shape.C.b, 'b'), seg(shape.C.a, 'a')]),
+      };
+      refs.dir = el('g', { class: 'blk-dir' }, Object.values(refs.pics));
+      kids.push(refs.exitArrow, refs.dir);
+      if (hasKoSymbol(this.sim.blocks.get(ex[0]) || {})) kids.push(refs.ko = el('rect', { class: 'blk-ko', ...shape.ko }));
       // opis szlaku wyrównany do wnętrza pulpitu (kostka wyjazdu leży na krawędzi – tekst wyśrodkowany byłby przycięty)
-      kids.push(refs.exitArrow, refs.dirOut, refs.dirIn, refs.status,
-        text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
+      kids.push(text(-dir * 9, 15, tile.text || ex[0], { class: 'scr-text small', 'text-anchor': dir > 0 ? 'end' : 'start' }));
     } else if (tile.endButton.color === 'white') {
       // koniec przebiegu manewrowego – półkole (Ie-104.1 §8 pkt 7), wypukłością od toru
       const d = tile.type === 'buffer' && tile.port === 'E' ? -1 : 1;
@@ -538,18 +544,15 @@ export class ScreenBase extends PanelView {
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
     r.g.classList.toggle('blk-occ', !!(b.occupied || b.poBlocked));
-    r.g.classList.toggle('blk-fault', !!b.fault);
-    // strzałki kierunku (Ie-104.1 blokada Eap): ciemnoszare – stan neutralny, żółte – kierunek ustawiony, czerwone –
-    // kierunek wykorzystany (pociąg na szlaku)
-    const out = b.direction === 'out' && (b.auto || b.permission || b.fixed === 'out' || !!b.phone?.permissionFor || b.poBlocked);
-    const inn = b.direction === 'in';
-    const used = b.occupied || b.poBlocked;
-    r.dirOut.setAttribute('class', `blk-dir${out ? (used ? ' used' : ' on') : ''}`);
-    r.dirIn.setAttribute('class', `blk-dir${inn ? (used ? ' used' : ' on') : ''}`);
-    // Pwl – sygnał wyjazdowy na szlak podany (przeciwwtórność liniowa Eap)
-    const st = b.request === 'theirs' ? ['żąd.', true] : b.request === 'ours' ? [b.auto ? 'Zk' : 'Wbl', true] : b.koPending && !b.auto ? ['Ko', true] : b.fault ? ['tel.', false] : b.pwl ? ['Pwl', false] : ['', false];
-    r.status.textContent = st[0];
-    r.status.setAttribute('class', `blk-status${st[1] ? ' blink' : ''}${st[0] === 'Ko' ? ' ko' : ''}`);
+    // strzałki kierunkowe i Ko/dKo wg Ie-104.1 (barwy segmentów – `blockSymbol.js`); miganie: wspólna faza obrazu `ph`
+    const s = blockSymbol(b);
+    r.dir.setAttribute('data-pic', s.pic);
+    for (const [pic, g] of Object.entries(r.pics)) {
+      const on = pic === s.pic;
+      g.setAttribute('display', on ? 'inline' : 'none');
+      for (const p of g.children) p.setAttribute('class', on ? `blk-seg s-${p.dataset.seg === 'b' ? s.b : s.a}` : 'blk-seg');
+    }
+    r.ko?.setAttribute('class', `blk-ko s-${koSymbol(b)}`);
   }
 
   /** G4: element wybrany do polecenia – niebieska ramka (migająca podczas nastawiania przebiegu). */

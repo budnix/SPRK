@@ -529,11 +529,35 @@ rozkład jazdy fikcyjny.
 ## Blokada liniowa na monitorze i blokada samoczynna
 
 Na komputerowych stanowiskach obsługi stan blokady liniowej nie jest osobnym polem z lampkami (to element
-pulpitu kostkowego z blokadą Eap), lecz zobrazowaniem przy wyjeździe na szlak: strzałka kierunku blokady,
-zajętość odstępu (tor szlakowy na czerwono) i znaczniki żądania / potwierdzenia; polecenia (żądanie, pozwolenie,
+pulpitu kostkowego z blokadą Eap), lecz symbolem przy wyjeździe na szlak; polecenia (żądanie, pozwolenie,
 potwierdzenie przyjazdu, zmiana kierunku, zwolnienia doraźne) wydaje się z menu elementu, a zwolnienia doraźne
-są rejestrowane w dzienniku zdarzeń i licznikach systemu, nie przy blokadzie. Tak jest w grze;
-geometria symbolu (strzałka szlaku, strzałka kierunku nad torem, napis stanu) jest własna, w duchu Ie-104.
+są rejestrowane w dzienniku zdarzeń i licznikach systemu, nie przy blokadzie. W grze symbol blokady idzie za
+Ie-104.1 (2025) §8 pkt 20 (przekaźnikowa blokada samoczynna), pkt 21 (elektroniczna samoczynna) i pkt 22 (Eap),
+rysunki s. 53, 56, 61, tabele barw s. 54–55, 57, 62 (`src/render/blockSymbol.js`):
+
+* strzałki kierunkowe ponad torem (dopuszczone w pkt 20 ust. 1 lit. a, pkt 22 ust. 1 lit. b); w głowicy prawej
+  lustrzane odbicie głowicy lewej (pkt 22 ust. 1 lit. a); obraz „A” – stan neutralny: grot w stronę szlaku,
+  prostokąt, grot w stronę stacji, ciemnoszare; usterka – biały migający na przemian z czerwonym (w grze: blokada bez
+  łączności, zapowiadanie telefoniczne); obraz „B” – kierunek PRZYJAZD (jedna strzałka do stacji), obraz „C” –
+  WYJAZD (jedna strzałka w stronę szlaku); grot to segment „a”, trzon – „b”;
+* barwy segmentów Eap: sąsiad żąda pozwolenia – a żółty migający, b żółty; ustawiony PRZYJAZD – oba żółte; nasze
+  żądanie (Wbl) – a żółty migający, b żółty; ustawiony WYJAZD – oba żółte; ustawiony sygnał zezwalający na wyjazd
+  (w grze: przeciwwtórność Pwl) – a żółty, b czerwony; kierunek wykorzystany – oba czerwone;
+* blokada samoczynna: żądanie zmiany kierunku (sąsiada / nasze Zk) – a żółty migający, b żółty; ustawiony kierunek –
+  oba żółte; tabele pkt 20–21 nie mają stanu „wykorzystany” – zajętość pokazuje odcinek szlaku (w grze strzałka szlaku);
+* symbol Ko/dKo (pkt 22 ust. 2 lit. e): w stanie podstawowym niewidoczny, żółty migający – wjazd na sygnał zastępczy /
+  rozkaz przygotowany poleceniem dKo, zielony ciągły – spełnione zależności zwolnienia blokady w kierunku PRZYJAZD
+  (przejazd stwierdzony przy semaforze wjazdowym); tylko Eap przyjmująca pociągi;
+* miganie – wspólną fazą obrazu (§4 ust. 17); „żółty migający” gaśnie w fazie ciemnej do barwy neutralnej.
+
+Przyjęte: kierunek jest „wykorzystany” od wjazdu pociągu na szlak do zwolnienia blokady – u nas do Ko (także gdy
+pociąg sąsiada zjechał ze szlaku, a nie minął jeszcze semafora wjazdowego), u sąsiada do potwierdzenia przyjazdu
+naszego pociągu; położenie Ko/dKo nad strzałkami od strony stacji i proporcje symbolu – wg rysunku, bez wymiarów
+z wytycznych; strzałka szlaku (czerwona – odstęp zajęty) zastępuje odcinki odstępów szlakowych, których gra nie rysuje.
+Nieodwzorowane: stan „brak aktualnych danych” (biały), zwalnianie kierunku, sygnał zezwalający na wyjazd u sąsiada,
+awaryjna zmiana kierunku, żądanie oWbl dla niewykorzystanego kierunku, zamknięcie szlaku (różowy), NO / NP, SKP /
+dSKP, lampki Tor / Poz / STOP, ramki potwierdzeń WSz i opisy numerem toru szlakowego. Gra nie ma też własnych napisów
+stanu blokady (dawniej „żąd.”, „Wbl”, „Ko”, „tel.”, „Pwl”) – stan widać tylko tak, jak w wytycznych.
 
 Linie 202 (Gdańsk – Gdynia) i 250 (SKM) są dwutorowe z samoczynną blokadą liniową (SBL) – bez pozwoleń Eap, bez
 bloków Po / Ko i przycisków doraźnych dPo / dKo (Ir-1 §29 ust. 1 i 3); po modernizacji blokada jest dwukierunkowa
@@ -582,8 +606,8 @@ dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sp
   opisu, rysunku nie odtworzono dokładnie), „+” przy położeniu zasadniczym, ciemnoszara, różowa przy zamknięciu;
 * koniec przebiegu (§8 pkt 7): pociągowego – pusty prostokąt, manewrowego – półkole; kozioł – symbol T z zagiętymi
   końcami (§8 pkt 32 lit. d); przyjęte: bez opisu „<sygnalizator>k”;
-* blokada Eap na wyjeździe: strzałki kierunku ciemnoszare (stan neutralny), żółte (kierunek), czerwone (kierunek
-  wykorzystany – pociąg na szlaku), Ko – zielony napis (§4 ust. 11 pkt 5, ust. 13 pkt 2; s. 60–63);
+* blokada na wyjeździe: strzałki kierunkowe – obraz A / B / C z segmentami a i b w barwach z tabel oraz symbol Ko/dKo
+  (§8 pkt 20–22; s. 53–63) – szczegóły w sekcji „Blokada liniowa na monitorze i blokada samoczynna”;
 * miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (§4 ust. 17) – wspólna faza (klasa `ph` przełączana przez widok);
 * grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
   czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
@@ -598,7 +622,7 @@ z terminologią Ie-1 / Ir-1 (nastawienie przebiegu, zwolnienie przebiegu, danie 
 podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne).
 
 Nieodwzorowane lub uproszczone: stany „ciemnoczerwony – w ochronie bocznej”, „turkusowy – nastawianie miejscowe”,
-dokładna geometria symbolu blokady wg Ie-104.1 (własna: strzałka szlaku, strzałka kierunku, napis stanu), dokładne
+wymiary symbolu blokady (kształt i barwy wg rysunków i tabel Ie-104.1, proporcje przyjęte), dokładne
 skróty poleceń na stanowisku `komputerowe` (opisowe; skróty EBILock 950 ma stanowisko `ebilock` – sekcja niżej),
 tabele zdarzeń i alarmów u dołu ekranu (na stanowisku `komputerowe` rolę pełni zakładka Dziennik).
 

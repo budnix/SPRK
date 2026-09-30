@@ -399,7 +399,9 @@ sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strza
 poleceniach, jako czerwone kasetki z samymi numerami (`lineTrains`: pociąg na szlaku pełną kasetką, potem w kolejce
 pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śledzenia numerów w komputerowych srk, tylko na
 żądanie, bo przy szlakach dwutorowych nie ma miejsca na kasetkę przy strzałce; pulpit kostkowy – nie.
-Na monitorze stan blokady rysuje `ScreenBase.#exitMark` przy wyjeździe (`blockRefs`), a polecenia
+Na monitorze stan blokady rysuje `ScreenBase.#exitMark` przy wyjeździe (`blockRefs`): strzałki kierunkowe (obraz
+A / B / C z segmentami a i b) i symbol Ko/dKo wg Ie-104.1 §8 pkt 20–22 – stan → obraz, barwy i kształt liczy
+`src/render/blockSymbol.js` (bez DOM, test w Node), miganie niesie wspólna faza obrazu `ph`; polecenia
 daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę jako kostki przy końcu toru szlakowego
 (`src/render/blockLayout.js`, bez DOM: strzałki „odjazd” / „przyjazd” na kostkach toru – żądania migają na nich,
 przyciski Ko | Poz | Wbl albo Zk w rzędzie obok – lampka Ko i Pwl, liczniki dKo | dPo wyżej – jak na pulpitach typu
