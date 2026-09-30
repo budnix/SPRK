@@ -547,7 +547,11 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
     przebiegowy niezwolniony przez pociąg (nastawnia mechaniczna), licznik osi z ZeroLO (MOR-3), pęknięta szyna z ITS / ITO;
   – `faults-block.test.js` – usterka blokady liniowej w każdej chwili wjazdu i wyjazdu, z naprawą w następnej chwili,
     na Eap dwukierunkowej (Szkolna, Kalinowo), jednokierunkowej (Jodłowa) i SBL (Brzezina), przy krzyżowaniu, pociągach
-    po sobie i pociągu przelotowym; pilnuje też szlaku (jeden pociąg na torze szlakowym, pozwolenie).
+    po sobie i pociągu przelotowym; pilnuje też szlaku (jeden pociąg na torze szlakowym, pozwolenie);
+  – `faults-combined.test.js` – dwie różne usterki na drodze jednego pociągu: semafor wyjazdowy i blokada tego wyjazdu
+    (Sz / rozkaz „S” dopiero po „droga wolna”, dPo, zawiadomienie o odjeździe), semafor wjazdowy i blokada wjazdu (dKo
+    odrzucone, przyjazd telefonogramem), napęd zwrotnicy albo semafor wjazdowy i fałszywa zajętość toru docelowego
+    (Sz / rozkaz przez zwrotnice zamknięte, po zabezpieczeniu na miejscu); koniec zmiany z niewykonanym zawiadomieniem.
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
   zmienia go na zwykły test; 16 błędów znalezionych przy powstaniu tych plików jest poprawionych – `todo` nie ma.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno

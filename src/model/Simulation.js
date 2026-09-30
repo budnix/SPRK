@@ -289,8 +289,13 @@ export class Simulation {
     for (const e of this.traffic.timetable()) {
       if (!Traffic.isDone(e)) this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany (${e.status})` });
     }
-    // obowiązki blokady niewykonane do końca zmiany – kara jak przy dojeździe pociągu do sąsiada (wtedy już jej nie będzie)
-    for (const d of this.#blockDuties()) if (d.code) this.bus.emit('score', { time: this.clock.time, code: d.code, points: -10, msg: `${d.text} – niewykonane do końca zmiany` });
+    // obowiązki blokady niewykonane do końca zmiany – kara jak przy dojeździe pociągu do sąsiada; obowiązek się zamyka,
+    // żeby dojazd pociągu po końcu zmiany (symulacja biegnie dalej) nie doliczył jej drugi raz
+    for (const d of this.#blockDuties()) {
+      if (!d.code) continue;
+      this.bus.emit('score', { time: this.clock.time, code: d.code, points: -10, msg: `${d.text} – niewykonane do końca zmiany` });
+      d.close();
+    }
   }
 
   /** Czynności dyżurnego na blokadach, na które zmiana czeka: dPo, telefonogram o odjeździe, Ko przyjazdu. */
@@ -298,8 +303,8 @@ export class Simulation {
     const out = [];
     for (const [id, b] of this.blocks) {
       const to = this.station.exits[id]?.name ?? id;
-      if (b.needPo) out.push({ code: 'no-dpo', text: `blok początkowy do ${to} – dPo` });
-      if (b.phone?.departedReported === false) out.push({ code: 'no-depart-report', text: `zawiadomienie ${to} o odjeździe pociągu ${b.phone.departedTrain}` });
+      if (b.needPo) out.push({ code: 'no-dpo', text: `blok początkowy do ${to} – dPo`, close: () => { b.needPo = false; } });
+      if (b.phone?.departedReported === false) out.push({ code: 'no-depart-report', text: `zawiadomienie ${to} o odjeździe pociągu ${b.phone.departedTrain}`, close: () => { b.phone.departedReported = true; } });
       if (b.koPending) out.push({ code: null, text: `przyjazd od ${to} – Ko` });
     }
     return out;
