@@ -268,7 +268,7 @@ test('block-fail na samoczynnej blokadzie liniowej SBL (Brzezina, EBILock 950)',
   assert.equal(runAll(SBL, (c) => ({ arrival: !sblArrivalLost(c) })), 76);
 });
 
-test('SBL przy usterce: przyjazd pociągu sąsiada zawiadomiony telefonicznie (usterka do końca jazdy)', { todo: 'błąd silnika: SBL bez łączności – przyjazd pociągu, który zjechał ze szlaku przed minięciem semafora wjazdowego, nie jest do zawiadomienia (Block.entryPassed pomija SBL)' }, () => {
+test('SBL przy usterce: przyjazd pociągu sąsiada zawiadomiony telefonicznie (usterka do końca jazdy)', () => {
   assert.equal(runAll(SBL.filter(sblArrivalLost)), 16);
 });
 
@@ -431,7 +431,7 @@ test('bez łączności: pozwolenie sprzed usterki wykorzystał pociąg, który j
   assert.equal(b.gate('signal', 'D1-E').ok, false, 'sygnał zezwalający dla 6103 bez pozwolenia przeniesionego przez blokadę (blok początkowy zablokowany)');
 });
 
-test('bez łączności: sąsiad nie daje „droga wolna” dla naszego pociągu, dopóki jego pociąg stoi przed semaforem wjazdowym', { todo: 'błąd silnika: odpowiedź sąsiada na nasze zapytanie (LineBlock.tick, reply.phoneFor) nie sprawdza awaitingEntry – docs/SOURCES.md: przy zapowiadaniu „droga wolna” się nie należy' }, () => {
+test('bez łączności: sąsiad nie daje „droga wolna” dla naszego pociągu, dopóki jego pociąg stoi przed semaforem wjazdowym', () => {
   const b = faultyBlock();
   assert.equal(b.phoneAskFromNeighbour(6102), true);
   assert.equal(b.phoneAnswerFree(6102).ok, true);
@@ -472,7 +472,7 @@ for (const [c, arrSz] of [[CROSS_A[0], '07:26'], [CROSS_A[1], '07:26'], [CROSS_A
  * następny pociąg po potwierdzeniu przyjazdu poprzedniego (Ir-1 §23 ust. 2–4) – tu wyprawia go, zanim pierwszy minie
  * semafor wjazdowy, a przyjazd pierwszego nie jest zawiadamiany wcale.
  */
-test('SBL przy usterce: sąsiad wyprawia następny pociąg dopiero po telefonicznym potwierdzeniu przyjazdu poprzedniego', { todo: 'błąd silnika: SBL bez łączności – przyjazd bez zawiadomienia (Block.entryPassed pomija SBL), sąsiad wyprawia następny pociąg bez potwierdzenia (awaitingEntry pomija SBL)' }, () => {
+test('SBL przy usterce: sąsiad wyprawia następny pociąg dopiero po telefonicznym potwierdzeniu przyjazdu poprzedniego', () => {
   const timetable = [osB(9101, 'T2', 'K2', '07:16', '07:18', '2'), osB(9105, 'T2', 'K2', '07:18', '07:20', '4')];
   const m = IN.find((x) => x.name === 'pociąg na szlaku');
   const early = [];
@@ -483,7 +483,7 @@ test('SBL przy usterce: sąsiad wyprawia następny pociąg dopiero po telefonicz
   assert.deepEqual(early, [], `${where}: 9105 wyprawiony przed zawiadomieniem o przyjeździe 9101`);
 });
 
-test('naprawa w trakcie naszego zapytania o drogę: spóźniona odpowiedź sąsiada nie zostawia zapowiedzi na następną usterkę', { todo: 'błąd silnika: LineBlock.setFault(false) nie kasuje oczekującej odpowiedzi na zapytanie (neighbourReply.phoneFor) – po naprawie ustawia phone.permissionFor, który przy kolejnej usterce otwiera Sz bez zapytania' }, () => {
+test('naprawa w trakcie naszego zapytania o drogę: spóźniona odpowiedź sąsiada nie zostawia zapowiedzi na następną usterkę', () => {
   const b = faultyBlock();
   b.phoneAskNeighbour(6101);
   b.setFault(false); // naprawa przed odpowiedzią sąsiada
@@ -492,7 +492,7 @@ test('naprawa w trakcie naszego zapytania o drogę: spóźniona odpowiedź sąsi
   assert.equal(b.gate('substitute').ok, false, 'Sz na szlak bez zapytania o drogę w tej usterce');
 });
 
-test('naprawa, gdy pociąg sąsiada stoi przed semaforem wjazdowym: przy kolejnej usterce jego przyjazd da się zawiadomić telefonicznie', { todo: 'błąd silnika: LineBlock.setFault(false) kasuje phone.arrivedTrain także przy awaitingEntry – przyjazd „pociągu null”, telefonogram o przyjeździe odrzucany' }, () => {
+test('naprawa, gdy pociąg sąsiada stoi przed semaforem wjazdowym: przy kolejnej usterce jego przyjazd da się zawiadomić telefonicznie', () => {
   const b = faultyBlock();
   b.phoneAskFromNeighbour(6102); b.phoneAnswerFree(6102);
   b.neighbourTrainEntered({ nr: 6102 });

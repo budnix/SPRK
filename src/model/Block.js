@@ -121,7 +121,8 @@ export class LineBlock {
   entryPassed(onSignal) {
     this.entrySeen = true; this.beforeEntry = null;
     if (onSignal) this.zpg = true;
-    if (this.arrivedFully && !this.auto && !this.koPending) this.#arrivalComplete();
+    // SBL tylko przy usterce – przyjazd do zawiadomienia telefonicznego (krótki pociąg zjeżdża ze szlaku przed semaforem)
+    if (this.arrivedFully && (!this.auto || this.fault) && !this.koPending) this.#arrivalComplete();
   }
 
   #arrivalComplete() {
@@ -153,7 +154,9 @@ export class LineBlock {
       // droga była nasza (zapowiedź naszego pociągu albo niewykorzystane pozwolenie sprzed usterki), a pociąg jeszcze nie
       // wjechał na szlak – może właśnie mijać semafor wyjazdowy; po naprawie pozwolenie zostaje u nas
       const oursPending = !this.occupied && this.#oursUnderFault() ? (this.phone.permissionFor ?? true) : null;
-      this.phone = { askedByThem: null, permissionFor: null, arrivalConfirmed: null, arrivedTrain: null, departedTrain: null, clearedFor: null, departedReported: true };
+      // pociąg sąsiada stoi przed semaforem wjazdowym – jego numer zostaje (przyjazd potwierdzi się po wjeździe)
+      const waiting = this.awaitingEntry ? this.phone.arrivedTrain : null;
+      this.phone = { askedByThem: null, permissionFor: null, arrivalConfirmed: null, arrivedTrain: waiting, departedTrain: null, clearedFor: null, departedReported: true };
       if (this.fixed) this.direction = this.fixed;
       this.faultDir = null;
       if (this.auto) { if (arrivedOurs) this.pendingArrivalAck = this.time + 5; }
@@ -596,8 +599,11 @@ export class LineBlock {
     if (this.neighbourReply && this.neighbourReply.at <= time) {
       const reply = this.neighbourReply;
       this.neighbourReply = null;
-      if (reply.phoneFor) {
-        const free = !this.occupied && !this.phone.askedByThem && !this.phone.clearedFor;
+      if (reply.phoneFor && !this.fault) {
+        // odpowiedź na zapytanie z czasu usterki przyszła po naprawie – zapowiadanie już nie obowiązuje
+      } else if (reply.phoneFor) {
+        // droga wolna dopiero, gdy pociąg sąsiada minął nasz semafor wjazdowy i jego przyjazd jest zawiadomiony
+        const free = !this.occupied && !this.phone.askedByThem && !this.phone.clearedFor && !this.awaitingEntry && !this.koPending;
         this.bus.emit('comms', { time, from: this.neighbour, kind: 'info', exit: this.id, text: free ? `Dla pociągu nr ${reply.phoneFor} droga jest wolna.` : `Stój pociąg nr ${reply.phoneFor} – tor szlakowy zajęty.` });
         if (free) this.phone.permissionFor = reply.phoneFor; // telefonogram nie przestawia kierunku blokady
         this.#emit();

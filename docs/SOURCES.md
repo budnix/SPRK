@@ -190,7 +190,10 @@ nim wyjechał, zużywa je – następny wyjeżdża na Sz / rozkaz); sygnał wyja
 nie gaśnie z utratą łączności (pozwolenie trzymają urządzenia naszej stacji – przyjęte; zgaszony tuż przed pociągiem
 kończył się minięciem „Stój”); na szlaku jednotorowym „droga wolna” dla naszego pociągu
 wyklucza „droga wolna” dla pociągu sąsiada, także gdy blokada nie ma ustawionego kierunku (telefonogram go nie
-przestawia). Stanowisko MOR-1 ma w menu
+przestawia); sąsiad odpowiada „droga wolna” dla naszego pociągu dopiero, gdy jego poprzedni pociąg minął nasz semafor
+wjazdowy i jego przyjazd jest zawiadomiony; na blokadzie samoczynnej przy usterce przyjazd pociągu sąsiada zawiadamia
+się telefonicznie także wtedy, gdy krótki pociąg zjechał ze szlaku przed minięciem semafora; odpowiedź na zapytanie,
+która przyjdzie już po naprawie, niczego nie zapowiada (przyjęte). Stanowisko MOR-1 ma w menu
 trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
 
 Lampki blokady Eap na pulpitach kostkowych (typ E, IZH-111, plan świetlny nastawni mechanicznej) – ISDR 2.3.2.3.2,
