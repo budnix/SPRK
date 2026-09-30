@@ -19,6 +19,23 @@ test('poziom zakłóceń: opóźnienia od sąsiadów są deterministyczne dla zi
   assert.ok(a.faults.list.length >= 3);
 });
 
+test('poziom zakłóceń: losowe usterki mają czas wystąpienia w obrębie zmiany i naprawdę się pojawiają', () => {
+  // scenariusze gry podają koniec zmiany jako napis „GG:MM” – z niego ma się brać okno losowania usterek
+  for (const seed of [1, 7, 42]) {
+    const sim = new Simulation(station, { scenario: 'zmiana', disruptions: 'high', seed });
+    assert.equal(typeof sim.scenario.endTime, 'string');
+    const start = sim.clock.time + 8 * 60, end = sim.endTime - 15 * 60;
+    assert.ok(sim.faults.list.length >= 3, `seed ${seed}`);
+    for (const f of sim.faults.list) assert.ok(Number.isFinite(f.at) && f.at >= start && f.at <= end, `seed ${seed}: usterka ${f.type} ${f.target} o czasie ${f.at}`);
+    let seen = 0;
+    sim.bus.on('alarm', (a) => { if (a.type === 'fault') seen++; });
+    while (sim.clock.time < sim.endTime) sim.step(0.5);
+    // usterka licznika osi czeka na pociąg, pozostałe pojawiają się o swoim czasie
+    assert.ok(sim.faults.list.some((f) => f.active || f.done), `seed ${seed}: żadna usterka nie wystąpiła`);
+    assert.ok(seen > 0, `seed ${seed}: brak alarmu usterki`);
+  }
+});
+
 test('usterka semafora: brak sygnału mimo przebiegu, Sz uzasadniony (0 pkt), po usunięciu semafor działa', () => {
   const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: [{ type: 'signal-fail', target: 'A', at: '05:53', duration: 2 }] } });
   run(sim, 90);

@@ -49,7 +49,9 @@ export class Faults {
     const sim = this.sim;
     const n = this.rng.int(level.faults[0], level.faults[1]);
     const start = sim.clock.time + 8 * 60;
-    const end = (sim.scenario?.endTime ?? sim.clock.time + 2 * 3600) - 15 * 60;
+    // koniec zmiany w sekundach (`sim.endTime`); `scenario.endTime` to napis „GG:MM” – odejmowanie od niego dawało NaN
+    // i usterka z takim czasem nie pojawiała się nigdy
+    const end = (sim.endTime ?? sim.clock.time + 2 * 3600) - 15 * 60;
     if (end <= start) return;
     const semafory = [...sim.ilk.signals.values()].filter((s) => s.kind === 'semafor').map((s) => s.id);
     const points = [...sim.ilk.points.keys()];
