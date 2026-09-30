@@ -29,7 +29,8 @@ import { Topology } from './Topology.js';
  *    podaniem sygnału; zablokowany przebieg zwalnia dopiero pociąg (albo zwalniacz – `releaseRoute(id, true)`),
  *  - `holdRoute` – po przejeździe pociągu przebieg zostaje zamknięty (drążek przełożony, zwrotnice zamknięte),
  *    aż gracz go zwolni (`releaseRoute`),
- *  - `shapedSignals` – semafory kształtowe (Ie-1 §3): obrazy Sr1 / Sr2 / Sr3 zamiast świetlnych, tarcze manewrowe
+ *  - `shapedSignals` – semafory kształtowe (Ie-1 §3): obrazy Sr1 / Sr2 / Sr3 zamiast świetlnych (ramię opada samo
+ *    dopiero po minięciu semafora przez cały pociąg – przyjęte sprzęgło elektryczne), tarcze manewrowe
  *    kształtowe M1 / M2; semafor z przebiegiem pociągowym ≤ 60 km/h ma dwa ramiona (`arms`), a semafor wjazdowy –
  *    tarczę ostrzegawczą kształtową (`warning`: Od1 / Od2 przy jednym ramieniu, Ot1 / Ot2 / Ot3 przy dwóch).
  *
@@ -1234,6 +1235,8 @@ export class Interlocking {
         // nastawnia mechaniczna: tarczę przestawia dźwignia, bez zmian
         const approach = this.sections.get(act.route.approach);
         if (!act.signalOff && act.route.kind === 'shunt' && !this.manualSignal && approach?.physical) act.shuntHold = true;
+        // semafor kształtowy (sprzęgło elektryczne): ramię opada dopiero, gdy semafor minie ostatnia oś pociągu
+        else if (!act.signalOff && act.route.kind === 'train' && this.shapedSignals && approach?.physical) act.armHold = true;
         else if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
         if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
       }
@@ -1250,6 +1253,10 @@ export class Interlocking {
       if (act.shuntHold && !this.sections.get(act.route.approach)?.physical) {
         act.shuntHold = false; act.signalOff = true; this.#refreshSignals();
         this.#log('info', `Skład minął ${sig.kind === 'tm' ? 'tarczę' : 'semafor'} ${sig.id} – sygnał manewrowy zgasł`);
+      }
+      if (act.armHold && !this.sections.get(act.route.approach)?.physical) {
+        act.armHold = false;
+        if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} w całości – semafor samoczynnie na „Stój”`); }
       }
       if (act.timedRelease && act.timedRelease <= time) {
         this.#log('info', `Przebieg ${act.id} zwolniony (zwalnianie czasowe)`);

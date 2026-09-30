@@ -145,6 +145,31 @@ test('mechaniczna: z położenia pośredniego drążek idzie dalej do końca (pe
   assert.equal(e.ilk.half.size, 0);
 });
 
+test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały pociąg, świetlny – już pod czołem', () => {
+  const pass = (sim, set) => {
+    const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+    set(sim);
+    const route = sim.ilk.routes.get('A-D1'), approach = sim.ilk.sections.get(route.approach);
+    const stop = sim.ilk.signals.get('A').kind && (sim.ilk.shapedSignals ? 'Sr1' : 'S1');
+    assert.notEqual(sim.ilk.signals.get('A').aspect, stop);
+    // czoło za semaforem, ogon jeszcze przed nim
+    for (let i = 0; i < 4000 && !(e.train && e.train.occupiedSections().has(route.sections[0])); i++) sim.step(0.5);
+    sim.step(0.5);
+    assert.ok(approach.physical, 'ogon pociągu jeszcze przed semaforem');
+    const under = sim.ilk.signals.get('A').aspect;
+    for (let i = 0; i < 4000 && approach.physical; i++) sim.step(0.5);
+    sim.step(0.5);
+    return { under, after: sim.ilk.signals.get('A').aspect, stop };
+  };
+  const m = pass(mech(), (sim) => { throwLevers(sim, 'A-D1'); run(sim, 3); sim.execute({ type: 'route', id: 'A-D1' }); sim.execute({ type: 'route-block', signal: 'A' }); sim.execute({ type: 'clear', signal: 'A' }); });
+  assert.equal(m.under, 'Sr2', 'ramię wzniesione, dopóki pociąg mija semafor');
+  assert.equal(m.after, 'Sr1', 'po ostatniej osi – „Stój”');
+  const l = pass(new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' }), (sim) => { sim.ilk.setRoute('A-D1'); for (let i = 0; i < 40 && !sim.ilk.active.has('A-D1'); i++) sim.step(0.5); });
+  assert.equal(l.under, l.stop, 'semafor świetlny gaśnie pod czołem pociągu');
+  assert.equal(l.after, l.stop);
+});
+
 test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięcia dźwigni i drążka; sygnał tylko raz', () => {
   const sim = mech();
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);

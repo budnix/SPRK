@@ -35,6 +35,12 @@ Pulpit typu E – powtarzacze, przyciski grupowe, wykolejnice (`src/tiles/repeat
 * przyciski grupowe (Zw, Zz, Pz) i doraźne (dPz, Sz) są czarne – ISDR 2.3.2.1.1 i 2.3.2.3 pisze „typowo”, więc to
   wzór, nie przepis; biel i czerwień zostają przy przyciskach sygnałowych i blokady. Kostki przycisków zapisane
   w starych plikach stacji (`type: 'button'`) zachowują swoją barwę;
+* zwolnienie przebiegu pociągowego przyciskiem Pz bez plomby i licznika (od razu, a przy zajętym odcinku zbliżania –
+  czasowo) to wzór ISDR. Ie-10 §25 ust. 2 pkt 5 wymaga do zwolnienia przebiegu pociągowego przycisku plombowanego,
+  a zwolnienie czasowe przewiduje dla urządzeń zblokowanych – gra tego nie odwzorowuje (rozbieżność znana, do decyzji);
+  plombowany i liczony jest tylko dPz;
+* numery pociągów przy czole pociągu na pulpitach przekaźnikowych (typ E, IZH-111) i na planie świetlnym nastawni
+  mechanicznej to pomoc gry, jak w ISDR – rzeczywisty pulpit ich nie pokazuje (dyżurny zna je z zapowiadania);
 * lampka wykolejnicy świeci na żółto tylko przy wykolejnicy zdjętej; nałożona albo w ruchu – zgaszona (ISDR
   2.3.2.2.1.2; źródło podaje też wariant z żółtymi szczelinami – w osi toru zdjęta, ukośna nałożona). Biel na pulpicie
   oznacza utwierdzenie, więc nie pokazuje położenia wykolejnicy.
@@ -204,7 +210,8 @@ transportszynowy.pl – „Urządzenia elektryczne przekaźnikowe”. Z opisu wz
   elementarnych wymaga tylko początku i końca; inny wariant wybiera zwrotnica zamknięta przyciskiem „STOP”;
 * zwrotnica: adres i „+” albo „−”; „STOP” – zamknięcie (czerwona lampka, szczeliny świecą na stałe), „Zw” –
   odwołanie zamknięcia; zwrotnice w przejściach nie są sprzężone;
-* zwalnianie: „Zcz” z adresem semafora końcowego – po 120 s, lampka przy przycisku miga na biało; przebieg manewrowy
+* zwalnianie: „Zcz” z adresem semafora końcowego – po 120 s, lampka przy przycisku miga na biało (źródło opisuje ją
+  tylko przy sygnalizatorze końcowym – przy końcu toru i przy szlaku lampki w grze nie ma); przebieg manewrowy
   – „Zw”, bezzwłocznie; sygnał zastępczy rozkazem „Sz”, rejestrowany licznikiem;
 * sygnalizator: „STOP” z adresem zamyka go – sygnał „Stój” do odwołania rozkazem „Zw”, lampka przy przycisku miga na
   czerwono (bsk.isdr.pl/srk_izh111.php); stan sygnalizatora pokazują tylko lampki powtarzacza – przycisk adresowy
@@ -316,6 +323,9 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
   dwuramiennym, dwustawna – przed jednoramiennym; gra rysuje ją na kostce semafora wjazdowego (w rzeczywistości stoi
   w odległości drogi hamowania przed nim) i nie zmienia jazdy pociągu – maszynista i tak hamuje przed semaforem
   na „Stój”;
+* semafor kształtowy ma sprzęgło elektryczne: ramię opada samo na Sr1, gdy semafor minie ostatnia oś pociągu
+  (Ie-4 §40), a dźwignia sygnałowa zostaje przełożona, aż nastawniczy ją cofnie (Ie-8 §21 ust. 11). Sprzęgło jest
+  przyjęte – są też semafory bez niego, na których ramię opada dopiero po cofnięciu dźwigni (sprawa do decyzji);
 * po Sr3 pociąg jedzie do 40 km/h do końca okręgu zwrotnicowego – tak jak po S10–S13 na innych stanowiskach;
 * plan świetlny pokazuje powtarzacze semaforów i tarcz w postaci rysunku ramion i tarcz (przyjęte – w rzeczywistości
   nastawniczy widzi je przez okno albo na powtarzaczach); ruch ramienia i tarczy trwa na rysunku niecałą sekundę,
