@@ -570,7 +570,7 @@ export class Train {
       this.trail.push(next);
       last = next;
       if (next.tile && !this.entered) { this.entered = true; this.onEvent('enter', this); }
-      if (next.virtual && !next.entering) { this.onEvent('leave', this); }
+      if (next.virtual && !next.entering) { this.onEvent('leave', this, next.virtual); } // szlak, na który pociąg naprawdę wjechał
     }
     // Zdejmij segmenty całkowicie za ogonem
     while (this.trail.length > 1 && this.trail[0].start + this.trail[0].len < this.tail) {

@@ -372,7 +372,9 @@ któregokolwiek ogniwa nic nie jest nastawiane, a odmowa nazywa ogniwo. Pulpit k
 `LineBlock` obsługuje trzy warianty jednym modelem: Eap dwukierunkowa (szlak jednotorowy: Wbl/Poz/Ko), Eap
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu
-`route:set`). Warunek wyjazdu `gate(mode, routeId)`: 'route' (przebieg), 'substitute' (Sz, rozkaz), 'signal' (sygnał
+`route:set`, a przebieg rozwiązany bez pociągu go oddaje – `releaseCommit()`; zgody Zk dla sąsiada przy nastawionym
+przebiegu wyjazdowym nie ma). Odjazd zajmuje blokadę szlaku, na który pociąg naprawdę wjechał (zdarzenie `leave`
+z numerem szlaku, `e.actualExit`) – przy jeździe po torze lewym to nie szlak z rozkładu (`tests/left-track.test.js`). Warunek wyjazdu `gate(mode, routeId)`: 'route' (przebieg), 'substitute' (Sz, rozkaz), 'signal' (sygnał
 zezwalający – `Interlocking.#computeAspect` woła go dla przebiegów na szlak: pozwolenie przeniesione przez blokadę,
 przeciwwtórność `pwl`); `fault: true` w wyniku uzasadnia Sz / rozkaz (`faultOnPath`). Pwl włącza `onExitSignal`
 z `Interlocking` przy pierwszym sygnale zezwalającym przebiegu na szlak. Stwierdzenie przejazdu (`zpg`): `Train`

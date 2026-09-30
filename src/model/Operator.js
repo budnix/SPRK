@@ -239,7 +239,8 @@ export class AutoOperator {
       // prośba sąsiada: Eap – pozwolenie (Poz), SBL – zgoda na zmianę kierunku (Zk)
       if (b.request === 'theirs' && this.#mayAccept(b) && deadEnd(b)) {
         sim.comms.send('hold', { exit: b.id, nr: b.talk.theirAsk ?? this.#pendingArrivalNr(b) }, { silent: true });
-      } else if (b.request === 'theirs' && this.#mayAccept(b)) {
+      } else if (b.request === 'theirs' && this.#mayAccept(b) && !(b.auto && b.permission)) {
+        // (SBL: nasz przebieg wyjazdowy na ten tor nastawiony – zgoda na zmianę kierunku dopiero po wyjeździe)
         // tryb ręczny rozmów: automat też nadaje 4a przed Poz (kary za pominięcie nie mogą trafić do gracza)
         if (!b.auto && b.phoneRoutine === 'manual' && b.talk.theirAsk != null) sim.comms.send('free', { exit: b.id, nr: b.talk.theirAsk }, { silent: true });
         b.press(b.auto ? 'Zk' : 'Poz');

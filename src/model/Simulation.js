@@ -64,7 +64,12 @@ export class Simulation {
     // sygnały; inaczej przebieg nastawiony przy usterce zostawał na „Stój” także po naprawie i pozwoleniu
     this.bus.on('block', () => this.ilk.refreshSignals());
     // nastawiony przebieg wyjazdowy „zajmuje” kierunek blokady samoczynnej – sąsiad nie zmieni go pod naszym pociągiem
-    this.bus.on('route', (r) => { if (r.state === 'set') { const route = this.ilk.routes.get(r.id); if (route?.exit) this.blocks.get(route.exit)?.commitOut(); } });
+    this.bus.on('route', (r) => {
+      const route = this.ilk.routes.get(r.id);
+      if (!route?.exit) return;
+      if (r.state === 'set') this.blocks.get(route.exit)?.commitOut();
+      else if (r.state === 'released') this.blocks.get(route.exit)?.releaseCommit(); // bez pociągu: blokada nie zajęta
+    });
     const timetable = this.scenario.timetable
       ? this.scenario.timetable
       : (this.scenario.trains ? station.timetable.filter((t) => this.scenario.trains.includes(t.nr)) : station.timetable);

@@ -281,6 +281,8 @@ export class LineBlock {
     if (this.fault) return this.#fail(`Blokada bez łączności – zapowiadanie telefoniczne (Łączność)`);
     if (this.occupied || this.poBlocked || this.koPending || this.awaitingEntry) return this.#fail(`Odstęp do ${this.neighbour} zajęty – zmiana kierunku niemożliwa`);
     if (this.request === 'theirs') {
+      // nasz przebieg wyjazdowy na ten tor nastawiony (commitOut) – pociąg może już mijać semafor wyjazdowy
+      if (this.permission) return this.#fail(`Przebieg wyjazdowy do ${this.neighbour} nastawiony – zgoda na zmianę kierunku dopiero po wyjeździe pociągu albo zwolnieniu przebiegu`);
       this.request = null; this.direction = 'in'; this.permission = false;
       this.log('info', `Zgoda na zmianę kierunku blokady samoczynnej do ${this.neighbour} na przyjazd – ${Clock.format(this.time)} (dziennik ruchu)`);
       this.#emit();
@@ -297,6 +299,11 @@ export class LineBlock {
   /** Nastawiono przebieg wyjazdowy na ten szlak – sąsiad nie może już zmienić kierunku. */
   commitOut() {
     if (this.auto && this.direction === 'out') this.permission = true;
+  }
+
+  /** Przebieg wyjazdowy na ten szlak rozwiązany bez wyjazdu pociągu – kierunek znów można oddać sąsiadowi. */
+  releaseCommit() {
+    if (this.auto && this.permission && !this.occupied) { this.permission = false; this.#emit(); }
   }
 
   #grantPermission() {

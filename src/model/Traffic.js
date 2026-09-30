@@ -324,9 +324,12 @@ export class Traffic {
           tr.stoppedSince = t;
         }
         break;
-      case 'leave':
+      case 'leave': {
         e.status = 'odjechał';
-        if (e.to) this.blocks.get(e.to)?.trainDeparted(tr);
+        // blokada szlaku, na który pociąg wjechał – nie zawsze szlaku z rozkładu (np. jazda po torze lewym po Zk)
+        const exitId = typeof arg === 'string' ? arg : e.to;
+        e.actualExit = exitId;
+        if (exitId) this.blocks.get(exitId)?.trainDeparted(tr);
         if (!e.stop && e.arrTime != null) {
           const late = Math.round((t - e.arrTime) / 60) - (e.delayIn || 0);
           if (late >= 3) this.bus.emit('score', { time: t, code: 'late-pass', points: -late, msg: `Pociąg ${e.nr} (przelot) opóźniony na stacji o ${late} min` });
@@ -338,6 +341,7 @@ export class Traffic {
           this.#journal(e, 'przejazd', t, this.#trackOf(tr) || e.actualTrack);
         }
         break;
+      }
       default:
     }
   }
