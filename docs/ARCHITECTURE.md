@@ -209,7 +209,7 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   się od razu; na stacji testowej `tests/fixtures/stare-pustkowie.js` droga ochronna za C1 leży na rozjazdzie 1
   i drugi wjazd czeka na zwolnienie Iz1 (test `interlocking.test.js`).
 * Przejazd: semafor na Stój po zajęciu pierwszego odcinka za nim (sygnał manewrowy – po zwolnieniu odcinka przed
-  sygnalizatorem, `act.shuntHold`); zwalnianie odcinkowe; droga ochronna zwalnia się po wjeździe na tor docelowy.
+  sygnalizatorem, `act.shuntHold`; tak samo semafor kształtowy przy przebiegu pociągowym – `act.armHold`); zwalnianie odcinkowe; droga ochronna zwalnia się po wjeździe na tor docelowy.
   Kontynuacją przebiegu pociągowego (droga ochronna zbędna) jest tylko przebieg pociągowy z semafora końcowego.
 * Zezwolenie na jazdę (`Train`): pociąg jedzie tylko na `Interlocking.isTrainProceed` (bez Ms2 / M2), Sz albo rozkaz;
   `authority` daje miniony semafor albo wjazd ze szlaku, `exitAuth` – przebieg na szlak (albo Sz / rozkaz); bez
