@@ -182,6 +182,40 @@ test('usterka blokady: zapowiadanie telefoniczne w obie strony, przyjazd potwier
   void eE;
 });
 
+test('koniec zmiany czeka na obowiązki blokady: po wyjeździe na rozkaz „S” zmiana trwa do dPo; zapomniane dPo jest w raporcie', async () => {
+  // wcześniej zmiana kończyła się, gdy ostatni pociąg „odjechał” – kara za brak dPo przychodziła już po raporcie końcowym
+  const { default: szkolna } = await import('../src/stations/szkolna.js');
+  const { faultSim } = await import('./fault-harness.js');
+  const { autoDispatch } = await import('./helpers.js');
+  const shift = (dPoAfter) => {
+    const sim = faultSim(szkolna, { srk: 'E', endTime: '09:00', timetable: [{ nr: 2, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 }],
+      faults: [{ type: 'signal-fail', target: 'D1', at: '06:55', duration: 60 }] });
+    const E = sim.blocks.get('E');
+    const press = E.press.bind(E);
+    let departedAt = null;
+    E.press = (btn) => (btn === 'dPo' && (dPoAfter == null || sim.clock.time < departedAt + dPoAfter) ? { ok: false } : press(btn)); // dyżurny zwleka z dPo
+    const e = sim.traffic.timetable()[0];
+    let atEnd = null, ordered = false, n = 0;
+    sim.bus.on('shift-end', () => { atEnd = sim.score.items.map((i) => i.code); });
+    while (!sim.ended && sim.clock.time < Clock.parse('08:30')) {
+      sim.step(0.5);
+      if (n++ % 4 === 0) autoDispatch(sim);
+      // semafor D1 z usterką: rozkaz „S” na wyjazd przy nastawionym przebiegu
+      if (!ordered && sim.clock.time >= Clock.parse('07:08') && e.train?.v === 0 && [...sim.ilk.active.keys()].some((id) => id.startsWith('D1-'))) ordered = sim.traffic.issueOrder({ nr: 2, signal: 'D1' }).ok;
+      if (E.needPo && departedAt == null) departedAt = sim.clock.time;
+    }
+    return { sim, e, atEnd, departedAt };
+  };
+  const late = shift(20);
+  assert.ok(late.departedAt != null, 'pociąg wyjechał na rozkaz bez dPo');
+  assert.ok(late.sim.endedAt >= late.departedAt + 20, 'zmiana nie skończyła się przed dPo');
+  assert.equal(late.sim.endReason, 'all-done');
+  assert.ok(!late.atEnd.includes('no-dpo'), 'dPo wykonane – bez kary');
+  const forgot = shift(null);
+  assert.equal(forgot.sim.endReason, 'all-done');
+  assert.ok(forgot.atEnd.includes('no-dpo'), `kara za brak dPo w raporcie: ${forgot.atEnd.join(', ')}`);
+});
+
 test('raport zmiany: punkty i ocena', () => {
   const sim = new Simulation(station, { disruptions: 'none', seed: 1 });
   sim.bus.emit('score', { time: 0, code: 'x', points: -20, msg: 'test' });

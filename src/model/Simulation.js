@@ -260,14 +260,16 @@ export class Simulation {
     const tasks = this.traffic.tasks || [];
     const trainsDone = tt.length && tt.every(Traffic.isDone);
     const tasksDone = tasks.every((t) => t.done || t.failed);
+    // pociąg „odjechał”, ale blokada czeka jeszcze na dyżurnego (dPo, telefonogram o odjeździe, Ko) – zmiana trwa
+    const duties = this.#blockDuties();
     const timeUp = this.endTime && this.clock.time >= this.endTime;
-    if ((trainsDone && tasksDone && this.autoEnd) || timeUp) { this.endShift(timeUp && !(trainsDone && tasksDone) ? 'time' : 'all-done'); return; }
+    if ((trainsDone && tasksDone && !duties.length && this.autoEnd) || timeUp) { this.endShift(timeUp && !(trainsDone && tasksDone && !duties.length) ? 'time' : 'all-done'); return; }
     // rozkład wyczerpany, a zmiana trwa – jedna podpowiedź, co ją trzyma (pociąg na stacji, zadanie manewrowe)
     if (!this.lateHinted && this.autoEnd) {
       const last = Math.max(...tt.map((e) => Math.max(e.arrTime ?? 0, e.depTime ?? 0)), ...tasks.map((t) => t.deadlineTime || 0));
       if (this.clock.time >= last + 3 * 60) {
         this.lateHinted = true;
-        const left = [...tt.filter((e) => !Traffic.isDone(e)).map((e) => `${e.label ?? e.nr} (${e.status})`), ...tasks.filter((t) => !t.done && !t.failed).map((t) => `zadanie: ${t.text}`)];
+        const left = [...tt.filter((e) => !Traffic.isDone(e)).map((e) => `${e.label ?? e.nr} (${e.status})`), ...tasks.filter((t) => !t.done && !t.failed).map((t) => `zadanie: ${t.text}`), ...duties.map((d) => d.text)];
         this.bus.emit('log', { time: this.clock.time, level: 'warn', msg: `Rozkład wyczerpany – do zakończenia zmiany: ${left.join('; ')}` });
       }
     }
@@ -287,6 +289,20 @@ export class Simulation {
     for (const e of this.traffic.timetable()) {
       if (!Traffic.isDone(e)) this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany (${e.status})` });
     }
+    // obowiązki blokady niewykonane do końca zmiany – kara jak przy dojeździe pociągu do sąsiada (wtedy już jej nie będzie)
+    for (const d of this.#blockDuties()) if (d.code) this.bus.emit('score', { time: this.clock.time, code: d.code, points: -10, msg: `${d.text} – niewykonane do końca zmiany` });
+  }
+
+  /** Czynności dyżurnego na blokadach, na które zmiana czeka: dPo, telefonogram o odjeździe, Ko przyjazdu. */
+  #blockDuties() {
+    const out = [];
+    for (const [id, b] of this.blocks) {
+      const to = this.station.exits[id]?.name ?? id;
+      if (b.needPo) out.push({ code: 'no-dpo', text: `blok początkowy do ${to} – dPo` });
+      if (b.phone?.departedReported === false) out.push({ code: 'no-depart-report', text: `zawiadomienie ${to} o odjeździe pociągu ${b.phone.departedTrain}` });
+      if (b.koPending) out.push({ code: null, text: `przyjazd od ${to} – Ko` });
+    }
+    return out;
   }
 
   /** Pełny raport zmiany (także w trakcie): ocena, pociągi, zadania, liczniki, dane zmiany. */

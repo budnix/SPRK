@@ -416,7 +416,9 @@ Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
 
 Zmiana kończy się sama (`Simulation.#checkEnd`), gdy ostatni pociąg rozkładu jest wyprawiony na szlak (status
 „odjechał” – nie czeka na dojazd do sąsiada; status na szlaku nie wraca do „jedzie”) i zadania manewrowe są wykonane
-albo przepadły (`Traffic.isDone`); inaczej o `endTime` scenariusza. Gdy rozkład jest wyczerpany (3 min po ostatnim
+albo przepadły (`Traffic.isDone`), a blokady nie czekają na dyżurnego (dPo, telefonogram o odjeździe, Ko –
+`Simulation.#blockDuties`; niewykonane dPo i telefonogram przy końcu z czasu liczą się w ocenie końcowej); inaczej
+o `endTime` scenariusza. Gdy rozkład jest wyczerpany (3 min po ostatnim
 czasie rozkładu / terminie zadania), a zmiana trwa, dziennik dostaje jedną podpowiedź „Rozkład wyczerpany – do
 zakończenia zmiany: …” z pociągami stojącymi na stacji i zadaniami. `sim.report()` (także w trakcie) daje pełny
 raport: ocena i punkty, wiersze pociągów (plan / rzeczywistość / tor / opóźnienie / stan), punktualność, zadania,
