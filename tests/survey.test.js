@@ -93,6 +93,8 @@ test('survey: jedna zmiana (Szkolna, zmiana-e, bez zakłóceń) – wszystkie po
   assert.deepEqual(r.stuck, []);
   assert.deepEqual(r.violations, { count: 0, ticks: 0, first: [] });
   assert.deepEqual(r.events, []);
+  assert.deepEqual(r.forced, [], 'bez kar za czynności wymuszone usterką');
+  assert.deepEqual(r.leftovers, [], 'urządzenia w stanie zasadniczym po zmianie');
   assert.equal(typeof r.counters.dPz, 'number');
   assert.equal(typeof r.counters.Sz, 'number');
   assert.equal(typeof r.score, 'number');
@@ -158,12 +160,12 @@ test('survey: nieznana stacja lub scenariusz – błąd', () => {
   assert.throws(() => surveyShift({ stationId: 'szkolna', scenarioId: 'nie-ma', seed: 1 }), /scenariusz/);
 });
 
-const shift = (scenario, seed, { stuck = [], violations = 0, events = 0, level = 'high' } = {}) => ({
+const shift = (scenario, seed, { stuck = [], violations = 0, events = 0, level = 'high', forced = [], leftovers = [] } = {}) => ({
   station: 'tczew', scenario, seed, level,
   stuck: stuck.map((nr) => ({ nr, status: 'stoi przed E1' })),
   violations: { count: violations, ticks: violations * 4, first: [] },
   events: Array.from({ length: events }, () => ({ code: 'spad', time: '07:00:00', msg: 'spad' })),
-  counters: { dPz: 0, Sz: 0 }, score: 0,
+  counters: { dPz: 0, Sz: 0 }, score: 0, forced, leftovers,
 });
 
 test('survey: porównanie – gorzej, lepiej, nowe zatory, zmiany tylko po jednej stronie', () => {
@@ -185,8 +187,8 @@ test('survey: porównanie – gorzej, lepiej, nowe zatory, zmiany tylko po jedne
   ];
   const c = compareResults(before, { results: after });
   assert.deepEqual(c.worse.map((w) => w.key), ['tczew:zmiana:high:1', 'tczew:zmiana:high:3']);
-  assert.deepEqual(c.worse[0].old, { stuck: 0, violations: 0, events: 0, error: 0 });
-  assert.deepEqual(c.worse[0].now, { stuck: 1, violations: 0, events: 0, error: 0 });
+  assert.deepEqual(c.worse[0].old, { stuck: 0, violations: 0, events: 0, forced: 0, leftovers: 0, error: 0 });
+  assert.deepEqual(c.worse[0].now, { stuck: 1, violations: 0, events: 0, forced: 0, leftovers: 0, error: 0 });
   assert.deepEqual(c.better.map((b) => b.key), ['tczew:zmiana:high:2']);
   assert.deepEqual(c.newJams, [
     { key: 'tczew:zmiana:high:1', nr: 5305, status: 'stoi przed E1' },
@@ -206,4 +208,16 @@ test('survey: porównanie – gorzej, lepiej, nowe zatory, zmiany tylko po jedne
   // błąd przebiegu zmiany liczy się jako pogorszenie
   const err = compareResults([shift('zmiana', 1)], [{ ...shift('zmiana', 1), error: 'TypeError: x' }]);
   assert.deepEqual(err.worse.map((w) => w.key), ['tczew:zmiana:high:1']);
+});
+
+test('survey: kara za czynność wymuszoną usterką i stan urządzeń po zmianie są problemem; pozostałości przy zatorze – nie', () => {
+  assert.equal(isProblem(shift('zmiana', 1)), false);
+  assert.equal(isProblem(shift('zmiana', 1, { forced: ['Sz -5: Sygnał zastępczy na D1 bez usterki urządzeń'] })), true);
+  assert.equal(isProblem(shift('zmiana', 1, { leftovers: ['przebieg A-D1 czynny'] })), true);
+  // pociąg w zatorze sam trzyma przebieg i blokadę – liczy się zator, nie pozostałości
+  const jam = shift('zmiana', 1, { stuck: [44611], leftovers: ['przebieg A-D1 czynny'] });
+  const c = compareResults([shift('zmiana', 1, { stuck: [44611] })], [jam]);
+  assert.deepEqual(c.worse, [], 'pozostałości przy zatorze nie pogarszają wyniku');
+  const w = compareResults([shift('zmiana', 1)], [shift('zmiana', 1, { forced: ['dKo -10'] })]);
+  assert.deepEqual(w.worse.map((x) => [x.old.forced, x.now.forced]), [[0, 1]]);
 });

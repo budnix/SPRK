@@ -33,6 +33,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 import { Clock } from '../src/core/Clock.js';
 import { STATIONS } from '../src/stations/index.js';
 import { violations } from '../tests/invariants.js';
+import { unjustified, leftovers } from '../tests/fault-harness.js';
 
 const WORKER_ROLE = 'sprk-survey-worker';
 const LEVELS = ['high', 'low', 'none'];
@@ -226,6 +227,10 @@ export function surveyShift({ stationId, scenarioId, seed, level = 'none', extra
     violations: viol,
     events,
     counters: { dPz: sim.ilk.counters.dPz, Sz: sim.ilk.counters.Sz },
+    // kary za czynności, które usterka wymusza (Sz, rozkaz „S”, dPz, dPo, dKo) i stan urządzeń na końcu przeglądu
+    // (przebiegi, blokady, sygnały, zajętość bez taboru) – przy zmianie bez zatoru oba powinny być puste
+    forced: unjustified(sim),
+    leftovers: leftovers(sim),
     score: sim.score.total,
     endReason: sim.endReason,
     fingerprint: trace.digest('hex').slice(0, 16),
@@ -248,9 +253,13 @@ function compactLog(lines) {
   return out;
 }
 
-/** Zmiana z problemem: zator, naruszenie, spad / rozprucie albo błąd przebiegu. */
+/**
+ * Zmiana z problemem: zator, naruszenie, spad / rozprucie, kara za czynność wymuszoną usterką, stan urządzeń po zmianie
+ * (tylko bez zatoru – pociąg w zatorze sam trzyma przebiegi i blokady) albo błąd przebiegu.
+ */
 export function isProblem(r) {
-  return !!(r.error || r.stuck?.length || r.violations?.count || r.events?.length);
+  const m = metrics(r);
+  return Object.values(m).some((x) => x > 0);
 }
 
 /** Klucz zmiany w porównaniach: „stacja:scenariusz:poziom:ziarno”. */
@@ -263,6 +272,8 @@ function metrics(r) {
     stuck: r.stuck?.length ?? 0,
     violations: r.violations?.count ?? 0,
     events: r.events?.length ?? 0,
+    forced: r.forced?.length ?? 0,
+    leftovers: r.stuck?.length ? 0 : r.leftovers?.length ?? 0,
     error: r.error ? 1 : 0,
   };
 }
@@ -321,15 +332,17 @@ export function formatProblem(r) {
     const ev = r.events.filter((e) => e.code === code);
     if (ev.length) parts.push(`${code} ${ev.length} [${ev.slice(0, 3).map((e) => `${e.time} ${e.msg}`).join(' | ')}]`);
   }
+  if (r.forced?.length) parts.push(`kary wymuszone usterką ${r.forced.length} [${r.forced.slice(0, 3).join(' | ')}]`);
+  if (!r.stuck.length && r.leftovers?.length) parts.push(`stan po zmianie [${r.leftovers.slice(0, 5).join(' | ')}]`);
   parts.push(`(dPz ${r.counters.dPz}, Sz ${r.counters.Sz}, wynik ${r.score})`);
   return parts.join('  ');
 }
 
 function summarize(results) {
-  const s = { shifts: results.length, stuck: 0, violations: 0, events: 0, errors: 0 };
+  const s = { shifts: results.length, stuck: 0, violations: 0, events: 0, forced: 0, leftovers: 0, errors: 0 };
   for (const r of results) {
     const m = metrics(r);
-    s.stuck += m.stuck; s.violations += m.violations; s.events += m.events; s.errors += m.error;
+    s.stuck += m.stuck; s.violations += m.violations; s.events += m.events; s.forced += m.forced; s.leftovers += m.leftovers; s.errors += m.error;
   }
   return s;
 }
@@ -337,6 +350,8 @@ function summarize(results) {
 function summaryText(s) {
   let t = `${s.shifts} zmian, ${s.stuck} pociągów w zatorze, ${s.violations} naruszeń bezpieczeństwa`;
   if (s.events) t += `, ${s.events} zdarzeń spad/rozprucie`;
+  if (s.forced) t += `, ${s.forced} kar za czynności wymuszone usterką`;
+  if (s.leftovers) t += `, ${s.leftovers} pozostałości po zmianie`;
   if (s.errors) t += `, ${s.errors} błędów`;
   return t;
 }
@@ -391,7 +406,7 @@ export async function runAll(jobs, workers, onProgress) {
 }
 
 function printCompare(cmp, file) {
-  const arrow = (a, b) => `zator ${a.stuck}→${b.stuck}, naruszenia ${a.violations}→${b.violations}, spad/rozprucie ${a.events}→${b.events}${a.error || b.error ? `, błąd ${a.error}→${b.error}` : ''}`;
+  const arrow = (a, b) => `zator ${a.stuck}→${b.stuck}, naruszenia ${a.violations}→${b.violations}, spad/rozprucie ${a.events}→${b.events}${a.forced || b.forced ? `, kary wymuszone ${a.forced}→${b.forced}` : ''}${a.leftovers || b.leftovers ? `, pozostałości ${a.leftovers}→${b.leftovers}` : ''}${a.error || b.error ? `, błąd ${a.error}→${b.error}` : ''}`;
   console.log(`\nPorównanie z ${file}:`);
   if (!cmp.worse.length && !cmp.better.length && !cmp.newJams.length) console.log('  bez zmian we wskaźnikach');
   for (const w of cmp.worse) console.log(`  GORZEJ  ${w.key}: ${arrow(w.old, w.now)}`);

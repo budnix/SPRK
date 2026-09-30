@@ -553,10 +553,11 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
-  dojechały, naruszenia niezmienników (w każdym takcie), spad i rozprucie, liczniki dPz i Sz, wynik oraz odcisk
+  dojechały, naruszenia niezmienników (w każdym takcie), spad i rozprucie, kary za czynności wymuszone usterką
+  (`unjustified`), stan urządzeń po zmianie (`leftovers` – liczony tylko bez zatoru), liczniki dPz i Sz, wynik oraz odcisk
   przebiegu ruchu (`fingerprint`). `--json` zapisuje wyniki, `--compare` porównuje je z zapisanymi (gorzej / lepiej /
   nowe zatory / inny przebieg przy tych samych wskaźnikach) – przed zmianą w silniku i po niej. Kod wyjścia 1 przy
-  zatorze, naruszeniu, spad albo rozpruciu. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
+  zatorze, naruszeniu, spad, rozpruciu, karze wymuszonej usterką albo pozostałościach po zmianie. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
   jego czyste funkcje sprawdza `tests/survey.test.js`.
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
   ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
