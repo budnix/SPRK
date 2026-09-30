@@ -527,8 +527,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
 * `tests/invariants.js` – niezmienniki bezpieczeństwa sprawdzane w każdym takcie (dwa pociągi na odcinku, odcinek
   w dwóch przebiegach, sygnał zezwalający bez przebiegu albo na zajęty odcinek – poza nastawnią mechaniczną,
-  zwrotnica przestawiana pod taborem) oraz zdarzenia „spad” i „rozprucie”. Wspólne dla macierzy, testów usterek
-  i przeglądu.
+  zwrotnica przestawiana pod taborem, dwa pociągi na jednym torze szlakowym) oraz zdarzenia „spad” i „rozprucie”.
+  Wspólne dla macierzy, testów usterek i przeglądu; sprawdza je `tests/invariants.test.js`.
 * Usterki w ustalonej chwili jazdy pociągu (`tests/fault-harness.js`): usterka zaczyna się przy zdarzeniu (pociąg
   zgłoszony, przebieg nastawiony, pociąg w przebiegu, przy peronie, wyjazd, na szlaku) – `Faults.add` – a cel wskazuje
   się względem pociągu. Ruch prowadzi automat; czynności, których automat nie robi (Sz, rozkaz „S”, ZeroLO, ITS / ITO),
@@ -541,7 +541,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   – `faults-block.test.js` – usterka blokady liniowej w każdej chwili wjazdu i wyjazdu, z naprawą w następnej chwili,
     na Eap dwukierunkowej (Szkolna, Kalinowo), jednokierunkowej (Jodłowa) i SBL (Brzezina), przy krzyżowaniu, pociągach
     po sobie i pociągu przelotowym; pilnuje też szlaku (jeden pociąg na torze szlakowym, pozwolenie).
-  Znane błędy silnika są testami `todo` (uruchamiają się, ale nie psują wyniku) – poprawka błędu zmienia test na zwykły.
+  Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
+  zmienia go na zwykły test; 16 błędów znalezionych przy powstaniu tych plików jest poprawionych – `todo` nie ma.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie

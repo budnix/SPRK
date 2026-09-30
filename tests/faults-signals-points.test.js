@@ -336,7 +336,7 @@ test('semafor gaśnie tuż przed pociągiem i zostaje naprawiony przed rozkazem:
 
 /* ---------------- usterka napędu zwrotnicy ---------------- */
 
-// nastawnia mechaniczna – osobno (test „todo” niżej): drążek zamyka przebieg przy zwrotnicy bez kontroli
+// nastawnia mechaniczna – osobno (test niżej): drążek nie zamyka przebiegu przy zwrotnicy bez kontroli
 const POINT_PANELS = PANELS.filter((p) => p.srk !== 'mech');
 
 function pointCase(st, srk, from, to, kind, duration) {
@@ -344,7 +344,7 @@ function pointCase(st, srk, from, to, kind, duration) {
   const timetable = [os(st, 2, from, to, '07:06', entry ? '07:08' : '07:10', '2')];
   const r = shift({ st, srk, timetable, nr: 2, when: entry ? moment.announced(2) : moment.standing(2), fault: { type: 'point-control', target: entry ? on.entryPointToMove(2) : on.exitPointToMove(2), duration } });
   const msg = label(st, srk, 2, from, to, '2', `zwrotnica przebiegu ${entry ? 'wjazdowego (pociąg zgłoszony)' : 'wyjazdowego (pociąg przy peronie)'}`, r);
-  // napęd wraca o `at` + czas usterki (Faults: `faultUntil`); koniec usterki liczy się od `since` – takt później (osobny test „todo” niżej)
+  // napęd wraca po czasie usterki liczonym od `since` (Faults: `faultUntil`; osobny test niżej)
   return { r, msg, end: r.fault ? r.fault.at + r.fault.duration : null, set: entry ? r.obs.setAt.entry : r.obs.setAt.exit };
 }
 /** Przebieg przez zwrotnicę z usterką utwierdza się po naprawie; pociąg na torze planowym mija semafory na sygnale zezwalającym. */

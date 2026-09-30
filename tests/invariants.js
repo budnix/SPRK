@@ -43,6 +43,12 @@ export function violations(sim) {
   for (const p of ilk.points.values()) {
     if (p.moving && ilk.sections.get(p.section)?.physical) out.push(`zwrotnica ${p.id} przestawiana pod taborem (${p.section})`);
   }
+  // 5. Na torze szlakowym najwyżej jeden pociąg – nasz wyprawiony albo pociąg sąsiada jadący do nas (szlak SBL to w grze
+  //    jeden odstęp); wcześniej niezmienniki widziały tylko odcinki stacji, a nie szlak
+  for (const id of sim.blocks.keys()) {
+    const on = sim.traffic.trains.filter((tr) => !tr.finished && tr.onLine(id));
+    if (on.length > 1) out.push(`pociągi ${on.map((t) => t.nr).join(' i ')} na szlaku ${id}`);
+  }
   return out;
 }
 

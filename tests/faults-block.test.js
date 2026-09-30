@@ -197,7 +197,7 @@ function checkDeparture(r, where, auth, kind, dpo = true) {
  * w następnej chwili, naprawa z pociągiem na szlaku). W wariancie długim także reguły zapowiadania: przyjazd pociągu
  * sąsiada zawiadomiony telefonicznie; nasz pociąg wyjeżdża na Sz albo na sygnał zgodnie z tym, gdzie było pozwolenie, blok
  * początkowy doraźnie dPo (Eap), odjazd zawiadomiony, przyjazd potwierdzony przez sąsiada telefonicznie. `run(opts)` –
- * asercje; `opts.arrival: false` pomija zawiadomienie o przyjeździe (osobny test „todo” dla SBL).
+ * asercje; `opts.arrival: false` pomija zawiadomienie o przyjeździe (sprawdza je osobny test dla SBL).
  */
 function cases(label, station, srks, trains) {
   const out = [];
@@ -211,7 +211,7 @@ function cases(label, station, srks, trains) {
         const where = `${label} (${srk}), pociąg ${def.nr} ${def.from}→${def.to} tor ${def.track}, ${side === 'in' ? 'wjazd' : 'wyjazd'}: ${m.name}; block-fail ${exitId} (${kind}) ${fix ? `naprawa: ${fix[0]}` : `${LONG} min`}`;
         out.push({ side, variant, kind, where, run: ({ arrival = true } = {}) => {
           const r = runCase(station, { srk, timetable: [def], nr: def.nr, when: m.when(def.nr), target: side === 'in' ? target.lineIn(def.nr) : target.lineOut(def.nr), fix: fix?.[1](def.nr) });
-          check(r, arrival ? where : `${where} (bez zawiadomienia o przyjeździe – osobny test „todo”)`);
+          check(r, arrival ? where : `${where} (bez zawiadomienia o przyjeździe – osobny test)`);
           if (fix) {
             assert.equal(r.repaired, true, `${where}: naprawa w tej chwili nie nastąpiła`);
             if (variant === 'mid' && side === 'out') checkDeparture(r, where, m.auth[kind], kind, false);
@@ -259,7 +259,7 @@ test('block-fail na Eap jednokierunkowej linii dwutorowej (Jodłowa): tor wjazdo
   assert.equal(n, 92);
 });
 
-// SBL: przyjazd krótkiego pociągu sąsiada przy usterce nie jest do zawiadomienia (błąd silnika – test „todo” niżej);
+// SBL: przyjazd krótkiego pociągu sąsiada przy usterce – zawiadomienie sprawdza osobny test niżej;
 // pozostałe asercje tych przypadków (bezpieczeństwo, kary, stan po naprawie) sprawdza test główny
 const SBL = cases('Brzezina', brzezina, ['ebilock'], [osB(9101, 'T2', 'K2', '07:16', '07:18', '2'), osB(9102, 'K1', 'T1', '07:16', '07:18', '1'), osB(9103, 'T2', 'K2', '07:16', '07:18', '4'), osB(9104, 'K1', 'T1', '07:16', '07:18', '3')]);
 const sblArrivalLost = (c) => c.side === 'in' && c.variant === 'long';
@@ -301,7 +301,7 @@ test('krzyżowanie na szlaku jednotorowym z Eap: usterka w każdej chwili obu po
  * Krzyżowanie, w którym nasz A wyjeżdża pierwszy, a sąsiad zgłasza B później: usterka w chwilach, gdy pozwolenie jest już
  * u nas (pozwolenie, przebieg, pociąg w przebiegu / na szlaku, u sąsiada) – sąsiad nie dostaje drogi, dopóki A nie
  * dojedzie. `fixes` – warianty naprawy (null – usterka 30 min); domyślnie 30 min i naprawa w następnej chwili. Usterka
- * w stanie zasadniczym (przed pozwoleniem) i naprawa, gdy A minął semafor wyjazdowy – testy „todo” niżej.
+ * w stanie zasadniczym (przed pozwoleniem) i naprawa, gdy A minął semafor wyjazdowy – testy niżej.
  */
 const IN_EXIT = ['pociąg minął semafor wyjazdowy', inExitRoute];
 const EXIT_STANDING = 'przebieg wyjazdowy, pociąg stoi';
@@ -326,7 +326,7 @@ test('krzyżowanie przy usterce, nasz pociąg wyjeżdża pierwszy (pozwolenie u 
 /**
  * Dwa pociągi po sobie w tę samą stronę: usterka przy pierwszym (na szlaku przyjazdu albo odjazdu), naprawa, gdy drugi jest
  * na szlaku / ma przebieg wyjazdowy, albo usterka do końca – zgłoszenie i przyjazd drugiego nie mogą przepaść. Przy odjeździe
- * pozwolenie sprzed usterki wykorzystał pierwszy pociąg – drugi wyjeżdża na Sz (test „todo” niżej).
+ * pozwolenie sprzed usterki wykorzystał pierwszy pociąg – drugi wyjeżdża na Sz (test niżej).
  */
 function followers(side) {
   const out = [];
@@ -364,7 +364,7 @@ test('dwa pociągi po sobie: usterka, gdy pierwszy jest na szlaku odjazdu – dr
  * Przelot: pociąg bez postoju jedzie na sygnał zezwalający semafora wyjazdowego (pozwolenie było u nas przed usterką).
  * Usterka, gdy semafor wyjazdowy właśnie zezwala, a pociąg jest daleko – sygnał gaśnie do zapowiedzi telefonicznej (pociąg
  * zdąży przed nim zahamować), potem wraca i pociąg wyjeżdża na sygnał. Usterka tuż przed semaforem (czoło na ostatniej
- * kostce, bliżej niż droga hamowania) – test „todo” niżej.
+ * kostce, bliżej niż droga hamowania) – test niżej.
  */
 const exitProceed = (nr) => (sim) => { const a = exitActive(sim, nr), tr = entry(sim, nr)?.train; if (!a || a.trainEntered || !tr || tr.v < 5) return false; const asp = sim.ilk.signals.get(a.route.start).aspect; return Interlocking.isProceed(asp) && asp !== 'Sz'; };
 const atExitSignal = (nr) => (sim) => { if (!exitProceed(nr)(sim)) return false; const a = exitActive(sim, nr), h = entry(sim, nr).train.headTile(); return !!h && sim.ilk.topo.signalsAt(h.tile, h.outPort).some((sg) => sg.id === a.route.start); };
@@ -395,7 +395,7 @@ test('przelot: usterka blokady tuż przed semaforem wyjazdowym nie kończy się 
   assert.equal(runAll(throughCases(atExitSignal, 'czoło na ostatniej kostce przed semaforem wyjazdowym')), 24);
 });
 
-/* ---- błędy silnika znalezione tymi testami (todo – do naprawy w src/model/Block.js) ---- */
+/* ---- błędy silnika znalezione tymi testami (poprawione w src/model/Block.js – testy pilnują, żeby nie wróciły) ---- */
 
 const T0 = 7 * 3600;
 /** Blokada Eap szlaku jednotorowego (jak Szkolna – Dębno), sprawna. */
