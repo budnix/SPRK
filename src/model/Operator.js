@@ -301,7 +301,9 @@ export class AutoOperator {
         continue;
       }
       // ---- zadania manewrowe (tylko operator całej stacji) ----
-      const task = !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && t >= x.afterTime && (String(x.unit) === String(e.nr) || String(x.unit) === String(e.unit))) : null;
+      // zadanie czekające na poprzednie (`afterTask`) jeszcze nie jest do wykonania – niezależnie od kolejności na liście
+      const ready = (x) => !x.afterTask || sim.traffic.tasks.find((y) => y.id === x.afterTask)?.done;
+      const task = !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && t >= x.afterTime && ready(x) && (String(x.unit) === String(e.nr) || String(x.unit) === String(e.unit))) : null;
       if (task && tr.entered && tr.v === 0) {
         if (fullyOn(tr, task.toTrack)) continue;
         if (tr.mode !== 'shunt') sim.traffic.toShunting(e.nr);

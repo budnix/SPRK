@@ -446,7 +446,8 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   zasłoniętego rysunku planu, elementu i pasków sterowania; dymek, słownik i pasek potwierdzenia dają się przeciągać
   (`src/ui/drag.js`) – przesunięty dymek zostaje do następnego kroku.
 * Zadania manewrowe mogą zależeć od siebie (`afterTask`), więc krok „podstaw z powrotem” nie zalicza się przed
-  odstawieniem, niezależnie od godziny. Termin zadania czekającego biegnie: gdy poprzednie nie zostało wykonane,
+  odstawieniem, niezależnie od godziny; automat bierze zadanie gotowe do wykonania, nie pierwsze z listy. Każde
+  kolejne zadanie tego samego składu ma `afterTask` (test treści w `tests/unit-handover.test.js`). Termin zadania czekającego biegnie: gdy poprzednie nie zostało wykonane,
   zadanie przepada 10 min po swoim terminie (inaczej zostawałoby w toku do końca zmiany, a automat czekałby na nie
   bez końca). Skład przekazany jako nowy pociąg (`unit`) traci zezwolenie pociągu, którym przyjechał
   (`Train.clearAuthority`) – rusza dopiero na sygnał semafora wyjazdowego. Test: `tests/unit-handover.test.js`.

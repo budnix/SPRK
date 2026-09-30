@@ -206,9 +206,9 @@ export default {
 
   tasks: [
     { id: 'odstaw-91151', unit: 91151, type: 'move', toTrack: '13', deadline: '07:08', text: 'Skład SKM 91151 odstawić z toru 501a na tor 13.' },
-    { id: 'podstaw-91202', unit: 91151, type: 'move', toTrack: '501', after: '07:16', deadline: '07:23', text: 'Skład z toru 13 podstawić na tor 501a jako pociąg 91202 do Gdyni (odjazd 07:25).' },
+    { id: 'podstaw-91202', unit: 91151, type: 'move', toTrack: '501', after: '07:16', afterTask: 'odstaw-91151', deadline: '07:23', text: 'Skład z toru 13 podstawić na tor 501a jako pociąg 91202 do Gdyni (odjazd 07:25).' },
     { id: 'odstaw-55152', unit: 55152, type: 'move', toTrack: '4', deadline: '07:40', text: 'Skład Regio 55152 odstawić z toru 1 na tor 4 (przed przyjazdem 55205 na tor 1).' },
-    { id: 'podstaw-55153', unit: 55152, type: 'move', toTrack: '1', after: '07:48', deadline: '07:56', text: 'Skład z toru 4 podstawić na tor 1 jako pociąg 55153 do Gdańska (odjazd 07:58).' },
+    { id: 'podstaw-55153', unit: 55152, type: 'move', toTrack: '1', after: '07:48', afterTask: 'odstaw-55152', deadline: '07:56', text: 'Skład z toru 4 podstawić na tor 1 jako pociąg 55153 do Gdańska (odjazd 07:58).' },
   ],
 
   scenarios: [

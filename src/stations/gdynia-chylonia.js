@@ -241,7 +241,7 @@ export default {
 
   tasks: [
     { id: 'odstaw-93151', unit: 93151, type: 'move', toTrack: '22', deadline: '07:15', text: 'Skład SKM 93151 odstawić z toru 501 na tor 22.' },
-    { id: 'podstaw-93202', unit: 93151, type: 'move', toTrack: '501', after: '07:11', deadline: '07:18', text: 'Skład z toru 22 podstawić na tor 501 jako pociąg 93202 do Gdańska (odjazd 07:20, przed SKM 93112 o 07:24).' },
+    { id: 'podstaw-93202', unit: 93151, type: 'move', toTrack: '501', after: '07:11', afterTask: 'odstaw-93151', deadline: '07:18', text: 'Skład z toru 22 podstawić na tor 501 jako pociąg 93202 do Gdańska (odjazd 07:20, przed SKM 93112 o 07:24).' },
     { id: 'postojowa-55152', unit: 55152, type: 'move', toTrack: '964', deadline: '08:05', text: 'Skład Regio 55152 odstawić z toru 1 do Gdyni Postojowej (linia 964).' },
   ],
 

@@ -207,6 +207,8 @@ Skład w trybie manewrowym jedzie obok semafora tylko na Ms2 i nie wyjeżdża na
 
 Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po godzinie `after` lub po wykonaniu zadania
 `afterTask: 'odstaw-90211'`, jeśli podane – tak zadanie „podstawić z powrotem” nie zalicza się przed odstawieniem).
+Każde kolejne zadanie tego samego składu ma `afterTask` wskazujące poprzednie – samo `after` nie wystarcza: skład
+opóźniony przyjeżdża po tej godzinie i „podstawienie” zaliczałoby się już przy przyjeździe.
 Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt – także zadanie, które
 czeka na niewykonane zadanie `afterTask` (jego termin biegnie).
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
