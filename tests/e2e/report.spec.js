@@ -6,6 +6,12 @@ import { openShift } from './helpers.js';
 test('raport po końcu zmiany: ocena słowna bez gwiazdek, kafelki, tabela pociągów, zadania, zdarzenia; „Nowa zmiana…” otwiera ekran startowy', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await expect(page.locator('#report')).toBeHidden();
+  // rozkład w panelu: towarowy z oznaczeniem PKP PLK (TME), nie „TOW”; pociąg kończący bieg to osobowy (zespół trakcyjny)
+  await page.click('#panel-tabs button[data-tab=rj]');
+  const cats = await page.locator('table.rj tbody tr').evaluateAll((rows) => Object.fromEntries(rows.map((r) => { const c = r.querySelector('.cat'); return [r.querySelector('.nr').textContent.replace(c.textContent, '').trim(), c.textContent]; })));
+  expect(cats['42101']).toBe('TME');
+  expect(cats['90201']).toBe('R');
+  expect(Object.values(cats)).not.toContain('TOW');
   const n = await page.evaluate(() => { window.sim.endShift('all-done'); return window.sim.traffic.timetable().length; });
   const rep = page.locator('#report');
   await expect(rep).toBeVisible();
@@ -19,6 +25,9 @@ test('raport po końcu zmiany: ocena słowna bez gwiazdek, kafelki, tabela poci�
   expect(await rep.locator('.rp-tile').count()).toBeGreaterThanOrEqual(6);
   await expect(rep.locator('.rp-trains tbody tr')).toHaveCount(n);
   await expect(rep.locator('.rp-trains tbody tr').first().locator('.cat')).toBeVisible();
+  // raport pokazuje etykietę kategorii (TME), a nie klucz z pliku stacji (TOW)
+  expect(await rep.locator('.rp-trains tbody tr .cat').allTextContents()).toContain('TME');
+  expect(await rep.locator('.rp-trains tbody tr .cat').allTextContents()).not.toContain('TOW');
   await expect(rep.locator('.rp-tasks li')).toHaveCount(2);
   await expect(rep.locator('.rp-items')).toBeVisible();
   await expect(rep.locator('.rp-chip')).toHaveCount(await page.evaluate(() => window.sim.report().byCode.length));
