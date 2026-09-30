@@ -182,8 +182,13 @@ zezwalającym (nie Sz, nie rozkaz); Ko jest do obsłużenia, gdy pociąg minął
 dKo przed wjazdem – 0 pkt, po wjeździe – −10, bez pociągu przyjmowanego – odmowa; dPo – tylko po wyjeździe naszego
 pociągu bez sygnału (0 pkt), brak dPo do przyjazdu – −10; oWbl – od razu przy żądaniu, zwrot pozwolenia po
 odpowiedzi sąsiada; przy zapowiadaniu telefonicznym telefonogram o przyjeździe zastępuje Ko (dKo się nie używa),
-blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywraca blokadę do stanu zasadniczego;
-pozwolenie „u nas” przy usterce – kierunek wyjazdu z pozwoleniem w chwili utraty łączności. Stanowisko MOR-1 ma w menu
+blok początkowy zostaje zablokowany do naprawy, a po naprawie automatyk przywraca blokadę do stanu zasadniczego –
+chyba że droga była nasza (zapowiedź „droga wolna” dla naszego pociągu albo niewykorzystane pozwolenie sprzed usterki),
+a pociąg jeszcze nie wjechał na szlak: wtedy pozwolenie zostaje u nas, bo pociąg może właśnie mijać semafor wyjazdowy
+(przyjęte); pozwolenie „u nas” przy usterce – niewykorzystane pozwolenie w chwili utraty łączności (pociąg, który na
+nim wyjechał, zużywa je – następny wyjeżdża na Sz / rozkaz); na szlaku jednotorowym „droga wolna” dla naszego pociągu
+wyklucza „droga wolna” dla pociągu sąsiada, także gdy blokada nie ma ustawionego kierunku (telefonogram go nie
+przestawia). Stanowisko MOR-1 ma w menu
 trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
 
 Lampki blokady Eap na pulpitach kostkowych (typ E, IZH-111, plan świetlny nastawni mechanicznej) – ISDR 2.3.2.3.2,

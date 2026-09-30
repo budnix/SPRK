@@ -356,7 +356,7 @@ test('dwa pociągi po sobie: usterka przy wjeździe pierwszego, naprawa przy dru
   assert.equal(runAll(followers('wjazd')), 32);
 });
 
-test('dwa pociągi po sobie: usterka, gdy pierwszy jest na szlaku odjazdu – drugi wyjeżdża na Sz, pozwolenie sprzed usterki już wykorzystane (Szkolna)', { todo: 'błąd silnika: LineBlock.setFault(true) – faultDir = "out" także, gdy pozwolenie zużył pociąg, który już wyjechał (warunek z `permission` nic nie zmienia), a gate() przy usterce pomija poBlocked – drugi pociąg dostaje sygnał zezwalający' }, () => {
+test('dwa pociągi po sobie: usterka, gdy pierwszy jest na szlaku odjazdu – drugi wyjeżdża na Sz, pozwolenie sprzed usterki już wykorzystane (Szkolna)', () => {
   assert.equal(runAll(followers('wyjazd')), 32);
 });
 
@@ -407,7 +407,7 @@ function faultyBlock() {
   return b;
 }
 
-test('bez łączności: po „droga wolna” dla naszego pociągu sąsiad nie dostaje drogi dla swojego (obie strony nie mogą wyprawić naraz)', { todo: 'błąd silnika: phoneAskFromNeighbour / phoneAnswerFree sprawdzają phone.permissionFor tylko przy kierunku „out” – usterka w stanie zasadniczym pozwala na dwie zapowiedzi naraz' }, () => {
+test('bez łączności: po „droga wolna” dla naszego pociągu sąsiad nie dostaje drogi dla swojego (obie strony nie mogą wyprawić naraz)', () => {
   const b = faultyBlock();
   assert.equal(b.phoneAskNeighbour(6101).ok, true);
   b.tick(T0 + 60); // sąsiad: „Dla pociągu nr 6101 droga jest wolna.”
@@ -417,7 +417,7 @@ test('bez łączności: po „droga wolna” dla naszego pociągu sąsiad nie do
   assert.ok(!(b.gate('substitute').ok && b.canNeighbourDispatch(6102)), `obie strony mogą wyprawić pociąg na szlak jednotorowy (sąsiad zapytał o 6102: ${asked}, odpowiedź „droga wolna”: ${answered})`);
 });
 
-test('bez łączności: pozwolenie sprzed usterki wykorzystał pociąg, który już wyjechał – następny wyjeżdża na Sz, nie na sygnał', { todo: 'błąd silnika: LineBlock.setFault(true) ustawia faultDir = "out" przy każdym kierunku „out” (także po wyjeździe pociągu z tym pozwoleniem), a gate() przy usterce nie patrzy na poBlocked' }, () => {
+test('bez łączności: pozwolenie sprzed usterki wykorzystał pociąg, który już wyjechał – następny wyjeżdża na Sz, nie na sygnał', () => {
   const b = eapBlock();
   b.press('Wbl');
   b.tick(T0 + 30); // Dębno daje pozwolenie (Poz)
@@ -450,7 +450,7 @@ test('bez łączności: sąsiad nie daje „droga wolna” dla naszego pociągu,
  * gdy A już ma Sz.
  */
 for (const c of CROSS_A) {
-  test(`krzyżowanie przy usterce (${c[0]}, ${c[2]}): sąsiad pyta o swój pociąg po naszej zapowiedzi – na szlak nie wjeżdżają dwa pociągi`, { todo: 'błąd silnika: dwie zapowiedzi naraz na szlaku jednotorowym (phoneAskFromNeighbour / phoneAnswerFree) – pociągi naprzeciw siebie na szlaku' }, () => {
+  test(`krzyżowanie przy usterce (${c[0]}, ${c[2]}): sąsiad pyta o swój pociąg po naszej zapowiedzi – na szlak nie wjeżdżają dwa pociągi`, () => {
     assert.equal(runAll(aFirst(c, ['przed Wbl', 'Wbl wysłane, przed Poz sąsiada'], { fixes: [null] })), 2);
   });
 }
@@ -462,7 +462,7 @@ for (const c of CROSS_A) {
  * wjedzie na szlak.
  */
 for (const [c, arrSz] of [[CROSS_A[0], '07:26'], [CROSS_A[1], '07:26'], [CROSS_A[2], '07:25:45']]) {
-  test(`naprawa blokady, gdy nasz pociąg jest w przebiegu wyjazdowym (${c[0]}, ${c[2]}) – sąsiad nie dostaje pozwolenia na szlak, na który wjeżdża nasz pociąg`, { todo: 'błąd silnika: LineBlock.setFault(false) ustawia stan zasadniczy przy wolnym torze szlakowym, choć nasz pociąg minął już semafor wyjazdowy (zapowiedź / pozwolenie sprzed usterki przepada)' }, () => {
+  test(`naprawa blokady, gdy nasz pociąg jest w przebiegu wyjazdowym (${c[0]}, ${c[2]}) – sąsiad nie dostaje pozwolenia na szlak, na który wjeżdża nasz pociąg`, () => {
     assert.equal(runAll([...aFirst(c, ['pozwolenie, przed przebiegiem', EXIT_STANDING], { fixes: [IN_EXIT] }), ...aFirst(c, ['przed Wbl'], { arrB: arrSz, fixes: [IN_EXIT] })]), 3);
   });
 }

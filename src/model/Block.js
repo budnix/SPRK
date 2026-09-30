@@ -131,7 +131,8 @@ export class LineBlock {
   setFault(on) {
     this.fault = on;
     if (on) {
-      this.faultDir = this.direction === 'out' && (this.permission || this.fixed === 'out') ? 'out' : this.direction;
+      // pozwolenie sprzed usterki liczy się tylko niewykorzystane (pociąg, który na nim wyjechał, już je zużył)
+      this.faultDir = this.direction === 'out' && (this.permission || this.fixed === 'out') ? 'out' : null;
       this.request = null; this.neighbourReply = null;
       if (this.pendingArrivalAck != null && !this.auto) {
         // nasz pociąg dojechał już do sąsiada, a jego Ko nie zdążyło przyjść – sąsiad zawiadamia o przyjeździe telefonicznie
@@ -146,6 +147,9 @@ export class LineBlock {
       // koniec usterki: blokada wraca do pracy, więc blok początkowy zwalnia się jak zwykle po potwierdzeniu przyjazdu,
       // a na SBL odstęp po zjeździe pociągu sąsiada zwalnia się sam – bez dPo/dKo, których wymagało zapowiadanie
       const arrivedOurs = this.poBlocked && this.phone.arrivalConfirmed != null && String(this.phone.arrivalConfirmed) === String(this.phone.departedTrain);
+      // droga była nasza (zapowiedź naszego pociągu albo niewykorzystane pozwolenie sprzed usterki), a pociąg jeszcze nie
+      // wjechał na szlak – może właśnie mijać semafor wyjazdowy; po naprawie pozwolenie zostaje u nas
+      const oursPending = !this.occupied && this.#oursUnderFault() ? (this.phone.permissionFor ?? true) : null;
       this.phone = { askedByThem: null, permissionFor: null, arrivalConfirmed: null, arrivedTrain: null, departedTrain: null, clearedFor: null, departedReported: true };
       if (this.fixed) this.direction = this.fixed;
       this.faultDir = null;
@@ -155,6 +159,10 @@ export class LineBlock {
         // w drodze – blok początkowy zablokowany do Ko sąsiada; pociąg sąsiada – kierunek wjazdu (Ko po przyjeździe)
         this.pwl = false; this.pwlRoute = null; this.needPo = false; this.permission = false;
         if (this.awaitingEntry) { this.direction = this.fixed || 'in'; } // pociąg sąsiada stoi przed semaforem wjazdowym
+        else if (oursPending != null && !this.fixed) {
+          this.direction = 'out'; this.permission = true; this.poBlocked = false; this.koPending = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false;
+          this.log('info', `Blokada sprawna – pozwolenie na wyjazd zostaje u nas${oursPending === true ? '' : ` (pociąg nr ${oursPending})`}`);
+        }
         else if (!this.occupied) { this.direction = this.fixed; this.poBlocked = false; this.koPending = false; this.zpg = false; this.koPrepared = false; this.entrySeen = false; }
         else if (this.lineOurs) { this.direction = this.fixed || 'out'; this.poBlocked = true; }
         else { this.direction = this.fixed || 'in'; }
@@ -354,9 +362,18 @@ export class LineBlock {
 
   /* ---- zapowiadanie telefoniczne (usterka blokady) ---- */
 
+  /**
+   * Szlak jest „nasz” przy zapowiadaniu: mamy od sąsiada „droga wolna” dla naszego pociągu (telefonogram nie przestawia
+   * kierunku blokady – kierunek bywa pusty) albo niewykorzystane pozwolenie sprzed usterki. Wtedy drogi dla pociągu
+   * sąsiada się nie daje – na szlak jednotorowy nie wyjadą dwa pociągi naprzeciw siebie.
+   */
+  #oursUnderFault() {
+    return this.phone.permissionFor != null || (this.direction === 'out' && this.permission);
+  }
+
   /** Sąsiad pyta telefonicznie o drogę dla swojego pociągu. */
   phoneAskFromNeighbour(nr) {
-    if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.awaitingEntry || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return false;
+    if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.awaitingEntry || this.koPending || this.#oursUnderFault()) return false;
     this.phone.askedByThem = nr;
     this.bus.emit('comms', { time: this.time, from: this.neighbour, kind: 'ask', exit: this.id, nr, text: `Czy droga dla pociągu nr ${nr} jest wolna?` });
     this.bus.emit('alarm', { type: 'phone', exit: this.id });
@@ -389,7 +406,7 @@ export class LineBlock {
       return { ok: true };
     }
     if (String(this.phone.askedByThem) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
-    if (this.occupied || this.awaitingEntry || this.koPending || (this.direction === 'out' && (this.permission || this.phone.permissionFor))) return { ok: false, reason: `Droga nie jest wolna` };
+    if (this.occupied || this.awaitingEntry || this.koPending || this.#oursUnderFault()) return { ok: false, reason: `Droga nie jest wolna` };
     this.phone.askedByThem = null;
     this.phone.clearedFor = nr; // telefonogram nie przestawia kierunku blokady
     this.log('info', `Zapowiedziano telefonicznie: droga dla pociągu ${nr} wolna`);
@@ -447,6 +464,7 @@ export class LineBlock {
   trainDeparted(train) {
     this.occupied = true; this.permission = false; this.lineTrain = train.nr; this.lineOurs = true;
     this.phone.permissionFor = null; this.phone.departedTrain = train.nr;
+    if (this.fault && !this.fixed) this.faultDir = null; // pozwolenie sprzed usterki wykorzystane – następny pociąg na Sz / rozkaz
     // zawiadomienie o odjeździe: przy zapowiadaniu telefonicznym, a na linii dwutorowej (Eap, SBL) – numer pociągu zawsze
     // (Ir-1 §28 ust. 2, §29 ust. 4)
     const notice = this.fault || this.fixed || this.auto;
