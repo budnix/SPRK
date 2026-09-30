@@ -28,8 +28,10 @@ test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manew
     const s = window.sim;
     s.press({ kind: 'signal', id: 'A', color: 'green' }); s.press({ kind: 'signal', id: 'H', color: 'green' });
     s.press({ kind: 'signal', id: 'L501', color: 'white' }); s.press({ kind: 'end', id: 'kT13' });
-    for (let i = 0; i < 20; i++) s.step(0.5);
   });
+  // zegar zatrzymany (openShift) – kroki symulacji przez advance, inaczej przebiegi zostają w nastawianiu
+  await advance(page, 10);
+  expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(2);
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('screen-sopot-zachod.png');
   expect(await shot(page, '#desk-tools', 1000, 40)).toMatchSnapshot('toolbar.png');
@@ -40,15 +42,17 @@ test('wygląd pulpitu typu IZH-111 (Szkolna): przebieg utwierdzony, wybrany adre
   await page.evaluate(() => {
     const s = window.sim;
     s.press({ kind: 'signal', id: 'A' }); s.press({ kind: 'signal', id: 'D2' }); s.press({ kind: 'order', id: 'P' });
-    for (let i = 0; i < 20; i++) s.step(0.5);
-    s.press({ kind: 'point', id: 'Zw4' });
   });
+  await advance(page, 10); // zegar zatrzymany – kroki przez advance, inaczej przebieg zostaje w nastawianiu
+  expect(await page.evaluate(() => [window.sim.ilk.active.has('A-D2'), window.sim.ilk.signals.get('A').aspect !== 'S1'])).toEqual([true, true]);
+  await page.evaluate(() => window.sim.press({ kind: 'point', id: 'Zw4' }));
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-izh-szkolna.png');
   expect(await shot(page, '.izh-orders', 1000, 38)).toMatchSnapshot('izh-orders.png');
 });
 
 test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek, blok zablokowany, sygnał zezwalający', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 960 }); // ława z dźwigniami (8 rzędów pod planem) mieści się w kadrze
   await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-mech' } });
   await page.evaluate(() => {
     const s = window.sim;
@@ -63,7 +67,7 @@ test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek,
     return { route: !!s.ilk.active.get('A-D2')?.lever, aspect: s.ilk.signals.get('A').aspect };
   }).then((st) => expect(st.route && st.aspect === 'Sr3').toBe(true));
   await page.waitForTimeout(200);
-  expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mech-szkolna.png');
+  expect(await shot(page, '#desk', 1000, 800)).toMatchSnapshot('desk-mech-szkolna.png');
 });
 
 test('wygląd stanowiska EBILock 950 (Szkolna): przebieg nastawiony z linii poleceń, semafor zamarkowany SZI, wybrana zwrotnica', async ({ page }) => {
