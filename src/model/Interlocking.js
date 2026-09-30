@@ -1316,6 +1316,23 @@ export class Interlocking {
             this.bus.emit('section', s);
           }
         }
+        // Tor docelowy złożony z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): pociąg staje
+        // przy peronie i do ostatniego odcinka nie dojeżdża. Wjechał na tor docelowy, gdy zwolniły się wszystkie odcinki
+        // przed tym torem – wtedy zwalniają się też pozostałe odcinki toru i przebieg jest zakończony.
+        if (act.route.kind === 'train' && act.route.end.type !== 'exit' && secs.length > 1 && act.released.size < secs.length) {
+          const track = this.sections.get(secs[secs.length - 1])?.track;
+          let g0 = secs.length - 1;
+          if (track != null) while (g0 > 0 && this.sections.get(secs[g0 - 1])?.track === track) g0--;
+          const group = secs.slice(g0);
+          if (g0 < secs.length - 1 && secs.slice(0, g0).every((sid) => act.released.has(sid)) && group.some((sid) => this.sections.get(sid).physical)) {
+            for (const sid of group) {
+              if (act.released.has(sid)) continue;
+              act.released.add(sid);
+              this.#unlockSection(sid, act);
+              this.bus.emit('section', this.sections.get(sid));
+            }
+          }
+        }
         // Zwrotnice zwalniają się z odcinkami (holdRoute: trzyma je drążek przebiegowy do zwolnienia przebiegu)
         if (!this.holdRoute) {
           for (const pid of [...act.lockedPoints]) {

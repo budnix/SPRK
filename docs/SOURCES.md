@@ -132,7 +132,11 @@ i zał. 1). Przyjęte (uproszczenia gry):
   jednokierunkowa), a przy zapowiadaniu telefonicznym „droga wolna” się nie należy (przyjęte: pociąg „przybył
   w całości”, gdy cały minął semafor wjazdowy – dopiero wtedy potwierdza się przyjazd);
 * pociąg kończący bieg „przyjeżdża” dopiero na torze stacyjnym – postój za innym taborem przed semaforem wjazdowym
-  nie kończy biegu.
+  nie kończy biegu;
+* przebieg wjazdowy jest zakończony, gdy pociąg w całości wjechał na tor docelowy (wszystkie odcinki przed tym torem
+  zwolnione) – także gdy tor ma za peronem jeszcze krótki odcinek przy semaforze, do którego pociąg nie dojeżdża
+  (przyjęte; wcześniej taki przebieg nie kończył się do odjazdu pociągu, a w nastawni mechanicznej drążka nie dało
+  się cofnąć bez zwalniacza).
 
 Prędkości szlaku, Sz i rozkazu (wszystkie stanowiska). Ze źródeł: pociąg jedzie z największą prędkością dozwoloną na
 odcinku, na którym jest (Ie-1 od 17.01.2026 §4 ust. 13 pkt 2); sygnał zastępczy i rozkaz „S” zezwalają na jazdę do

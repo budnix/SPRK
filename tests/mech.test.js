@@ -367,3 +367,27 @@ test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; pr
   assert.match(res.reason, /Zw1/);
 });
 const e2 = (sim) => sim.traffic.timetable().find((x) => x.nr === 6101);
+
+test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy peronie, a przebieg jest „przejechany” – drążek da się cofnąć, zwrotnice wolne', async () => {
+  const { default: olszyny } = await import('../src/stations/olszyny.js');
+  const { autoDispatch: auto, allArrived: done } = await import('./helpers.js');
+  for (const srk of ['mech', 'E']) {
+    // pociąg z Grabowca przyjęty na tor 2: peron jest na odcinku T2, a przebieg B-C2 kończy się dalej, na T2x przy semaforze C2
+    const sim = new Simulation(olszyny, { srk, disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:00', tasks: [], timetable: [
+      { nr: 4002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:10', dep: '07:20', track: '2', stop: true, length: 100, vmax: 100, dwell: 60 },
+    ] } });
+    const e = sim.traffic.timetable()[0];
+    let n = 0;
+    while (sim.clock.time < Clock.parse('07:16') && e.actualArr == null) { sim.step(0.5); if (n++ % 4 === 0) auto(sim); }
+    run(sim, 20, () => { if (n++ % 4 === 0) auto(sim); });
+    assert.ok(e.actualArr != null, `${srk}: pociąg przyjechał`);
+    assert.equal(String(e.actualTrack), '2');
+    assert.ok(e.train.occupiedSections().has('T2') && !e.train.occupiedSections().has('T2x'), `${srk}: stoi przy peronie, przed odcinkiem T2x`);
+    // przebieg wjazdowy nie wisi: na nastawni mechanicznej automat cofnął drążek, gdzie indziej przebieg rozwiązał się sam
+    assert.equal(sim.ilk.active.has('B-C2'), false, `${srk}: przebieg B-C2 zakończony`);
+    assert.equal(sim.ilk.sections.get('T2x').route, null, `${srk}: odcinek T2x zwolniony`);
+    for (const p of sim.ilk.routes.get('B-C2').points) assert.equal(sim.ilk.pointLockedByRoute(p.id), null, `${srk}: zwrotnica ${p.id} wolna`);
+    while (sim.clock.time < Clock.parse('08:30') && !done(sim)) { sim.step(0.5); if (n++ % 4 === 0) auto(sim); }
+    assert.equal(e.status, 'na następnym posterunku', `${srk}: ${e.status}`);
+  }
+});
