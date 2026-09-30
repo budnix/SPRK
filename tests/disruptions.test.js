@@ -216,6 +216,22 @@ test('koniec zmiany czeka na obowiązki blokady: po wyjeździe na rozkaz „S”
   assert.ok(forgot.atEnd.includes('no-dpo'), `kara za brak dPo w raporcie: ${forgot.atEnd.join(', ')}`);
 });
 
+test('inny tor, bo semafor wyjazdowy toru planowego ma usterkę: bez kary „wrong-track” (jak przy zajętości z usterki)', async () => {
+  const { default: szkolna } = await import('../src/stations/szkolna.js');
+  const { faultSim } = await import('./fault-harness.js');
+  const { AutoOperator } = await import('../src/model/Operator.js');
+  const shift = (faults) => {
+    const sim = faultSim(szkolna, { srk: 'E', timetable: [{ nr: 2, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 }], faults });
+    const op = new AutoOperator(sim, { district: null, role: 'full', trackFor: () => '2' }); // dyżurny przyjmuje na tor 2
+    let n = 0;
+    while (sim.clock.time < Clock.parse('07:12')) { sim.step(0.5); if (n++ % 4 === 0) op.tick(); }
+    assert.equal(String(sim.traffic.timetable()[0].actualTrack), '2');
+    return sim.score.items.filter((i) => i.code === 'wrong-track').map((i) => i.points);
+  };
+  assert.deepEqual(shift([{ type: 'signal-fail', target: 'D1', at: '06:55', duration: 40 }]), [], 'D1 (wyjazd z toru 1) z usterką');
+  assert.deepEqual(shift([]), [-5], 'bez usterki – kara jak dotąd');
+});
+
 test('raport zmiany: punkty i ocena', () => {
   const sim = new Simulation(station, { disruptions: 'none', seed: 1 });
   sim.bus.emit('score', { time: 0, code: 'x', points: -20, msg: 'test' });

@@ -443,7 +443,8 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
   Każda misja uczy innej usterki – razem wszystkie siedem rodzajów (`src/model/Faults.js`; `route-block` tylko na
   nastawni mechanicznej, także w losowaniu; `track-defect` i `axle-counter` tylko w scenariuszu). Wjazd na tor z pękniętą szyną bez
   zamknięcia kosztuje punkty; przyjęcie na inny tor, gdy planowy jest zamknięty, jest bez kary. Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
-  inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka (tak jak uzasadnione Sz).
+  inny niż planowy nie jest karane, gdy trwa usterka zwrotnicy albo odcinka albo semafor wyjazdowy toru planowego
+  ma usterkę (tak jak uzasadnione Sz).
 
   Misje nie mają rozgrzewki: zaczynają się o 07:00 (pierwszy sąsiad już pyta o pozwolenie albo wyprawia pociąg)
   i uczą polecenia wtedy, gdy są potrzebne – zwykłym ruchem albo przy usterce; wyjaśnienie elementu jest w kroku,

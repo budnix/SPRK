@@ -277,8 +277,11 @@ export class Traffic {
         if (track && e.track && String(track) !== String(e.track)) {
           this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
           const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
-          // usterka urządzeń (zwrotnica bez kontroli, odcinek z fałszywą zajętością) uzasadnia inny tor – jak przy Sz
-          const fault = [...this.ilk.sections.values()].some((s) => Interlocking.faultOccupied(s)) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
+          // usterka urządzeń (zwrotnica bez kontroli, odcinek z fałszywą zajętością, semafor wyjazdowy toru planowego)
+          // uzasadnia inny tor – jak przy Sz
+          // także semafor wyjazdowy toru planowego bez sygnału zezwalającego (usterka semafora) – pociąg odjedzie z innego toru
+          const exitFailed = this.ilk.routeList().some((r) => r.kind === 'train' && String(this.ilk.sections.get(r.approach)?.track) === String(e.track) && this.ilk.signals.get(r.start)?.failed);
+          const fault = exitFailed || [...this.ilk.sections.values()].some((s) => Interlocking.faultOccupied(s)) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
           if (fault) this.bus.emit('log', { time: t, level: 'info', msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
           if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }
