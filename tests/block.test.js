@@ -105,6 +105,9 @@ test('blokada samoczynna (SBL): bez pozwoleń i bez Ko, odstęp zwalnia się sam
   assert.equal(inn.occupied, false);
   assert.equal(inn.koPending, false, 'SBL nie wymaga Ko');
   assert.equal(inn.press('Ko').ok, false, 'Ko nie stosuje się');
+  // ostatni odstęp kończy się na semaforze wjazdowym: pociąg przed semaforem jeszcze go zajmuje
+  assert.equal(inn.canNeighbourDispatch(12), false, 'pociąg stoi przed semaforem wjazdowym');
+  inn.entryPassed(true);
   assert.equal(inn.canNeighbourDispatch(12), true);
   assert.equal(inn.direction, 'in', 'kierunek zasadniczy');
   // jazda „pod prąd”: Zk to prośba – kierunek zmienia się po zgodzie sąsiada

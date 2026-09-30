@@ -493,7 +493,10 @@ bloków Po / Ko i przycisków doraźnych dPo / dKo (Ir-1 §29 ust. 1 i 3); po mo
 a czas pozwolenia wpisuje się do dziennika ruchu (Ir-1 §30 ust. 2 pkt 1, wersja od 20.05.2025): w grze nasze Zk to
 prośba (sąsiad-automat zgadza się przy wolnym odstępie), a prośbę sąsiada gracz przyjmuje przyciskiem Zk; godzina
 trafia do dziennika zdarzeń. Przyjęte: szlak SBL to jeden odstęp (gra nie rysuje semaforów odstępowych; na szlakach
-SKM w rzeczywistości jest ich kilka); odstęp zwalnia się, gdy pociąg go opuści. Dlatego szlaki
+SKM w rzeczywistości jest ich kilka); odstęp zwalnia się, gdy pociąg go opuści – ostatni odstęp kończy się na semaforze
+wjazdowym, więc pociąg stojący przed nim (już poza rysunkiem szlaku, na odcinku przed semaforem) wciąż go zajmuje
+i sąsiad nie wyprawia następnego pociągu (przyjęte: odstęp blokowy to część szlaku między semaforami, a ostatni kończy
+się semaforem wjazdowym – tak samo jak przy blokadzie półsamoczynnej wyżej). Dlatego szlaki
 Sopotu, Orłowa, Chyloni i Gdyni Głównej mają `block: 'sbl'` z kierunkiem zasadniczym wg numeracji torów
 (tor 1 / 501 – w stronę Gdyni, tor 2 / 502 – w stronę Gdańska). Linie jednotorowe do Gdyni Port (723) i Wielkiego
 Kacka (201) zostały z blokadą półsamoczynną. Stacja fikcyjna Szkolna ma Eap – celowo, bo uczy

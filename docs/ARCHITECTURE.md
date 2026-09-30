@@ -252,7 +252,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   z którego zadanie da się wykonać (albo czeka na taki tor). Skład, z którego powstanie pociąg (`unit`), a który
   po przepadnięciu zadań stoi na torze bez przebiegu pociągowego, automat podstawia na tor odjazdu tego pociągu.
   Testy: `tests/chylonia.test.js`, `tests/unit-handover.test.js`.
-* Tor szlakowy zajęty do minięcia semafora wjazdowego: `Block.awaitingEntry` (`tests/line-busy.test.js`).
+* Tor szlakowy zajęty do minięcia semafora wjazdowego: `Block.awaitingEntry` (`tests/line-busy.test.js`) – na każdej
+  blokadzie, także samoczynnej (ostatni odstęp kończy się na semaforze wjazdowym; wcześniej SBL zwalniał odstęp przy
+  zjeździe ze szlaku i następny pociąg wjeżdżał na odcinek przed semaforem, na którym stał poprzedni).
 * Zgłoszenie pociągu przez sąsiada przeżywa zmianę trybu blokady: `Traffic.tick` pyta `Block.neighbourRequestAlive(nr)`
   i – gdy usterka łączności albo naprawa skasowała żądanie lub telefonogram – zgłasza pociąg od nowa (przy usterce
   telefonicznie, po naprawie przez blokadę). Zmiana stanu blokady (zdarzenie `block`) odświeża obrazy semaforów:

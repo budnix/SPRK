@@ -185,10 +185,11 @@ export class LineBlock {
 
   /**
    * Pociąg sąsiada zjechał w całości ze szlaku na odcinek przed semaforem wjazdowym, ale semafora jeszcze nie minął.
-   * Tor szlakowy nie jest wtedy wolny: sąsiad nie wyprawi następnego pociągu, a „droga wolna” się nie należy. Blokada
-   * samoczynna ma własne odstępy – jej to nie dotyczy.
+   * Tor szlakowy nie jest wtedy wolny: sąsiad nie wyprawi następnego pociągu, a „droga wolna” się nie należy. Na
+   * blokadzie samoczynnej tak samo – ostatni odstęp kończy się na semaforze wjazdowym (wcześniej odstęp zwalniał się
+   * przy zjeździe ze szlaku i następny pociąg wjeżdżał na odcinek, na którym stał poprzedni).
    */
-  get awaitingEntry() { return !this.auto && this.beforeEntry != null; }
+  get awaitingEntry() { return this.beforeEntry != null; }
 
   #phoneOut(text) { this.bus.emit('phone-out', { to: this.neighbour, text }); }
 
@@ -256,7 +257,7 @@ export class LineBlock {
   #changeDirection() {
     if (!this.auto) return this.#fail(`Zmiana kierunku dotyczy blokady samoczynnej – tu użyj Wbl / Poz`);
     if (this.fault) return this.#fail(`Blokada bez łączności – zapowiadanie telefoniczne (Łączność)`);
-    if (this.occupied || this.poBlocked || this.koPending) return this.#fail(`Odstęp do ${this.neighbour} zajęty – zmiana kierunku niemożliwa`);
+    if (this.occupied || this.poBlocked || this.koPending || this.awaitingEntry) return this.#fail(`Odstęp do ${this.neighbour} zajęty – zmiana kierunku niemożliwa`);
     if (this.request === 'theirs') {
       this.request = null; this.direction = 'in'; this.permission = false;
       this.log('info', `Zgoda na zmianę kierunku blokady samoczynnej do ${this.neighbour} na przyjazd – ${Clock.format(this.time)} (dziennik ruchu)`);
@@ -520,7 +521,7 @@ export class LineBlock {
     if (this.time < this.heldUntil && !this.auto && !this.fixed) return false; // pociąg wstrzymany naszym „Stój pociąg”
     // przy zapowiadaniu na torze właściwym linii dwutorowej sąsiad nie pyta – wyprawia po potwierdzonym przyjeździe
     if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : this.phoneAskFromNeighbour(nr);
-    if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked; }
+    if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked && !this.awaitingEntry; }
     if (this.fixed === 'in') return !this.occupied && !this.awaitingEntry && !this.koPending; // blokada jednokierunkowa: bez pozwolenia
     if (this.fixed === 'out') return false;
     if (this.request || this.direction || this.occupied) return false;
@@ -538,7 +539,7 @@ export class LineBlock {
    * i czeka na naszą zgodę (Zk), o ile odstęp jest wolny i nie mamy nastawionego wyjazdu.
    */
   #neighbourWantsDirection() {
-    if (this.direction === 'in' || this.occupied || this.koPending || this.poBlocked || this.permission) return;
+    if (this.direction === 'in' || this.occupied || this.koPending || this.poBlocked || this.permission || this.awaitingEntry) return;
     if (this.request === 'theirs') return;
     if (this.request === 'ours') { this.request = null; this.neighbourReply = null; } // obie strony chcą kierunku – decyduje nasza zgoda
     this.request = 'theirs'; this.requestSince = this.time;
@@ -563,7 +564,7 @@ export class LineBlock {
     // na zgodę
     if (this.auto) {
       if (this.direction !== 'in') { this.#neighbourWantsDirection(); return false; }
-      return !this.occupied && !this.koPending && !this.poBlocked;
+      return !this.occupied && !this.koPending && !this.poBlocked && !this.awaitingEntry;
     }
     if (this.fixed === 'in') return !this.occupied && !this.awaitingEntry && !this.koPending;
     return this.direction === 'in' && !this.occupied && !this.awaitingEntry;
@@ -582,7 +583,7 @@ export class LineBlock {
       } else if (reply.dirChange) {
         if (this.request === 'ours') {
           this.request = null;
-          if (this.occupied || this.poBlocked || this.koPending) this.log('warn', `${this.neighbour} nie zgadza się na zmianę kierunku – odstęp zajęty`);
+          if (this.occupied || this.poBlocked || this.koPending || this.awaitingEntry) this.log('warn', `${this.neighbour} nie zgadza się na zmianę kierunku – odstęp zajęty`);
           else {
             this.direction = this.direction === 'out' ? 'in' : 'out';
             this.permission = false;
