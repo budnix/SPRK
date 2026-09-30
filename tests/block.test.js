@@ -299,3 +299,26 @@ test('SBL: komunikaty o odstępie (bez „Ko” i „bloku początkowego”), go
   assert.ok(msgs.some((m) => /Zgoda na zmianę kierunku.*06:00.*dziennik ruchu/.test(m)), msgs.join('\n'));
   assert.ok(!msgs.some((m) => /\bKo\b|blok początkowy/.test(m)), msgs.join('\n'));
 });
+
+test('usterka Eap tuż po przybyciu naszego pociągu do sąsiada, zanim przyszło Ko: przyjazd potwierdza telefon, szlak nie zostaje zajęty na zawsze', () => {
+  const { b, bus } = mk();
+  const phone = [];
+  bus.on('comms', (m) => phone.push(m.text));
+  b.press('Wbl'); b.tick(100);
+  assert.equal(b.gate().ok, true);
+  b.trainDeparted({ nr: 1 });
+  assert.deepEqual([b.occupied, b.poBlocked], [true, true]);
+  // pociąg dojechał do sąsiada; Ko przyjdzie za kilkanaście sekund – w tym czasie blokada traci łączność
+  b.tick(400); b.trainArrivedAtNeighbour({ nr: 1 });
+  assert.equal(b.occupied, true, 'do Ko sąsiada tor szlakowy zajęty');
+  b.tick(405); b.setFault(true);
+  assert.equal(b.occupied, false, 'sąsiad zawiadamia o przyjeździe telefonicznie');
+  assert.equal(String(b.phone.arrivalConfirmed), '1');
+  assert.ok(phone.some((t) => /Pociąg nr 1 przyjechał/.test(t)), phone.join(' | '));
+  b.tick(1000);
+  assert.equal(b.occupied, false);
+  // naprawa: szlak wolny – stan zasadniczy, można żądać pozwolenia dla następnego pociągu
+  b.setFault(false);
+  assert.deepEqual([b.occupied, b.poBlocked, b.direction, b.lineTrain], [false, false, null, null]);
+  assert.equal(b.press('Wbl').ok, true);
+});

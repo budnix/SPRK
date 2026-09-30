@@ -129,7 +129,15 @@ export class LineBlock {
     this.fault = on;
     if (on) {
       this.faultDir = this.direction === 'out' && (this.permission || this.fixed === 'out') ? 'out' : this.direction;
-      this.request = null; this.neighbourReply = null; this.pendingArrivalAck = null;
+      this.request = null; this.neighbourReply = null;
+      if (this.pendingArrivalAck != null && !this.auto) {
+        // nasz pociąg dojechał już do sąsiada, a jego Ko nie zdążyło przyjść – sąsiad zawiadamia o przyjeździe telefonicznie
+        // (inaczej tor szlakowy zostawał zajęty na zawsze); blok początkowy zostaje zablokowany do naprawy
+        const nr = this.lineTrain;
+        this.occupied = false; this.lineTrain = null; this.phone.arrivalConfirmed = nr;
+        this.#phoneIn(`Pociąg nr ${nr} przyjechał o ${Clock.format(this.time)}.`, 5);
+      }
+      this.pendingArrivalAck = null;
     }
     else {
       // koniec usterki: blokada wraca do pracy, więc blok początkowy zwalnia się jak zwykle po potwierdzeniu przyjazdu,
