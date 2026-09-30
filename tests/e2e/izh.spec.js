@@ -52,6 +52,8 @@ test('IZH-111: przebieg adresami początku i końca z rozkazem P; STOP gasi; Zcz
   expect(st.active).toContain('A-D1');
   expect(st.signals.A).not.toBe('S1');
   expect(await lit(page, 'svg.desk [data-tile] .lamp')).toContain('lamp-green');
+  // sygnał zezwalający pokazuje tylko lampka powtarzacza – przycisk adresowy semafora nie świeci
+  await expect(btn(page, A('signal', 'A'))).not.toHaveClass(/active/);
   await pressBtn(page, A('signal', 'D1'));
   await order(page, 'Zcz');
   st = await simState(page);

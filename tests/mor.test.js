@@ -50,6 +50,35 @@ test('przebieg: kliknięcie semafora (menu obiektu), kliknięcie celu – menu �
   assert.deepEqual(codes(u), ['Plus', 'Minus', 'Stop']);
 });
 
+test('przebieg od toru początkowego: kliknięcie toru, potem celu – kierunek (semafor początkowy) wynika z celu', () => {
+  // tor 1 Szkolnej ma semafory wyjazdowe na obu końcach: D1 (na wschód) i C1 (na zachód)
+  const sim = mor();
+  assert.deepEqual(sim.press({ kind: 'section', id: 'T1' }), { ok: true, menu: 'object' });
+  assert.ok(codes(sim).includes('Zmk'), 'sam tor – menu toru');
+  assert.deepEqual(sim.press({ kind: 'end', id: 'kE' }), { ok: true, menu: 'route' });
+  assert.deepEqual(codes(sim), ['Pociąg']);
+  assert.deepEqual(sim.input.armed.selection, [{ kind: 'section', id: 'T1' }, { kind: 'end', id: 'kE' }]);
+  // blokada Eap: przebieg wyjazdowy wymaga pozwolenia – odmowa mówi o przebiegu D1-E, nie o torze
+  const res = sim.chooseCommand('Pociąg');
+  assert.match(JSON.stringify(res), /D1-E|pozwoleni/);
+  const w = mor();
+  w.press({ kind: 'section', id: 'T1' });
+  assert.equal(w.press({ kind: 'end', id: 'kW' }).menu, 'route');
+  w.input.choose('Pociąg');
+  assert.match(w.input.events.at(-1).text, /C1-W/, 'ten sam tor, cel na zachodzie – przebieg od C1');
+  // z toru 2 przebieg manewrowy D2 → kT3: menu daje tylko „Manewr”; tor bez sygnalizatora – zwykły nowy wybór
+  const m = mor();
+  m.press({ kind: 'section', id: 'T2' });
+  assert.equal(m.press({ kind: 'end', id: 'kT3' }).menu, 'route');
+  assert.deepEqual(codes(m), ['Manewr']);
+  assert.ok(m.chooseCommand('Manewr').ok);
+  run(m, 8);
+  assert.ok(m.ilk.active.has('D2-kT3m'));
+  const n = mor();
+  n.press({ kind: 'section', id: 'ZbA' });
+  assert.equal(n.press({ kind: 'section', id: 'T3' }).menu, 'object', 'od ZbA nie ma przebiegu na tor 3');
+});
+
 test('polecenia do potwierdzenia i specjalne: SZ czeka na potwierdzenie, w tym czasie inne polecenia odrzucone; licznik', () => {
   const sim = mor();
   sim.press({ kind: 'signal', id: 'B' });

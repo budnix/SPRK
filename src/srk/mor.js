@@ -8,9 +8,10 @@
  *
  * Obsługa:
  *  - kliknięcie obiektu (`press`) – fioletowa obwódka i menu jego poleceń (`menu()`),
- *  - gdy wybrany jest sygnalizator (albo strzałka blokady przy wjeździe), kliknięcie celu – sygnalizatora, trójkąta
- *    końca toru albo toru – zamiast polecenia z menu daje menu przebiegu: „Pociąg” / „Manewr” (tylko dostępne);
- *    to samo daje przeciągnięcie prawym klawiszem od początku do celu,
+ *  - gdy wybrany jest początek przebiegu – sygnalizator, tor początkowy (tor, przy którym stoi sygnalizator; kierunek
+ *    wynika z celu) albo strzałka blokady przy wjeździe – kliknięcie celu – sygnalizatora, trójkąta końca toru albo
+ *    toru – zamiast polecenia z menu daje menu przebiegu: „Pociąg” / „Manewr” (tylko dostępne); to samo daje
+ *    przeciągnięcie prawym klawiszem od początku do celu,
  *  - wybór polecenia (`choose(code)`): polecenie zwykłe wykonuje się od razu (Ie-20 §13.6 – wskazanie w menu to
  *    akceptacja); polecenie „do potwierdzenia” (w menu fioletowe) i specjalne (czerwone, z licznikiem poleceń
  *    specjalnych) czekają na potwierdzenie (`confirm()`) – w tym czasie nie przyjmuje się innych poleceń (§13.8),
@@ -96,8 +97,7 @@ export class MorProtocol {
     this.bus.emit('button', { ref, action: 'press' });
     const r = { kind: ref.kind, id: ref.id ?? ref.exit };
     if (this.pending) return this.ilk.refuse('Najpierw potwierdź albo odwołaj polecenie czekające na potwierdzenie');
-    const start = this.#startSignal(this.sel);
-    if (start && !this.target && !same(r, this.sel) && this.#routesTo(start, r).length) {
+    if (this.sel && !this.target && !same(r, this.sel) && this.#routesTo(this.#starts(this.sel), r).length) {
       this.target = r;
       this.#changed();
       return { ok: true, menu: 'route' };
@@ -124,7 +124,7 @@ export class MorProtocol {
   menu() {
     if (!this.sel) return [];
     if (this.target) {
-      const kinds = new Set(this.#routesTo(this.#startSignal(this.sel), this.target).map((r) => r.kind));
+      const kinds = new Set(this.#routesTo(this.#starts(this.sel), this.target).map((r) => r.kind));
       return ROUTE_ITEMS.filter((it) => kinds.has(it.kind)).map(({ code, name }) => ({ code, name, level: LEVEL.normal }));
     }
     const o = this.sel;
@@ -149,7 +149,7 @@ export class MorProtocol {
     const o = this.sel;
     let cmd, text;
     if (this.target) {
-      const routes = this.#routesTo(this.#startSignal(o), this.target).filter((r) => r.kind === (code === 'Pociąg' ? 'train' : 'shunt'));
+      const routes = this.#routesTo(this.#starts(o), this.target).filter((r) => r.kind === (code === 'Pociąg' ? 'train' : 'shunt'));
       cmd = { type: 'route', id: routes[0].id };
       text = `${code} ${routes[0].id}`;
     } else if (o.kind === 'end') {
@@ -198,23 +198,29 @@ export class MorProtocol {
     return this.ilk.refuse(reason);
   }
 
-  /** Sygnalizator początku przebiegu dla wybranego obiektu: sygnalizator albo strzałka blokady przy wjeździe (semafor wjazdowy). */
-  #startSignal(o) {
-    if (!o) return null;
-    if (o.kind === 'signal') return o.id;
-    if (o.kind !== 'end') return null;
+  /**
+   * Sygnalizatory początku przebiegu dla wybranego obiektu: sygnalizator; tor początkowy – sygnalizatory stojące przy
+   * tym torze (tor jest ich odcinkiem zbliżania; który z nich zaczyna przebieg, wynika z celu); strzałka blokady przy
+   * wjeździe – semafor wjazdowy.
+   */
+  #starts(o) {
+    if (!o) return [];
+    if (o.kind === 'signal') return [o.id];
+    const routes = [...this.ilk.routes.values()];
+    if (o.kind === 'section') return [...new Set(routes.filter((r) => r.approach === o.id).map((r) => r.start))];
+    if (o.kind !== 'end') return [];
     const tile = this.ilk.topo.endButtons.get(o.id) || null;
     const exit = this.#exitOf(o.id);
-    if (!tile || !exit) return null;
+    if (!tile || !exit) return [];
     const sec = tile.section;
-    const entry = [...this.ilk.routes.values()].find((r) => r.approach === sec && r.kind === 'train' && this.ilk.signals.get(r.start)?.tile.entry);
-    return entry?.start ?? null;
+    const entry = routes.find((r) => r.approach === sec && r.kind === 'train' && this.ilk.signals.get(r.start)?.tile.entry);
+    return entry ? [entry.start] : [];
   }
 
-  /** Przebiegi od sygnalizatora `start` do celu: sygnalizatora, trójkąta końca toru albo toru (ostatni odcinek przebiegu). */
-  #routesTo(start, t) {
-    if (!start || !t) return [];
-    return [...this.ilk.routes.values()].filter((r) => r.start === start && (
+  /** Przebiegi od sygnalizatorów `starts` do celu: sygnalizatora, trójkąta końca toru albo toru (ostatni odcinek przebiegu). */
+  #routesTo(starts, t) {
+    if (!starts.length || !t) return [];
+    return [...this.ilk.routes.values()].filter((r) => starts.includes(r.start) && (
       (t.kind === 'signal' && r.end.type === 'signal' && r.end.id === t.id)
       || (t.kind === 'end' && r.endButton === t.id)
       || (t.kind === 'section' && r.sections.at(-1) === t.id)));

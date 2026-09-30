@@ -70,6 +70,14 @@ test('tablet: dotknięcie początku i dotknięcie celu (bez przeciągania) dają
   await tap(hit(page, 'signal', 'A'));
   await tap(hit(page, 'section', sec));
   expect(await codes(page)).toEqual(['Pociąg']);
+  // tor początkowy zamiast sygnalizatora: tor 1 i trójkąt szlaku – przebieg od semafora stojącego przy torze (E1)
+  await page.keyboard.press('Escape');
+  await tap(hit(page, 'section', 'T1'));
+  expect(await codes(page)).toContain('Zmk');
+  await tap(hit(page, 'end', 'kL'));
+  expect(await codes(page)).toEqual(['Pociąg']);
+  await page.locator('.mor-menu button[data-code="Pociąg"]').click();
+  await expect(page.locator('.mor-list')).toContainText('Pociąg E1-L');
 });
 
 test('alarm: przełącznik okna miga, dwuklik potwierdza (czerwony na niebieskim), po naprawie znika', async ({ page }) => {

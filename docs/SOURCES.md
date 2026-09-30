@@ -185,7 +185,8 @@ transportszynowy.pl – „Urządzenia elektryczne przekaźnikowe”. Z opisu wz
 * zwalnianie: „Zcz” z adresem semafora końcowego – po 120 s, lampka przy przycisku miga na biało; przebieg manewrowy
   – „Zw”, bezzwłocznie; sygnał zastępczy rozkazem „Sz”, rejestrowany licznikiem;
 * sygnalizator: „STOP” z adresem zamyka go – sygnał „Stój” do odwołania rozkazem „Zw”, lampka przy przycisku miga na
-  czerwono (bsk.isdr.pl/srk_izh111.php);
+  czerwono (bsk.isdr.pl/srk_izh111.php); stan sygnalizatora pokazują tylko lampki powtarzacza – przycisk adresowy
+  nie świeci przy sygnale zezwalającym;
 * **pulpit ciemny**: lampki w stanie zasadniczym wygaszone; powtarzacze bez lampki sygnału zabraniającego (zielona
   i biała, tarcze – tylko biała); szczeliny zwrotnic ciemne, położenie widać po obsłużeniu przycisku adresowego oraz
   przy utwierdzeniu lub zajętości odcinka; rozprucie – szczeliny migają na czerwono, niespodziewany brak kontroli –
@@ -550,6 +551,9 @@ Uproszczenia i założenia w grze (przyjęte):
 * obraz stanu jak na innych stanowiskach komputerowych gry (Ie-104); zielonego toru szlakowego przy ustawionym
   kierunku blokady, który stosuje producent w systemach MOR, gra nie rysuje – PKP PLK uznały go za niezgodny ze swoimi
   wymaganiami (kolejowyportal.pl, „Zobrazowania w systemach MOR do poprawy”);
+* tor początkowy przebiegu to tor, przy którym stoi sygnalizator początkowy (jego odcinek zbliżania); gdy przy torze
+  stoją sygnalizatory w obu kierunkach, początek wynika z klikniętego celu (przyjęte – opis SPE mówi tylko
+  „sygnalizator lub tor początkowy”); wyjątku SPE dla torów bez izolacji gra nie ma, bo wszystkie tory są izolowane;
 * potwierdzenie polecenia fioletowego i czerwonego – pasek „Potwierdź” / „Odwołaj” (opis SPE nie podaje wyglądu);
   polecenie czekające na potwierdzenie nie wygasa samo;
 * ZD (w opisie SPE bez koloru, „natychmiast zwalnia przebieg”) – zwolnienie przebiegu bez licznika, gdy odcinek
