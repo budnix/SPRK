@@ -37,7 +37,8 @@ test('K1: symulacja – w trakcie polecenia specjalnego inne polecenia zablokowa
   run(sim, SPECIAL_DELAY);
   assert.equal(sim.confirmSpecial().ok, true);
   assert.equal(sim.ilk.signals.get('A').aspect, 'Sz');
-  assert.equal(sim.execute({ type: 'point', id: 'Zw1' }).ok, true, 'po potwierdzeniu polecenia znów działają');
+  // Zw4 – poza drogą Sz na A (Zw1 na tej drodze trzyma się, dopóki świeci Sz)
+  assert.equal(sim.execute({ type: 'point', id: 'Zw4' }).ok, true, 'po potwierdzeniu polecenia znów działają');
   sim.initiateSpecial({ type: 'release', signal: 'B', emergency: true }, { label: 'dPz B' });
   sim.cancelSpecial();
   assert.equal(sim.special.pending, null, 'OPS');

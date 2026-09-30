@@ -118,6 +118,7 @@ export class Traffic {
       text: text || this.orderTemplate(e.nr, signal, reason || undefined, behind), reason: reason || '',
     };
     this.orders.push(order);
+    this.ilk.holdPath(signal, path, 'S'); // zwrotnice drogi zostają w położeniu, dopóki pociąg ich nie minie
     const faultSpad = behind && !!tr.spadByFault;
     if (behind) tr.resumeAfterStop();
     else tr.orders.push({ signal, used: false, id: order.id });

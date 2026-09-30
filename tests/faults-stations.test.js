@@ -115,7 +115,8 @@ function attendant(how = null, { hold = false } = {}) {
     for (let i = locked.length - 1; i >= 0; i--) {
       const z = locked[i], tr = entryOf(sim, z.nr)?.train, p = sim.ilk.points.get(z.id);
       const passed = !tr || tr.finished || tr.nextSignal() !== z.sig;
-      if (passed && !sim.ilk.sections.get(p.section).physical) { sim.execute({ type: 'lock', id: z.id }); locked.splice(i, 1); }
+      // zdjęcie Zz udaje się dopiero, gdy pociąg minie zwrotnicę (droga pociągu na Sz / rozkaz jest trzymana) – ponawiane
+      if (passed && !sim.ilk.sections.get(p.section).physical && sim.execute({ type: 'lock', id: z.id }).ok) locked.splice(i, 1);
     }
     if (how) for (const e of sim.traffic.timetable()) {
       const sig = blockedAhead(sim, e), tr = e.train;

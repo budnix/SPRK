@@ -233,6 +233,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   (`#unlockSection`). Wjazd składu w taki przebieg poznaje się po odcinkach głowicy, nie po zajętości toru docelowego
   (zajmuje go też drugi skład). Pociąg widzi inny tabor także na kostce, na której stoi jego czoło
   (`Traffic.stockAt(…, from)`). Test: `tests/shared-track.test.js`.
+* Droga pociągu na Sz / rozkaz „S”: `Interlocking.holdPath` (z `substituteSignal` i `Traffic.issueOrder`) trzyma
+  zwrotnice i wykolejnice drogi (`pathHolds`) – Zz, przestawienie, zdjęcie zabezpieczenia i przebieg w innym położeniu
+  odmawiane, dopóki pociąg ich nie minie (odcinek zajęty, potem wolny) albo Sz nie zgaśnie bez pociągu na drodze.
+  Testy: `tests/faults-shunt.test.js`.
 * Przebieg po usterce: `Interlocking.routeStuck(act)` – pociąg przejechał odcinek wykazujący zajętość z usterki, więc
   przebieg sam się nie rozwiąże; doraźne zwolnienie jest wtedy bez kary.
 * Automat dyżurnego (`Operator.js`) nie prowadzi własnych notatek o przebiegach – pyta urządzenia: wjazd należy się
@@ -568,9 +572,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   Stan po naprawie (`leftovers`) obejmuje też blok początkowy zablokowany bez pociągu i niewykorzystane pozwolenie
   albo kierunek Eap.
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
-  zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): zwrotnica na drodze pociągu jadącego na Sz /
-  rozkaz „S” daje się otworzyć (Zz) i przestawić przed pociągiem; brak zezwolenia dyżurnego na minięcie sygnalizatora
-  manewrowego z usterką (reguła do potwierdzenia). W `faults-stations.test.js`: odstęp SBL zostaje zajęty po naprawie,
+  zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): brak zezwolenia dyżurnego na minięcie
+  sygnalizatora manewrowego z usterką (reguła do potwierdzenia). W `faults-stations.test.js`: odstęp SBL zostaje zajęty po naprawie,
   gdy przy zapowiadaniu pojechał nasz pociąg torem lewym, a potem pociąg sąsiada (`poBlocked`); zapytanie o drogę
   telefonogramem dla jazdy po torze lewym odrzucane (Comms szuka pociągu po szlaku z rozkładu).
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno

@@ -114,6 +114,8 @@ export class Interlocking {
     }
     this.active = new Map();     // routeId -> aktywny przebieg
     this.half = new Map();       // sygnalizator początkowy -> drążek w położeniu pośrednim { id, route, lockedPoints, lockedDerailers }
+    // droga pociągu jadącego na Sz / rozkaz „S”: { signal, kind, points, derailers (id -> tabor już na odcinku), sections, entered }
+    this.pathHolds = [];
     this.pending = [];           // przebiegi w trakcie nastawiania (zwrotnice się przestawiają)
     this.counters = { dPz: 0, Sz: 0, rozprucie: 0 };
     this.allStop = false;        // SSS – wszystkie sygnalizatory stacji na „Stój” (stanowiska komputerowe)
@@ -273,6 +275,8 @@ export class Interlocking {
     if (this.sections.get(p.section)?.occupied) return { ok: false, reason: `Zwrotnica ${id}: odcinek ${p.section} zajęty` };
     const r = this.pointLockedByRoute(id);
     if (r) return { ok: false, reason: `Zwrotnica ${id} utwierdzona w przebiegu ${r.id}` };
+    const h = this.pathHoldOf(id);
+    if (h) return { ok: false, reason: `Zwrotnica ${id} na drodze pociągu jadącego na ${h.kind === 'Sz' ? 'Sz' : 'rozkaz „S”'} od ${h.signal} – nie przestawia się, zanim pociąg ją minie` };
     return { ok: true };
   }
 
@@ -295,6 +299,8 @@ export class Interlocking {
     if (this.sections.get(d.section)?.occupied) return { ok: false, reason: `Wykolejnica ${id}: odcinek zajęty` };
     const r = this.derailerLockedByRoute(id);
     if (r) return { ok: false, reason: `Wykolejnica ${id} utwierdzona w przebiegu ${r.id}` };
+    const h = this.pathHoldOf(id, true);
+    if (h) return { ok: false, reason: `Wykolejnica ${id} na drodze pociągu jadącego na ${h.kind === 'Sz' ? 'Sz' : 'rozkaz „S”'} od ${h.signal}` };
     return { ok: true };
   }
 
@@ -313,6 +319,8 @@ export class Interlocking {
     const el = isDerailer ? this.derailers.get(id) : this.points.get(id);
     if (!el) return this.#fail(`Brak elementu ${id}`);
     if (el.moving) return this.#fail(`${id}: w trakcie przestawiania`);
+    const h = el.individualLock && this.pathHoldOf(id, isDerailer);
+    if (h) return this.#fail(`${id}: na drodze pociągu jadącego na ${h.kind === 'Sz' ? 'Sz' : 'rozkaz „S”'} od ${h.signal} – zamknięcia nie zdejmuje się, zanim pociąg minie ${isDerailer ? 'wykolejnicę' : 'zwrotnicę'}`);
     el.individualLock = !el.individualLock;
     this.#log('info', `${isDerailer ? 'Wykolejnica' : 'Zwrotnica'} ${id} ${el.individualLock ? 'zamknięta' : 'otwarta'} (zamknięcie indywidualne)`);
     this.bus.emit(isDerailer ? 'derailer' : 'point', el);
@@ -329,6 +337,8 @@ export class Interlocking {
     if (!p) return this.#fail(`Brak zwrotnicy ${id}`);
     if (!on) {
       if (!p.secured && !p.securing) return { ok: true, noop: true };
+      const h = this.pathHoldOf(id);
+      if (h) return this.#fail(`Zwrotnica ${id} na drodze pociągu jadącego na ${h.kind === 'Sz' ? 'Sz' : 'rozkaz „S”'} od ${h.signal} – zabezpieczenia nie zdejmuje się, zanim pociąg ją minie`);
       p.secured = false; p.securing = null;
       this.#log('info', `Zwrotnica ${id}: zabezpieczenie na miejscu zdjęte`);
       this.bus.emit('point', p);
@@ -404,6 +414,42 @@ export class Interlocking {
     }
     path.sections = [...sections];
     return path;
+  }
+
+  /**
+   * Droga pociągu jadącego na Sz albo rozkaz „S” (`kind` 'Sz' | 'S'): zwrotnic i wykolejnic na niej nie otwiera się (Zz),
+   * nie przestawia, nie zdejmuje z nich zabezpieczenia i nie nastawia przez nie przebiegu w innym położeniu, dopóki
+   * pociąg ich nie minie (przyjęte – w rzeczywistości pilnuje tego dyżurny; urządzenie Sz drogi nie utwierdza).
+   */
+  holdPath(signalId, path, kind) {
+    const map = (ids) => new Map(ids.map((x) => [x.id ?? x, false]));
+    if (!path.points.length && !path.derailers.length) return;
+    this.pathHolds.push({ signal: signalId, kind, points: map(path.points), derailers: map(path.derailers), sections: new Set(path.sections), entered: false });
+  }
+
+  /** Hold drogi, w którym jest zwrotnica (`isDerailer` – wykolejnica) `id`, jeszcze nieminięta przez pociąg; albo null. */
+  pathHoldOf(id, isDerailer = false) {
+    return this.pathHolds.find((h) => (isDerailer ? h.derailers : h.points).has(id)) ?? null;
+  }
+
+  /** Sz zgasł (czas, odwołanie), a żaden pociąg nie wjechał na jego drogę – zwrotnice znów wolne. */
+  #releaseUnusedHolds(signalId) {
+    this.pathHolds = this.pathHolds.filter((h) => !(h.kind === 'Sz' && h.signal === signalId && !h.entered));
+  }
+
+  /** Po każdej zmianie zajętości: pociąg wjechał na drogę, minął zwrotnicę (jej odcinek zajęty, potem wolny). */
+  #updatePathHolds() {
+    for (const h of this.pathHolds) {
+      if (!h.entered && [...h.sections].some((sid) => this.sections.get(sid)?.physical)) h.entered = true;
+      for (const [map, get] of [[h.points, (id) => this.points.get(id)], [h.derailers, (id) => this.derailers.get(id)]]) {
+        for (const [id, seen] of map) {
+          const phys = !!this.sections.get(get(id)?.section)?.physical;
+          if (phys) map.set(id, true);
+          else if (seen) map.delete(id);
+        }
+      }
+    }
+    this.pathHolds = this.pathHolds.filter((h) => h.points.size || h.derailers.size);
   }
 
   /**
@@ -510,6 +556,7 @@ export class Interlocking {
         const r = this.pointLockedByRoute(req.id, predIds);
         if (r) add('point', `Zwrotnica ${req.id} utwierdzona w przebiegu ${r.id}`);
         if (this.sections.get(p.section).occupied) add('point', `Zwrotnica ${req.id}: odcinek zajęty – nie można przestawić`);
+        if (p.position !== req.position && this.pathHoldOf(req.id)) add('point', `Zwrotnica ${req.id} na drodze pociągu jadącego na Sz / rozkaz „S”`);
       } else {
         const r = this.pointLockedByRoute(req.id, predIds);
         if (r && this.#lockedPosition(req.id, predIds) !== req.position) add('point', `Zwrotnica ${req.id} utwierdzona w innym położeniu`);
@@ -743,7 +790,7 @@ export class Interlocking {
   cancelSignal(signalId) {
     const sig = this.signals.get(signalId);
     if (!sig) return this.#fail(`Brak sygnalizatora ${signalId}`);
-    if (sig.substitute) { sig.substitute = false; this.#refreshSignals(); this.#log('info', `Sygnał zastępczy na ${signalId} wygaszony`); return { ok: true }; }
+    if (sig.substitute) { sig.substitute = false; this.#releaseUnusedHolds(signalId); this.#refreshSignals(); this.#log('info', `Sygnał zastępczy na ${signalId} wygaszony`); return { ok: true }; }
     // dźwignię sygnałową zawsze da się przełożyć na „Stój” – także bez przebiegu
     if (!sig.route) return this.manualSignal ? { ok: true, noop: true } : { ok: false };
     const act = this.active.get(sig.route);
@@ -1016,7 +1063,7 @@ export class Interlocking {
   /** Wygaszenie wszystkich wyświetlonych sygnałów zastępczych (SZO). */
   substituteOff() {
     const on = [...this.signals.values()].filter((s) => s.substitute);
-    for (const s of on) s.substitute = false;
+    for (const s of on) { s.substitute = false; this.#releaseUnusedHolds(s.id); }
     if (on.length) { this.#log('info', `Sygnały zastępcze wygaszone: ${on.map((s) => s.id).join(', ')}`); this.#refreshSignals(); }
     return on.length ? { ok: true } : { ok: true, noop: true };
   }
@@ -1051,6 +1098,7 @@ export class Interlocking {
     // przed Sz zwrotnice drogi ustawia się i utwierdza (przebieg albo zamknięcie Zz) – urządzenie tego nie wymusza
     const loose = path.points.filter(({ id }) => { const p = this.points.get(id); return !p.individualLock && !p.secured && !this.pointLockedByRoute(id); }).map((p) => p.id);
     if (loose.length) this.bus.emit('score', { time: this.time, code: 'Sz-points', points: -10, msg: `Sz na ${signalId}: zwrotnice ${loose.join(', ')} nieutwierdzone ani niezamknięte (Zz)` });
+    this.holdPath(signalId, path, 'Sz');
     this.#refreshSignals();
     return { ok: true };
   }
@@ -1190,6 +1238,7 @@ export class Interlocking {
         this.bus.emit('section', s);
       }
     }
+    if (this.pathHolds.length) this.#updatePathHolds();
   }
 
   /** Zajętość odcinka z usterki urządzeń (nie z taboru). */
@@ -1243,7 +1292,7 @@ export class Interlocking {
 
     // Sygnał zastępczy – czas
     for (const sig of this.signals.values()) {
-      if (sig.substitute && sig.substituteUntil <= time) { sig.substitute = false; this.#refreshSignals(); }
+      if (sig.substitute && sig.substituteUntil <= time) { sig.substitute = false; this.#releaseUnusedHolds(sig.id); this.#refreshSignals(); }
     }
 
     // Aktywne przebiegi: przejazd pociągu, zwalnianie odcinkowe, zwalnianie czasowe

@@ -238,6 +238,10 @@ Przyjęte (uproszczenia gry):
   kontroli); usterka gdzie indziej na stacji ich nie uzasadnia (Sz −5, rozkaz −10);
 * Sz przy zwrotnicy na drodze ani utwierdzonej w przebiegu, ani zamkniętej Zz – dodatkowo −10 (urządzenie Sz nie
   blokuje – odpowiada dyżurny); rozkaz w takiej sytuacji jest odrzucany jak dotąd;
+* po Sz i po rozkazie „S” zwrotnic i wykolejnic na drodze pociągu nie da się otworzyć (Zz), przestawić, odbezpieczyć ani
+  użyć w przebiegu w innym położeniu, dopóki pociąg ich nie minie (albo Sz nie zgaśnie, zanim pociąg wjedzie na jego
+  drogę) – w rzeczywistości pilnuje tego dyżurny, gra to wymusza (przyjęte; wcześniej zwrotnica przestawiała się przed
+  pociągiem, a zdjęcie Zz tuż po Sz omijało karę za zwrotnice nieutwierdzone);
 * rozkaz nie jest odrzucany z powodu zajętości z usterki (fałszywa zajętość, licznik osi) – tylko taboru;
 * każdy nowy wjazd pociągu na tor z pękniętą szyną kosztuje −50, na tor zamknięty dla ruchu (ITS, np. na Sz) −80.
 

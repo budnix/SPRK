@@ -344,12 +344,11 @@ test('pociąg na Sz / rozkaz „S”: dopóki Zw1 jest zamknięta (Zz), nie prze
  * (zamknięcie indywidualne)” i „Pociąg 6101 przyjęty na tor 2 zamiast 1” – bez alarmu i bez kary (także bez kary
  * `Sz-points`, bo w chwili Sz zwrotnica była zamknięta).
  */
-const P7_TODO = 'błąd silnika: zwrotnicę na drodze pociągu jadącego na Sz / rozkaz „S” można otworzyć (Zz) i przestawić przed pociągiem – '
-  + 'Interlocking.toggleIndividualLock nie sprawdza niczego, Interlocking.canSwitchPoint sprawdza tylko zajętość i utwierdzenie w przebiegu '
-  + '(Sz – Interlocking.substituteSignal – i rozkaz – Traffic.issueOrder – niczego nie utwierdzają); polecenia przez Simulation.execute (lock, point)';
+// wcześniej błąd silnika: Zz dało się zdjąć, a zwrotnicę przestawić przed pociągiem (przestawiała się, gdy czoło wjeżdżało
+// na jej odcinek) – teraz droga pociągu na Sz / rozkaz „S” jest trzymana do jego przejazdu (Interlocking.holdPath)
 
 for (const srk of SRK) for (const how of ['Sz', 'S']) {
-  test(`pociąg na ${how === 'Sz' ? 'Sz' : 'rozkaz „S”'} (${srk}): Zw1 na jego drodze nie daje się otworzyć (Zz) ani przestawić, zanim pociąg ją minie`, { todo: P7_TODO }, () => {
+  test(`pociąg na ${how === 'Sz' ? 'Sz' : 'rozkaz „S”'} (${srk}): Zw1 na jego drodze nie daje się otworzyć (Zz) ani przestawić, zanim pociąg ją minie`, () => {
     const out = [];
     const tryUnlockAndThrow = (sim, where) => {
       if (!sim.ilk.points.get('Zw1').individualLock) return;

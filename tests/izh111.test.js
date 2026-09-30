@@ -168,7 +168,7 @@ test('IZH-111: STOP zamyka sygnalizator (sygnał nie wraca, także po nowym prze
   assert.ok(sim.press({ kind: 'block', exit: 'E', btn: 'Wbl' }).ok);
   assert.equal(sim.blocks.get('E').request, 'ours');
   // polecenia wprost działają niezależnie od protokołu
-  assert.ok(sim.execute({ type: 'point', id: 'Zw4' }).ok);
+  assert.ok(sim.execute({ type: 'point', id: 'Zw3' }).ok); // Zw3 – poza drogą Sz na B (Zw4) i przebiegiem A-D1 (Zw1)
 });
 
 test('typ E i stanowisko komputerowe: zwalnianie jak dotąd (opcje zależności mają wartości domyślne)', () => {
