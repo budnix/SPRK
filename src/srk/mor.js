@@ -164,6 +164,8 @@ export class MorProtocol {
       text = `${code} ${o.id}`;
     }
     if (item.level !== LEVEL.normal) {
+      // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane do potwierdzenia (docs/SOURCES.md)
+      if (cmd.type === 'substitute') cmd.justifiedAtChoice = ilk.faultOnPath(cmd.signal);
       this.pending = { code, level: item.level, text, cmd };
       this.#changed();
       return { ok: true, confirm: true, level: item.level, text };

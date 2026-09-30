@@ -104,7 +104,9 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'ebilock' | 'mor3' | 'izh111' | 'me
     (`src/srk/buttons.js`): obsługa dwuprzyciskowa pulpitu typu E, uzbrojenie na `armTimeout` s, rodzaj przebiegu
     z koloru przycisku (zielony / biały), funkcja przycisku grupowego z roli (Zw, Zz, Pz, dPz, Sz);
   * **polecenia wprost** – `sim.execute({ type, … })`: `route` (`start`, `end`, `kind`, `compound?`), `stop`,
-    `release` (`emergency?`), `substitute`, `point`, `derailer`, `lock`, `block` – bez przycisków i bez uzbrojenia;
+    `release` (`emergency?`), `substitute` (`justifiedAtChoice?` – ustawia tylko protokół polecenia dwuetapowego:
+    uzasadnienie usterką z chwili wyboru SZI / menu MOR-3 / inicjowania polecenia specjalnego), `point`, `derailer`,
+    `lock`, `block` – bez przycisków i bez uzbrojenia;
     polecenia stanowisk komputerowych: `close-section` (zamknięcie ruchowe toru ITS / ITO), `signal-stop`
     (stopowanie sygnalizatora SES / SEO), `all-stop` (SSS / SSO), `substitute-off` (SZO), `cancel-timed` (KZW),
     `axle-reset` (zerowanie licznika osi ZeroLO), `release` z `timed` (zwolnienie czasowe na żądanie – ZCZ).
@@ -566,7 +568,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   – `faults-desks.test.js` – usterki obsługiwane przez protokół stanowiska, nie przez `sim.execute`: dKo i Sz przy długiej
     usterce semafora wjazdowego na każdym z sześciu stanowisk (przyciski typu E, adres i rozkaz IZH-111, SZI → SZW
     w EBILock, menu i potwierdzenie MOR-3, polecenie specjalne na monitorze, klawisz Sz nastawni mechanicznej), semafor
-    naprawiony, gdy SZ czeka na potwierdzenie (wynik utrwalony); nastawnia mechaniczna – drążek w położeniu pośrednim
+    naprawiony, gdy SZ czeka na potwierdzenie (Sz oceniany w chwili wyboru – `justifiedAtChoice` z protokołu), Sz
+    wybrany bez usterki (−5 po potwierdzeniu); nastawnia mechaniczna – drążek w położeniu pośrednim
     przy zajętości toru docelowego z usterki, usterka semafora i bloku przebiegowego tego samego semafora (Sz
     i zwalniacz), usterka napędu zwrotnicy w Olszynach;
   – `faults-shunt.test.js` – zadania manewrowe Szkolnej przy usterce na drodze manewru (sygnalizator bez Ms2, napęd

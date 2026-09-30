@@ -252,7 +252,8 @@ export class EbiLockProtocol {
       case 'SZI': {
         const sig = ilk.signals.get(obj.id);
         if (!sig.canSubstitute) return refuse(`Semafor ${obj.id} nie ma sygnału zastępczego`);
-        this.marks.set(`signal:${obj.id}`, { code: 'SZI', at: ilk.time, color: def.mark });
+        // Sz ocenia się w chwili wyboru (SZI): uzasadnienie usterką zapamiętane do SZW (docs/SOURCES.md)
+        this.marks.set(`signal:${obj.id}`, { code: 'SZI', at: ilk.time, color: def.mark, justified: ilk.faultOnPath(obj.id) });
         return { ok: true, marked: true };
       }
       case 'SZW': {
@@ -263,7 +264,7 @@ export class EbiLockProtocol {
         if (age < SPECIAL_WINDOW.min) return refuse(`SZW: sprawdź zamarkowany obiekt – polecenie wykonania najwcześniej ${SPECIAL_WINDOW.min} s po SZI`);
         if (age > SPECIAL_WINDOW.max) { this.marks.delete(key); return refuse(`SZW: minęło ${SPECIAL_WINDOW.max} s od SZI – wyślij polecenie inicjujące ponownie`); }
         this.marks.delete(key);
-        return { ok: true, cmd: { type: 'substitute', signal: obj.id } };
+        return { ok: true, cmd: { type: 'substitute', signal: obj.id, justifiedAtChoice: !!m.justified } };
       }
       case 'SSS': case 'SSO': return { ok: true, cmd: { type: 'all-stop', on: def.code === 'SSS' } };
       case 'SZO': {

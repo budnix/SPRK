@@ -249,6 +249,10 @@ Przyjęte (uproszczenia gry):
   toru (`Interlocking.pathBeyond`); blokadę sprawdza się tylko dla wyjazdu na tej drodze;
 * Sz i rozkaz są bez kary, gdy usterka jest na tej drodze (semafor bez sygnału, zajętość z usterki, zwrotnica bez
   kontroli); usterka gdzie indziej na stacji ich nie uzasadnia (Sz −5, rozkaz −10);
+* Sz polecenia dwuetapowego (EBILock SZI → SZW, MOR-3 – menu i potwierdzenie, polecenie specjalne monitora) ocenia się
+  w chwili wyboru: dyżurny decyduje w czasie usterki, potwierdzenie to krok bezpieczeństwa urządzenia. Bez kary, gdy
+  usterka na drodze była przy wyborze albo jest przy potwierdzeniu (przyjęte; dawniej liczyła się tylko chwila
+  wykonania – usterka naprawiona w czasie odliczania dawała −5);
 * tak samo przyjęcie pociągu na tor inny niż planowy: bez kary tylko przy usterce na drodze toru planowego – jego
   odcinki, przebieg na niego od strony wjazdu, przebieg z niego w stronę wyjazdu (zajętość z usterki, licznik osi,
   pęknięta szyna, zwrotnica bez kontroli, semafor tych przebiegów bez sygnału) – czynnej między zgłoszeniem pociągu

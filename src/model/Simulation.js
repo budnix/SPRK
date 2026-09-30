@@ -371,7 +371,7 @@ export class Simulation {
       case 'release':
         return this.#allowed('signal', cmd.signal) ? ilk.releaseRoute(cmd.signal, !!cmd.emergency, !!cmd.timed) : refuse(OTHER_DISTRICT);
       case 'substitute':
-        return this.#allowed('signal', cmd.signal) ? ilk.substituteSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+        return this.#allowed('signal', cmd.signal) ? ilk.substituteSignal(cmd.signal, { justifiedAtChoice: !!cmd.justifiedAtChoice }) : refuse(OTHER_DISTRICT);
       case 'point':
         return this.#allowed('point', cmd.id) ? ilk.switchPoint(cmd.id, cmd.position) : refuse(OTHER_DISTRICT);
       case 'derailer':
@@ -457,6 +457,8 @@ export class Simulation {
   /** Naciśnięcie przycisku – ref jak w ButtonProtocol.press lub { kind:'block', exit, btn }. */
   /** Inicjowanie polecenia specjalnego (stanowisko komputerowe): `cmd` – polecenie `execute`, `meta` { label, target }. */
   initiateSpecial(cmd, meta = {}) {
+    // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane przy inicjowaniu (docs/SOURCES.md)
+    if (cmd?.type === 'substitute') cmd = { ...cmd, justifiedAtChoice: this.ilk.faultOnPath(cmd.signal) };
     const res = this.special.start(this.clock.time, cmd, meta);
     if (res.ok) {
       this.bus.emit('log', { time: this.clock.time, level: 'info', msg: `Polecenie specjalne zainicjowane: ${meta.label ?? cmd.type} – potwierdzenie po 5 s, najpóźniej po 60 s` });

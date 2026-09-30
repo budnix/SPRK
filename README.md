@@ -115,7 +115,9 @@ Play it: **https://budnix.github.io/SPRK/**
   order „S”; a route that did not release behind a train because of a faulty track circuit is released with the
   emergency release at no cost. Waiting you could not avoid costs nothing: a shunting task's deadline moves by the
   unit's inbound delay (once the neighbour reports it) and by the time a fault with no way around blocked every
-  shunting path to the target track. Shift report with a score for every procedural
+  shunting path to the target track. A substitute signal given with a two-step command (EBILock SZI → SZW, MOR-3,
+  the monitor's special command) is judged when you choose it, so a fault repaired before you confirm still excuses
+  it. Shift report with a score for every procedural
   decision.
 
 ### Stations

@@ -4,7 +4,8 @@ import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import olszyny from '../src/stations/olszyny.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch } from './helpers.js';
+import { Simulation } from '../src/model/Simulation.js';
+import { autoDispatch, run } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
 
 /*
@@ -62,6 +63,7 @@ const DESKS = [
     dKo: (exit) => [(sim) => sim.submitCommand(`DKO ${exit}`)],
     // polecenie specjalne dwuczęściowe: SZI markuje semafor, SZW przyjmowane od 5 do 30 s po SZI (src/srk/ebilock.js)
     Sz: (sig) => [(sim) => sim.submitCommand(`SZI ${sig}`), 6, (sim) => sim.submitCommand(`SZW ${sig}`)],
+    twoStep: true,
   },
   {
     st: kalinowo, srk: 'mor3',
@@ -70,6 +72,7 @@ const DESKS = [
     dKo: (exit) => [(sim) => { sim.cancelSelection(); return sim.press({ kind: 'end', id: `k${exit}` }); }, (sim) => sim.chooseCommand('dKo'), 2, (sim) => sim.confirmCommand()],
     Sz: (sig) => [(sim) => { sim.cancelSelection(); return sim.press({ kind: 'signal', id: sig }); }, (sim) => sim.chooseCommand('SZ'), 2, (sim) => sim.confirmCommand()],
     cancel: (sim) => { sim.cancelSelection(); return { ok: sim.input.pending == null }; },
+    twoStep: true,
   },
   {
     st: szkolna, srk: 'komputerowe',
@@ -77,6 +80,7 @@ const DESKS = [
     dKo: (exit) => special({ type: 'block', exit, btn: 'dKo' }, { label: 'dKo', target: { kind: 'block', exit } }),
     Sz: (sig) => special({ type: 'substitute', signal: sig }, { label: 'Sygnał zastępczy (SZ)', target: { kind: 'signal', id: sig } }),
     cancel: (sim) => sim.cancelSpecial(),
+    twoStep: true,
   },
   {
     st: szkolna, srk: 'mech',
@@ -213,16 +217,14 @@ test('długa usterka semafora wjazdowego: dKo i Sz przez protokół stanowiska �
 
 /*
  * Semafor naprawiony, gdy SZ czeka na potwierdzenie (zainicjowane ok. 3 s przed naprawą, w czasie usterki). Po naprawie
- * semafor od razu daje sygnał zezwalający na nastawionym przebiegu, pociąg rusza w tym samym takcie. Utrwalony wynik:
- *  - potwierdzenie po naprawie – Sz wyświetla się na semaforze, za który czoło pociągu już wjechało, i kosztuje −5
- *    („bez usterki urządzeń”: `faultOnPath` liczy się w chwili wykonania, nie zainicjowania). docs/SOURCES.md ocenia Sz
- *    przy jego wyświetleniu, a Ie-20 §13 ust. 7 każe sprawdzić polecenie przed potwierdzeniem – wynik nie jest więc
- *    oczywiście błędny; czy uzasadnienie brać z chwili zainicjowania i czy Sz przy przebiegu zajętym przez pociąg
- *    przyjmować, to pytanie do właściciela reguły,
+ * semafor od razu daje sygnał zezwalający na nastawionym przebiegu, pociąg rusza w tym samym takcie.
+ *  - potwierdzenie po naprawie (MOR-3, monitor; EBILock – SZW po SZI) – Sz wyświetla się na semaforze, za który czoło
+ *    pociągu już wjechało. Sz ocenia się w chwili wyboru polecenia (docs/SOURCES.md): dyżurny zdecydował w czasie
+ *    usterki, potwierdzenie to krok bezpieczeństwa urządzenia – bez kary (dawniej −5, uzasadnienie z chwili wykonania),
  *  - odwołanie (OPS, Ie-20 §13 ust. 9) po zobaczeniu sygnału zezwalającego – bez Sz i bez kary.
  */
-test('MOR-3 i monitor: semafor naprawiony, gdy SZ czeka na potwierdzenie – potwierdzenie po naprawie: Sz −5 (utrwalone), odwołanie: bez Sz', () => {
-  for (const desk of DESKS.filter((x) => x.cancel)) for (const end of ['potwierdzenie', 'odwołanie']) {
+test('MOR-3, monitor, EBILock: semafor naprawiony, gdy SZ czeka na potwierdzenie – Sz oceniany w chwili wyboru (bez kary), odwołanie: bez Sz', () => {
+  for (const desk of DESKS.filter((x) => x.twoStep)) for (const end of desk.cancel ? ['potwierdzenie', 'odwołanie'] : ['potwierdzenie']) {
     const { st, srk } = desk;
     const sim = faultSim(st, { srk, timetable: p8Timetable(st) });
     const w = passWatch(sim);
@@ -251,8 +253,8 @@ test('MOR-3 i monitor: semafor naprawiony, gdy SZ czeka na potwierdzenie – pot
     if (end === 'potwierdzenie') {
       assert.equal(fin.after.aspect, 'Sz', `${msg}: Sz wyświetlony`);
       assert.equal(fin.entered, true, `${msg}: Sz przyjęty na semaforze, którego przebieg zajmuje już pociąg`);
-      assert.deepEqual(scores(sim, 'Sz'), [-5], `${msg}: Sz potwierdzony po naprawie (utrwalone)`);
-      assert.deepEqual(unjustified(sim), ['Sz -5: Sygnał zastępczy na A bez usterki urządzeń'], `${msg}: kary`);
+      assert.deepEqual(scores(sim, 'Sz'), [0], `${msg}: Sz wybrany w czasie usterki – uzasadniony, choć potwierdzony po naprawie`);
+      assert.deepEqual(unjustified(sim), [], `${msg}: kary`);
       assert.equal(sim.ilk.counters.Sz, 1, `${msg}: licznik Sz`);
       assert.equal(sim.report().counters.Sz, 1, `${msg}: licznik Sz w raporcie`);
     } else {
@@ -263,6 +265,29 @@ test('MOR-3 i monitor: semafor naprawiony, gdy SZ czeka na potwierdzenie – pot
     }
     if (srk === 'mor3') assert.equal(sim.input.specialCount, end === 'potwierdzenie' ? 2 : 1, `${msg}: licznik poleceń specjalnych MOR-1`);
     if (srk === 'komputerowe') assert.equal(sim.special.pending, null, `${msg}: polecenie specjalne zakończone`);
+  }
+});
+
+/*
+ * Druga strona oceny w chwili wyboru: Sz wybrany bez usterki kosztuje −5 także po potwierdzeniu (protokół zapamiętał
+ * brak uzasadnienia), a usterka, która zaczęła się przed potwierdzeniem, go uzasadnia (polecenie sprawdza się przed
+ * potwierdzeniem, Ie-20 §13 ust. 7).
+ */
+test('MOR-3, monitor, EBILock: Sz wybrany bez usterki – −5 po potwierdzeniu; usterka przed potwierdzeniem – bez kary', () => {
+  const TWO = {
+    ebilock: { choose: (sim) => sim.submitCommand('SZI A'), confirm: (sim) => sim.submitCommand('SZW A') },
+    mor3: { choose: (sim) => { sim.press({ kind: 'signal', id: 'A' }); return sim.chooseCommand('SZ'); }, confirm: (sim) => sim.confirmCommand() },
+    komputerowe: { choose: (sim) => sim.initiateSpecial({ type: 'substitute', signal: 'A' }, { label: 'Sz A' }), confirm: (sim) => sim.confirmSpecial() },
+  };
+  for (const [srk, d] of Object.entries(TWO)) for (const faultBefore of [false, true]) {
+    const sim = new Simulation(szkolna, { srk, scenario: { id: 't', name: 't', endTime: '09:00', trains: [] }, disruptions: 'none' });
+    const msg = `${srk}, ${faultBefore ? 'usterka semafora A między wyborem a potwierdzeniem' : 'bez usterki'}`;
+    assert.ok(d.choose(sim).ok, `${msg}: wybór Sz`);
+    if (faultBefore) sim.faults.add({ type: 'signal-fail', target: 'A', duration: 5 });
+    run(sim, 6);
+    assert.ok(d.confirm(sim).ok, `${msg}: potwierdzenie`);
+    assert.equal(sim.ilk.signals.get('A').aspect, 'Sz', `${msg}: Sz wyświetlony`);
+    assert.deepEqual(scores(sim, 'Sz'), [faultBefore ? 0 : -5], msg);
   }
 });
 

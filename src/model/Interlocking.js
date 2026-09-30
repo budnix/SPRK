@@ -1078,8 +1078,12 @@ export class Interlocking {
     return { ok: true };
   }
 
-  /** Sygnał zastępczy Sz na semaforze (licznik). */
-  substituteSignal(signalId) {
+  /**
+   * Sygnał zastępczy Sz na semaforze (licznik). `justifiedAtChoice` – usterka na drodze uzasadniała Sz w chwili wyboru
+   * polecenia dwuetapowego (protokół stanowiska zapamiętuje `faultOnPath` przy inicjowaniu); Sz jest wtedy bez kary,
+   * nawet gdy usterkę naprawiono przed potwierdzeniem.
+   */
+  substituteSignal(signalId, { justifiedAtChoice = false } = {}) {
     const sig = this.signals.get(signalId);
     if (!sig || sig.kind !== 'semafor') return this.#fail(`Sz tylko na semaforze`);
     if (!sig.canSubstitute) return this.#fail(`Semafor ${signalId} nie ma sygnału zastępczego`);
@@ -1093,7 +1097,7 @@ export class Interlocking {
     sig.substitute = true; sig.substituteUntil = this.time + SUBSTITUTE_TIME;
     this.counters.Sz++;
     this.#log('warn', `Sygnał zastępczy Sz na semaforze ${signalId} (licznik ${this.counters.Sz})`);
-    const justified = this.faultOnPath(signalId, path);
+    const justified = justifiedAtChoice || this.faultOnPath(signalId, path);
     this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     // przed Sz zwrotnice drogi ustawia się i utwierdza (przebieg albo zamknięcie Zz) – urządzenie tego nie wymusza
     const loose = path.points.filter(({ id }) => { const p = this.points.get(id); return !p.individualLock && !p.secured && !this.pointLockedByRoute(id); }).map((p) => p.id);
