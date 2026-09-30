@@ -568,20 +568,19 @@ test('Sopot, jazda po torze lewym jako odpowiedź na usterkę toru 2 do Gdańska
   assert.equal(runAll(LEFT_CASES.slice(0, 2).map((c) => () => checkLeft(leftCase(c)))), 2);
 });
 
-// Stan blokady GD1 po naprawie i następny pociąg od Gdańska – test „todo” niżej (błąd silnika)
+// Stan blokady GD1 po naprawie i następny pociąg od Gdańska – osobny test niżej
 test('Sopot, tor lewy przy blokadzie GD1 bez łączności: po „droga wolna” 9001 torem GD1, GD2 wolny, bez kary za tor, jeden pociąg na szlaku', () => {
   checkLeftSafety(leftCase(LEFT_CASES[2]));
 });
 
-test('Sopot, tor lewy przy blokadzie GD1 bez łączności: po naprawie odstęp GD1 wolny, następny pociąg od Gdańska', {
-  todo: 'błąd silnika: po naprawie blokady GD1 odstęp zostaje zajęty (poBlocked) – Block.setFault(false) sprawdza przyjazd naszego pociągu po phone.arrivalConfirmed, które nadpisał telefonogram o przyjeździe pociągu sąsiada (phoneReportArrival); sąsiad nie wyprawia już nic torem 1',
-}, () => {
+// wcześniej po naprawie odstęp zostawał zajęty (poBlocked): Block.setFault(false) sprawdzał przyjazd naszego pociągu po
+// phone.arrivalConfirmed, które nadpisał telefonogram o przyjeździe pociągu sąsiada – sąsiad nie wyprawiał już nic torem 1
+test('Sopot, tor lewy przy blokadzie GD1 bez łączności: po naprawie odstęp GD1 wolny, następny pociąg od Gdańska', () => {
   checkLeft(leftCase({ ...LEFT_CASES[2], timetable: [...LEFT_TT, osSopot(55106, 'GD1', 'OR1', '07:40', '07:41', '2')] }));
 });
 
-test('Sopot, tor lewy przy blokadzie GD1 bez łączności: zapytanie o drogę telefonogramem (Łączność) dla pociągu, który planowo jedzie torem GD2', {
-  todo: 'błąd silnika: Comms „ask-free” szuka pociągu po e.to === exit (src/model/Comms.js, case \'ask-free\') – dla jazdy po torze lewym odmawia („pociąg nr 9001 nie jest do wyprawienia do Gdańsk Oliwa”) i daje −5 comms-wrong',
-}, () => {
+// wcześniej Comms „ask-free” szukał pociągu po e.to === exit – dla jazdy po torze lewym odmawiał i dawał −5 comms-wrong
+test('Sopot, tor lewy przy blokadzie GD1 bez łączności: zapytanie o drogę telefonogramem (Łączność) dla pociągu, który planowo jedzie torem GD2', () => {
   const x = leftCase(LEFT_CASES[2], (sim, nr) => sim.comms.send('ask-free', { exit: 'GD1', nr }));
   assert.equal(x.d.state.asked?.ok, true, `${x.msg}: zapytanie „Czy droga dla pociągu nr 9001 jest wolna?” do Gdańska Oliwy torem 1 (${x.d.state.asked?.reason})`);
   checkLeftSafety(x);

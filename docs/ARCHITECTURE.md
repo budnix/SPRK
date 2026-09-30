@@ -390,7 +390,9 @@ przyjazdu, telefonogramy) losuje `opts.random` – `Simulation` daje każdemu sz
 to samo ziarno daje tę samą zmianę (test w `tests/disruptions.test.js`). Przy usterce (`fault`, zapowiadanie
 telefoniczne) szlak jest „nasz” (`#oursUnderFault`), gdy mamy „droga wolna” dla naszego pociągu albo niewykorzystane
 pozwolenie sprzed usterki (`faultDir`; zużywa je wyjazd pociągu) – sąsiad nie dostaje wtedy drogi, a naprawa zostawia
-pozwolenie u nas, dopóki pociąg nie wjedzie na szlak (`setFault(false)`); testy: `tests/faults-block.test.js`. Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
+pozwolenie u nas, dopóki pociąg nie wjedzie na szlak (`setFault(false)`); testy: `tests/faults-block.test.js`. SBL po
+naprawie zwalnia odstęp, gdy nie ma na nim pociągu; zapytanie o drogę (`ask-free`) przyjmuje pociąg do tej samej stacji
+sąsiedniej także innym torem niż z rozkładu (jazda po torze lewym, `tests/faults-stations.test.js`). Blokada zna numer pociągu na torze szlakowym (`lineTrain`: nasz od wyjazdu do potwierdzenia przyjazdu,
 sąsiada od wyprawienia do zjazdu w całości); monitor pokazuje go w menu strzałki szlaku pod separatorem, po
 poleceniach, jako czerwone kasetki z samymi numerami (`lineTrains`: pociąg na szlaku pełną kasetką, potem w kolejce
 pociągi zgłoszone przez sąsiada i czekające – konturem) – jak system śledzenia numerów w komputerowych srk, tylko na
@@ -573,9 +575,7 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   albo kierunek Eap.
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
   zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): brak zezwolenia dyżurnego na minięcie
-  sygnalizatora manewrowego z usterką (reguła do potwierdzenia). W `faults-stations.test.js`: odstęp SBL zostaje zajęty po naprawie,
-  gdy przy zapowiadaniu pojechał nasz pociąg torem lewym, a potem pociąg sąsiada (`poBlocked`); zapytanie o drogę
-  telefonogramem dla jazdy po torze lewym odrzucane (Comms szuka pociągu po szlaku z rozkładu).
+  sygnalizatora manewrowego z usterką (reguła do potwierdzenia).
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie

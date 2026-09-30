@@ -158,7 +158,6 @@ export class LineBlock {
     else {
       // koniec usterki: blokada wraca do pracy, więc blok początkowy zwalnia się jak zwykle po potwierdzeniu przyjazdu,
       // a na SBL odstęp po zjeździe pociągu sąsiada zwalnia się sam – bez dPo/dKo, których wymagało zapowiadanie
-      const arrivedOurs = this.poBlocked && this.phone.arrivalConfirmed != null && String(this.phone.arrivalConfirmed) === String(this.phone.departedTrain);
       // droga była nasza (zapowiedź naszego pociągu albo niewykorzystane pozwolenie sprzed usterki), a pociąg jeszcze nie
       // wjechał na szlak – może właśnie mijać semafor wyjazdowy; po naprawie pozwolenie zostaje u nas
       const oursPending = !this.occupied && this.#oursUnderFault() ? (this.phone.permissionFor ?? true) : null;
@@ -167,7 +166,9 @@ export class LineBlock {
       this.phone = { askedByThem: null, permissionFor: null, arrivalConfirmed: null, arrivedTrain: waiting, departedTrain: null, clearedFor: null, departedReported: true };
       if (this.fixed) this.direction = this.fixed;
       this.faultDir = null;
-      if (this.auto) { if (arrivedOurs) this.pendingArrivalAck = this.time + 5; }
+      // SBL: odstęp zwalnia się sam, gdy nie ma na nim pociągu – także gdy po naszym pociągu (np. po torze lewym) przyjechał
+      // pociąg sąsiada i telefonogram o jego przyjeździe nadpisał potwierdzenie przyjazdu naszego
+      if (this.auto) { if (this.poBlocked && !this.occupied) this.pendingArrivalAck = this.time + 5; }
       else {
         // Eap – automatyk po naprawie ustawia blokadę zgodnie ze stanem szlaku: wolny – stan zasadniczy; nasz pociąg
         // w drodze – blok początkowy zablokowany do Ko sąsiada; pociąg sąsiada – kierunek wjazdu (Ko po przyjeździe)

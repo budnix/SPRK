@@ -67,7 +67,9 @@ export class Comms {
     switch (f.id) {
       case 'ask-free': {
         if (!b) return { ok: false, reason: 'brak posterunku' };
-        const e = this.sim.traffic.timetable().find((x) => String(x.nr) === nr && x.to === p.exit && x.train && !x.train.finished);
+        // pociąg do tej stacji sąsiedniej – także innym torem niż z rozkładu (jazda po torze lewym)
+        const exits = this.sim.station.exits;
+        const e = this.sim.traffic.timetable().find((x) => String(x.nr) === nr && x.to && (x.to === p.exit || exits[x.to]?.name === exits[p.exit]?.name) && x.train && !x.train.finished);
         if (!e) return { ok: false, reason: `pociąg nr ${nr} nie jest do wyprawienia do ${b.neighbour}` };
         return b.phoneAskNeighbour(nr);
       }
