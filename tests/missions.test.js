@@ -94,8 +94,9 @@ test('kroki każdej misji są spójne: unikalne id, teksty, warunki, skróty ze 
     assert.doesNotMatch(s.text, /\b[Dd]rąż(?:ek|ka|kiem)\s+(?:a|b|c1|c2|d1|d2|c2m|tm1m)\b/, `mech/${s.id}: drążek bez pogrubienia`);
     assert.doesNotMatch(s.text, /\b[Dd]źwigni(?:a|ę|ą)\s+\d/, `mech/${s.id}: numer dźwigni bez pogrubienia`);
   }
-  // dźwignie rysowane z boku: zasadnicza odchylona w lewo, przełożona w prawo – nie „w górze” / „w dole” (to drążki)
-  for (const s of missionSteps('mech')) assert.doesNotMatch(`${s.text} ${s.tip || ''} ${s.wrong?.toString() || ''}`, /dźwigni\S*\s+(?:<b>)?\d*(?:<\/b>)?[^.;,]{0,25}\b(w górze|w dole|w górę|w dół)/i, `mech/${s.id}: położenie dźwigni`);
+  // dźwignia w położeniu zasadniczym jest górna, przełożona obraca się o 180° i zwisa w dół – nie „w lewo” / „w prawo”
+  for (const s of missionSteps('mech')) assert.doesNotMatch(`${s.text} ${s.tip || ''} ${s.wrong?.toString() || ''}`, /dźwigni\S*\s+(?:<b>)?\d*(?:<\/b>)?[^.;,]{0,25}\b(w lewo|w prawo|odchyl\S*)/i, `mech/${s.id}: położenie dźwigni`);
+  assert.match(missionSteps('mech').map((s) => s.text).join(' '), /A¹.*A²/, 'misja 4 mówi o dwóch dźwigniach semafora A');
 });
 
 test('misje bez rozgrzewki: po planie stacji od razu blokada i pierwszy pociąg – polecenia wtedy, gdy są potrzebne', () => {

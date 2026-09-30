@@ -221,7 +221,15 @@ za kolej.krb.com.pl; transportszynowy.pl – „Urządzenia mechaniczne scentral
   (Ie-8 §5 ust. 7, §9 ust. 2);
 * barwy trzonów dźwigni: zwrotnicowe i wykolejnicowe – niebieskie, semaforowe – czerwone, tarcz manewrowych –
   niebieskie z czerwoną obwódką; dźwignia ma położenie zasadnicze (górne) i przełożone (dolne) (Ie-8 §6 ust. 4;
-  transportszynowy.pl);
+  transportszynowy.pl); w położeniu zasadniczym dźwignia jest nachylona o 38° od pionu, przełożona obraca się
+  o 180° i zwisa w dół (transportszynowy.pl „Urządzenia mechaniczne scentralizowane”);
+* semafor rozprzężony (podaje Sr2 albo Sr3) ma dwie sprzężone dźwignie – jedną dla Sr2, drugą dla Sr3; semafor
+  sprzężony (tylko Sr1 / Sr3) – jedną (transportszynowy.pl);
+* drążek przebiegowy ma położenie pośrednie: zamyka zwrotnice drogi przebiegu, ale nie pozwala podać sygnału
+  zezwalającego – służy do jazdy na sygnał zastępczy; gdy i tego zrobić się nie da, zwrotnice zabezpiecza się na
+  miejscu (Ie-8 §21 ust. 14–15; transportszynowy.pl „Blokada stacyjna”);
+* aparat blokowy: klawisze bloków są na górnej płaszczyźnie skrzyni, okienka i zwalniacze (plombowane) na ścianie
+  czołowej, pod okienkami tabliczki z opisem (Ie-8 §9 ust. 3; transportszynowy.pl „Blokada stacyjna”);
 * kolejność przy przygotowaniu drogi przebiegu: zwrotnice i wykolejnice dźwigniami (także ochronne), potem drążek
   przebiegowy – „wolno przekładać do położenia przełożonego dopiero po wykonaniu wszystkich czynności” i nie da się
   go przełożyć przy niewłaściwym położeniu dźwigni; przełożony drążek zamyka zwrotnice przebiegu i wyklucza przebiegi
@@ -250,7 +258,7 @@ man.htm). Z opisu wzięto:
   zwrotnicowego; semafory jedno- i dwuramienne; nocą światła (czerwone, zielone, zielone nad pomarańczowym);
 * sygnał zastępczy Sz – białe światło migające na słupie semafora wskazującego Sr1;
 * tarcza ostrzegawcza kształtowa stoi przed semaforem kształtowym: **dwustawna** – okrągła tarcza pomarańczowa
-  z czarnym pierścieniem i białą obwódką, **Od1** ustawiona pionowo (semafor wskazuje Sr1), **Od2** w położeniu
+  z czarnym pierścieniem i białą obwódką (pierścień przylega do obwódki – rysunek od1dz.gif), **Od1** ustawiona pionowo (semafor wskazuje Sr1), **Od2** w położeniu
   poziomym (semafor wskazuje Sr2 albo Sr3); **trzystawna** – ta sama tarcza i biała strzała z czerwoną obwódką pod nią:
   **Ot1** tarcza pionowo, strzała w dół (Sr1), **Ot2** tarcza poziomo, strzała w dół (Sr2), **Ot3** tarcza pionowo,
   strzała ukośnie 45° w dół na prawo od słupa (Sr3);
@@ -263,10 +271,23 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
 * semafory kształtowe na całej stacji (także wyjazdowe i tarcze manewrowe); semafor ma dwa ramiona, gdy wychodzi
   z niego przebieg pociągowy o szybkości do 60 km/h (przez zwrotnicę w kierunku zwrotnym) – na ten przebieg podaje
   Sr3, na pozostałe Sr2; w rzeczywistości liczba ramion wynika z projektu stacji;
-* dźwignia sygnałowa jest jedna dla semafora – Sr2 albo Sr3 wynika z przebiegu zamkniętego drążkiem (uproszczenie
-  gry; w rzeczywistości semafor dwuramienny ma osobne dźwignie albo dźwignię dwukierunkową);
-* dolne ramię semafora dwuramiennego w położeniu spoczynkowym (Sr1, Sr2) jest pionowo wzdłuż słupa – jak na rysunkach
-  semaforów kształtowych; tego Ie-1 w cytowanym tekście nie opisuje;
+* semafor, z którego wychodzą przebiegi na Sr2 i na Sr3, ma dwie dźwignie sygnałowe; drążek przebiegowy zamyka tę,
+  której przebieg nie wymaga. Oznaczenia dźwigni indeksem liczby ramion – A¹ (Sr2), A² (Sr3) – są przyjęte. Semafor,
+  którego wszystkie przebiegi pociągowe są na Sr3, i semafor jednoramienny mają jedną dźwignię. Przebieg manewrowy
+  z semafora z dwiema dźwigniami podaje dźwignia pierwsza (uproszczenie gry – takiego semafora stacje gry nie mają);
+* dolne ramię semafora dwuramiennego w położeniu spoczynkowym (Sr1, Sr2) stoi pionowo w górę od swojej osi, tarczką
+  tuż pod górnym ramieniem, a przy Sr3 obraca się o 45° – jak na rysunkach sr1dz.gif, sr2dz.gif, sr3dz.gif
+  (kolej.krb.com.pl/e1); tego Ie-1 w cytowanym tekście nie opisuje słowami;
+* dźwignie rysowane są z boku, każda osobno (w rzeczywistości nastawniczy widzi rząd dźwigni od czoła); kąt 38°
+  i obrót o 180° jak w źródle, koziołek uproszczony do tarczy z dwoma wycięciami zapadki;
+* położenie pośrednie drążka: w grze osobne pole po lewej stronie szczeliny (kreska „½”) – drążek zamyka zwrotnice
+  i wykolejnice drogi przebiegu (także ochronne), nie sprawdza zajętości odcinków ani blokady liniowej i wyklucza
+  przebiegi po tych samych odcinkach; sygnału zezwalającego ani bloku przebiegowego podać się wtedy nie da. Drążek
+  wraca w położenie zasadnicze dopiero po zgaśnięciu Sz (przyjęte). Sz przy niezamkniętych zwrotnicach nie jest
+  blokowany, ale kosztuje punkty (kod `Sz-points`). Kliny zastawcze z Ie-8 zastępuje w grze zabezpieczenie zwrotnicy
+  na miejscu (`point-secure`). Położenie pośrednie mają tylko drążki przebiegów pociągowych (przyjęte);
+* tabliczka pod okienkiem bloku przebiegowego nosi nazwę semafora początkowego (przyjęte – źródło mówi tylko
+  o tabliczkach z opisem);
 * semafor z sygnałem manewrowym (np. C2 w Olszynach) ma na słupie tarczę manewrową kształtową (M1 / M2) – przyjęte,
   bo semafor kształtowy nie ma obrazu Ms2; jazda manewrowa obok niego – na M2 jak na tarczy manewrowej;
 * tarcza ostrzegawcza kształtowa jest tylko przy semaforach wjazdowych (pole `entry`): trzystawna przed semaforem

@@ -907,6 +907,13 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .desk.mech .lever-notch { fill: var(--desk-mech-bench); }
 .desk.mech .lever-drum { fill: var(--desk-mech-knob-edge); stroke: var(--desk-mech-slot); stroke-width: 1; }
 .desk.mech .drazek-pos.set .target { fill: var(--desk-mech-set); font-weight: 700; }
+.desk.mech .drazek-knob { pointer-events: none; }
+.desk.mech .blk-plate { fill: var(--desk-mech-plate); }
+.desk.mech .plate-text.small { font-size: 5px; }
+.desk.mech .half-tick { stroke: var(--desk-mech-label); stroke-width: 1; opacity: 0.55; }
+.desk.mech .bench-label.half-mark { font-size: 6.5px; opacity: 0.55; }
+.desk.mech .drazek-half.set .half-tick { stroke: var(--desk-mech-set); opacity: 1; }
+.desk.mech .drazek-half.set .half-mark { fill: var(--desk-mech-set); font-weight: 700; opacity: 1; }
 .desk.mech .lever-rod { fill: var(--desk-mech-blue); }
 .desk.mech .lever-signal .lever-rod { fill: var(--desk-mech-red); }
 .desk.mech .lever-shunt .lever-rod { fill: var(--desk-mech-blue); stroke: var(--desk-mech-red); stroke-width: 1.2; }
@@ -923,8 +930,9 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 .desk.mech .sem-hub { fill: var(--desk-mech-mast); }
 .desk.mech .sem-arm-body { fill: var(--desk-mech-arm); stroke: var(--desk-mech-arm-edge); stroke-width: 0.9; }
 .desk.mech .shunt-disc { fill: var(--desk-mech-shunt); stroke: var(--desk-mech-shunt-edge); stroke-width: 0.9; }
-.desk.mech .warn-face { fill: var(--desk-mech-warn); stroke: var(--desk-mech-arm); stroke-width: 0.8; }
-.desk.mech .warn-ring { fill: none; stroke: var(--desk-mech-warn-ring); stroke-width: 0.8; }
+.desk.mech .warn-edge { fill: var(--desk-mech-arm); }
+.desk.mech .warn-ring { fill: var(--desk-mech-warn-ring); }
+.desk.mech .warn-face { fill: var(--desk-mech-warn); }
 .desk.mech .sem-arrow { fill: var(--desk-mech-arm); stroke: var(--desk-mech-arm-edge); stroke-width: 0.8; stroke-linejoin: round; }
 .desk.mech .lever-pos.glyph .sem-arm-body { stroke-width: 0.7; }
 /* ruch: dźwignię i drążek przekłada ręka (krótko), ramię semafora i tarcza obracają się pędnią (dłużej) */

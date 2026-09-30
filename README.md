@@ -58,7 +58,9 @@ Play it: **https://budnix.github.io/SPRK/**
 * **Mechanical signal box** – an illuminated track diagram above a lever frame: numbered levers (blue for points
   and derailers, red for signals), route levers and route block windows. You throw the points yourself, lock the
   route with the route lever, lock the route block, then pull the signal lever; after the train the signal lever and
-  the route lever go back. Semaphore signals with moving arms (Sr1 / Sr2 / Sr3), distant discs at entry signals and
+  the route lever go back. A lever points up when normal and hangs down when reversed; a signal that shows both Sr2
+  and Sr3 has two levers (A¹, A²). The route lever also has an intermediate position that locks the points without
+  giving a signal – for a movement on the substitute signal Sz. Semaphore signals with moving arms (Sr1 / Sr2 / Sr3), distant discs at entry signals and
   shunting discs; arms, discs and levers move with a short animation (off when the system asks for reduced motion).
   Played in mission 4 at Olszyny.
 * **EBILock 950 workstation (EBIScreen)** – the same Ie-104 picture, operated the EBIScreen way: right click on an

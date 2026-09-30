@@ -294,6 +294,10 @@ export class Simulation {
    *
    *  { type: 'route', start, end, kind: 'train'|'shunt', compound? } – nastawienie przebiegu; `end` to semafor końcowy
    *      albo przycisk końca przebiegu (szlak, kozioł); `compound` – także łańcuch przez semafory pośrednie
+   *  { type: 'route', id }                    – przebieg wskazany wprost (drążek przebiegowy nastawni mechanicznej)
+   *  { type: 'route-half', id }               – drążek przebiegowy w położeniu pośrednim: zamyka zwrotnice, bez sygnału
+   *  { type: 'clear', signal, aspect? }       – dźwignia sygnałowa (nastawnia mechaniczna); `aspect` – dźwignia Sr2 / Sr3
+   *  { type: 'route-block', signal }          – blok przebiegowy utwierdzający
    *  { type: 'stop', signal }                 – sygnał „Stój”, przebieg pozostaje utwierdzony
    *  { type: 'release', signal, emergency?, timed? } – zwolnienie przebiegu (Pz) / doraźne (dPz, licznik) / czasowe na żądanie
    *  { type: 'substitute', signal }           – sygnał zastępczy (Sz, licznik)
@@ -321,8 +325,12 @@ export class Simulation {
         return cmd.compound ? ilk.requestCompoundRoute(cmd.start, cmd.end, cmd.kind) : ilk.requestRoute(cmd.start, cmd.end, cmd.kind);
       case 'stop':
         return this.#allowed('signal', cmd.signal) ? ilk.cancelSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+      case 'route-half': {
+        const r = ilk.routes.get(cmd.id);
+        return !r ? refuse(`Nieznany przebieg ${cmd.id}`) : this.#allowed('signal', r.start) ? ilk.halfRoute(cmd.id) : refuse(OTHER_DISTRICT);
+      }
       case 'clear':
-        return this.#allowed('signal', cmd.signal) ? ilk.clearSignal(cmd.signal) : refuse(OTHER_DISTRICT);
+        return this.#allowed('signal', cmd.signal) ? ilk.clearSignal(cmd.signal, cmd.aspect) : refuse(OTHER_DISTRICT);
       case 'route-block':
         return this.#allowed('signal', cmd.signal) ? ilk.blockRoute(cmd.signal) : refuse(OTHER_DISTRICT);
       case 'release':

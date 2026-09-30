@@ -92,6 +92,59 @@ test('mechaniczna: sygnał dopiero dźwignią, po zablokowaniu bloku przebiegowe
   assert.deepEqual(sim.execute({ type: 'stop', signal: 'A' }), { ok: true, noop: true });
 });
 
+test('mechaniczna: drążek w położeniu pośrednim zamyka zwrotnice mimo zajętości z usterki – Sz bez kary za niezamknięte zwrotnice', () => {
+  // usterka kontroli zajętości na drodze przebiegu A-D2: drążka nie da się przełożyć do końca
+  const fault = (sim) => { const s = sim.ilk.sections.get(sim.ilk.routes.get('A-D2').sections.at(-1)); s.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); };
+  const points = (sim) => sim.score.items.filter((i) => i.code === 'Sz-points').length;
+  // bez położenia pośredniego: Sz przy niezamkniętych zwrotnicach – wolno, ale z karą
+  const bare = mech();
+  throwLevers(bare, 'A-D2'); run(bare, 3); fault(bare);
+  assert.deepEqual(bare.execute({ type: 'route', id: 'A-D2' }).codes, ['section-occupied']);
+  assert.ok(bare.execute({ type: 'substitute', signal: 'A' }).ok, 'Sz nie jest blokowany');
+  assert.equal(points(bare), 1, 'kara za niezamknięte zwrotnice');
+  // z położeniem pośrednim: zwrotnice zamknięte, sygnału zezwalającego i bloku nie ma, Sz bez tej kary
+  const sim = mech();
+  const q = wrongPoint(sim, 'A-D2');
+  assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D2' }).codes, ['point-position'], 'złe położenie dźwigni – odmowa jak przy pełnym przełożeniu');
+  throwLevers(sim, 'A-D2'); run(sim, 3); fault(sim);
+  assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D2' }), { ok: true, half: true });
+  assert.equal(sim.ilk.active.size, 0, 'przebiegu nie ma');
+  assert.equal(sim.execute({ type: 'point', id: q.id, position: q.position === '+' ? '-' : '+' }).ok, false, 'zwrotnica zamknięta drążkiem');
+  assert.match(sim.execute({ type: 'clear', signal: 'A' }).reason, /położeniu pośrednim/);
+  assert.match(sim.execute({ type: 'route-block', signal: 'A' }).reason, /położeniu pośrednim/);
+  assert.equal(sim.ilk.signals.get('A').aspect, 'Sr1');
+  // drugi przebieg z tego samego drążka i przebieg po tych samych odcinkach – wykluczone
+  assert.deepEqual(sim.execute({ type: 'route', id: 'A-D1' }).codes.includes('signal-busy'), true);
+  assert.ok(sim.ilk.checkRoute(sim.ilk.routes.get('B-C2')).some((m) => /położeniu pośrednim/.test(m)));
+  assert.ok(sim.execute({ type: 'substitute', signal: 'A' }).ok);
+  assert.equal(points(sim), 0, 'zwrotnice zamknięte drążkiem – bez kary');
+  assert.equal(sim.ilk.signals.get('A').aspect, 'Sz');
+  // drążek wraca dopiero po zgaśnięciu Sz; potem zwrotnice wolne
+  assert.match(sim.execute({ type: 'release', signal: 'A' }).reason, /sygnał zastępczy/);
+  run(sim, 95);
+  assert.ok(sim.execute({ type: 'release', signal: 'A' }).ok);
+  assert.equal(sim.ilk.half.size, 0);
+  assert.ok(sim.execute({ type: 'point', id: q.id, position: q.position === '+' ? '-' : '+' }).ok);
+});
+
+test('mechaniczna: z położenia pośredniego drążek idzie dalej do końca (pełny przebieg), gdy droga jest wolna; tylko przebiegi pociągowe', () => {
+  const sim = mech();
+  throwLevers(sim, 'A-D1'); run(sim, 3);
+  assert.ok(sim.execute({ type: 'route-half', id: 'A-D1' }).ok);
+  assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D1' }), { ok: true, noop: true });
+  assert.deepEqual(sim.execute({ type: 'route', id: 'A-D1' }), { ok: true });
+  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.equal(sim.ilk.half.size, 0);
+  assert.ok(sim.execute({ type: 'route-block', signal: 'A' }).ok);
+  assert.ok(sim.execute({ type: 'clear', signal: 'A' }).ok);
+  const shunt = [...sim.ilk.routes.values()].find((r) => r.kind === 'shunt');
+  assert.match(sim.execute({ type: 'route-half', id: shunt.id }).reason, /manewrowy/);
+  // stanowiska bez dźwigni zwrotnicowych nie mają tego położenia
+  const e = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
+  assert.equal(e.execute({ type: 'route-half', id: 'A-D1' }).ok, false);
+  assert.equal(e.ilk.half.size, 0);
+});
+
 test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięcia dźwigni i drążka; sygnał tylko raz', () => {
   const sim = mech();
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);

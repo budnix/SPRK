@@ -151,13 +151,19 @@ z licznikiem jak dPz), a po przejeździe przebieg zostaje zamknięty do cofnięc
 kształtowe (`shapedSignals`): obrazy Sr1 / Sr2 / Sr3 i M1 / M2 zamiast świetlnych, semafor ma `arms` (1 albo 2 – dwa,
 gdy wychodzi z niego przebieg pociągowy ≤ 60 km/h), wjazdowy – `warning` (tarcza ostrzegawcza Od / Ot). Prędkość
 i znaczenie obrazu dają statyczne `Interlocking.aspectSpeed`, `isProceed`, `isStop`, `isShuntProceed`,
-`warningAspect` – model i widoki nie porównują nazw obrazów wprost. Polecenia
-idą przez `Simulation.execute`: `point` / `derailer` z położeniem, `route` z `id` (drążek wskazuje konkretny
-przebieg), `route-block`, `clear`, `stop`, `release`. Automat dyżurnego (`Operator.js`) umie tę kolejność.
+`warningAspect` – model i widoki nie porównują nazw obrazów wprost; obraz dla przebiegu podaje `shapedAspect(route)`.
+Polecenia idą przez `Simulation.execute`: `point` / `derailer` z położeniem, `route` z `id` (drążek wskazuje konkretny
+przebieg), `route-half` (drążek w położeniu pośrednim – `Interlocking.halfRoute`: zamyka zwrotnice i wykolejnice drogi
+przebiegu bez sprawdzania zajętości i blokady, bez sygnału i bez bloku; stan w `ilk.half`, zwrotnice widzą go przez
+`pointLockedByRoute`), `route-block`, `clear` (z `aspect` – dźwignia Sr2 albo Sr3 semafora rozprzężonego; zła
+dźwignia dostaje odmowę), `stop`, `release` (cofa też drążek z położenia pośredniego). Automat dyżurnego
+(`Operator.js`) umie tę kolejność.
 
 `leverFrame(ilk)` (bez DOM, test w Node) numeruje dźwignie (zwrotnicowe, wykolejnicowe, semaforowe, tarcz) i dzieli
-przebiegi na drążki: drążek należy do sygnalizatora i rodzaju przebiegu, najwyżej dwa przebiegi (w górę i w dół);
-`leverStates` mówi, jak narysować stan. Widok rysuje plan świetlny częściami pulpitów (`deskParts.js`, grafika
+przebiegi na drążki: drążek należy do sygnalizatora i rodzaju przebiegu, najwyżej dwa przebiegi (w górę i w dół).
+Semafor, z którego wychodzą przebiegi na Sr2 i na Sr3, dostaje dwie dźwignie (`id` A¹ / A², pola `signal`, `aspect`);
+`signalLevers` podaje dźwignie sygnalizatora – pierwszą tę, której wymaga przebieg (dla samouczka). `leverStates`
+mówi, jak narysować stan (drążek: `pos` i `half`). Widok rysuje plan świetlny częściami pulpitów (`deskParts.js`, grafika
 `leverArt.js` – kostki bez przycisków, zostają przyciski blokady; zamiast lampek sygnałów rysunek semafora
 kształtowego z ramionami, tarczą manewrową i ostrzegawczą) i ławę pod planem (`static size` dodaje jej wysokość).
 Położenia ramion, tarcz, dźwigni i drążków to transformacje CSS (`style.transform`), więc zmianę stanu animuje

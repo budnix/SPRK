@@ -36,7 +36,7 @@ function shuntDisc(cx, cy, h) {
 
 /**
  * Powtarzacz semafora kształtowego: słup, ramię górne i dolne (dolne widać tylko na semaforze dwuramiennym – w
- * spoczynku wisi wzdłuż słupa), latarnia sygnału zastępczego, tarcza manewrowa na słupie (semafor z sygnałem
+ * spoczynku stoi pionowo w górę od swojej osi, tarczką tuż pod górnym ramieniem), latarnia sygnału zastępczego, tarcza manewrowa na słupie (semafor z sygnałem
  * manewrowym), przy semaforze wjazdowym – tarcza ostrzegawcza kształtowa (tarcza i strzała trzystawnej). Rysunek
  * jak z miejsca maszynisty; dla jazdy na zachód w lustrzanym odbiciu – ramiona wskazują kierunek jazdy, jak maszt na
  * innych pulpitach. Położenia ramion i tarcz ustawia widok (`LeverRenderer.updateSignal`), obrót jest animowany w CSS.
@@ -57,13 +57,15 @@ export function signalArt(tile) {
   }
   pic.append(el('path', { class: 'sem-mast', d: 'M16,5 L16,30 M13,30 L19,30' }));
   if (tile.entry) {
-    // tarcza ostrzegawcza: okrągła, pomarańczowa z czarnym pierścieniem i białą obwódką; strzała – trzystawna
+    // tarcza ostrzegawcza: okrągła, pomarańczowa, z czarnym pierścieniem przylegającym do białej obwódki (Ie-1 §5
+    // ust. 2) – od środka: pomarańczowy, czarny, biały; strzała – trzystawna
     pic.append(el('path', { class: 'sem-mast thin', d: 'M5,12 L5,30 M3,30 L7,30' }));
     refs.warnArrow = el('path', { class: 'sem-arrow', d: 'M5,14 L5,19.5 L6.6,19.5 L5,22.5 L3.4,19.5 L5,19.5' });
     refs.pivots.warnArrow = [5, 14];
     refs.warn = el('g', { class: 'sem-disc warn-disc' }, [
-      el('circle', { class: 'warn-face', cx: 5, cy: 9, r: 3.6 }),
-      el('circle', { class: 'warn-ring', cx: 5, cy: 9, r: 2 }),
+      el('circle', { class: 'warn-edge', cx: 5, cy: 9, r: 4 }),
+      el('circle', { class: 'warn-ring', cx: 5, cy: 9, r: 3.3 }),
+      el('circle', { class: 'warn-face', cx: 5, cy: 9, r: 2.3 }),
     ]);
     refs.pivots.warn = [5, 9];
     pic.append(refs.warnArrow, refs.warn);
@@ -77,11 +79,13 @@ export function signalArt(tile) {
     refs.sz = e.lamp(12, 26, 1.8, '');
     pic.appendChild(refs.sz);
   }
-  refs.lower = semArm(16, 16, 'lower');
+  // oś dolnego ramienia niżej na słupie: ramię w spoczynku sięga w górę, pod samo ramię górne
+  refs.lower = semArm(16, 23, 'lower');
   refs.upper = semArm(16, 9, 'upper');
-  refs.pivots.lower = [16, 16];
+  refs.pivots.lower = [16, 23];
   refs.pivots.upper = [16, 9];
-  pic.append(refs.lower, refs.upper, el('circle', { class: 'sem-hub', cx: 16, cy: 9, r: 0.9 }));
+  refs.lowerHub = el('circle', { class: 'sem-hub', cx: 16, cy: 23, r: 0.9 });
+  pic.append(refs.lower, refs.upper, el('circle', { class: 'sem-hub', cx: 16, cy: 9, r: 0.9 }), refs.lowerHub);
   g.appendChild(pic);
   g.appendChild(text(east ? 30 : 10, 34, tile.id, { class: 'tile-text sig-label' }));
   return { g, refs };

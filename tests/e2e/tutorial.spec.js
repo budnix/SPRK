@@ -370,7 +370,11 @@ test('misja 4: nastawnia mechaniczna w Olszynach – pełna kolejność kliknię
   await expect(ctl('routeblock', 'A')).toHaveClass(/tut-hl/);
   await ctl('routeblock', 'A').click();
   await expect(title).toContainText('3. Dźwignia sygnałowa');
-  await ctl('lever', 'A').click();
+  // semafor A ma dwie dźwignie: samouczek wskazuje A¹ (przebieg na tor 1 wymaga Sr2), A² jest zamknięta
+  await expect(ctl('lever', 'A¹')).toHaveClass(/tut-hl/);
+  await ctl('lever', 'A²').click();
+  await expect(title).toContainText('3. Dźwignia sygnałowa');
+  await ctl('lever', 'A¹').click();
   await expect(title).toContainText('Pociąg wjeżdża');
   expect(await page.evaluate(() => window.sim.ilk.signals.get('A').aspect)).not.toBe('S1');
 });
