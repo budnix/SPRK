@@ -69,15 +69,59 @@ test('Gdynia Chylonia: pełna zmiana – 31 pociągów, wyjazdy dwustopniowe, od
   assert.ok(sim.ended);
 });
 
-test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3', () => {
-  const sim = new Simulation(chylonia, { scenario: 'tor-1-zamkniety', disruptions: 'none' });
-  const end = Clock.parse('08:20');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
-  for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
-    assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
+test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3; skład 55152 na tor 3, skąd dojedzie do Postojowej', () => {
+  for (const seed of [1, 2]) {
+    const sim = new Simulation(chylonia, { scenario: 'tor-1-zamkniety', disruptions: 'none', seed });
+    const end = Clock.parse('08:20');
+    let n = 0;
+    while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+    for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
+      assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+      assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
+    }
+    // 55152 kończy bieg i jedzie do Postojowej: z toru 2 drogi manewrowej nie ma (tor 1 zamknięty, a przez tor 503
+    // zwrotnica ochronna 37 blokuje powrót na tor 3) – automat przyjmuje go na tor 3, a 55106 ma wolny tor 2
+    const done = (x) => x.status === 'na następnym posterunku' || x.status === 'zakończył bieg' || x.status.startsWith('przekazany');
+    assert.ok(allArrived(sim), `ziarno ${seed}: ` + sim.traffic.timetable().filter((x) => !done(x)).map((x) => `${x.nr} ${x.status}`).join('; '));
+    const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
+    assert.equal(String(e(55152).actualTrack), '3', `ziarno ${seed}`);
+    assert.deepEqual([...e(55152).train.occupiedSections()], ['T964']);
+    assert.equal(sim.traffic.tasks.find((t) => t.id === 'postojowa-55152').done, true);
+    assert.equal(String(e(55106).actualTrack), '2');
   }
+});
+
+// skład 55152 przyjęty na tor 2 (poza planem) i zadanie „do Postojowej”: z toru 2 wprost się nie da
+const onTrack2 = (closed) => {
+  const scenario = { id: 't', name: 't', endTime: '09:00', trains: [55152], tasks: chylonia.tasks.filter((t) => t.unit === 55152),
+    ...(closed ? { closedSections: [{ section: 'T1', from: '05:55', to: '09:00' }] } : {}) };
+  const sim = new Simulation(chylonia, { scenario, disruptions: 'none' });
+  const e = sim.traffic.timetable()[0];
+  let n = 0, turns = 0, dir = null;
+  while (sim.clock.time < Clock.parse('08:30')) {
+    sim.step(0.5);
+    if (n++ % 4 === 0) autoDispatch(sim, (x) => (x.nr === 55152 ? '2' : x.track));
+    const d = e.train?.entered && e.train.direction;
+    if (d && dir && d !== dir) turns++;
+    if (d) dir = d;
+  }
+  return { sim, e, turns, task: sim.traffic.tasks[0] };
+};
+
+test('Chylonia: droga manewrowa z kilku przebiegów ze zmianą kierunku – z toru 2 przez tor 503 i tor 1 do Postojowej', () => {
+  const { sim, e, task } = onTrack2(false);
+  assert.equal(String(e.actualTrack), '2');
+  // M2 → Tm26 → A503, zmiana kierunku, Tm32 → E1 (tor 1), E1 → Postojowa
+  assert.equal(task.done, true, sim.traffic.tasks.map((t) => `${t.id} ${t.failed ? 'przepadło' : 'w toku'}`).join());
+  assert.ok(task.doneAt <= task.deadlineTime, 'po terminie');
+  assert.deepEqual([...e.train.occupiedSections()], ['T964']);
+});
+
+test('Chylonia: bez drogi do celu (tor 1 zamknięty) skład czeka – automat nie zmienia jego kierunku w kółko', () => {
+  const { e, turns, task } = onTrack2(true);
+  assert.equal(String(e.actualTrack), '2');
+  assert.equal(task.failed, true);
+  assert.equal(turns, 0, `zmiany kierunku: ${turns}`);
 });
 
 test('Chylonia: ruch prawostronny jak w Sopocie i Orłowie – SKM na dole, tor 1 każdej pary (jazda w prawo) pod torem 2; sygnalizatory przy torach, bez nakładania na przyciski', () => {

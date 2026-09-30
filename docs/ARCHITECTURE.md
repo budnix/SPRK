@@ -243,6 +243,14 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
   przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak. Testy: `tests/rumia.test.js`,
   `tests/operator.test.js`.
+* Manewry automatu (`Operator.#shuntPath`): drogę do toru docelowego zadania szuka BFS po przebiegach manewrowych,
+  także z kilkoma zmianami kierunku (Chylonia: z toru 2 przez tor 503 na tor 1 i do Postojowej). Pierwszy przebieg
+  zaczyna się od sygnalizatora, przed którym skład stoi; kolejny nie może potrzebować w innym położeniu zwrotnic, które
+  trzyma poprzedni (ochronne i pod składem) – inaczej skład utknąłby w połowie drogi. Bez drogi skład czeka (wcześniej
+  automat zmieniał mu kierunek co takt). Pociąg kończący bieg z zadaniem, gdy tor planowy jest zamknięty, dostaje tor,
+  z którego zadanie da się wykonać (albo czeka na taki tor). Skład, z którego powstanie pociąg (`unit`), a który
+  po przepadnięciu zadań stoi na torze bez przebiegu pociągowego, automat podstawia na tor odjazdu tego pociągu.
+  Testy: `tests/chylonia.test.js`, `tests/unit-handover.test.js`.
 * Tor szlakowy zajęty do minięcia semafora wjazdowego: `Block.awaitingEntry` (`tests/line-busy.test.js`).
 * Zgłoszenie pociągu przez sąsiada przeżywa zmianę trybu blokady: `Traffic.tick` pyta `Block.neighbourRequestAlive(nr)`
   i – gdy usterka łączności albo naprawa skasowała żądanie lub telefonogram – zgłasza pociąg od nowa (przy usterce

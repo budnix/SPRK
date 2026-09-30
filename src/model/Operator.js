@@ -91,6 +91,61 @@ export class AutoOperator {
   }
 
   /**
+   * Droga manewrowa składu na tor `target`: najkrótszy (w liczbie przebiegów) ciąg przebiegów manewrowych, także ze
+   * zmianami kierunku (BFS, do 6 przebiegów). Zwraca listę przebiegów albo null.
+   * `at` – skąd skład rusza: `{ occ, next, head, length }` (odcinki pod składem, sygnalizator przed nim, kierunek jazdy
+   * 'E'/'W', długość); `now` – pierwszy przebieg ma się dać nastawić teraz (dla składu, który stoi; bez `now` – czy
+   * droga w ogóle istnieje, np. z toru, na który pociąg dopiero wjedzie).
+   *  - pierwszy przebieg zaczyna się od sygnalizatora, przed którym skład stoi (zajmuje odcinek przed nim, ale żadnego
+   *    odcinka przebiegu) – w kierunku jazdy albo po zmianie kierunku; bez takiego – od sygnalizatora przed czołem,
+   *  - dalej: od sygnalizatora końcowego poprzedniego przebiegu (ten sam kierunek), od sygnalizatora zwróconego
+   *    w drugą stronę w tym samym miejscu (manewr „za rozjazdy i z powrotem”) albo – po zmianie kierunku – od
+   *    sygnalizatora, którego odcinek przed nim skład zajmie, stojąc na końcu poprzedniego przebiegu,
+   *  - poprzedni przebieg, na którego końcu skład stoi, trzyma swoje zwrotnice ochronne i zwrotnice pod składem –
+   *    następny nie może ich potrzebować w innym położeniu (inaczej skład utknie w połowie drogi, np. na torze do
+   *    szlaku); przebiegi przez odcinek zamknięty odpadają.
+   */
+  #shuntPath(at, target, routes, routeTrack, now) {
+    const ilk = this.sim.ilk, topo = ilk.topo;
+    const shunts = routes.filter((x) => x.kind === 'shunt' && !x.sections.some((sid) => ilk.sections.get(sid)?.closed));
+    const dir = (x) => topo.signals.get(x.start)?.dir;
+    const opposite = (sigId) => { const s = topo.signals.get(sigId); return s && [...topo.signals.values()].find((o) => o.kind === 'tm' && o.at.x === s.at.x && o.at.y === s.at.y && o.dir !== s.dir); };
+    // odcinki pod składem stojącym na końcu przebiegu (od końca, na długość składu)
+    const tail = (x) => { const out = new Set(); let len = 0; for (let i = x.sections.length - 1; i >= 0 && len < at.length; i--) { out.add(x.sections[i]); len += ilk.sections.get(x.sections[i])?.length ?? 0; } return out; };
+    const held = (x, under) => [...x.flank, ...x.points.filter((q) => under.has(ilk.points.get(q.id)?.section))];
+    const clash = (a, b) => a.some((q) => b.some((w) => w.id === q.id && w.position !== q.position));
+    // teraz: bez przeszkód poza zajętością przez sam skład (dźwignie zwrotnic nastawni mechanicznej automat przekłada)
+    const settable = (x) => ilk.routeProblems(x).every((q) => q.occupancy || q.code === 'point-position' || q.code === 'derailer-position')
+      && !x.sections.some((sid) => ilk.sections.get(sid).occupied && !at.occ.has(sid));
+    // przebieg od sygnalizatora, przed którym skład stoi: skład zajmuje odcinek przed nim, a żadnego odcinka przebiegu
+    // (skład stojący czołem tuż za tarczą ruszy dopiero w przebiegu od niej); bez takiego – od sygnalizatora przed czołem
+    const behind = (x) => at.occ.has(x.approach) && !x.sections.some((sid) => at.occ.has(sid));
+    const near = shunts.filter((x) => dir(x) === at.head && behind(x));
+    const same = near.length ? near : shunts.filter((x) => dir(x) === at.head && x.start === at.next);
+    const first = [...same, ...shunts.filter((x) => dir(x) !== at.head && behind(x))].filter((x) => !now || settable(x))
+      // bez zmiany kierunku najpierw, krótsze najpierw
+      .sort((a, b) => (dir(a) !== at.head) - (dir(b) !== at.head) || a.sections.length - b.sections.length);
+    const queue = first.map((x) => [x]);
+    const seen = new Set(first.map((x) => x.id));
+    while (queue.length) {
+      const path = queue.shift();
+      const last = path[path.length - 1];
+      if (routeTrack(last) === target) return path;
+      if (path.length >= 6) continue;
+      const end = last.end.type === 'signal' ? last.end.id : null, back = end && opposite(end), under = tail(last), kept = held(last, under);
+      for (const y of shunts) {
+        if (seen.has(y.id)) continue;
+        const ok = (end && y.start === end && dir(y) === dir(last)) || (back && y.start === back.id)
+          || (dir(y) !== dir(last) && under.has(y.approach) && !y.sections.some((sid) => under.has(sid)));
+        if (!ok || clash(kept, [...y.points, ...y.flank])) continue;
+        seen.add(y.id);
+        queue.push([...path, y]);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Przebiegi, które po usterce same nie wrócą do pracy:
    *  - semafor zgasł przed pociągiem, bo odcinek drogi przebiegu wykazał zajętość albo zwrotnica straciła kontrolę –
    *    sygnał sam nie wraca; automat zwalnia przebieg (Pz) i nastawia go od nowa, gdy droga będzie sprawna
@@ -193,6 +248,9 @@ export class AutoOperator {
       if (b.koPending) { if (!b.zpg && !b.koPrepared) b.press('dKo'); b.press('Ko'); }
     }
 
+    // zadanie czekające na poprzednie (`afterTask`) jeszcze nie jest do wykonania – niezależnie od kolejności na liście
+    const ready = (x) => !x.afterTask || sim.traffic.tasks.find((y) => y.id === x.afterTask)?.done;
+
     for (const e of sim.traffic.timetable()) {
       const tr = e.train;
       // ---- dyżurny-automat wydaje polecenia graczowi (dla ruchu w okręgu gracza) ----
@@ -261,9 +319,22 @@ export class AutoOperator {
           return null;
         };
         const path = pathTo(want);
-        // kolejność prób: tor planowy, potem inne tory peronowe, na końcu pozostałe (np. tor planowy zamknięty)
-        const rank = (r) => (routeTrack(r) === String(want) ? 0 : ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 2);
-        const order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
+        // Pociąg kończący bieg z zadaniem manewrowym: inny tor tylko taki, z którego da się to zadanie wykonać – skład
+        // stojący na torze bez drogi manewrowej do celu zostałby na nim do końca zmiany.
+        const job = !e.to && !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && ready(x) && String(x.unit) === String(e.nr)) : null;
+        const reach = (r) => {
+          if (!job) return true;
+          const occ = new Set(); let len = 0;
+          for (let i = r.sections.length - 1; i >= 0 && len < (e.length ?? 100); i--) { occ.add(r.sections[i]); len += ilk.sections.get(r.sections[i])?.length ?? 0; }
+          const at = { occ, next: r.end.type === 'signal' ? r.end.id : null, head: topo.signals.get(r.start).dir, length: e.length ?? 100 };
+          return !!this.#shuntPath(at, String(job.toTrack), routes, routeTrack, false);
+        };
+        // kolejność prób: tor planowy, potem inne tory peronowe, na końcu pozostałe (np. tor planowy zamknięty); przy
+        // zadaniu – tory, z których zadanie da się wykonać, przed pozostałymi
+        const rank = (r) => (routeTrack(r) === String(want) ? 0 : (ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 3) + (reach(r) ? 0 : 1));
+        let order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
+        // skoro jest inny tor, z którego zadanie da się wykonać, na tor bez drogi do celu nie przyjmować – raczej czekać
+        if (job && cands.some((r) => routeTrack(r) !== String(want) && reach(r))) order = order.filter((r) => routeTrack(r) === String(want) || reach(r));
         // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
         // ten pociąg nadjeżdża – żaden nie ruszy, dopóki ten nie wjedzie na inny tor
         // (nastawnia wykonawcza przyjmuje na tor z polecenia dyżurnego – toru sama nie zmienia)
@@ -301,26 +372,30 @@ export class AutoOperator {
         continue;
       }
       // ---- zadania manewrowe (tylko operator całej stacji) ----
-      // zadanie czekające na poprzednie (`afterTask`) jeszcze nie jest do wykonania – niezależnie od kolejności na liście
-      const ready = (x) => !x.afterTask || sim.traffic.tasks.find((y) => y.id === x.afterTask)?.done;
       const task = !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && t >= x.afterTime && ready(x) && (String(x.unit) === String(e.nr) || String(x.unit) === String(e.unit))) : null;
-      if (task && tr.entered && tr.v === 0) {
-        if (fullyOn(tr, task.toTrack)) continue;
+      // Skład, z którego powstanie pociąg (`unit`), stoi bez zadań na torze, z którego nie wychodzi żaden przebieg
+      // pociągowy (tor odstawczy – np. „podstaw” przepadło w trakcie odstawiania): automat podstawia go na tor
+      // odjazdu tego pociągu, zanim skład przejdzie w jazdę pociągową i zostanie przekazany. Zadanie, które czeka na
+      // swoją porę albo na poprzednie, też jest zadaniem – wtedy skład stoi; zadanie po poprzednim, które przepadło,
+      // już się nie wykona.
+      const alive = (x) => !x.done && !x.failed && (!x.afterTask || !sim.traffic.tasks.find((y) => y.id === x.afterTask)?.failed);
+      const open = (sim.traffic.tasks || []).some((x) => alive(x) && String(x.unit) === String(e.nr));
+      const heir = !task && !open && !this.district && !e.to && tr.entered ? sim.traffic.timetable().find((x) => String(x.unit) === String(e.nr) && !x.attached) : null;
+      const stranded = heir && !routes.some((r) => r.kind === 'train' && tr.occupiedSections().has(r.approach));
+      const target = task ? task.toTrack : stranded ? heir.track : null;
+      if (target != null && tr.entered && tr.v === 0) {
+        if (fullyOn(tr, target)) continue;
         if (tr.mode !== 'shunt') sim.traffic.toShunting(e.nr);
-        const next = tr.nextSignal();
         const occ = tr.occupiedSections();
+        // przebieg dla tego składu już czeka – skład zaraz ruszy
+        const mine = (x) => x.kind === 'shunt' && (x.start === tr.nextSignal() || occ.has(x.approach));
+        if (routes.some((x) => mine(x) && ((ilk.active.has(x.id) && !ilk.active.get(x.id).trainEntered) || ilk.pending.some((p) => p.route.id === x.id)))) continue;
         const head = ['E', 'NE', 'SE'].includes(tr.direction) ? 'E' : 'W';
-        const usable = routes.filter((x) => x.kind === 'shunt' && topo.signals.get(x.start).dir === head && (x.start === next || occ.has(x.approach)));
-        const isSet = (x) => ilk.active.has(x.id) || ilk.pending.some((p) => p.route.id === x.id);
-        // Przebieg wprost na tor docelowy; gdy go nie ma – przebieg do tarczy, spod której (po zmianie
-        // kierunku) tor docelowy jest osiągalny (manewr „za rozjazdy i z powrotem”).
-        const opposite = (sigId) => { const s = topo.signals.get(sigId); return [...topo.signals.values()].find((o) => o.kind === 'tm' && o.at.x === s.at.x && o.at.y === s.at.y && o.dir !== s.dir); };
-        const leadsTo = (x) => { if (x.end.type !== 'signal') return false; const o = opposite(x.end.id); return !!o && routes.some((y) => y.kind === 'shunt' && y.start === o.id && routeTrack(y) === String(task.toTrack)); };
-        const free = usable.filter((x) => !isSet(x) && !x.sections.some((sid) => ilk.sections.get(sid).occupied && !occ.has(sid)));
-        const r = free.find((x) => routeTrack(x) === String(task.toTrack))
-          || free.filter(leadsTo).sort((a, b) => a.sections.length - b.sections.length)[0];
-        if (r) this.#setRoute(r.id);
-        else if (!usable.some(isSet)) sim.traffic.reverseTrain(e.nr);
+        const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
+        // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg
+        // zajęty) – czekać, nie zmieniać kierunku w kółko
+        if (r && topo.signals.get(r.start).dir !== head) sim.traffic.reverseTrain(e.nr);
+        else if (r) this.#setRoute(r.id);
         continue;
       }
       // skład po manewrach (bez zadań) wraca w tryb jazdy pociągowej – dopiero wtedy przejmie go pociąg powrotny

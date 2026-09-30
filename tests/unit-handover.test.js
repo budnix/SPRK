@@ -102,3 +102,16 @@ test('skład opóźniony po godzinie „podstaw”: najpierw odstawienie, potem 
     assert.equal(e.status, 'na następnym posterunku', `${name}: ${e.nr} ${e.status}`);
   }
 });
+
+test('Chylonia: oba zadania przepadły, gdy skład był w drodze na tor 22 – automat podstawia go na tor 501, 93202 odjeżdża', () => {
+  // 93151 opóźniony o 30 min: odstawienie przepada (07:25) w trakcie jazdy na tor 22, podstawienie czeka na nie i też
+  // przepada; skład na torze odstawczym nie może być przekazany jako pociąg – z toru 22 nie ma przebiegu pociągowego
+  const scenario = { id: 't', name: 't', endTime: '10:00', trains: [93151, 93202], tasks: chylonia.tasks.filter((x) => x.unit === 93151) };
+  const sim = new Simulation(chylonia, { scenario, disruptions: 'none' });
+  sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 93151), 30);
+  let n = 0;
+  while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  assert.deepEqual(sim.traffic.tasks.map((t) => t.failed), [true, true]);
+  const e = sim.traffic.timetable().find((x) => x.nr === 93202);
+  assert.equal(e.status, 'na następnym posterunku', e.status);
+});
