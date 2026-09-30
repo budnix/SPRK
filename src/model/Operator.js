@@ -181,7 +181,8 @@ export class AutoOperator {
       if (!tr || tr.finished) continue;
 
       // ---- pociąg stanął za semaforem, który zgasł tuż przed nim: rozkaz pisemny na dalszą jazdę ----
-      if (tr.stoppedAt?.kind === 'spad' && tr.v === 0 && this.#inDistrict(tr.stoppedAt.signal)) {
+      // (rozkaz wydaje dyżurny ruchu – nastawnia wykonawcza czeka na gracza)
+      if (this.role !== 'executive' && tr.stoppedAt?.kind === 'spad' && tr.v === 0 && this.#inDistrict(tr.stoppedAt.signal)) {
         sim.traffic.issueOrder({ nr: e.nr, signal: tr.stoppedAt.signal });
         continue;
       }
@@ -236,7 +237,9 @@ export class AutoOperator {
         const order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
         // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
         // ten pociąg nadjeżdża – żaden nie ruszy, dopóki ten nie wjedzie na inny tor
+        // (nastawnia wykonawcza przyjmuje na tor z polecenia dyżurnego – toru sama nie zmienia)
         const crossing = (r) => {
+          if (this.role === 'executive') return false;
           const sid = r.sections.at(-1);
           return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0 && o.train.occupiedSections().has(sid));
         };
