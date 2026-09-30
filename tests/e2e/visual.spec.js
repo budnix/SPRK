@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openShift } from './helpers.js';
+import { openShift, advance } from './helpers.js';
 
 /* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update.
    Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu) – wysokość nagłówka różni się
@@ -14,7 +14,10 @@ async function shot(page, selector, width, height) {
 
 test('wygląd pulpitu kostkowego (Szkolna, typ E) po nastawieniu przebiegu', async ({ page }) => {
   await openShift(page, 'szkolna', { settings: { sideCollapsed: true }, params: { scenariusz: 'zmiana-e' } });
-  await page.evaluate(() => { window.sim.press({ kind: 'signal', id: 'A', color: 'green' }); window.sim.press({ kind: 'signal', id: 'D1', color: 'green' }); for (let i = 0; i < 20; i++) window.sim.step(0.5); });
+  await page.evaluate(() => { window.sim.press({ kind: 'signal', id: 'A', color: 'green' }); window.sim.press({ kind: 'signal', id: 'D1', color: 'green' }); });
+  // zegar zatrzymany (openShift) – krok symulacji przez advance, inaczej przebieg zostaje w nastawianiu
+  await advance(page, 10);
+  expect(await page.evaluate(() => [window.sim.ilk.active.has('A-D1'), window.sim.ilk.signals.get('A').aspect])).toEqual([true, 'S5']);
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-szkolna.png');
 });
