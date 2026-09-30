@@ -73,3 +73,28 @@ test('SBL: zgoda na zmianę kierunku (Zk) odmówiona, gdy nasz przebieg wyjazdow
   assert.equal(b.press('Zk').ok, true);
   assert.equal(b.direction, 'in');
 });
+
+test('SBL bez łączności, tor zwykle wjazdowy: po „droga wolna” dla naszego pociągu (albo po Zk na nasz kierunek) sąsiad nie wyprawia swojego', () => {
+  // wcześniej przy usterce tor o kierunku zasadniczym „wjazd” był dla sąsiada wolny, gdy nie był zajęty – mimo naszej
+  // zapowiedzi pociągu po torze lewym; sąsiad wyprawiał swój pociąg naprzeciw
+  const sbl = () => { const b = new LineBlock('GD1', { name: 'Gdańsk Oliwa', tile: { x: 0, y: 6 }, dir: 'W', direction: 'in', block: 'sbl' }, new EventBus()); b.tick(25200); return b; };
+  const a = sbl();
+  a.setFault(true);
+  assert.ok(a.phoneAskNeighbour(9001).ok);
+  a.tick(25260);
+  assert.equal(a.phone.permissionFor, 9001, '„droga wolna” dla 9001');
+  assert.equal(a.gate('substitute').ok, true, 'nasz pociąg może jechać na Sz');
+  assert.equal(a.neighbourRequests(5100), false);
+  assert.equal(a.canNeighbourDispatch(5100), false, 'sąsiad nie wyprawia 5100 naprzeciw');
+  // kierunek zmieniony na nasz (Zk) przed usterką
+  const b = sbl();
+  assert.ok(b.press('Zk').ok);
+  b.tick(25240);
+  assert.equal(b.direction, 'out');
+  b.setFault(true);
+  assert.equal(b.canNeighbourDispatch(5100), false, 'kierunek nasz – sąsiad nie wyprawia');
+  // bez naszej zapowiedzi i przy kierunku zasadniczym sąsiad wyprawia jak dotąd (po potwierdzeniu przyjazdu)
+  const c = sbl();
+  c.setFault(true);
+  assert.equal(c.canNeighbourDispatch(5100), true);
+});

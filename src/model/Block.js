@@ -392,6 +392,15 @@ export class LineBlock {
     return this.phone.permissionFor != null || (this.direction === 'out' && this.permission);
   }
 
+  /**
+   * Tor o kierunku zasadniczym „wjazd” przy zapowiadaniu: sąsiad wyprawia bez pytania, gdy tor jest wolny, poprzedni
+   * pociąg minął nasz semafor wjazdowy i jego przyjazd jest zawiadomiony – ale nie wtedy, gdy tor jest nasz (kierunek
+   * zmieniony na wyjazd Zk albo „droga wolna” dla naszego pociągu po torze lewym).
+   */
+  #inboundFreeUnderFault() {
+    return !this.occupied && !this.awaitingEntry && !this.koPending && this.direction !== 'out' && this.phone.permissionFor == null;
+  }
+
   /** Sąsiad pyta telefonicznie o drogę dla swojego pociągu. */
   phoneAskFromNeighbour(nr) {
     if (this.phone.askedByThem || this.phone.clearedFor || this.occupied || this.awaitingEntry || this.koPending || this.#oursUnderFault()) return false;
@@ -559,7 +568,7 @@ export class LineBlock {
   neighbourRequests(nr) {
     if (this.time < this.heldUntil && !this.auto && !this.fixed) return false; // pociąg wstrzymany naszym „Stój pociąg”
     // przy zapowiadaniu na torze właściwym linii dwutorowej sąsiad nie pyta – wyprawia po potwierdzonym przyjeździe
-    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : this.phoneAskFromNeighbour(nr);
+    if (this.fault) return this.fixed === 'in' ? this.#inboundFreeUnderFault() : this.phoneAskFromNeighbour(nr);
     if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked && !this.awaitingEntry; }
     if (this.fixed === 'in') return !this.occupied && !this.awaitingEntry && !this.koPending; // blokada jednokierunkowa: bez pozwolenia
     if (this.fixed === 'out') return false;
@@ -598,7 +607,7 @@ export class LineBlock {
   }
 
   canNeighbourDispatch(nr) {
-    if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : String(this.phone.clearedFor) === String(nr) && !this.occupied && !this.awaitingEntry;
+    if (this.fault) return this.fixed === 'in' ? this.#inboundFreeUnderFault() : String(this.phone.clearedFor) === String(nr) && !this.occupied && !this.awaitingEntry;
     // SBL: sąsiad z pociągiem do wyprawienia prosi o kierunek przyjazdu (np. po naszej jeździe po torze lewym) i czeka
     // na zgodę
     if (this.auto) {

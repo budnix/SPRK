@@ -197,7 +197,9 @@ wyklucza „droga wolna” dla pociągu sąsiada, także gdy blokada nie ma usta
 przestawia); sąsiad odpowiada „droga wolna” dla naszego pociągu dopiero, gdy jego poprzedni pociąg minął nasz semafor
 wjazdowy i jego przyjazd jest zawiadomiony; na blokadzie samoczynnej przy usterce przyjazd pociągu sąsiada zawiadamia
 się telefonicznie także wtedy, gdy krótki pociąg zjechał ze szlaku przed minięciem semafora; odpowiedź na zapytanie,
-która przyjdzie już po naprawie, niczego nie zapowiada (przyjęte). Stanowisko MOR-1 ma w menu
+która przyjdzie już po naprawie, niczego nie zapowiada; na torze o kierunku zasadniczym „wjazd” (SBL, linia
+dwutorowa) sąsiad przy zapowiadaniu nie wyprawia swojego pociągu, gdy tor jest nasz – po zmianie kierunku (Zk) albo po
+„droga wolna” dla naszego pociągu po torze lewym (przyjęte). Stanowisko MOR-1 ma w menu
 trójkąta polecenie oWbl – przyjęte (odpowiednik wyciągnięcia Wbl).
 
 Lampki blokady Eap na pulpitach kostkowych (typ E, IZH-111, plan świetlny nastawni mechanicznej) – ISDR 2.3.2.3.2,
