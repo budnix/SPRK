@@ -551,9 +551,20 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   – `faults-combined.test.js` – dwie różne usterki na drodze jednego pociągu: semafor wyjazdowy i blokada tego wyjazdu
     (Sz / rozkaz „S” dopiero po „droga wolna”, dPo, zawiadomienie o odjeździe), semafor wjazdowy i blokada wjazdu (dKo
     odrzucone, przyjazd telefonogramem), napęd zwrotnicy albo semafor wjazdowy i fałszywa zajętość toru docelowego
-    (Sz / rozkaz przez zwrotnice zamknięte, po zabezpieczeniu na miejscu); koniec zmiany z niewykonanym zawiadomieniem.
+    (Sz / rozkaz przez zwrotnice zamknięte, po zabezpieczeniu na miejscu); koniec zmiany z niewykonanym zawiadomieniem;
+  – `faults-desks.test.js` – usterki obsługiwane przez protokół stanowiska, nie przez `sim.execute`: dKo i Sz przy długiej
+    usterce semafora wjazdowego na każdym z sześciu stanowisk (przyciski typu E, adres i rozkaz IZH-111, SZI → SZW
+    w EBILock, menu i potwierdzenie MOR-3, polecenie specjalne na monitorze, klawisz Sz nastawni mechanicznej), semafor
+    naprawiony, gdy SZ czeka na potwierdzenie (wynik utrwalony); nastawnia mechaniczna – drążek w położeniu pośrednim
+    przy zajętości toru docelowego z usterki, usterka semafora i bloku przebiegowego tego samego semafora (Sz
+    i zwalniacz), usterka napędu zwrotnicy w Olszynach;
+  – `faults-shunt.test.js` – zadania manewrowe Szkolnej przy usterce na drodze manewru (sygnalizator bez Ms2, napęd
+    zwrotnicy, fałszywa zajętość – przed manewrem i w czasie jazdy): krótka bez kar, długa – obecne zachowanie (automat
+    czeka na naprawę); ochrona drogi pociągu na Sz / rozkaz „S” (zwrotnicę trzyma utwierdzenie przebiegu albo Zz).
   Błąd silnika znaleziony takim testem zostaje testem `todo` (uruchamia się, ale nie psuje wyniku) do poprawki, która
-  zmienia go na zwykły test; 16 błędów znalezionych przy powstaniu tych plików jest poprawionych – `todo` nie ma.
+  zmienia go na zwykły test. Otwarte `todo` (w `faults-shunt.test.js`): zwrotnica na drodze pociągu jadącego na Sz /
+  rozkaz „S” daje się otworzyć (Zz) i przestawić przed pociągiem; brak zezwolenia dyżurnego na minięcie sygnalizatora
+  manewrowego z usterką (reguła do potwierdzenia).
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
