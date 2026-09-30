@@ -75,6 +75,50 @@ export class Traffic {
    *  - wyjazd na szlak tylko z pozwoleniem blokady liniowej.
    */
   /**
+   * Usterka na drodze toru planowego pociągu `e`, czynna między zgłoszeniem pociągu a jego przyjazdem (dyżurny decyduje
+   * o torze wcześniej, niż pociąg przyjedzie): odcinki toru, przebiegi na niego od strony wjazdu (także wieloetapowe),
+   * przebiegi z niego w stronę wyjazdu – odcinki (zajętość z usterki, licznik osi, pęknięta szyna), zwrotnice (napęd),
+   * semafory przebiegów (usterka semafora; bez semafora wjazdowego – ten jest wspólny dla wszystkich torów).
+   */
+  #plannedTrackFault(e, t) {
+    const ilk = this.ilk, T = String(e.track);
+    const trackOf = (sid) => String(ilk.sections.get(sid)?.track ?? '');
+    const sections = new Set([...ilk.sections.values()].filter((s) => String(s.track) === T).map((s) => s.id));
+    const points = new Set(), signals = new Set();
+    const add = (r, withSignal) => { for (const sid of r.sections) sections.add(sid); for (const p of r.points) points.add(p.id); if (withSignal) signals.add(r.start); };
+    const train = ilk.routeList().filter((r) => r.kind === 'train');
+    // wjazd: łańcuchy przebiegów od strony `from` (do 3 stopni) kończące się na torze planowym
+    const app = e.from ? (() => { const ex = this.station.exits[e.from]; return ilk.topo.trackAt(ex.tile.x, ex.tile.y)?.section; })() : null;
+    const chains = (starts, goal, depth = 3) => {
+      const out = [];
+      const walk = (path) => {
+        const last = path[path.length - 1];
+        if (goal(last)) { out.push(path); return; }
+        if (path.length >= depth || last.end.type !== 'signal') return;
+        for (const r of train) if (r.start === last.end.id && !path.includes(r)) walk([...path, r]);
+      };
+      for (const r of starts) walk([r]);
+      return out;
+    };
+    for (const path of chains(train.filter((r) => r.approach === app), (r) => trackOf(r.sections.at(-1)) === T)) path.forEach((r, i) => add(r, i > 0));
+    // wyjazd: przebiegi z toru planowego w stronę wyjazdu z rozkładu (do 3 stopni)
+    for (const path of chains(train.filter((r) => trackOf(r.approach) === T), (r) => !!e.to && r.exit === e.to)) path.forEach((r) => add(r, true));
+    for (const sid of sections) if (ilk.sections.get(sid)?.defect) return true;
+    const from = e.requestAt ?? t - 20 * 60;
+    return (this.faultList?.() ?? []).some((f) => {
+      if (!(f.active || f.done)) return false;
+      const since = f.since ?? f.at;
+      if (since > t || since + f.duration < from) return false;
+      switch (f.type) {
+        case 'false-occupancy': case 'axle-counter': case 'track-defect': return sections.has(f.target);
+        case 'point-control': return points.has(f.target);
+        case 'signal-fail': return signals.has(f.target);
+        default: return false;
+      }
+    });
+  }
+
+  /**
    * Zezwolenie dyżurnego na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15–16, § 6 ust. 2 pkt 2):
    * przebieg manewrowy od tego sygnalizatora nastawiony, sygnalizator nie daje Ms2 / M2 z powodu usterki – zezwolenie
    * ustne albo przez radiotelefon, dla tego jednego przebiegu, jazda z prędkością manewrową. Przy sprawnym sygnalizatorze
@@ -304,11 +348,9 @@ export class Traffic {
         if (track && e.track && String(track) !== String(e.track)) {
           this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
           const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
-          // usterka urządzeń (zwrotnica bez kontroli, odcinek z fałszywą zajętością, semafor wyjazdowy toru planowego)
-          // uzasadnia inny tor – jak przy Sz
-          // także semafor wyjazdowy toru planowego bez sygnału zezwalającego (usterka semafora) – pociąg odjedzie z innego toru
-          const exitFailed = this.ilk.routeList().some((r) => r.kind === 'train' && String(this.ilk.sections.get(r.approach)?.track) === String(e.track) && this.ilk.signals.get(r.start)?.failed);
-          const fault = exitFailed || [...this.ilk.sections.values()].some((s) => Interlocking.faultOccupied(s)) || [...this.ilk.points.values()].some((p) => p.faultUntil > t);
+          // usterka urządzeń na drodze toru planowego (jego odcinki, przebieg wjazdowy na niego, wyjazd z niego) uzasadnia
+          // inny tor – jak przy Sz; usterka gdzie indziej na stacji – nie (przyjęte)
+          const fault = this.#plannedTrackFault(e, t);
           if (fault) this.bus.emit('log', { time: t, level: 'info', msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
           if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }

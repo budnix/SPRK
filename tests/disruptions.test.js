@@ -216,7 +216,7 @@ test('koniec zmiany czeka na obowiązki blokady: po wyjeździe na rozkaz „S”
   assert.ok(forgot.atEnd.includes('no-dpo'), `kara za brak dPo w raporcie: ${forgot.atEnd.join(', ')}`);
 });
 
-test('inny tor, bo semafor wyjazdowy toru planowego ma usterkę: bez kary „wrong-track” (jak przy zajętości z usterki)', async () => {
+test('inny tor tylko przez usterkę na drodze toru planowego (semafor wyjazdowy, zajętość toru) – bez kary; usterka gdzie indziej – kara', async () => {
   const { default: szkolna } = await import('../src/stations/szkolna.js');
   const { faultSim } = await import('./fault-harness.js');
   const { AutoOperator } = await import('../src/model/Operator.js');
@@ -230,6 +230,11 @@ test('inny tor, bo semafor wyjazdowy toru planowego ma usterkę: bez kary „wro
   };
   assert.deepEqual(shift([{ type: 'signal-fail', target: 'D1', at: '06:55', duration: 40 }]), [], 'D1 (wyjazd z toru 1) z usterką');
   assert.deepEqual(shift([]), [-5], 'bez usterki – kara jak dotąd');
+  // usterka na drodze toru planowego – także naprawiona przed przyjazdem, ale czynna, gdy dyżurny wybierał tor
+  assert.deepEqual(shift([{ type: 'false-occupancy', target: 'T1', at: '06:55', duration: 40 }]), [], 'tor 1 zajęty z usterki');
+  assert.deepEqual(shift([{ type: 'false-occupancy', target: 'T1', at: '06:58', duration: 5 }]), [], 'usterka toru 1 naprawiona przed przyjazdem');
+  // usterka gdzie indziej na stacji (tor 3) nie uzasadnia innego toru – wcześniej uzasadniała każda zajętość z usterki
+  assert.deepEqual(shift([{ type: 'false-occupancy', target: 'T3', at: '06:55', duration: 40 }]), [-5], 'usterka poza drogą toru 1');
 });
 
 test('raport zmiany: punkty i ocena', () => {

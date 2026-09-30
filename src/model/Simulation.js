@@ -77,6 +77,7 @@ export class Simulation {
     this.special = new SpecialCommand(); // polecenie specjalne stanowiska komputerowego (Ie-104.1 §11)
     this.comms = new Comms(this);
     this.faults = new Faults(this, this.rng, this.level, this.scenario.faults || []);
+    this.traffic.faultList = () => this.faults.list; // usterki uzasadniające decyzje dyżurnego (np. inny tor)
     this.closed = (this.scenario.closedSections || []).map((c) => ({ section: c.section, from: c.from ? Clock.parse(c.from) : 0, to: c.to ? Clock.parse(c.to) : Infinity, active: false }));
     this.extraTrainsPlanned = this.#planExtraTrains();
     this.ilk.time = this.clock.time;
