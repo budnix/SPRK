@@ -145,7 +145,7 @@ Lampki są wygaszone w stanie zasadniczym; co świeci i kiedy – opis klasy `Iz
 
 Czwarte stanowisko – pierwsze, w którym zmienia się **kolejność obsługi**, a nie tylko sposób wydawania poleceń.
 Różnice są opcjami `Interlocking` (domyślnie wyłączonymi): przebieg nie przestawia zwrotnic (`manualPoints`,
-przeszkoda `point-position`), sygnał podaje dźwignia (`manualSignal`: `clearSignal`, tylko raz na jazdę), przebieg
+przeszkoda `point-position`; zwrotnica bez kontroli położenia – przeszkoda `point`, drążek nie zamyka przebiegu), sygnał podaje dźwignia (`manualSignal`: `clearSignal`, tylko raz na jazdę), przebieg
 pociągowy wymaga bloku przebiegowego utwierdzającego (`routeBlock`: `blockRoute`, zwalnia go pociąg albo zwalniacz
 z licznikiem jak dPz), a po przejeździe przebieg zostaje zamknięty do cofnięcia drążka (`holdRoute`). Semafory są
 kształtowe (`shapedSignals`): obrazy Sr1 / Sr2 / Sr3 i M1 / M2 zamiast świetlnych, semafor ma `arms` (1 albo 2 – dwa,

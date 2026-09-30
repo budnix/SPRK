@@ -369,7 +369,7 @@ test('usterka napędu zwrotnicy przebiegu wjazdowego i wyjazdowego: przebieg utw
 // kontroli). Po przestawieniu zwrotnicy w czasie usterki semafor wskazuje Sr2 / Sr3, a pociąg i tak staje przed zwrotnicą
 // bez kontroli (Train: przejazd tylko po zabezpieczeniu). Zwrotnica bez kontroli – jazda tylko na Sz albo rozkaz „S”
 // (docs/SOURCES.md, „wszystkie stanowiska”; Ie-4 §30 ust. 1).
-test('nastawnia mechaniczna: usterka napędu zwrotnicy – drążek nie zamyka przebiegu, sygnał zezwalający dopiero po naprawie', { todo: 'błąd silnika: nastawnia mechaniczna zamyka przebieg i podaje Sr2/Sr3 przy zwrotnicy bez kontroli (Interlocking.routeProblems / #computeAspect)' }, () => {
+test('nastawnia mechaniczna: usterka napędu zwrotnicy – drążek nie zamyka przebiegu, sygnał zezwalający dopiero po naprawie', () => {
   for (const [from, to] of DIRS) for (const kind of ['wjazd', 'wyjazd']) {
     checkPoint(pointCase(szkolna, 'mech', from, to, kind, 12));
   }

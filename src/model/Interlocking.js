@@ -500,6 +500,10 @@ export class Interlocking {
       if (p.trailed) add('point', `Zwrotnica ${req.id} rozpruta`);
       if (this.manualPoints && (p.position !== req.position || p.moving)) {
         add('point-position', p.moving ? `Zwrotnica ${req.id} w trakcie przestawiania` : `Zwrotnica ${req.id} w położeniu ${p.position} – potrzebne ${req.position}`);
+      } else if (this.manualPoints && !p.control) {
+        // nastawnia mechaniczna: przebieg zamyka drążek od razu (bez nastawiania), więc brak kontroli położenia sprawdza się
+        // tu – inaczej drążek zamykał przebieg, a semafor dawał sygnał zezwalający przy zwrotnicy bez kontroli
+        add('point', `Zwrotnica ${req.id} bez kontroli położenia`);
       } else if (p.position !== req.position || !p.control) {
         if (p.individualLock) add('point', `Zwrotnica ${req.id} zamknięta w położeniu ${p.position}`);
         if (p.secured || p.securing) add('point', `Zwrotnica ${req.id} zabezpieczona na miejscu w położeniu ${p.position}`);
