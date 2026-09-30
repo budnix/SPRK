@@ -15,10 +15,17 @@ function grantBlocks(sim) {
 /** Czy przebieg `b` jest kontynuacją przebiegu `a` (oba pociągowe, `b` zaczyna się na semaforze końcowym `a`). */
 const continues = (a, b) => a.kind === 'train' && b.kind === 'train' && a.end.type === 'signal' && a.end.id === b.start;
 
-function conflicts(r1, r2) {
+/**
+ * Tor stacyjny będący ostatnim odcinkiem dwóch przebiegów manewrowych nie czyni ich sprzecznymi (Ie-4 §43 ust. 5);
+ * każdy musi mieć przed nim odcinek głowicy. Stacja testowa takiej pary nie ma – sprawdza je tests/shared-track.test.js.
+ */
+const sharedEndTrack = (sim, r1, r2, s) => r1.kind === 'shunt' && r2.kind === 'shunt' && sim.ilk.sections.get(s).kind === 'station'
+  && r1.sections.length > 1 && r2.sections.length > 1 && r1.sections.at(-1) === s && r2.sections.at(-1) === s;
+
+function conflicts(r1, r2, sim) {
   if (r1.start === r2.start) return 'ten sam semafor';
   const s1 = new Set(r1.sections), s2 = new Set(r2.sections);
-  for (const s of s2) if (s1.has(s)) return `wspólny odcinek ${s}`;
+  for (const s of s2) if (s1.has(s) && !sharedEndTrack(sim, r1, r2, s)) return `wspólny odcinek ${s}`;
   const pos = new Map();
   for (const p of [...r1.points, ...r1.flank]) pos.set(p.id, p.position);
   for (const p of [...r2.points, ...r2.flank]) if (pos.has(p.id) && pos.get(p.id) !== p.position) return `zwrotnica ${p.id} w różnych położeniach`;
@@ -47,7 +54,7 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
       assert.equal(a.ok, true, `r1 ${r1.id}: ${a.reason}`);
       run(sim, POINT_SWITCH_TIME + 1);
       assert.ok(sim.ilk.active.has(r1.id), `r1 ${r1.id} nie utwierdzony`);
-      const expectConflict = conflicts(r1, r2);
+      const expectConflict = conflicts(r1, r2, sim);
       // zwrotnice drogi ochronnej r1 utwierdzone w bieżącym położeniu
       const act1 = sim.ilk.active.get(r1.id);
       let overlapPointConflict = null;
@@ -66,10 +73,10 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
       } else {
         assert.equal(b.ok && set2, true, `${r1.id} + ${r2.id}: powinny być zgodne: ${b.reason}`);
         allowed++;
-        // niezmiennik: żaden odcinek nie jest utwierdzony w dwóch przebiegach
+        // niezmiennik: żaden odcinek nie jest utwierdzony w dwóch przebiegach (poza wspólnym torem docelowym manewrów)
         const owners = new Map();
         for (const act of sim.ilk.active.values()) for (const s of act.lockedSections) {
-          assert.ok(!owners.has(s), `odcinek ${s} utwierdzony podwójnie`);
+          assert.ok(!owners.has(s) || sharedEndTrack(sim, r1, r2, s), `odcinek ${s} utwierdzony podwójnie`);
           owners.set(s, act.id);
         }
         // niezmiennik: zwrotnica w obu przebiegach ma to samo położenie

@@ -173,6 +173,17 @@ export class Train {
       const lim = this.#tileLimit(tile, inPort, outPort);
       if (lim < Infinity) constraints.push({ dist: 0, speed: lim, reason: `zwrotnica ${tile.id}`, kind: 'limit' });
     }
+    // inny tabor przed czołem na tej samej kostce – składy manewrowe jadące naprzeciw siebie po tym samym torze
+    if (tile?.section && this.stockAt && this.blockedBy(tile.section)) {
+      const at0 = this.head - seg.start;
+      const off = this.stockAt(tile, inPort, at0);
+      if (off != null) {
+        const at = off - at0;
+        constraints.push({ dist: Math.max(0, at - STOCK_CREEP), speed: 3 * KMH, reason: 'dojazd do taboru', kind: 'limit' });
+        constraints.push({ dist: Math.max(0, at - 2), speed: 0, reason: 'tabor na torze', kind: 'end' });
+        return constraints;
+      }
+    }
     if (seg.virtual && !seg.entering) {
       constraints.push({ dist: 0, speed: Math.min(this.lineSpeed, this.vmax), reason: 'szlak', kind: 'limit' });
       return constraints;

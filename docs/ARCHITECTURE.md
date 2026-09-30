@@ -225,6 +225,12 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Zwalnianie: Pz (natychmiast lub czasowo 90 s przy zajętym odcinku zbliżania albo przebiegu poprzednim z sygnałem
   zezwalającym lub pociągiem), dPz (doraźne, licznik). Po zwolnieniu kontynuacji `#restoreOverlap` przywraca drogę
   ochronną przebiegu poprzedniego (`overlapByCont`) albo daje „Stój”.
+* Wspólny tor docelowy: odcinek ma jednego właściciela (`section.route`), z jednym wyjątkiem – tor stacyjny będący
+  ostatnim odcinkiem dwóch przebiegów manewrowych (`#sharedEndTrack`, Ie-4 §43 ust. 5). Oba przebiegi mają go
+  w `lockedSections` i flagę `sharedEnd`; `section.route` wskazuje jeden z nich, a przy zwolnieniu przechodzi na drugi
+  (`#unlockSection`). Wjazd składu w taki przebieg poznaje się po odcinkach głowicy, nie po zajętości toru docelowego
+  (zajmuje go też drugi skład). Pociąg widzi inny tabor także na kostce, na której stoi jego czoło
+  (`Traffic.stockAt(…, from)`). Test: `tests/shared-track.test.js`.
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).
   Test: `tests/signal-safety.test.js`.

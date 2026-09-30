@@ -453,9 +453,11 @@ export class Interlocking {
       const s = this.sections.get(sid);
       const last = i === route.sections.length - 1;
       if (s.closed) add('section-closed', `Odcinek ${sid} zamknięty dla ruchu`);
-      if (s.route && s.route !== route.id) add('section-locked', `Odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+      // tor stacyjny może być celem dwóch przebiegów manewrowych z przeciwnych stron (Ie-4 §43 ust. 5)
+      const holder = s.route && s.route !== route.id ? this.active.get(s.route)?.route : null;
+      if (s.route && s.route !== route.id && !(holder && this.#sharedEndTrack(route, holder, sid))) add('section-locked', `Odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
       if (s.occupied && !(route.kind === 'shunt' && last)) add('section-occupied', `Odcinek ${sid} zajęty`, true);
-      for (const pr of this.pending) if (pr.route.sections.includes(sid)) add('section-pending', `Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
+      for (const pr of this.pending) if (pr.route.sections.includes(sid) && !this.#sharedEndTrack(route, pr.route, sid)) add('section-pending', `Odcinek ${sid} w nastawianym przebiegu ${pr.route.id}`);
     });
     // Droga ochronna (zbędna, gdy semafor końcowy ma nastawiony przebieg – kontynuacja)
     if (overlapNeeded) {
@@ -470,7 +472,7 @@ export class Interlocking {
       if (act.id === route.id || predIds.has(act.id)) continue;
       for (const sid of route.sections) if (act.overlap.includes(sid)) add('overlap', `Odcinek ${sid} w drodze ochronnej przebiegu ${act.id}`);
       // przebieg po przejeździe pociągu, wciąż zamknięty (holdRoute): jego odcinki wykluczają przebiegi sprzeczne
-      if (act.passed) for (const sid of route.sections) if (act.route.sections.includes(sid)) add('section-locked', `Odcinek ${sid} w zamkniętym przebiegu ${act.id} – zwolnij przebieg`);
+      if (act.passed) for (const sid of route.sections) if (act.route.sections.includes(sid) && !this.#sharedEndTrack(route, act.route, sid)) add('section-locked', `Odcinek ${sid} w zamkniętym przebiegu ${act.id} – zwolnij przebieg`);
     }
     // drążek innego semafora w położeniu pośrednim wyklucza przebiegi po tych samych odcinkach
     for (const h of this.half.values()) {
@@ -513,6 +515,27 @@ export class Interlocking {
       if (!g.ok) add('block', g.reason);
     }
     return problems;
+  }
+
+  /**
+   * Wspólny tor docelowy dwóch przebiegów manewrowych (Ie-4 §43 ust. 5): przebiegi manewrowe z przeciwnych stron na
+   * ten sam tor stacyjny nie są sprzeczne – sprzeczne są dopiero na odcinkach między rozjazdami tej samej głowicy.
+   * Warunek: oba manewrowe, `sid` to tor stacyjny i ostatni odcinek obu przebiegów, a każdy ma przed nim jeszcze
+   * odcinek głowicy (po nim poznaje się wjazd składu).
+   */
+  #sharedEndTrack(route, other, sid) {
+    return route.kind === 'shunt' && other.kind === 'shunt' && route.id !== other.id
+      && this.sections.get(sid)?.kind === 'station'
+      && route.sections.length > 1 && other.sections.length > 1
+      && route.sections.at(-1) === sid && other.sections.at(-1) === sid;
+  }
+
+  /** Zwolnienie odcinka z przebiegu `act`: utwierdzenie przechodzi na drugi przebieg, który ten odcinek jeszcze trzyma. */
+  #unlockSection(sid, act) {
+    const s = this.sections.get(sid);
+    if (s.route !== act.id) return;
+    const other = [...this.active.values()].find((a) => a !== act && a.lockedSections.includes(sid) && !a.released.has(sid));
+    s.route = other ? other.id : null;
   }
 
   /** Zwrotnice leżące w drodze ochronnej – utwierdzane w bieżącym położeniu. */
@@ -683,7 +706,13 @@ export class Interlocking {
       signalOff: this.manualSignal, timedRelease: null,
       lever: false, blocked: false, passed: false, // dźwignia sygnałowa, blok przebiegowy, przejazd przy holdRoute
     };
-    for (const sid of route.sections) { const s = this.sections.get(sid); s.route = route.id; s.wasOccupied = false; }
+    for (const sid of route.sections) {
+      const s = this.sections.get(sid);
+      // tor docelowy trzyma już drugi przebieg manewrowy: utwierdzenie zostaje przy nim, oba przebiegi wiedzą o sobie
+      const first = s.route && s.route !== route.id ? this.active.get(s.route) : null;
+      if (first) { first.sharedEnd = true; act.sharedEnd = true; continue; }
+      s.route = route.id; s.wasOccupied = false;
+    }
     this.active.set(route.id, act);
     const sig = this.signals.get(route.start);
     sig.route = route.id;
@@ -851,10 +880,7 @@ export class Interlocking {
   #dissolve(act) {
     const preds = this.#continuedBy(act.route);
     if (act.exitSignal && !act.trainEntered) this.opts.onExitSignal?.(act.route.exit, act.id, false);
-    for (const sid of act.lockedSections) {
-      const s = this.sections.get(sid);
-      if (s.route === act.id) s.route = null;
-    }
+    for (const sid of act.lockedSections) this.#unlockSection(sid, act);
     const sig = this.signals.get(act.route.start);
     if (sig.route === act.id) sig.route = null;
     this.active.delete(act.id);
@@ -1190,7 +1216,16 @@ export class Interlocking {
       // czoło pociągu w przebiegu: najdalszy odcinek zajęty od chwili nastawienia (wasOccupied zeruje się przy
       // utwierdzeniu, więc tabor stojący wcześniej na torze docelowym się nie liczy); bardzo krótki odcinek (np. sama
       // zwrotnica) może być przeskoczony między krokami symulacji – dlatego nie wymagamy zajęcia pierwszego
-      const front = secs.reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+      let front = secs.reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+      if (act.sharedEnd) {
+        // tor docelowy wspólny z drugim przebiegiem manewrowym: jego zajętość może pochodzić od drugiego składu, więc
+        // czoło poznaje się po odcinkach głowicy; skład jest na torze docelowym, gdy zjechał z ostatniego z nich
+        const n = secs.length;
+        front = secs.slice(0, n - 1).reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+        if ((act.front ?? -1) >= n - 2 && !this.sections.get(secs[n - 2]).occupied) front = n - 1;
+        front = Math.max(front, act.front ?? -1);
+      }
+      act.front = Math.max(act.front ?? -1, front);
       if (!act.trainEntered && front >= 0) {
         act.trainEntered = true;
         act.timedRelease = null;
@@ -1230,14 +1265,15 @@ export class Interlocking {
           // zwalnianie odcinkowe: odcinek za czołem pociągu i wolny (także przeskoczony bez zajęcia); ostatni odcinek
           // zwalnia się, gdy pociąg go opuścił (wyjazd na szlak) albo wjechał na tor docelowy (gałąź niżej)
           const last = i === secs.length - 1;
-          if (!s.occupied && (i < front || (last && s.wasOccupied))) {
+          // (tor docelowy wspólny z drugim przebiegiem manewrowym: dopiero gdy skład tego przebiegu na niego wjechał)
+          if (!s.occupied && (i < front || (last && s.wasOccupied && (!act.sharedEnd || front >= i)))) {
             act.released.add(sid);
-            if (s.route === act.id) s.route = null;
+            this.#unlockSection(sid, act);
             this.bus.emit('section', s);
           } else if (last && s.occupied && act.released.size === secs.length - 1 && act.route.end.type !== 'exit') {
             // Pociąg wjechał na tor docelowy – przebieg zakończony
             act.released.add(sid);
-            if (s.route === act.id) s.route = null;
+            this.#unlockSection(sid, act);
             this.bus.emit('section', s);
           }
         }

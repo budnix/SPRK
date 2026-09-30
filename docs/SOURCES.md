@@ -72,7 +72,10 @@ Zezwolenie na jazdę (wszystkie stanowiska). Ze źródeł: pociąg mija semafor 
 manewrowej, dla pociągu znaczy „Stój” (Ie-1 §4 ust. 14 i 17; Ir-1 §11 ust. 1). Pociąg wyprawia się na szlak
 na sygnał semafora wyjazdowego albo na rozkaz pisemny (Ir-1 §63 ust. 1 pkt 1). Jazda manewrowa obok sygnalizatora –
 na Ms2 (M2) (Ie-1 §3 ust. 17–18). Przebieg manewrowy przez drogę ochronną przebiegu pociągowego jest z nim sprzeczny
-(Ie-4 §43 ust. 2 pkt 4). Sygnał manewrowy gaśnie dopiero po minięciu sygnalizatora przez cały skład (Ie-4 §40,
+(Ie-4 §43 ust. 2 pkt 4). Przebiegi manewrowe z przeciwnych stron na ten sam tor stacyjny nie są sprzeczne – sprzeczne
+są dopiero na odcinku między rozjazdami tej samej głowicy (Ie-4 §43 ust. 5); w grze tor stacyjny może być ostatnim
+odcinkiem dwóch przebiegów manewrowych naraz, a składy dojeżdżają do siebie jak do taboru na torze zajętym (ostatnie
+metry do 3 km/h). Sygnał manewrowy gaśnie dopiero po minięciu sygnalizatora przez cały skład (Ie-4 §40,
 §42 ust. 2 – wytyczne dla nowych urządzeń; przyjęte na wszystkich stanowiskach poza nastawnią mechaniczną). Przyjęte
 (uproszczenia gry):
 

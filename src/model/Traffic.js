@@ -164,9 +164,10 @@ export class Traffic {
   /** Czy odcinek zajmuje inny tabor niż pociąg `nr` (stan z ostatniego kroku). */
   /**
    * Odległość od wejścia na kostkę `tile` (portem `inPort`) do najbliższego końca innego taboru na tej kostce albo null –
-   * dojazd do taboru na torze zajętym.
+   * dojazd do taboru na torze zajętym. `from` – liczy się tylko tabor dalej niż `from` od wejścia (tabor przed czołem
+   * składu, który sam stoi na tej kostce).
    */
-  stockAt(tile, inPort, self) {
+  stockAt(tile, inPort, self, from = 0) {
     let best = null;
     for (const tr of this.trains) {
       if (tr === self || tr.finished) continue;
@@ -174,7 +175,9 @@ export class Traffic {
         if (seg.tile !== tile) continue;
         const a = Math.max(0, tr.tail - seg.start), b = Math.min(seg.len, tr.head - seg.start);
         if (a >= b) continue;
-        const off = seg.inPort === inPort ? a : seg.len - b; // ten sam kierunek jazdy albo przeciwny
+        const lo = seg.inPort === inPort ? a : seg.len - b; // ten sam kierunek jazdy albo przeciwny
+        if (lo + (b - a) <= from) continue; // tabor za czołem
+        const off = Math.max(lo, from);
         if (best == null || off < best) best = off;
       }
     }
@@ -231,7 +234,7 @@ export class Traffic {
       onExit: (exitId, tr) => this.#onExit(e, exitId, tr),
       onEvent: (ev, tr, arg) => this.#onTrainEvent(e, ev, tr, arg),
       blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
-      stockAt: (tile, inPort) => this.stockAt(tile, inPort, train),
+      stockAt: (tile, inPort, from) => this.stockAt(tile, inPort, train, from),
     });
     return train;
   }
