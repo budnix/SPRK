@@ -79,6 +79,33 @@ test('usterka dopisana w trakcie zmiany (Faults.add): zaczyna się przy najbliż
   assert.equal(sim.ilk.signals.get('A').failed, false);
 });
 
+test('dwie usterki tego samego elementu nałożone w czasie: element niesprawny do końca późniejszej (wcześniej pierwsza naprawa kasowała drugą)', () => {
+  const faults = (type, target) => [{ type, target, at: '05:52', duration: 10 }, { type, target, at: '05:57', duration: 10 }];
+  const at = (sim, hhmm) => run(sim, Clock.parse(hhmm) - sim.clock.time);
+  for (const [type, target, broken] of [
+    ['false-occupancy', 'T1', (sim) => sim.ilk.sections.get('T1').occupied],
+    ['signal-fail', 'A', (sim) => sim.ilk.signals.get('A').failed],
+    ['block-fail', 'E', (sim) => sim.blocks.get('E').fault],
+    ['point-control', 'Zw1', (sim) => sim.ilk.points.get('Zw1').faultUntil > sim.clock.time],
+  ]) {
+    const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: faults(type, target) }, disruptions: 'none' });
+    at(sim, '06:04');
+    assert.equal(sim.faults.list.filter((f) => f.active).length, 1, `${type}: pierwsza naprawiona, druga trwa`);
+    assert.ok(broken(sim), `${type}: element dalej niesprawny`);
+    at(sim, '06:08');
+    assert.ok(!broken(sim), `${type}: po końcu drugiej sprawny`);
+  }
+  // blokada: początek drugiej usterki nie kasuje naszego zapytania o drogę – odpowiedź sąsiada przychodzi
+  const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: faults('block-fail', 'E') }, disruptions: 'none' });
+  at(sim, '05:56:50');
+  const b = sim.blocks.get('E');
+  const replies = [];
+  sim.bus.on('comms', (c) => { if (c.exit === 'E' && /nr 6101/.test(c.text)) replies.push(c.text); });
+  assert.ok(b.phoneAskNeighbour(6101).ok);
+  at(sim, '05:58:30');
+  assert.equal(replies.length, 1, 'odpowiedź sąsiada na zapytanie o 6101 nie przepadła');
+});
+
 test('usterka semafora: brak sygnału mimo przebiegu, Sz uzasadniony (0 pkt), po usunięciu semafor działa', () => {
   const sim = new Simulation(station, { scenario: { id: 't', name: 't', faults: [{ type: 'signal-fail', target: 'A', at: '05:53', duration: 2 }] } });
   run(sim, 90);

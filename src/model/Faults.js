@@ -91,11 +91,23 @@ export class Faults {
     for (const f of this.list) {
       // licznik osi: od `at` odcinek jest „uzbrojony” – zależność ustawia usterkę w chwili zjazdu taboru, bez taktu przerwy
       if (f.type === 'axle-counter' && !f.active && !f.done && time >= f.at) { const s = this.sim.ilk.sections.get(f.target); if (s) s.axleArmed = true; }
-      if (!f.active && !f.done && time >= f.at && this.#ready(f)) { f.active = true; f.since = time; this.#apply(f); }
-      if (f.active && time >= (f.since ?? f.at) + f.duration) { f.active = false; f.done = true; this.#clear(f); }
+      if (!f.active && !f.done && time >= f.at && this.#ready(f)) {
+        f.active = true; f.since = time;
+        // druga usterka tego samego elementu, gdy pierwsza trwa: element już jest niesprawny – nie ustawia się go od nowa
+        // (np. blokada nie gubi zapytania o drogę), a napęd zwrotnicy wraca dopiero po późniejszej z nich
+        if (!this.#twin(f)) this.#apply(f);
+        else if (f.type === 'point-control') { const p = this.sim.ilk.points.get(f.target); if (p) p.faultUntil = Math.max(p.faultUntil || 0, time + f.duration); }
+      }
+      // naprawa – dopiero po ostatniej z nakładających się usterek elementu
+      if (f.active && time >= (f.since ?? f.at) + f.duration) { f.active = false; f.done = true; if (!this.#twin(f)) this.#clear(f); }
       if (f.active && f.type === 'track-defect') this.#defectRide(f);
       if (f.active && f.type === 'axle-counter') this.#pilotRide(f);
     }
+  }
+
+  /** Inna czynna usterka tego samego rodzaju na tym samym elemencie (losowanie i scenariusz mogą je nałożyć). */
+  #twin(f) {
+    return this.list.find((x) => x !== f && x.active && x.type === f.type && x.target === f.target) ?? null;
   }
 
   /** Usterka licznika osi pojawia się, gdy pociąg zjedzie z odcinka (po `at`); inne usterki – o czasie `at`. */

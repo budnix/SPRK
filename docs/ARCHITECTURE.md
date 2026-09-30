@@ -270,7 +270,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Tor docelowy z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): przebieg pociągowy jest
   zakończony, gdy zwolniły się wszystkie odcinki przed torem docelowym i pociąg stoi na tym torze – także wtedy, gdy
   do ostatniego odcinka nie dojechał (`tests/mech.test.js`).
-* Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy).
+* Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy). Dwie usterki
+  tego samego rodzaju na jednym elemencie mogą się nałożyć (losowanie, scenariusz): druga nie ustawia elementu od nowa,
+  naprawa przychodzi po ostatniej (`Faults.#twin`; napęd zwrotnicy – do późniejszego końca).
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).
   Test: `tests/signal-safety.test.js`.
