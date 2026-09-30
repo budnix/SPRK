@@ -150,6 +150,6 @@ export default {
   /** Zadania manewrowe. */
   tasks: [
     { id: 'odstaw-90211', unit: 90211, type: 'move', toTrack: '3', deadline: '07:52', text: 'Skład zdawczego 90211 odstawić na tor 3 (tor 2 potrzebny; 5316 przyjeżdża 07:55).' },
-    { id: 'podstaw-90212', unit: 90211, type: 'move', toTrack: '2', after: '07:58', deadline: '08:10', text: 'Skład podstawić na tor 2 jako pociąg 90212 do Lipowej (odjazd 08:12).' },
+    { id: 'podstaw-90212', unit: 90211, type: 'move', toTrack: '2', after: '07:58', afterTask: 'odstaw-90211', deadline: '08:10', text: 'Skład podstawić na tor 2 jako pociąg 90212 do Lipowej (odjazd 08:12).' },
   ],
 };

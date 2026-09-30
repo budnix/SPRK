@@ -4,6 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import sopot from '../src/stations/sopot.js';
+import pustkowie from './fixtures/stare-pustkowie.js';
 import { autoDispatch, allArrived, run, Clock } from './helpers.js';
 
 /*
@@ -70,7 +71,7 @@ const PAIRS = [
 ];
 
 test('zadania tego samego składu idą po kolei: każde następne czeka na poprzednie (afterTask)', () => {
-  for (const st of [chylonia, sopot, szkolna]) {
+  for (const st of [chylonia, sopot, szkolna, pustkowie]) {
     const seen = new Map();
     for (const task of st.tasks || []) {
       const prev = seen.get(String(task.unit));
