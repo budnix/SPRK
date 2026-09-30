@@ -91,24 +91,28 @@ export class AutoOperator {
   }
 
   /**
-   * Przebiegi, które po usterce same nie wrócą do pracy (urządzenia przekaźnikowe i komputerowe):
+   * Przebiegi, które po usterce same nie wrócą do pracy:
    *  - semafor zgasł przed pociągiem, bo odcinek drogi przebiegu wykazał zajętość albo zwrotnica straciła kontrolę –
-   *    sygnał sam nie wraca; automat zwalnia przebieg (Pz) i nastawia go od nowa, gdy droga będzie sprawna,
-   *  - pociąg przejechał, a przebieg się nie rozwiązał (`Interlocking.routeStuck`) – doraźne zwolnienie po chwili.
+   *    sygnał sam nie wraca; automat zwalnia przebieg (Pz) i nastawia go od nowa, gdy droga będzie sprawna
+   *    (urządzenia przekaźnikowe i komputerowe; w nastawni mechanicznej sygnał trzyma dźwignia),
+   *  - pociąg przejechał, a przebieg się nie rozwiązał (`Interlocking.routeStuck`) – doraźne zwolnienie po chwili
+   *    (w nastawni mechanicznej: dźwignia sygnałowa na „Stój” i zwalniacz).
    */
   #recoverRoutes() {
     const sim = this.sim, ilk = sim.ilk, t = sim.clock.time;
-    if (ilk.manualSignal) return; // nastawnia mechaniczna: sygnał trzyma dźwignia, przebieg zwalnia drążek
     for (const id of this.stuckSince.keys()) if (!ilk.active.has(id)) this.stuckSince.delete(id);
     for (const act of [...ilk.active.values()]) {
       if (!this.#inDistrict(act.route.start) || act.timedRelease || ilk.signals.get(act.route.start).substitute) continue;
       if (!act.trainEntered) {
+        if (ilk.manualSignal) continue; // nastawnia mechaniczna: sygnał trzyma dźwignia – sam nie gaśnie
         if (act.route.kind === 'train' && act.signalOff && ilk.releaseRoute(act.route.start, false).ok) this.#forgetRoute(act.route);
         continue;
       }
       if (!ilk.routeStuck(act)) { this.stuckSince.delete(act.id); continue; }
       if (!this.stuckSince.has(act.id)) { this.stuckSince.set(act.id, t); continue; }
-      if (t - this.stuckSince.get(act.id) >= 20) ilk.releaseRoute(act.route.start, true);
+      if (t - this.stuckSince.get(act.id) < 20) continue;
+      if (ilk.manualSignal) ilk.cancelSignal(act.route.start); // dźwignia sygnałowa na „Stój” przed zwalniaczem
+      ilk.releaseRoute(act.route.start, true);
     }
   }
 

@@ -359,7 +359,9 @@ Uproszczenia i założenia w grze (przyjęte – źródła ich nie podają albo 
 * dźwignia zwrotnicowa przestawia zwrotnicę w 2 s (czas przyjęty – pędnia drutowa działa od razu);
 * przebieg manewrowy nie ma bloku przebiegowego utwierdzającego: drążek i dźwignia tarczy;
 * ręczne zwolnienie bloku (zwalniacz, plomba) liczy licznik jak dPz i kosztuje punkty jak dPz – bez kary, gdy blok
-  nie zwolnił się przez usterkę urządzenia oddziaływania pociągu (usterka `route-block`, misja 4; E16 §8 ust. 19);
+  nie zwolnił się przez usterkę urządzenia oddziaływania pociągu (usterka `route-block`, misja 4; E16 §8 ust. 19)
+  albo przez usterkę obwodu torowego, przez który pociąg już przejechał (przebieg nie jest „przejechany”, jak na
+  innych stanowiskach);
 * sygnał zastępczy – klawisz przy aparacie blokowym z licznikiem, jak na innych stanowiskach;
 * plan świetlny pokazuje zajętość odcinków, powtarzacze sygnałów i blokadę liniową (Ie-8 §11 ust. 4); położenie
   zwrotnic Ie-8 na planie nie wymienia – w rzeczywistości widać je na dźwigni i na latarniach zwrotnicowych przez

@@ -391,3 +391,30 @@ test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy pe
     assert.equal(e.status, 'na następnym posterunku', `${srk}: ${e.status}`);
   }
 });
+
+test('nastawnia mechaniczna: usterka obwodu torowego pod pociągiem – przebieg nie jest „przejechany”; zwalniacz uzasadniony usterką, automat go używa', () => {
+  // pociąg z Brzeziny na tor 2: przebieg B-C2 prowadzi przez T2b i Iz3, zanim wejdzie na tor docelowy (T2e, T2)
+  const sim = new Simulation(szkolna, { srk: 'mech', disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:00', tasks: [], timetable: [
+    { nr: 5002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:08', dep: '07:10', track: '2', stop: true, length: 100, vmax: 100, dwell: 60 },
+  ] } });
+  const e = sim.traffic.timetable()[0];
+  let n = 0, faulty = null, stuck = false;
+  while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) {
+    sim.step(0.5);
+    if (n++ % 4 === 0) autoDispatch(sim);
+    const act = sim.ilk.active.get('B-C2');
+    // pociąg wjechał w przebieg: odcinek przed nim (przed torem docelowym) wykazuje zajętość bez taboru; naprawa dopiero
+    // po zwolnieniu przebiegu – do tego czasu przebieg nie może się rozwiązać sam
+    if (!faulty && act?.trainEntered) {
+      const k = act.lockedSections.findIndex((sid, i) => i > (act.front ?? -1) && i < act.lockedSections.length - 2);
+      if (k >= 0) { faulty = sim.ilk.sections.get(act.lockedSections[k]); faulty.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
+    }
+    if (faulty && act && sim.ilk.routeStuck(act)) stuck = true;
+    if (stuck && faulty.forced && !act) { faulty.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
+  }
+  assert.ok(faulty && stuck, 'przebieg zatrzymany przez usterkę');
+  assert.equal(e.status, 'na następnym posterunku', e.status);
+  assert.equal(sim.ilk.active.size, 0);
+  const dpz = sim.score.items.filter((i) => i.code === 'dPz');
+  assert.ok(dpz.length >= 1 && dpz.every((i) => i.points === 0), JSON.stringify(dpz));
+});

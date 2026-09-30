@@ -238,8 +238,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Automat dyżurnego (`Operator.js`) nie prowadzi własnych notatek o przebiegach – pyta urządzenia: wjazd należy się
   pociągowi, który nie minął semafora wjazdowego (`train.entryPending`) i jedzie pierwszy (na SBL pociągi bywają
   w innej kolejności niż w rozkładzie); wyjazd jest „za pociągiem”, gdy minął semafor wyjazdowy (`exitAuth`). Po
-  usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa; zwalnia doraźnie przebieg
-  z `routeStuck`; wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
+  usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa (poza nastawnią
+  mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg z `routeStuck` (na nastawni mechanicznej
+  najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
   przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak. Testy: `tests/rumia.test.js`,
   `tests/operator.test.js`.
 * Tor szlakowy zajęty do minięcia semafora wjazdowego: `Block.awaitingEntry` (`tests/line-busy.test.js`).
