@@ -195,6 +195,7 @@ Pociąg tworzony ze składu innego pociągu (np. zdawczy powrotny):
 
 `unit` – numer pociągu, który zakończył bieg na stacji; jego skład staje się pociągiem `nr`, gdy stoi w trybie jazdy
 pociągowej (nie w trakcie manewrów), nie wcześniej niż 15 min przed `dep`; do `dep` stoi mimo sygnału zezwalającego.
+Zezwolenie, na którym skład przyjechał, nie przechodzi na nowy pociąg – rusza on na sygnał semafora przed sobą.
 Skład w trybie manewrowym jedzie obok semafora tylko na Ms2 i nie wyjeżdża na szlak
 (o ile stoi). Skład trzeba podstawić na właściwy tor manewrami i ustawić czołem do semafora wyjazdowego.
 
@@ -206,7 +207,8 @@ Skład w trybie manewrowym jedzie obok semafora tylko na Ms2 i nie wyjeżdża na
 
 Zadanie jest wykonane, gdy cały skład `unit` stoi na torze `toTrack` (po godzinie `after` lub po wykonaniu zadania
 `afterTask: 'odstaw-90211'`, jeśli podane – tak zadanie „podstawić z powrotem” nie zalicza się przed odstawieniem).
-Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt.
+Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie −10 pkt – także zadanie, które
+czeka na niewykonane zadanie `afterTask` (jego termin biegnie).
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
 
 ## Okręgi nastawcze (`districts`) – opcjonalne

@@ -405,6 +405,8 @@ export class Traffic {
       e.attached = true; e.train = tr;
       u.status = `przekazany jako ${e.nr}`; u.train = null;
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
+      // nowy pociąg rusza dopiero na sygnał semafora przed sobą – nie na zezwoleniu pociągu, którym skład przyjechał
+      tr.clearAuthority();
       tr.vmax = speedFor(e) / 3.6; tr.holdUntil = e.depTime; tr.orders = [];
       tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
       tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
@@ -417,10 +419,12 @@ export class Traffic {
     // Zadania manewrowe
     for (const task of this.tasks) {
       if (task.done || task.failed) continue;
-      if (task.afterTask && !this.tasks.find((x) => x.id === task.afterTask)?.done) continue; // kolejność zadań (np. odstawić, potem podstawić)
+      // kolejność zadań (np. odstawić, potem podstawić): zadanie czeka na poprzednie, ale termin biegnie – zadanie po
+      // poprzednim, które przepadło, też przepada (wcześniej zostawało w toku do końca zmiany)
+      const waiting = task.afterTask && !this.tasks.find((x) => x.id === task.afterTask)?.done;
       const u = this.entries.find((x) => String(x.nr) === String(task.unit));
       const tr = u?.train || this.entries.find((x) => String(x.unit) === String(task.unit))?.train;
-      if (time >= task.afterTime && tr && !tr.finished && tr.entered && tr.v === 0) {
+      if (!waiting && time >= task.afterTime && tr && !tr.finished && tr.entered && tr.v === 0) {
         const secs = [...tr.occupiedSections()].map((sid) => this.ilk.sections.get(sid));
         if (secs.length && secs.every((sec) => String(sec.track) === String(task.toTrack))) {
           task.done = true; task.doneAt = time;

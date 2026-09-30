@@ -88,7 +88,9 @@ metry do 3 km/h). Sygnał manewrowy gaśnie dopiero po minięciu sygnalizatora p
 * pociąg, który nie minął jeszcze żadnego semafora (utworzony na stacji, po zmianie czoła, po przełączeniu
   z manewrów), rusza tylko wtedy, gdy najbliższy semafor przed nim – przed najbliższą zwrotnicą – wskazuje sygnał
   zezwalający dla pociągu albo pociąg ma rozkaz na jego minięcie; potem jedzie do granicy stacji tylko wtedy, gdy
-  ostatni miniony semafor miał przebieg na szlak (albo Sz / rozkaz);
+  ostatni miniony semafor miał przebieg na szlak (albo Sz / rozkaz). Tak samo pociąg utworzony ze składu innego
+  pociągu (`unit`): zezwolenie, na którym skład przyjechał, nie przechodzi na nowy pociąg – ten rusza na sygnał
+  semafora przed sobą albo na rozkaz (Ir-1 §63 ust. 1 pkt 1);
 * skład manewrowy rusza, gdy sygnalizator przed nim (przed najbliższą zwrotnicą) albo pod nim, zwrócony w kierunku
   jazdy, wskazuje Ms2 / M2; po minięciu sygnalizatora jedzie dalej w obrębie tego przebiegu – przebieg manewrowy innej
   jazdy nie jest zezwoleniem;
