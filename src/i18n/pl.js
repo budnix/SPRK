@@ -342,7 +342,7 @@ export default {
   'sp.comms.formula': 'Telefonogram / komunikat',
   'sp.comms.train': 'Pociąg nr',
   'sp.comms.send': 'Nadaj',
-  'sp.comms.rules': 'Telefonogramy wg Ir-1 stosuje się przy usterce blokady liniowej (zapowiadanie telefoniczne). Błędna formuła jest punktowana ujemnie.',
+  'sp.comms.rules': 'Telefonogramy wg Ir-1 stosuje się przy usterce blokady liniowej (zapowiadanie telefoniczne). „Stój pociąg nr …” wstrzymuje pociąg, o który pyta sąsiad – także przy sprawnej blokadzie; sąsiad zgłosi go ponownie po kilku minutach. Błędna formuła jest punktowana ujemnie.',
   'sp.comms.log': 'Rozmowy',
   'sp.comms.post': 'posterunek',
   'sp.comms.driver': 'maszynista (radio)',
@@ -459,7 +459,7 @@ export default {
       <h3>Blokada liniowa Eap</h3>
       <ul>
         <li><b>Wyprawienie pociągu</b>: <b>Wbl</b> – żądanie pozwolenia. Sąsiad odpowiada (strzałka „odjazd” świeci na biało). Potem nastaw przebieg wyjazdowy. Po wyjeździe blok początkowy Po i zajętość szlaku świecą na czerwono aż sąsiad potwierdzi przyjazd.</li>
-        <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca na biało strzałka „przyjazd”, komunikat). Daj pozwolenie (<b>Poz</b>). Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (świeci „Ko”) zwolnij blok końcowy (<b>Ko</b>). Czerwona lampka <b>Pwl</b> – sygnał wyjazdowy na ten szlak już podany.</li>
+        <li><b>Przyjęcie pociągu</b>: sąsiad żąda pozwolenia (migająca na biało strzałka „przyjazd”, komunikat). Daj pozwolenie (<b>Poz</b>) albo – gdy pociągu nie masz gdzie przyjąć – wstrzymaj go telefonogramem „Stój pociąg nr …” (zakładka Łączność); wtedy możesz najpierw wyprawić swój pociąg. Nastaw przebieg wjazdowy. Po przyjeździe pociągu w całości (świeci „Ko”) zwolnij blok końcowy (<b>Ko</b>). Czerwona lampka <b>Pwl</b> – sygnał wyjazdowy na ten szlak już podany.</li>
         <li><b>dPo</b> – doraźne zablokowanie bloku początkowego po wyjeździe na Sz / rozkaz; <b>dKo</b> – doraźne przygotowanie bloku końcowego przed wjazdem na Sz / rozkaz (bez niego Ko nie zadziała). Liczniki; żaden nie kasuje blokady. <b>Wyciągnięcie Wbl</b> (oWbl) odwołuje żądanie albo zwraca niewykorzystane pozwolenie. Po podaniu sygnału wyjazdowego działa przeciwwtórność (Pwl): drugi sygnał na szlak nie wyjdzie.</li>
         <li><b>Blokada samoczynna (SBL)</b> na liniach dwutorowych (Sopot, Gdynia): bez pozwoleń i bez Ko – odstęp zwalnia się sam. Tor ma kierunek zasadniczy; jazda po torze „pod prąd” wymaga zmiany kierunku <b>Zk</b> (na pulpicie kostkowym: przycisk Wbl) przy wolnym odstępie. Przy usterce – zapowiadanie telefoniczne jak w Eap.</li>
       </ul>

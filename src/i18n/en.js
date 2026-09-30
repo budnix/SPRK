@@ -335,7 +335,7 @@ export default {
   'sp.comms.formula': 'Telephone message',
   'sp.comms.train': 'Train no.',
   'sp.comms.send': 'Send',
-  'sp.comms.rules': 'Ir-1 telephone messages are used when the block system has failed (telephone block working). A wrong formula costs points.',
+  'sp.comms.rules': 'Ir-1 telephone messages are used when the block system has failed (telephone block working). “Stój pociąg nr …” holds the train the neighbour asks about – also with a working block; the neighbour offers it again a few minutes later. A wrong formula costs points.',
   'sp.comms.log': 'Calls',
   'sp.comms.post': 'station',
   'sp.comms.driver': 'driver (radio)',
@@ -450,7 +450,7 @@ export default {
       <h3>Eap block system</h3>
       <ul>
         <li><b>Dispatching a train</b>: <b>Wbl</b> – permission request. The neighbour answers (the “odjazd” arrow lights white). Then set the departure route. After departure the start block Po and the line occupancy show red until the neighbour confirms arrival.</li>
-        <li><b>Accepting a train</b>: the neighbour requests permission (the “przyjazd” arrow flashes white, message). Give permission (<b>Poz</b>). Set the arrival route. After the whole train has arrived (“Ko” lights) release the end block (<b>Ko</b>). The red <b>Pwl</b> lamp – an exit signal onto this line has already been given.</li>
+        <li><b>Accepting a train</b>: the neighbour requests permission (the “przyjazd” arrow flashes white, message). Give permission (<b>Poz</b>) or – when you have nowhere to take the train – hold it with the telephone message “Stój pociąg nr …” (Comms tab); then you can dispatch your own train first. Set the arrival route. After the whole train has arrived (“Ko” lights) release the end block (<b>Ko</b>). The red <b>Pwl</b> lamp – an exit signal onto this line has already been given.</li>
         <li><b>dPo</b> – emergency locking of the starting block after a departure on Sz / written order; <b>dKo</b> – emergency preparation of the end block before an entry on Sz / written order (without it Ko does not work). Counters; neither resets the block. <b>Pulling Wbl</b> (oWbl) cancels the request or returns an unused permission. After an exit signal the line interlock (Pwl) prevents a second signal onto the line.</li>
         <li><b>Automatic block (SBL)</b> on double-track lines (Sopot, Gdynia): no permissions and no Ko – the section releases itself. A track has a normal direction; running “against the flow” requires a direction change <b>Zk</b> (on the push-button desk: the Wbl button) with the section clear. In case of a fault – telephone block working as with Eap.</li>
       </ul>

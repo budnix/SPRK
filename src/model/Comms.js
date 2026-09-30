@@ -8,6 +8,7 @@ import { Clock } from '../core/Clock.js';
 export const FORMULAS = [
   { id: 'ask-free', to: 'neighbour', text: (p) => `Czy droga dla pociągu nr ${p.nr} jest wolna?`, doc: 'Zapytanie o drogę przed wyprawieniem pociągu (wzór 1a)' },
   { id: 'free', to: 'neighbour', text: (p) => `Dla pociągu nr ${p.nr} droga jest wolna.`, doc: 'Pozwolenie – odpowiedź na zapytanie sąsiada (wzór 4a)' },
+  { id: 'hold', to: 'neighbour', text: (p) => `Stój pociąg nr ${p.nr} – droga nie jest wolna.`, doc: 'Odmowa – wstrzymanie pociągu sąsiada (wzór 5a)' },
   { id: 'departed', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} odjechał o ${p.time}.`, doc: 'Zawiadomienie o odjeździe wyprawionego pociągu' },
   { id: 'arrived', to: 'neighbour', text: (p) => `Pociąg nr ${p.nr} przyjechał o ${p.time}.`, doc: 'Zawiadomienie o przyjeździe pociągu od sąsiada (wzór 14)' },
   { id: 'ask-arrived', to: 'neighbour', text: (p) => `Czy pociąg nr ${p.nr} przyjechał?`, doc: 'Pytanie o przyjazd naszego pociągu do sąsiada' },
@@ -71,6 +72,7 @@ export class Comms {
         return b.phoneAskNeighbour(nr);
       }
       case 'free': return b ? b.phoneAnswerFree(nr) : { ok: false, reason: 'brak posterunku' };
+      case 'hold': return b ? b.phoneHold(nr) : { ok: false, reason: 'brak posterunku' };
       case 'departed': return b ? b.phoneReportDeparture(nr) : { ok: false, reason: 'brak posterunku' };
       case 'arrived': return b ? b.phoneReportArrival(nr) : { ok: false, reason: 'brak posterunku' };
       case 'ask-arrived': {

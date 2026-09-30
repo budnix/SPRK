@@ -189,7 +189,10 @@ dla pociągu nr … jest wolna?”, 4a „Dla pociągu nr … droga jest wolna�
 nr … przyjechał o …”; odbiorca powtarza treść (Ir-1 §23 ust. 7 i 9, §24); na szlaku jednotorowym rozmowa 1a / 4a przy
 każdym pociągu także przy sprawnej blokadzie (Ir-1 §28 ust. 3, §24 ust. 5, 9, 16); przy zapowiadaniu na torze
 właściwym linii dwutorowej – oznajmienie odjazdu i potwierdzenie przyjazdu, bez zapytania (Ir-1 §23 ust. 2–4, §24
-ust. 1–2); na linii dwutorowej numer pociągu przekazuje się przy odjeździe (Ir-1 §28 ust. 2, §29 ust. 4). Przyjęte
+ust. 1–2); na linii dwutorowej numer pociągu przekazuje się przy odjeździe (Ir-1 §28 ust. 2, §29 ust. 4). Odmowę –
+wzór 5a „Stój pociąg nr …” – może nadać także gracz: sąsiad wycofuje żądanie pozwolenia (przy usterce blokady –
+zapytanie o drogę) i zgłasza pociąg ponownie po 3 min (`HOLD_TIME`, czas przyjęty); w tym czasie gracz może zażądać
+pozwolenia dla swojego pociągu. Bez tego żądania sąsiada nie dało się odrzucić. Przyjęte
 (uproszczenia gry): rozmowy przy sprawnej blokadzie nadają się same (ustawienie „Rozmowy przy sprawnej blokadzie”:
 automatycznie – domyślnie, ręcznie – pominięty telefonogram −2 pkt; w samouczkach zawsze automatycznie, a automat
 dyżurnego drugiego okręgu nadaje swoje telefonogramy sam); zapowiadanie włącza się i wyłącza z usterką

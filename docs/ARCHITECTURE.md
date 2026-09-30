@@ -248,6 +248,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   telefonicznie, po naprawie przez blokadę). Zmiana stanu blokady (zdarzenie `block`) odświeża obrazy semaforów:
   przebieg wyjazdowy nastawiony bez pozwolenia dostaje sygnał, gdy pozwolenie przyjdzie. Automat wyprawia pociąg na
   Sz także wtedy, gdy blokada daje drogę, ale nie sygnał (Pwl). Test: `tests/request-fault.test.js`.
+* Wstrzymanie pociągu sąsiada: telefonogram `hold` („Stój pociąg nr …”, `Block.phoneHold`) kasuje żądanie pozwolenia
+  albo zapytanie o drogę na `HOLD_TIME`. Automat używa go na szlaku jednotorowym, gdy każdy tor wjazdu z tego szlaku
+  zajmuje pociąg czekający na ten sam szlak; a gdy sąsiad ma już pozwolenie, nie wpuszcza na taki tor własnego pociągu
+  przed pociągiem sąsiada. Test: `tests/hold.test.js`.
 * Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy).
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi
   ochronnej albo zwrotnica bez kontroli – `signalOff`, przebieg utwierdzony (bez nastawni mechanicznej).

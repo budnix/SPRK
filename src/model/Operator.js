@@ -145,20 +145,42 @@ export class AutoOperator {
     };
     const approachOf = (exitId) => { const ex = sim.station.exits[exitId]; return topo.trackAt(ex.tile.x, ex.tile.y).section; };
 
+    // Szlak jednotorowy: czy pociąg sąsiada miałby gdzie wjechać. Nie, gdy każdy tor, na który prowadzi wjazd z tego
+    // szlaku, zajmuje (albo ma już nastawiony wjazd) pociąg, który sam czeka na ten szlak – po Poz żaden by nie ruszył.
+    // Wtedy automat wstrzymuje pociąg sąsiada („Stój pociąg nr …”) i najpierw wyprawia swój.
+    const deadEnd = (b) => {
+      if (b.auto || b.fixed || this.role === 'executive') return false;
+      const app = approachOf(b.id);
+      const tracks = new Set(routes.filter((r) => r.kind === 'train' && r.approach === app).map(routeTrack).filter(Boolean));
+      if (!tracks.size) return false;
+      const claimed = new Set();
+      for (const o of sim.traffic.timetable()) {
+        const tr = o.train;
+        if (o.to !== b.id || !tr || tr.finished) continue;
+        if (tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal())) continue; // już wyjeżdża
+        if (tr.entered && !tr.entryPending) { const tk = trackOf(tr); if (tk) claimed.add(tk); continue; }
+        const act = [...ilk.active.values()].find((a) => a.route.kind === 'train' && !a.trainEntered && a.route.approach === (o.from ? approachOf(o.from) : null));
+        if (act) { const tk = routeTrack(act.route); if (tk) claimed.add(tk); }
+      }
+      return [...tracks].every((tk) => claimed.has(tk));
+    };
+
     // ---- blokady w moim okręgu ----
     for (const b of sim.blocks.values()) {
       if (!this.#exitInDistrict(b.id)) continue;
       // pociąg wyprawiony bez sygnału zezwalającego (Sz, rozkaz, zapowiadanie) – doraźne zablokowanie bloku początkowego
       if (b.needPo) b.press('dPo');
       if (b.fault) {
-        if (b.phone.askedByThem && this.#mayAccept(b)) sim.comms.send('free', { exit: b.id, nr: b.phone.askedByThem }, { silent: true });
+        if (b.phone.askedByThem && this.#mayAccept(b)) sim.comms.send(deadEnd(b) ? 'hold' : 'free', { exit: b.id, nr: b.phone.askedByThem }, { silent: true });
         // przyjazd pociągu sąsiada: telefonogram zastępuje Ko
         if (b.koPending && String(b.phone.arrivalConfirmed) !== String(b.phone.arrivedTrain)) sim.comms.send('arrived', { exit: b.id, nr: b.phone.arrivedTrain }, { silent: true });
         if (b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
         continue;
       }
       // prośba sąsiada: Eap – pozwolenie (Poz), SBL – zgoda na zmianę kierunku (Zk)
-      if (b.request === 'theirs' && this.#mayAccept(b)) {
+      if (b.request === 'theirs' && this.#mayAccept(b) && deadEnd(b)) {
+        sim.comms.send('hold', { exit: b.id, nr: b.talk.theirAsk ?? this.#pendingArrivalNr(b) }, { silent: true });
+      } else if (b.request === 'theirs' && this.#mayAccept(b)) {
         // tryb ręczny rozmów: automat też nadaje 4a przed Poz (kary za pominięcie nie mogą trafić do gracza)
         if (!b.auto && b.phoneRoutine === 'manual' && b.talk.theirAsk != null) sim.comms.send('free', { exit: b.id, nr: b.talk.theirAsk }, { silent: true });
         b.press(b.auto ? 'Zk' : 'Poz');
@@ -246,8 +268,20 @@ export class AutoOperator {
           const sid = r.sections.at(-1);
           return sim.traffic.timetable().some((o) => o !== e && o.to === e.from && o.train && !o.train.finished && o.train.v === 0 && o.train.occupiedSections().has(sid));
         };
+        // Ten pociąg odjedzie na szlak jednotorowy, z którego właśnie nadjeżdża inny, a ten inny może wjechać tylko na
+        // ten sam tor – najpierw wjeżdża tamten (inaczej ten zająłby tor i czekał na szlak zajęty przez tamtego)
+        const meetsOpposing = (r) => {
+          const xb = e.to ? sim.blocks.get(e.to) : null;
+          if (!xb || xb.auto || xb.fixed || this.role === 'executive') return false;
+          const tk = routeTrack(r), xapp = approachOf(e.to);
+          const theirs = routes.filter((x) => x.kind === 'train' && x.approach === xapp).map(routeTrack).filter(Boolean);
+          if (!theirs.length || !theirs.every((x) => x === tk)) return false;
+          // sąsiad ma już pozwolenie (albo „droga wolna”), jego pociąg jest na szlaku albo stoi przed semaforem wjazdowym
+          return xb.direction === 'in' || xb.phone.clearedFor != null || xb.awaitingEntry || (xb.occupied && !xb.lineOurs);
+        };
         let closed = false;
         for (const pick of order) {
+          if (meetsOpposing(pick)) break;
           const res = this.#setRoute(pick.id);
           // inny tor tylko przy torze zamkniętym albo przy krzyżowaniu; chwilowo zajęty/utwierdzony tor planowy – czekać
           if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick)) closed = true; if (closed) continue; break; }

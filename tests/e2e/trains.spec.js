@@ -120,3 +120,21 @@ test('rozkaz pisemny dla pociągu, który stanął za semaforem miniętym na „
   await advance(page, 40);
   expect(await page.evaluate(() => { const tr = window.sim.traffic.timetable().find((x) => x.nr === 6101).train; return [tr.authority, tr.stoppedAt?.kind ?? null, tr.v > 0 || tr.hasStopped]; })).toEqual([true, null, true]);
 });
+
+test('Łączność: „Stój pociąg nr …” wstrzymuje pociąg, o który pyta sąsiad – żądanie pozwolenia znika z blokady', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-e' } });
+  await advance(page, 60); // Lipno żąda pozwolenia dla 6101
+  expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+  await page.click('#panel-tabs button[data-tab=lacznosc]');
+  const formulas = await page.locator('#comms-formula option').allTextContents();
+  expect(formulas).toContain('Stój pociąg nr … – droga nie jest wolna.');
+  await page.selectOption('#comms-to', 'W');
+  await page.selectOption('#comms-formula', 'hold');
+  await page.fill('#comms-nr', '6101');
+  await page.locator('#comms-form button[type=submit]').click();
+  await expect(page.locator('#comms-msg')).toHaveClass(/ok/);
+  expect(await page.evaluate(() => window.sim.blocks.get('W').request)).toBe(null);
+  await expect(page.locator('#comms-log li').first()).toContainText('Stój pociąg nr 6101');
+  // kierunek wolny – działa nasze Wbl
+  expect(await page.evaluate(() => window.sim.blocks.get('W').press('Wbl').ok)).toBe(true);
+});

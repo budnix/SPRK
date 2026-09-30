@@ -1,4 +1,7 @@
 import { Clock } from '../core/Clock.js';
+
+/** Po tylu sekundach sąsiad ponawia zgłoszenie pociągu wstrzymanego telefonogramem „Stój pociąg” (przyjęte). */
+export const HOLD_TIME = 180;
 /**
  * Blokada liniowa – jeden tor szlakowy między naszą stacją a posterunkiem sąsiednim
  * (symulowanym przez „AI sąsiada”). Dwa rodzaje:
@@ -63,6 +66,7 @@ export class LineBlock {
     this.koPrepared = false;       // dKo przed wjazdem na Sz / rozkaz – Ko zadziała bez stwierdzenia przejazdu
     this.entrySeen = false;        // pociąg sąsiada minął nasz semafor wjazdowy (na sygnał albo Sz / rozkaz)
     this.beforeEntry = null;       // numer pociągu sąsiada, który zjechał ze szlaku i stoi przed semaforem wjazdowym
+    this.heldUntil = 0;            // do tego czasu sąsiad nie ponawia zgłoszenia pociągu wstrzymanego „Stój pociąg”
     this.faultDir = null;          // kierunek z pozwoleniem w chwili utraty łączności
     this.log = (level, msg) => bus.emit('log', { time: this.time, level, msg: `[${this.neighbour}] ${msg}` });
   }
@@ -348,6 +352,21 @@ export class LineBlock {
     return true;
   }
 
+  /**
+   * Nasza odmowa „Stój pociąg nr …” (wzór 5a): sąsiad wycofuje żądanie pozwolenia (przy usterce – zapytanie o drogę)
+   * i ponawia je po `HOLD_TIME`. Do tego czasu kierunek jest wolny – można zażądać pozwolenia dla swojego pociągu.
+   */
+  phoneHold(nr) {
+    const asked = this.fault ? this.phone.askedByThem : (this.request === 'theirs' ? (this.talk.theirAsk ?? nr) : null);
+    if (asked == null || String(asked) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
+    if (this.fault) this.phone.askedByThem = null;
+    else { this.request = null; this.talk.theirAsk = null; this.talk.answered = null; }
+    this.heldUntil = this.time + HOLD_TIME;
+    this.log('info', `Pociąg nr ${nr} wstrzymany u sąsiada („Stój pociąg”) – ${this.neighbour} zgłosi go ponownie`);
+    this.#emit();
+    return { ok: true };
+  }
+
   /** Nasza odpowiedź „Droga dla pociągu nr … wolna”. */
   phoneAnswerFree(nr) {
     if (!this.fault) {
@@ -486,6 +505,7 @@ export class LineBlock {
 
   /** Żądanie pozwolenia od sąsiada (AI). */
   neighbourRequests(nr) {
+    if (this.time < this.heldUntil && !this.auto && !this.fixed) return false; // pociąg wstrzymany naszym „Stój pociąg”
     // przy zapowiadaniu na torze właściwym linii dwutorowej sąsiad nie pyta – wyprawia po potwierdzonym przyjeździe
     if (this.fault) return this.fixed === 'in' ? !this.occupied && !this.awaitingEntry && !this.koPending : this.phoneAskFromNeighbour(nr);
     if (this.auto) { this.#neighbourWantsDirection(); return !this.occupied && !this.koPending && !this.poBlocked; }
