@@ -455,6 +455,7 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 13px; }
 .train-card .train-head .rel { font-weight: 400; color: var(--muted); margin-left: 6px; }
 .train-card .train-state { grid-column: 1; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; line-height: 1.4; } /* ikony i tekst w jednej osi */
 .train-card .train-state b { color: var(--text); font-weight: 600; }
+.train-card .train-wait { grid-column: 1; color: var(--warn); line-height: 1.4; }   /* przyczyna postoju (Traffic.waitReason) */
 .train-card .train-actions { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 4px; }
 .train-card .delay { color: var(--danger); font-weight: 600; }
 /* ikony: czoło pojazdu z lampami (tryb jazdy) i sylwetka lokomotywy ze strzałką (czoło składu) */

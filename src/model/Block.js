@@ -79,29 +79,30 @@ export class LineBlock {
    * Warunek wyjazdu na ten szlak. `mode`: 'route' – nastawienie przebiegu wyjazdowego (także pod Sz / rozkaz),
    * 'substitute' – Sz / rozkaz „S”, 'signal' – sygnał zezwalający semafora wyjazdowego przebiegu `routeId`
    * (wymaga pozwolenia przeniesionego przez blokadę i wolnej przeciwwtórności Pwl). `fault: true` – blokada bez
-   * łączności (uzasadnia Sz i rozkaz).
+   * łączności (uzasadnia Sz i rozkaz). `code` – przyczyna odmowy jako stały kod (widok tłumaczy ją przez t(); działanie
+   * nie zależy od treści `reason`).
    */
   gate(mode = 'route', routeId = null) {
-    if (this.fixed === 'in' && !this.auto) return { ok: false, reason: `Tor szlakowy do ${this.neighbour} jest torem wjazdowym (ruch jednokierunkowy)` };
-    if (this.occupied) return { ok: false, reason: `Tor szlakowy do ${this.neighbour} zajęty` };
+    if (this.fixed === 'in' && !this.auto) return { ok: false, code: 'line-inbound', reason: `Tor szlakowy do ${this.neighbour} jest torem wjazdowym (ruch jednokierunkowy)` };
+    if (this.occupied) return { ok: false, code: 'line-occupied', reason: `Tor szlakowy do ${this.neighbour} zajęty` };
     if (this.fault) {
       // sygnał wyjazdowy podany przed usterką na niewykorzystanym pozwoleniu zostaje – pozwolenie trzymają urządzenia
       // naszej stacji (wcześniej gasł tuż przed pociągiem i pociąg przejeżdżał „Stój”)
       if (mode === 'signal' && this.faultDir === 'out' && this.pwl && this.pwlRoute != null && this.pwlRoute === routeId) return { ok: true, fault: true };
       // zapowiadanie telefoniczne: blok początkowy zostaje zablokowany do naprawy – o drodze decyduje telefonogram
       // tor właściwy linii dwutorowej: wyjazd po potwierdzeniu przyjazdu poprzedniego pociągu (tor wolny), bez zapytania
-      if (!this.phone.permissionFor && this.fixed !== 'out') return { ok: false, fault: true, reason: `Blokada bez łączności – zapytaj ${this.neighbour} telefonicznie, czy droga jest wolna` };
+      if (!this.phone.permissionFor && this.fixed !== 'out') return { ok: false, fault: true, code: 'phone-ask', reason: `Blokada bez łączności – zapytaj ${this.neighbour} telefonicznie, czy droga jest wolna` };
       // sygnał zezwalający tylko, gdy pozwolenie było u nas przed utratą łączności (albo tor ma stały kierunek wyjazdu)
-      if (mode === 'signal' && !this.auto && this.fixed !== 'out' && this.faultDir !== 'out') return { ok: false, fault: true, reason: `Blokada do ${this.neighbour} bez łączności, pozwolenie u sąsiada – wyprawienie na Sz lub rozkaz „S”` };
+      if (mode === 'signal' && !this.auto && this.fixed !== 'out' && this.faultDir !== 'out') return { ok: false, fault: true, code: 'phone-sz', reason: `Blokada do ${this.neighbour} bez łączności, pozwolenie u sąsiada – wyprawienie na Sz lub rozkaz „S”` };
       return { ok: true, fault: true };
     }
-    if (this.poBlocked) return { ok: false, reason: this.auto ? `Odstęp do ${this.neighbour} zajęty` : `Blok początkowy do ${this.neighbour} zablokowany` };
-    if (this.auto) return this.direction === 'out' ? { ok: true } : { ok: false, reason: `Kierunek blokady samoczynnej do ${this.neighbour} na wjazd – zmień kierunek (Zk)` };
-    if (mode === 'signal' && this.pwl && this.pwlRoute !== routeId) return { ok: false, fault: this.pwlFault, reason: `Pwl – sygnał wyjazdowy do ${this.neighbour} już był podany; wypraw pociąg na Sz lub rozkaz „S”` };
+    if (this.poBlocked) return { ok: false, code: this.auto ? 'line-occupied' : 'po-blocked', reason: this.auto ? `Odstęp do ${this.neighbour} zajęty` : `Blok początkowy do ${this.neighbour} zablokowany` };
+    if (this.auto) return this.direction === 'out' ? { ok: true } : { ok: false, code: 'sbl-direction', reason: `Kierunek blokady samoczynnej do ${this.neighbour} na wjazd – zmień kierunek (Zk)` };
+    if (mode === 'signal' && this.pwl && this.pwlRoute !== routeId) return { ok: false, fault: this.pwlFault, code: 'pwl', reason: `Pwl – sygnał wyjazdowy do ${this.neighbour} już był podany; wypraw pociąg na Sz lub rozkaz „S”` };
     // Pwl po sygnale zgaszonym przez usterkę – Sz / rozkaz wymusiła usterka
     const ok = this.pwl && this.pwlFault ? { ok: true, fault: true } : { ok: true };
     if (this.fixed === 'out') return ok;
-    if (this.direction !== 'out' || !this.permission) return { ok: false, reason: `Brak pozwolenia na wyjazd do ${this.neighbour} (blokada Eap)` };
+    if (this.direction !== 'out' || !this.permission) return { ok: false, code: 'no-permission', reason: `Brak pozwolenia na wyjazd do ${this.neighbour} (blokada Eap)` };
     return ok;
   }
 

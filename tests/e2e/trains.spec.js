@@ -171,3 +171,27 @@ test('Łączność: zezwolenie na jazdę manewrową obok uszkodzonego sygnalizat
   expect(await page.evaluate(() => window.sim.score.items.filter((i) => i.code === 'comms-wrong').length)).toBe(0);
   await expect(page.locator('#comms-log')).toContainText('Zezwolenie przyjąłem');
 });
+
+// Przyczyna postoju w karcie pociągu (kod z Traffic.waitReason – logika w tests/waitReason.test.js – i tekst przez t()):
+// np. 6106 po godzinie odjazdu przed C1 przy usterce blokady do Lipna; dawniej karta mówiła tylko „postój, odjazd …”
+test('zakładka „Pociągi”: przyczyna postoju w karcie pociągu', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await expect.poll(() => page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+  await page.evaluate(() => {
+    const sim = window.sim, c = sim.clock;
+    sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+    c.paused = false; c.speed = 1;
+    for (let i = 0; i < 2400; i++) {
+      sim.step(0.5);
+      if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+      const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
+      if (tr?.entered && tr.v === 0 && tr.hasStopped) break;
+    }
+    c.paused = true;
+    sim.traffic.waitReason = (e) => (e.nr === 6101 ? { code: 'phone-sz', signal: 'D1', neighbour: 'Dębno' } : null);
+  });
+  await page.click('#panel-tabs button[data-tab=pociagi]');
+  const card = page.locator('#trains .train-card[data-nr="6101"]');
+  await expect(card.locator('.train-wait')).toHaveText('blokada do Dębno bez łączności – po „droga wolna” sygnał zastępczy Sz na D1 albo rozkaz „S”');
+  expect(await page.locator('#trains .train-wait').count()).toBe(1);
+});

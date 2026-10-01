@@ -184,7 +184,10 @@ powiększenia), strzałki ← →, przesunięcie palcem.
 Panel boczny ma zakładki: Rozkład, Dziennik, Zadania (tylko gdy scenariusz ma zadania manewrowe – karty z terminem,
 składem, torem docelowym i stanem: do wykonania / czeka na porę lub poprzednie zadanie / wykonane / niewykonane;
 powiadomienie na karcie po zdarzeniu `tasks`), Pociągi (każdy pociąg na posterunku: jedzie / stoi i dlaczego – semafor,
-peron, koniec toru, postój do odjazdu, zakończył bieg; tor, czoło, tryb – ikony z `src/ui/icons.js`: czoło pojazdu z lampami
+peron, koniec toru, postój do odjazdu, zakończył bieg; po godzinie odjazdu albo przed sygnalizatorem przyczyna postoju
+z `Traffic.waitReason` – kod bez tekstu, tekst `sp.wait.*`: sygnalizator uszkodzony / zastopowany, brak przebiegu albo
+w nastawianiu, odmowa blokady szlaku (`gate(…).code`: zapytanie telefoniczne, Sz po „droga wolna”, Pwl, brak pozwolenia,
+blok początkowy, szlak zajęty, tor wjazdowy, kierunek SBL), inna przyczyna „Stój” – `tests/waitReason.test.js`; tor, czoło, tryb – ikony z `src/ui/icons.js`: czoło pojazdu z lampami
 (Pc1: trzy światła = jazda pociągowa, jedno = manewrowa) i sylwetka lokomotywy zwrócona w stronę jazdy; po zatrzymaniu przyciski jazda manewrowa /
 pociągowa i zmiana czoła – dawniej sekcja „Manewry” w Stanie), Stan, Rozkazy, Łączność, Polecenia (tylko stacje z okręgami – obecnie żadna w grze, mechanizm testowany na
 `tests/fixtures/gdynia-glowna-okregi.js`).
@@ -390,7 +393,8 @@ jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez
 przebiegu wyjazdowym nie ma). Odjazd zajmuje blokadę szlaku, na który pociąg naprawdę wjechał (zdarzenie `leave`
 z numerem szlaku, `e.actualExit`) – przy jeździe po torze lewym to nie szlak z rozkładu (`tests/left-track.test.js`). Warunek wyjazdu `gate(mode, routeId)`: 'route' (przebieg), 'substitute' (Sz, rozkaz), 'signal' (sygnał
 zezwalający – `Interlocking.#computeAspect` woła go dla przebiegów na szlak: pozwolenie przeniesione przez blokadę,
-przeciwwtórność `pwl`); `fault: true` w wyniku uzasadnia Sz / rozkaz (`faultOnPath`). Pwl włącza `onExitSignal`
+przeciwwtórność `pwl`); `fault: true` w wyniku uzasadnia Sz / rozkaz (`faultOnPath`); `code` – stały kod odmowy (zakładka
+Pociągi). Pwl włącza `onExitSignal`
 z `Interlocking` przy pierwszym sygnale zezwalającym przebiegu na szlak. Stwierdzenie przejazdu (`zpg`): `Train`
 zgłasza minięcie pierwszego semafora stacji (`entry-signal`) → `Traffic` → `entryPassed(onSignal)`; wyjazd na Sz /
 rozkaz (`exitAuth === '*'`) nie blokuje bloku początkowego (`needPo` → dPo). Czasy odpowiedzi sąsiada (Poz, potwierdzenie

@@ -51,6 +51,42 @@ export class Traffic {
   }
 
   /**
+   * Dlaczego stojący pociąg nie jedzie (zakładka Pociągi) – kod przyczyny, bez tekstu (tekst daje widok przez t()):
+   * { code, signal, neighbour? } albo null, gdy pociąg jedzie, zakończył bieg, ma jeszcze planowy postój albo przed nim
+   * jest sygnał zezwalający. Kody: 'signal-failed' (sygnalizator bez sygnału – Sz / rozkaz), 'signal-stopped'
+   * (zastopowany, SSS), 'route-setting' (przebieg w nastawianiu), 'no-route' (brak przebiegu od sygnalizatora),
+   * odmowa blokady szlaku przebiegu wyjazdowego – kod z `LineBlock.gate` ('phone-ask', 'phone-sz', 'pwl',
+   * 'no-permission', 'po-blocked', 'line-occupied', 'line-inbound', 'sbl-direction'), 'signal-stop' (przebieg
+   * nastawiony, sygnał „Stój” z innej przyczyny – zajętość, zwrotnica).
+   */
+  waitReason(e, time = this.time) {
+    const tr = e?.train;
+    if (!tr || tr.finished || !tr.entered || tr.v > 0) return null;
+    if (e.terminates && tr.hasStopped && tr.mode === 'train') return null;
+    if (tr.state === 'dwell' && e.depTime != null && time < e.depTime) return null; // planowy postój do godziny odjazdu
+    const signal = tr.stoppedAt?.kind === 'spad' ? null : tr.nextSignal();
+    const sig = signal ? this.ilk.signals.get(signal) : null;
+    if (!sig) return null;
+    const proceed = tr.mode === 'shunt' ? Interlocking.isProceed(sig.aspect) : Interlocking.isTrainProceed(sig.aspect);
+    if (proceed) return null;
+    if (sig.failed) return { code: 'signal-failed', signal };
+    if (sig.stopped || this.ilk.allStop) return { code: 'signal-stopped', signal };
+    if (this.ilk.pending.some((p) => p.route.start === signal)) return { code: 'route-setting', signal };
+    const act = sig.route ? this.ilk.active.get(sig.route) : null;
+    if (!act) {
+      // przebiegu wyjazdowego nie da się nastawić przez blokadę szlaku pociągu (np. bez łączności i bez zapytania) –
+      // to jest przyczyna, nie sam brak przebiegu
+      const b = e.to && [...this.ilk.routes.values()].some((r) => r.kind === 'train' && r.start === signal && r.exit === e.to) ? this.blocks.get(e.to) : null;
+      const g = b?.gate('route');
+      return g && !g.ok && g.code ? { code: g.code, signal, neighbour: b.neighbour } : { code: 'no-route', signal };
+    }
+    const b = act.route.exit ? this.blocks.get(act.route.exit) : null;
+    const g = b?.gate('signal', act.id);
+    if (g && !g.ok && g.code) return { code: g.code, signal, neighbour: b.neighbour };
+    return { code: 'signal-stop', signal };
+  }
+
+  /**
    * Szablon treści rozkazu pisemnego „S” (wg wzoru Ir-1): pozwolenie na przejazd obok
    * semafora wskazującego sygnał „Stój” z prędkością do 40 km/h do następnego semafora.
    */

@@ -456,11 +456,14 @@ export class SidePanel {
         : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd')
         : tr.stoppedAt?.kind === 'spad' ? t('sp.trains.afterSpad', { signal: tr.stoppedAt.signal }) : t('sp.trains.stopped');
       const meta = [`${modeIcon(tr.mode)} ${t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(tr.direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
+      // dlaczego stoi (po godzinie odjazdu albo przed sygnalizatorem) – kod z modelu, tekst przez t()
+      const why = sim.traffic.waitReason(e, sim.clock.time);
+      const wait = why ? `<div class="train-wait">${escapeHtml(t(`sp.wait.${why.code}`, { signal: why.signal ?? '', neighbour: why.neighbour ?? '' }))}</div>` : '';
       const canControl = tr.v === 0;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
         <div class="train-head"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
-        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>
+        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>${wait}
         <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
