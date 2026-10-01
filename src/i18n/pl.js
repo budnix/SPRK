@@ -5,6 +5,7 @@ export default {
   'app.tagline': 'Symulator Prowadzenia Ruchu Kolejowego',
   // pasek górny i menu
   'top.pause': 'Pauza (spacja)',
+  'top.speed': 'Prędkość {s}× (klawisz {key})',
   'top.help': 'Instrukcja obsługi',
   'top.menu': 'Menu',
   'menu.title': 'Menu',

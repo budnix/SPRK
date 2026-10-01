@@ -4,6 +4,7 @@ export default {
   'app.title': 'SPRK – Railway Traffic Control Simulator',
   'app.tagline': 'Railway Traffic Control Simulator',
   'top.pause': 'Pause (space)',
+  'top.speed': 'Speed {s}× (key {key})',
   'top.help': 'User manual',
   'top.menu': 'Menu',
   'menu.title': 'Menu',

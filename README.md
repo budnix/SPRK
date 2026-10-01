@@ -222,6 +222,9 @@ On the EBILock 950 workstation every action is a typed (or menu-picked) command 
 `ZWS` / `ZWO` (point lock), `SZI` → `SZW` (substitute signal), `ITS` / `ITO` (close / reopen a track), `SSS` / `SSO`,
 `SZO` (whole station), `WBL` / `POZ` / `KO` (line block).
 
+Keyboard: **Space** pauses or resumes the clock, keys **1–5** pick the speeds from the header (1×, 2×, 5×, 10×, 30×),
+**←** / **→** switch screens.
+
 Full manual and glossary: the **?** button in the app (Polish, as is the whole UI, since the simulator follows
 Polish railway rules and terminology).
 

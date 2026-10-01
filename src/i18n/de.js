@@ -4,6 +4,7 @@ export default {
   'app.title': 'SPRK – Simulator für die Betriebsführung im Eisenbahnverkehr',
   'app.tagline': 'Simulator für die Betriebsführung',
   'top.pause': 'Pause (Leertaste)',
+  'top.speed': 'Geschwindigkeit {s}× (Taste {key})',
   'top.help': 'Bedienungsanleitung',
   'top.menu': 'Menü',
   'menu.title': 'Menü',

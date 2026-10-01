@@ -208,9 +208,10 @@ sim.bus.on('log', (e) => { if (e.level !== 'info') setStatus(e.msg, e.level); })
 const clockEl = document.getElementById('clock');
 const speedEl = document.getElementById('speed');
 const SPEEDS = [1, 2, 5, 10, 30];
-for (const s of SPEEDS) {
+for (const [i, s] of SPEEDS.entries()) {
   const b = document.createElement('button');
   b.className = 'tb speed-btn'; b.textContent = `${s}×`; b.dataset.speed = s;
+  b.title = t('top.speed', { s, key: i + 1 });
   b.addEventListener('click', () => { sim.clock.speed = s; sim.clock.paused = false; updateSpeed(); });
   speedEl.appendChild(b);
 }
@@ -228,6 +229,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { help.hide(); toggleMenu(false); report.hide(); if (params.get('scenariusz')) startScreen.hide(); return; }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
+  // klawisze 1–5 – prędkości z nagłówka po kolei (1×, 2×, 5×, 10×, 30×)
+  if (/^[1-5]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) speedEl.querySelectorAll('.speed-btn')[+e.key - 1]?.click();
 });
 
 /* ---- zoom pulpitu ---- */

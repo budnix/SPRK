@@ -339,3 +339,25 @@ for (const pos of ['right', 'left']) {
     expect(await page.evaluate(() => !!document.querySelector('#desk-tools .tg-panel #panel-tabs') && !!document.querySelector('#desk-tools #side-toggle'))).toBe(true);
   });
 }
+
+// Skróty klawiszowe zegara: spacja – pauza / wznowienie, 1–5 – prędkości z nagłówka po kolei (1×, 2×, 5×, 10×, 30×);
+// przy pisaniu w polu tekstowym (linia poleceń EBILock) cyfra jest tekstem, nie zmienia prędkości
+test('skróty klawiszowe: spacja – pauza, 1–5 – prędkości; w polu tekstowym cyfra nie zmienia prędkości', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-ebi' } });
+  const clock = () => page.evaluate(() => ({ speed: window.sim.clock.speed, paused: window.sim.clock.paused }));
+  for (const [key, speed] of [['3', 5], ['1', 1], ['5', 30], ['4', 10], ['2', 2]]) {
+    await page.keyboard.press(key);
+    expect(await clock(), `klawisz ${key}`).toEqual({ speed, paused: false });
+    await expect(page.locator(`#speed .speed-btn[data-speed="${speed}"]`)).toHaveClass(/active/);
+  }
+  await page.keyboard.press('Space');
+  expect((await clock()).paused).toBe(true);
+  await page.keyboard.press('Space');
+  expect((await clock()).paused).toBe(false);
+  await expect(page.locator('#speed .speed-btn[data-speed="10"]')).toHaveAttribute('title', /klawisz 4/);
+  const input = page.locator('input[type=text]:visible').first();
+  await input.click();
+  await page.keyboard.press('5');
+  expect((await clock()).speed).toBe(2);
+  await expect(input).toHaveValue(/5/);
+});
