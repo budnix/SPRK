@@ -449,3 +449,16 @@ test('zmiana toru wymuszona usterką urządzeń nie kosztuje punktów; bez uster
   assert.equal(run([{ type: 'point-control', target: 'Zw5', at: '07:00', duration: 30 }]), 0, 'usterka zwrotnicy');
   assert.equal(run([{ type: 'false-occupancy', target: 'T2', at: '07:00', duration: 30 }]), 0, 'fałszywa zajętość toru planowego');
 });
+
+test('krok z czynnością na zakładce Pociągi („jazda pociągowa / manewrowa”, „zmiana czoła”) podświetla tę zakładkę', () => {
+  // dawniej „Skład podstawiony” (misja 1, krok 28) podświetlał zakładkę Urządzenia, a przełączenie na jazdę pociągową jest w Pociągach
+  let n = 0;
+  for (const id of Object.keys(MISSIONS)) {
+    for (const s of missionSteps(id)) {
+      if (!/„jazda (pociągowa|manewrowa)”|„zmiana czoła”/.test(s.text)) continue;
+      n++;
+      assert.deepEqual(s.anchor, { tab: 'pociagi' }, `${id}/${s.id}`);
+    }
+  }
+  assert.ok(n >= 4, `kroki z czynnością na zakładce Pociągi: ${n}`);
+});
