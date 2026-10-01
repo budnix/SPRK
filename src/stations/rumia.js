@@ -172,7 +172,7 @@ export default {
     { nr: 55203, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'RD2', to: 'GC2', arr: '06:55', dep: '06:56', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GC1', to: 'RD1', arr: '07:12', dep: '07:13', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 44561, kind: 'tow', cat: 'TM', name: 'Towarowy Szczecin Port Centralny – Gdańsk Port Płn.', from: 'RD2', to: 'GC2', arr: '07:15', track: '2', stop: false, length: 520, mass: 2500, vmax: 60 },
-    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'RD2', to: 'GC2', arr: '07:21', track: '2', stop: false, length: 300 },
+    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', stock: '754', from: 'RD2', to: 'GC2', arr: '07:21', track: '2', stop: false, length: 300 },
     { nr: 55205, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'RD2', to: 'GC2', arr: '07:25', dep: '07:26', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 44570, kind: 'tow', cat: 'TK', traction: 'S', name: 'Towarowy Reda – Rumia (zdawczy, kończy bieg)', from: 'RD2', to: null, arr: '07:29', track: '6', stop: true, terminates: true, length: 220, mass: 400, vmax: 60 },
     { nr: 55106, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'GC1', to: 'RD1', arr: '07:42', dep: '07:43', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },

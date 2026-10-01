@@ -7,7 +7,7 @@ src/
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól), controls (pola przycisków
                grupowych stanowiska – miejsce na pulpicie, bez DOM), repeater (lampki powtarzacza sygnalizatora
                na pulpicie typu E dla obrazu sygnału)
-  model/       categories (kategorie pociągów: prędkość, dynamika – przyspieszenie przeliczone na masę składu, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
+  model/       categories (kategorie pociągów: prędkość, dynamika – przyspieszenie przeliczone na masę składu, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru i dobór zespołu / lokomotywy dla pociągu – tylko do pokazania), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
@@ -445,6 +445,22 @@ raport: ocena i punkty, wiersze pociągów (plan / rzeczywistość / tor / opó�
 bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endReason`: all-done | time | manual).
 `Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena z gwiazdkami, kafelki, tabele) z przyciskami
 „Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu.
+
+## Tabor pociągów (`src/model/rollingStock.js`)
+
+Katalog `ROLLING_STOCK` (zespoły trakcyjne i lokomotywy jeżdżące w rejonie Trójmiasta – źródła w docs/SOURCES.md,
+„Tabor pociągów”) i czysta funkcja `stockFor(entry, timetable, seed)`, którą panel boczny (`SidePanel`) woła przy
+rysowaniu podpowiedzi numeru pociągu i karty na zakładce „Pociągi” (`sim.seed`, `sim.traffic.timetable()`). Tabor to
+tylko opis: nie trafia do `Traffic`, `Train` ani dziennika, nie zmienia prędkości ani dynamiki.
+
+* pula kategorii (`skm`, `regio`, `ic`, `eip`; pociągi towarowe – lokomotywy o trakcji `traction`, zdawcze także
+  manewrowe), zespoły w liczbie dobranej do długości `length` (tolerancja `STOCK_LENGTH_TOLERANCE`), albo typy
+  przypięte polem `stock` wpisu (typ lub lista typów – pociągi z linii bez sieci);
+* ziarno: własny ciąg `Random` z ziarna zmiany i numeru pociągu – dobór nie zużywa `sim.rng`, więc opóźnienia, usterki
+  i przebieg zmiany (odcisk przeglądu `npm run survey`) zostają te same;
+* pociąg ze składu innego (`unit`) – tabor początku łańcucha (`rootOf`, `chainOf`); kolejne pociągi jednej linii
+  (kategoria + `from` + `to`, w kolejności godzin) losują po kolei, następny bez typu poprzedniego, gdy pasuje inny;
+* walidacja (`validate.js`): znany typ, trakcja lokomotywy jak pociągu towarowego, ten sam `stock` w łańcuchu `unit`.
 
 ## Misje wprowadzające (`src/tutorial/`)
 

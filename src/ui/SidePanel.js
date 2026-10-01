@@ -1,4 +1,5 @@
 import { CATEGORIES, brandOf, categoryLabel, relationOf, speedFor } from '../model/categories.js';
+import { stockFor } from '../model/rollingStock.js';
 import { faultAlarm, faultListText } from './faultText.js';
 import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
@@ -401,8 +402,10 @@ export class SidePanel {
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
       // długość pociągu i (towarowy) masa brutto składu
       const consist = e.length ? ` · ${escapeHtml(t(e.mass ? 'sp.consistMass' : 'sp.consist', { length: e.length, mass: e.mass }))}` : '';
+      // tabor (zespół trakcyjny albo lokomotywa) – losowany na zmianę, tylko do pokazania
+      const stock = this.stockText(e);
       // podpowiedź o pociągu tylko na numerze pociągu (nie na całym wierszu – przeszkadzała przy godzinach i torze)
-      const tip = `${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h${consist}`;
+      const tip = `${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h${consist}${stock ? ` · ${escapeHtml(stock)}` : ''}`;
       return `<tr class="${cls}">
         <td class="nr" title="${tip}"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
@@ -412,6 +415,12 @@ export class SidePanel {
     this.tbody.innerHTML = rows.join('');
     const s = this.sim.traffic.score;
     this.root.querySelector('#score').textContent = t('sp.score', { onTime: s.onTime, delayed: s.delayed, min: s.totalDelayMin, dPz: this.sim.ilk.counters.dPz, sz: this.sim.ilk.counters.Sz });
+  }
+
+  /** Tabor pociągu jako tekst („skład: 2 × EN57”, „lokomotywa ET22”) albo pusty, gdy katalog nie ma typu dla pociągu. */
+  stockText(e) {
+    const st = stockFor(e, this.sim.traffic.timetable(), this.sim.seed);
+    return st ? t(st.unit ? 'sp.stock.unit' : 'sp.stock.loco', { set: st.label }) : '';
   }
 
   renderState() {
@@ -459,11 +468,12 @@ export class SidePanel {
       // dlaczego stoi (po godzinie odjazdu albo przed sygnalizatorem) – kod z modelu, tekst przez t()
       const why = sim.traffic.waitReason(e, sim.clock.time);
       const wait = why ? `<div class="train-wait">${escapeHtml(t(`sp.wait.${why.code}`, { signal: why.signal ?? '', neighbour: why.neighbour ?? '' }))}</div>` : '';
+      const stock = this.stockText(e);
       const canControl = tr.v === 0;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
         <div class="train-head"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
-        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>${wait}
+        <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>${wait}${stock ? `<div class="train-stock">${escapeHtml(stock)}</div>` : ''}
         <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;

@@ -305,6 +305,8 @@ export default {
   'sp.trains.front': 'front',
   'sp.consist': 'length {length} m',
   'sp.consistMass': 'length {length} m, gross mass {mass} t',
+  'sp.stock.unit': 'trainset: {set}',
+  'sp.stock.loco': 'locomotive {set}',
   'sp.tab.stan': 'Equipment',
   'sp.tab.rozkazy': 'Orders',
   'sp.tab.lacznosc': 'Comms',

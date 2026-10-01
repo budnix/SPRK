@@ -195,3 +195,38 @@ test('zakładka „Pociągi”: przyczyna postoju w karcie pociągu', async ({ p
   await expect(card.locator('.train-wait')).toHaveText('blokada do Dębno bez łączności – po „droga wolna” sygnał zastępczy Sz na D1 albo rozkaz „S”');
   expect(await page.locator('#trains .train-wait').count()).toBe(1);
 });
+
+test('tabor pociągu: podpowiedź numeru w rozkładzie i karta na zakładce „Pociągi” pokazują zespół trakcyjny albo lokomotywę', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana', seed: '7' } });
+  await page.click('#panel-tabs button[data-tab=rj]');
+  const tip = (nr) => page.locator('table.rj tbody td.nr', { hasText: new RegExp(`\\b${nr}$`) }).getAttribute('title');
+  // osobowy 130 m – zespoły trakcyjne; towarowy TME – lokomotywa elektryczna, po długości i masie składu
+  const t6101 = await tip(6101);
+  expect(t6101).toMatch(/ · skład: 2 × [\w ]+$/);
+  const t42101 = await tip(42101);
+  expect(t42101).toContain('do krajowych przewozów masowych');
+  expect(t42101).toContain('długość 380 m, masa brutto 2000 t · lokomotywa ');
+  // pociąg utworzony ze składu 90201 ma jego tabor
+  const set = (t) => t.slice(t.lastIndexOf(' · ') + 3);
+  expect(set(await tip(90202))).toBe(set(await tip(90201)));
+  // to samo ziarno – ten sam tabor po ponownym uruchomieniu zmiany
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
+  await page.evaluate(() => { window.sim.clock.paused = true; });
+  await page.click('#panel-tabs button[data-tab=rj]');
+  expect(await tip(6101)).toBe(t6101);
+  // karta pociągu na posterunku: ten sam tabor co w podpowiedzi
+  await page.evaluate(() => {
+    const sim = window.sim, c = sim.clock;
+    sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+    c.paused = false; c.speed = 1;
+    for (let i = 0; i < 2400; i++) {
+      sim.step(0.5);
+      if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+      if (sim.traffic.trains.find((x) => String(x.nr) === '6101')?.entered) break;
+    }
+    c.paused = true;
+  });
+  await page.click('#panel-tabs button[data-tab=pociagi]');
+  await expect(page.locator('#trains .train-card[data-nr="6101"] .train-stock')).toHaveText(set(t6101));
+});

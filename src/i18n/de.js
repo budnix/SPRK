@@ -305,6 +305,8 @@ export default {
   'sp.trains.front': 'Spitze',
   'sp.consist': 'Länge {length} m',
   'sp.consistMass': 'Länge {length} m, Bruttomasse {mass} t',
+  'sp.stock.unit': 'Triebzug: {set}',
+  'sp.stock.loco': 'Lokomotive {set}',
   'sp.tab.stan': 'Anlagen',
   'sp.tab.rozkazy': 'Befehle',
   'sp.tab.lacznosc': 'Kommunikation',

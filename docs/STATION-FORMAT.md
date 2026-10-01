@@ -200,6 +200,14 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 * `name` – relacja pełna, jak w rozkładzie („Regio Gdańsk Gł. – Słupsk”, „IC „Kaszub” Kraków Gł. – Gdynia Gł.”);
   przedrostek kategorii i nazwa handlowa w cudzysłowie są z niej wycinane do wyświetlenia (`relationOf`, `brandOf`).
   Rozkład pokazuje etykietę „IC 5100” i relację; sąsiednie posterunki (`from` → `to`) w drugiej linii.
+* `stock` – opcjonalnie tabor pociągu: typ z katalogu `ROLLING_STOCK` (`src/model/rollingStock.js`, np. `'EN57'`) albo
+  lista typów (gra losuje z listy). Bez `stock` gra losuje tabor na zmianę z puli kategorii (SKM, Regio, PKP Intercity,
+  lokomotywy towarowe o trakcji `traction`), dla zespołów trakcyjnych – tyle zespołów, ile mieści długość `length`.
+  Pociągi jednego składu (łańcuch `unit`) mają ten sam tabor, więc `stock` wpisuje się raz albo tak samo w każdym
+  z nich – różne wartości są błędem walidacji. Nieznany typ i lokomotywa o innej trakcji niż pociąg towarowy (`traction`,
+  domyślnie E) to też błędy. Potrzebne tam, gdzie pula kategorii nie pasuje: pociągi pasażerskie z linii
+  niezelektryfikowanych (spalinowe zespoły trakcyjne), misje wymagające stałego składu. Tabor widać w podpowiedzi
+  numeru pociągu i na zakładce „Pociągi”; nie zmienia prędkości, dynamiki ani długości pociągu.
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
 by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).

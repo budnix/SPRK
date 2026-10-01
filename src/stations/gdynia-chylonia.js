@@ -232,7 +232,7 @@ export default {
     { nr: 44561, kind: 'tow', cat: 'TM', name: 'Towarowy Gdańsk Port Płn. – Gdynia Port', from: 'GG1', to: 'PORT', arr: '07:08', track: '3', stop: false, length: 520, mass: 2800, vmax: 60 },
     { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GG1', to: 'RG1', arr: '07:10', dep: '07:11', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 93202, kind: 'os', name: 'SKM Gdynia Chylonia – Gdańsk Śródmieście', unit: 93151, from: null, to: 'GS2', dep: '07:20', track: '501', stop: false, length: 130 },
-    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'RG2', to: 'GG2', arr: '07:20', track: '1', stop: false, length: 300 },
+    { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', stock: '754', from: 'RG2', to: 'GG2', arr: '07:20', track: '1', stop: false, length: 300 },
     { nr: 55205, kind: 'os', name: 'Regio Słupsk – Gdańsk Gł.', from: 'RG2', to: 'GG2', arr: '07:26', dep: '07:27', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 55152, kind: 'os', name: 'Regio Lębork – Gdynia Chylonia (kończy bieg)', from: 'RG2', to: null, arr: '07:36', track: '1', stop: true, terminates: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 55106, kind: 'os', name: 'Regio Gdańsk Gł. – Lębork', from: 'GG1', to: 'RG1', arr: '07:40', dep: '07:41', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },

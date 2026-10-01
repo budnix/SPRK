@@ -582,6 +582,129 @@ torze 13 ma id `Zw41s`; pominięto sygnalizatory blokady samoczynnej (82–83, 1
 ostrzegawcze; p.o. Sopot Wyścigi jest tylko opisem na odcinku zbliżania linii 250. Blokady dwukierunkowe (Eap),
 rozkład jazdy fikcyjny.
 
+## Tabor pociągów (`src/model/rollingStock.js`)
+
+Podpowiedź numeru pociągu w rozkładzie i karta na zakładce „Pociągi” pokazują tabor: zespół trakcyjny („skład:
+2 × EN57”) albo lokomotywę („lokomotywa ET22”). To tylko opis – prędkość, dynamika i długość pociągu dalej biorą się
+z wpisu rozkładu i kategorii. Katalog to stan na 1.10.2026; wszystkie źródła sprawdzone 1.10.2026. Typ, którego
+jazdy w rejonie Trójmiasta źródło nie potwierdza, nie wchodzi do katalogu.
+
+Ze źródeł – elektryczne zespoły trakcyjne SKM Trójmiasto (linia 250) i Polregio (oddział pomorski):
+
+* EN57 – 3 człony, 64,97 m, prędkość konstrukcyjna 120 km/h (w eksploatacji 110 km/h); jazda w trakcji ukrotnionej
+  z EN57, EN71 i ED72 (https://pl.wikipedia.org/wiki/EN57). SKM – tabor własny „EN57, EN57AKM, EN71 oraz 31WE”
+  (https://www.skm.pkp.pl/o-nas/informacje-o-firmie); Polregio – 3 EN57 województwa pomorskiego
+  (https://kolejowyportal.pl/pomorskie-chce-sprawdzic-stan-taboru-przed-zmiana-operatora/, 7.08.2026). Odmiany
+  EN57AL, EN57ALd, EN57AP (Polregio) i EN57AKM (SKM) jeżdżą w regionie, ale źródła nie podają ich długości – katalog ich
+  nie rozróżnia;
+* EN71 – 4 człony, 86,84 m, 110 km/h; SKM (https://pl.wikipedia.org/wiki/EN71; skm.pkp.pl jak wyżej);
+* 31WE Impuls – 4 człony, 74,4 m, 2 zespoły SKM (https://www.rynek-kolejowy.pl/wiadomosci/impulsy-dla-skm-trojmiasto-gotowe-duzo-zdjec-75565.html,
+  26.02.2016); prędkości źródło nie podaje (`vmax: null`);
+* 31WEbb Impuls 2 – 4 człony, ok. 75 m, 160 km/h (https://pomorskie.eu/press/taborowa-rewolucja-na-pomorzu-nowe-pojazdy-na-torach-skm/,
+  7.12.2023); własność województwa: w SKM i 13 zespołów w Polregio (kolejowyportal.pl jak wyżej), w Polregio m.in.
+  Elbląg – Gdynia Chylonia (https://pulsgdanska.pl/transport/kolej/nowe-impulsy-trafily/M9g33Qq7N32HzTdq41Oa, 6.04.2024);
+* 58WE Impuls 2 – 3 człony, „ok. 77 metrów”, 20 zespołów województwa dla SKM
+  (https://www.rynek-kolejowy.pl/wiadomosci/pomorskie-kupi-20-impulsow-dla-skm-trojmiasto--112619.html, 27.03.2023;
+  ostatnie odebrane w lipcu 2026: https://www.rynek-kolejowy.pl/wiadomosci/newag-wkrotce-odbior-ostatnich-impulsow-dla-pkp-skm-trojmiasto-153499.html).
+  Prędkości konstrukcyjnej źródła nie podają – przetarg wymagał 120 km/h
+  (https://www.trojmiasto.pl/wiadomosci/Nowy-pociag-dla-SKM-na-testach-w-Trojmiescie-n200558.html); `vmax: null`;
+* 45WE Impuls (w Polregio EN90) – 5 członów, 160 km/h, 10 zespołów województwa dostarczonych w latach 2018–2020
+  (https://www.rynek-kolejowy.pl/wiadomosci/pomorskie-impulsy-do-naprawy-rewizyjnej-124504.html;
+  https://www.rynek-kolejowy.pl/wiadomosci/nowoczesny-impuls-45we032-zawital-na-linie-pomorskiej-kolei-metropolitalnej-115738.html);
+  długość 90,40 m – z opisu tego samego typu u innego przewoźnika (https://kolejedolnoslaskie.pl/o-spolce/tabor/pojazdy-elektryczne/45we/).
+
+Ze źródeł – spalinowe zespoły trakcyjne Polregio na liniach bez sieci (tylko przypięte polem `stock`):
+
+* SA133 (Pesa 218Mc) – 2 człony, 41,70 m, 120 km/h; zespoły 029–031 „dedykowane obsłudze linii PKM”
+  (https://pl.wikipedia.org/wiki/SA133);
+* SA136 Atribo – 3 człony, 55,57 m, 140 km/h konstrukcyjna (120 km/h w eksploatacji); 7 zespołów województwa,
+  w Polregio od 11.12.2022 na PKM (https://pl.wikipedia.org/wiki/SA136);
+* SA137 (Newag 220M) – 2 człony, 41,8 m; SA138 (Newag 221M) – 3 człony, 58,36 m; oba 120 km/h
+  (https://pl.wikipedia.org/wiki/Newag_220M); artykuł o linii 213 wymienia je w ruchu do Helu
+  (https://pl.wikipedia.org/wiki/Linia_kolejowa_nr_213 – opis sprzed lat, obecny przydział przyjęty).
+
+Linie bez sieci trakcyjnej: 213 Reda – Hel „niezelektryfikowana i jednotorowa” (strona linii 213 jak wyżej);
+201 Gdynia – Kościerzyna – zelektryfikowane tylko Gdynia Gł. – Gdynia Port i Nowa Wieś Wielka – Maksymilianowo,
+sieć Kościerzyna – Gdańsk Osowa „w budowie” (https://pl.wikipedia.org/wiki/Linia_kolejowa_nr_201); 203 Tczew – Czersk –
+Chojnice – elektryfikacja „planowana” (https://pl.wikipedia.org/wiki/Linia_kolejowa_nr_203). Linia 248 (PKM) ma sieć
+od czerwca 2023 (https://pl.wikipedia.org/wiki/Linia_kolejowa_nr_248), ale pociągi do Kartuz jadą dalej liniami bez
+sieci (201 / 229).
+
+Ze źródeł – PKP Intercity (pociągi do Gdyni i Gdańska, lato 2026). Zestawienie pociągów PKP Intercity dla Gdyni Głównej
+14.06–29.08.2026 (https://www.intercity.pl/dokumenty/zestawienia%20poci%C4%85g%C3%B3w/od-14-06-2026/Gdynia_Glowna_20260614_20260829_20260630.pdf)
+oznacza pociągi „zestawione z elektrycznych zespołów trakcyjnych”, ale nie podaje typu; przydziały dzienne z 15.08.2026
+– 55p.cz (serwis miłośniczy, nieoficjalny):
+
+* ED250 Pendolino – 7 członów, 187,4 m, „Maksymalna prędkość eksploatacyjna: 250 km/h”
+  (https://www.intercity.pl/pl/site/dla-pasazera/informacje/nasze-pociagi/express-intercity-premium/specyfikacja-i-uslugi.html);
+  EIP Warszawa – Gdynia, Gdynia – Kraków; jazdy w dwóch zespołach Kraków – Gdynia
+  (https://www.rynek-kolejowy.pl/wiadomosci/pkp-intercity-podwojne-pendolino-do-kolobrzegu-gdyni-i-krakowa-124229.html,
+  1.08.2025);
+* ED160 Flirt – 8 członów, „Długość jednego pociągu wynosi 152,9 metra”, 160 km/h
+  (https://psmkms.krakow.pl/index.php/kolej/elektryczne-zespoly-trakcyjne/1465-ed160); IC z Gdyni do Zakopanego (IC 5360/1
+  „Witkacy” – zestawienie Gdyni Głównej), Katowic, Bielska-Białej, Łodzi i Poznania (55p.cz). Jazdy dwóch zespołów źródła
+  nie potwierdzają;
+* EU160 Griffin – „Eksploatuje je już zakład w Warszawie i w Gdyni”
+  (https://www.intercity.pl/pl/site/o-nas/dzial-prasowy/aktualnosci/juz-66-polskich-lokomotyw-griffin-we-flocie-pkp-intercity.html,
+  14.03.2025), 160 km/h (https://transinfo.pl/inforail/po-gdyni-i-warszawie-takze-krakow-z-griffinami-pkp-intercity-zastepuja-ep09/);
+  EU200 Griffin – „oznaczenie serii EU200”, „prędkość 200 km/h”
+  (https://www.intercity.pl/pl/site/o-nas/dzial-prasowy/aktualnosci/griffin-200-%E2%80%93-polski,-ale-nie-tylko-na-polskie-tory.html),
+  IC Gdynia – Łódź z zakładu w Gdyni (55p.cz); EP07 – 125 km/h (https://en.wikipedia.org/wiki/PKP_class_EP07), IC/TLK
+  z zakładu w Gdyni (55p.cz);
+* 754 „Nurek” (České dráhy, dzierżawa PKP Intercity) – „Maximální povolená rychlost: 100 km/h”
+  (https://cs.wikipedia.org/wiki/Lokomotiva_754); „Lokomotywy serii 754 … zostaną skierowane do obsługi pociągów na trasie
+  Gdynia – Hel” (https://kolejowyportal.pl/30-lokomotyw-spalinowych-to-za-malo-pkp-intercity-siega-po-czeski-tabor/,
+  21.04.2026); zmiana lokomotywy „z elektrycznej na spalinową na stacji Gdynia Główna, ponieważ na linii kolejowej nr 213
+  (Reda – Hel) nie ma sieci trakcyjnej” (https://magazyn.koleo.pl/eic-jantar-2025/, 7.07.2025).
+
+Ze źródeł – lokomotywy towarowe przewoźników obecnych w portach: obsługę manewrową w porcie Gdynia mają „PKP CARGO S.A
+the Company's Northern Plant”, „CTL Północ”, „DB Cargo Polska”, „Freightliner PL”, „LOTOS Kolej”
+(https://www.bct.gdynia.pl/en/rail); Lotos Kolej i Orlen KolTrans to od 14.10.2024 Orlen Kolej z siedzibą w Gdańsku
+(https://pl.wikipedia.org/wiki/Orlen_Kolej); PKP Cargo ma lokomotywownię w Zajączkowie Tczewskim
+(https://pl.wikipedia.org/wiki/Zaj%C4%85czkowo_Tczewskie); typy w zapleczu PKP Cargo – „Wykaz taboru utrzymywanego
+w zapleczu PKP CARGO S.A.” (https://www.pkpcargo.com/wp-content/uploads/2023/10/zalnr4doregulaminudostepudooiupkpcargosawykaztaboruutrzymywanegowzapleczupkpcargosa.pdf).
+
+* elektryczne: ET22 – PKP Cargo, 125 km/h (https://pl.wikipedia.org/wiki/Pafawag_201E); ET41 – PKP Cargo, 125 km/h
+  (https://pl.wikipedia.org/wiki/HCP_203E); EU07 – PKP Cargo (24 zmodernizowane), 125 km/h
+  (https://pl.wikipedia.org/wiki/Pafawag_4E/HCP_303E); EU46 Vectron – PKP Cargo, 160 km/h
+  (https://www.pkpcargo.com/pkp-cargo-z-trzema-nowymi-lokomotywami-vectron/); E6ACT Dragon – „Lotos Kolej 5 Dragonów typu
+  E6ACT”, 120 km/h (https://pl.wikipedia.org/wiki/Newag_Dragon); E6ACTa Dragon 2 – Orlen Kolej, CTL Logistics (trasy
+  „do Szczecina, Polic, Gdańska”: https://kurier-kolejowy.pl/aktualnosci/33024/ctl-logistics-pozyskal-dwa-dragony-2.html),
+  120 km/h (https://en.wikipedia.org/wiki/Newag_Dragon); 111Eo Gama – PCC Intermodal, kontenery z Gliwic do DCT Gdańsk
+  (https://kurier-kolejowy.pl/aktualnosci/40948/przedwczoraj-przekazana--wczoraj-nowa-lokomotywa-pcc-intermodal-wyruszyla-z-gliwic-do-gdanska.html),
+  160 km/h (https://www.rynek-kolejowy.pl/wiadomosci/pierwsza-gama-111eo-juz-w-eksploatacji-w-orion-kolej-113595.html);
+* spalinowe: Class 66 (JT42CWRM) – Freightliner PL, DB Cargo Polska, 120 km/h (https://pl.wikipedia.org/wiki/EMD_JT42CWRM;
+  https://najsilniejsi.pl/mocniejsi-o-nowe-lokomotywy/); 311D – DB Cargo Polska, CTL Logistics, 100 km/h
+  (https://pl.wikipedia.org/wiki/Newag_311D); ST44 (M62) – PKP Cargo, 100 km/h (https://pl.wikipedia.org/wiki/%C5%81TZ_M62);
+  ST45 (Pesa 301Dd) – PKP Cargo, 120 km/h (https://pl.wikipedia.org/wiki/Pesa_301Dd); ST48 (Newag 15D) – PKP Cargo,
+  100 km/h (https://en.wikipedia.org/wiki/Newag_15D/16D);
+* manewrowe: SM42 – PKP Cargo, Orlen Kolej (6Dg), 90 km/h (https://pl.wikipedia.org/wiki/Fablok_6D;
+  https://pl.wikipedia.org/wiki/Newag_6Dg); SM48 (TEM2) – PKP Cargo, 100 km/h (https://pl.wikipedia.org/wiki/TEM2).
+
+Pominięte, bo źródło nie potwierdza jazdy w rejonie albo nie podaje danych: ED161 Dart, ED74, EU44 Husarz, EP09, EP07P,
+EU07A i SU160 (PKP Intercity – brak pociągów w Trójmieście w 2026 albo tylko plan), Vectrony dzierżawione do pociągów
+IC Gedania (przewoźnik i oznaczenie nieustalone), ED72, EN76 / 22WE Elf, 14WE, SA134 (brak w taborze pomorskim),
+36WEhb (hybrydowy Impuls 2 na linii 201 – źródła podają długość tylko innej odmiany), odmiany EN57 bez podanej
+długości, ET42, ST43, Traxx, Griffin E4DCU, Vectron Freightlinera (bez prędkości).
+
+Przyjęte (decyzje gry, nie dane ze źródła):
+
+* przydział taboru do pociągów i linii – źródła podają, którzy przewoźnicy i jakie typy jeżdżą w regionie, a nie który
+  pojazd jedzie danym pociągiem (rozkład gry jest fikcyjny). SKM: EN57, EN71, 31WE, 31WEbb, 58WE; Regio (Polregio):
+  EN57, 31WEbb, 45WE; IC / EIC / TLK: ED160, EU160, EU200, EP07; EIP: ED250; skład EZT bez pasażerów: pule SKM i Regio;
+  pociągi towarowe: lokomotywy liniowe o trakcji pociągu (`traction`), zdawcze (TK) także manewrowe SM42 / SM48;
+* pociągi pasażerskie z linii bez sieci mają tabor przypięty w pliku stacji: Hel (Reda, Gdańsk Gł.) – SA136, SA137,
+  SA138; Chojnice (Tczew) i Kościerzyna (Gdynia Gł.) – SA133, SA136, SA137, SA138 (typy z pomorskiego taboru Polregio;
+  przydział do tych linii przyjęty); Kartuzy (Gdańsk Gł.) – SA133, SA136 (PKM); TLK Hel – Warszawa na odcinku przed
+  Gdynią Główną (Reda, Rumia, Chylonia) – 754. W Gdyni Głównej, gdzie zmienia się lokomotywę, gra pokazuje lokomotywę
+  elektryczną, z którą pociąg odjeżdża (postój w rozkładzie gry nie obejmuje zmiany lokomotywy);
+* długość: zespoły pasują, gdy ich łączna długość różni się od długości pociągu z rozkładu najwyżej o 20 %
+  (`STOCK_LENGTH_TOLERANCE`); gdy żaden typ nie pasuje – zestaw o najmniejszej różnicy; najwyżej 2 zespoły w pociągu
+  (ED160 – 1). Przykład: SKM 130 m → 2 × EN57 (129,9 m), 2 × 31WE, 2 × 31WEbb albo 2 × 58WE; EN71 do 130 m nie pasuje;
+* losowanie na zmianę: ciąg losowy z ziarna zmiany i numeru pociągu (osobny od losowań opóźnień i usterek – przebieg
+  zmiany się nie zmienia); kolejny pociąg tej samej linii (ta sama kategoria, te same szlaki `from` i `to`) dostaje inny
+  typ niż poprzedni, gdy pasuje więcej typów; pociąg ze składu innego (`unit`) ma tabor tamtego pociągu.
+
 ## Blokada liniowa na monitorze i blokada samoczynna
 
 Na komputerowych stanowiskach obsługi stan blokady liniowej nie jest osobnym polem z lampkami (to element

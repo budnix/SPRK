@@ -312,6 +312,8 @@ export default {
   'sp.trains.front': 'czoło',
   'sp.consist': 'długość {length} m',
   'sp.consistMass': 'długość {length} m, masa brutto {mass} t',
+  'sp.stock.unit': 'skład: {set}',
+  'sp.stock.loco': 'lokomotywa {set}',
   'sp.tab.stan': 'Urządzenia',
   'sp.tab.rozkazy': 'Rozkazy',
   'sp.tab.lacznosc': 'Łączność',
