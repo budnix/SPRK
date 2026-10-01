@@ -3,21 +3,24 @@ import { openShift, btn, simState, advance, hit } from './helpers.js';
 
 /* Pulpit kostkowy (urządzenia typu E) – Stare Pustkowie */
 
-test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / wg trudności, wybór posterunku rozwija parametry i startuje zmianę', async ({ page }) => {
+test('ekran startowy bez parametrów: tytuł → Służba (lista alfabetycznie / wg trudności) → strona stacji → start zmiany', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('#start')).toBeVisible();
-  // lista po lewej: misje przed posterunkami; odprawa (etap 2) po prawej z podpowiedzią
-  const order = await page.evaluate(() => [...document.querySelectorAll('.st-left .st-missions, .st-left .st-stations')].map((e) => e.className));
-  expect(order).toEqual(['st-missions', 'st-stations']);
-  await expect(page.locator('#st-briefing .st-bplaceholder')).toBeVisible();
-  await expect(page.locator('.st-arrow')).toBeVisible();
-  expect(await page.locator('.st-mission').count()).toBeGreaterThanOrEqual(2);
+  expect(await page.locator('#start .st-logo-svg').count()).toBe(1); // logo SVG zamiast napisu
+  // ekran tytułowy: służba, szkolenie, ustawienia (ostatniej zmiany jeszcze nie ma); bez list misji i posterunków
+  await expect(page.locator('#st-service')).toBeVisible();
+  await expect(page.locator('#st-training')).toBeVisible();
+  await expect(page.locator('#st-settings')).toBeVisible();
+  await expect(page.locator('#st-last')).toHaveCount(0);
+  await expect(page.locator('.st-card, .st-mission')).toHaveCount(0);
+  await page.click('#st-service');
+  await expect(page).toHaveURL(/#\/sluzba$/);
   // domyślnie alfabetycznie
   const names = await page.locator('.st-card .st-name').allTextContents();
+  expect(names.length).toBeGreaterThanOrEqual(9);
   expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pl')));
   expect(await page.locator('.st-card .st-diff').first()).toBeVisible();
-  expect(await page.locator('#start .st-logo-svg').count()).toBe(1); // logo SVG zamiast napisu
-  // wg trudności: skala 1–5 niemalejąco, wybór zapamiętany po przeładowaniu
+  // wg trudności: skala 1–5 niemalejąco, wybór zapamiętany po przeładowaniu (adres #/sluzba zostaje)
   await page.click('.st-sort button[data-sort=difficulty]');
   const diffList = await page.locator('.st-card .st-diff b').allTextContents();
   const counts = diffList.map((s) => Number(s.split('/')[0]));
@@ -25,11 +28,7 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   expect(counts).toEqual([...counts].sort((a, b) => a - b));
   await page.reload({ waitUntil: 'load' });
   await expect(page.locator('.st-sort button[data-sort=difficulty]')).toHaveClass(/active/);
-  // wybór posterunku: parametry pod kartą
-  await expect(page.locator('#st-params')).toBeHidden();
   expect(await page.locator('.st-card .st-thumb svg path').count()).toBeGreaterThan(0); // miniatury planów
-  await page.click('.st-card[data-id=sopot]');
-  await expect(page.locator('#st-params')).toBeVisible();
   // stacje szkoleniowe są tylko w misjach – wśród posterunków ich nie ma
   for (const id of ['szkolna', 'jodlowa', 'zacisze', 'olszyny']) await expect(page.locator(`.st-card[data-id=${id}]`)).toHaveCount(0);
   // Rumia: zmiana na pulpicie typu E i na monitorze – karta „stanowisko do wyboru”, chip jak pozostałe (szary)
@@ -37,18 +36,26 @@ test('ekran startowy bez parametrów: misje u góry, posterunki alfabetycznie / 
   const chips = await page.locator('.st-card[data-id=rumia] .st-srk, .st-card[data-id=sopot] .st-srk').evaluateAll((els) => els.map((e) => getComputedStyle(e).color + '|' + getComputedStyle(e).borderTopColor));
   expect(new Set(chips).size).toBe(1);
   await expect(page.locator('.st-card[data-id=sopot] .st-srk').first()).toHaveText('komputerowe · monitor');
+  // karta otwiera stronę stacji z parametrami zmiany
   await page.click('.st-card[data-id=rumia]');
+  await expect(page).toHaveURL(/#\/stacja\/rumia$/);
   const opts = await page.locator('#st-scenario option').allTextContents();
   expect(opts).toEqual(['Pełna zmiana – pulpit kostkowy typu E (05:55–08:15)', 'Pełna zmiana – stanowisko komputerowe (05:55–08:15)', 'Usterka blokady od Redy', 'Szczyt z zakłóceniami']);
   expect(opts.some((o) => /samouczek/i.test(o))).toBe(false);
+  // „wstecz” – do regionu stacji, przeglądarka – z powrotem na listę
+  await page.click('#st-up');
+  await expect(page).toHaveURL(/#\/sluzba\/pomorskie$/);
+  await page.goBack(); await page.goBack();
+  await expect(page).toHaveURL(/#\/sluzba$/);
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-briefing')).toHaveClass(/open/);
-  await expect(page.locator('.st-card[data-id=sopot]')).toHaveClass(/active/);
+  await expect(page.locator('#st-params')).toBeVisible();
   await expect(page.locator('#st-briefing .st-bname')).toHaveText('Sopot');
   await expect(page.locator('#st-station-desc')).toContainText('Ebilock');
   await page.selectOption('#st-level', 'none');
   await page.click('#st-go');
   await page.waitForURL(/stacja=sopot.*zaklocenia=none/);
+  expect(new URL(page.url()).hash).toBe(''); // zmiana startuje bez adresu ekranu wyboru
   await expect(page.locator('#station-name')).toContainText('Sopot');
 });
 
@@ -360,7 +367,7 @@ test('„Nowa zmiana…” czyści parametry URL (odświeżenie zostaje na wybor
 });
 
 test('Rumia: karta „stanowisko do wyboru” (typ E i komputerowe); pulpit kostkowy rysuje stację z blokadami, stanowisko komputerowe – semafory dwustopniowego wyjazdu', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   await expect(page.locator('.st-card[data-id=rumia] .st-name')).toHaveText('Rumia');
   await expect(page.locator('.st-card[data-id=rumia] .st-srk-both')).toHaveText('stanowisko do wyboru');
   await openShift(page, 'rumia', { settings: { sideCollapsed: true } });
@@ -373,7 +380,7 @@ test('Rumia: karta „stanowisko do wyboru” (typ E i komputerowe); pulpit kost
 });
 
 test('Reda: karta „stanowisko do wyboru”; pulpit z blokadą dwukierunkową do Helu, stanowisko komputerowe – semafory R, P, Szn1, S', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   await expect(page.locator('.st-card[data-id=reda] .st-name')).toHaveText('Reda');
   await expect(page.locator('.st-card[data-id=reda] .st-srk-both')).toHaveText('stanowisko do wyboru');
   await openShift(page, 'reda', { settings: { sideCollapsed: true } });
@@ -387,7 +394,7 @@ test('Reda: karta „stanowisko do wyboru”; pulpit z blokadą dwukierunkową d
 });
 
 test('Tczew: karta „komputerowe”; stanowisko komputerowe z blokadami czterech linii i semaforami wjazdowymi A1, E1, U, S, P, Z', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   await expect(page.locator('.st-card[data-id=tczew] .st-name')).toHaveText('Tczew');
   await expect(page.locator('.st-card[data-id=tczew] .st-srk').first()).toHaveText('komputerowe · monitor');
   await expect(page.locator('.st-card[data-id=tczew] .st-srk-both')).toHaveCount(0);
@@ -398,7 +405,7 @@ test('Tczew: karta „komputerowe”; stanowisko komputerowe z blokadami czterec
 });
 
 test('Pruszcz Gdański: karta „komputerowe”; monitor z blokadami linii 9 (SBL), 260, 229 i 226 (Eap jednotorowe) i semaforami wjazdowymi C, D, P, S, R', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   await expect(page.locator('.st-card[data-id=pruszcz-gdanski] .st-name')).toHaveText('Pruszcz Gdański');
   await expect(page.locator('.st-card[data-id=pruszcz-gdanski] .st-srk').first()).toHaveText('komputerowe · monitor');
   await expect(page.locator('.st-card[data-id=pruszcz-gdanski] .st-srk-both')).toHaveCount(0);
@@ -409,7 +416,7 @@ test('Pruszcz Gdański: karta „komputerowe”; monitor z blokadami linii 9 (SB
 });
 
 test('Gdańsk Główny: karta „komputerowe”; monitor z blokadami SBL (9, Śródmieście, 202, 250) i Eap (227, 249), semafory wjazdowe B, A501, G, N, H, M i kozły torów czołowych', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-name')).toHaveText('Gdańsk Główny');
   await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-srk').first()).toHaveText('komputerowe · monitor');
   await expect(page.locator('.st-card[data-id=gdansk-glowny] .st-srk-both')).toHaveCount(0);

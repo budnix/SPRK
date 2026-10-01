@@ -139,9 +139,10 @@ test('Gdynia Główna: jedno stanowisko na całą stację – bez zakładek okr�
   await expect(page.locator('#help')).not.toContainText('Okręgi nastawcze');
   await page.keyboard.press('Escape');
   await page.click('#btn-menu'); await page.click('#menu-new');
+  await expect(page.locator('.st-card[data-id=gdynia-glowna]')).toHaveCount(1);
+  await expect(page.locator('.st-card[data-id=gdynia-glowna] .st-srk', { hasText: 'dwa okręgi' })).toHaveCount(0);
   await page.click('.st-card[data-id=gdynia-glowna]');
   await expect(page.locator('#st-district-wrap')).toBeHidden();
-  await expect(page.locator('.st-card[data-id=gdynia-glowna] .st-srk', { hasText: 'dwa okręgi' })).toHaveCount(0);
 });
 
 test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawędź kostki w kierunku jazdy), tarcza w Ms1 szara', async ({ page }) => {

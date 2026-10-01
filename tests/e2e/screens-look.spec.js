@@ -15,27 +15,30 @@ const rgbOf = (page, v) => page.evaluate((name) => {
 const fill = (loc) => loc.evaluate((e) => getComputedStyle(e).fill);
 
 for (const theme of ['dark', 'light']) {
-  test(`ekran startowy (${theme}): semafor między listą a odprawą – „Stój”, po wyborze „wolna droga”; misja zapala przystanek; nazwa na tablicy`, async ({ page }) => {
+  test(`ekran startowy (${theme}): semafor między misjami a odprawą – „Stój”, po wyborze „wolna droga”; misja zapala przystanek; nazwa na tablicy`, async ({ page }) => {
     await page.addInitScript((th) => localStorage.setItem('sprk.settings', JSON.stringify({ theme: th })), theme);
-    await page.goto('/', { waitUntil: 'load' });
+    await page.goto('/#/szkolenie', { waitUntil: 'load' });
     await expect(page.locator('#start .st-arrow .sg-svg')).toBeVisible();
     const [green, red, off] = [await rgbOf(page, '--sc-lamp-green'), await rgbOf(page, '--sc-lamp-red'), await rgbOf(page, '--sc-lens-off')];
     const arrow = (cls) => page.locator(`#start .st-arrow .sg-lens.${cls}`);
     expect([await fill(arrow('sg-r')), await fill(arrow('sg-g'))]).toEqual([red, off]);
     // pusta odprawa: ten sam semafor zamiast znaku tekstowego
     await expect(page.locator('#st-briefing .st-bplaceholder .sg-svg')).toBeVisible();
-    await page.click('#start .st-card[data-id=sopot]');
-    await expect.poll(async () => [await fill(arrow('sg-r')), await fill(arrow('sg-g'))]).toEqual([off, green]);
-    // tablica stacyjna: granatowe tło, biała litera
-    const plate = await page.locator('#st-briefing .st-bname').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]);
-    expect(plate).toEqual([await rgbOf(page, '--sc-plate'), await rgbOf(page, '--sc-plate-text')]);
-    // trudność – okrągłe lampki
-    expect(await page.locator('#start .st-card .st-diff i').first().evaluate((e) => getComputedStyle(e).borderRadius)).toBe('50%');
-    // misja: znacznik przystanku na torze, po wyborze zapalony na zielono
+    // misja: znacznik przystanku na torze, po wyborze zapalony na zielono, semafor – „wolna droga”
     const no = page.locator('#start .st-mission[data-idx="0"] .st-no');
     expect(await no.evaluate((e) => getComputedStyle(e).borderRadius)).toBe('50%');
     await page.click('#start .st-mission[data-idx="0"]');
+    await expect.poll(async () => [await fill(arrow('sg-r')), await fill(arrow('sg-g'))]).toEqual([off, green]);
     await expect.poll(() => no.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe(green);
+    // tablica stacyjna: granatowe tło, biała litera (odprawa misji i strona stacji)
+    const plate = () => page.locator('#st-briefing .st-bname').evaluate((e) => [getComputedStyle(e).backgroundColor, getComputedStyle(e).color]);
+    const colours = [await rgbOf(page, '--sc-plate'), await rgbOf(page, '--sc-plate-text')];
+    expect(await plate()).toEqual(colours);
+    await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
+    // trudność – okrągłe lampki
+    expect(await page.locator('#start .st-card .st-diff i').first().evaluate((e) => getComputedStyle(e).borderRadius)).toBe('50%');
+    await page.click('#start .st-card[data-id=sopot]');
+    expect(await plate()).toEqual(colours);
   });
 }
 

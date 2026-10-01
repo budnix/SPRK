@@ -96,7 +96,7 @@
   --radius: 4px; --radius-sm: 3px; --radius-pill: 10px;
   --ctl-h: 28px;
   --z-edge: 3; --z-status: 5; --z-tab: 6; --z-tutorial: 70; --z-gloss: 71; --z-cmd-menu: 80; --z-confirm: 81;
-  --z-menu: 85; --z-help: 86; --z-report: 87; --z-settings: 88; --z-start: 90;
+  --z-menu: 85; --z-help: 86; --z-report: 87; --z-start: 88; --z-settings: 90; /* ustawienia otwierają się też z ekranu tytułowego */
 }
 /* Motyw jasny – zmienia tylko interfejs, kostki pulpitu pozostają bez zmian */
 :root[data-theme="light"] {
@@ -681,6 +681,92 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 #start.modal .order-actions .st-go:hover, #report.modal .rp-actions .st-go:hover { background: var(--sc-go-hover); border-color: var(--sc-go-hover); }
 .st-go::before { content: ''; flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: var(--sc-on-go); box-shadow: 0 0 0 3px var(--sc-glow-green), 0 0 10px var(--sc-on-go); }
 .st-params .order-actions { margin-top: 10px; }
+
+/* ekrany wyboru (StartScreen): nagłówek z „wstecz” i okruszkami, tytuł z kafelkami, służba (wyszukiwarka, filtry,
+   karty), region, strona stacji (zakładki ery, zmiana) – ten sam świat nastawni: lampki, tor, tablica */
+.st-heroact { grid-column: 2; display: flex; gap: 8px; flex-wrap: wrap; justify-self: start; margin-top: 6px; }
+/* ekran wyboru: przyciski „wstecz” / „wróć do zmiany” z prawej strony nagłówka, nie w osobnym wierszu */
+@media (min-width: 601px) {
+  #start .st-hero { grid-template-columns: auto minmax(0, 1fr) auto; }
+  #start .st-heroact { grid-column: 3; grid-row: 1 / span 2; align-self: center; margin-top: 0; }
+}
+.st-heroact .st-close { margin-top: 0; }
+.st-up { background: var(--sc-panel2); color: var(--sc-text); border-color: var(--sc-border); }
+.st-crumbs a { color: var(--sc-accent); text-decoration: none; }
+.st-crumbs a:hover { text-decoration: underline; }
+.st-crumbs [aria-current] { color: var(--sc-text); font-weight: 600; }
+.st-sep { margin: 0 7px; color: var(--sc-muted); }
+.st-tagline:focus { outline: none; }
+.st-logo:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 4px; }
+@media (max-width: 600px) { .st-hero .st-heroact { grid-column: 1; } }
+.st-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.st-view > * { flex: 1 1 auto; min-height: 0; }
+/* tytuł: kafelki jak przyciski pulpitu z lampką; główny (Służba) – zapalona zielona */
+.st-title-screen { display: grid; grid-template-columns: minmax(0, 560px) auto; gap: 40px; align-content: start; justify-content: center; padding-top: 18px; }
+.st-menu { display: flex; flex-direction: column; gap: 12px; }
+.st-tile { position: relative; display: flex; flex-direction: column; gap: 3px; text-align: left; text-decoration: none; background: var(--sc-panel); color: var(--sc-text); border: 1px solid var(--sc-border); border-left: 4px solid var(--sc-rail); border-radius: var(--radius-sm); padding: 14px 18px 14px 44px; font: inherit; cursor: pointer; transition: border-color .15s, background-color .15s; }
+.st-tile:hover, .st-tile:focus-visible { border-color: var(--sc-accent); background: var(--sc-accent-soft); outline: none; }
+.st-tile-lamp { position: absolute; left: 16px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--sc-lamp-off); box-shadow: inset 0 1px 2px var(--sc-shadow); }
+.st-tile.primary { border-left-color: var(--sc-go); }
+.st-tile.primary .st-tile-lamp, .st-tile:hover .st-tile-lamp, .st-tile:focus-visible .st-tile-lamp { background: var(--sc-lamp-green); box-shadow: 0 0 8px var(--sc-glow-green); }
+.st-tile-last { border-left-color: var(--sc-lamp-yellow); }
+.st-tile-last .st-tile-lamp { background: var(--sc-lamp-yellow); box-shadow: 0 0 8px var(--sc-glow-yellow); }
+.st-tile-name { font-size: 20px; font-weight: 800; letter-spacing: 0.3px; }
+.st-tile-sub { color: var(--sc-muted); font-size: 12.5px; }
+.st-title-art { align-self: center; opacity: 0.9; }
+@media (max-width: 700px) { .st-title-screen { grid-template-columns: minmax(0, 1fr); } .st-title-art { display: none; } }
+/* szkolenie: misja ukończona – zielona obwódka przystanku i znacznik */
+.st-mission.done .st-no { border-color: var(--sc-lamp-green); }
+.st-done { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; font-size: 11px; font-weight: 600; color: var(--sc-good); }
+/* służba: wyszukiwarka i filtry nad listą */
+.st-service { display: flex; flex-direction: column; gap: 10px; }
+.st-toolbar { display: flex; flex-direction: column; gap: 10px; background: var(--sc-panel); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 12px 14px; }
+.st-search { display: flex; align-items: center; gap: 8px; background: var(--sc-panel2); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 0 10px; color: var(--sc-muted); }
+.st-search:focus-within { border-color: var(--sc-accent); box-shadow: 0 0 0 1px var(--sc-accent) inset; }
+.st-search input { flex: 1 1 auto; min-width: 0; background: transparent; border: 0; color: var(--sc-text); font: inherit; font-size: 15px; padding: 9px 0; outline: none; }
+.st-search kbd { font: 600 11px var(--font); color: var(--sc-muted); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 0 6px; }
+.st-filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.st-fgroup { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.st-flabel { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--sc-muted); margin-right: 3px; }
+.st-chip { font: inherit; font-size: 12px; background: var(--sc-panel2); color: var(--sc-text); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 4px 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.st-chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--sc-lamp-off); }
+.st-chip[aria-pressed="true"] { border-color: var(--sc-accent); background: var(--sc-accent-soft); }
+.st-chip[aria-pressed="true"]::before { background: var(--sc-lamp-green); box-shadow: 0 0 5px var(--sc-glow-green); }
+.st-chip:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 1px; }
+.st-fsel { font-size: 12px; color: var(--sc-muted); display: inline-flex; align-items: center; gap: 6px; }
+.st-fsel select { background: var(--sc-panel2); color: var(--sc-text); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 4px 6px; font: inherit; }
+.st-check { font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.st-check input { accent-color: var(--sc-accent); margin: 0; }
+.st-filters .st-sort { margin-left: auto; }
+.st-count { font-size: 12px; color: var(--sc-muted); padding: 0 2px; }
+.st-empty { color: var(--sc-muted); padding: 30px 10px; text-align: center; background: var(--sc-panel); border: 1px dashed var(--sc-border); border-radius: var(--radius-sm); }
+.st-service .st-list, .st-region .st-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 400px), 1fr)); align-content: start; }
+.st-card { position: relative; }
+/* ocena jak mała pieczątka: podwójna ramka w barwie oceny, skośnie */
+.st-stamp { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; border: 3px double currentColor; border-radius: var(--radius-sm); padding: 1px 6px; transform: rotate(-5deg); line-height: 1.3; }
+.st-stamp.grade-wzorowo { color: var(--sc-accent); } .st-stamp.grade-dobrze { color: var(--sc-good); }
+.st-stamp.grade-dostatecznie { color: var(--sc-warn); } .st-stamp.grade-niedostatecznie { color: var(--sc-bad); }
+.st-card-stamp { position: absolute; left: 10px; bottom: 9px; background: var(--sc-panel); } /* na miniaturze planu */
+/* region */
+.st-region { display: flex; flex-direction: column; gap: 12px; }
+/* strona stacji: po lewej obraz i opis, po prawej zmiana i start */
+.st-station .st-briefing { min-height: 0; }
+.st-station .st-bthumb { height: 200px; }
+@media (min-width: 900px) {
+  .st-station .st-bcontent { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); column-gap: 8px; }
+  .st-station .st-bcontent > * { grid-column: 1; }
+  .st-station .st-bthumb { grid-column: 1 / -1; }
+  .st-station #st-params { grid-column: 2; grid-row: 2 / span 5; align-self: start; padding-top: 14px; }
+}
+.st-bdesc { padding: 8px 14px 0; margin: 0; font-size: 12.5px; line-height: 1.5; }
+.st-best { padding: 6px 14px 0; display: flex; align-items: center; gap: 10px; font-size: 12.5px; }
+.st-best:empty { display: none; }
+.st-eras { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px 0; }
+.st-era { font-size: 12px; text-decoration: none; color: var(--sc-text); background: var(--sc-panel2); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 4px 10px; }
+.st-era.active { border-color: var(--sc-plate); background: var(--sc-plate); color: var(--sc-plate-text); }
+.st-adv { margin: 6px 0 2px; font-size: 12px; color: var(--sc-muted); }
+.st-adv summary { cursor: pointer; padding: 2px 0; }
+.st-adv summary:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 2px; }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
 /* zakładka „Zadania”: karty zadań manewrowych scenariusza */
 .tasks-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 2px; font-size: 14px; }

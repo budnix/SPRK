@@ -22,7 +22,7 @@ test('ikony pociągu: tryb pociągowy = trzy zapalone światła (Pc1), manewrowy
 
 test('ikony interfejsu: wspólna siatka 16×16, kolor z tekstu, ukryte przed czytnikami; nieznana nazwa to błąd', async () => {
   const { uiIcon, uiIconNames } = await import('../src/ui/icons.js');
-  assert.deepEqual(uiIconNames().sort(), ['check', 'close', 'cross', 'menu', 'pause', 'play', 'todo', 'wait']);
+  assert.deepEqual(uiIconNames().sort(), ['check', 'close', 'cross', 'menu', 'pause', 'play', 'search', 'todo', 'wait']);
   for (const name of uiIconNames()) {
     const svg = uiIcon(name);
     assert.match(svg, new RegExp(`^<svg class="ui-ic" data-icon="${name}" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">`));

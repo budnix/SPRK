@@ -37,7 +37,8 @@ export function frontIcon(direction) {
 /**
  * Ikony interfejsu (tekst SVG, bez DOM): jedna siatka 16×16 i jedna grubość kreski, kolor z tekstu przycisku
  * (`currentColor`). Zastępują znaki tekstowe, które każdy system rysuje inaczej.
- * `pause`, `play`, `menu`, `close` – przyciski; `check`, `cross`, `wait`, `todo` – stan zadania / polecenia.
+ * `pause`, `play`, `menu`, `close` – przyciski; `check`, `cross`, `wait`, `todo` – stan zadania / polecenia; `search` –
+ * pole wyszukiwania posterunku.
  */
 const UI_ICONS = {
   pause: '<rect x="3.5" y="2.5" width="3" height="11" rx="0.8" class="solid"/><rect x="9.5" y="2.5" width="3" height="11" rx="0.8" class="solid"/>',
@@ -48,6 +49,7 @@ const UI_ICONS = {
   cross: '<path d="M4 4l8 8M12 4l-8 8"/>',
   wait: '<circle cx="8" cy="8" r="5.2" stroke-dasharray="2.2 2.2"/>',
   todo: '<rect x="3" y="3" width="10" height="10" rx="1.5"/>',
+  search: '<circle cx="7" cy="7" r="4.3"/><path d="M10.2 10.2l3.6 3.6"/>',
 };
 
 export function uiIcon(name, size = 16) {

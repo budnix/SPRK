@@ -107,7 +107,10 @@ test('mysz: przeciągnięcie prawym klawiszem od semafora do celu daje menu prze
 test('ekran startowy: odprawa misji – samouczek albo pełna zmiana tej stacji na tym samym pulpicie; MOR-3 tylko w misji 6', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   // stacje szkoleniowe nie są na liście „Służba” – wejście do ich pełnej zmiany jest w odprawie misji
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id="sopot"]')).toHaveCount(1);
   await expect(page.locator('.st-card[data-id="kalinowo"]')).toHaveCount(0);
+  await page.goto('/#/szkolenie', { waitUntil: 'load' });
   const opts = () => page.locator('#st-scenario option').evaluateAll((o) => o.map((x) => x.value));
   // misja nie zmienia pulpitu: misja 1 (monitor) – tylko zmiana na monitorze
   await page.click('.st-mission[data-scenario="nauka-1"]');

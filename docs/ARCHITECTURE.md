@@ -423,18 +423,34 @@ własna kostka opisu zostaje pusta, więc opis nigdy nie leży na obrysie peronu
 
 ## Ekran startowy (`src/ui/StartScreen.js`)
 
-Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków do służby (`dutyStations` – bez
-stacji szkoleniowych, czyli tych, które mają misję; ich zmiany są tylko do testów i przez adres URL) z `location`, `traffic`,
-`difficulty` (pięć lampek, `difficultyMark` w `src/ui/brand.js`) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
-zapamiętany w localStorage). Układ dwuetapowy: przewijana lista (misje, potem posterunki) po lewej, „tor” z semaforem i odprawa (briefing) po prawej –
-miniatura, opis i parametry zmiany (scenariusz, zakłócenia, ziarno; okręg tylko dla stacji z `districts`) albo, dla misji, opis i liczba kroków.
-Na wąskim ekranie odprawa staje pod wybraną kartą. Ekran startowy leży nad dymkami samouczka i menu (z-index).
+Wybór jak w grze – kilka ekranów z własnym adresem w części „#” (`catalog.parseRoute` / `routeHash`; stan ekranu wynika
+tylko z adresu, więc przycisk „wstecz” przeglądarki i odświeżenie działają, a link prowadzi do konkretnej stacji):
+* `#/` tytuł – kafelki: ostatnia zmiana (uruchamia ją ponownie), Służba, Szkolenie (licznik ukończonych misji),
+  Ustawienia (ten sam ekran ustawień co w menu – leży nad ekranem startowym);
+* `#/szkolenie[/n]` – misje wprowadzające (scenariusze z `tutorial`, `missionList`) jako przystanki na torze, semafor
+  i odprawa misji: samouczek albo pełna zmiana stacji szkoleniowej na tym samym stanowisku;
+* `#/sluzba`, `#/sluzba/lista` – posterunki do służby (`dutyStations` – bez stacji szkoleniowych; jedno miejsce raz,
+  edycje są zakładkami) z wyszukiwarką („/” przenosi do pola, Enter otwiera pierwszy wynik), filtrami (stanowisko,
+  trudność, era i województwo – gdy są co najmniej dwie wartości, „tylko niegrane”) i kolejnością A–Z / wg trudności
+  (zapamiętana w localStorage);
+* `#/sluzba/<województwo>` – region: posterunki województwa;
+* `#/stacja/<id>` – strona stacji: tablica z nazwą, trudność (pięć lampek, `difficultyMark` w `src/ui/brand.js`),
+  zakładki ery (`eraTabs`, gdy miejsce ma kilka edycji), miniatura planu, opis i urządzenia, najlepszy wynik, wybór
+  zmiany (okręg tylko dla stacji z `districts`, scenariusz, zakłócenia; ziarno w „Zaawansowane”) i start.
+Nagłówek ma okruszki (Start › Służba › województwo › stacja) i „‹ Wstecz” (`catalog.parentRoute`); Esc bez trwającej
+zmiany – piętro wyżej. Przy wejściu do gry (bez `scenariusz` w adresie) otwiera się tytuł; „Nowa zmiana…” w trakcie
+zmiany (menu, raport) – od razu lista posterunków. Otwarcie ekranu zdejmuje parametry zmiany z adresu (odświeżenie
+zostaje na wyborze), „Wróć do zmiany” je przywraca; start zmiany ładuje adres `?stacja=…` bez części „#”.
+Ekran startowy leży nad dymkami samouczka i menu (z-index). Karty i odprawa mają miniatury planów z
+`src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
 Wygląd ze świata nastawni: misje stoją na torze jak przystanki linii szkoleniowej (numer to znacznik przystanku, wybrana
-misja go zapala); semafor między listą a odprawą (`signalSvg` z `brand.js`) pokazuje „Stój”, a po wyborze misji lub
-posterunku „wolna droga” (samo CSS, `:has(.st-briefing.open)`); pusta odprawa ma ten sam semafor; nazwa w odprawie to
-tablica stacyjna (granatowa emalia, `--sc-plate`), a przycisk startu świeci zielenią sygnału zezwalającego (`--sc-go`).
-Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
-Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
+misja go zapala, ukończona ma zieloną obwódkę i znacznik); semafor między misjami a odprawą (`signalSvg` z `brand.js`)
+pokazuje „Stój”, a po wyborze misji „wolna droga” (samo CSS, `:has(.st-briefing.open)`); pusta odprawa ma ten sam
+semafor; nazwa w odprawie to tablica stacyjna (granatowa emalia, `--sc-plate`), a przycisk startu świeci zielenią
+sygnału zezwalającego (`--sc-go`); najlepsza ocena to mała pieczątka na karcie i stronie stacji.
+Postęp gracza (`src/ui/progress.js`, localStorage): `main.js` przy `shift-end` zapisuje najlepszy wynik zmiany
+(`catalog.recordResult`, misja – ukończona), a przy starcie zmiany – adres ostatniej zmiany. Funkcje sortowania, listy
+misji, zakładek ery i miniatur są bez DOM – testowane w Node.
 Katalog posterunków (`src/ui/catalog.js`, bez DOM, `tests/catalog.test.js`): posterunki do służby i szkoleniowe,
 miejsca i edycje (`place`, `era` – zakładki ery), wyszukiwanie bez polskich znaków (nazwa, położenie, linie, województwo,
 rok, urządzenia; nazwa pasująca w całości pierwsza), filtry (stanowisko, trudność, era, województwo, niegrane), adresy
@@ -584,7 +600,7 @@ scenariusza. Zapisane ustawienia (localStorage) mają pierwszeństwo; zmiana `ro
   torze (bieżąca – zapalona lampka), wybór opcji pokazuje lampka kontrolna (pole wyboru z `appearance: none` – nadal
   działa z klawiatury). Ruch tylko przy zmianie stanu (lampka, pieczątka), wyłączony przy `prefers-reduced-motion`. `dialog.js` nadaje im rolę okna dialogowego,
   przenosi fokus do okna po otwarciu i oddaje go po zamknięciu. Kolejność warstw: menu < instrukcja < raport <
-  ustawienia < ekran startowy.
+  ekran startowy < ustawienia (ustawienia otwiera też ekran tytułowy).
 * **Ikony.** `uiIcon(name)` zwraca SVG na siatce 16×16 w kolorze tekstu (pauza, wznowienie, menu, zamknij, stan
   zadania). Znaki tekstowe zostały tylko w treści (słowniki, opisy), nie na przyciskach.
 * **Dostępność.** Widoczny fokus z klawiatury (`:focus-visible`), opisy przycisków-ikon (`aria-label`), przy

@@ -189,12 +189,14 @@ failure, a block failure, a peak with heavy disruptions).
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a
   terminating unit, a substitute signal after a signal fault and telephone announcements after a block fault.
 * Popups can be dragged anywhere; by default they avoid the track plan and the command bars.
-* Start screen like a mission select: missions first, as stops on a training line, then station cards with a schematic
-  thumbnail, location, traffic and a difficulty of one to five lamps, sortable alphabetically or by difficulty; a signal
-  between the list and the briefing shows "Stop" until you pick something and "proceed" after; the briefing panel on the
-  right shows the station name on a station sign and sets district, scenario, disruptions and seed. The shift report
-  stamps the grade and shows the totals as desk counters with a status lamp; in settings the categories are stops on a
-  track and the chosen option lights its lamp.
+* Station select like a game, with its own address for every screen (the browser Back button works): a title screen
+  (last shift, duty, training, settings), the training line with the six missions as stops (finished ones are ticked),
+  the duty list with a search box (no Polish letters needed – "gdansk", a line number like "202", the equipment) and
+  filters (workstation, difficulty, era, voivodeship, not played yet), a page per voivodeship and a station page with a
+  station sign, era tabs when a place has several editions, the shift choice and a green "start" button. Your best grade
+  is stamped on the station card; the difficulty shows as one to five lamps. The shift report stamps the grade and shows the totals as
+  desk counters with a status lamp; in settings the categories are stops on a track and the chosen option lights its
+  lamp.
 
 ### Desk and screens
 * Wide stations are split into logical screens that fit the browser width (cuts avoid point groups, two-column overlap,

@@ -157,3 +157,17 @@ test('postęp: najlepsza ocena na zmianę (ocena, potem punkty), misje ukończon
   assert.ok(missionDone(p, 'szkolna', 'samouczek') && !missionDone(p, 'jodlowa', 'samouczek'));
   assert.ok(!played(p, 'szkolna'), 'misja to nie zmiana na posterunku');
 });
+
+test('zakładki ery na stronie stacji: jedna na edycję („rok · stanowisko”), bieżąca zaznaczona; jedna edycja – bez zakładek', async () => {
+  const { eraTabs } = await import('../src/ui/StartScreen.js');
+  const now = fake('gdynia-glowna', { place: 'gdynia-glowna' });
+  const old = fake('gdynia-glowna-2010', { place: 'gdynia-glowna', era: 2010, srk: 'E' });
+  const html = eraTabs(editionsOf([old, now], now), 'gdynia-glowna-2010');
+  const tabs = [...html.matchAll(/<a class="st-era( active)?" href="([^"]+)" data-id="([^"]+)"[^>]*>(.*?)<\/a>/g)].map((m) => ({ active: !!m[1], href: m[2], id: m[3], text: m[4].replace(/<[^>]+>/g, '') }));
+  assert.deepEqual(tabs, [
+    { active: false, href: '#/stacja/gdynia-glowna', id: 'gdynia-glowna', text: 'dziś · komputerowe · monitor' },
+    { active: true, href: '#/stacja/gdynia-glowna-2010', id: 'gdynia-glowna-2010', text: '2010 · typ E · pulpit kostkowy' },
+  ]);
+  assert.match(html, /aria-current="page"/);
+  assert.equal(eraTabs([now], 'gdynia-glowna'), '');
+});
