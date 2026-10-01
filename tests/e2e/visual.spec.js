@@ -102,3 +102,29 @@ test('wygląd stanowiska MOR-3 (Kalinowo): przebieg nastawiony z menu, wybrany s
   await expect(page.locator('#desk .scr-el.signal.mor-sel')).toHaveCount(1);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-mor-kalinowo.png');
 });
+
+// karta pociągu na zakładce „Pociągi”: kategoria, numer, relacja, stan, przyczyna postoju i tabor (zespoły trakcyjne)
+test('wygląd karty pociągu na zakładce „Pociągi” (Szkolna): postój po godzinie odjazdu, przyczyna i tabor', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana', seed: '7' } });
+  await expect.poll(() => page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+  await page.evaluate(() => {
+    const sim = window.sim, c = sim.clock;
+    const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+    c.paused = false; c.speed = 1;
+    for (let i = 0; i < 4800; i++) {
+      sim.step(0.5);
+      const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
+      if (tr?.entered && tr.v === 0 && tr.hasStopped && c.time >= e.depTime + 60) break;
+      if (!tr?.entered && !sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+    }
+    c.paused = true;
+  });
+  await page.click('#panel-tabs button[data-tab=pociagi]');
+  const card = page.locator('#trains .train-card[data-nr="6101"]');
+  await expect(card.locator('.train-wait')).toHaveCount(1);
+  await expect(card.locator('.train-stock')).toHaveCount(1);
+  await page.waitForTimeout(200);
+  // panel pod pulpitem – karta na całą szerokość, przyciski trybu jazdy i zmiany czoła z prawej
+  expect(await shot(page, '#trains .train-card[data-nr="6101"]', 1350, 100)).toMatchSnapshot('train-card-szkolna.png');
+});
