@@ -138,6 +138,8 @@ export default {
   srkInfo: 'Urządzenia przekaźnikowe typu E (stan planu: I 2020) z nastawniami „Rd” i „Rd1” – tu jedno stanowisko na całą stację; modernizacja linii 202 zastępuje je urządzeniami komputerowymi, dostępnymi jako druga zmiana.',
   description: 'Stacja na linii 202 Gdańsk – Stargard, początek linii 213 do Helu. Peron II (tory 2/1), peron I (tor 23), peron Ia (tor 11, wahadła do Helu), tor 3 dla przelotów, tor 4 i tory ładunkowe 7/9. Blokady półsamoczynne Eap do Rumi, Wejherowa i Helu.',
   location: 'Linia 202 Gdańsk – Stargard za Rumią, węzeł z linią 213 Reda – Hel; powiat wejherowski, woj. pomorskie.',
+  region: 'pomorskie',          // województwo – mapa wyboru posterunku
+  lines: [202, 213],              // linie kolejowe (jak w `location`)
   traffic: 'Regionalne i dalekobieżne na peronie II, pociągi z Helu na peronie I i Ia, towarowe przelotem torem 3 i zdawcze na tory ładunkowe.',
   difficulty: 4,
   startTime: '05:55',

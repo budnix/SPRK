@@ -435,6 +435,12 @@ posterunku „wolna droga” (samo CSS, `:has(.st-briefing.open)`); pusta odpraw
 tablica stacyjna (granatowa emalia, `--sc-plate`), a przycisk startu świeci zielenią sygnału zezwalającego (`--sc-go`).
 Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
 Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
+Katalog posterunków (`src/ui/catalog.js`, bez DOM, `tests/catalog.test.js`): posterunki do służby i szkoleniowe,
+miejsca i edycje (`place`, `era` – zakładki ery), wyszukiwanie bez polskich znaków (nazwa, położenie, linie, województwo,
+rok, urządzenia; nazwa pasująca w całości pierwsza), filtry (stanowisko, trudność, era, województwo, niegrane), adresy
+ekranów wyboru (`parseRoute` / `routeHash`), schemat regionu (kolejne posterunki linii – `regionLayout`) i postęp gracza
+(najlepsza ocena zmiany, ukończone misje). Województwa i granice Polski do walidacji `region` / `geo`:
+`src/model/regions.js`.
 
 ## Koniec zmiany i raport (`src/model/Score.js`, `src/ui/Report.js`)
 
