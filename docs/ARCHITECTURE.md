@@ -696,8 +696,10 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `screens-look.spec.js` (wygląd ekranów pełnych w obu motywach: semafor „Stój” / „wolna droga”, przystanki misji, tablica stacyjna, pieczątka i liczniki raportu, lampki ustawień, nagłówek na telefonie), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
   próg 300 pikseli, żeby drobne zmiany symboli też były wykrywane). Pomocniki w `helpers.js`: `openShift` (ustawienia w localStorage, zegar zatrzymany),
   `btn`/`tap` (przyciski wg `data-ref`), `simState`, `advance` (krok symulacji bez czekania).
-* Wzorce zrzutów powstają w kontenerze Playwright (czcionki DejaVu) – lokalnie odświeżaj je
-  `npm run test:e2e:update` tylko z tymi samymi czcionkami, inaczej porównanie w CI padnie.
+* Wzorce zrzutów odświeża się na komputerze (`npm run test:e2e:update`, dowolny system): przed zrzutem litery stają się
+  przezroczyste (`HIDE_GLYPHS` w `visual.spec.js` – miejsce zostaje), bo rasteryzacja tej samej czcionki różni się między
+  systemami (CoreText / FreeType / DirectWrite); układ, kształty i barwy są wszędzie te same, więc wzorzec z macOS przechodzi
+  w CI (kontener Linux). Napisy sprawdzają asercje `toHaveText` w testach zachowania.
 
 ## Plan rozwoju
 

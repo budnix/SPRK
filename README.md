@@ -271,6 +271,8 @@ lives in one place.
 ## CI / deploy
 
 Workflow `.github/workflows/ci.yml`: every push and pull request runs `npm test` and the Playwright e2e suite
-(in the `mcr.microsoft.com/playwright` container, so screenshot baselines match its fonts; two shards on two runners,
+(in the `mcr.microsoft.com/playwright` container; screenshot baselines are made on any computer with
+`npm run test:e2e:update` – letters are hidden in the screenshots, so font rendering differences between systems don't
+matter; two shards on two runners,
 two workers each, pages served from the built bundle – `SPRK_E2E_PREVIEW=1`) in parallel with the Vite build; on
 `main` the GitHub Pages deploy waits for all of them, so a push is live in about a minute and a half.

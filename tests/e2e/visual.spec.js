@@ -1,11 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { openShift, advance } from './helpers.js';
 
-/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update.
-   Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu) – wysokość nagłówka różni się
-   o piksel między środowiskami, a porównanie obrazów o różnych wymiarach zawsze pada. */
+/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update – na komputerze
+   (macOS, Linux, Windows), bez kontenera. Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu).
+   Litery są na zrzucie przezroczyste (miejsce zostaje): ta sama czcionka (Inter z src/fonts) jest rasteryzowana inaczej
+   na każdym systemie (CoreText / FreeType / DirectWrite), a układ, kształty i barwy – tak samo. Treść napisów
+   sprawdzają asercje toHaveText w testach zachowania. */
+
+/** Litery przezroczyste – tekst HTML, pola i napisy SVG; ramki, tła, ikony (currentColor) zostają. */
+const HIDE_GLYPHS = `* { -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; }
+  ::placeholder { color: transparent !important; }
+  svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }`;
 
 async function shot(page, selector, width, height) {
+  await page.addStyleTag({ content: HIDE_GLYPHS });
   // miganie monitora to przełączana klasa (wspólna faza, Ie-104.1 §4 ust. 17) – zatrzymana w fazie jasnej przed zrzutem
   await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); window.desk?.inner?.setAttribute('data-ph', '0'); });
   const r = await page.locator(selector).boundingBox();
