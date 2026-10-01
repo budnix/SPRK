@@ -486,7 +486,9 @@ test('etykieta pociągu wjeżdżającego ze szlaku nie zasłania nazwy szlaku na
           const x = e.train.trail[e.train.trail.length - 1].tile?.x ?? 0;
           out.seen++;
           if (r.right > name.left && r.left < name.right && r.bottom > name.top && r.top < name.bottom) out.hits.push(`${nr}@${x}`);
-          if (inside(x)) break;
+          // koniec: czoło w głębi stacji albo pociąg stanął (przed semaforem wjazdowym – bez przebiegu dalej nie pojedzie,
+          // a etykieta stojącego już się nie przesuwa; dawniej „■” przy stojącym pomijał go w wyszukiwaniu etykiety)
+          if (inside(x) || (e.train.v === 0 && e.train.stoppedAt)) break;
         }
       }
       c.paused = true;
