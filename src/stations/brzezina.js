@@ -131,7 +131,7 @@ export default {
   timetable: [
     os(9101, 'T2', 'K2', '07:06', '07:07', '2'),
     os(9102, 'K1', 'T1', '07:12', '07:13', '1'),
-    { nr: 49101, kind: 'tow', name: 'Towarowy', from: 'T2', to: 'K2', arr: '07:22', dep: '07:34', track: '4', stop: true, length: 450, vmax: 80, dwell: 60 },
+    { nr: 49101, kind: 'tow', cat: 'TM', name: 'Towarowy', from: 'T2', to: 'K2', arr: '07:22', dep: '07:34', track: '4', stop: true, length: 450, mass: 2000, vmax: 80, dwell: 60 },
     { nr: 1901, kind: 'os', name: 'TLK Topolno – Klonów', from: 'T2', to: 'K2', arr: '07:29', track: '2', stop: false, length: 220, vmax: 120 },
     os(9103, 'K1', 'T1', '07:42', '07:43', '1'),
     os(9104, 'K1', 'T1', '07:58', '07:59', '1'),

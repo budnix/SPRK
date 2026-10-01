@@ -56,14 +56,59 @@ nie zgaduje, które tory są dodatkowe) i Sr3 na kształtowym semaforze wjazdowy
 Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
 (`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
 
-Oznaczenia pociągów towarowych (wszystkie stanowiska). Ze źródła – PKP PLK, Regulamin sieci, zał. 6.3 „Klasyfikacja
-pociągów stosowana w konstrukcji rozkładów jazdy”: rodzaj pociągu oznaczają trzy litery; w ruchu krajowym TM – przewozy
-masowe, TN – niemasowe, TK – obsługa stacji i bocznic, LT – lokomotywa do i od pociągów towarowych; trzecia litera to
-trakcja (E – elektryczna lokomotywa, S – spalinowa lokomotywa, J – elektryczny zespół trakcyjny). Gra pokazuje TME,
-TNE, TKE, LTE. Przyjęte: towarowy ładowny to TM, próżny / lekki – TN (gra nie zna ładunku); trakcja zawsze „E”, bo gra
-jej nie odwzorowuje – wpis rozkładu może podać inną etykietę w polu `catLabel`; dynamika lokomotywy luzem. Pociągi
-pasażerskie mają w grze oznaczenia handlowe (IC, TLK, R, SKM), a próżny skład EZT – „EZT”, nie oznaczenia z załącznika
-(EIE, MPE, ROJ, PWJ…).
+Rodzaje pociągów towarowych (wszystkie stanowiska). Ze źródła – PKP PLK, Regulamin sieci 2025/2026, zał. 6.3 „Wzór
+wniosku o przydzielenie trasy pociągu z instrukcją wypełniania wniosku”, część „Klasyfikacja pociągów stosowana
+w konstrukcji rozkładów jazdy” (aktualizacja z 15.09.2026, publikacja v41, s. 9–13): rodzaj pociągu oznaczają trzy
+litery. Dwie pierwsze – pociągi towarowe w ruchu międzynarodowym (B1): TC – przewozy jednostek transportu
+intermodalnego i próżnych platform, TG – przewozy masowe, TR – niemasowe; w ruchu krajowym (B2): TD – przewozy
+intermodalne (jak TC), TM – masowe, TN – niemasowe, TK – obsługa stacji i bocznic, TS – próżne wagony z/do naprawy,
+pociągi próbne oraz pozostałe pociągi, TH – skład lokomotyw; pojazdy luzem (C): LT – lokomotywa do i od pociągów
+towarowych (oraz LP, LZ, LS – gra ich nie używa). Trzecia litera to trakcja: P – parowa, E – elektryczna (lokomotywy),
+J – elektryczne zespoły trakcyjne, S – spalinowa (lokomotywy), M – spalinowa (zespoły i wagony trakcyjne). Tablice
+załącznika (s. 12–13) dopuszczają dla TC, TG, TR, TD, TM, TN, TH tylko E i S, dla TK – P, E, S, dla TS – E, J, S, M,
+dla LT – P, E, S; gra przyjmuje tylko te połączenia (`tractions` w `categories.js`, walidacja `traction`).
+
+Masa i długość pociągu (wszystkie stanowiska). Ze źródeł:
+* Ir-1 (tekst ujednolicony, uchwała Zarządu PKP PLK nr 460/2026 z 26.05.2026) §19: masa ogólna pociągu do 120 km/h
+  to suma mas pojazdów bez czynnego pojazdu z napędem (ust. 1 pkt 1); długość pociągu to suma długości wszystkich
+  pojazdów (ust. 3) i nie powinna być większa od długości użytecznej torów głównych na stacjach (ust. 4); dopuszczalne
+  długości podaje się w dodatkach do rozkładu jazdy (ust. 6).
+* Ir-1 §21: wymagana masa hamująca Mhw = Mo × Pw / 100, a procent Pw zależy od drogi hamowania, sposobu hamowania,
+  prędkości i pochyleń – nie od masy pociągu.
+* Regulamin sieci 2025/2026, pkt 2.3.8: dopuszczalne długości pociągów towarowych są w tablicy 2 Dodatku 1 do WRJ
+  (dostępnej w ISZTP – niepublicznej); zał. 6.3, pola E02 i E03: we wniosku podaje się masę brutto (t) i długość (m)
+  składu bez lokomotywy, a długość składu z lokomotywą nie może przekraczać wartości z tej tablicy.
+* Regulamin sieci 2025/2026, zał. 2.5 (stan na 25.10.2026): na liniach 9, 131 i 201 nacisk osi wagonów do 221 kN,
+  nacisk liniowy 71 kN/m (klasa D3) albo 78 kN/m (D4).
+* Regulamin sieci 2025/2026, zał. 9.1: współczynniki opłaty zależne od masy brutto pociągu w przedziałach do 4800 t.
+* PKP PLK, informacja prasowa „Nowe możliwości transportu ładunków koleją do portu w Gdańsku” (22.01.2025): do nabrzeży
+  portu w Gdańsku dojeżdżają pociągi o długości 750 m i nacisku 22,5 t na oś.
+
+Przyjęte w grze:
+* Pole `mass` to masa brutto składu bez czynnej lokomotywy (jak E02 i Ir-1 §19 ust. 1 pkt 1), a `length` – długość
+  całego pociągu z lokomotywą (tyle zajmuje torów). Górna granica masy: 7,2 t/m (71 kN/m – najmniejszy nacisk liniowy
+  w zał. 2.5 dla linii 9, 131 i 201; pozostałych linii gry, np. 202, 226, 227, 249, zał. 2.5 nie obejmuje – przyjęto
+  tę samą granicę) razy `length` – łagodna, bo `length` obejmuje lokomotywę.
+* Długość użyteczna toru w grze to suma odcinków z tym numerem toru (pole `track` odcinka), bez względu na kierunek
+  jazdy i położenie semaforów. Na przykład tor 1 Gdyni Gł. to 292 + 160 m, więc pociąg 400 m się mieści, choć
+  przy wyjeździe na wschód stoi także na odcinkach za torem. Pociąg dłuższy niż tor daje ostrzeżenie walidacji.
+* Najdłuższy pociąg towarowy w rozkładach gry: 750 m (`MAX_FREIGHT_LENGTH`, wg informacji prasowej PKP PLK o liniach
+  portowych Gdańska – to nie jest ogólny przepis). Tablicy 2 Dodatku 1 do WRJ gra nie zna.
+* Rodzaj, trakcja, masa i długość każdego pociągu towarowego w rozkładach są fikcyjne (dobrane w powyższych granicach
+  i do długości torów): masowe (TM) cięższe (2000–3000 t), intermodalne (TD) i niemasowe (TN) lżejsze (700–1800 t),
+  zdawcze (TK) krótkie (220–400 m, 400–650 t), próżne wagony do naprawy (TS) – 600 t na 480 m. Gra nie zna ładunku
+  ani wagonów – nazwy relacji go nie podają.
+  Trakcję spalinową (S) mają niektóre pociągi zdawcze i towarowe; trakcja nie zmienia dynamiki.
+* Dynamika: prędkość, przyspieszenie, hamowanie i masa odniesienia (`refMass`) kategorii są wartościami gry.
+  Przyspieszenie kategorii obowiązuje przy masie odniesienia (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t, TS 800 t,
+  TK 600 t); pociąg o masie `mass` ma przyspieszenie razy `refMass / mass` (ta sama siła pociągowa, większa masa),
+  w granicach 0,5–1,5 przyspieszenia kategorii. Hamowanie nie zależy od masy – zgodnie z Ir-1 §21 hamulce dobiera się
+  do masy tak, by uzyskać wymaganą drogę hamowania. Wpis bez `mass` jedzie jak dotąd.
+* Wpis bez `cat`: towarowy to TM, nazwa z „zdawczy” – TK, „Lokomotywa luzem” – LT (przyjęte). Dawna reguła „próżny”
+  albo „lekki” w nazwie → TN usunięta – nie miała źródła (TN to przewozy niemasowe, a próżne wagony z/do naprawy
+  to w zał. 6.3 TS); rodzaj pociągu podaje wpis rozkładu wprost (`cat`).
+* Pociągi pasażerskie mają w grze oznaczenia handlowe (IC, TLK, R, SKM), a próżny skład EZT – „EZT”, nie oznaczenia
+  z załącznika (EIE, MPE, ROJ, PWJ…).
 
 Zmiana czoła (wszystkie stanowiska). Ze źródeł: pociąg prowadzi się z czynnej kabiny na czele (Dz.U. 2015 poz. 360
 §12 ust. 4; Ir-1 §66) – skład z lokomotywą na jednym końcu, żeby pojechać w drugą stronę, musi ją przestawić na drugi

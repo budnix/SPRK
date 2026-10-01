@@ -133,13 +133,13 @@ export default {
   timetable: [
     { nr: 3301, kind: 'os', name: 'Osobowy Krasne – Zalesie', from: 'K2', to: 'Z2', arr: '07:05', dep: '07:06', track: '2', stop: true, length: 130, vmax: 100, dwell: 45 },
     { nr: 3302, kind: 'os', name: 'Osobowy Zalesie – Krasne', from: 'Z1', to: 'K1', arr: '07:12', dep: '07:13', track: '1', stop: true, length: 130, vmax: 100, dwell: 45 },
-    { nr: 42801, kind: 'tow', name: 'Towarowy', from: 'K2', to: 'Z2', arr: '07:21', dep: '07:33', track: '3', stop: true, length: 380, vmax: 70 },
+    { nr: 42801, kind: 'tow', cat: 'TM', name: 'Towarowy', from: 'K2', to: 'Z2', arr: '07:21', dep: '07:33', track: '3', stop: true, length: 380, mass: 2000, vmax: 70 },
     { nr: 5501, kind: 'os', name: 'IC Krasne – Zalesie', from: 'K2', to: 'Z2', arr: '07:29', track: '2', stop: false, length: 250, vmax: 120 },
     { nr: 6612, kind: 'os', name: 'Osobowy Krasne – Borki', from: 'K2', to: 'B', arr: '07:42', dep: '07:44', track: '3', stop: true, length: 80, vmax: 80, dwell: 60 },
     { nr: 6611, kind: 'os', name: 'Osobowy Borki – Krasne', from: 'B', to: 'K1', arr: '07:56', dep: '07:59', track: '3', stop: true, length: 80, vmax: 80, dwell: 90 },
     { nr: 3304, kind: 'os', name: 'Osobowy Krasne – Zalesie', from: 'K2', to: 'Z2', arr: '08:10', dep: '08:11', track: '2', stop: true, length: 130, vmax: 100, dwell: 45 },
     { nr: 3303, kind: 'os', name: 'Osobowy Zalesie – Krasne', from: 'Z1', to: 'K1', arr: '08:16', dep: '08:17', track: '1', stop: true, length: 130, vmax: 100, dwell: 45 },
-    { nr: 45230, kind: 'tow', name: 'Towarowy', from: 'Z1', to: 'K1', arr: '08:28', track: '1', stop: false, length: 500, vmax: 80 },
+    { nr: 45230, kind: 'tow', cat: 'TN', name: 'Towarowy', from: 'Z1', to: 'K1', arr: '08:28', track: '1', stop: false, length: 500, mass: 1800, vmax: 80 },
     { nr: 6613, kind: 'os', name: 'Osobowy Borki – Krasne', from: 'B', to: 'K1', arr: '08:40', dep: '08:44', track: '3', stop: true, length: 80, vmax: 80, dwell: 90 },
   ],
 };

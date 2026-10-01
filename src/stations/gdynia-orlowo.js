@@ -151,7 +151,7 @@ export default {
     { nr: 55104, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '07:08', dep: '07:09', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 5301, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', from: 'Z2', to: 'S2', arr: '07:15', track: '2', stop: false, length: 300 },
     { nr: 55205, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '07:22', dep: '07:23', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },
-    { nr: 44561, kind: 'tow', name: 'Towarowy Gdańsk Port Płn. – Gdynia Port', from: 'S1', to: 'Z1', arr: '07:30', track: '3', stop: false, length: 520, vmax: 80 },
+    { nr: 44561, kind: 'tow', cat: 'TM', name: 'Towarowy Gdańsk Port Płn. – Gdynia Port', from: 'S1', to: 'Z1', arr: '07:30', track: '3', stop: false, length: 520, mass: 2800, vmax: 80 },
     { nr: 55106, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'S1', to: 'Z1', arr: '07:38', dep: '07:39', track: '1', stop: true, length: 160, vmax: 120, dwell: 40 },
     { nr: 88302, kind: 'os', name: 'Skład EZT Gdynia Gł. – Baza EZ Sopot (próżny)', from: 'Z2', to: null, arr: '07:44', track: '4', stop: true, terminates: true, length: 130, vmax: 90, dwell: 30 },
     { nr: 55207, kind: 'os', name: 'Regio Lębork – Gdańsk Gł.', from: 'Z2', to: 'S2', arr: '07:52', dep: '07:53', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 },

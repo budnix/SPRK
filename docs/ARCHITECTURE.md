@@ -7,7 +7,7 @@ src/
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól), controls (pola przycisków
                grupowych stanowiska – miejsce na pulpicie, bez DOM), repeater (lampki powtarzacza sygnalizatora
                na pulpicie typu E dla obrazu sygnału)
-  model/       categories (kategorie pociągów: prędkość, dynamika, etykieta), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
+  model/       categories (kategorie pociągów: prędkość, dynamika – przyspieszenie przeliczone na masę składu, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
@@ -220,6 +220,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   (`shuntRoute`). Test: `tests/train-authority.test.js`.
 * Jazda na tor zajęty: `Train.#lookahead` pyta `Traffic.stockAt(kostka, port)` o odległość do innego taboru na kostce
   odcinka zajętego – zatrzymanie 2 m przed taborem, ostatnie `STOCK_CREEP` m do 3 km/h (bez `stockAt` – przed złączem).
+* Przyspieszenie (`categories.dynamicsFor`): z kategorii, a gdy wpis rozkładu ma masę (`mass`) – razy `refMass / mass`
+  kategorii w granicach `MASS_ACCEL_MIN`–`MASS_ACCEL_MAX`; `accel` wpisu ma pierwszeństwo. Hamowanie nie zależy od masy.
+  Walidacja (`validate.js`) sprawdza `cat`, `traction`, `length`, `mass` wpisu i ostrzega, gdy pociąg jest dłuższy niż
+  tor stacyjny. Testy: `tests/categories.test.js`.
 * Hamowanie (`Train.tick`): służbowe z kategorii; gdy ograniczenie jest bliżej niż droga hamowania – mocniej, najwyżej
   `EMERGENCY_BRAKE`. Minięcie semafora bez sygnału dla pociągu (i bez rozkazu) to `spad` (Traffic: alarm, kara – bez
   kary przy `sig.failed` albo `act.faultDrop`, czyli gdy sygnał zgasł z przyczyny po stronie urządzeń), potem

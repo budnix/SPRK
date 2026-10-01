@@ -2,6 +2,7 @@ import { hasTileDef, getTileDef } from '../tiles/registry.js';
 import { isDir } from '../tiles/directions.js';
 import { hasSrk } from '../srk/registry.js';
 import { controlsFit, legacyButtons, controlAnchor } from '../tiles/controls.js';
+import { CATEGORIES, categoryKey, categoryOf, MAX_TONNES_PER_METRE } from './categories.js';
 
 /**
  * Walidacja definicji stacji (schemat v1). Zwraca { errors: [], warnings: [] }.
@@ -65,6 +66,7 @@ export function validateStation(st) {
     if (!isDir(e.dir)) errors.push(`Wyjazd ${id}: zły kierunek`);
     if (!e.name) warnings.push(`Wyjazd ${id}: brak nazwy posterunku sąsiedniego`);
   }
+  const tracks = trackLengths(st);
   if (!Array.isArray(st.timetable)) warnings.push('Brak rozkładu jazdy');
   else st.timetable.forEach((tr, i) => {
     if (tr.nr == null) errors.push(`Rozkład #${i}: brak numeru pociągu`);
@@ -76,6 +78,41 @@ export function validateStation(st) {
     if (exF && exF.direction === 'out') errors.push(`Rozkład ${tr.nr}: wjazd od ${exF.name} torem wyjazdowym '${tr.from}' (direction: 'out')`);
     if (exT && exT.direction === 'in') errors.push(`Rozkład ${tr.nr}: wyjazd do ${exT.name} torem wjazdowym '${tr.to}' (direction: 'in')`);
     if (!tr.arr && !tr.dep) errors.push(`Rozkład ${tr.nr}: brak czasu przyjazdu/odjazdu`);
+    validateConsist(tr, tracks, errors, warnings);
   });
   return { errors, warnings };
+}
+
+/** Długości torów stacyjnych: numer toru → suma długości odcinków z tym numerem (`track`). */
+function trackLengths(st) {
+  const out = new Map();
+  for (const s of Object.values(st.sections || {})) {
+    if (s.track == null || !(s.length > 0)) continue;
+    const k = String(s.track);
+    out.set(k, (out.get(k) ?? 0) + s.length);
+  }
+  return out;
+}
+
+/**
+ * Kategoria, trakcja, długość i masa wpisu rozkładu. Rodzaje i trakcje – PKP PLK, Regulamin sieci, zał. 6.3; masa
+ * brutto bez czynnej lokomotywy (zał. 6.3 pole E02; Ir-1 §19 ust. 1 pkt 1) nie większa niż nacisk liniowy 71 kN/m
+ * razy długość; pociąg nie dłuższy niż tor stacyjny, którym jedzie (Ir-1 §19 ust. 4 – ostrzeżenie).
+ */
+function validateConsist(tr, tracks, errors, warnings) {
+  const where = `Rozkład ${tr.nr}`;
+  if (tr.cat != null && !categoryKey(tr.cat)) { errors.push(`${where}: nieznana kategoria cat='${tr.cat}'`); return; }
+  const key = categoryOf(tr);
+  const cat = CATEGORIES[key];
+  if (tr.traction != null && !(cat.tractions || []).includes(tr.traction)) {
+    errors.push(`${where}: trakcja '${tr.traction}' niedozwolona dla ${cat.code ?? key}${cat.tractions ? ` (dozwolone: ${cat.tractions.join('/')})` : ' (trakcję podaje się tylko dla pociągów towarowych i lokomotyw luzem)'}`);
+  }
+  if (tr.length != null && !(typeof tr.length === 'number' && tr.length > 0)) errors.push(`${where}: długość pociągu musi być liczbą dodatnią (m)`);
+  if (tr.mass != null) {
+    if (!(typeof tr.mass === 'number' && tr.mass > 0)) errors.push(`${where}: masa pociągu musi być liczbą dodatnią (t)`);
+    else if (tr.kind !== 'tow' || !cat.refMass) errors.push(`${where}: masa (mass) tylko dla pociągu towarowego ze składem wagonów, nie dla ${cat.code ?? key}`);
+    else if (tr.mass > MAX_TONNES_PER_METRE * (tr.length ?? 100)) errors.push(`${where}: masa ${tr.mass} t większa niż ${MAX_TONNES_PER_METRE} t/m (nacisk liniowy 71 kN/m) razy długość ${tr.length ?? 100} m`);
+  }
+  const len = tr.track != null ? tracks.get(String(tr.track)) : null;
+  if (len != null && (tr.length ?? 100) > len) warnings.push(`${where}: pociąg ${tr.length ?? 100} m dłuższy niż tor ${tr.track} (${len} m)`);
 }

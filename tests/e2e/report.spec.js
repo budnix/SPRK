@@ -12,7 +12,12 @@ test('raport po końcu zmiany: ocena słowna bez gwiazdek, kafelki, tabela poci�
   expect(cats['42101']).toBe('TME');
   expect(cats['90201']).toBe('R');
   expect(Object.values(cats)).not.toContain('TOW');
-  const n = await page.evaluate(() => { window.sim.endShift('all-done'); return window.sim.traffic.timetable().length; });
+  // podpowiedź wiersza: rodzaj pociągu z Regulaminu sieci (zał. 6.3), długość i masa brutto składu towarowego
+  // podpowiedź na wierszu albo na komórce w wierszu (np. numer pociągu)
+  const tip = await page.locator('table.rj tbody tr', { hasText: '42101' }).evaluate((r) => r.getAttribute('title') || r.querySelector('[title]')?.getAttribute('title'));
+  expect(tip).toContain('do krajowych przewozów masowych');
+  expect(tip).toContain('długość 380 m, masa brutto 2000 t');
+  const n =await page.evaluate(() => { window.sim.endShift('all-done'); return window.sim.traffic.timetable().length; });
   const rep = page.locator('#report');
   await expect(rep).toBeVisible();
   await expect(rep.locator('.st-tagline')).toHaveText('Raport zmiany');

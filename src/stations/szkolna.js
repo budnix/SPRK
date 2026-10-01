@@ -135,7 +135,7 @@ export default {
   timetable: [
     { nr: 6101, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6102, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:17', dep: '07:19', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
-    { nr: 42101, kind: 'tow', name: 'Towarowy', from: 'W', to: 'E', arr: '07:29', track: '1', stop: false, length: 380, vmax: 70 },
+    { nr: 42101, kind: 'tow', cat: 'TM', name: 'Towarowy', from: 'W', to: 'E', arr: '07:29', track: '1', stop: false, length: 380, mass: 2000, vmax: 70 },
     { nr: 6103, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:40', dep: '07:43', track: '2', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6104, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:41', dep: '07:44', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
     // 90201 / 90202: zespół trakcyjny (kabina na obu końcach) – zmienia czoło na miejscu; skład z lokomotywą musiałby

@@ -117,7 +117,7 @@ export default {
     os(7202, 'E', 'W', '07:14', '07:15', '1'),
     os(7203, 'W', 'L', '07:24', '07:25', '2'),
     os(7204, 'E', 'W', '07:25', '07:27', '1'),
-    { nr: 47201, kind: 'tow', name: 'Towarowy', from: 'L', to: 'W', arr: '07:41', track: '2', stop: false, length: 380, vmax: 70 },
+    { nr: 47201, kind: 'tow', cat: 'TM', name: 'Towarowy', from: 'L', to: 'W', arr: '07:41', track: '2', stop: false, length: 380, mass: 2000, vmax: 70 },
     os(7205, 'L', 'W', '07:58', '07:59', '2'),
     os(7206, 'W', 'E', '08:10', '08:11', '1'),
     os(7207, 'W', 'L', '08:22', '08:23', '2'),

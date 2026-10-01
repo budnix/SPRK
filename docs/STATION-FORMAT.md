@@ -163,23 +163,40 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 ```js
 { nr: 5310, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '06:05', dep: '06:07',
   track: '1', stop: true, length: 130, vmax: 100, dwell: 60 }
+{ nr: 44711, kind: 'tow', cat: 'TD', traction: 'S', name: 'Towarowy Gdańsk Port Płn. – Pszczółki', from: 'GP', to: 'PS2',
+  arr: '07:54', track: '7', stop: false, length: 500, mass: 1100, vmax: 60 }
 ```
 
 * `from`/`to` – szlaki (`null` = pociąg zaczyna/kończy bieg na stacji),
 * `arr`/`dep` – czasy planowe, `stop` – zatrzymanie (przelot: `false`), `terminates` – kończy bieg,
 * `startOn: { section, dir }` – pociąg stojący na stacji od początku zmiany,
 * `kind`: `os` (osobowy), `tow` (towarowy),
-* `cat` – kategoria (`EIP`, `EIC`, `IC`, `TLK`, `R`, `SKM`, `TOW`, `TOWP` – towarowy próżny/lekki, `ZD` – zdawczy,
-  `LT` – lokomotywa luzem, `EZT`); bez `cat` kategoria bierze się z nazwy („IC …”, „TLK …”, „Regio …”, „SKM …”,
-  „Zdawczy” albo „(zdawczy)” w relacji, „Lokomotywa luzem …”, „Skład EZT …”, „próżny”) i z `kind`.
-  Kategoria daje domyślną prędkość maksymalną (EIP 200, IC/EIC 160, TLK 140, R/SKM 120, towarowy 80, próżny 100,
-  zdawczy 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`); `vmax`, `accel`, `brake` wpisu nadpisują.
+* `cat` – kategoria: pasażerskie `EIP`, `EIC`, `IC`, `TLK`, `R`, `SKM`, `EZT` (próżny skład EZT); towarowe i pojazdy
+  luzem – rodzaj pociągu PKP PLK (Regulamin sieci, zał. 6.3): w ruchu międzynarodowym `TC` (intermodalny), `TG`
+  (masowy), `TR` (niemasowy), w krajowym `TD` (intermodalny), `TM` (masowy), `TN` (niemasowy), `TK` (obsługa stacji
+  i bocznic – zdawczy), `TS` (próżne wagony z/do naprawy, pociąg próbny, pozostałe), `TH` (skład lokomotyw), `LT`
+  (lokomotywa luzem do i od pociągów towarowych). Dawne klucze `TOW`, `TOWP`, `ZD` działają jak `TM`, `TN`, `TK`.
+  Nieznana kategoria jest błędem walidacji. Bez `cat` kategoria bierze się z nazwy („IC …”, „TLK …”, „Regio …”,
+  „SKM …”, „Zdawczy” albo „(zdawczy)” w relacji → `TK`, „Lokomotywa luzem …” → `LT`, „Skład EZT …”, „próżny” /
+  „lekki” → `TN`) i z `kind` (towarowy → `TM`).
+  Kategoria daje domyślną prędkość maksymalną (EIP 200, IC/EIC 160, TLK 140, R/SKM 120, TM/TG/TS 80, TN/TR/TD/TC 100,
+  TK 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`); `vmax`, `accel`, `brake` wpisu nadpisują.
+* `traction` – trzecia litera rodzaju pociągu towarowego lub lokomotywy luzem (zał. 6.3): `E` – elektryczna, lokomotywy
+  (domyślnie), `S` – spalinowa, lokomotywy, `P` – parowa, `J` / `M` – zespoły trakcyjne elektryczne / spalinowe; tylko
+  połączenia z tablic załącznika (np. `TKP`, `TSJ`, ale nie `TMJ`) – inne są błędem walidacji. Etykieta: `cat` + `traction`
+  („TDS 44711”). Trakcja nie zmienia dynamiki.
+* `length` – długość pociągu w metrach (cały skład z lokomotywą, tyle zajmuje torów; domyślnie 100). Liczba dodatnia.
+  Pociąg dłuższy niż tor stacyjny `track` (suma odcinków z tym numerem toru) daje ostrzeżenie walidacji (Ir-1 §19 ust. 4).
+* `mass` – masa brutto składu w tonach, bez czynnej lokomotywy (zał. 6.3, pole E02; Ir-1 §19 ust. 1 pkt 1); tylko dla
+  pociągu towarowego ze składem wagonów (nie `LT`, `TH`, nie osobowe). Nie większa niż 7,2 t/m (nacisk liniowy 71 kN/m)
+  razy `length`. Przyspieszenie kategorii obowiązuje przy jej masie odniesienia (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t,
+  TS 800 t, TK 600 t); pociąg o masie `mass` przyspiesza razy `masa odniesienia / mass`, najwyżej 1,5 i najmniej 0,5
+  przyspieszenia kategorii. Bez `mass` – przyspieszenie kategorii. Hamowanie nie zależy od masy.
   Obowiązuje mniejsza z prędkości pociągu i szlaku: na szlaku wjazdowym – `lineSpeed` wyjazdu `from`, dopóki cały
   pociąg nie wjedzie na stację; dalej – `lineSpeed` wyjazdu `to` (pociąg kończący bieg – `from`). Na rozjazdach –
   prędkość rozjazdu, przy Sz i rozkazie „S” – 40 km/h do następnego semafora (przy wyjeździe na szlak do końca
   rozjazdów, na SBL – przez umowny pierwszy odstęp 1000 m).
-* `catLabel` – opcjonalnie własna etykieta kategorii. Towarowe i lokomotywy luzem mają etykiety PKP PLK z trakcją
-  elektryczną (`TME`, `TNE`, `TKE`, `LTE`); pociąg z lokomotywą spalinową może podać np. `catLabel: 'TMS'`.
+* `catLabel` – opcjonalnie własna etykieta kategorii, nadpisuje całą etykietę (także `cat` + `traction`).
 * `name` – relacja pełna, jak w rozkładzie („Regio Gdańsk Gł. – Słupsk”, „IC „Kaszub” Kraków Gł. – Gdynia Gł.”);
   przedrostek kategorii i nazwa handlowa w cudzysłowie są z niej wycinane do wyświetlenia (`relationOf`, `brandOf`).
   Rozkład pokazuje etykietę „IC 5100” i relację; sąsiednie posterunki (`from` → `to`) w drugiej linii.
