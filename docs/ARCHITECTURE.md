@@ -31,7 +31,7 @@ src/
   ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
                dialog (wspólne zachowanie okien pełnoekranowych), DeskViewport (powiększenie i dopasowanie pulpitu;
                przyciski dopasowania stanowe – osie w `zoom.js`: `fitAxes`, `nextFitMode`), SideResizer (przeciąganie
-               granicy planu i panelu: krawędź panelu i uchwyt w listwie; rachunki `sideSize.js`, bez DOM),
+               granicy planu i panelu tylko za uchwyt w listwie – krawędź panelu nie jest uchwytem; rachunki `sideSize.js`, bez DOM),
                Settings (ustawienia, motyw wg systemu), settingsSchema (opis ustawień, bez DOM), SettingsScreen,
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)

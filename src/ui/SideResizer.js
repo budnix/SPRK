@@ -1,9 +1,9 @@
 import { clampSide, dragSide, SIDE_LIMITS } from './sideSize.js';
 
 /**
- * Przeciąganie granicy między planem a panelem bocznym (rozkład, dziennik…): za krawędź panelu (mysz – kursor
- * ↕ albo ↔) albo za uchwyt w listwie narzędzi obok przycisku panelu (palec na tablecie), także strzałkami z klawiatury
- * na uchwycie. Rozmiar jest zapamiętany: panel na dole – ułamek wysokości (`sideSize`), z boku – szerokość w px
+ * Przeciąganie granicy między planem a panelem bocznym (rozkład, dziennik…) – tylko za uchwyt w listwie narzędzi obok
+ * przycisku panelu (mysz – kursor ↕ albo ↔, palec na tablecie), także strzałkami z klawiatury na uchwycie. Krawędź
+ * panelu nie jest uchwytem: pasek przy krawędzi podświetlał się przy ruchu myszą nad rozkładem. Rozmiar jest zapamiętany: panel na dole – ułamek wysokości (`sideSize`), z boku – szerokość w px
  * (`sideWidth`). Rachunki bez DOM: `sideSize.js`.
  */
 export class SideResizer {
@@ -13,11 +13,7 @@ export class SideResizer {
    */
   constructor({ main, side, grip, settings, onResize = () => {}, onEnd = () => {}, onPlacement = () => {} }) {
     Object.assign(this, { main, side, grip, settings, onResize, onEnd, onPlacement });
-    this.edge = document.createElement('div');
-    this.edge.className = 'side-edge';
-    this.edge.setAttribute('aria-hidden', 'true');
-    side.prepend(this.edge);
-    for (const handle of [this.edge, grip]) this.#bindDrag(handle);
+    this.#bindDrag(grip);
     grip.addEventListener('keydown', (ev) => this.#key(ev));
     this.apply();
   }

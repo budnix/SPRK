@@ -84,7 +84,7 @@ export default {
   'tools.panelTabs': 'Zakładki panelu bocznego',
   'tools.hidePanel': 'Ukryj panel',
   'tools.showPanel': 'Pokaż panel',
-  'tools.resizeSide': 'Przeciągnij, aby zmienić rozmiar panelu (na komputerze także krawędź panelu)',
+  'tools.resizeSide': 'Przeciągnij, aby zmienić rozmiar panelu',
   'tools.resizeSideShort': 'Rozmiar panelu',
   'tools.hideSide': 'Ukryj panel boczny',
   'tools.showSide': 'Pokaż panel boczny',

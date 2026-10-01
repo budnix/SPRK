@@ -239,7 +239,8 @@ test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapa
   expect(s.fw !== s.fh).toBe(true);
   expect(s.mode).toBe(s.fw ? 'width' : 'height');
   expect(s.w).toBeLessThanOrEqual(s.cw); expect(s.h).toBeLessThanOrEqual(s.ch);
-  expect(await page.locator('#side .side-edge').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
+  // przeciąga się tylko za uchwyt – krawędź panelu nie jest uchwytem (pasek podświetlał się nad rozkładem)
+  await expect(page.locator('#side .side-edge')).toHaveCount(0);
   expect(await page.locator('#side-grip').evaluate((e) => getComputedStyle(e).cursor)).toBe('ns-resize');
   // uchwyt w listwie (palec na tablecie): panel wyższy o tyle, o ile przesunięto; plan dopasował się do mniejszego obszaru
   await drag('#side-grip', -120);
@@ -263,8 +264,8 @@ test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapa
   expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
   await page.click('#zoom-fit-h');
   expect(await st()).toMatchObject({ mode: 'height', fw: false, fh: true });
-  // krawędź panelu (mysz): wysokość planu dopasowuje się na żywo
-  await drag('#side .side-edge', 90);
+  // uchwyt w drugą stronę: wysokość planu dopasowuje się na żywo
+  await drag('#side-grip', 90);
   await expect.poll(async () => { const x = await st(); return Math.abs(x.h - (x.ch - 8)) < 2; }).toBe(true);
   // „+” wyłącza oba przyciski – po zmianie rozmiaru powiększenie zostaje
   await page.click('#zoom-in');
@@ -280,13 +281,14 @@ test('granica planu i panelu: przeciąganie uchwytem i krawędzią, rozmiar zapa
   expect(await st()).toMatchObject({ mode: null, fw: false, fh: false });
 });
 
-test('granica panelu z boku: kursor ↔, przeciągnięcie w lewo poszerza panel po prawej', async ({ page }) => {
+test('granica panelu z boku: uchwyt z kursorem ↔, przeciągnięcie w lewo poszerza panel po prawej', async ({ page }) => {
   await openShift(page, 'szkolna', { settings: { sidePos: 'right' } });
-  expect(await page.locator('#side .side-edge').evaluate((e) => getComputedStyle(e).cursor)).toBe('ew-resize');
+  await expect(page.locator('#side .side-edge')).toHaveCount(0);
+  expect(await page.locator('#side-grip').evaluate((e) => getComputedStyle(e).cursor)).toBe('ew-resize');
   const w0 = (await page.locator('#side').boundingBox()).width;
-  const b = await page.locator('#side .side-edge').boundingBox();
-  await page.mouse.move(b.x + b.width / 2, b.y + 200); await page.mouse.down();
-  await page.mouse.move(b.x + b.width / 2 - 100, b.y + 200, { steps: 6 }); await page.mouse.up();
+  const b = await page.locator('#side-grip').boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2 - 100, b.y + b.height / 2, { steps: 6 }); await page.mouse.up();
   expect(Math.abs((await page.locator('#side').boundingBox()).width - w0 - 100)).toBeLessThan(4);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).sideWidth)).toBeGreaterThan(w0 + 90);
 });

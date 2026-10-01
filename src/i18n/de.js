@@ -82,7 +82,7 @@ export default {
   'tools.panelTabs': 'Reiter des Seitenpanels',
   'tools.hidePanel': 'Panel ausblenden',
   'tools.showPanel': 'Panel einblenden',
-  'tools.resizeSide': 'Ziehen, um die Panelgröße zu ändern (am Computer auch am Panelrand)',
+  'tools.resizeSide': 'Ziehen, um die Panelgröße zu ändern',
   'tools.resizeSideShort': 'Panelgröße',
   'tools.hideSide': 'Seitenpanel ausblenden',
   'tools.showSide': 'Seitenpanel einblenden',

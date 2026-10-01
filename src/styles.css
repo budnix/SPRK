@@ -175,11 +175,6 @@ button, input, select, textarea { font-family: inherit; }
 /* położenie panelu bocznego */
 /* granica planu i panelu: krawędź panelu do przeciągania myszą (kursor ↕ / ↔) i uchwyt w listwie dla palca */
 #side { position: relative; }
-.side-edge { position: absolute; z-index: var(--z-tab); touch-action: none; }
-#app[data-side-placement="bottom"] .side-edge { top: 0; left: 0; right: 0; height: 7px; cursor: ns-resize; }
-#app[data-side-placement="right"] .side-edge { top: 0; bottom: 0; left: 0; width: 7px; cursor: ew-resize; }
-#app[data-side-placement="left"] .side-edge { top: 0; bottom: 0; right: 0; width: 7px; cursor: ew-resize; }
-.side-edge:hover, body[data-side-resizing] .side-edge { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 #side-grip { touch-action: none; cursor: ns-resize; }
 #app[data-side-placement="right"] #side-grip, #app[data-side-placement="left"] #side-grip { cursor: ew-resize; }
 #app[data-side-placement="right"] #side-grip svg, #app[data-side-placement="left"] #side-grip svg { transform: rotate(90deg); }
