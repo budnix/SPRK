@@ -409,6 +409,10 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 @keyframes flash { 50% { background: var(--warn); color: var(--on-warn); } }
 .badge { background: var(--danger); color: var(--on-danger); border-radius: var(--radius-pill); padding: 0 5px; font-size: 10px; margin-left: 4px; }
 .tab { overflow: auto; flex: 1 1 auto; padding: 8px; }
+/* plan i zakładki panelu bez pasków przewijania (decyzja właściciela) – przewija się kółkiem, gładzikiem i palcem;
+   na macOS z myszą paski systemowe były stałe i zabierały miejsce */
+#desk-scroll, #side .tab { scrollbar-width: none; }
+#desk-scroll::-webkit-scrollbar, #side .tab::-webkit-scrollbar { display: none; }
 .hidden { display: none !important; }
 /* treść zakładek panelu o 1 px większa niż dawniej (czytelność przy zwykłym powiększeniu przeglądarki) */
 table.rj { width: 100%; border-collapse: collapse; font-size: 13px; }

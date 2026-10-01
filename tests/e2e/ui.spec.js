@@ -453,3 +453,17 @@ test('skróty klawiszowe po kliknięciu zakładki nie zostawiają ramki fokusu n
   }
   expect(await page.evaluate(() => window.sim.clock.paused)).toBe(true); // spacja nadal pauzuje (a nie „klika” zakładki)
 });
+
+// Plan i zakładki panelu bez pasków przewijania (decyzja właściciela – na macOS z myszą paski były stałe), ale treść
+// dalej się przewija: kółko myszy przesuwa rozkład dłuższy niż panel
+test('plan i zakładki panelu bez pasków przewijania; rozkład przewija się kółkiem', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  const tab = page.locator('#tab-rj');
+  for (const sel of ['#desk-scroll', '#tab-rj']) expect(await page.locator(sel).evaluate((e) => getComputedStyle(e).scrollbarWidth), sel).toBe('none');
+  expect(await tab.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
+  const box = await tab.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, 200);
+  await expect.poll(() => tab.evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
+});
