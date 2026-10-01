@@ -363,3 +363,26 @@ test('skróty klawiszowe: spacja – pauza, 1–5 – prędkości; w polu teksto
   expect((await clock()).speed).toBe(2);
   await expect(input).toHaveValue(/5/);
 });
+
+// Łączność: przełącznik powiadomień – domyślnie licznik i podświetlenie zakładki przy nowej wiadomości; po wyłączeniu
+// (np. przy automatycznych rozmowach) zakładka nie odrywa od gry; wybór zapamiętany
+test('łączność: powiadomienia domyślnie włączone, przełącznik w zakładce je wyłącza i zostaje zapamiętany', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  const badge = page.locator('#comms-badge'), tab = page.locator('button[data-tab="lacznosc"]');
+  const incoming = (text) => page.evaluate((x) => window.sim.bus.emit('comms', { time: window.sim.clock.time, from: 'Lipno', kind: 'radio', text: x }), text);
+  const before = Number(await badge.textContent()) || 0; // na starcie zmiany sąsiad mógł już zadzwonić
+  await incoming('test 1');
+  await expect(badge).toBeVisible();
+  await expect(badge).toHaveText(String(before + 1));
+  await tab.click();
+  await expect(page.locator('#comms-notify')).toBeChecked();
+  await page.uncheck('#comms-notify');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.settings')).commsNotify)).toBe('off');
+  await page.click('button[data-tab="rj"]');
+  await incoming('test 2');
+  await expect(badge).toBeHidden();
+  await expect(tab).not.toHaveClass(/flash/);
+  await page.reload(); await page.waitForFunction(() => window.sim);
+  await page.click('button[data-tab="lacznosc"]');
+  await expect(page.locator('#comms-notify')).not.toBeChecked();
+});

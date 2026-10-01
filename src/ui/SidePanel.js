@@ -61,6 +61,7 @@ export class SidePanel {
         <ol id="orders" class="orders"></ol>
       </section>
       <section class="tab hidden" id="tab-lacznosc">
+        <label class="comms-notify"><input type="checkbox" id="comms-notify"> ${t('sp.comms.notify')}</label>
         <form id="comms-form" class="order-form">
           <label>${t('sp.comms.to')} <select id="comms-to"></select></label>
           <label>${t('sp.comms.formula')} <select id="comms-formula"></select></label>
@@ -85,6 +86,16 @@ export class SidePanel {
         <h4>${t('sp.cmd.list')}</h4>
         <div id="cmd-list"></div>
       </section>`;
+    // powiadomienia z łączności (licznik i podświetlenie zakładki) – domyślnie włączone; można je wyłączyć, np. przy
+    // automatycznych rozmowach, żeby nie odrywały od gry (zapamiętane w ustawieniach przez `onCommsNotify`)
+    this.commsNotify = opts.commsNotify !== false;
+    const notify = root.querySelector('#comms-notify');
+    notify.checked = this.commsNotify;
+    notify.addEventListener('change', () => {
+      this.commsNotify = notify.checked;
+      if (!this.commsNotify) { this.commsUnread = 0; this.#commsBadge(); this.tabs.querySelector('button[data-tab="lacznosc"]')?.classList.remove('flash'); }
+      opts.onCommsNotify?.(this.commsNotify);
+    });
     this.tbody = root.querySelector('.rj tbody');
     this.logEl = root.querySelector('#log');
     this.alertsEl = root.querySelector('#alerts');
@@ -257,7 +268,7 @@ export class SidePanel {
       li.className = m.dir === 'out' ? 'out' : `in kind-${m.kind}`;
       li.innerHTML = `<span class="t">${Clock.format(m.time)}</span> <b>${escapeHtml(m.dir === 'out' ? `→ ${m.to}` : m.from)}</b>: ${escapeHtml(m.text)}`;
       logEl.prepend(li);
-      if (m.dir === 'in' && this.root.querySelector('#tab-lacznosc').classList.contains('hidden')) {
+      if (m.dir === 'in' && this.commsNotify && this.root.querySelector('#tab-lacznosc').classList.contains('hidden')) {
         this.commsUnread++; this.#commsBadge();
         if (m.kind === 'ask' || m.kind === 'radio') this.flash('lacznosc');
       }
@@ -388,7 +399,9 @@ export class SidePanel {
       const cls = e.status === 'odjechał' || e.status === 'zakończył bieg' ? 'done' : (e.train ? 'active' : '');
       const delay = e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : '';
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
-      return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h">
+      // długość pociągu i (towarowy) masa brutto składu
+      const consist = e.length ? ` · ${escapeHtml(t(e.mass ? 'sp.consistMass' : 'sp.consist', { length: e.length, mass: e.mass }))}` : '';
+      return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h${consist}">
         <td class="nr"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
         <td>${e.dep ?? (e.terminates ? t('rp.endsHere') : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>

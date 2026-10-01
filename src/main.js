@@ -159,6 +159,8 @@ const desk = desks[0].renderer;
 const sideToggle = document.getElementById('side-toggle');
 const side = new SidePanel(document.getElementById('side'), sim, {
   tabsHost: document.getElementById('panel-tabs'),
+  commsNotify: settings.values.commsNotify !== 'off',
+  onCommsNotify: (on) => settings.set('commsNotify', on ? 'on' : 'off'),
   onToggle: (collapsed) => {
     settings.set('sideCollapsed', collapsed);
     // ikona panelu: wypełniona część = panel widoczny; pusta = panel ukryty (etykieta dla czytników i podpowiedzi)

@@ -6,7 +6,8 @@ import { DEFAULTS } from '../src/ui/Settings.js';
 
 test('schemat ekranu ustawień opisuje każde ustawienie dokładnie raz, z tytułem i opisem; wartości domyślne są wśród wyborów', () => {
   const keys = schemaKeys();
-  const byHand = ['sideCollapsed', 'sideSize', 'sideWidth']; // przycisk „ukryj” i przeciągnięcie granicy panelu – nie ekran ustawień
+  // przycisk „ukryj”, przeciągnięcie granicy panelu, przełącznik w zakładce Łączność – nie ekran ustawień
+  const byHand = ['sideCollapsed', 'sideSize', 'sideWidth', 'commsNotify'];
   assert.deepEqual([...keys].sort(), Object.keys(DEFAULTS).filter((k) => !byHand.includes(k)).sort(), 'klucze schematu = DEFAULTS (bez ustawień zmienianych przyciskiem i przeciąganiem)');
   assert.equal(new Set(keys).size, keys.length, 'klucz opisany raz');
   const SETTINGS_CATEGORIES = settingsCategories();
