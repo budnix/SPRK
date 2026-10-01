@@ -401,8 +401,10 @@ export class SidePanel {
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
       // długość pociągu i (towarowy) masa brutto składu
       const consist = e.length ? ` · ${escapeHtml(t(e.mass ? 'sp.consistMass' : 'sp.consist', { length: e.length, mass: e.mass }))}` : '';
-      return `<tr class="${cls}" title="${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h${consist}">
-        <td class="nr"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
+      // podpowiedź o pociągu tylko na numerze pociągu (nie na całym wierszu – przeszkadzała przy godzinach i torze)
+      const tip = `${cat.name}${brand ? ` „${brand}”` : ''} – ${escapeHtml(relationOf(e))} · ${speedFor(e)} km/h${consist}`;
+      return `<tr class="${cls}">
+        <td class="nr" title="${tip}"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}</td><td class="rel">${escapeHtml(relationOf(e))}${brand ? ` <i>„${brand}”</i>` : ''}<div class="via">${via}</div></td>
         <td>${e.arr ? (e.stop ? e.arr : `<i>${e.arr}</i>`) : '–'}${e.actualArr != null ? `<div class="act">${Clock.format(e.actualArr)}</div>` : ''}</td>
         <td>${e.dep ?? (e.terminates ? t('rp.endsHere') : '–')}${e.actualDep != null ? `<div class="act">${Clock.format(e.actualDep)}</div>` : ''}</td>
         <td>${e.track ?? ''}</td><td class="st">${e.status}${delay}</td></tr>`;

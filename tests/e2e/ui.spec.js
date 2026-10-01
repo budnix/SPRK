@@ -430,3 +430,13 @@ test('panel i pasek poleceń: tekst rozkładu i zadań 13 px, przyciski paska po
   expect(await fs('.task-card')).toBe(13);
   expect(await fs('.tasks-head')).toBe(14);
 });
+
+// Podpowiedź o pociągu w rozkładzie (rodzaj, relacja, prędkość, skład) tylko na numerze pociągu – dawniej na całym
+// wierszu, więc wyskakiwała także nad godzinami przyjazdu / odjazdu i torem
+test('rozkład: podpowiedź o pociągu tylko na komórce numeru, nie na wierszu', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  const row = page.locator('table.rj tbody tr', { hasText: '6101' }).first();
+  expect(await row.getAttribute('title')).toBeNull();
+  await expect(row.locator('td.nr')).toHaveAttribute('title', /km\/h/);
+  expect(await row.locator('td:not(.nr)[title], td:not(.nr) [title]').count()).toBe(0);
+});
