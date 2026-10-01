@@ -305,11 +305,16 @@ body[data-side-resizing="h"], body[data-side-resizing="h"] * { cursor: ew-resize
 .menu-actions { display: flex; flex-direction: column; gap: 6px; }
 .menu-actions .tb { text-align: left; padding: 8px 10px; }
 /* ekrany pełne (start, raport, ustawienia, instrukcja): wspólne zmienne --sc-* z :root, w obu motywach */
+/* dół ekranu pełnego: zapas 48 px i pas systemu (pasek domowy iPada / iPhone'a – viewport-fit=cover), żeby przyciski na
+   końcu (raport: „Nowa zmiana…”) nie zlewały się z krawędzią ekranu */
+/* treść rośnie z zawartością (nie jest rozciągnięta do wysokości okna) – inaczej długi raport wychodzi poza ramkę i dolny
+   zapas zostaje w połowie przewijania; co najmniej wysokość okna zostaje dzięki min-height */
+.settings-screen, .help-screen, .report-screen, .start-screen { align-self: flex-start; min-height: 100%; }
 #start.modal .tb, #report.modal .tb, #settings.modal .tb, #help.modal .tb { border-radius: var(--radius-sm); }
 #start.modal .tb.primary, #report.modal .tb.primary, #settings.modal .tb.primary, #start.modal .order-actions button { background: var(--sc-accent); color: var(--sc-on-accent); border-color: var(--sc-accent); border-radius: var(--radius-sm); }
 /* ekran ustawień – motyw ekranu startowego: kategorie po lewej, opcje z opisem po prawej */
 #settings.modal { align-items: stretch; z-index: var(--z-settings); background: var(--sc-bg); overflow: auto; }
-.settings-screen { width: min(1100px, 100%); margin: 0 auto; padding: 22px 20px 30px; color: var(--sc-text); font-size: 13px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 100%; }
+.settings-screen { width: min(1100px, 100%); margin: 0 auto; padding: 22px 20px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--sc-text); font-size: 13px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 100%; }
 .se-layout { display: grid; grid-template-columns: 1fr; gap: 14px; flex: 1 1 auto; min-height: 0; }
 .se-nav { display: flex; gap: 6px; flex-wrap: wrap; align-content: start; }
 .se-cat { display: flex; flex-direction: column; gap: 2px; text-align: left; background: var(--sc-panel); color: var(--sc-text); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 8px 12px; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px; }
@@ -525,7 +530,7 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 13px; }
 .modal { position: fixed; inset: 0; background: var(--overlay); display: flex; align-items: center; justify-content: center; z-index: var(--z-help); }
 /* instrukcja – pełny ekran w układzie ustawień i raportu */
 #help.modal { align-items: stretch; background: var(--sc-bg); overflow: auto; }
-.help-screen { width: min(900px, 100%); margin: 0 auto; padding: 22px 20px 30px; color: var(--sc-text); font-size: 13px; line-height: 1.5; box-sizing: border-box; }
+.help-screen { width: min(900px, 100%); margin: 0 auto; padding: 22px 20px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--sc-text); font-size: 13px; line-height: 1.5; box-sizing: border-box; }
 .help-section { background: var(--sc-panel); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 14px 20px 16px; margin-bottom: 12px; }
 .help-section h2 { margin: 0 0 8px; font-size: 19px; letter-spacing: 0.3px; }
 .help-section h3 { font-size: 14px; margin: 14px 0 4px; color: var(--sc-accent); }
@@ -555,7 +560,7 @@ ul.comms li.out { color: var(--text); }
 ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 /* raport zmiany – ten sam motyw co ekran startowy (płaskie karty, kickery) */
 #report.modal { align-items: stretch; z-index: var(--z-report); background: var(--sc-bg); overflow: auto; }
-.report-screen { width: min(1180px, 100%); margin: 0 auto; padding: 22px 20px 30px; color: var(--sc-text); font-size: 13px; box-sizing: border-box; }
+.report-screen { width: min(1180px, 100%); margin: 0 auto; padding: 22px 20px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--sc-text); font-size: 13px; box-sizing: border-box; }
 .report-screen h3 { font-size: 15px; margin: 2px 0 8px; color: var(--sc-text); letter-spacing: 0.5px; display: flex; align-items: baseline; gap: 10px; }
 .rp-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
 @media (min-width: 900px) { .rp-grid { grid-template-columns: 300px minmax(0, 1fr); } }
@@ -602,7 +607,7 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .rp-actions .tb.primary { background: var(--sc-accent); color: var(--sc-on-accent); border-color: var(--sc-accent); }
 /* ekran startowy – wybór misji / posterunku: lista po lewej, odprawa (etap 2) po prawej */
 #start.modal { align-items: stretch; z-index: var(--z-start); background: var(--sc-bg); overflow: auto; }
-.start-screen { width: min(1280px, 100%); margin: 0 auto; padding: 22px 20px 30px; color: var(--sc-text); font-size: 13px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 100%; }
+.start-screen { width: min(1280px, 100%); margin: 0 auto; padding: 22px 20px calc(48px + env(safe-area-inset-bottom, 0px)); color: var(--sc-text); font-size: 13px; box-sizing: border-box; display: flex; flex-direction: column; min-height: 100%; }
 .st-hero { display: grid; grid-template-columns: auto 1fr; gap: 2px 16px; align-items: baseline; margin-bottom: 16px; }
 /* tor pod nagłówkiem: dwie szyny na podkładach – wspólny motyw ekranów pełnych */
 .st-hero::after { content: ''; grid-column: 1 / -1; height: 10px; margin-top: 12px;

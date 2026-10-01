@@ -92,3 +92,25 @@ test('ustawienia: wybrana opcja ma zapaloną lampkę kontrolną, pole wyboru nad
   await page.keyboard.press('ArrowLeft');
   await expect(page.locator('#settings input[name=theme]:checked')).not.toHaveValue('dark');
 });
+
+test('ekrany pełne: przyciski na końcu nie dotykają dolnej krawędzi – zapas co najmniej 40 px po przewinięciu do końca', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 700 }); // tablet w poziomie – raport dłuższy niż ekran
+  await openShift(page, 'szkolna');
+  await page.evaluate(() => document.getElementById('menu-report').click());
+  const gap = await page.evaluate(() => {
+    const r = document.querySelector('#report'); r.scrollTop = r.scrollHeight;
+    const btn = [...r.querySelectorAll('.rp-actions .tb')].at(-1).getBoundingClientRect();
+    return r.getBoundingClientRect().bottom - btn.bottom;
+  });
+  expect(gap).toBeGreaterThanOrEqual(40);
+  // lista posterunków na niskim ekranie: ostatnia karta też z zapasem
+  await page.click('#report .st-close');
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await page.setViewportSize({ width: 1024, height: 420 });
+  const gap2 = await page.evaluate(() => {
+    const r = document.querySelector('#start'); r.scrollTop = r.scrollHeight;
+    const last = [...r.querySelectorAll('#st-list .st-card')].at(-1).getBoundingClientRect();
+    return r.getBoundingClientRect().bottom - last.bottom;
+  });
+  expect(gap2).toBeGreaterThanOrEqual(40);
+});
