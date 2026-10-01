@@ -334,6 +334,9 @@ export class AutoOperator {
         // zadaniu – tory, z których zadanie da się wykonać, przed pozostałymi
         const rank = (r) => (routeTrack(r) === String(want) ? 0 : (ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 3) + (reach(r) ? 0 : 1));
         let order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
+        // pociąg jadący dalej – tylko tory, z których jest przebieg wyjazdowy na jego szlak (na torze bez wyjazdu utknąłby)
+        const exitTracks = e.to ? new Set(routes.filter((x) => x.kind === 'train' && x.exit === e.to).map((x) => ilk.sections.get(x.approach)?.track).filter((k) => k != null).map(String)) : null;
+        if (exitTracks?.size) order = order.filter((r) => r === path?.[0] || ilk.sections.get(r.sections.at(-1))?.kind !== 'station' || exitTracks.has(String(routeTrack(r))));
         // skoro jest inny tor, z którego zadanie da się wykonać, na tor bez drogi do celu nie przyjmować – raczej czekać
         if (job && cands.some((r) => routeTrack(r) !== String(want) && reach(r))) order = order.filter((r) => routeTrack(r) === String(want) || reach(r));
         // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
@@ -361,12 +364,19 @@ export class AutoOperator {
             && o.train.entered && !o.train.entryPending && trackOf(o.train) === t);
           return !theirs.some((t) => t !== tk && !held(t));
         };
+        // Tor zajmuje skład, który z niego już nie odjedzie: zakończył bieg, nie ma zadań manewrowych i nie powstanie z niego
+        // pociąg – czekanie nic nie da (Tczew: 44631 kończy bieg na torze 15 planowym dla opóźnionego 44611)
+        const stays = (r) => sim.traffic.timetable().some((o) => o !== e && !o.to && o.train && !o.train.finished && o.train.entered && o.train.v === 0
+          && r.sections.some((sid) => o.train.occupiedSections().has(sid))
+          && !(sim.traffic.tasks || []).some((x) => !x.done && !x.failed && String(x.unit) === String(o.nr))
+          && !sim.traffic.timetable().some((x) => String(x.unit) === String(o.nr) && x.actualDep == null));
         let closed = false;
         for (const pick of order) {
           if (meetsOpposing(pick)) break;
           const res = this.#setRoute(pick.id);
-          // inny tor tylko przy torze zamkniętym albo przy krzyżowaniu; chwilowo zajęty/utwierdzony tor planowy – czekać
-          if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick)) closed = true; if (closed) continue; break; }
+          // inny tor tylko przy torze zamkniętym, przy krzyżowaniu albo gdy tor zajmuje skład, który już nie odjedzie;
+          // chwilowo zajęty/utwierdzony tor planowy – czekać
+          if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick) || stays(pick)) closed = true; if (closed) continue; break; }
           if (path && pick === path[0] && path.length > 1) e._entryPath = path.slice(1).map((r) => r.id);
           if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
           break;

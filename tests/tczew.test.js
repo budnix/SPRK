@@ -63,3 +63,37 @@ test('Tczew: pełna zmiana – IC/Regio linii 9, Bydgoszcz, nawroty do Chojnic, 
   assert.ok(!sim.score.items.some((i) => i.code === 'held'), 'przetrzymania: ' + sim.score.items.filter((i) => i.code === 'held').map((i) => i.msg).join('; '));
   assert.ok(sim.ended, 'zmiana zakończona');
 });
+
+/*
+ * Tor planowy zajęty na stałe: 44611 (Szymankowo → Zajączkowo ZTB, bez postoju, tor 15) opóźniony tak, że pierwszy
+ * przyjeżdża 44631 – kończy bieg na torze 15 i z niego już nie odjedzie (bez zadań, bez pociągu ze składu). Automat
+ * czekał przed E1 na tor 15 bez końca (przegląd: tczew:zmiana, low, ziarno 4). Teraz przyjmuje 44611 na inny tor,
+ * z którego jest wyjazd do Zajączkowa (5–13; z torów 1–3 przebiegu na ZB nie ma).
+ */
+test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat przyjmuje przejazdowy na inny tor z wyjazdem na jego szlak', () => {
+  const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611, 44631] }, disruptions: 'none' });
+  const e = sim.traffic.timetable().find((x) => x.nr === 44611);
+  // 16 min: 44631 dostaje Z → tor 15 (07:49), zanim 44611 dojedzie do E1
+  sim.traffic.setInboundDelay(e, 16);
+  let n = 0;
+  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  const end = sim.traffic.timetable().find((x) => x.nr === 44631);
+  assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
+  assert.equal(String(end.actualTrack), '15', '44631 kończy bieg na torze 15');
+  assert.ok(end.actualArr < e.actualArr, '44631 przyjechał pierwszy');
+  assert.ok(['5', '7', '9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack} – z wyjazdem do Zajączkowa`);
+  assert.deepEqual(sim.score.items.filter((i) => ['spad', 'trailed', 'wrong-track'].includes(i.code)).map((i) => i.msg), []);
+});
+
+// Inny tor dla pociągu jadącego dalej – tylko z przebiegiem wyjazdowym na jego szlak. Przy torach 15, 7 i 5 zamkniętych
+// automat brał następny tor peronowy z kolejności przebiegów: tor 1, z którego do Zajączkowa nie ma wyjazdu – 44611
+// stawał przed M1 do końca zmiany.
+test('Tczew: przejazdowy na inny tor tylko z wyjazdem na jego szlak – przy torach 15, 7, 5 zamkniętych nie na tor 1', () => {
+  const closedSections = ['T15', 'T7', 'T5'].map((section) => ({ section }));
+  const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611], closedSections }, disruptions: 'none' });
+  let n = 0;
+  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  const e = sim.traffic.timetable().find((x) => x.nr === 44611);
+  assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
+  assert.ok(['9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack}`);
+});

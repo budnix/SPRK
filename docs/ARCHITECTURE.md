@@ -248,8 +248,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg z `routeStuck` (na nastawni mechanicznej
   najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
   przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak (na którymkolwiek odcinku
-  przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3). Testy: `tests/rumia.test.js`,
-  `tests/operator.test.js`.
+  przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3), a także gdy planowy zajmuje skład, który
+  z niego już nie odjedzie (zakończył bieg, bez zadań manewrowych i bez pociągu ze składu – Tczew: 44631 na torze 15
+  opóźnionego 44611). Pociąg jadący dalej dostaje inny tor tylko taki, z którego jest przebieg wyjazdowy na jego szlak.
+  Testy: `tests/rumia.test.js`, `tests/operator.test.js`, `tests/tczew.test.js`.
 * Manewry automatu (`Operator.#shuntPath`): drogę do toru docelowego zadania szuka BFS po przebiegach manewrowych,
   także z kilkoma zmianami kierunku (Chylonia: z toru 2 przez tor 503 na tor 1 i do Postojowej). Pierwszy przebieg
   zaczyna się od sygnalizatora, przed którym skład stoi; kolejny nie może potrzebować w innym położeniu zwrotnic, które
