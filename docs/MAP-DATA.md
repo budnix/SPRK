@@ -47,6 +47,11 @@ zostaje tablica z torami na siatce. Wygląd: zmienne `--sc-board-*` (tablica dys
    Artykuł stacji ma zwykle dopisek „(stacja kolejowa)”, gdy nazwa miasta jest zajęta (np. `Sopot_(stacja_kolejowa)`),
    a stacje z nazwą własną – bez niego (`Gdańsk_Główny`). Źródło każdej pary współrzędnych dopisz do
    `docs/SOURCES.md`, sekcja „Mapa wyboru posterunku”.
+   Dokładniejsze (ok. 1 m, przy peronach linii głównej): punkt `railway=station` PKP PLK w OpenStreetMap – np. Overpass
+   `node["railway"="station"]["name"="Gdynia Główna"]["operator"~"PKP"];out;` (uwaga na osobne przystanki SKM, np.
+   Gdynia Orłowo ma punkt stacji i punkt przystanku SKM). Współrzędne z Wikipedii to zwykle budynek stacji, do ok. 200 m
+   dalej (Gdynia Gł. 185 m) – na mapie w największym przybliżeniu najwyżej kilka pikseli od toru; obecne stacje mają
+   współrzędne z Wikipedii, każda < 65 m od najbliższego toru swoich linii.
 3. **Przebieg linii** – po dodaniu posterunku zawsze od nowa (zmienia się wycinek województwa i zestaw linii):
    ```sh
    node scripts/rail-lines.mjs
