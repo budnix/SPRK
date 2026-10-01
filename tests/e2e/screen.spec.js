@@ -484,9 +484,11 @@ test('monitor: Stój gasi sygnał; Stop zastopowuje sygnalizator (sygnał nie wr
 
 // Menu elementu monitora szersze (wg treści, do 480 px): polecenia blokady Eap mieszczą się w jednej linii – dawniej
 // menu miało najwyżej 320 px i długie polecenia (dPo, dKo) zajmowały trzy linie
-test('menu szlaku: polecenia blokady Eap w jednej linii (okno 1366 px)', async ({ page }) => {
+// Menu otwarte przy prawej krawędzi okna mieści się w oknie (położenie z rzeczywistej szerokości menu – dawniej stałe
+// 260 px, więc szersze menu wychodziło poza okno).
+test('menu szlaku: polecenia blokady Eap w jednej linii (okno 1366 px), menu przy prawej krawędzi w oknie', async ({ page }) => {
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
-  await page.locator(`.hit[data-ref*='"id":"kE"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 900, clientY: 200 });
+  await page.locator(`.hit[data-ref*='"id":"kE"']`).dispatchEvent('pointerdown', { bubbles: true, button: 0, clientX: 1300, clientY: 200 });
   await expect(page.locator('.scr-menu h5')).toContainText('Eap');
   const rows = await page.locator('.scr-menu button').evaluateAll((bs) => bs.map((b) => {
     const cs = getComputedStyle(b), line = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.3;

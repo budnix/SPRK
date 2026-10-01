@@ -210,7 +210,8 @@ export class ScreenRenderer extends ScreenBase {
       this.menu.appendChild(b);
     }
     this.menu.classList.remove('hidden');
-    const mw = 260, mh = this.menu.offsetHeight || 160;
+    // rzeczywisty rozmiar menu (szerokość wg treści, do 480 px) – menu przy prawej / dolnej krawędzi nie wychodzi z okna
+    const mw = this.menu.offsetWidth || 260, mh = this.menu.offsetHeight || 160;
     this.menu.style.left = `${Math.min(ev.clientX, window.innerWidth - mw - 8)}px`;
     this.menu.style.top = `${Math.min(ev.clientY, window.innerHeight - mh - 8)}px`;
   }
