@@ -111,7 +111,12 @@ Play it: **https://budnix.github.io/SPRK/**
   mass), and at speed the vehicle's power limits acceleration – a longer or heavier train, or an older or weaker
   vehicle, takes longer to reach line speed (an EN57 needs much longer than an Impuls, a diesel 754 with a long TLK
   minutes); a vehicle slower than the timetable is not assigned unless the station pins it, and then it limits the
-  train's speed (shown in the tooltip); braking follows the train category; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
+  train's speed (shown in the tooltip); trains brake as a driver would: each driver plans a comfortable share of the
+  vehicle's service braking (a little different on every train), starts braking early enough for the brakes to build
+  up and eases off over the last metres before the stop; braking depends on the train – multiple units brake hardest,
+  loco-hauled passenger trains as their speed requires, freight trains by their load (a heavy or long freight train
+  needs much longer to stop and a long one stops without easing off); a signal dropping to "Stop" too close still means
+  full or emergency braking; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, running onto an occupied track up to the standing stock (last 50 m at 3 km/h).
 * A point without detection is secured on site from the Equipment tab (a worker, about 3 minutes); then a train can
   pass it on a substitute signal or a written order.

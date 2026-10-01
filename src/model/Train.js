@@ -1,4 +1,5 @@
 import { trainDynamics } from './rollingStock.js';
+import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
 import { OPPOSITE } from '../tiles/directions.js';
 
@@ -11,6 +12,23 @@ export const SUBSTITUTE_SPEED = 40;
 export const SBL_FIRST_BLOCK = 1000;
 /** Dojazd do taboru na torze zajętym: ostatnie metry (przyjęte) z prędkością do 3 km/h (Dz.U. 2015 poz. 360 §9 ust. 4). */
 export const STOCK_CREEP = 50;
+
+/**
+ * Maszynista (przyjęte, docs/SOURCES.md „Hamowanie jak maszynista”): hamuje z opóźnieniem planowanym – częścią
+ * `DRIVER_MIN`…`DRIVER_MAX` opóźnienia hamowania służbowego pociągu (każdy maszynista trochę inaczej: z ziarna zmiany
+ * i numeru pociągu, `driverFactor`), zaczyna hamować z wyprzedzeniem na czas działania hamulca (`brakeDelay`), a przed
+ * miejscem zatrzymania luzuje: ostatnie metry dojeżdża z prędkością `EASE_SPEED` z opóźnieniem `EASE_SHARE` planowanego.
+ */
+export const DRIVER_MIN = 0.6;
+export const DRIVER_MAX = 0.8;
+export const EASE_SPEED = 2;      // m/s (ok. 7 km/h) – początek łagodnego dojazdu do miejsca zatrzymania
+export const EASE_SHARE = 0.5;
+
+/** Maszynista pociągu `nr` w zmianie o ziarnie `seed`: część opóźnienia służbowego, z którą planuje hamowanie. */
+export function driverFactor(seed, nr) {
+  const h = mixSeed(Number(seed), nr, 0x5bd1e995);
+  return DRIVER_MIN + (Math.imul(h ^ (h >>> 13), 0x85ebca6b) >>> 8) / 0x1000000 * (DRIVER_MAX - DRIVER_MIN);
+}
 
 /**
  * Pociąg poruszający się po topologii toru według rzeczywistych położeń zwrotnic
@@ -32,6 +50,8 @@ export class Train {
     this.stopShort = opts.stopShort ?? 0;    // o ile metrów przed końcem peronu staje czoło (rozrzut, Traffic.stopScatter)
     // tabor wpisu (Traffic: `e.rollingStock` – ten sam pokazuje panel) albo null – wtedy dynamika kategorii
     this.stock = opts.stock ?? null;
+    // maszynista (`driverFactor`) albo null – wtedy pociąg hamuje pełnym hamowaniem służbowym, bez wyprzedzenia i luzowania
+    this.driver = opts.driver ?? null;
     this.applyDynamics(def);
     this.v = 0;
     this.trail = [];
@@ -74,8 +94,31 @@ export class Train {
     const dyn = trainDynamics(def, this.stock);
     this.vmax = dyn.vmax * KMH;
     this.accel = dyn.accel;
-    this.brake = dyn.brake;
+    this.brake = dyn.brake; // opóźnienie hamowania służbowego (największe) – też przy nagłej zmianie sygnału na „Stój”
     this.power = dyn.power; // kW/t albo null – przyspieszenie przy prędkości v najwyżej power / v
+    // hamowanie planowane przez maszynistę: część służbowego i wyprzedzenie na czas działania hamulca
+    this.brakePlan = this.driver ? this.brake * this.driver : this.brake;
+    this.brakeDelay = this.driver ? dyn.brakeDelay ?? 0 : 0;
+    this.ease = !!this.driver && dyn.ease !== false; // łagodny dojazd – nie w długim pociągu towarowym (ALZA-W2 §40–41)
+  }
+
+  /**
+   * Największa prędkość, z której maszynista zwolni do `speed` na drodze `dist` [m] (krzywa hamowania planowanego):
+   * opóźnienie `brakePlan`, a na wyprzedzenie działania hamulca droga (v − speed) · `brakeDelay`; zatrzymanie (`speed`
+   * 0) z łagodnym dojazdem – od `EASE_SPEED` z opóźnieniem `EASE_SHARE` planowanego.
+   */
+  brakeCurve(speed, dist) {
+    const a = this.brakePlan, at = a * this.brakeDelay;
+    const curve = (v1, d) => -at + Math.sqrt((at + v1) * (at + v1) + 2 * a * Math.max(0, d));
+    if (speed > 0 || !this.ease) return curve(speed, dist);
+    const ease = (EASE_SPEED * EASE_SPEED) / (2 * a * EASE_SHARE); // droga łagodnego dojazdu
+    return dist >= ease ? curve(EASE_SPEED, dist - ease) : EASE_SPEED * Math.sqrt(Math.max(0, dist) / ease);
+  }
+
+  /** Droga, na której maszynista zatrzyma pociąg z prędkości `v` (horyzont skanowania toru). */
+  brakingDistance(v) {
+    const a = this.brakePlan;
+    return v * this.brakeDelay + (v * v) / (2 * a) + (this.ease ? (EASE_SPEED * EASE_SPEED) / (2 * a * EASE_SHARE) : 0);
   }
 
   /** Przyspieszenie przy prędkości `v` [m/s]: przy ruszaniu `accel`, wyżej ograniczone mocą (power / v). */
@@ -373,8 +416,8 @@ export class Train {
         this.onEvent('depart', this);
       } else return;
     }
-    // horyzont skanowania nie krótszy niż droga hamowania z bieżącej prędkości (szybkie pociągi: IC 160 km/h ≈ 1,8 km)
-    const constraints = this.#lookahead(Math.max(1500, (this.v * this.v) / (2 * this.brake) + 300));
+    // horyzont skanowania nie krótszy niż droga hamowania planowanego z bieżącej prędkości (z wyprzedzeniem i dojazdem)
+    const constraints = this.#lookahead(Math.max(1500, this.brakingDistance(this.v) + 300));
     // Prędkość docelowa uwzględniająca drogę hamowania: v² = u² + 2·b·s; na stacji nie szybciej niż prędkość szlaku
     // (prędkość drogowa) – rozjazdy i sygnały ograniczają dalej
     let allowed = Math.min(this.vmax, this.#activeSpeed(), this.#lineSpeedNow(), this.#pointsUnderTrain(), this.#zoneSpeed());
@@ -385,7 +428,7 @@ export class Train {
     // najwyżej hamowaniem nagłym: pociąg nie staje „w miejscu”
     let decel = this.brake;
     for (const c of constraints) {
-      const v = Math.sqrt(c.speed * c.speed + 2 * this.brake * Math.max(0, c.dist));
+      const v = this.brakeCurve(c.speed, c.dist);
       if (c.speed === 0 && c.dist <= 0.5 && (!stopC || c.dist < stopC.dist)) stopC = c;
       if (v < allowed) allowed = v;
       if (c.speed === 0 && (!stopC || c.dist < stopC.dist)) stopC = c;

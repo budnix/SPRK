@@ -100,8 +100,11 @@ test('rozkaz pisemny dla pociągu, który stanął za semaforem miniętym na „
       if (b.request === 'theirs') b.press('Poz');
       if (!set && e.train) set = sim.ilk.setRoute('A-D2').ok;
       if (set && !dropped && e.train) {
+        // sygnał gaśnie o krok symulacji wcześniej – zmiana działa w następnym kroku, gdy do A zostaje najwyżej 8 m
+        // (dojazd zależy od maszynisty; bez tego pociąg bywał już przy A i mijał go na sygnał zezwalający)
         const x = e.train.constraintsAhead(3000, true).find((q) => q.signal === 'A')?.dist;
-        if (x != null && x <= 8 && e.train.v > 8) { sim.ilk.sections.get('T2').forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); dropped = true; }
+        const next = x != null ? x - e.train.v * 0.5 : null;
+        if (next != null && next > 0 && next <= 8 && e.train.v > 8) { sim.ilk.sections.get('T2').forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); dropped = true; }
       }
     }
     c.paused = true;

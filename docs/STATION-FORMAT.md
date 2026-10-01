@@ -180,7 +180,8 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   „SKM …”, „Zdawczy” albo „(zdawczy)” w relacji → `TK`, „Lokomotywa luzem …” → `LT`, „Skład EZT …”, „próżny” /
   „lekki” → `TN`) i z `kind` (towarowy → `TM`).
   Kategoria daje domyślną prędkość maksymalną (EIP 200, IC/EIC 160, TLK 140, R/SKM 120, TM/TG/TS 80, TN/TR/TD/TC 100,
-  TK 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`); `vmax`, `accel`, `brake` wpisu nadpisują.
+  TK 60 km/h) oraz przyspieszenie i hamowanie (`src/model/categories.js`) – dla pociągu bez taboru; `vmax`, `accel`,
+  `brake` wpisu nadpisują (`brake` – największe opóźnienie hamowania służbowego, maszynista hamuje z jego częścią).
 * `traction` – trzecia litera rodzaju pociągu towarowego lub lokomotywy luzem (zał. 6.3): `E` – elektryczna, lokomotywy
   (domyślnie), `S` – spalinowa, lokomotywy, `P` – parowa, `J` / `M` – zespoły trakcyjne elektryczne / spalinowe; tylko
   połączenia z tablic załącznika (np. `TKP`, `TSJ`, ale nie `TMJ`) – inne są błędem walidacji. Etykieta: `cat` + `traction`
@@ -192,7 +193,9 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   razy `length`. Pociąg z lokomotywą z katalogu taboru przyspiesza z siłą rozruchową lokomotywy podzieloną przez masę
   lokomotywy i `mass` (`stock` niżej). Bez danych lokomotywy – przyspieszenie kategorii przy jej masie odniesienia
   (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t, TS 800 t, TK 600 t) razy `masa odniesienia / mass`, najwyżej 1,5 i najmniej
-  0,5 przyspieszenia kategorii; bez `mass` – przyspieszenie kategorii. Hamowanie nie zależy od masy.
+  0,5 przyspieszenia kategorii; bez `mass` – przyspieszenie kategorii. Hamowanie pociągu z taborem zależy od masy na
+  metr składu (mniejszy procent masy hamującej ładownych wagonów) i od długości (nastawienie P / G, czas narastania
+  hamowania); bez taboru – hamowanie kategorii.
   Obowiązuje mniejsza z prędkości pociągu i szlaku: na szlaku wjazdowym – `lineSpeed` wyjazdu `from`, dopóki cały
   pociąg nie wjedzie na stację; dalej – `lineSpeed` wyjazdu `to` (pociąg kończący bieg – `from`). Na rozjazdach –
   prędkość rozjazdu, przy Sz i rozkazie „S” – 40 km/h do następnego semafora (przy wyjeździe na szlak do końca
@@ -212,8 +215,12 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   niezelektryfikowanych (spalinowe zespoły trakcyjne), misje wymagające stałego składu. Tabor widać w podpowiedzi
   numeru pociągu i na zakładce „Pociągi”, a pociąg jedzie z jego dynamiką: przyspieszenie rozruchu typu zespołu albo
   przyspieszenie z siły rozruchowej lokomotywy i masy (wagony z `length`, pociąg towarowy – `mass`), przy prędkości
-  ograniczone mocą pojazdu; hamowanie – kategorii; prędkość typu ogranicza pociąg, gdy jest mniejsza niż `vmax` wpisu /
-  kategorii. Długości pociągu tabor nie zmienia. Pola `accel` i `brake` wpisu mają pierwszeństwo przed taborem.
+  ograniczone mocą pojazdu; hamowanie z typu zespołu, z prędkości pociągu z lokomotywą albo z masy na metr i długości
+  składu towarowego (docs/SOURCES.md „Hamowanie jak maszynista”); prędkość typu ogranicza pociąg, gdy jest mniejsza niż
+  `vmax` wpisu / kategorii. Długości pociągu tabor nie zmienia. Pola `accel` i `brake` wpisu mają pierwszeństwo przed
+  taborem; `brake` to wtedy największe opóźnienie hamowania służbowego – maszynista planuje hamowanie z jego częścią;
+  `brake` wpisu zastępuje opóźnienie, nie czas narastania hamowania ani luzowanie przed zatrzymaniem (te zależą od
+  nastawienia hamulca i długości składu).
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
 by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).

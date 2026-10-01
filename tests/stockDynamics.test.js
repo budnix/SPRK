@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ROLLING_STOCK, STOCK_KINDS, COACH_LENGTH, COACH_MASS, LOCO_ACCEL_MAX, stockFor, trailingMass, trainDynamics } from '../src/model/rollingStock.js';
+import { ROLLING_STOCK, STOCK_KINDS, COACH_LENGTH, COACH_MASS, LOCO_ACCEL_MAX, SERVICE_BRAKE_MAX, UNIT_BRAKE, brakingDistanceFor, brakingOf, decelForDistance, stockFor, trailingMass, trainDynamics, trainSpeed } from '../src/model/rollingStock.js';
 import { CATEGORIES, dynamicsFor, speedFor } from '../src/model/categories.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { Train, EMERGENCY_BRAKE } from '../src/model/Train.js';
@@ -46,7 +46,8 @@ test('zespół trakcyjny: przyspieszenie rozruchu i hamowanie typu (null – kat
     const cat = CATEGORIES[t.pools.includes('skm') ? 'SKM' : 'R'];
     const d = trainDynamics(e, set(id));
     assert.equal(d.accel, t.accel ?? cat.accel, `${id}: przyspieszenie`);
-    assert.equal(d.brake, t.brake ?? cat.brake, `${id}: hamowanie`);
+    // hamowanie służbowe: typu, a bez danych – dolna granica wymagań zamówień na zespoły (UNIT_BRAKE)
+    assert.equal(d.brake, Math.min(SERVICE_BRAKE_MAX, t.brake ?? UNIT_BRAKE), `${id}: hamowanie ${d.brake}`);
     // kilka zespołów – każdy z własnym napędem: to samo przyspieszenie i hamowanie
     assert.deepEqual(trainDynamics(e, set(id, 2)), d, `${id}: 2 zespoły`);
   }
@@ -65,7 +66,9 @@ test('lokomotywa z wagonami: a = siła rozruchowa / (masa lokomotywy + wagonów)
     const a300 = trainDynamics(ic(300), set(id)).accel;
     assert.ok(Math.abs(a300 - Math.min(LOCO_ACCEL_MAX, t.tractive / (t.mass + coaches * COACH_MASS))) < 1e-12, `${id}: ${a300}`);
     assert.ok(trainDynamics(ic(350), set(id)).accel < trainDynamics(ic(200), set(id)).accel, `${id}: więcej wagonów – wolniej`);
-    assert.equal(trainDynamics(ic(300), set(id)).brake, CATEGORIES.IC.brake, `${id}: hamowanie kategorii (Ir-1 §21)`);
+    // hamowanie: skład ma masę hamującą wymaganą dla swojej prędkości (Ir-1 §21) – z drogi hamowania (Ie-4 §8)
+    const v = trainSpeed(ic(300), set(id));
+    assert.ok(Math.abs(trainDynamics(ic(300), set(id)).brake - decelForDistance(v, brakingDistanceFor(v))) < 1e-12, `${id}: hamowanie dla ${v} km/h`);
   }
   // lokomotywa luzem: siła / masa lokomotywy przekracza granicę – granica
   const lt = { nr: 1, kind: 'tow', name: 'Lokomotywa luzem A – B', length: 20 };
@@ -82,7 +85,8 @@ test('pociąg towarowy: cięższy skład tą samą lokomotywą przyspiesza wolni
     const tm = (mass) => ({ nr: 1, kind: 'tow', cat: 'TM', name: 'Towarowy', length: 500, mass });
     assert.ok(Math.abs(trainDynamics(tm(2000), set(id)).accel - Math.min(LOCO_ACCEL_MAX, t.tractive / (t.mass + 2000))) < 1e-12, id);
     assert.ok(trainDynamics(tm(3000), set(id)).accel < trainDynamics(tm(1000), set(id)).accel, `${id}: cięższy wolniej`);
-    assert.equal(trainDynamics(tm(3000), set(id)).brake, CATEGORIES.TM.brake);
+    // hamowanie z masy hamującej: cięższy na metr składu – mniejszy procent masy hamującej, łagodniej
+    assert.ok(trainDynamics(tm(3000), set(id)).brake < trainDynamics(tm(1000), set(id)).brake, `${id}: cięższy hamuje łagodniej`);
   }
   // silniejsza lokomotywa rusza ten sam skład szybciej
   const byForce = [...freight].sort((a, b) => ROLLING_STOCK[a].tractive - ROLLING_STOCK[b].tractive);
@@ -105,11 +109,15 @@ test('prędkość: typ wolniejszy niż pociąg ogranicza; typ bez prędkości w 
 
 test('bez taboru albo bez danych typu – dynamika kategorii; `accel` / `brake` wpisu mają pierwszeństwo', () => {
   const tm = { nr: 1, kind: 'tow', cat: 'TM', name: 'Towarowy', length: 500, mass: 2500 };
-  assert.deepEqual(trainDynamics(tm, null), { vmax: speedFor(tm), ...dynamicsFor(tm), power: null });
+  // bez taboru: kategoria; czas do pełnego hamowania jak hamulec P, długi towarowy – z wyłączeniem siły, bez luzowania
+  assert.deepEqual(trainDynamics(tm, null), { vmax: speedFor(tm), ...dynamicsFor(tm), power: null, brakeDelay: 15, ease: false });
   const loco = locos.find((id) => ROLLING_STOCK[id].pools.includes('freight') && ROLLING_STOCK[id].tractive != null);
   const d = trainDynamics({ ...tm, accel: 0.05, brake: 0.25 }, set(loco));
   assert.equal(d.accel, 0.05); assert.equal(d.brake, 0.25);
   assert.equal(d.power, null, '`accel` wpisu – stałe przyspieszenie, bez ograniczenia mocą');
+  // `brake` wpisu zastępuje opóźnienie, nie czas narastania hamowania ani zasadę luzowania (nastawienie i długość składu)
+  assert.equal(d.brakeDelay, brakingOf(tm, set(loco)).brakeDelay);
+  assert.equal(d.ease, brakingOf(tm, set(loco)).ease);
   const unit = units.find((id) => ROLLING_STOCK[id].accel != null);
   const r = trainDynamics({ nr: 2, kind: 'os', name: 'Regio A – B', length: 130, accel: 0.33, brake: 0.44 }, set(unit));
   assert.equal(r.accel, 0.33); assert.equal(r.brake, 0.44);
@@ -153,7 +161,8 @@ test('przekazanie składu jako inny pociąg: ten sam tabor, dynamika z nowego wp
   tr.def = b; tr.applyDynamics(b);
   assert.ok(tr.accel > trainDynamics(a, tr.stock).accel, 'lżejszy skład – szybciej');
   assert.equal(tr.accel, trainDynamics(b, tr.stock).accel);
-  assert.equal(tr.brake, CATEGORIES.TN.brake);
+  assert.equal(tr.brake, brakingOf(b, tr.stock).brake, 'hamowanie z nowego wpisu');
+  assert.ok(tr.brake > brakingOf(a, tr.stock).brake, 'lżejszy na metr skład – mocniej');
 });
 
 test('cięższy pociąg z lokomotywą rusza wolniej także w symulacji: po minucie jedzie wolniej', () => {

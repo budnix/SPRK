@@ -1,4 +1,4 @@
-import { CATEGORIES, categoryOf, dynamicsFor, speedFor, tractionOf } from './categories.js';
+import { CATEGORIES, MAX_TONNES_PER_METRE, categoryOf, dynamicsFor, speedFor, tractionOf } from './categories.js';
 import { Random, mixSeed } from '../core/Random.js';
 import { Clock } from '../core/Clock.js';
 
@@ -19,7 +19,8 @@ import { Clock } from '../core/Clock.js';
  *    w jednym pociągu (przyjęte: 2; ED160 – 1, bo jazdy dwóch zespołów źródła nie potwierdzają), `vmax` – prędkość
  *    maksymalna wg źródła [km/h] (null – źródło jej nie podaje),
  *  - dynamika (wartości ze źródeł, null – źródło ich nie podaje, gra bierze wartość kategorii): zespoły – `accel`
- *    przyspieszenie rozruchu [m/s²], `brake` opóźnienie hamowania służbowego [m/s²]; lokomotywy – `tractive` siła
+ *    przyspieszenie rozruchu [m/s²], `brake` opóźnienie hamowania służbowego [m/s²] (z wymagań zamówień – przyjęte;
+ *    null – `UNIT_BRAKE`); lokomotywy – `tractive` siła
  *    pociągowa rozruchowa [kN], `bufferLength` długość ze zderzakami [m]; oba – `mass` masa [t] (zespoły – własna,
  *    lokomotywy – służbowa), `power` moc do jazdy [kW] (ciągła; spalinowe – trakcyjna, a gdy źródło jej nie podaje –
  *    moc silnika).
@@ -38,12 +39,12 @@ export const STOCK_KINDS = {
 
 export const ROLLING_STOCK = {
   // elektryczne zespoły trakcyjne SKM Trójmiasto (linia 250) i Polregio (oddział pomorski) – stan na 1.10.2026
-  EN57: { kind: 'ezt', operator: 'SKM Trójmiasto, Polregio', pools: ['skm', 'regio'], cars: 3, length: 64.97, maxCount: 2, vmax: 120, accel: 0.5, brake: null, mass: 123, power: 608 },
+  EN57: { kind: 'ezt', operator: 'SKM Trójmiasto, Polregio', pools: ['skm', 'regio'], cars: 3, length: 64.97, maxCount: 2, vmax: 120, accel: 0.5, brake: 0.8, mass: 123, power: 608 },
   EN71: { kind: 'ezt', operator: 'SKM Trójmiasto', pools: ['skm'], cars: 4, length: 86.84, maxCount: 2, vmax: 110, accel: null, brake: null, mass: 178, power: null },
-  '31WE': { kind: 'ezt', name: 'Impuls', operator: 'SKM Trójmiasto', pools: ['skm'], cars: 4, length: 74.4, maxCount: 2, vmax: 160, accel: 1.0, brake: null, mass: 145, power: 2000 },
+  '31WE': { kind: 'ezt', name: 'Impuls', operator: 'SKM Trójmiasto', pools: ['skm'], cars: 4, length: 74.4, maxCount: 2, vmax: 160, accel: 1.0, brake: 0.89, mass: 145, power: 2000 },
   '31WEbb': { kind: 'ezt', name: 'Impuls 2', operator: 'SKM Trójmiasto, Polregio', pools: ['skm', 'regio'], cars: 4, length: 75, maxCount: 2, vmax: 160, accel: null, brake: null, mass: 145, power: null },
   '58WE': { kind: 'ezt', name: 'Impuls 2', operator: 'SKM Trójmiasto', pools: ['skm'], cars: 3, length: 77, maxCount: 2, vmax: null, accel: 1.1, brake: null, mass: 165.5, power: null },
-  '45WE': { kind: 'ezt', name: 'Impuls', operator: 'Polregio', pools: ['regio'], cars: 5, length: 90.4, maxCount: 2, vmax: 160, accel: 1.0, brake: null, mass: 168, power: 2000 },
+  '45WE': { kind: 'ezt', name: 'Impuls', operator: 'Polregio', pools: ['regio'], cars: 5, length: 90.4, maxCount: 2, vmax: 160, accel: 1.0, brake: 1.08, mass: 168, power: 2000 },
   // spalinowe zespoły trakcyjne Polregio (oddział pomorski) – linie niezelektryfikowane; tylko przypięte polem `stock`
   SA133: { kind: 'szt', operator: 'Polregio', pools: [], cars: 2, length: 41.7, maxCount: 2, vmax: 120, accel: null, brake: null, mass: 82, power: 764 },
   SA136: { kind: 'szt', name: 'Atribo', operator: 'Polregio', pools: [], cars: 3, length: 55.57, maxCount: 2, vmax: 140, accel: null, brake: null, mass: 108, power: 764 },
@@ -264,6 +265,81 @@ export function trailingMass(entry, type) {
   return coaches * COACH_MASS;
 }
 
+/**
+ * Hamowanie (docs/SOURCES.md, „Hamowanie jak maszynista”). Drogi hamowania wg prędkości (Ie-4 §8 ust. 4, zakres
+ * zasadniczy): do 60 km/h – 400 m, do 100 – 700 m, do 140 – 1000 m, do 160 – 1300 m (powyżej – 1300 m, przyjęte).
+ */
+export const BRAKING_DISTANCES = [[60, 400], [100, 700], [140, 1000], [160, 1300]];
+/** Równoważny czas narastania hamowania we wzorze EN 14531-1 (a = v² / 2(S − Te·v)): 2 s (UTP WAG, tabl. C.3). */
+export const EN14531_TE = 2;
+/** Opóźnienie na 1 % masy hamującej [m/s²]: UTP WAG tabl. C.3 przy 100 km/h – 65 % → 0,60; 100 % → 0,91; 125 % → 1,15. */
+export const DECEL_PER_PERCENT = 0.0091;
+/** Masa hamująca wagonów towarowych [%]: próżne 100, ładowne 65 (UTP WAG tabl. C.3 – najmniejsze λ), w G najwyżej 80. */
+export const LAMBDA_EMPTY = 100;
+export const LAMBDA_LOADED = 65;
+export const LAMBDA_G_MAX = 80;
+/** Największe opóźnienie hamowania służbowego [m/s²] (wymagania KM dla 45WE: „Maksymalne opóźnienie hamowania: 1,2 m/s²”). */
+export const SERVICE_BRAKE_MAX = 1.2;
+/**
+ * Hamowanie służbowe zespołu trakcyjnego bez danych typu [m/s²] (przyjęte): dolna granica wymagań polskich zamówień na
+ * zespoły – SKM Trójmiasto 2010 (modernizacja EN57) „0,8 – 1,1”, Koleje Śląskie 2012 (SZT) „od 0,9 do 1,1”, ŁKA 2020
+ * „od 0,9 m/s2 do 1,2 m/s2”.
+ */
+export const UNIT_BRAKE = 0.8;
+/**
+ * Czas od decyzji maszynisty do pełnego hamowania [s] – wyprzedzenie w krzywej hamowania: zespół trakcyjny 2 s
+ * (EN 14531-1 jak wyżej), hamulec P / R 5 s (ERA, przykłady: pociąg pasażerski 83 m – 5,02 s, towarowy P 400 m – 5,0 s),
+ * G 12,8 s (towarowy G 600 m); pociąg towarowy dłuższy niż 300 m – dodatkowo ok. 10 s wyłączenia siły pociągowej przed
+ * hamowaniem (ALZA-W2 §40).
+ */
+export const BRAKE_DELAY = { unit: 2, P: 5, G: 12.8 };
+export const FREIGHT_COAST = 10;
+export const LONG_FREIGHT = 300;
+
+/** Droga hamowania dla prędkości `kmh` (Ie-4 §8 ust. 4). */
+export function brakingDistanceFor(kmh) {
+  for (const [max, s] of BRAKING_DISTANCES) if (kmh <= max) return s;
+  return BRAKING_DISTANCES.at(-1)[1];
+}
+
+/** Opóźnienie [m/s²], z którym pociąg z prędkości `kmh` staje na drodze `s` (EN 14531-1, Te = `EN14531_TE`). */
+export function decelForDistance(kmh, s) {
+  const v = kmh / 3.6;
+  return (v * v) / (2 * (s - EN14531_TE * v));
+}
+
+/**
+ * Hamowanie pociągu: { brake – opóźnienie hamowania służbowego [m/s²], brakeDelay – czas do pełnego hamowania [s],
+ * ease – czy maszynista może luzować przed zatrzymaniem, regime – nastawienie hamulca }.
+ *  - zespół trakcyjny: opóźnienie typu (`brake`), inaczej `UNIT_BRAKE`;
+ *  - pociąg pasażerski z lokomotywą (R): z drogi hamowania dla prędkości pociągu – skład ma masę hamującą wymaganą dla
+ *    tej prędkości (Ir-1 §21: wymagany procent masy hamującej rośnie z prędkością);
+ *  - pociąg towarowy: masa hamująca z ładunku – λ od 100 % (próżne) do 65 % przy 7,2 t/m (najcięższy skład), P przy
+ *    składzie ponad 500 m razy 1,00…0,90 przy 700 m (MKT-4 §52), G (skład ponad 700 m albo ponad 4000 t – ALZA-W2 §16)
+ *    najwyżej 80 %; opóźnienie = `DECEL_PER_PERCENT` × λ; pociąg dłuższy niż 300 m nie luzuje przed zatrzymaniem
+ *    (ALZA-W2 §40 ust. 5, §41);
+ *  - wszystko najwyżej `SERVICE_BRAKE_MAX`.
+ */
+export function brakingOf(entry, stock, kmh = trainSpeed(entry, stock)) {
+  const type = typeOf(stock);
+  const freight = !!CATEGORIES[categoryOf(entry)].tractions;
+  const length = entry.length ?? 100;
+  if (freight) {
+    const consist = Math.max(1, length - (type?.bufferLength ?? 0));
+    const perMetre = entry.mass > 0 ? entry.mass / consist : 0;
+    let lambda = LAMBDA_EMPTY - (LAMBDA_EMPTY - LAMBDA_LOADED) * Math.min(1, perMetre / MAX_TONNES_PER_METRE);
+    const regime = length > 700 || (entry.mass ?? 0) > 4000 ? 'G' : 'P';
+    if (regime === 'G') lambda = Math.min(lambda, LAMBDA_G_MAX);
+    else if (length > 500) lambda *= 1 - 0.1 * Math.min(1, (length - 500) / 200);
+    const long = length > LONG_FREIGHT;
+    return { brake: Math.min(SERVICE_BRAKE_MAX, DECEL_PER_PERCENT * lambda), brakeDelay: BRAKE_DELAY[regime] + (long ? FREIGHT_COAST : 0), ease: !long, regime };
+  }
+  if (type && STOCK_KINDS[type.kind].unit) {
+    return { brake: Math.min(SERVICE_BRAKE_MAX, type.brake ?? UNIT_BRAKE), brakeDelay: BRAKE_DELAY.unit, ease: true, regime: 'EP' };
+  }
+  return { brake: Math.min(SERVICE_BRAKE_MAX, decelForDistance(kmh, brakingDistanceFor(kmh))), brakeDelay: BRAKE_DELAY.P, ease: true, regime: 'R' };
+}
+
 /** Typ taboru zestawu `stock` (wynik `stockFor`) albo null. */
 function typeOf(stock) {
   return stock && Object.hasOwn(ROLLING_STOCK, stock.id) ? ROLLING_STOCK[stock.id] : null;
@@ -297,12 +373,17 @@ export function trainDynamics(entry, stock) {
   const base = dynamicsFor(entry);
   const vmax = trainSpeed(entry, stock);
   const type = typeOf(stock);
-  if (!type) return { vmax, accel: base.accel, brake: base.brake, power: null };
+  if (!type) {
+    // bez taboru: przyspieszenie i hamowanie kategorii; czas do pełnego hamowania jak hamulec P (przyjęte)
+    const freight = !!CATEGORIES[categoryOf(entry)].tractions;
+    const long = freight && (entry.length ?? 100) > LONG_FREIGHT;
+    return { vmax, accel: base.accel, brake: base.brake, power: null, brakeDelay: BRAKE_DELAY.P + (long ? FREIGHT_COAST : 0), ease: !long };
+  }
   const cat = CATEGORIES[categoryOf(entry)];
-  let accel = base.accel, brake = base.brake, power = null;
+  const brk = brakingOf(entry, stock, vmax);
+  let accel = base.accel, power = null;
   if (STOCK_KINDS[type.kind].unit) {
     accel = type.accel ?? cat.accel;
-    brake = type.brake ?? cat.brake;
     if (type.power != null && type.mass != null) power = type.power / type.mass;
   } else {
     const load = trailingMass(entry, type);
@@ -311,5 +392,5 @@ export function trainDynamics(entry, stock) {
       if (type.power != null) power = type.power / (type.mass + load);
     }
   }
-  return { vmax, accel: entry.accel ?? accel, brake: entry.brake ?? brake, power: entry.accel != null ? null : power };
+  return { vmax, accel: entry.accel ?? accel, brake: entry.brake ?? brk.brake, power: entry.accel != null ? null : power, brakeDelay: brk.brakeDelay, ease: brk.ease };
 }

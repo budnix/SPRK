@@ -1,5 +1,5 @@
 import { categoryOf, trainLabel } from './categories.js';
-import { Train } from './Train.js';
+import { Train, driverFactor } from './Train.js';
 import { Clock } from '../core/Clock.js';
 import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
@@ -422,11 +422,18 @@ export class Traffic {
       blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
       platforms: this.platforms,
       stopShort: stopScatter(this.seed, e.nr),
+      driver: driverFactor(this.seed, e.nr), // maszynista: hamowanie planowane, inne w każdym pociągu (powtarzalne)
       stockAt: (tile, inPort, from) => this.stockAt(tile, inPort, train, from),
       // tabor wpisu (ten sam pokazuje panel) – daje pociągowi przyspieszenie, hamowanie i prędkość pojazdu
       stock: e.rollingStock,
     });
     return train;
+  }
+
+  /** Czy skład wpisu `u` ma zadanie manewrowe w toku (niewykonane, nie przepadło, a poprzednie – nie przepadło). */
+  #openTask(u) {
+    return this.tasks.some((x) => String(x.unit) === String(u.nr) && !x.done && !x.failed
+      && !(x.afterTask && this.tasks.find((y) => y.id === x.afterTask)?.failed));
   }
 
   #onTrainEvent(e, ev, tr, arg) {
@@ -590,6 +597,10 @@ export class Traffic {
       const tr = u?.train;
       // przekazanie dopiero, gdy skład stoi w trybie jazdy pociągowej – nie w trakcie manewrów (nie wymuszamy trybu)
       if (!tr || tr.finished || !tr.entered || tr.v > 0 || tr.mode !== 'train') continue;
+      // ani gdy skład ma jeszcze zadanie manewrowe (niewykonane, w terminie) – dyżurny najpierw je wykonuje albo zadanie
+      // przepada; inaczej opóźniony skład przechodziłby w pociąg przy przyjeździe, zanim dyżurny zdąży go przestawić.
+      // Zadanie wstrzymane usterką bez obejścia (termin się przesuwa) nie blokuje – inaczej skład czekałby bez końca
+      if (!tr.faultBlocked && this.#openTask(u)) continue;
       // pociąg, który przyjeżdża ze szlaku, musi najpierw dojechać – postój przed semaforem wjazdowym to nie przyjazd
       if (u.from && u.actualArr == null) continue;
       e.attached = true; e.train = tr;

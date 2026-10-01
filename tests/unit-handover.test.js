@@ -142,3 +142,44 @@ test('Chylonia: oba zadania przepadły, gdy skład był w drodze na tor 22 – a
   const e = sim.traffic.timetable().find((x) => x.nr === 93202);
   assert.equal(e.status, 'na następnym posterunku', e.status);
 });
+
+test('skład z zadaniem manewrowym w toku nie przechodzi w pociąg: przekazanie dopiero po wykonaniu albo przepadnięciu zadania', () => {
+  // 93151 opóźniony o 30 min przyjeżdża po planowym odjeździe 93202: przekazanie przy przyjeździe uprzedziłoby
+  // odstawienie (zależnie od tego, czy automat zdążył przełączyć skład w manewry) – i skład 93202 trafiał na tor 22
+  const scenario = { id: 't', name: 't', endTime: '10:00', trains: [93151, 93202], tasks: earlier(chylonia.tasks.filter((x) => x.unit === 93151), 30) };
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+    const sim = new Simulation(chylonia, { scenario, disruptions: 'none', seed });
+    sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 93151), 30);
+    const e = sim.traffic.timetable().find((x) => x.nr === 93202);
+    const open = () => sim.traffic.tasks.some((x) => !x.done && !x.failed && !(x.afterTask && sim.traffic.tasks.find((y) => y.id === x.afterTask)?.failed));
+    let n = 0, handedWithOpenTask = false;
+    while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) {
+      const before = e.attached;
+      sim.step(0.5);
+      if (!before && e.attached && open()) handedWithOpenTask = true;
+      if (n++ % 4 === 0) autoDispatch(sim);
+    }
+    assert.equal(handedWithOpenTask, false, `ziarno ${seed}: przekazanie przy zadaniu w toku`);
+    assert.equal(e.status, 'na następnym posterunku', `ziarno ${seed}: ${e.status}`);
+  }
+});
+
+test('zadanie, którego nie da się wykonać, nie trzyma składu bez końca: przepada w terminie, potem skład przechodzi w pociąg', () => {
+  // odstawienie na tor bez przebiegu manewrowego (99) – zadanie nigdy się nie wykona i nie jest wstrzymane usterką
+  const tasks = [{ id: 'nigdy', unit: 90201, type: 'move', toTrack: '99', deadline: '07:58', text: 'Skład odstawić na tor 99.' }];
+  const scenario = { id: 't', name: 't', endTime: '10:00', trains: [90201, 90202], tasks };
+  const sim = new Simulation(szkolna, { scenario, disruptions: 'none', seed: 3 });
+  const e = sim.traffic.timetable().find((x) => x.nr === 90202);
+  const task = sim.traffic.tasks[0];
+  let n = 0, handedAt = null, failedAt = null;
+  while (sim.clock.time < Clock.parse('09:30') && !allArrived(sim)) {
+    sim.step(0.5);
+    if (task.failed && failedAt == null) failedAt = sim.clock.time;
+    if (e.attached && handedAt == null) handedAt = sim.clock.time;
+    if (n++ % 4 === 0) autoDispatch(sim);
+  }
+  assert.ok(failedAt != null, 'zadanie przepadło');
+  assert.ok(failedAt <= Clock.parse('07:58') + 10 * 60 + 1, `w terminie (+10 min): ${Clock.format(failedAt, true)}`);
+  assert.ok(handedAt != null && handedAt >= failedAt, `przekazanie ${handedAt && Clock.format(handedAt, true)} po przepadnięciu ${Clock.format(failedAt, true)}`);
+  assert.equal(e.status, 'na następnym posterunku', e.status);
+});

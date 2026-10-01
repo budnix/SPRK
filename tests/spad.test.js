@@ -26,8 +26,11 @@ function overrun(drop, route = 'A-D1', d = route === 'A-D1' ? 60 : 8) {
     if (b.request === 'theirs') b.press('Poz');
     if (!set && e.train) { set = sim.ilk.setRoute(route).ok; }
     if (set && !dropped && e.train) {
+      // sygnał gaśnie o krok symulacji (0,5 s) wcześniej: zmiana obrazu działa w następnym kroku, gdy do A zostaje
+      // najwyżej `d` m (dojazd zależy od maszynisty – bez tego pociąg bywał już przy A i mijał go na sygnał zezwalający)
       const x = e.train.constraintsAhead(3000, true).find((c) => c.signal === 'A')?.dist;
-      if (x != null && x <= d && e.train.v > 8) { drop(sim); dropped = true; }
+      const next = x != null ? x - e.train.v * 0.5 : null;
+      if (next != null && next > 0 && next <= d && e.train.v > 8) { drop(sim); dropped = true; }
     }
   }
   assert.ok(dropped, 'pociąg nie dojechał do A');

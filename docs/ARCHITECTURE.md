@@ -466,6 +466,15 @@ albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#make
   min(accel, power / v): przy ruszaniu przyspieszenie z siły, wyżej ograniczone mocą. `accel` / `brake` wpisu mają
   pierwszeństwo (z `accel` wpisu – stałe przyspieszenie). Pociąg bez taboru (testy tworzące `Train` wprost) albo typ
   bez danych – dynamika kategorii (`categories.dynamicsFor`), stałe przyspieszenie;
+* hamowanie (`brakingOf`, docs/SOURCES.md „Hamowanie jak maszynista”): `trainDynamics` zwraca też `brake` (największe
+  opóźnienie hamowania służbowego – zespół: typu albo `UNIT_BRAKE`; pasażerski z lokomotywą: z drogi hamowania Ie-4 dla
+  prędkości pociągu, wzór EN 14531-1; towarowy: z masy hamującej zależnej od masy na metr składu, P / G wg długości
+  i masy), `brakeDelay` (czas do pełnego hamowania – wyprzedzenie) i `ease` (luzowanie przed zatrzymaniem – nie
+  w towarowym dłuższym niż 300 m). `Traffic.#makeTrain` daje pociągowi maszynistę: `driverFactor(seed, nr)` (`mixSeed`,
+  bez `sim.rng`) – część 0,6–0,8 opóźnienia służbowego, z którą planuje hamowanie (`Train.brakePlan`). `Train.brakeCurve(c,
+  d)` to największa prędkość, z której pociąg zwolni do `c` na drodze `d` (z wyprzedzeniem `brakeDelay` i łagodnym
+  dojazdem do zatrzymania); `brakingDistance(v)` wydłuża horyzont skanowania. Nagła zmiana sygnału: hamowanie od
+  `brake` do `EMERGENCY_BRAKE` – jak dotąd. `Train` bez `opts.driver` (testy) hamuje pełnym `brake`, bez wyprzedzenia;
 * sąsiedni posterunek wyprawia pociąg wg `trainSpeed` (wolniejszy pojazd – wcześniej, jak w rozkładzie ułożonym dla
   niego; `Traffic.#prepare`); przyspieszenia przy tym nie liczy, więc pociąg ruszający wolno przyjeżdża trochę później;
 * pula kategorii (`skm`, `regio`, `ic`, `eip`; pociągi towarowe – lokomotywy o trakcji `tractionOf(entry)`, zdawcze także
@@ -534,7 +543,11 @@ albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#make
   zamknięta usterką bez obejścia (`task.faultShift`; zadanie z `afterTask` przesuwa się razem z nim). Skład stojący
   wtedy ma `faultBlocked` (bez kary za przetrzymanie), a późny odjazd pociągu z tego składu liczy się bez tych minut.
   Skład przekazany jako nowy pociąg (`unit`) traci zezwolenie pociągu, którym przyjechał
-  (`Train.clearAuthority`) – rusza dopiero na sygnał semafora wyjazdowego. Test: `tests/unit-handover.test.js`.
+  (`Train.clearAuthority`) – rusza dopiero na sygnał semafora wyjazdowego. Skład z zadaniem manewrowym w toku
+  (niewykonane, nie przepadło, poprzednie nie przepadło – `Traffic.#openTask`) nie jest przekazywany: dyżurny najpierw
+  je wykonuje albo zadanie przepada (inaczej opóźniony skład przechodził w pociąg przy przyjeździe, zanim automat zdążył
+  przełączyć go w manewry – zależnie od kroku przyjazdu); zadanie wstrzymane usterką bez obejścia (`faultBlocked`, termin
+  się przesuwa) nie blokuje przekazania. Test: `tests/unit-handover.test.js`.
 * Stacja treningowa `src/stations/szkolna.js`; scenariusz z polem `tutorial` uruchamia misję (main.js).
 
 ## Ustawienia (`src/ui/Settings.js`)

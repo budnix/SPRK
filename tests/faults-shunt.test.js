@@ -379,7 +379,8 @@ test('zezwolenie na jazdę manewrową (Ir-9 § 10 ust. 15): tylko dla składu ma
   const sim = shuntSim('E');
   const u = sim.traffic.timetable().find((e) => e.nr === 90201);
   let n = 0;
-  while (sim.clock.time < Clock.parse('08:30') && !(u.actualArr != null && u.train?.v === 0)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  // zatrzymanie sprawdzane zaraz po kroku – zanim automat przełączy skład w manewry (zadanie odstawienia)
+  while (sim.clock.time < Clock.parse('08:30')) { sim.step(0.5); if (u.actualArr != null && u.train?.v === 0) break; if (n++ % 4 === 0) autoDispatch(sim); }
   assert.ok(u.actualArr != null, '90201 na torze 2');
   // pociąg (nie skład manewrowy) – zezwolenia na manewr nie daje się
   assert.match(sim.traffic.shuntPermit(90201).reason, /nie jest w jeździe manewrowej/);

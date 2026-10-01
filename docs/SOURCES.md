@@ -102,7 +102,8 @@ Przyjęte w grze:
   Trakcję spalinową (S) mają niektóre pociągi zdawcze i towarowe; trakcja wybiera lokomotywę, a ta – dynamikę.
 * Dynamika: prędkość, przyspieszenie, hamowanie i masa odniesienia (`refMass`) kategorii są wartościami gry. Pociąg
   z lokomotywą z katalogu taboru, dla której źródła podają siłę pociągową i masę, przyspiesza z tych danych i z `mass`
-  („Tabor pociągów – dynamika”); wartości kategorii zostają dla lokomotyw bez danych i dla hamowania.
+  („Tabor pociągów – dynamika”); wartości kategorii zostają dla lokomotyw bez danych. Hamowanie pociągu z taborem
+  zależy od masy na metr składu i długości („Hamowanie jak maszynista”).
   Przyspieszenie kategorii obowiązuje przy masie odniesienia (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t, TS 800 t,
   TK 600 t); pociąg o masie `mass` ma przyspieszenie razy `refMass / mass` (ta sama siła pociągowa, większa masa),
   w granicach 0,5–1,5 przyspieszenia kategorii. Hamowanie nie zależy od masy – zgodnie z Ir-1 §21 hamulce dobiera się
@@ -736,9 +737,7 @@ Pociąg jedzie z dynamiką swojego taboru (`trainDynamics` w `src/model/rollingS
   F / m 2–3,5 m/s², czego pojazd nie osiąga – poślizg kół); przy prędkości v najwyżej P / ((m_lok + m_skł) · v);
   m_skł – pociąg towarowy: `mass` wpisu (masa brutto składu); pasażerski: wagony = zaokrąglone (długość pociągu −
   długość lokomotywy) / 26,4 m, po 50 t każdy (masa wagonu bez podróżnych – przyjęte);
-* hamowanie: żadne ze źródeł nie podaje opóźnienia hamowania służbowego typu (są tylko wymagania przetargów: 31WE –
-  „Droga hamowania służbowego nie więcej niż 1200 m od Vmax”, 45WE – „Nie więcej niż 1000 m od 160 km/h”, i hamowanie
-  nagłe), więc każdy pociąg hamuje wartością kategorii (Ir-1 §21 – wyżej); pole `brake` typu czeka na źródło;
+* hamowanie: wg typu, masy i długości pociągu, z maszynistą – osobny rozdział „Hamowanie jak maszynista” niżej;
 * prędkość: typ wolniejszy niż pociąg ogranicza pociąg; podpowiedź rozkładu pokazuje tę prędkość, a sąsiedni posterunek
   wyprawia pociąg tak, by przy tej prędkości przyjechał o czasie. Pula losuje tylko typy nie wolniejsze niż pociąg
   z rozkładu (przyjęte: przewoźnik daje pojazd, który pojedzie wg rozkładu – EP07, 125 km/h, nie do IC 160 km/h);
@@ -761,7 +760,9 @@ Ze źródeł – zespoły elektryczne:
   https://www.plk-sa.pl/files/public/user_upload/pdf/Reg_przydzielania_tras/Regulamin_sieci_2026-2027/v.21/zal_13_Reg26_27_v21_POL-ANG.xlsx
   – dalej „zał. 13”); trakcja wielokrotna (Przewozy Regionalne, DSU EN57/EN71, 2010:
   http://web.archive.org/web/20140912081146/http://www.pomorskie.eu/res/BIP/UMWP/zamowienia_publiczne/zamowienia/2012/015/dsu_en57_en71_spot___wersja_ostateczna_zatwierdzona.pdf).
-  Katalog nie rozróżnia EN57AKM (SKM) – wartości EN57 (przyjęte). Prędkość w katalogu: 120 km/h (konstrukcyjna, jak
+  Katalog nie rozróżnia EN57AKM (SKM) – wartości EN57 (przyjęte); świadomie mieszane: przyspieszenie rozruchu 0,5 m/s²
+  pierwotnego EN57 (Medcom), a hamowanie 0,8 m/s² z wymagania SKM 2010 dla modernizacji EN57 („Hamowanie jak
+  maszynista”). Prędkość w katalogu: 120 km/h (konstrukcyjna, jak
   wyżej; EN57AKM – 120 km/h w zał. 13), choć DSU i zał. 13 podają dla EN57 110 km/h – przyjęte, bo katalog obejmuje
   też EN57AKM; przez to pula SKM / Regio (120 km/h) może dostać EN57;
 * EN71 – masa własna 178 t (zał. 13); przyspieszenia i mocy źródła nie podają (pl.wikipedia – bez przypisu);
@@ -856,6 +857,97 @@ Ze źródeł – lokomotywy towarowe:
   spalinowych, s. 32: https://www.newag.pl/wp-content/uploads/2025/01/Lokomotywy-Spalinowe-PL-2_74079862.pdf);
 * SM42 – „Siła pociągowa rozruchu teoretyczna 219 kN”, moc silnika 590 kW, masa służbowa 74 t, długość ze zderzakami
   14 240 mm (katalog Newag jak wyżej, s. 16, kolumna „przed modernizacją”).
+
+
+## Hamowanie jak maszynista (`src/model/rollingStock.js` – `brakingOf`, `src/model/Train.js` – `brakeCurve`)
+
+Pociąg hamuje tak, jak prowadziłby go maszynista: planuje hamowanie łagodniejsze niż największe służbowe, zaczyna je
+z wyprzedzeniem na czas działania hamulca, a przed miejscem zatrzymania luzuje. Hamowanie zależy od rodzaju pociągu,
+taboru, masy i długości składu. Hamowanie nagłe (`EMERGENCY_BRAKE`) i przejechanie sygnału „Stój” (`spad`) – bez zmian:
+gdy sygnał zmieni się na „Stój” bliżej niż droga hamowania planowanego, pociąg hamuje służbowo, a gdy i to nie wystarczy –
+nagle. Wszystkie źródła sprawdzone 1.10.2026.
+
+Ze źródeł:
+
+* drogi hamowania – PKP PLK Ie-4 (WTB-E10, od 5.11.2025), §8 ust. 4: „przyjmuje się następujące drogi hamowania
+  wynikające z maksymalnej możliwej do uzyskania prędkości na danym odcinku linii”: 1300 m – do 160 km/h, 1000 m – do
+  140 km/h, 700 m – do 100 km/h, 400 m – do 60 km/h (zakres zasadniczy;
+  https://www.plk-sa.pl/files/public/user_upload/pdf/Akty_prawne_i_przepisy/Instrukcje/Wydruk/Ie/Ie-4_obowiazuje_od_2025-11-05__uz_903_25_.pdf);
+  tarcza ostrzegawcza stoi w odległości drogi hamowania przed semaforem (§8 ust. 1);
+* masa hamująca – Ir-1 (od 1.07.2026) §21: „Mhw = Mo × Pw / 100”; wymagany procent masy hamującej zależy od drogi
+  hamowania, sposobu hamowania („I – hamulcami zespolonymi szybko działającymi (P, R, R+Mg)”, „II – … wolno
+  działającymi (G)”), prędkości i pochyleń; Dodatek 1, np. droga 1000 m, poziom: szybko działające – 80 km/h 33 %,
+  120 km/h 92 %, 160 km/h 187 %; wolno działające – 80 km/h 42 %
+  (https://www.plk-sa.pl/files/public/user_upload/pdf/Akty_prawne_i_przepisy/Instrukcje/Wydruk/Ir/Instrukcja_Ir-1_po_zm_19__od_01_07_26.pdf);
+* masa hamująca a droga i opóźnienie – OTIF UTP WAG 2021, tabl. C.3 (wagony w położeniu P): przy 100 km/h „λmin = 65 %
+  amin = 0,60m/s2” (ładowne), „λmin = 100% amin=0,91m/s2” (próżne), „λmax=125% … amax= 1,15m/s2”; wzór z przypisu:
+  a = v² / (2 (S − Te·v)), „Te=2sec. Distance calculation EN 14531-1:2015 section 4”
+  (https://otif.org/fileadmin/new/3-Reference-Text/3D-Technical-Interoperability/3D1-Prescriptions-and-other-rules/UTP-WAG-2021_e-In-force.pdf);
+  G: „Das Bremsverhältnis der G-Bremse beträgt maximal rund 80 %” (https://de.wikipedia.org/wiki/Bremsgewicht);
+* nastawienie hamulca pociągów towarowych – ALZA Cargo, instrukcja ALZA-W2 (zm. 12.05.2025), §16: „Pociągi towarowe
+  kursują … zasadniczo z hamulcami nastawionymi na przebieg działania P … we wszystkich pojazdach pociągu hamulce muszą
+  być nastawione na G”, gdy warunek nie jest spełniony; „Długość składu pociągu, w którym stosuje się nastawienie
+  hamulców na P, nie może być większa niż 700 m”; tabela mas do 4000 t
+  (https://www.alzacargo.pl/wp-content/uploads/2025/10/ALZA-W2-Instr.-obslugi-hamulcow-taboru-kolejowego-wyd.2.pdf);
+  pociągi P dłuższe niż 500 m – masa hamująca razy współczynnik „Długość 500 520 … 700 – Współczynnik 1,00 0,99 … 0,90”
+  (Majkoltrans MKT-4 §52 ust. 8: https://majkoltrans.pl/dokumenty/dok-wewn/MKT-4_po_zmianie_2.pdf);
+* czas działania hamulca – UIC 540 (kopia: https://pdfcoffee.com/uic-540-pdf-free.html): napełnianie cylindra
+  hamulcowego „between 18 and 30 seconds” w G, „between 3 and 5 seconds” w P; R – „gleiche Füll- und Lösezeiten wie bei
+  der P-Bremse” (https://de.wikipedia.org/wiki/Druckluftbremse_(Eisenbahn)); równoważny czas narastania hamowania
+  w przykładach ERA (ERA_ERTMS_040026 v1.5: https://www.era.europa.eu/system/files/2022-11/Introduction%20to%20ETCS%20braking%20curves.pdf):
+  pociąg pasażerski 83 m – 5,02 s, towarowy P 400 m – 5,0 s, towarowy G 600 m – 12,8 s;
+* hamowanie służbowe zespołów – wymagania zamówień: SKM Trójmiasto 2010, modernizacja EN57: „opóźnienie hamowania
+  w przedziale 0,8 – 1,1 [m/s²]” (https://img.trojmiasto.pl/download/SIWZ%20TABOR.pdf); Koleje Śląskie 2012 (SZT):
+  „opóźnienie hamowania (na torze prostym): od 0,9 do 1,1 m/s2”
+  (http://old.kolejeslaskie.com/uploads/pliki/SIWZ%20dostawa%20w%20formie%20leasingu%20spalinowych%20zespo%C5%82%C3%B3w%20trakcyjnych.pdf);
+  ŁKA 2020: „hamowanie eksploatacyjne − od 0,9 m/s2 do 1,2 m/s2”
+  (https://bip.lka.lodzkie.pl/_data/Zamowienia/Postepowania/2020/485_dostawa%203%20dwunap%C4%99dowych%20Pojazd%C3%B3w/9.%20OPZ_485_20.pdf);
+  31WE – SKM 2014: „Droga hamowania służbowego nie więcej niż 1200 m od Vmax” (OPZ – adres w „Tabor pociągów – dynamika”);
+  45WE – KM 2014: „Droga hamowania służbowego: Nie więcej niż 1000 m od 160 km/h”, „Maksymalne opóźnienie hamowania:
+  1,2 m/s²” (https://web.archive.org/web/20160311224726id_/http://www.mazowieckie.com.pl/g2/oryginal/2014_07/72c523b897a305c99e9f22ccf487d3c5.pdf);
+  zwykłe hamowanie: „In normal passenger high-speed operations the deceleration is usually limited to about 0.6 m/s2”
+  (Sjöholm, KTH 2011: https://www.diva-portal.org/smash/get/diva2:405993/FULLTEXT01.pdf); „Viele Bremsvorgänge im
+  Bahnverkehr werden beispielsweise mit 0,8 m/s² gut getroffen” (https://www.bahntechnik-bahnbetrieb.de/verzoegerungsrechner/);
+* jak hamuje maszynista – ALZA-W2 §40: „Aby zatrzymać pociąg, należy, po wyłączeniu napędu, stosować hamowanie
+  służbowe”; na stacji końcowej „rozpocząć hamowanie z takim wyprzedzeniem, aby pociąg zatrzymał się w określonym
+  miejscu bez konieczności wykorzystania pełnej siły hamowania”; pociągi towarowe dłuższe niż 300 m: „wyłączyć siłę
+  pociągową, w miarę możliwości na okres około 10 sekund”, a w pociągu z hamulcami nieluzującymi stopniowo maszynista
+  „nie może stosować w trakcie zatrzymywania pociągu zmniejszenia stopnia hamowania” (§40 ust. 5); „Nie wolno również
+  stosować odhamowania stopniowego pociągów towarowych o długości powyżej 300 m” (§41); zmiana opóźnienia przy
+  hamowaniu służbowym pojazdów miejskich do 1,5 m/s³ (DIN/EN 13452-1 – za opisem https://patents.google.com/patent/US9580052B2/en:
+  „the deceleration is terminated slowly by reducing the brake force slowly on completion of the deceleration”).
+
+Przyjęte (wyliczone ze źródeł, decyzje gry):
+
+* opóźnienie hamowania służbowego (największe, `brake`):
+  * zespół trakcyjny – wartość typu: 31WE 0,89 m/s² (1200 m od 160 km/h wg wzoru EN 14531-1, Te = 2 s), 45WE 1,08 m/s²
+    (1000 m od 160 km/h), EN57 0,8 m/s² (dolna granica wymagania SKM 2010 – katalog nie rozróżnia EN57AKM); inne zespoły –
+    0,8 m/s² (`UNIT_BRAKE`, dolna granica wymagań zamówień wyżej);
+  * pociąg pasażerski z lokomotywą – skład ma masę hamującą wymaganą dla swojej prędkości (Ir-1 §21), więc staje
+    z prędkości pociągu na drodze hamowania z Ie-4: a = v² / (2 (S − 2 s · v)) – np. IC 160 km/h 0,82 m/s², IC / TLK
+    120 km/h i TLK z 754 (100 km/h) 0,60 m/s²;
+  * pociąg towarowy – masa hamująca z ładunku: λ = 100 % przy pustym składzie do 65 % przy 7,2 t/m (najcięższy skład
+    w grze – nacisk liniowy 71 kN/m), masa na metr = `mass` / (długość pociągu − długość lokomotywy); P i skład ponad 500 m –
+    λ razy 1,00…0,90 (700 m); G (skład ponad 700 m albo ponad 4000 t) – λ najwyżej 80 %; opóźnienie 0,0091 m/s² na 1 %
+    (tabl. C.3: 0,60 / 65 %, 0,91 / 100 %, 1,15 / 125 %) – np. 600 t na 480 m: 0,85 m/s², 3000 t na 560 m: 0,64 m/s²;
+  * wszystko najwyżej 1,2 m/s² (`SERVICE_BRAKE_MAX`, wymaganie KM), poniżej hamowania nagłego 1,3 m/s²; pociąg bez
+    taboru – hamowanie kategorii jak dotąd; `brake` wpisu zastępuje wyliczone opóźnienie;
+* czas od decyzji maszynisty do pełnego hamowania (`brakeDelay`, wyprzedzenie w krzywej hamowania): zespół 2 s
+  (EN 14531-1), pociąg z lokomotywą P / R 5 s, G 12,8 s (ERA), pociąg towarowy dłuższy niż 300 m – dodatkowo 10 s
+  wyłączenia siły pociągowej (ALZA-W2 §40); pociąg bez taboru – jak P. We wzorze na opóźnienie Te zostaje 2 s (jak w
+  tabl. C.3) – dłuższe narastanie hamowania wydłuża drogę zatrzymania, nie zwiększa opóźnienia;
+* maszynista: planuje hamowanie z opóźnieniem 0,6–0,8 największego służbowego (`DRIVER_MIN`, `DRIVER_MAX`) – np. Impuls
+  0,53–0,71, EN57 0,48–0,64, IC 160 km/h 0,49–0,66 m/s² (zgodnie z „about 0.6” i „0,8 … gut getroffen”); każdy pociąg
+  ma inny współczynnik – z ziarna zmiany i numeru pociągu (`driverFactor`, wspólne `mixSeed`, bez losowań zmiany),
+  ten sam przy tym samym ziarnie;
+* krzywa hamowania: największa prędkość, z której pociąg zwolni do prędkości `c` na drodze d: v = −a·t + √((a·t + c)²
+  + 2·a·d), gdzie a – opóźnienie planowane, t – `brakeDelay` (droga (v − c)·t na narastanie hamowania);
+* łagodny dojazd do miejsca zatrzymania (luzowanie przed zatrzymaniem): od 2 m/s (ok. 7 km/h, `EASE_SPEED`) z połową
+  planowanego opóźnienia (`EASE_SHARE`) – nie w pociągu towarowym dłuższym niż 300 m (ALZA-W2 §40–41), ten staje
+  z planowanym opóźnieniem do końca;
+* horyzont skanowania toru – nie krótszy niż droga zatrzymania przy planowanym hamowaniu + 300 m;
+* gra nie odwzorowuje pochyleń, oporów ruchu ani hamowania elektrodynamicznego osobno – opóźnienie jest jedno dla całej
+  prędkości.
 
 ## Blokada liniowa na monitorze i blokada samoczynna
 
