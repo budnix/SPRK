@@ -227,6 +227,10 @@ test('mapa przybliżana jak mapa w przeglądarce: kółko i szczypanie na gładz
   // przeciąganie przesuwa mapę; klik po przeciągnięciu nie otwiera posterunku
   await page.click('#st-map .mv-btn[data-zoom=in]'); await page.click('#st-map .mv-btn[data-zoom=in]');
   await expect.poll(zoom).toBeCloseTo(z0 * 4, 1); // dwa kliknięcia w trakcie animacji – cztery razy bliżej
+  // animacja przybliżenia (380 ms) skończona – widok stoi; data-zoom ma dwa miejsca po przecinku, więc sam warunek wyżej
+  // przechodzi jeszcze w ostatnich klatkach animacji, a przeciąganie zmierzyłoby resztę jej ruchu (wolny komputer, CI)
+  const still = async () => { const a = (await vb()).join(' '); await page.waitForTimeout(60); return a === (await vb()).join(' '); };
+  await expect.poll(still).toBe(true);
   const before = await vb();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
