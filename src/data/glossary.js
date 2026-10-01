@@ -69,7 +69,7 @@ export const GLOSSARY = {
   'blokada jednokierunkowa': { name: 'Blokada jednokierunkowa', text: 'Blokada liniowa toru szlakowego linii dwutorowej: tor ma jeden kierunek ruchu, więc nie ma pozwoleń (Wbl, Poz). Sąsiad wyprawia pociąg sam, a po przyjeździe pociągu w całości potwierdza się przyjazd przyciskiem Ko.' },
   'stacja krańcowa': { name: 'Stacja krańcowa', text: 'Stacja, na której linia się kończy. Pociągi kończą tu bieg, zmieniają czoło i wracają tam, skąd przyjechały. Semafory wyjazdowe stoją po tej samej stronie torów co semafor wjazdowy.' },
   'tor czołowy': { name: 'Tor czołowy', text: 'Tor zakończony kozłem oporowym. Przebieg wjazdowy kończy się na koźle, a nie na następnym semaforze; skład odjeżdża z niego po zmianie czoła.' },
-  'zmiana czoła': { name: 'Zmiana czoła', text: 'Odwrócenie kierunku jazdy stojącego składu. W zespole trakcyjnym maszynista przechodzi do kabiny na drugim końcu. Skład z lokomotywą musi ją mieć na czele – lokomotywa objeżdża skład sąsiednim torem; tego gra nie odwzorowuje. W grze: zakładka Pociągi → „zmiana czoła”.' },
+  'zmiana czoła': { name: 'Zmiana czoła', text: 'Odwrócenie kierunku jazdy stojącego składu. W zespole trakcyjnym maszynista przechodzi do kabiny na drugim końcu. Skład z lokomotywą musi ją mieć na czele – lokomotywa objeżdża skład sąsiednim torem; tego gra nie odwzorowuje. W grze: zakładka Pociągi → „zmiana czoła”; maszynista potwierdza przez radio, przechodzi do drugiej kabiny (45–75 s, skład w tym czasie stoi) i zgłasza gotowość (zakładka Łączność).' },
 };
 
 /** Krótka podpowiedź (title) dla przycisku / polecenia. */

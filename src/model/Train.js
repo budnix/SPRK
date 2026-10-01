@@ -31,6 +31,20 @@ export function driverFactor(seed, nr) {
 }
 
 /**
+ * Zmiana czoła (przyjęte, docs/SOURCES.md „Zmiana czoła i rozmowy z maszynistą”): maszynista przechodzi do kabiny na
+ * drugim końcu składu i ją uruchamia – od `CAB_CHANGE_MIN` do `CAB_CHANGE_MAX` sekund, w każdym pociągu inaczej (z ziarna
+ * zmiany i numeru, `cabChangeTime`); skład w tym czasie stoi, kierunek jazdy zmienia się na końcu.
+ */
+export const CAB_CHANGE_MIN = 45;
+export const CAB_CHANGE_MAX = 75;
+
+/** Czas zmiany czoła pociągu `nr` w zmianie o ziarnie `seed` [s] – stały dla tej samej zmiany (powtórka). */
+export function cabChangeTime(seed, nr) {
+  const h = mixSeed(Number(seed), nr, 0x27d4eb2f);
+  return Math.round(CAB_CHANGE_MIN + (Math.imul(h ^ (h >>> 15), 0x165667b1) >>> 8) / 0x1000000 * (CAB_CHANGE_MAX - CAB_CHANGE_MIN));
+}
+
+/**
  * Pociąg poruszający się po topologii toru według rzeczywistych położeń zwrotnic
  * i obrazów sygnałowych. Pozycja: ślad (`trail`) przebytych kostek i odległość czoła.
  *
@@ -84,6 +98,7 @@ export class Train {
     this.shuntRoute = null;      // przebieg manewrowy, na którego sygnał Ms2 skład minął sygnalizator
     this.shuntPermit = null;     // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora manewrowego { signal, route }
     this.spad = null;            // przejechany semafor „Stój” – hamowanie nagłe do zatrzymania
+    this.cabChange = null;       // zmiana czoła w toku: { since, until, quiet } – maszynista przechodzi do drugiej kabiny
   }
 
   /**
@@ -407,6 +422,15 @@ export class Train {
   /** Krok symulacji. */
   tick(dt, time) {
     if (this.finished) return;
+    // zmiana czoła w toku – skład stoi do przejścia maszynisty; przed warunkiem pociągu, który zakończył bieg (ten
+    // zmienia czoło właśnie w takim stanie)
+    if (this.cabChange) {
+      if (time < this.cabChange.until) return;
+      const { quiet } = this.cabChange;
+      this.cabChange = null;
+      this.reverse();
+      this.onEvent('cab-ready', this, { quiet });
+    }
     if (this.def.terminates && this.hasStopped && this.mode === 'train') return; // zakończył bieg – czeka na manewry
     if (this.holdUntil && this.mode === 'train' && this.v === 0 && time < this.holdUntil) return; // pociąg gotowy, czeka na czas odjazdu
     if (this.state === 'dwell') {
@@ -708,10 +732,27 @@ export class Train {
     return { tile: nb.tile, inPort: nb.inPort, outPort: st.outPort, len: nb.tile._len, start: last.start + last.len, virtual: null };
   }
 
-  /** Odwrócenie kierunku jazdy stojącego pociągu (manewry). */
+  /** Kostki pod pociągiem (bez toru szlakowego) – po nich odwraca się ślad przy zmianie czoła. */
+  #bodySegments() {
+    return this.trail.filter((s) => s.tile && s.start < this.head && s.start + s.len > this.tail);
+  }
+
+  /**
+   * Początek zmiany czoła stojącego składu: przez `duration` s maszynista przechodzi do drugiej kabiny (skład stoi, także
+   * na sygnał zezwalający), potem `reverse()` i zdarzenie 'cab-ready'. Zezwolenie przepada od razu – kabina jest pusta.
+   * `quiet` – bez rozmowy radiowej (automat innego okręgu). False, gdy skład jedzie, zmiana już trwa albo stoi na szlaku.
+   */
+  startCabChange(time, duration, quiet = false) {
+    if (this.v > 0 || this.finished || this.cabChange || !this.#bodySegments().length) return false;
+    this.cabChange = { since: time, until: time + duration, quiet };
+    this.clearAuthority();
+    return true;
+  }
+
+  /** Odwrócenie kierunku jazdy stojącego pociągu od razu (koniec zmiany czoła; testy). */
   reverse() {
     if (this.v > 0) return false;
-    const segs = this.trail.filter((s) => s.tile && s.start < this.head && s.start + s.len > this.tail);
+    const segs = this.#bodySegments();
     if (!segs.length) return false;
     // nowy ślad: kostki w odwrotnej kolejności, porty zamienione
     const headOffsetInLast = this.head - segs[segs.length - 1].start; // ile czoła w ostatniej kostce

@@ -130,7 +130,9 @@ Play it: **https://budnix.github.io/SPRK/**
   single-track lines for every train, departure notices on double-track lines – sent automatically or by you, see
   Settings), telephone block working when a block loses communication, holding a neighbour's train with „Stój pociąg nr …” when
   you have no track for it, radio calls from drivers, a radio permission for a shunt move past a damaged shunting signal
-  once its route is set (Ir-9 §10(15)). New messages raise a counter and highlight the Comms tab; a switch in that tab
+  once its route is set (Ir-9 §10(15)), radio talk with the driver (Ir-5 call format) when you switch a train between
+  train and shunting mode or reverse it. Reversing takes 45–75 s while the driver walks to the cab at the other end:
+  the train stays put even on a proceed signal, the trains tab counts down, and the driver reports ready by radio. New messages raise a counter and highlight the Comms tab; a switch in that tab
   turns these notifications off (handy with automatic telephone routine).
 * Disruptions: inbound delays, random faults during the shift (dark signal, point without detection, false occupancy,
   block without communication), extra trains; seeded so a shift can be replayed. A signal that drops in front of a

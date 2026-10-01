@@ -16,6 +16,9 @@ export const FORMULAS = [
   { id: 'shunt-permit', to: 'driver', text: (p) => `Skład nr ${p.nr}, zezwalam na jazdę manewrową – sygnalizator uszkodzony.`, doc: 'Radio: zezwolenie na jazdę manewrową obok uszkodzonego sygnalizatora (Ir-9 § 10 ust. 15)' },
 ];
 
+/** Po ilu sekundach maszynista odpowiada na wezwanie radiowe (przyjęte). */
+export const DRIVER_REPLY = 4;
+
 export class Comms {
   constructor(sim) {
     this.sim = sim;
@@ -24,6 +27,8 @@ export class Comms {
     this.time = 0;
     this.driverReported = new Set();
     this.bus.on('comms', (m) => this.#incoming(m));
+    // polecenia dla maszynisty z zakładki Pociągi (tryb jazdy, zmiana czoła) – rozmowa radiowa (Traffic, zdarzenie 'driver')
+    this.bus.on('driver', (d) => this.#driverTalk(d));
     // telefonogram nadany automatycznie (rozmowa przy sprawnej blokadzie) – do dziennika łączności
     this.bus.on('phone-out', (m) => {
       const msg = { dir: 'out', time: this.time, to: m.to, text: m.text, auto: true };
@@ -37,6 +42,40 @@ export class Comms {
     if (msg.time > this.time) { (this.queue ??= []).push(msg); return; }
     this.messages.push(msg);
     this.bus.emit('comms-log', msg);
+  }
+
+  /** Wpis do dziennika łączności w chwili `msg.time` (teraz albo później – kolejka w `tick`, po kolei). */
+  #at(msg) {
+    if (msg.time > this.time || this.queue?.length) { (this.queue ??= []).push(msg); return; }
+    this.messages.push(msg);
+    this.bus.emit('comms-log', msg);
+  }
+
+  /**
+   * Rozmowa radiowa dyżurnego z maszynistą przy poleceniu z zakładki Pociągi. Sposób prowadzenia rozmowy – Ir-5 (R-12)
+   * §7–§8: wywołanie „Pociąg <nr>, tu <posterunek>”, „odbiór”, gdy oczekuje się odpowiedzi, „bez odbioru” na końcu,
+   * meldunek potwierdzony słowami „meldunek zrozumiałem”. Treść poleceń i meldunku gotowości – przyjęta.
+   */
+  #driverTalk(d) {
+    const st = this.sim.station.name, nr = d.nr, to = `maszynista poc. ${nr}`;
+    const say = (text, after = 0) => this.#at({ dir: 'out', time: d.time + after, to, text, auto: after > 0, nr });
+    const hear = (text, after, kind = 'info') => this.#at({ dir: 'in', time: d.time + after, from: to, kind, text, nr });
+    if (d.order === 'shunt') {
+      say(`Pociąg ${nr}, tu ${st}: koniec jazdy pociągowej, dalej jazda manewrowa – odbiór.`);
+      hear(`Tu pociąg ${nr}, zrozumiałem – jazda manewrowa, bez odbioru.`, DRIVER_REPLY);
+    } else if (d.order === 'train') {
+      say(`Pociąg ${nr}, tu ${st}: koniec manewrów, dalej jazda pociągowa – odbiór.`);
+      hear(`Tu pociąg ${nr}, zrozumiałem – jazda pociągowa, bez odbioru.`, DRIVER_REPLY);
+    } else if (d.order === 'reverse') {
+      say(`Pociąg ${nr}, tu ${st}: zmiana czoła, przejdź do drugiej kabiny i zgłoś gotowość – odbiór.`);
+      hear(`Tu pociąg ${nr}, zrozumiałem – zmieniam kabinę, gotowość zgłoszę, bez odbioru.`, DRIVER_REPLY);
+    } else if (d.order === 'ready') {
+      const sig = d.signal ? this.sim.ilk.signals.get(d.signal) : null;
+      const before = sig ? `, stoję przed ${sig.kind === 'semafor' ? 'semaforem' : 'tarczą manewrową'} ${sig.id}` : '';
+      // meldunek gotowości – zakładka Łączność miga (rodzaj 'radio'), dyżurny potwierdza odbiór
+      hear(`${st}, tu pociąg ${nr}: zmiana czoła zakończona${before}, gotów do jazdy – odbiór.`, 0, 'radio');
+      say(`Tu ${st}, meldunek zrozumiałem.`, DRIVER_REPLY / 2);
+    }
   }
 
   /** Formuły dostępne w tej chwili (parametry: kandydaci do numeru pociągu). */

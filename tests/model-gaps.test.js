@@ -5,6 +5,7 @@ import { validateStation } from '../src/model/validate.js';
 import { EventBus } from '../src/core/EventBus.js';
 import { listTileDefs, getTileDef, registerTile, hasTileDef } from '../src/tiles/registry.js';
 import { DISRUPTION_LEVELS } from '../src/core/Random.js';
+import { CAB_CHANGE_MAX } from '../src/model/Train.js';
 import { makeSim, run, station } from './helpers.js';
 import gdynia from './fixtures/gdynia-glowna-okregi.js'; // mechanizm okręgów – tylko w stacji testowej
 import sopot from '../src/stations/sopot.js';
@@ -145,7 +146,12 @@ test('pociąg: kierunek, zajęte kostki, obecność na szlaku, ograniczenia prze
   const snap = a.snapshot();
   assert.deepEqual(Object.keys(snap).sort(), ['delay', 'head', 'mode', 'nr', 'state', 'v'].sort());
   sim.traffic.toShunting(1);
-  sim.traffic.reverseTrain(1);
+  // zmiana czoła trwa: kierunek zmienia się, gdy maszynista przejdzie do drugiej kabiny (do CAB_CHANGE_MAX s)
+  assert.equal(sim.traffic.reverseTrain(1), true);
+  assert.equal(a.direction, 'E', 'kierunek zmienia się dopiero po przejściu maszynisty');
+  assert.equal(sim.traffic.reverseTrain(1), false, 'zmiana czoła już trwa – bez drugiego polecenia');
+  run(sim, CAB_CHANGE_MAX + 1);
+  assert.equal(a.direction, 'W');
   const c = a.constraintsAhead();
   assert.ok(Array.isArray(c) && c.some((x) => x.kind === 'end'), 'kozioł przed czołem po zmianie kierunku');
   // pociąg nadjeżdżający od sąsiada: kierunek wg wyjazdu, jest na szlaku

@@ -1,5 +1,5 @@
 import { categoryOf, trainLabel } from './categories.js';
-import { Train, driverFactor } from './Train.js';
+import { Train, cabChangeTime, driverFactor } from './Train.js';
 import { Clock } from '../core/Clock.js';
 import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
@@ -86,6 +86,8 @@ export class Traffic {
   waitReason(e, time = this.time) {
     const tr = e?.train;
     if (!tr || tr.finished || !tr.entered || tr.v > 0) return null;
+    // zmiana czoła w toku – także pociąg, który zakończył bieg (zmienia czoło właśnie wtedy)
+    if (tr.cabChange) return { code: 'cab-change', left: Math.max(0, Math.ceil(tr.cabChange.until - time)) };
     if (e.terminates && tr.hasStopped && tr.mode === 'train') return null;
     if (tr.state === 'dwell' && e.depTime != null && time < e.depTime) return null; // planowy postój do godziny odjazdu
     const signal = tr.stoppedAt?.kind === 'spad' ? null : tr.nextSignal();
@@ -492,6 +494,10 @@ export class Traffic {
         if (!sig?.failed && !act?.faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, nr: e.nr, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
         break;
       }
+      case 'cab-ready':
+        // maszynista w drugiej kabinie – meldunek gotowości radiem (Comms), z sygnalizatorem przed nowym czołem
+        if (!arg?.quiet) this.bus.emit('driver', { time: t, nr: e.nr, order: 'ready', signal: tr.nextSignal() });
+        break;
       case 'order-used':
         this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (40 km/h)` });
         break;
@@ -678,11 +684,16 @@ export class Traffic {
     }
   }
 
-  /** Stojący pociąg zakończony – przełącz w tryb manewrowy (jazda za Ms2). */
-  toShunting(nr) {
+  /**
+   * Stojący pociąg zakończony – przełącz w tryb manewrowy (jazda za Ms2). Polecenie i potwierdzenie maszynisty idą przez
+   * radio (zdarzenie 'driver' → Comms); `quiet` – bez rozmowy (automat innego okręgu). W czasie zmiany czoła – false
+   * (maszynisty nie ma w kabinie).
+   */
+  toShunting(nr, { quiet = false } = {}) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
-    if (!e?.train) return false;
+    if (!e?.train || e.train.cabChange) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
+    if (e.train.mode !== 'shunt' && !quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'shunt' });
     e.train.mode = 'shunt';
     e.train.clearAuthority();
     e.train.def.stop = false;
@@ -691,11 +702,12 @@ export class Traffic {
     return true;
   }
 
-  /** Skład manewrowy z powrotem w tryb jazdy pociągowej (po podstawieniu na tor). */
-  toTrainMode(nr) {
+  /** Skład manewrowy z powrotem w tryb jazdy pociągowej (po podstawieniu na tor); radio i `quiet` – jak `toShunting`. */
+  toTrainMode(nr, { quiet = false } = {}) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
-    if (!e?.train) return false;
+    if (!e?.train || e.train.cabChange) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
+    if (e.train.mode !== 'train' && !quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'train' });
     e.train.mode = 'train';
     e.train.clearAuthority(); // pociąg utworzony ze składu rusza dopiero na sygnał semafora
     e.train.applyDynamics(e);
@@ -703,9 +715,17 @@ export class Traffic {
     return true;
   }
 
-  reverseTrain(nr) {
+  /**
+   * Zmiana czoła stojącego składu: maszynista przechodzi do drugiej kabiny (`cabChangeTime`, 45–75 s) i melduje gotowość;
+   * polecenie, odpowiedź i meldunek idą przez radio (zdarzenie 'driver' → Comms). `quiet` – bez rozmowy (automat innego
+   * okręgu). False, gdy skład jedzie albo zmiana już trwa – bez nowego polecenia (automat pyta w każdym kroku).
+   */
+  reverseTrain(nr, { quiet = false } = {}) {
     const e = this.entries.find((x) => String(x.nr) === String(nr));
     if (!e?.train) return false;
-    return e.train.reverse();
+    const duration = cabChangeTime(this.seed, e.nr);
+    if (!e.train.startCabChange(this.time, duration, quiet)) return false;
+    if (!quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'reverse', duration });
+    return true;
   }
 }

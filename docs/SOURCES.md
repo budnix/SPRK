@@ -859,6 +859,33 @@ Ze źródeł – lokomotywy towarowe:
   14 240 mm (katalog Newag jak wyżej, s. 16, kolumna „przed modernizacją”).
 
 
+## Zmiana czoła i rozmowy z maszynistą (`src/model/Train.js` – `cabChangeTime`, `src/model/Comms.js` – rozmowa)
+
+Ze źródła – Instrukcja o użytkowaniu urządzeń radiołączności pociągowej Ir-5 (R-12), tekst ujednolicony z uchwałą
+nr 822/2016 (https://www.plk-sa.pl/files/public/user_upload/pdf/Akty_prawne_i_przepisy/Instrukcje/Wydruk/Ir/Ir-5__R-12__WCAG_format_A4__Z_.pdf):
+* §7 ust. 4 pkt 3 i 5: wywołujący podaje znak wywoławczy wywoływanego i swój; znak posterunku to nazwa posterunku
+  ruchu, pociągu – „Pociąg 1215”;
+* §7 ust. 7: po przekazaniu informacji – „odbiór”; gdy odpowiedzi się nie oczekuje, rozmowę kończy się słowami
+  „bez odbioru” albo „koniec”;
+* §7 ust. 9 pkt 1: odebrany meldunek się potwierdza, np. „Tu dyżurny ruchu stacji Kozuby, meldunek zrozumiałem”;
+* §8 ust. 1 i 5: dyżurny wywołuje maszynistę, np. „Pociąg 5404, tu Kozuby, zgłoś się – odbiór”; w sieci GSM-R
+  wystarcza potwierdzenie stron nazwą posterunku albo numerem pociągu, np. „Pociąg 3503, tu LCS Ciechanów – odbiór”;
+* §14 ust. 2: odpowiedź maszynisty, np. „Tu pociąg 54780, zrozumiałem, bez odbioru”.
+
+Przyjęte (źródła tego nie podają):
+* rozmowa skrócona jak w GSM-R (§8 ust. 5): wywołanie i treść w jednym komunikacie, bez osobnego „zgłoś się” /
+  „zgłaszam się”; maszynista odpowiada po 4 s (`DRIVER_REPLY`);
+* treść poleceń z zakładki Pociągi – przejście na jazdę manewrową („koniec jazdy pociągowej, dalej jazda manewrowa”),
+  na jazdę pociągową („koniec manewrów, dalej jazda pociągowa”), zmiana czoła („przejdź do drugiej kabiny i zgłoś
+  gotowość”) – i meldunku gotowości („zmiana czoła zakończona, stoję przed <sygnalizator przed nowym czołem>, gotów
+  do jazdy”); potwierdzenie meldunku („Tu <posterunek>, meldunek zrozumiałem”) nadaje się samo;
+* zmiana czoła trwa 45–75 s (`CAB_CHANGE_MIN`, `CAB_CHANGE_MAX`; w każdym pociągu inaczej, stałe dla tej samej zmiany):
+  maszynista przechodzi do kabiny na drugim końcu składu i ją uruchamia. W tym czasie skład stoi także przy sygnale
+  zezwalającym, a trybu jazdy nie da się zmienić (maszynisty nie ma w kabinie); zezwolenie przepada od razu, jak dotąd;
+* automat okręgu obok gracza zmienia tryb i czoło bez rozmowy w dzienniku łączności gracza; automat dyżurnego
+  (testy, automat sprawdzający) zleca zmianę czoła pociągowi ze składu innego pociągu już od przekazania składu, a
+  przebieg wyjazdowy – jak dotąd ok. 2 min przed odjazdem.
+
 ## Hamowanie jak maszynista (`src/model/rollingStock.js` – `brakingOf`, `src/model/Train.js` – `brakeCurve`)
 
 Pociąg hamuje tak, jak prowadziłby go maszynista: planuje hamowanie łagodniejsze niż największe służbowe, zaczyna je

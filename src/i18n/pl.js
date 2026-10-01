@@ -343,6 +343,7 @@ export default {
   'sp.wait.line-occupied': 'szlak do {neighbour} zajęty',
   'sp.wait.line-inbound': 'tor szlakowy do {neighbour} jest wjazdowy (ruch jednokierunkowy)',
   'sp.wait.sbl-direction': 'kierunek blokady do {neighbour} na wjazd – zmień kierunek (Zk)',
+  'sp.wait.cab-change': 'zmiana czoła – maszynista przechodzi do drugiej kabiny, gotowość zgłosi przez radio za {left} s',
   'sp.trains.atPlatform': 'stoi przy peronie',
   'sp.trains.atEnd': 'stoi na końcu toru',
   'sp.trains.dwell': 'postój, odjazd {time}',

@@ -467,9 +467,10 @@ export class SidePanel {
       const meta = [`${modeIcon(tr.mode)} ${t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(tr.direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
       // dlaczego stoi (po godzinie odjazdu albo przed sygnalizatorem) – kod z modelu, tekst przez t()
       const why = sim.traffic.waitReason(e, sim.clock.time);
-      const wait = why ? `<div class="train-wait">${escapeHtml(t(`sp.wait.${why.code}`, { signal: why.signal ?? '', neighbour: why.neighbour ?? '' }))}</div>` : '';
+      const wait = why ? `<div class="train-wait">${escapeHtml(t(`sp.wait.${why.code}`, { signal: why.signal ?? '', neighbour: why.neighbour ?? '', left: why.left ?? '' }))}</div>` : '';
       const stock = this.stockText(e);
-      const canControl = tr.v === 0;
+      // w czasie zmiany czoła maszynisty nie ma w kabinie – bez poleceń do jej końca (odliczanie w wierszu przyczyny)
+      const canControl = tr.v === 0 && !tr.cabChange;
       const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
         <div class="train-head"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>

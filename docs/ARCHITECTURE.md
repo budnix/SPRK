@@ -190,7 +190,8 @@ z `Traffic.waitReason` – kod bez tekstu, tekst `sp.wait.*`: sygnalizator uszko
 w nastawianiu, odmowa blokady szlaku (`gate(…).code`: zapytanie telefoniczne, Sz po „droga wolna”, Pwl, brak pozwolenia,
 blok początkowy, szlak zajęty, tor wjazdowy, kierunek SBL), inna przyczyna „Stój” – `tests/waitReason.test.js`; tor, czoło, tryb – ikony z `src/ui/icons.js`: czoło pojazdu z lampami
 (Pc1: trzy światła = jazda pociągowa, jedno = manewrowa) i sylwetka lokomotywy zwrócona w stronę jazdy; po zatrzymaniu przyciski jazda manewrowa /
-pociągowa i zmiana czoła – dawniej sekcja „Manewry” w Stanie), Stan, Rozkazy, Łączność, Polecenia (tylko stacje z okręgami – obecnie żadna w grze, mechanizm testowany na
+pociągowa i zmiana czoła – dawniej sekcja „Manewry” w Stanie; w czasie zmiany czoła bez przycisków, przyczyna `cab-change`
+z sekundami do końca), Stan, Rozkazy, Łączność, Polecenia (tylko stacje z okręgami – obecnie żadna w grze, mechanizm testowany na
 `tests/fixtures/gdynia-glowna-okregi.js`).
 
 Strona nie przewija się i nie odświeża gestem (tablet): `html, body { overflow: hidden; overscroll-behavior: none }`
@@ -302,6 +303,15 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Sz i rozkaz „S”: droga za semaforem po bieżących położeniach zwrotnic (`Interlocking.pathBeyond`) – blokada tylko
   wyjazdu na tej drodze, uzasadnienie usterką tylko na niej (`faultOnPath`); `Traffic.issueOrder` używa tej samej drogi.
 * Zwrotnice: Zw + przycisk, blokada przy zajętości / utwierdzeniu / zamknięciu (Zz); rozprucie przy najeździe z ostrza.
+* Zmiana czoła i radio z maszynistą: `Traffic.reverseTrain` → `Train.startCabChange` (`cabChange` na pociągu, nie na
+  wpisie rozkładu – przekazanie składu jako inny pociąg go nie gubi); skład stoi `cabChangeTime` s (45–75), koniec
+  w `Train.tick` przed warunkiem pociągu, który zakończył bieg (taki zmienia czoło), potem `reverse()` (sama zmiana
+  kierunku, od razu) i zdarzenie pociągu `cab-ready`. W toku zmiany `reverseTrain`, `toShunting`, `toTrainMode` zwracają
+  false bez skutków (automat pyta w każdym kroku). Polecenia z zakładki Pociągi idą przez szynę jako `driver`
+  (`shunt` / `train` / `reverse`, po zmianie `ready` z sygnalizatorem przed nowym czołem); `Comms` zapisuje rozmowę
+  wg Ir-5 (wywołanie, odpowiedź po `DRIVER_REPLY` s, meldunek gotowości – rodzaj `radio`, potwierdzenie). Opcja
+  `{ quiet: true }` – bez rozmowy (automat okręgu obok gracza). Automat dyżurnego zleca zmianę czoła pociągowi ze
+  składu innego pociągu od przekazania, przebieg – ok. 2 min przed odjazdem. Test: `tests/cab-change.test.js`.
 * Telefonogramy: `FORMULAS` w `Comms` (wzory Ir-1); rozmowy przy sprawnej blokadzie (`LineBlock.talk`, 1a / 4a na
   jednotorze, zawiadomienie o odjeździe na dwutorze) – `phoneRoutine` 'auto' (nadaje blokada: `phone-out`) albo 'manual'
   (ustawienie gracza, kara `phone-routine`); przy usterce na torze właściwym dwutoru bez zapytania.

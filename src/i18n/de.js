@@ -336,6 +336,7 @@ export default {
   'sp.wait.line-occupied': 'Strecke nach {neighbour} besetzt',
   'sp.wait.line-inbound': 'Streckengleis nach {neighbour} nur Einfahrt (Einrichtungsbetrieb)',
   'sp.wait.sbl-direction': 'Selbstblock nach {neighbour} auf Einfahrt – Richtung wechseln (Zk)',
+  'sp.wait.cab-change': 'Fahrtrichtungswechsel – der Triebfahrzeugführer geht zum anderen Führerstand und meldet sich per Funk in {left} s',
   'sp.trains.atPlatform': 'steht am Bahnsteig',
   'sp.trains.atEnd': 'steht am Gleisende',
   'sp.trains.dwell': 'Halt, Abfahrt {time}',

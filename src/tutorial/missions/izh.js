@@ -10,6 +10,8 @@ const adr = (id) => ({ ref: { kind: 'signal', id } });
 const W = (sim) => sim.blocks.get('W');
 const consist = (sim, ...nrs) => nrs.map((nr) => entry(sim, nr)?.train).find(Boolean);
 const facingWest = (sim, ...nrs) => { const tr = consist(sim, ...nrs); return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); };
+// zmiana czoła wydana: maszynista idzie do drugiej kabiny albo już tam jest
+const turning = (sim, ...nrs) => !!consist(sim, ...nrs)?.cabChange || facingWest(sim, ...nrs);
 const route = (s, e, order = 'P') => `naciśnij <b>przycisk adresowy</b> semafora <b>${s}</b>, potem <b>przycisk adresowy</b> ${e}, a na końcu rozkaz <b>${order}</b> w grupie rozkazów nad planem – masz na to 10 s`;
 const trackEnd = (n) => `końca toru ${n} (przy koźle)`;
 const lineEnd = 'końca toru szlakowego do Modrzewia (skrajna lewa kostka)';
@@ -30,8 +32,8 @@ export function steps() {
       { wrong: (sim) => (active(sim, 'A-kT2') || active(sim, 'A-kT3') ? 'Pociąg 7101 ma tor 1. Zwolnij ten przebieg (adres jego końca i rozkaz Zcz) i nastaw wjazd na tor 1.' : null) }),
     act('ko-7101', 'Potwierdzenie przyjazdu (Ko)', `Pociąg stanął przy peronie i <b>zakończył bieg</b>. Potwierdź przyjazd: przycisk <b>Ko</b> na kostkach blokady. Szlak do Modrzewia jest znów wolny.`, { block: 'W' },
       (sim) => arrived(sim, 7101) && blockFree(W(sim))),
-    act('reverse-7101', 'Zmiana czoła', `Skład stoi czołem do kozła. Żeby wrócić do Modrzewia, musi zmienić czoło: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 7101 (${A('zmiana czoła')}).<p>Skład odjedzie jako nowy pociąg <b>7102</b> o 07:14.</p>`, { tab: 'pociagi' },
-      (sim) => facingWest(sim, 7101, 7102) || atNeighbour(sim, 7102)),
+    act('reverse-7101', 'Zmiana czoła', `Skład stoi czołem do kozła. Żeby wrócić do Modrzewia, musi zmienić czoło: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 7101 (${A('zmiana czoła')}).<p>Maszynista potwierdzi przez radio i przejdzie do kabiny na drugim końcu – to trwa około minuty, a gotowość zgłosi w zakładce <b>Łączność</b>. W tym czasie możesz działać dalej. Skład odjedzie jako nowy pociąg <b>7102</b> o 07:14.</p>`, { tab: 'pociagi' },
+      (sim) => turning(sim, 7101, 7102) || atNeighbour(sim, 7102)),
     act('wbl-7102', 'Żądanie pozwolenia (Wbl)', `Przed odjazdem potrzebujesz pozwolenia od Modrzewia: przycisk <b>Wbl</b> na kostkach blokady. Sąsiad odpowie po kilkunastu sekundach – strzałka „odjazd” zaświeci na biało.`, { block: 'W' },
       (sim) => (W(sim).direction === 'out' && W(sim).permission) || atNeighbour(sim, 7102),
       { wrong: (sim) => (W(sim).request === 'ours' ? 'Żądanie wysłane – czekaj na odpowiedź Modrzewia.' : null) }),

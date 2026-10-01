@@ -336,6 +336,7 @@ export default {
   'sp.wait.line-occupied': 'line to {neighbour} occupied',
   'sp.wait.line-inbound': 'line track to {neighbour} is inbound only (one-way)',
   'sp.wait.sbl-direction': 'automatic block to {neighbour} set inbound – change direction (Zk)',
+  'sp.wait.cab-change': 'head change – the driver is walking to the other cab and will report ready by radio in {left} s',
   'sp.trains.atPlatform': 'standing at the platform',
   'sp.trains.atEnd': 'standing at the track end',
   'sp.trains.dwell': 'stop, departure {time}',

@@ -27,6 +27,11 @@ export class AutoOperator {
     this.stuckSince = new Map();   // przebieg, który nie rozwiązał się za pociągiem → od kiedy
   }
 
+  /** Rozmowa radiowa z maszynistą przy zmianie trybu i czoła: automat okręgu obok gracza rozmawia bez dziennika gracza. */
+  get #talk() {
+    return { quiet: !!this.district };
+  }
+
   #inDistrict(signalId) {
     if (!this.district) return true;
     return this.sim.districtOf(signalId) === this.district;
@@ -380,7 +385,7 @@ export class AutoOperator {
       const target = task ? task.toTrack : stranded ? heir.track : null;
       if (target != null && tr.entered && tr.v === 0) {
         if (fullyOn(tr, target)) continue;
-        if (tr.mode !== 'shunt') sim.traffic.toShunting(e.nr);
+        if (tr.mode !== 'shunt') sim.traffic.toShunting(e.nr, this.#talk);
         const occ = tr.occupiedSections();
         // przebieg dla tego składu już czeka – skład zaraz ruszy; sygnalizator uszkodzony (nie da Ms2) – zezwolenie radiem
         const mine = (x) => x.kind === 'shunt' && (x.start === tr.nextSignal() || occ.has(x.approach));
@@ -391,12 +396,12 @@ export class AutoOperator {
         const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
         // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg
         // zajęty) – czekać, nie zmieniać kierunku w kółko
-        if (r && topo.signals.get(r.start).dir !== head) sim.traffic.reverseTrain(e.nr);
+        if (r && topo.signals.get(r.start).dir !== head) sim.traffic.reverseTrain(e.nr, this.#talk);
         else if (r) this.#setRoute(r.id);
         continue;
       }
       // skład po manewrach (bez zadań) wraca w tryb jazdy pociągowej – dopiero wtedy przejmie go pociąg powrotny
-      if (!task && !e.to && tr.mode === 'shunt' && tr.v === 0 && sim.traffic.timetable().some((x) => String(x.unit) === String(e.nr))) { sim.traffic.toTrainMode(e.nr); continue; }
+      if (!task && !e.to && tr.mode === 'shunt' && tr.v === 0 && sim.traffic.timetable().some((x) => String(x.unit) === String(e.nr))) { sim.traffic.toTrainMode(e.nr, this.#talk); continue; }
       // ---- wyjazd ----
       // Pozwolenie na wyjazd (Wbl) na szlak dwukierunkowy zawczasu – 6 min przed planowym odjazdem, gdy pociąg już jedzie
       // do nas albo stoi na stacji: kto pierwszy zażąda kierunku, ten go dostaje, a sąsiad z pociągiem w tę stronę poczeka
@@ -409,11 +414,13 @@ export class AutoOperator {
       // Czy wyjazd jest już nastawiony, wynika ze stanu urządzeń, a nie z notatek automatu: przebieg w nastawianiu może
       // przepaść (zwrotnica bez kontroli), a nastawiony – zostać zwolniony po usterce. Pociąg ma wyjazd za sobą, gdy minął
       // semafor wyjazdowy (`leaving`).
-      if (e.to && tr.entered && !leaving && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - 120) && this.#exitInDistrict(e.to)) {
+      // Pociąg ze składu innego pociągu (`unit`) wchodzi tu od przekazania (do 15 min przed odjazdem): zmiana czoła trwa do
+      // CAB_CHANGE_MAX s, więc maszynista dostaje ją zawczasu, a przebieg – jak zawsze ok. 2 min przed odjazdem.
+      if (e.to && tr.entered && !leaving && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - (e.unit ? 15 * 60 : 120)) && this.#exitInDistrict(e.to)) {
         let exitId = e.to;
         let cmd = null;
         if (this.role === 'executive') { cmd = this.#command(e, 'dispatch'); if (!cmd) continue; exitId = cmd.exit || e.to; }
-        if (tr.mode === 'shunt') { if (tr.v === 0) sim.traffic.toTrainMode(e.nr); continue; }
+        if (tr.mode === 'shunt') { if (tr.v === 0) sim.traffic.toTrainMode(e.nr, this.#talk); continue; }
         const cur = trackOf(tr);
         const b = sim.blocks.get(exitId);
         if (!b) continue;
@@ -434,9 +441,10 @@ export class AutoOperator {
         if (e.unit && tr.v === 0) {
           const ahead = tr.nextSignal();
           const facing = cands.filter((r) => r.start === ahead);
-          if (!facing.length) { sim.traffic.reverseTrain(e.nr); continue; }
+          if (!facing.length) { sim.traffic.reverseTrain(e.nr, this.#talk); continue; }
           cands = facing;
         }
+        if (e.depTime != null && t < e.depTime - 120) continue; // skład gotowy (czoło w stronę wyjazdu) – przebieg później
         if (b.fault) { if (b.fixed !== 'out' && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
         else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
         else if (!b.fixed && !b.direction && !b.request && !b.occupied) this.#wbl(b, e.nr);

@@ -55,8 +55,22 @@ test('zakładka „Pociągi”: pociąg na posterunku ze stanem, torem i czołem
   await expect(card.locator('.train-state .ic-mode')).toHaveAttribute('data-mode', 'shunt');
   expect(await card.locator('.train-state .ic-mode .lamp.on').count()).toBe(1); // manewry: jedno światło
   await expect(card.locator('button[data-act=train]')).toHaveText('jazda pociągowa');
+  // zmiana czoła trwa: maszynista przechodzi do drugiej kabiny – odliczanie w karcie, bez przycisków do końca zmiany
   await card.locator('button[data-act=rev]').click();
+  await expect(card.locator('.train-wait')).toContainText('maszynista przechodzi do drugiej kabiny');
+  await expect(card.locator('.train-actions button')).toHaveCount(0);
+  await expect(card.locator('.train-state .ic-front')).toHaveAttribute('data-dir', 'E');
+  await advance(page, 80);
+  await page.waitForTimeout(700); // dławione odświeżanie panelu
   await expect(card.locator('.train-state .ic-front')).toHaveAttribute('data-dir', 'W');
+  await expect(card.locator('button[data-act=rev]')).toBeVisible();
+  // polecenia i meldunek gotowości – rozmowa radiowa w zakładce Łączność
+  await page.click('#panel-tabs button[data-tab=lacznosc]');
+  const comms = page.locator('#comms-log');
+  await expect(comms).toContainText('Pociąg 6101, tu Szkolna: koniec jazdy pociągowej, dalej jazda manewrowa – odbiór.');
+  await expect(comms).toContainText('Tu pociąg 6101, zrozumiałem – zmieniam kabinę');
+  await expect(comms).toContainText('Szkolna, tu pociąg 6101: zmiana czoła zakończona');
+  await expect(comms).toContainText('Tu Szkolna, meldunek zrozumiałem.');
   // „Stan” nie ma już sekcji Manewry
   await page.click('#panel-tabs button[data-tab=stan]');
   await expect(page.locator('#tab-stan')).not.toContainText('Manewry');

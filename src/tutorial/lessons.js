@@ -110,8 +110,8 @@ export function lessonSteps(P) {
     (sim) => active(sim, 'D2-kT3m') || sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
   act('shunt-task1', 'Skład na torze 3', `Poczekaj, aż cały skład stanie na torze 3 – zadanie w zakładce <b>Zadania</b> zostanie odhaczone.`, { tab: 'zadania' },
     (sim) => !!sim.traffic.tasks.find((t) => t.id === 'odstaw-90201')?.done);
-  act('shunt-reverse', 'Zmiana czoła', `Skład ma wrócić na tor 2 w drugą stronę: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 90201 (${A('zmiana czoła')}).`, { tab: 'pociagi' },
-    (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction); });
+  act('shunt-reverse', 'Zmiana czoła', `Skład ma wrócić na tor 2 w drugą stronę: zakładka <b>Pociągi</b> → <b>„zmiana czoła”</b> przy 90201 (${A('zmiana czoła')}).<p>Maszynista potwierdzi przez radio i przejdzie do kabiny na drugim końcu składu – to trwa około minuty. Gotowość zgłosi w zakładce <b>Łączność</b>; przebieg możesz nastawić już teraz.</p>`, { tab: 'pociagi' },
+    (sim) => { const tr = entry(sim, 90201)?.train; return !!tr && (!!tr.cabChange || (tr.v === 0 && ['W', 'NW', 'SW'].includes(tr.direction))); });
   act('shunt-back', 'Powrót na tor 2 – w dwóch etapach', `${P.shuntRoute('Tm1', P.shuntEndTm2)} – ${A('przebieg manewrowy')} z tarczy <b>Tm1</b> na tor 2. Skład (180 m) jest dłuższy niż miejsce przed <b>Tm2</b>, więc od razu nastaw też drugi etap: ${P.shuntRoute('Tm2', P.shuntEndC2)}. Skład przejedzie do C2 i stanie czołem na zachód – gotowy do odjazdu.`, cmd('shunt', sig('Tm1', 'white')),
     (sim, ctx) => (ctx.seen.has('route:Tm1-Tm2:set') && active(sim, 'Tm2-C2')) || !!sim.traffic.tasks.find((t) => t.id === 'podstaw-90202')?.done);
   act('shunt-task2', 'Skład podstawiony', `Poczekaj, aż skład stanie w całości na torze 2 – zadanie 2 odhaczy się w zakładce <b>Zadania</b> – i przełącz go na <b>„jazda pociągowa”</b> (zakładka Pociągi, kolejność dowolna). Gdy stanie w trybie jazdy pociągowej (nie wcześniej niż 07:57), pojawi się w rozkładzie jako pociąg <b>90202</b>.`, { tab: 'pociagi' },
