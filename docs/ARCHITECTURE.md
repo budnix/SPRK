@@ -10,8 +10,7 @@ src/
   model/       categories (kategorie pociągów: prędkość, dynamika kategorii – przyspieszenie przeliczone na masę składu, gdy pociąg nie ma taboru, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru, dobór zespołu / lokomotywy dla pociągu i dynamika z taboru – przyspieszenie, hamowanie, prędkość pojazdu), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
-               Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji),
-               scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze)
+               Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
@@ -483,9 +482,6 @@ czasie rozkładu / terminie zadania), a zmiana trwa, dziennik dostaje jedną pod
 zakończenia zmiany: …” z pociągami stojącymi na stacji i zadaniami. `sim.report()` (także w trakcie) daje pełny
 raport: ocena i punkty, wiersze pociągów (plan / rzeczywistość / tor / opóźnienie / stan), punktualność, zadania,
 bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endReason`: all-done | time | manual).
-Zdarzenia oceny i wpisy dziennika o pociągu mają jego numer w polu `nr` (zadania – także `task`, przetrzymanie
-i rozkaz – `signal`, obowiązki blokady – `exit`, jazda po pękniętej szynie – `section`): raport i automat sprawdzający
-scenariusze przypisują je pociągowi bez czytania komunikatu.
 `Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena jako pieczątka odbita raz przy otwarciu, kafelki jak
 liczniki pulpitu – cyfry w okienku, stan lampką w rogu – i tabele jak arkusz rozkładu) z przyciskami
 „Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu.
@@ -707,16 +703,7 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   przebiegu ruchu (`fingerprint`). `--json` zapisuje wyniki, `--compare` porównuje je z zapisanymi (gorzej / lepiej /
   nowe zatory / inny przebieg przy tych samych wskaźnikach) – przed zmianą w silniku i po niej. Kod wyjścia 1 przy
   zatorze, naruszeniu, spad, rozpruciu, karze wymuszonej usterką albo pozostałościach po zmianie. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
-  jego czyste funkcje sprawdza `tests/survey.test.js`. Pętlę zmiany (`playShift`: krok 0,5 s, automat co 2 s,
-  niezmienniki po każdym takcie) i kolejkę wątków (`runParallel`) dzieli z automatem sprawdzającym scenariusze
-  (`scripts/shift.mjs`).
-* `scripts/check-scenario.mjs` (`npm run check`) – automat sprawdzający scenariusze (sekcja niżej); jego reguły
-  i statyczne kontrole sprawdza `tests/scenario-check.test.js` (każdy kod błędu na celowo zepsutym wariancie Szkolnej,
-  przebiegi z błędem i zatorem, werdykt na raportach wzorcowych, wiersz poleceń), a każdy scenariusz każdej stacji
-  (definicja i jeden przebieg: ziarno 1, poziom wymuszony scenariuszem albo `low`) – `tests/scenario-check.test.js`
-  i `tests/scenario-check-run-1…4.test.js` (podział w `tests/scenario-runs.js`; pliki liczą się równolegle, ok. +5 s
-  do `npm test`). Scenariusz, który świadomie nie przechodzi, trafia do `KNOWN` w `tests/scenario-runs.js` z
-  uzasadnieniem (test `todo`).
+  jego czyste funkcje sprawdza `tests/survey.test.js`.
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
   ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
   skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `screens-look.spec.js` (wygląd ekranów pełnych w obu motywach: semafor „Stój” / „wolna droga”, przystanki misji, tablica stacyjna, pieczątka i liczniki raportu, lampki ustawień, nagłówek na telefonie), `start-nav.spec.js` (ekrany wyboru: wyszukiwarka, filtry, adresy i „wstecz”, Esc, mapa i schemat regionu, postęp, ustawienia z tytułu, brak mignięcia pulpitu), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
@@ -726,65 +713,6 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   przezroczyste (`HIDE_GLYPHS` w `visual.spec.js` – miejsce zostaje), bo rasteryzacja tej samej czcionki różni się między
   systemami (CoreText / FreeType / DirectWrite); układ, kształty i barwy są wszędzie te same, więc wzorzec z macOS przechodzi
   w CI (kontener Linux). Napisy sprawdzają asercje `toHaveText` w testach zachowania.
-
-## Automat sprawdzający scenariusze (`scripts/check-scenario.mjs`, `src/model/scenarioCheck.js`)
-
-Do szybkiego dodawania wariantów scenariuszy (inne okno zmiany, podzbiór pociągów, usterki) istniejących i nowych
-stacji: `npm run check -- [stacja[:scenariusz] …] [--seeds 1-3] [--level none|low|high|all] [--extra min]
-[--tutorial] [--verbose] [--json plik]` – bez stacji wszystkie; `--level all` (domyślnie) to `none`, `low` i `high`
-(inaczej niż w `survey`, gdzie `all` = `high` i `low`); scenariusz z własnym `disruptions` idzie tylko na swoim
-poziomie. Kod wyjścia 1, gdy definicja albo któraś zmiana ma werdykt BŁĘDY; 2 – błędne opcje, nieznana stacja.
-
-1. **Definicja** – `checkScenario(station, scenarioId | obiekt, { missions, level })` (moduł logiki, bez DOM): lista
-   `{ level: 'error' | 'warning', code, msg, train? }`. Kontrole czytają symulację utworzoną bez kroku (rozkład z czasami
-   w sekundach, odcinki i przebiegi po normalizacji, blokady), bez losowych zakłóceń. Błędy: nieznany / powtórzony
-   scenariusz, poziom, misja, srk, czas nie GG:MM, `endTime` ≤ start, `trains` z numerem spoza rozkładu (także napis
-   zamiast liczby) albo razem z `timetable`, własny `timetable` niepoprawny wg `validateStation`, pociąg, który nie
-   powstanie (`from: null` bez `startOn` / `unit`, `startOn` na nieistniejącym odcinku, dwa na jednym), nigdy nie
-   będzie obsłużony (bez `to`, `terminates`, następcy), skład `unit` spoza zmiany / z dwoma następcami / po odjeździe
-   następcy, powtórzony numer, odjazd przed przyjazdem, tor planowy nieistniejący albo bez przebiegu z wjazdu / na
-   wyjazd (pociąg z postojem – kara pewna), pociąg przed startem albo po końcu zmiany, zadania (składu nie ma, termin
-   niepoprawny / niewykonalny / przed startem, `afterTask` nieistniejące, tor docelowy nieistniejący albo bez drogi
-   manewrowej, skład jadący dalej), usterki (nieznany rodzaj / element, czas, `duration`, po końcu zmiany, blok
-   przebiegowy poza nastawnią mechaniczną), zamknięcia toru (nieznany odcinek, czas, `from` ≥ `to`, pociąg bez
-   objazdu do końca zmiany). Uwagi: pole spoza formatu, sąsiad musiałby wyprawić pociąg przed startem (≥ 2 min),
-   ostatnie zdarzenie < 15 min przed końcem (`sc-slack`), dwa pociągi na jednym torze w planie, wjazdy jednym szlakiem
-   gęściej niż jazda po nim (szlak to jeden odstęp – także SBL), wyjazd i wjazd naprzeciw na Eap, zadanie po terminie
-   / bez `afterTask` / odziedziczone i pominięte, usterka przed startem / po końcu / na odcinku podzielonym przez
-   łącznicę, usterka, której automat nie obsługuje (licznik osi, pęknięta szyna), pociągi nadzwyczajne poziomu `high`
-   bliżej niż 15 min przed końcem. Listę misji (`src/tutorial/missions.js`) podaje wywołujący – logika nie importuje
-   samouczka.
-2. **Przebieg** – `checkShift(job)`: zmiana grana `playShift` (jak przegląd) z obserwatorem: co takt automatu przyczyna
-   postoju każdego pociągu (`Traffic.waitReason`, a także pociąg u sąsiada po planowym wyprawieniu – `neighbour-wait` –
-   i pociąg ze składu, którego skład nie przyszedł – `unit-wait`; bez postoju do planowego odjazdu), minuty postoju
-   przy czynnej usterce na drodze pociągu, które usterki dotknęły których pociągów, chwila obsłużenia, odjazd pociągu
-   stojącego od początku zmiany (silnik nie zgłasza go zdarzeniem); przy postoju ponad 5 min – przeszkody przebiegów
-   od sygnalizatora (`Interlocking.routeProblems` z polami `section` / `point` / `route` / `exit`) przypisane pociągowi,
-   który zajmuje odcinek albo ma na nim przebieg, albo usterce. W chwili końca zmiany – migawka pociągów
-   nieobsłużonych (gdzie stoją, od kiedy, przyczyna, przeszkody, ostatnie wpisy dziennika z ich numerem – pole `nr`
-   wpisów i zdarzeń oceny). Przebieg trwa do końca zmiany + `--extra` min (domyślnie 120), ale kończy się wcześniej,
-   gdy po końcu zmiany wszystko jest obsłużone i urządzenia są w stanie zasadniczym (ten sam ruch co bez skrótu).
-   Raport (zwykły obiekt, przechodzi między wątkami i do JSON): pociągi (plan i rzeczywistość, tor, opóźnienie od
-   sąsiada i z winy stacji z kar `late-depart` / `late-pass` z polem `nr`, postoje), pociągi nieobsłużone na koniec
-   zmiany i po zapasie, zadania (termin po przesunięciu), usterki z dotkniętymi pociągami, pociągi nadzwyczajne,
-   naruszenia, zdarzenia, kary wymuszone usterką, stan urządzeń, ocena w chwili końca zmiany.
-3. **Werdykt** – `verdict(raport)`: BŁĘDY – naruszenie zależności, spad, rozprucie, zator po zapasie, pociąg
-   nieobsłużony na koniec zmiany, który wg planu i opóźnienia od sąsiada zdążyłby ≥ 3 min przed końcem i ≥ 5 min stał
-   z winy stacji (bez szlaku, usterki i pociągu opóźnionego od sąsiada na drodze), kara wymuszona usterką, stan
-   urządzeń po zmianie, zadanie przepadło bez usterki, usterka ze scenariusza bez wpływu na ruch przy poziomie
-   `none`, wyjątek. UWAGI – pociągi opóźnione od sąsiada albo nadzwyczajne, które nie zmieściły się w zmianie
-   (z podpowiedzią, o ile wydłużyć `endTime`), kaskada / szlak, automat czeka na naprawę usterki (gracz użyłby Sz,
-   rozkazu „S”, zerowania licznika, innego toru), jazda po pękniętej szynie z usterki ze scenariusza (automat nie
-   zamyka toru), zapas do końca zmiany < 5 min (samouczek: od chwili, gdy wszystko obsłużone), opóźnienie z winy
-   stacji ≥ 5 min, przetrzymanie albo postój ≥ 5 min (wg przyczyny: szlak, konflikt z pociągiem, inne), inny tor,
-   zadanie po terminie, niewykonany obowiązek blokady, usterka bez wpływu przy `low` / `high`. Progi to stałe silnika:
-   kara za przetrzymanie od 4 min, za przelot od 3 min, termin zadania + 10 min, opóźnienia od sąsiada poziomów.
-
-Automat steruje zależnościami wprost (`sim.execute`), więc warianty stanowisk (`srk`) tej samej stacji dają ten sam
-ruch – sprawdzają rozkład i zależności, nie obsługę pulpitu. Wydruk w terminalu: dla każdego scenariusza definicja
-(błędy, do 6 uwag), wiersz każdej zmiany (werdykt, koniec, zapas, wynik), błędy z przeszkodami i dziennikiem pociągu,
-uwagi o pojedynczych pociągach w jednym wierszu na rodzaj; `--verbose` – pełne uwagi, tabela pociągów, zadania,
-usterki; na końcu podsumowanie (scenariusze i zmiany wg werdyktu, rodzaje błędów i uwag z liczbą zmian, czas).
 
 ## Plan rozwoju
 
