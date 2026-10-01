@@ -9,18 +9,27 @@ i co zrobić, gdy dochodzi nowe miasto. Skrót kroków dla Claude: skill `.claud
 | Warstwa | Plik | Źródło | Licencja | Jak odtworzyć |
 |---|---|---|---|---|
 | Kształty 16 województw | `src/ui/map/poland.js` (generowany) | Natural Earth, *Admin 1 – States, Provinces*, 1:10m | domena publiczna | `scripts/poland-map.mjs` (niżej) |
+| Sieć kolejowa Polski w małym przybliżeniu | `src/ui/map/railOverview.js` (generowany) | Natural Earth, *Railroads*, 1:10m | domena publiczna | `scripts/rail-overview.mjs` (niżej) |
 | Identyfikatory i nazwy województw | `src/model/regions.js` | TERYT (nazwy urzędowe) | – | ręcznie; test porównuje z `poland.js` |
 | Rzut (stopnie → rysunek) | `PROJ`, `VIEWBOX` w `poland.js`; `project` / `unproject` w `src/ui/map/mapSvg.js` | – | – | generuje `poland-map.mjs` |
 | Współrzędne stacji | pole `geo` w `src/stations/<id>.js` | polska Wikipedia, artykuł stacji (szablon współrzędnych) | fakty; adres w `docs/SOURCES.md` | API Wikipedii (niżej) |
 | Numery linii przy stacji | pole `lines` | opis położenia stacji (`location`) – te same źródła co plan stacji | – | ręcznie |
 | Przebieg linii (tory na schemacie) | `src/ui/map/railLines.js` (generowany) | OpenStreetMap, relacje `route=railway` z numerem linii PKP PLK w `ref`, przez Overpass API | **ODbL 1.0** – plik to baza pochodna na ODbL; podpis „© autorzy OpenStreetMap (ODbL)” pod schematem (`start.regionMapNote`) i w `docs/SOURCES.md` | `scripts/rail-lines.mjs` (niżej) |
 
-Rysowanie (bez DOM, testy w Node): `src/ui/map/mapSvg.js` – `polandMapSvg` (województwa jako odnośniki `#/sluzba/<id>`,
-liczba posterunków, lampki stacji), `regionBox` (wycinek schematu: posterunki + 30 %, co najmniej 0,5° × 0,8°, poszerzony
-do proporcji 1,8 : 1), `regionMapSvg` (tory z `RAIL_LINES` – linia przez co najmniej dwa posterunki jaśniejsza, pozostałe
-przygaszone; linia bez danych – odcinek prosty między kolejnymi posterunkami z `catalog.regionLayout`; numery linii przy
-torze bez nachodzenia na tablice z nazwami; przystanki jako lampki w obudowie i tablice stacyjne). Wygląd: zmienne
-`--sc-board-*` (tablica dyspozytorska, ciemna w obu motywach) w `src/styles.css`.
+Rysowanie (bez DOM, testy w Node): `src/ui/map/mapSvg.js` – `boardSvg` (jedna tablica w jednostkach rysunku Polski:
+województwa, sieć z Natural Earth, dokładne tory linii posterunków z `RAIL_LINES` – linia przez co najmniej dwa posterunki
+jaśniejsza; linia bez danych OSM – odcinek prosty między kolejnymi posterunkami z `catalog.regionLayout`; nazwy województw
+z liczbą posterunków, numery linii, posterunki jako lampki w obudowie i tablice stacyjne; obrysy w osobnej warstwie nad
+wypełnieniami – równa grubość na całej granicy), `regionBox` (wycinek województwa: posterunki + 30 %, co najmniej
+0,5° × 0,8°). Przybliżanie: `src/ui/map/zoom.js` (bez DOM – `zoomAt`, `clampView`, `homeView`, `levelOf`) i
+`src/ui/map/MapView.js` (kółko myszy, szczypanie na gładziku – także zdarzenia `gesture` Safari, przeciąganie, dwa palce,
+dwuklik, przyciski + / − / cała Polska, klawiatura; strona się nie przybliża: `preventDefault`, `touch-action: none`;
+wskaźnik przechwytywany dopiero przy przeciąganiu – inaczej klik nie trafiłby w posterunek). Znaczniki i napisy mają stały
+rozmiar na ekranie (grupa z `data-x` / `data-y` dostaje przesunięcie i skalę). Poziomy szczegółów zależą od gęstości –
+pikseli ekranu na jednostkę rysunku (`LEVELS`): kraj (województwa, liczby, sieć), region (tory linii posterunków,
+lampki), szczegół (tablice z nazwami, numery linii; od gęstości, przy której Reda i Rumia są dalej od siebie niż wysokość
+tablicy). Bliżej kształty województw (1:10m, ok. 1 km dokładności) znikają – nie rozmijają się z dokładnymi torami (Hel),
+zostaje tablica z torami na siatce. Wygląd: zmienne `--sc-board-*` (tablica dyspozytorska, ciemna w obu motywach).
 
 ## Dodanie nowego posterunku (miasta) na mapę
 
@@ -59,6 +68,16 @@ Nowe województwo nie wymaga zmian w kodzie: mapa podświetla każde z posterunk
 Osobny plik stacji z `place: '<id miejsca>'`, `era: <rok>` i tym samym `geo`, `region`, `lines` (o ile linie się nie
 zmieniły). Mapa i lista pokazują miejsce raz, strona stacji ma zakładki ery (`eraTabs`). Rok i urządzenia edycji – ze
 źródeł (`docs/SOURCES.md`); przepisy zawsze dzisiejsze.
+
+## Sieć kolejowa w małym przybliżeniu (rzadko – nowa wersja Natural Earth)
+
+```sh
+curl -L -o /tmp/ne_10m_railroads.geojson \
+  https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_railroads.geojson
+node scripts/rail-overview.mjs /tmp/ne_10m_railroads.geojson
+```
+Odcinki w granicach Polski (wielokąty województw), połączone i uproszczone (ok. 900 m) – ok. 56 KB. Ta warstwa nie zależy
+od posterunków; nowe miasto jej nie zmienia.
 
 ## Kształty województw (rzadko – nowa wersja Natural Earth)
 

@@ -161,15 +161,15 @@ test('wygląd listy posterunków: wyszukiwarka, filtry, karty z trudnością i p
   expect(await shot(page, '#start .start-screen', 1280, 720)).toMatchSnapshot('start-list.png');
 });
 
-test('wygląd mapy Polski: tablica z siatką, województwo z posterunkami i liczbą, lampki stacji', async ({ page }) => {
+test('wygląd mapy Polski: tablica z siatką, sieć kolejowa, województwo z posterunkami i liczbą, lampki stacji, przyciski przybliżania', async ({ page }) => {
   await startWithProgress(page, '#/sluzba');
-  await expect(page.locator('#st-map .mp-region.has')).toHaveCount(1);
+  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(1);
   expect(await shot(page, '#st-map', 900, 700)).toMatchSnapshot('start-map.png');
 });
 
 test('wygląd schematu regionu: tory z podkładami (OSM), lampki przystanków, tablice z nazwami, karta posterunku', async ({ page }) => {
   await startWithProgress(page, '#/sluzba/pomorskie');
   await page.locator('.rm-stop[data-id=sopot]').focus();
-  await expect(page.locator('#st-rinfo')).toHaveClass(/on/);
-  expect(await shot(page, '.st-rmap', 1200, 720)).toMatchSnapshot('start-region.png');
+  await expect(page.locator('#st-rmapfig .st-rinfo')).toHaveClass(/on/);
+  expect(await shot(page, '#st-rmapfig', 1200, 720)).toMatchSnapshot('start-region.png');
 });

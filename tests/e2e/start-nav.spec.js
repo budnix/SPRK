@@ -68,7 +68,7 @@ test('adresy i „wstecz”: tytuł → służba → strona stacji; okruszki; Es
   await expect(page).toHaveURL(/#\/$/);
   await expect(page.locator('#st-up')).toBeHidden();
   await page.click('#st-service');
-  await page.click('.mp-region[data-region=pomorskie]'); // mapa → województwo → karta
+  await page.click('#st-mapside a[data-region=pomorskie]'); // mapa (lista województw obok) → województwo → karta
   await page.click('.st-card[data-id=tczew]');
   await expect(page.locator('#st-crumbs')).toHaveText(/Start\s*›\s*Służba\s*›\s*pomorskie\s*›\s*Tczew/);
   // okruszek województwa – region z posterunkami
@@ -157,32 +157,105 @@ test('wejście bez zmiany w adresie: pulpit ukryty od pierwszej klatki (bez mign
   expect(await page.evaluate(() => document.documentElement.classList.contains('boot-start'))).toBe(false);
 });
 
-test('mapa: województwa z liczbą posterunków, klik – region z rzeczywistym przebiegiem linii, przystanek – strona stacji; wyszukiwanie obok mapy', async ({ page }) => {
+test('mapa: województwa z liczbą posterunków, sieć kolejowa, klik w województwo przybliża, przystanek – strona stacji; wyszukiwanie obok mapy', async ({ page }) => {
   await page.goto('/#/sluzba', { waitUntil: 'load' });
   await expect(page.locator('.st-mode a[data-mode=map]')).toHaveAttribute('aria-current', 'page');
-  await expect(page.locator('#st-map .mp-region')).toHaveCount(16);
-  await expect(page.locator('#st-map .mp-region.has')).toHaveCount(1);
-  await expect(page.locator('#st-map .mp-region[data-region=pomorskie] .mp-count text')).toHaveText('9');
-  await expect(page.locator('#st-map .mp-dot')).toHaveCount(9);
-  // obok mapy: województwa; wyszukiwanie – pasujące posterunki, Enter otwiera pierwszy
+  const svg = page.locator('#st-map .mv-svg');
+  await expect(svg).toHaveAttribute('data-level', 'country');
+  await expect(page.locator('#st-map path.mp-shape')).toHaveCount(16);
+  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(1);
+  await expect(page.locator('#st-map .mv-rlabel[data-region=pomorskie] .mp-count text')).toHaveText('9');
+  await expect(page.locator('#st-map .mv-stop')).toHaveCount(9);
+  await expect(page.locator('#st-map .mv-overview')).toHaveCount(1);
+  // obok mapy: województwa; wyszukiwanie – pasujące posterunki (i tylko one na mapie)
   await expect(page.locator('#st-mapside a[data-region=pomorskie]')).toBeVisible();
   await page.fill('#st-search', 'tczew');
   await expect(page.locator('#st-mapside a[data-id]')).toHaveCount(1);
-  await expect(page.locator('#st-map .mp-dot')).toHaveCount(1);
+  await expect(page.locator('#st-map .mv-stop')).toHaveCount(1);
   await page.fill('#st-search', '');
-  // klik w województwo (odnośnik SVG) – schemat regionu
-  await page.click('#st-map .mp-region[data-region=pomorskie]');
-  await expect(page).toHaveURL(/#\/sluzba\/pomorskie$/);
-  await expect(page.locator('.rm-region .rm-stop')).toHaveCount(9);
-  expect(await page.locator('.rm-region .rm-rail[data-line="202"]').count()).toBeGreaterThan(0);
-  await expect(page.locator('.st-rmap figcaption')).toContainText('OpenStreetMap');
-  await page.click('.rm-region .rm-stop[data-id=tczew]');
+  // klik w województwo w widoku kraju – przybliżenie do posterunków (bez zmiany ekranu), potem tablice z nazwami
+  // klik w punkt etykiety województwa (wewnątrz obszaru; etykieta przepuszcza kliknięcie)
+  const lab = await page.locator('#st-map .mv-rlabel[data-region=pomorskie] .mp-name').boundingBox();
+  await page.mouse.click(lab.x + lab.width / 2, lab.y - 6);
+  await expect(svg).toHaveAttribute('data-level', 'detail');
+  await expect(page).toHaveURL(/#\/sluzba$/);
+  await expect(page.locator('#st-map .mv-stop[data-id=tczew] .rm-plate')).toBeVisible();
+  expect(await page.locator('#st-map .rm-rail[data-line="202"]').count()).toBeGreaterThan(0);
+  await expect(page.locator('#st-map figcaption')).toContainText('OpenStreetMap');
+  // najechanie – karta posterunku; klik – strona stacji
+  await page.locator('#st-map .mv-stop[data-id=tczew] .rm-lamp').hover();
+  await expect(page.locator('#st-map .st-rinfo')).toContainText('Tczew');
+  await page.locator('#st-map .mv-stop[data-id=tczew] .rm-lamp').click();
   await expect(page).toHaveURL(/#\/stacja\/tczew$/);
-  await expect(page.locator('#st-briefing .st-bname')).toHaveText('Tczew');
   // przełącznik widoku: lista i z powrotem mapa
   await page.goto('/#/sluzba', { waitUntil: 'load' });
   await page.click('.st-mode a[data-mode=list]');
   await expect(page.locator('#st-list .st-card')).toHaveCount(9);
   await page.click('.st-mode a[data-mode=map]');
-  await expect(page.locator('#st-map svg')).toBeVisible();
+  await expect(page.locator('#st-map .mv-svg')).toBeVisible();
 });
+
+test('mapa przybliżana jak mapa w przeglądarce: kółko i szczypanie na gładziku przybliżają mapę, nie stronę; przyciski +/−/cała Polska; przeciąganie; dwa palce', async ({ page }) => {
+  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  const svg = page.locator('#st-map .mv-svg');
+  const zoom = async () => Number(await svg.getAttribute('data-zoom'));
+  const vb = async () => (await svg.getAttribute('viewBox')).split(' ').map(Number);
+  const z0 = await zoom();
+  const box = await svg.boundingBox();
+  const lamp = async (id) => { const r = await page.locator(`#st-map .mv-stop[data-id=${id}] .rm-lamp`).boundingBox(); return [r.x + r.width / 2, r.y + r.height / 2]; };
+  // kółko myszy nad mapą: przybliża wokół kursora (Gdańsk zostaje pod kursorem), strona bez przybliżenia
+  const [gx, gy] = await lamp('gdansk-glowny');
+  await page.mouse.move(gx, gy);
+  for (let i = 0; i < 3; i++) await page.mouse.wheel(0, -240);
+  await expect.poll(zoom).toBeGreaterThan(z0 * 2);
+  const [gx2, gy2] = await lamp('gdansk-glowny');
+  expect(Math.hypot(gx2 - gx, gy2 - gy)).toBeLessThan(4);
+  expect(await page.evaluate(() => [window.visualViewport?.scale ?? 1, window.scrollY, document.querySelector('#start').scrollTop])).toEqual([1, 0, 0]);
+  // szczypanie na gładziku (Chrome: kółko z Ctrl) – też mapa
+  const z1 = await zoom();
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -40); await page.keyboard.up('Control');
+  await expect.poll(zoom).toBeGreaterThan(z1);
+  // przyciski: + (dwa razy bliżej), − , cała Polska
+  const z2 = await zoom();
+  await page.click('#st-map .mv-btn[data-zoom=in]');
+  await expect.poll(zoom).toBeCloseTo(z2 * 2, 1);
+  await page.click('#st-map .mv-btn[data-zoom=out]');
+  await expect.poll(zoom).toBeCloseTo(z2, 1);
+  await page.click('#st-map .mv-btn[data-zoom=home]');
+  await expect.poll(zoom).toBeCloseTo(z0, 1);
+  await expect(page.locator('#st-map .mv-btn[data-zoom=out]')).toBeDisabled(); // dalej się nie da
+  // przeciąganie przesuwa mapę; klik po przeciągnięciu nie otwiera posterunku
+  await page.click('#st-map .mv-btn[data-zoom=in]'); await page.click('#st-map .mv-btn[data-zoom=in]');
+  await expect.poll(zoom).toBeCloseTo(z0 * 4, 1); // dwa kliknięcia w trakcie animacji – cztery razy bliżej
+  const before = await vb();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 120, box.y + box.height / 2 - 60, { steps: 6 });
+  await page.mouse.up();
+  const after = await vb();
+  expect(after[0]).toBeGreaterThan(before[0]);
+  expect(after[1]).toBeGreaterThan(before[1]);
+  expect(after[2]).toBeCloseTo(before[2], 5);
+  // dwa palce (zdarzenia wskaźnika dotykowego): rozsunięcie palców przybliża
+  const z3 = await zoom();
+  const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+  const touch = (type, id, x, y) => svg.dispatchEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: x, clientY: y, button: 0, bubbles: true });
+  await touch('pointerdown', 1, cx - 40, cy); await touch('pointerdown', 2, cx + 40, cy);
+  for (let k = 1; k <= 5; k++) { await touch('pointermove', 1, cx - 40 - k * 16, cy); await touch('pointermove', 2, cx + 40 + k * 16, cy); }
+  await touch('pointerup', 1, cx - 120, cy); await touch('pointerup', 2, cx + 120, cy);
+  await expect.poll(zoom).toBeGreaterThan(z3 * 2.5);
+  // klawiatura na mapie z fokusem: 0 – cała Polska
+  await svg.focus(); await page.keyboard.press('0');
+  await expect.poll(zoom).toBeCloseTo(z0, 1);
+});
+
+test('ekran województwa: ta sama mapa przybliżona do posterunków – tablice z nazwami od razu, dalej można oddalić', async ({ page }) => {
+  await page.goto('/#/sluzba/pomorskie', { waitUntil: 'load' });
+  const svg = page.locator('#st-rmapfig .mv-svg');
+  await expect(svg).toHaveAttribute('data-level', 'detail');
+  for (const id of ['reda', 'sopot', 'tczew']) await expect(page.locator(`#st-rmapfig .mv-stop[data-id=${id}] .rm-plate`)).toBeVisible();
+  await page.click('#st-rmapfig .mv-btn[data-zoom=home]');
+  await expect(svg).toHaveAttribute('data-level', 'country');
+  await expect(page.locator('#st-rmapfig .mv-stop[data-id=sopot] .rm-plate')).toBeHidden();
+});
+

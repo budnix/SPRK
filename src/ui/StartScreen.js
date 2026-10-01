@@ -14,7 +14,8 @@ import {
   parentRoute, bestResult, missionDone,
 } from './catalog.js';
 import { loadProgress, loadLastShift } from './progress.js';
-import { polandMapSvg, regionMapSvg } from './map/mapSvg.js';
+import { regionBox } from './map/mapSvg.js';
+import { MapView } from './map/MapView.js';
 
 export { dutyStations } from './catalog.js';
 
@@ -361,7 +362,7 @@ export class StartScreen {
         </div>
       </div>
       <div class="st-count" id="st-count" aria-live="polite"></div>
-      ${mode === 'map' ? `<div class="st-mapwrap"><div class="st-map" id="st-map"></div><aside class="st-mapside" id="st-mapside"></aside></div>` : '<div id="st-list" class="st-list"></div>'}
+      ${mode === 'map' ? `<div class="st-mapwrap">${this.#mapFigure('st-map')}<aside class="st-mapside" id="st-mapside"></aside></div>` : '<div id="st-list" class="st-list"></div>'}
     </div>`;
     const v = this.view;
     v.querySelector('#st-srk').value = f.srk[0] || '';
@@ -414,7 +415,9 @@ export class StartScreen {
       return;
     }
     const counts = regionCounts(found);
-    v.querySelector('#st-map').innerHTML = polandMapSvg({ counts, stations: found, label: (name, n) => t('start.mapRegion', { name, n }) });
+    // mapa zostaje w tym samym miejscu i przybliżeniu przy zmianie filtrów
+    const keep = this.mapView?.host?.isConnected ? this.mapView.view : null;
+    this.#mount(v.querySelector('#st-map .st-mapview'), found, { view: keep });
     const f = this.filters;
     const filtered = f.query || f.srk.length || f.difficulty.length || f.era != null || f.region || f.notPlayed;
     // obok mapy: bez filtrów – województwa z posterunkami, z filtrami – pasujące posterunki
@@ -455,22 +458,34 @@ export class StartScreen {
     const list = sortStations(placesOf(STATIONS).map((eds) => eds[0]).filter((s) => s.region === region), this.sort);
     const mark = (st) => { const b = bestResult(this.progress, st.id); return b ? `played grade-${b.grade}` : ''; };
     this.view.innerHTML = `<div class="st-region">
-      <figure class="st-rmap">${regionMapSvg(region, list, { mark })}<div class="st-rinfo" id="st-rinfo" aria-live="polite"><span class="muted">${t('start.regionInfoHint')}</span></div><figcaption class="muted">${t('start.regionMapNote')}</figcaption></figure>
+      ${this.#mapFigure('st-rmapfig')}
       <section class="st-rlist"><h3><span class="st-kicker">${t('start.duty')}</span>${t('start.regionStations', { n: list.length })}</h3>
         <div id="st-list" class="st-list">${list.map((s) => this.#card(s)).join('') || `<div class="st-empty">${t('start.noResults')}</div>`}</div></section>
     </div>`;
     this.#bindCards(this.view.querySelector('#st-list'));
-    // karta posterunku na tablicy: najechanie albo fokus na przystanku – tablica z nazwą, trudność, stanowisko, ocena
-    const info = this.view.querySelector('#st-rinfo');
-    const show = (ev) => {
-      const stop = ev.target.closest?.('.rm-stop'); if (!stop) return;
-      const st = STATIONS.find((x) => x.id === stop.dataset.id); if (!st) return;
-      info.innerHTML = `<span class="st-rinfo-name">${esc(st.name)}</span>${difficultyMark(st.difficulty)}<span class="st-rinfo-srk">${esc(srkBadge(st))} · ${t('start.scen', { n: (st.scenarios || []).filter((x) => !x.tutorial).length })}</span>${stamp(bestResult(this.progress, st.id))}`;
-      info.classList.add('on');
-    };
-    const svg = this.view.querySelector('.rm-region');
-    svg.addEventListener('pointerover', show);
-    svg.addEventListener('focusin', show);
+    // schemat województwa: ta sama mapa, przybliżona do wycinka posterunków (dalej da się przybliżać i oddalać)
+    this.#mount(this.view.querySelector('#st-rmapfig .st-mapview'), list, { view: regionBox(region, list, { aspect: 0.5, min: { lat: 0.3, lon: 0.4 } }) });
+  }
+
+  /** Mapa z kartą posterunku (najechanie / fokus) i podpisem źródeł. */
+  #mapFigure(id) {
+    return `<figure class="st-rmap" id="${id}"><div class="st-mapview"></div><div class="st-rinfo" aria-live="polite"><span class="muted">${t('start.regionInfoHint')}</span></div><figcaption class="muted">${t('start.regionMapNote')}</figcaption></figure>`;
+  }
+
+  /** Przybliżana mapa (MapView) z posterunkami `stations`; `view` – początkowy wycinek (inaczej cała Polska). */
+  #mount(host, stations, { view = null } = {}) {
+    const mark = (st) => { const b = bestResult(this.progress, st.id); return b ? `played grade-${b.grade}` : ''; };
+    const card = host.parentElement.querySelector('.st-rinfo');
+    this.mapView = new MapView(host, {
+      stations, counts: regionCounts(stations), mark, view, label: (name, n) => t('start.mapRegion', { name, n }),
+      labels: { in: t('start.zoomIn'), out: t('start.zoomOut'), home: t('start.zoomHome'), map: t('start.mapLabel') },
+      // karta posterunku: tablica z nazwą, trudność, stanowisko, liczba zmian, ocena
+      onHover: (id) => {
+        const st = STATIONS.find((x) => x.id === id); if (!st) return;
+        card.innerHTML = `<span class="st-rinfo-name">${esc(st.name)}</span>${difficultyMark(st.difficulty)}<span class="st-rinfo-srk">${esc(srkBadge(st))} · ${t('start.scen', { n: (st.scenarios || []).filter((x) => !x.tutorial).length })}</span>${stamp(bestResult(this.progress, st.id))}`;
+        card.classList.add('on');
+      },
+    });
   }
 
   // --- strona stacji ----------------------------------------------------------------------------------------------

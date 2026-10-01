@@ -1,13 +1,16 @@
 import { PROJ, VIEWBOX, VOIVODESHIPS } from './poland.js';
 import { RAIL_LINES } from './railLines.js';
+import { RAIL_OVERVIEW } from './railOverview.js';
 import { regionLayout } from '../catalog.js';
 import { escapeHtml as esc } from '../dom.js';
 
 /**
- * Mapa wyboru posterunku jako tekst SVG (bez DOM – testy w Node, tests/map.test.js): Polska z województwami
- * (`src/ui/map/poland.js`, dane generowane) i schemat regionu – posterunki jako przystanki na liniach.
- * Województwa i przystanki to odnośniki SVG (`<a href="#/…">`) – klik i klawiatura bez skryptu, adres ekranu z
- * `catalog.routeHash`.
+ * Mapa wyboru posterunku jako tekst SVG (bez DOM – testy w Node, tests/map.test.js): jedna tablica dyspozytorska
+ * w jednostkach rysunku Polski (`src/ui/map/poland.js`), przybliżana przez `MapView` (atrybut viewBox). Warstwy:
+ * województwa, sieć kolejowa w małym przybliżeniu (Natural Earth, `railOverview.js`), dokładny przebieg linii posterunków
+ * (OpenStreetMap, `railLines.js`), nazwy województw z liczbą posterunków, numery linii, posterunki (lampka w obudowie
+ * i tablica stacyjna – odnośnik do strony stacji). Znaczniki i napisy mają stały rozmiar na ekranie: grupa z
+ * `data-x` / `data-y` dostaje od `MapView` przesunięcie i skalę (piksel ekranu w jednostkach rysunku).
  */
 
 /** [szerokość, długość] → [x, y] w jednostkach `VIEWBOX` (rzut z nagłówka `poland.js`). */
@@ -35,28 +38,6 @@ export function insidePath(d, [x, y]) {
     }
   }
   return inside;
-}
-
-/**
- * Polska: województwa z liczbą posterunków (`counts` – { region: n }; województwo z posterunkami jest wyróżnione,
- * etykieta z liczbą) i kropki stacji (`stations` z `geo`). `label(name, n)` – opis dla czytnika ekranu.
- */
-export function polandMapSvg({ counts = {}, stations = [], href = (id) => `#/sluzba/${id}`, label = (name, n) => `${name}: ${n}` } = {}) {
-  const regions = VOIVODESHIPS.map((v) => {
-    const n = counts[v.id] || 0;
-    return `<a class="mp-region${n ? ' has' : ''}" href="${href(v.id)}" data-region="${v.id}" aria-label="${esc(label(v.name, n))}">
-      <path class="mp-shape" d="${v.d}"/>
-      <text class="mp-name" x="${v.label[0]}" y="${v.label[1]}">${esc(v.name)}</text>
-      ${n ? `<g class="mp-count" transform="translate(${v.label[0]} ${v.label[1] + 26})"><circle r="13"/><text>${n}</text></g>` : ''}
-    </a>`;
-  }).join('');
-  const dots = stations.filter((s) => s.geo).map((s) => {
-    const [x, y] = project(s.geo);
-    return `<circle class="mp-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" data-id="${esc(s.id)}"/>`;
-  }).join('');
-  const grid = `<defs><pattern id="mp-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path class="rm-gridline" d="M40 0H0V40"/></pattern></defs>
-    <rect class="rm-board" x="-40" y="-40" width="${VIEWBOX[2] + 80}" height="${VIEWBOX[3] + 80}"/><rect class="rm-gridfill" x="-40" y="-40" width="${VIEWBOX[2] + 80}" height="${VIEWBOX[3] + 80}" fill="url(#mp-grid)"/>`;
-  return `<svg class="mp-poland" viewBox="${VIEWBOX.join(' ')}" role="group">${grid}${regions}<g class="mp-dots" aria-hidden="true">${dots}</g></svg>`;
 }
 
 /** [x, y] w jednostkach `VIEWBOX` → [szerokość, długość] (odwrotność `project`). */
@@ -88,83 +69,85 @@ export function regionBox(region, stations, { aspect = 1.8, min = { lat: 0.5, lo
   return box;
 }
 
+/** Ciąg [szer., dł., …] → ścieżka SVG w jednostkach rysunku. */
+function flatPath(flat) {
+  const pts = [];
+  for (let i = 0; i < flat.length; i += 2) {
+    const [x, y] = project([flat[i], flat[i + 1]]);
+    pts.push(`${x.toFixed(2)} ${y.toFixed(2)}`);
+  }
+  return `M${pts.join('L')}`;
+}
+
+/** Sieć w małym przybliżeniu (Natural Earth) – jedna ścieżka, stała grubość na ekranie. */
+export function overviewPath() {
+  return RAIL_OVERVIEW.map(flatPath).join('');
+}
+
 /**
- * Schemat regionu: kontur województwa, rzeczywisty przebieg linii kolejowych posterunków (`RAIL_LINES` z OpenStreetMap;
- * linia bez danych – odcinek prosty między kolejnymi posterunkami, `catalog.regionLayout`), numery linii przy torze,
- * posterunki jako przystanki z nazwą (odnośnik do strony stacji). Wycinek – `regionBox`; rysunek `width` × wysokość.
- * `mark(station)` – klasa przystanku (np. ocena gracza).
+ * Tablica: województwa (z posterunkami – wyróżnione, z liczbą), sieć, dokładne tory linii posterunków (linia przez co
+ * najmniej dwa posterunki – jaśniejsza; bez danych OSM – odcinek prosty między kolejnymi posterunkami), numery linii
+ * przy torze (środek odcinka między kolejnymi posterunkami, `data-len` – długość odcinka; krótki na ekranie – ukryty),
+ * posterunki `stations` (z `geo`). `counts` – { województwo: n }, `mark(station)` – klasa przystanku (ocena gracza),
+ * `label(name, n)` – opis województwa dla czytnika ekranu.
  */
-export function regionMapSvg(region, stations, { width = 1000, aspect = 1.8, href = (id) => `#/stacja/${id}`, mark = () => '', min } = {}) {
+export function boardSvg({ stations = [], counts = {}, mark = () => '', label = (name, n) => `${name}: ${n}`, href = (id) => `#/stacja/${id}` } = {}) {
   const geo = stations.filter((s) => s.geo);
-  const box = regionBox(region, geo, { aspect, ...(min ? { min } : {}) });
-  const s = width / box.w, height = Math.round(box.h * s);
-  const px = ([x, y]) => [(x - box.x) * s, (y - box.y) * s];
-  const layout = regionLayout(geo, (g) => px(project(g)));
+  const regions = VOIVODESHIPS.map((v) => {
+    const n = counts[v.id] || 0;
+    return `<path class="mp-shape${n ? ' has' : ''}" d="${v.d}" data-region="${v.id}" vector-effect="non-scaling-stroke"><title>${esc(label(v.name, n))}</title></path>`;
+  }).join('');
+  // dokładne tory: linie posterunków; główny ciąg (co najmniej dwa posterunki) jaśniejszy
+  const layout = regionLayout(geo, project);
   const at = Object.fromEntries(layout.nodes.map((n) => [n.id, n]));
-  const shapes = VOIVODESHIPS.map((x) => `<path class="rm-shape${x.id === region ? ' own' : ''}" d="${x.d}" vector-effect="non-scaling-stroke"/>`).join('');
-  // tory: rzeczywisty przebieg linii (RAIL_LINES, ciągi [szer., dł., …]) w pikselach rysunku
+  const busy = new Set(layout.segments.flatMap((g) => g.lines));
   const lineIds = [...new Set(geo.flatMap((st) => st.lines || []))].sort((a, b) => a - b);
-  const tracks = Object.fromEntries(lineIds.filter((l) => RAIL_LINES[l]).map((l) => [l, RAIL_LINES[l].map((flat) => {
-    const pts = [];
-    for (let i = 0; i < flat.length; i += 2) pts.push(px(project([flat[i], flat[i + 1]])));
-    return pts;
-  })]));
-  const pathOf = (pts) => `M${pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}`;
-  const near = (line, x, y) => { // punkt toru linii najbliższy (x, y)
+  const tracks = lineIds.filter((l) => RAIL_LINES[l]).map((l) => {
+    const d = RAIL_LINES[l].map(flatPath).join(''), hot = busy.has(l) ? ' hot' : '';
+    return `<path class="rm-sleepers${hot}" d="${d}" vector-effect="non-scaling-stroke"/><path class="rm-rail${hot}" data-line="${l}" d="${d}" vector-effect="non-scaling-stroke"/>`;
+  }).join('');
+  const straight = layout.segments.filter((g) => g.lines.some((l) => !RAIL_LINES[l])).map((g) => {
+    const a = at[g.a], b = at[g.b];
+    return `<path class="rm-rail" data-lines="${g.lines.filter((l) => !RAIL_LINES[l]).join(' ')}" d="M${a.x.toFixed(2)} ${a.y.toFixed(2)}L${b.x.toFixed(2)} ${b.y.toFixed(2)}" vector-effect="non-scaling-stroke"/>`;
+  }).join('');
+  // numer linii: punkt toru najbliższy środka odcinka, odsunięty w lewo (nazwy posterunków są z prawej) o 12 px ekranu
+  const nearest = (line, x, y) => {
     let best = null, bd = Infinity;
-    for (const pts of tracks[line] || []) for (const p of pts) { const d = Math.hypot(p[0] - x, p[1] - y); if (d < bd) { bd = d; best = p; } }
+    for (const flat of RAIL_LINES[line] || []) for (let i = 0; i < flat.length; i += 2) {
+      const p = project([flat[i], flat[i + 1]]), d = Math.hypot(p[0] - x, p[1] - y);
+      if (d < bd) { bd = d; best = p; }
+    }
     return best;
   };
-  // numer linii obok toru, po lewej (nazwy posterunków są z prawej): przy odcinku między kolejnymi posterunkami (punkt toru
-  // najbliższy środka; krótki odcinek – bez numeru, zasłoniłby przystanki), linia z jednym posterunkiem – kawałek dalej
-  const labels = [], taken = [];
-  // zajęte miejsca: przystanek z nazwą (prostokąt na prawo) i już postawione numery – nowy numer nie nachodzi na nie
-  const busy = (x, y) => taken.some((b) => x > b.x0 && x < b.x1 && y > b.y0 && y < b.y1);
-  for (const n of layout.nodes) taken.push({ x0: n.x - 16, x1: n.x + 14 + 9 * (geo.find((g) => g.id === n.id).name.length), y0: n.y - 16, y1: n.y + 16 });
-  const label = (text, x, y, dx, dy) => {
-    const len = Math.hypot(dx, dy) || 1;
+  const lnums = layout.segments.map((g) => {
+    const a = at[g.a], b = at[g.b];
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
     let nx = -dy / len, ny = dx / len;
     if (nx > 0) { nx = -nx; ny = -ny; }
-    const lx = x + nx * 12, ly = y + ny * 12 + 4;
-    if (busy(lx - 4, ly - 4) || busy(lx - 7 * text.length, ly - 4)) return;
-    taken.push({ x0: lx - 7.5 * text.length - 6, x1: lx + 6, y0: ly - 16, y1: ly + 6 });
-    labels.push(`<text class="rm-line" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}">${text}</text>`);
-  };
-  const straight = [];
-  for (const g of layout.segments) {
-    const a = at[g.a], b = at[g.b];
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const missing = g.lines.filter((l) => !tracks[l]);
-    if (missing.length) straight.push(`<path class="rm-rail" data-lines="${missing.join(' ')}" d="M${a.x.toFixed(1)} ${a.y.toFixed(1)}L${b.x.toFixed(1)} ${b.y.toFixed(1)}"/>`);
-    if (Math.hypot(dx, dy) < 60) continue;
-    const m = near(g.lines[0], (a.x + b.x) / 2, (a.y + b.y) / 2) || [(a.x + b.x) / 2, (a.y + b.y) / 2];
-    label(g.lines.join(' · '), m[0], m[1], dx, dy);
-  }
-  const inSegments = new Set(layout.segments.flatMap((g) => g.lines));
-  for (const l of lineIds.filter((x) => tracks[x] && !inSegments.has(x))) {
-    const st = geo.find((x) => (x.lines || []).includes(l)), n = at[st.id];
-    // pierwszy punkt toru 70–160 px od posterunku, wewnątrz rysunku
-    const pts = tracks[l].flat().filter(([x, y]) => x > 20 && x < width - 20 && y > 20 && y < height - 20);
-    const p = pts.find(([x, y]) => { const d = Math.hypot(x - n.x, y - n.y); return d >= 70 && d <= 160; });
-    if (p) label(String(l), p[0], p[1], p[0] - n.x, p[1] - n.y);
-  }
-  const busyLines = new Set(layout.segments.flatMap((g) => g.lines));
-  const rails = Object.entries(tracks).map(([l, parts]) => parts.map((pts) => {
-    const d = pathOf(pts), hot = busyLines.has(Number(l)) ? ' hot' : '';
-    return `<path class="rm-sleepers${hot}" d="${d}"/><path class="rm-rail${hot}" data-line="${l}" d="${d}"/>`;
-  }).join('')).join('');
-  const stops = geo.map((st) => {
-    const n = at[st.id], x = n.x.toFixed(1), y = n.y.toFixed(1);
-    const w = Math.round(st.name.length * 8.1 + 18); // szerokość tablicy z nazwą (Inter 14 px półgruby)
-    return `<a class="rm-stop ${mark(st)}" href="${href(st.id)}" data-id="${esc(st.id)}" aria-label="${esc(st.name)}">
-      <circle class="rm-halo" cx="${x}" cy="${y}" r="15"/><circle class="rm-housing" cx="${x}" cy="${y}" r="9"/><circle class="rm-lamp" cx="${x}" cy="${y}" r="5.5"/>
-      <g class="rm-plate" transform="translate(${(n.x + 16).toFixed(1)} ${(n.y - 12).toFixed(1)})"><rect width="${w}" height="24" rx="2"/><rect class="rm-plate-edge" x="2.5" y="2.5" width="${w - 5}" height="19" rx="1"/><text x="9" y="16.5">${esc(st.name)}</text></g></a>`;
+    const m = nearest(g.lines[0], (a.x + b.x) / 2, (a.y + b.y) / 2) || [(a.x + b.x) / 2, (a.y + b.y) / 2];
+    return `<g class="mv-lnum" data-x="${m[0].toFixed(2)}" data-y="${m[1].toFixed(2)}" data-len="${len.toFixed(2)}"><text class="rm-line" x="${(nx * 12).toFixed(1)}" y="${(ny * 12 + 4).toFixed(1)}">${g.lines.join(' · ')}</text></g>`;
   }).join('');
-  // tło tablicy dyspozytorskiej: siatka jak na pulpicie
-  const grid = `<defs><pattern id="rm-grid-${region}" width="40" height="40" patternUnits="userSpaceOnUse"><path class="rm-gridline" d="M40 0H0V40"/></pattern></defs>
-    <rect class="rm-board" width="${width}" height="${height}"/>`;
-  return `<svg class="rm-region" viewBox="0 0 ${width} ${height}" role="group" data-region="${region}">${grid}
-    <g transform="scale(${s.toFixed(4)}) translate(${(-box.x).toFixed(2)} ${(-box.y).toFixed(2)})" aria-hidden="true">${shapes}</g>
-    <rect class="rm-gridfill" width="${width}" height="${height}" fill="url(#rm-grid-${region})" aria-hidden="true"/>
-    <g class="rm-segs" aria-hidden="true">${rails}${straight.join('')}${labels.join('')}</g>${stops}</svg>`;
+  // nazwy województw z liczbą posterunków (liczba – zapalona lampka)
+  const rlabels = VOIVODESHIPS.map((v) => {
+    const n = counts[v.id] || 0;
+    return `<g class="mv-rlabel${n ? ' has' : ''}" data-x="${v.label[0]}" data-y="${v.label[1]}" data-region="${v.id}"><text class="mp-name">${esc(v.name)}</text>${n ? `<g class="mp-count" transform="translate(0 22)"><circle r="12"/><text>${n}</text></g>` : ''}</g>`;
+  }).join('');
+  const stops = geo.map((st) => {
+    const [x, y] = project(st.geo);
+    const w = Math.round(st.name.length * 8.1 + 18); // szerokość tablicy z nazwą (Inter 14 px półgruby)
+    return `<a class="rm-stop mv-stop ${mark(st)}" href="${href(st.id)}" data-id="${esc(st.id)}" data-x="${x.toFixed(2)}" data-y="${y.toFixed(2)}" aria-label="${esc(st.name)}">
+      <circle class="rm-halo" r="15"/><circle class="rm-housing" r="9"/><circle class="rm-lamp" r="5.5"/>
+      <g class="rm-plate" transform="translate(16 -12)"><rect width="${w}" height="24" rx="2"/><rect class="rm-plate-edge" x="2.5" y="2.5" width="${w - 5}" height="19" rx="1"/><text x="9" y="16.5">${esc(st.name)}</text></g></a>`;
+  }).join('');
+  // obrys województw z posterunkami i podświetlenia (MapView) nad wypełnieniami wszystkich województw – inaczej sąsiad
+  // rysowany później zasłania połowę linii na wspólnej granicy, a na wybrzeżu i granicy kraju widać ją całą
+  const outlines = VOIVODESHIPS.filter((v) => counts[v.id]).map((v) => `<path class="mp-outline" d="${v.d}" vector-effect="non-scaling-stroke"/>`).join('');
+  return `<svg class="mv-svg" viewBox="${VIEWBOX.join(' ')}" data-level="country">
+    <g class="mv-regions">${regions}</g>
+    <g class="mv-outlines" aria-hidden="true">${outlines}<path class="mp-hover" d=""/></g>
+    <path class="mv-overview" d="${overviewPath()}" vector-effect="non-scaling-stroke" aria-hidden="true"/>
+    <g class="mv-tracks" aria-hidden="true">${tracks}${straight}</g>
+    <g class="mv-rlabels" aria-hidden="true">${rlabels}</g>
+    <g class="mv-lnums" aria-hidden="true">${lnums}</g>
+    <g class="mv-stops">${stops}</g></svg>`;
 }

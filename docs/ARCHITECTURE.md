@@ -430,15 +430,17 @@ tylko z adresu, więc przycisk „wstecz” przeglądarki i odświeżenie dział
 * `#/szkolenie[/n]` – misje wprowadzające (scenariusze z `tutorial`, `missionList`) jako przystanki na torze, semafor
   i odprawa misji: opis, stacja, liczba kroków i start (szkolenie to tylko misje – bez wyboru zmiany i zakłóceń; pełne
   zmiany stacji szkoleniowych są dostępne tylko z adresu `?stacja=…&scenariusz=…`);
-* `#/sluzba` – mapa Polski (`src/ui/map/mapSvg.js`, dane i źródła – `docs/MAP-DATA.md`): województwa z liczbą
-  pasujących posterunków (odnośniki do regionu), lampki stacji; obok – województwa albo, przy wyszukiwaniu i filtrach,
+* `#/sluzba` – mapa Polski przybliżana jak mapa w przeglądarce (`src/ui/map/MapView.js`, rysunek `mapSvg.boardSvg`,
+  dane i źródła – `docs/MAP-DATA.md`): kółko myszy, szczypanie, przeciąganie, dwa palce, przyciski + / − / cała Polska;
+  z daleka województwa z liczbą pasujących posterunków (klik – przybliżenie) i sieć kolejowa, bliżej tory linii
+  posterunków i lampki, najbliżej tablice z nazwami; obok – województwa albo, przy wyszukiwaniu i filtrach,
   pasujące posterunki; `#/sluzba/lista` – posterunki do służby (`dutyStations` – bez stacji szkoleniowych; jedno miejsce
   raz, edycje są zakładkami). Oba widoki mają wyszukiwarkę („/” przenosi do pola, Enter otwiera pierwszy wynik) i filtry:
   stanowisko (lista wszystkich rodzajów z rejestru z liczbą posterunków), trudność (zawsze 1–5), era i województwo (gdy
   są co najmniej dwie wartości), „tylko niegrane”; lista – kolejność A–Z / wg trudności (zapamiętana w localStorage);
-* `#/sluzba/<województwo>` – schemat województwa jako tablica dyspozytorska: rzeczywisty przebieg linii (OpenStreetMap,
-  `src/ui/map/railLines.js`), posterunki jako lampki (żółta – niegrany, zielona – grany) z tablicami stacyjnymi,
-  numery linii przy torze, karta posterunku po najechaniu / fokusie; pod spodem karty posterunków województwa;
+* `#/sluzba/<województwo>` – ta sama mapa przybliżona do posterunków województwa (tablica dyspozytorska: rzeczywisty
+  przebieg linii z OpenStreetMap, posterunki jako lampki – żółta niegrany, zielona grany – z tablicami stacyjnymi, numery
+  linii przy torze, karta posterunku po najechaniu / fokusie); pod spodem karty posterunków województwa;
 * `#/stacja/<id>` – strona stacji: tablica z nazwą, trudność (pięć lampek, `difficultyMark` w `src/ui/brand.js`),
   zakładki ery (`eraTabs`, gdy miejsce ma kilka edycji), miniatura planu, opis i urządzenia, najlepszy wynik, wybór
   zmiany (okręg tylko dla stacji z `districts`, scenariusz, zakłócenia; ziarno w „Zaawansowane”) i start.

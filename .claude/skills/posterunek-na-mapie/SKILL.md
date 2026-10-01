@@ -25,8 +25,10 @@ Pełny opis danych, źródeł i licencji: `docs/MAP-DATA.md` – przeczytaj go n
    - zmieniony wygląd mapy / schematu → `npx playwright test tests/e2e/visual.spec.js --update-snapshots` (litery na
      zrzutach są ukryte, wzorzec z macOS przechodzi w CI) i uzasadnienie w commicie.
    Testy wyliczają posterunki – liczby (np. „9 posterunków”) w testach e2e trzeba wtedy zaktualizować z uzasadnieniem.
-5. **Podgląd**: `#/sluzba` (mapa), `#/sluzba/<województwo>` (schemat) – obejrzyj, czy tablice z nazwami nie nachodzą
-   na siebie i czy tory nie urywają się przy krawędzi.
+5. **Podgląd**: `#/sluzba` (mapa – przybliż kółkiem / przyciskami do posterunku), `#/sluzba/<województwo>` (mapa
+   przybliżona do posterunków) – obejrzyj, czy tablice z nazwami nie nachodzą na siebie (próg `LEVELS.detail` w
+   `src/ui/map/zoom.js` liczy się z najbliższej pary posterunków – test w `tests/map.test.js`) i czy tory nie urywają się
+   na krawędzi wycinka.
 6. **Dokumentacja** w tym samym commicie: `docs/SOURCES.md` (źródła), README (lista stacji), w razie zmian w skryptach –
    `docs/MAP-DATA.md`.
 
