@@ -760,7 +760,8 @@ svg.screen .sig-label.stopped { fill: var(--mon-pink); }
 .scr-cmdbar button.active { background: var(--mon-active); border-color: var(--mon-active-border); color: var(--mon-on-active); }
 .scr-cmdbar button.special { color: var(--mon-special); }
 .scr-cmdinfo { color: var(--muted); font-size: 12px; margin-right: auto; order: -1; }
-.scr-menu { position: fixed; z-index: var(--z-cmd-menu); min-width: 250px; max-width: 320px; background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius); box-shadow: 0 8px 24px var(--mon-shadow); overflow: hidden; font-size: 13px; }
+/* szerokość wg treści (do 480 px, nie szersze niż okno) – polecenia blokady w jednej linii */
+.scr-menu { position: fixed; z-index: var(--z-cmd-menu); min-width: 250px; width: max-content; max-width: min(480px, calc(100vw - 16px)); background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius); box-shadow: 0 8px 24px var(--mon-shadow); overflow: hidden; font-size: 13px; }
 .scr-menu h5 { margin: 0; padding: 6px 10px; background: var(--mon-bg2); color: var(--mon-title); font-size: 12px; font-weight: 600; }
 .scr-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--mon-bg2); color: inherit; padding: 8px 10px; font: inherit; cursor: pointer; }
 .scr-menu button:hover { background: var(--mon-hover); }
