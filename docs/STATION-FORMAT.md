@@ -10,6 +10,11 @@ export default {
   name: 'Przykładowo',
   description: '…',
   location: '…',                  // gdzie leży posterunek (linia, region) – karta na ekranie startowym
+  region: 'pomorskie',            // województwo (src/model/regions.js) – mapa wyboru posterunku
+  geo: [54.5204, 18.5300],        // [szerokość, długość] stacji – punkt na mapie (opcjonalne)
+  lines: [202, 250, 201],         // numery linii kolejowych – schemat regionu i wyszukiwanie
+  place: 'gdynia-glowna',         // miejsce (opcjonalne, domyślnie id) – edycje jednego miejsca to zakładki ery
+  era: 2014,                      // rok stanu planu i urządzeń edycji (opcjonalne; brak – stan dzisiejszy)
   traffic: '…',                   // krótki opis ruchu – karta na ekranie startowym
   difficulty: 2,                  // trudność 1–5 (gwiazdki; sortowanie „wg trudności”)
   startTime: '05:52',             // początek zmiany
@@ -267,6 +272,26 @@ Pulpit dzieli się po kolumnach na osobne pulpity (zakładki). Sygnalizatory, zw
 wg kolumny kostki. Gracz wybiera okręg (`?okreg=GO|GO2|both`); pozostałe prowadzi `AutoOperator`:
 nastawnia wykonawcza działa tylko na polecenia dyżurnego (`sim.issueCommand`), dyżurny-automat sam wydaje polecenia
 graczowi-nastawniczemu. Przyciski obcego okręgu są zablokowane, jego pulpit jest w podglądzie.
+
+## Miejsce i era (`region`, `geo`, `lines`, `place`, `era`)
+
+Ekrany wyboru (`src/ui/catalog.js`, `src/ui/StartScreen.js`) pokazują posterunki do służby na mapie Polski, w regionie
+i na liście z wyszukiwarką. Posterunek do służby ma `region` (identyfikator województwa z `src/model/regions.js`, np.
+`pomorskie`, `slaskie`, `warminsko-mazurskie`) i `lines` (numery linii kolejowych – te same co w `location`; z nich
+powstaje schemat regionu: kolejne posterunki tej samej linii łączy odcinek). `geo` to współrzędne stacji (stopnie,
+[szerokość, długość], w granicach Polski) – źródło w `docs/SOURCES.md`. Stacje szkoleniowe (z misją) tych pól nie mają.
+Po dodaniu posterunku trzeba odświeżyć przebieg linii (`node scripts/rail-lines.mjs`); źródła, licencje i kroki –
+`docs/MAP-DATA.md` (skill `posterunek-na-mapie`).
+
+Era: jedno miejsce może mieć kilka edycji – osobnych plików stacji z własnym planem, rozkładem, taborem i **jednym**
+rodzajem stanowiska (`srk`), np. `gdynia-glowna` (stan dzisiejszy) i `gdynia-glowna-2010` z `place: 'gdynia-glowna'`
+i `era: 2010`. Edycje jednego miejsca są zakładkami na stronie stacji; mapa i lista pokazują miejsce raz. Przepisy są
+zawsze dzisiejsze (Ir-1, Ie-1) – era zmienia urządzenia, plan, rozkład i tabor. Rok edycji i granice er wynikają ze
+źródeł (`docs/SOURCES.md`).
+
+Jedno stanowisko na posterunek: zmiany posterunku do służby działają na jednym rodzaju stanowiska (pole `srk`
+scenariusza tylko w stacjach szkoleniowych). Wyjątki z czasów przed erami: Rumia i Reda (pulpit typu E i stanowisko
+komputerowe po modernizacji linii 202) – pilnuje tego `tests/catalog.test.js`.
 
 ## System srk stacji (`srk`)
 

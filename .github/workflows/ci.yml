@@ -28,7 +28,7 @@ jobs:
   e2e:
     name: Testy e2e (Playwright, część ${{ matrix.shard }}/2)
     runs-on: ubuntu-24.04
-    # obraz z gotowym Chromium i czcionkami DejaVu – wzorce zrzutów ekranu są z niego zależne
+    # obraz z gotowym Chromium; wzorce zrzutów powstają na dowolnym komputerze (litery na zrzutach przezroczyste)
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
     strategy:

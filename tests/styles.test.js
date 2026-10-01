@@ -33,7 +33,8 @@ test('każda warstwa ma własną wartość, ekrany pełne leżą nad menu i dymk
     assert.ok(z[screen] > z['--z-menu'], `${screen} nad menu`);
     assert.ok(z[screen] > z['--z-tutorial'], `${screen} nad samouczkiem`);
   }
-  assert.ok(z['--z-start'] > z['--z-report'] && z['--z-start'] > z['--z-settings']);
+  // ekran startowy nad raportem (raport → „Nowa zmiana…”); ustawienia nad ekranem startowym – otwiera je też ekran tytułowy
+  assert.ok(z['--z-start'] > z['--z-report'] && z['--z-settings'] > z['--z-start']);
 });
 
 test('motyw jasny ma komplet barw interfejsu (także ekranów pełnych)', () => {

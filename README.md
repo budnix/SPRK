@@ -10,7 +10,7 @@ beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) a
 
 Play it: **https://budnix.github.io/SPRK/**
 
-![Start screen: missions, stations and the briefing panel](docs/screenshots/start.png)
+![Station select: the Pomeranian voivodeship as a dispatcher board – real track course, stations as lamps with station signs](docs/screenshots/start.png)
 
 ## Screenshots
 
@@ -189,9 +189,17 @@ failure, a block failure, a peak with heavy disruptions).
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a
   terminating unit, a substitute signal after a signal fault and telephone announcements after a block fault.
 * Popups can be dragged anywhere; by default they avoid the track plan and the command bars.
-* Start screen like a mission select: missions first, then station cards with a schematic thumbnail, location, traffic
-  and a star rating, sortable alphabetically or by difficulty; the briefing panel on the right sets district,
-  scenario, disruptions and seed.
+* Station select like a game, with its own address for every screen (the browser Back button works): a title screen
+  (last shift, duty, training, settings), the training line with the six missions as stops (finished ones are ticked),
+  duty on a zoomable map of Poland (mouse wheel, pinch, drag, + / − buttons; voivodeships with their station count and
+  the rail network from afar, the real course of the lines and the stations closer in) or as a list, with a search box (no Polish letters
+  needed – "gdansk", a line number like "202", the equipment) and filters (workstation, difficulty 1–5, era,
+  voivodeship, not played yet), a dispatcher's board per voivodeship with the real course of the railway lines
+  (OpenStreetMap) and the stations as lamps with station signs, and a station page with a
+  station sign, era tabs when a place has several editions, the shift choice and a green "start" button. Your best grade
+  is stamped on the station card; the difficulty shows as one to five lamps. The shift report stamps the grade and shows the totals as
+  desk counters with a status lamp; in settings the categories are stops on a track and the chosen option lights its
+  lamp.
 
 ### Desk and screens
 * Wide stations are split into logical screens that fit the browser width (cuts avoid point groups, two-column overlap,
@@ -266,6 +274,8 @@ lives in one place.
 ## CI / deploy
 
 Workflow `.github/workflows/ci.yml`: every push and pull request runs `npm test` and the Playwright e2e suite
-(in the `mcr.microsoft.com/playwright` container, so screenshot baselines match its fonts; two shards on two runners,
+(in the `mcr.microsoft.com/playwright` container; screenshot baselines are made on any computer with
+`npm run test:e2e:update` – letters are hidden in the screenshots, so font rendering differences between systems don't
+matter; two shards on two runners,
 two workers each, pages served from the built bundle – `SPRK_E2E_PREVIEW=1`) in parallel with the Vite build; on
 `main` the GitHub Pages deploy waits for all of them, so a push is live in about a minute and a half.

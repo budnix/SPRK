@@ -5,6 +5,7 @@ import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
+import { saveLastShift, saveResult } from './ui/progress.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
 import { DeskViewport } from './ui/DeskViewport.js';
@@ -38,10 +39,15 @@ installNoBounce(document); // bez przesuwania strony i „pull to refresh” na 
 document.querySelector('#topbar .logo').innerHTML = logoSvg(22);
 document.getElementById('btn-menu').innerHTML = uiIcon('menu', 14);
 const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings.values.symScale });
+// ekran wyboru: ustawienia z ekranu tytułowego otwiera ten sam ekran ustawień co menu (zmienna niżej – wołana później)
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
-});
+}, { onSettings: () => settingsScreen.show({ fromStart: true }) });
 if (!params.get('scenariusz')) startScreen.show();
+else saveLastShift(location.search);
+document.documentElement.classList.remove('boot-start'); // ekran startowy już zakrywa pulpit (index.html) // kafelek „Ostatnia zmiana” na ekranie tytułowym
+/** „Nowa zmiana…” w trakcie zmiany (menu, raport): ostatnio oglądany ekran wyboru (mapa, lista, województwo, szkolenie). */
+const newShift = () => startScreen.showLast();
 
 const sim = new Simulation(station, {
   speed: 1,
@@ -55,8 +61,12 @@ const sim = new Simulation(station, {
 if (!params.get('scenariusz')) sim.clock.paused = true;
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? t('top.bothDistricts') : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
-const report = new Report(document.getElementById('report'), sim, { onNew: () => startScreen.show() });
-sim.bus.on('shift-end', () => report.show());
+const report = new Report(document.getElementById('report'), sim, { onNew: newShift });
+sim.bus.on('shift-end', (r) => {
+  // postęp gracza: najlepsza ocena zmiany na posterunku, misja – ukończona
+  saveResult({ station: station.id, scenario: sim.scenario.id, grade: r.grade, total: r.total, mission: !!sim.scenario.tutorial });
+  report.show();
+});
 
 /* ---- pulpity: jeden lub po jednym na okręg nastawczy ---- */
 // przyciski pulpitu (onPress / onPull / onCompound – protokół typu E) i polecenia wydawane wprost (onCommand, onCancel)
@@ -186,7 +196,7 @@ menuBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); })
 document.addEventListener('click', (e) => { if (!menuEl.contains(e.target)) toggleMenu(false); });
 document.getElementById('menu-help').addEventListener('click', () => { toggleMenu(false); help.toggle(); });
 document.getElementById('menu-settings').addEventListener('click', () => { toggleMenu(false); settingsScreen.show(); });
-document.getElementById('menu-new').addEventListener('click', () => { toggleMenu(false); startScreen.show(); });
+document.getElementById('menu-new').addEventListener('click', () => { toggleMenu(false); newShift(); });
 document.getElementById('menu-report').addEventListener('click', () => { toggleMenu(false); report.show(); });
 
 /* ---- pasek stanu: uzbrojenie i ostatni komunikat ---- */
@@ -358,3 +368,15 @@ if (mission && params.get('scenariusz')) {
 
 // Dla debugowania w konsoli
 window.sim = sim; window.desk = desk; window.side = side; window.tutorial = tutorial; window.viewport = viewport;
+
+// ekran wczytywania (index.html): zdjęty, gdy pulpit i panel są zbudowane, a czcionka wczytana (najdłużej 1,5 s czekania),
+// ale nie wcześniej niż BOOT_MIN_MS od początku wczytywania strony – krótkie mignięcie wygląda jak błąd
+const BOOT_MIN_MS = 1000;
+const bootEl = document.getElementById('boot');
+Promise.all([
+  Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]),
+  new Promise((r) => setTimeout(r, Math.max(0, BOOT_MIN_MS - performance.now()))), // performance.now() – od początku nawigacji
+]).then(() => requestAnimationFrame(() => {
+  bootEl?.classList.add('done');
+  setTimeout(() => bootEl?.remove(), 300);
+}));

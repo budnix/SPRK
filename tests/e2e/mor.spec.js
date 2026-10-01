@@ -104,23 +104,17 @@ test('mysz: przeciągnięcie prawym klawiszem od semafora do celu daje menu prze
   expect(await page.evaluate(() => window.sim.input.armed.selection.map((r) => r.id))).toEqual(['A', 'E2']);
 });
 
-test('ekran startowy: odprawa misji – samouczek albo pełna zmiana tej stacji na tym samym pulpicie; MOR-3 tylko w misji 6', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
-  // stacje szkoleniowe nie są na liście „Służba” – wejście do ich pełnej zmiany jest w odprawie misji
+test('ekran startowy: Kalinowo (MOR-3) tylko w misji 6 – odprawa misji bez wyboru zmiany; pełna zmiana stacji z adresu', async ({ page }) => {
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id="sopot"]')).toHaveCount(1);
   await expect(page.locator('.st-card[data-id="kalinowo"]')).toHaveCount(0);
-  const opts = () => page.locator('#st-scenario option').evaluateAll((o) => o.map((x) => x.value));
-  // misja nie zmienia pulpitu: misja 1 (monitor) – tylko zmiana na monitorze
-  await page.click('.st-mission[data-scenario="nauka-1"]');
-  expect(await opts()).toEqual(['nauka-1', 'zmiana']);
+  await page.goto('/#/szkolenie', { waitUntil: 'load' });
   await page.click('.st-mission[data-scenario="nauka-6"]');
-  const sel = page.locator('#st-scenario');
-  await expect(sel).toHaveValue('nauka-6');
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('MOR-3');
+  await expect(page.locator('#st-briefing select')).toHaveCount(0); // szkolenie to tylko misje
   await expect(page.locator('#st-go')).toContainText('misję');
-  expect(await opts()).toEqual(['nauka-6', 'zmiana']);
-  await sel.selectOption('zmiana');
-  await expect(page.locator('#st-scenario-desc')).toContainText('MOR-3');
-  await expect(page.locator('#st-level')).toBeEnabled();
-  await page.click('#st-go');
+  // pełna zmiana stacji szkoleniowej nie jest w menu, ale działa z adresu
+  await page.goto('/?stacja=kalinowo&scenariusz=zmiana&zaklocenia=low', { waitUntil: 'load' });
   await page.waitForURL(/stacja=kalinowo.*scenariusz=zmiana/);
   await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
   await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);

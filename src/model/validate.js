@@ -1,6 +1,7 @@
 import { hasTileDef, getTileDef } from '../tiles/registry.js';
 import { isDir } from '../tiles/directions.js';
 import { hasSrk } from '../srk/registry.js';
+import { isRegion, inPoland } from './regions.js';
 import { controlsFit, legacyButtons, controlAnchor } from '../tiles/controls.js';
 import { CATEGORIES, categoryKey, categoryOf, tractionOf, MAX_TONNES_PER_METRE } from './categories.js';
 import { ROLLING_STOCK, STOCK_KINDS, chainOf, pinnedTypes, unitLoop } from './rollingStock.js';
@@ -18,6 +19,14 @@ export function validateStation(st) {
   if (!st.name) errors.push('Brak pola name');
   if (!st.desk || !(st.desk.cols > 0) || !(st.desk.rows > 0)) errors.push('Brak wymiarów pulpitu desk.cols/desk.rows');
   if (st.srk != null && !hasSrk(st.srk)) errors.push(`Nieznany system srk: ${st.srk}`);
+  // miejsce na mapie i edycja (docs/STATION-FORMAT.md, „Miejsce i era”)
+  if (st.place != null && (typeof st.place !== 'string' || !/^[a-z0-9-]+$/.test(st.place))) errors.push(`place: identyfikator miejsca (a–z, cyfry, „-”), jest ${JSON.stringify(st.place)}`);
+  if (st.era != null && !(Number.isInteger(st.era) && st.era >= 1840 && st.era <= 2100)) errors.push(`era: rok stanu stacji (1840–2100), jest ${JSON.stringify(st.era)}`);
+  if (st.region != null && !isRegion(st.region)) errors.push(`region: nieznane województwo ${JSON.stringify(st.region)}`);
+  if (st.geo != null && !inPoland(st.geo)) errors.push(`geo: [szerokość, długość] w granicach Polski, jest ${JSON.stringify(st.geo)}`);
+  if (st.lines != null && !(Array.isArray(st.lines) && st.lines.length && st.lines.every((n) => Number.isInteger(n) && n > 0 && n < 1000) && new Set(st.lines).size === st.lines.length)) {
+    errors.push(`lines: lista numerów linii kolejowych (różne liczby 1–999), jest ${JSON.stringify(st.lines)}`);
+  }
   for (const sc of st.scenarios || []) if (sc.srk != null && !hasSrk(sc.srk)) errors.push(`Scenariusz ${sc.id}: nieznany system srk: ${sc.srk}`);
   if (!Array.isArray(st.tiles)) { errors.push('Brak listy kostek tiles'); return { errors, warnings }; }
   const occupied = new Map();

@@ -167,6 +167,9 @@ export default {
   srkInfo: 'Komputerowe (Ebilock 950 / EbiScreen). Od modernizacji E65 (2011–2015) tory linii 202 są obiektem zdalnego sterowania LCS Gdynia (dawna nastawnia „Sp” zlikwidowana, „Sp1” rezerwowa); tory SKM 501/502 – obiekt zdalnego sterowania „Sp-SKM” nastawni G-SKM (Gdańsk Główny, PKP SKM). W symulatorze oba obszary obsługuje jedno stanowisko na miejscu.',
   description: 'Stacja na liniach 202 Gdańsk – Stargard i 250 SKM. Grupa zachodnia (tory 6, 2a, 4, 1a), peron II (tory 2/1), peron I SKM (502a/501a), tor 13 z wykolejnicą Wk7. Przejazd pociągu to trzy przebiegi. Numeracja rozjazdów i semaforów z planu stacji (2023).',
   location: 'Linie 202 Gdańsk – Gdynia i 250 (SKM), woj. pomorskie.',
+  region: 'pomorskie',          // województwo – mapa wyboru posterunku
+  lines: [202, 250],              // linie kolejowe (jak w `location`)
+  geo: [54.4408, 18.5622],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min, regionalne i dalekobieżne z postojem przy peronie II, odstawianie składów; przejazd to trzy przebiegi.',
   difficulty: 4,
   startTime: '05:55',

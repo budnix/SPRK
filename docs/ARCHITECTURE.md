@@ -423,14 +423,53 @@ własna kostka opisu zostaje pusta, więc opis nigdy nie leży na obrysie peronu
 
 ## Ekran startowy (`src/ui/StartScreen.js`)
 
-Misje wprowadzające (scenariusze z `tutorial`, `missionList`) u góry; niżej karty posterunków do służby (`dutyStations` – bez
-stacji szkoleniowych, czyli tych, które mają misję; ich zmiany są tylko do testów i przez adres URL) z `location`, `traffic`,
-`difficulty` (gwiazdki) i etykietą stanowiska, sortowane alfabetycznie lub wg trudności (`sortStations`, wybór
-zapamiętany w localStorage). Układ dwuetapowy: przewijana lista (misje, potem posterunki) po lewej, „tor” ze strzałką i odprawa (briefing) po prawej –
-miniatura, opis i parametry zmiany (scenariusz, zakłócenia, ziarno; okręg tylko dla stacji z `districts`) albo, dla misji, opis i liczba kroków.
-Na wąskim ekranie odprawa staje pod wybraną kartą. Ekran startowy leży nad dymkami samouczka i menu (z-index).
-Karty i odprawa (briefing) mają miniatury planów z `src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
-Funkcje sortowania, listy misji i miniatur są bez DOM – testowane w Node.
+Wybór jak w grze – kilka ekranów z własnym adresem w części „#” (`catalog.parseRoute` / `routeHash`; stan ekranu wynika
+tylko z adresu, więc przycisk „wstecz” przeglądarki i odświeżenie działają, a link prowadzi do konkretnej stacji):
+* `#/` tytuł – kafelki: ostatnia zmiana (uruchamia ją ponownie), Służba, Szkolenie (licznik ukończonych misji),
+  Ustawienia (ten sam ekran ustawień co w menu – leży nad ekranem startowym);
+* `#/szkolenie[/n]` – misje wprowadzające (scenariusze z `tutorial`, `missionList`) jako przystanki na torze, semafor
+  i odprawa misji: opis, stacja, liczba kroków i start (szkolenie to tylko misje – bez wyboru zmiany i zakłóceń; pełne
+  zmiany stacji szkoleniowych są dostępne tylko z adresu `?stacja=…&scenariusz=…`);
+* `#/sluzba` – mapa Polski przybliżana jak mapa w przeglądarce (`src/ui/map/MapView.js`, rysunek `mapSvg.boardSvg`,
+  dane i źródła – `docs/MAP-DATA.md`): kółko myszy, szczypanie, przeciąganie, dwa palce, przyciski + / − / cała Polska;
+  z daleka województwa z liczbą pasujących posterunków (klik – przybliżenie) i sieć kolejowa, bliżej tory linii
+  posterunków i lampki, najbliżej tablice z nazwami; obok – województwa albo, przy wyszukiwaniu i filtrach,
+  pasujące posterunki; `#/sluzba/lista` – posterunki do służby (`dutyStations` – bez stacji szkoleniowych; jedno miejsce
+  raz, edycje są zakładkami). Oba widoki mają wyszukiwarkę („/” przenosi do pola, Enter otwiera pierwszy wynik) i filtry:
+  stanowisko (lista wszystkich rodzajów z rejestru z liczbą posterunków), trudność (zawsze 1–5), era i województwo (gdy
+  są co najmniej dwie wartości), „tylko niegrane”; lista – kolejność A–Z / wg trudności (zapamiętana w localStorage);
+* `#/sluzba/<województwo>` – ta sama mapa przybliżona do posterunków województwa (tablica dyspozytorska: rzeczywisty
+  przebieg linii z OpenStreetMap, posterunki jako lampki – żółta niegrany, zielona grany – z tablicami stacyjnymi, numery
+  linii przy torze, karta posterunku po najechaniu / fokusie); pod spodem karty posterunków województwa;
+* `#/stacja/<id>` – strona stacji: tablica z nazwą, trudność (pięć lampek, `difficultyMark` w `src/ui/brand.js`),
+  zakładki ery (`eraTabs`, gdy miejsce ma kilka edycji), miniatura planu, opis i urządzenia, najlepszy wynik, wybór
+  zmiany (okręg tylko dla stacji z `districts`, scenariusz, zakłócenia; ziarno w „Zaawansowane”) i start.
+Nagłówek ma okruszki (Start › Służba › województwo › stacja) i „‹ Wstecz” (`catalog.parentRoute`); Esc bez trwającej
+zmiany – piętro wyżej. Przy wejściu do gry (bez `scenariusz` w adresie) otwiera się tytuł; „Nowa zmiana…” w trakcie
+zmiany (menu, raport) – ostatnio oglądany ekran wyboru (mapa w tym samym przybliżeniu, lista, województwo, szkolenie;
+`localStorage`), a bez zapisu – lista posterunków. Ekran wczytywania (`#boot` w `index.html`, semafor ze światłami
+zapalanymi po kolei, napis wg języka z ustawień) jest od pierwszej klatki; `main.js` zdejmuje go po zbudowaniu pulpitu
+i wczytaniu czcionki, nie wcześniej niż 1 s od początku wczytywania (`BOOT_MIN_MS` – bez mignięcia; przy błędzie skryptu
+znika sam) – bez pustego układu przed pulpitem. Wejście bez zmiany w adresie: skrypt w `index.html` dodaje klasę
+`boot-start` (pulpit ukryty od pierwszej klatki, tło ekranu startowego), `main.js` zdejmuje ją po otwarciu ekranu – bez
+mignięcia pulpitu przed tytułem. Ustawienia otwarte z tytułu mają „Wróć do menu”, z menu zmiany – „Wróć do zmiany”. Otwarcie ekranu zdejmuje parametry zmiany z adresu (odświeżenie
+zostaje na wyborze), „Wróć do zmiany” je przywraca; start zmiany ładuje adres `?stacja=…` bez części „#”.
+Ekran startowy leży nad dymkami samouczka i menu (z-index). Karty i odprawa mają miniatury planów z
+`src/render/thumbnail.js` (SVG jako tekst z definicji kostek, bez DOM).
+Wygląd ze świata nastawni: misje stoją na torze jak przystanki linii szkoleniowej (numer to znacznik przystanku, wybrana
+misja go zapala, ukończona ma zieloną obwódkę i znacznik); semafor między misjami a odprawą (`signalSvg` z `brand.js`)
+pokazuje „Stój”, a po wyborze misji „wolna droga” (samo CSS, `:has(.st-briefing.open)`); pusta odprawa ma ten sam
+semafor; nazwa w odprawie to tablica stacyjna (granatowa emalia, `--sc-plate`), a przycisk startu świeci zielenią
+sygnału zezwalającego (`--sc-go`); najlepsza ocena to mała pieczątka na karcie i stronie stacji.
+Postęp gracza (`src/ui/progress.js`, localStorage): `main.js` przy `shift-end` zapisuje najlepszy wynik zmiany
+(`catalog.recordResult`, misja – ukończona), a przy starcie zmiany – adres ostatniej zmiany. Funkcje sortowania, listy
+misji, zakładek ery i miniatur są bez DOM – testowane w Node.
+Katalog posterunków (`src/ui/catalog.js`, bez DOM, `tests/catalog.test.js`): posterunki do służby i szkoleniowe,
+miejsca i edycje (`place`, `era` – zakładki ery), wyszukiwanie bez polskich znaków (nazwa, położenie, linie, województwo,
+rok, urządzenia; nazwa pasująca w całości pierwsza), filtry (stanowisko, trudność, era, województwo, niegrane), adresy
+ekranów wyboru (`parseRoute` / `routeHash`), schemat regionu (kolejne posterunki linii – `regionLayout`) i postęp gracza
+(najlepsza ocena zmiany, ukończone misje). Województwa i granice Polski do walidacji `region` / `geo`:
+`src/model/regions.js`.
 
 ## Koniec zmiany i raport (`src/model/Score.js`, `src/ui/Report.js`)
 
@@ -443,7 +482,8 @@ czasie rozkładu / terminie zadania), a zmiana trwa, dziennik dostaje jedną pod
 zakończenia zmiany: …” z pociągami stojącymi na stacji i zadaniami. `sim.report()` (także w trakcie) daje pełny
 raport: ocena i punkty, wiersze pociągów (plan / rzeczywistość / tor / opóźnienie / stan), punktualność, zadania,
 bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endReason`: all-done | time | manual).
-`Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena z gwiazdkami, kafelki, tabele) z przyciskami
+`Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena jako pieczątka odbita raz przy otwarciu, kafelki jak
+liczniki pulpitu – cyfry w okienku, stan lampką w rogu – i tabele jak arkusz rozkładu) z przyciskami
 „Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu.
 
 ## Tabor pociągów (`src/model/rollingStock.js`)
@@ -566,9 +606,14 @@ scenariusza. Zapisane ustawienia (localStorage) mają pierwszeństwo; zmiana `ro
   (`--cat-*`), barwy urządzeń niezależne od motywu – pulpit (`--desk-*`) i paski / menu monitora (`--mon-*`).
   `tests/styles.test.js` pilnuje, że reguły interfejsu nie mają barw, promieni ani warstw wpisanych na sztywno.
 * **Ekrany pełne** (start, ustawienia, raport, instrukcja) mają jeden układ – nagłówek `.st-hero` z logo, tytułem
-  i przyciskiem powrotu, treść na kartach – i idą za motywem interfejsu. `dialog.js` nadaje im rolę okna dialogowego,
+  i przyciskiem powrotu, pod nim tor (szyny na podkładach), treść na kartach; na telefonie logo stoi nad tytułem – i idą
+  za motywem interfejsu. Wygląd ze świata nastawni (tor, semafor, lampki kontrolne, liczniki, tablica stacyjna,
+  pieczątka) daje kilka zmiennych `--sc-*` w obu motywach: `--sc-plate*`, `--sc-lamp-*` / `--sc-glow-*`, `--sc-lens-off`,
+  `--sc-counter*`, `--sc-rail`, `--sc-sleeper`, `--sc-go*`, `--sc-warn-plate`. Ustawienia: kategorie to przystanki na
+  torze (bieżąca – zapalona lampka), wybór opcji pokazuje lampka kontrolna (pole wyboru z `appearance: none` – nadal
+  działa z klawiatury). Ruch tylko przy zmianie stanu (lampka, pieczątka), wyłączony przy `prefers-reduced-motion`. `dialog.js` nadaje im rolę okna dialogowego,
   przenosi fokus do okna po otwarciu i oddaje go po zamknięciu. Kolejność warstw: menu < instrukcja < raport <
-  ustawienia < ekran startowy.
+  ekran startowy < ustawienia (ustawienia otwiera też ekran tytułowy).
 * **Ikony.** `uiIcon(name)` zwraca SVG na siatce 16×16 w kolorze tekstu (pauza, wznowienie, menu, zamknij, stan
   zadania). Znaki tekstowe zostały tylko w treści (słowniki, opisy), nie na przyciskach.
 * **Dostępność.** Widoczny fokus z klawiatury (`:focus-visible`), opisy przycisków-ikon (`aria-label`), przy
@@ -661,11 +706,13 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   jego czyste funkcje sprawdza `tests/survey.test.js`.
 * `tests/e2e/` – Playwright: `desk.spec.js` (ekran startowy: misje, sortowanie, odprawa; pulpit kostkowy: dwa przyciski, wyciągnięcie, Zw, blokada,
   ustawienia, struktura przycisków), `screen.spec.js` (monitor: pasek poleceń, menu elementu, polecenia specjalne, ekrany,
-  skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
+  skala symboli, perony i numery torów, sygnalizatory na linii, blokada przy wyjeździe, ustawienia domyślne, okręgi), `tutorial.spec.js` (samouczek: dymki, podświetlenie, przeciąganie, słownik, obie misje, ekran startowy nad dymkami), `screens-look.spec.js` (wygląd ekranów pełnych w obu motywach: semafor „Stój” / „wolna droga”, przystanki misji, tablica stacyjna, pieczątka i liczniki raportu, lampki ustawień, nagłówek na telefonie), `start-nav.spec.js` (ekrany wyboru: wyszukiwarka, filtry, adresy i „wstecz”, Esc, mapa i schemat regionu, postęp, ustawienia z tytułu, brak mignięcia pulpitu), `visual.spec.js` (zrzuty ekranu porównywane ze wzorcami w `__screenshots__`,
   próg 300 pikseli, żeby drobne zmiany symboli też były wykrywane). Pomocniki w `helpers.js`: `openShift` (ustawienia w localStorage, zegar zatrzymany),
   `btn`/`tap` (przyciski wg `data-ref`), `simState`, `advance` (krok symulacji bez czekania).
-* Wzorce zrzutów powstają w kontenerze Playwright (czcionki DejaVu) – lokalnie odświeżaj je
-  `npm run test:e2e:update` tylko z tymi samymi czcionkami, inaczej porównanie w CI padnie.
+* Wzorce zrzutów odświeża się na komputerze (`npm run test:e2e:update`, dowolny system): przed zrzutem litery stają się
+  przezroczyste (`HIDE_GLYPHS` w `visual.spec.js` – miejsce zostaje), bo rasteryzacja tej samej czcionki różni się między
+  systemami (CoreText / FreeType / DirectWrite); układ, kształty i barwy są wszędzie te same, więc wzorzec z macOS przechodzi
+  w CI (kontener Linux). Napisy sprawdzają asercje `toHaveText` w testach zachowania.
 
 ## Plan rozwoju
 

@@ -28,9 +28,10 @@
 
 - Test odtwarzający zmianę jest w tym samym commicie; `npm test` przechodzi. Jeden plik: `node --test tests/<nazwa>.test.js`,
   jeden plik e2e: `npx playwright test tests/e2e/<nazwa>.spec.js`.
-- Zmiana w UI: `npm run test:e2e`. Wzorce zrzutów (`tests/e2e/visual.spec.js`) powstają w kontenerze Playwright (czcionki
-  DejaVu, jak w CI). Na macOS / Windows test wizualny pulpitu różni się czcionką – to nie regresja; **nie odświeżaj wzorców
-  lokalnie**, tylko w kontenerze `mcr.microsoft.com/playwright` w wersji z `.github/workflows/ci.yml`.
+- Zmiana w UI: `npm run test:e2e`. Wzorce zrzutów (`tests/e2e/visual.spec.js`) odświeża się na komputerze (macOS, Linux,
+  Windows) – `npm run test:e2e:update`, bez kontenera. Litery są na zrzutach przezroczyste (`HIDE_GLYPHS`): ta sama
+  czcionka rasteryzuje się inaczej na każdym systemie, a układ, kształty i barwy – tak samo, więc ten sam wzorzec
+  przechodzi lokalnie i w CI. Treść napisów sprawdzają asercje w testach zachowania.
 - Dokumentacja zgodna z kodem w tym samym commicie: `docs/ARCHITECTURE.md` (moduły, zasady), `docs/STATION-FORMAT.md`
   (pola definicji stacji), `README.md` (funkcje widoczne dla gracza, po angielsku).
 - Bez nowych zależności npm (także deweloperskich) bez zgody właściciela.
@@ -74,6 +75,12 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
    i klucz `start.srk*`. Testy treści stacji (lista scenariuszy) trzeba wtedy rozszerzyć – uzasadnij w commicie.
 5b. Barwy urządzenia jako zmienne `--desk-*` / `--mon-*` (są poza wymogiem motywu jasnego).
 6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
+
+## Nowy posterunek na mapie wyboru
+
+- Pola `region`, `geo`, `lines` (i `place` / `era` dla edycji z innego roku), współrzędne z Wikipedii, przebieg linii
+  z OpenStreetMap (`node scripts/rail-lines.mjs`, licencja ODbL – podpis pod schematem zostaje): `docs/MAP-DATA.md`,
+  skill `posterunek-na-mapie` (`.claude/skills/`).
 
 ## Interfejs (wygląd)
 

@@ -47,15 +47,14 @@ async function untilRequest(page, exit) {
 
 test('ekran startowy: przycisk samouczka uruchamia misję 1 na stacji Szkolna', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
+  await page.click('#st-training'); // ekran tytułowy → szkolenie
   await expect(page.locator('.st-mission').first()).toContainText('Misja 1');
   await page.click('.st-mission[data-scenario="nauka-1"]');
-  // etap 2: odprawa misji po prawej – z liczbą kroków i przyciskiem startu; domyślnie wybrany samouczek (bez zakłóceń
-  // i ziarna), obok pełne zmiany stacji szkoleniowej na innych stanowiskach
+  // etap 2: odprawa misji po prawej – z liczbą kroków i przyciskiem startu; szkolenie to tylko misje: bez wyboru zmiany,
+  // zakłóceń i ziarna (misja zawsze bez zakłóceń)
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 1');
   await expect(page.locator('#st-briefing .st-bdiff')).toContainText('kroków');
-  await expect(page.locator('#st-scenario')).toHaveValue('nauka-1');
-  await expect(page.locator('#st-level')).toBeDisabled();
-  await expect(page.locator('#st-seed')).toBeHidden();
+  await expect(page.locator('#st-briefing select, #st-briefing input')).toHaveCount(0);
   await expect(page.locator('#st-go')).toHaveText('Rozpocznij misję');
   await page.click('#st-go');
   await page.waitForURL(/stacja=szkolna.*scenariusz=nauka-1/);
@@ -206,7 +205,7 @@ test('misja: zmiana nie kończy się sama (raport dopiero po ostatnim kroku); za
 });
 
 test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – wjazd na tor czołowy, zły tor daje podpowiedź z Zcz', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/szkolenie', { waitUntil: 'load' }); // ekran szkolenia (misje) ma własny adres
   await expect(page.locator('.st-mission')).toHaveCount(6);
   expect(await page.locator('.st-mission').evaluateAll((els) => els.map((e) => e.dataset.station))).toEqual(['szkolna', 'jodlowa', 'zacisze', 'olszyny', 'brzezina', 'kalinowo']);
   await page.click('.st-mission[data-scenario="nauka-3"]');
@@ -348,7 +347,7 @@ for (const [station, scenario] of [['szkolna', 'nauka-1'], ['jodlowa', 'nauka-2'
 }
 
 test('misja 4: nastawnia mechaniczna w Olszynach – pełna kolejność kliknięciami dla pierwszego pociągu', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/szkolenie', { waitUntil: 'load' }); // ekran szkolenia (misje) ma własny adres
   await page.click('.st-mission[data-scenario="nauka-4"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 4: nastawnia mechaniczna');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Olszyny');
@@ -380,7 +379,7 @@ test('misja 4: nastawnia mechaniczna w Olszynach – pełna kolejność kliknię
 });
 
 test('misja 5: EBILock 950 w Brzezinie – przebieg kliknięciami przez linię poleceń, alarm pękniętej szyny, ITS prawym klawiszem', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/szkolenie', { waitUntil: 'load' }); // ekran szkolenia (misje) ma własny adres
   await page.click('.st-mission[data-scenario="nauka-5"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 5: stanowisko EBILock 950');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Brzezina');
@@ -422,7 +421,7 @@ test('misja 5: EBILock 950 w Brzezinie – przebieg kliknięciami przez linię p
 });
 
 test('misja 6: MOR-3 w Kalinowie – przebieg kliknięciem celu, alarm licznika osi (dwuklik), ZeroLO z potwierdzeniem', async ({ page }) => {
-  await page.goto('/', { waitUntil: 'load' });
+  await page.goto('/#/szkolenie', { waitUntil: 'load' }); // ekran szkolenia (misje) ma własny adres
   await page.click('.st-mission[data-scenario="nauka-6"]');
   await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 6: stanowisko MOR-3');
   await expect(page.locator('#st-briefing .st-bmeta')).toContainText('Kalinowo');

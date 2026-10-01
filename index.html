@@ -5,12 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <script>(function(){var t=null;try{t=JSON.parse(localStorage.getItem("sprk.settings")||"{}").theme;}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t;})();</script>
+  <script>(function(){var t=null;try{t=JSON.parse(localStorage.getItem("sprk.settings")||"{}").theme;}catch(e){}if(t!=="dark"&&t!=="light")t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.dataset.theme=t;if(!new URLSearchParams(location.search).get("scenariusz"))document.documentElement.classList.add("boot-start");})();</script>
   <link rel="icon" href="data:," />
   <title>SPRK – Symulator Prowadzenia Ruchu Kolejowego</title>
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
 <body>
+  <!-- ekran wczytywania: od pierwszej klatki, zanim moduły gry narysują pulpit albo ekran startowy; zdejmuje go main.js -->
+  <div id="boot" aria-hidden="true"><div class="boot-box">
+    <svg class="boot-sig" viewBox="0 0 24 64" width="30" height="80"><path d="M12 38V60M5 61H19" class="sg-mast"/><rect x="3" y="1.5" width="18" height="37" rx="3" class="sg-head"/><circle cx="12" cy="9.5" r="4.6" class="sg-lens sg-g"/><circle cx="12" cy="20" r="4.6" class="sg-lens sg-y"/><circle cx="12" cy="30.5" r="4.6" class="sg-lens sg-r"/></svg>
+    <div class="boot-text" id="boot-text">Wczytywanie…</div>
+  </div></div>
+  <script>(function(){var l="pl";try{l=JSON.parse(localStorage.getItem("sprk.settings")||"{}").lang||"auto";}catch(e){}if(l==="auto"){var n=(navigator.language||"pl").slice(0,2);l=n==="en"||n==="de"?n:"pl";}var shift=!!new URLSearchParams(location.search).get("scenariusz");var T={pl:["Wczytywanie posterunku…","Wczytywanie…"],en:["Loading the signal box…","Loading…"],de:["Stellwerk wird geladen…","Wird geladen…"]}[l]||["Wczytywanie posterunku…","Wczytywanie…"];document.getElementById("boot-text").textContent=shift?T[0]:T[1];window.addEventListener("error",function(){var b=document.getElementById("boot");if(b)b.classList.add("done");});})();</script>
   <div id="app">
     <header id="topbar">
       <div class="brand"><span class="logo">SPRK</span><span id="station-name">…</span></div>

@@ -99,6 +99,9 @@ export default {
   srkInfo: 'Stanowisko komputerowe (LCS Gdańsk po modernizacji linii 9); plan z XII 2014 pokazuje układ torowy z nastawnią „PrG” – tu jedno stanowisko na całą stację.',
   description: 'Stacja na linii 9 przed Gdańskiem: perony I (tory 4/2) i II (1/3), tory 6, 5, 7 dla towarowych; linie 260 od Zajączkowa Tczewskiego, 229 do Starej Piły i 226 do Gdańska Portu Północnego. Blokada samoczynna na 9, Eap na liniach jednotorowych.',
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. między Pszczółkami a Gdańskiem Południowym; węzeł z liniami 226, 229 i 260; powiat gdański, woj. pomorskie.',
+  region: 'pomorskie',          // województwo – mapa wyboru posterunku
+  lines: [9, 226, 229, 260],      // linie kolejowe (jak w `location`)
+  geo: [54.2581, 18.6469],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'Regio i dalekobieżne linii 9 na peronach I/II, towarowe z Zajączkowa do Portu Północnego torami 3/5/7, na Starą Piłę torem 6.',
   difficulty: 4,
   startTime: '05:55',

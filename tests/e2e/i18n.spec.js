@@ -21,7 +21,14 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await expect(page.locator('#tab-rj tbody tr').first()).toContainText('Lipno');
   // ekran startowy i raport po angielsku
   await page.click('#btn-menu'); await page.click('#menu-new');
+  // „Nowa zmiana…” w trakcie zmiany – od razu lista posterunków; ekran tytułowy pod logo
+  await expect(page.locator('#start .st-tagline')).toHaveText('Duty');
+  await expect(page.locator('#st-search')).toHaveAttribute('placeholder', /^Search/);
+  await page.click('#start .st-logo');
   await expect(page.locator('#start .st-tagline')).toHaveText('Railway Traffic Control Simulator');
+  await page.click('#st-service');
+  await expect(page.locator('.st-mode a[data-mode=map]')).toHaveText('Map');
+  await page.click('.st-mode a[data-mode=list]');
   await expect(page.locator('#start .st-card .st-diff b').first()).toHaveText(/\/5$/);
   await page.click('#st-close');
   await page.evaluate(() => window.sim.endShift('all-done'));

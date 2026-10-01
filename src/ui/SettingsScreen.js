@@ -67,7 +67,11 @@ export class SettingsScreen {
 
   #activate(id) { for (const b of this.root.querySelectorAll('.se-cat')) b.classList.toggle('active', b.dataset.cat === id); }
 
-  show() { openDialog(this.root); }
+  /** `fromStart` – otwarte z ekranu tytułowego (bez trwającej zmiany): przycisk wraca do menu, nie „do zmiany”. */
+  show({ fromStart = false } = {}) {
+    this.root.querySelector('#se-close').textContent = t(fromStart ? 'set.backMenu' : 'set.back');
+    openDialog(this.root);
+  }
   hide() { closeDialog(this.root); }
   toggle() { if (isOpen(this.root)) this.hide(); else this.show(); }
 }

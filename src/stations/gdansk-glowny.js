@@ -113,6 +113,9 @@ export default {
   srkInfo: 'Stanowisko komputerowe LCS Gdańsk (nastawnia „G”) i nastawnia „G-SKM” dla torów 502/501 – tu jedno stanowisko na całą część pasażerską (stan planu: I 2022).',
   description: 'Stacja węzłowa: perony I/II (tory 4/2 i 1/3) linii 9 i 202, peron III SKM (502/501) między Śródmieściem a Wrzeszczem, perony czołowe IV/V (tory 7–15) dla pociągów kończących bieg od Wrzeszcza; linie 227 na Zaspę Towarową i 249 do Brzeźna.',
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. (koniec), linia 202 Gdańsk Gł. – Stargard, 250 (SKM), 227 i 249; Gdańsk, woj. pomorskie.',
+  region: 'pomorskie',          // województwo – mapa wyboru posterunku
+  lines: [9, 202, 250, 227, 249], // linie kolejowe (jak w `location`)
+  geo: [54.3572, 18.6444],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min Śródmieście ↔ Wrzeszcz, Regio i IC/EIC linii 9 przez perony I/II, pociągi kończące bieg na peronach IV/V, towarowe na Zaspę Towarową.',
   difficulty: 5,
   startTime: '05:55',

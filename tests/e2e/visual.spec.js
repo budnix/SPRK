@@ -1,11 +1,20 @@
 import { test, expect } from '@playwright/test';
 import { openShift, advance } from './helpers.js';
 
-/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update.
-   Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu) – wysokość nagłówka różni się
-   o piksel między środowiskami, a porównanie obrazów o różnych wymiarach zawsze pada. */
+/* Regresja wizualna: wzorce w tests/e2e/__screenshots__; aktualizacja: npm run test:e2e:update – na komputerze
+   (macOS, Linux, Windows), bez kontenera. Zrzuty mają stałe wymiary (wycinek strony od lewego górnego rogu elementu).
+   Litery są na zrzucie przezroczyste (miejsce zostaje): ta sama czcionka (Inter z src/fonts) jest rasteryzowana inaczej
+   na każdym systemie (CoreText / FreeType / DirectWrite), a układ, kształty i barwy – tak samo. Treść napisów
+   sprawdzają asercje toHaveText w testach zachowania. */
+
+/** Litery przezroczyste – tekst HTML, pola i napisy SVG; ramki, tła, ikony (currentColor) zostają. */
+const HIDE_GLYPHS = `* { -webkit-text-fill-color: transparent !important; text-shadow: none !important; caret-color: transparent !important; }
+  ::placeholder { color: transparent !important; }
+  svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }`;
 
 async function shot(page, selector, width, height) {
+  await page.waitForFunction(() => !document.getElementById('boot')); // ekran wczytywania zdjęty
+  await page.addStyleTag({ content: HIDE_GLYPHS });
   // miganie monitora to przełączana klasa (wspólna faza, Ie-104.1 §4 ust. 17) – zatrzymana w fazie jasnej przed zrzutem
   await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); window.desk?.inner?.setAttribute('data-ph', '0'); });
   const r = await page.locator(selector).boundingBox();
@@ -127,4 +136,41 @@ test('wygląd karty pociągu na zakładce „Pociągi” (Szkolna): postój po g
   await page.waitForTimeout(200);
   // panel pod pulpitem – karta na całą szerokość, przyciski trybu jazdy i zmiany czoła z prawej
   expect(await shot(page, '#trains .train-card[data-nr="6101"]', 1350, 100)).toMatchSnapshot('train-card-szkolna.png');
+});
+
+// ekrany wyboru (StartScreen): tytuł, lista posterunków, mapa Polski i schemat regionu jako tablica dyspozytorska
+async function startWithProgress(page, hash) {
+  await page.addInitScript(() => {
+    localStorage.setItem('sprk.settings', JSON.stringify({ theme: 'dark' }));
+    localStorage.setItem('sprk.progress', JSON.stringify({ stations: { sopot: { zmiana: { grade: 'dobrze', total: 24 } } }, missions: { 'szkolna/nauka-1': true } }));
+    localStorage.setItem('sprk.lastShift', JSON.stringify({ search: '?stacja=gdynia-glowna&scenariusz=zmiana&zaklocenia=low' }));
+  });
+  await page.goto(`/${hash}`, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(200);
+}
+
+test('wygląd ekranu tytułowego: ostatnia zmiana, służba, szkolenie, ustawienia, semafor', async ({ page }) => {
+  await startWithProgress(page, '#/');
+  await expect(page.locator('#st-last')).toBeVisible();
+  expect(await shot(page, '#start .start-screen', 1280, 600)).toMatchSnapshot('start-title.png');
+});
+
+test('wygląd listy posterunków: wyszukiwarka, filtry, karty z trudnością i pieczątką oceny', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba/lista');
+  await expect(page.locator('.st-card[data-id=sopot] .st-stamp')).toBeVisible();
+  expect(await shot(page, '#start .start-screen', 1280, 720)).toMatchSnapshot('start-list.png');
+});
+
+test('wygląd mapy Polski: tablica z siatką, sieć kolejowa, województwo z posterunkami i liczbą, lampki stacji, przyciski przybliżania', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba');
+  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(1);
+  expect(await shot(page, '#st-map', 900, 700)).toMatchSnapshot('start-map.png');
+});
+
+test('wygląd schematu regionu: tory z podkładami (OSM), lampki przystanków, tablice z nazwami, karta posterunku', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba/pomorskie');
+  await page.locator('.rm-stop[data-id=sopot]').focus();
+  await expect(page.locator('#st-rmapfig .st-rinfo')).toHaveClass(/on/);
+  expect(await shot(page, '#st-rmapfig', 1200, 720)).toMatchSnapshot('start-region.png');
 });
