@@ -103,7 +103,8 @@ export default {
     { x: 9, y: 7, type: 'signal', id: 'C2', kind: 'semafor', at: { x: 9, y: 6 }, dir: 'W' },
     { x: 23, y: 3, type: 'signal', id: 'D1', kind: 'semafor', at: { x: 23, y: 4 }, dir: 'E' },
     { x: 19, y: 5, type: 'signal', id: 'D2', kind: 'semafor', at: { x: 19, y: 6 }, dir: 'E', shunting: true },
-    { x: 19, y: 7, type: 'signal', id: 'Tm2', kind: 'tm', at: { x: 19, y: 6 }, dir: 'W' },
+    // Tm2 na złączu T2 | T2e (tam, gdzie D2 w drugą stronę): przebieg do Tm2 kończy się na T2e, a nie utwierdza toru 2 do C2
+    { x: 20, y: 7, type: 'signal', id: 'Tm2', kind: 'tm', at: { x: 20, y: 6 }, dir: 'W' },
     { x: 25, y: 9, type: 'signal', id: 'Tm1', kind: 'tm', at: { x: 25, y: 8 }, dir: 'W' },
 
     // opisy

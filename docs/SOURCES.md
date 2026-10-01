@@ -122,7 +122,7 @@ wraca z toru jako nowy pociąg, jest tylko lokomotywa luzem (Gdańsk Gł. 44660 
 Szkolnej (90201 / 90202) to zespół trakcyjny – pilnuje tego `tests/categories.test.js`. Przyjęte: składy pasażerskie
 z lokomotywą, które wracają jako nowy pociąg (IC w Gdańsku Gł. i Gdyni Gł.), zmieniają czoło na miejscu – zastępuje to
 podstawienie lokomotywy na drugi koniec; zmiana czoła w trybie manewrowym oznacza pchanie składu, co przy manewrach
-jest dozwolone.
+jest dozwolone. Czas zmiany czoła i rozmowa z maszynistą – „Zmiana czoła i rozmowy z maszynistą” niżej.
 
 Zezwolenie na jazdę (wszystkie stanowiska). Ze źródeł: pociąg mija semafor tylko na sygnał zezwalający dla pociągu
 (S2–S13, Sr2/Sr3), sygnał zastępczy Sz albo rozkaz pisemny; sygnał Ms2 na semaforze dotyczy wyłącznie jazdy
@@ -1218,6 +1218,9 @@ Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego śr
   nastawnia „G-SKM” (PKP SKM). W grze: `komputerowe`, jedno stanowisko na całą część pasażerską.
 * **Szkolna**, **Jodłowa**, **Zacisze**, **Olszyny** – stacje fikcyjne, treningowe (misje 1–4); każda ma zmiany na
   wszystkich czterech stanowiskach. Układ torów Jodłowej jest taki jak stacji testowej Wola Pustkowska.
+  Szkolna (przyjęte): tarcza Tm2 stoi na złączu T2e | T2, tam gdzie semafor D2 w drugą stronę – przebieg Tm1 → Tm2
+  kończy się na T2e, a 180-metrowy skład jedzie dalej przebiegiem Tm2 → C2 przez tor 2. Wcześniej Tm2 stała kostkę
+  dalej, wewnątrz odcinka T2: przebieg do niej utwierdzał cały tor 2 aż do C2, a przebieg Tm2 → C2 nie miał odcinków.
 * Dawne stacje fikcyjne Stare Pustkowie i Wola Pustkowska zostały jako stacje testowe w `tests/fixtures/`.
 
 Uproszczenie wspólne: w rzeczywistości tory linii 250 (PKP SKM) i linii 202 (PKP PLK) na tych stacjach obsługują

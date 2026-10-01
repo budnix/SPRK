@@ -147,26 +147,34 @@ export class Traffic {
   }
 
   /**
-   * Zadanie manewrowe zablokowane usterką bez obejścia: każdy przebieg manewrowy z toru, na którym stoi skład, na tor
-   * docelowy (albo – gdy takiego nie ma – każdy przebieg na tor docelowy) ma na drodze odcinek zajęty z usterki (fałszywa
-   * zajętość, licznik osi), pękniętą szynę albo zwrotnicę z usterką napędu, która nie da się ustawić z kontrolą. Usterka
-   * sygnalizatora ma obejście – zezwolenie dyżurnego (Ir-9 § 10 ust. 15) – więc terminu nie przesuwa.
+   * Zadanie manewrowe zablokowane usterką bez obejścia: każda droga składu na tor docelowy ma na drodze odcinek zajęty
+   * z usterki (fałszywa zajętość, licznik osi), pękniętą szynę albo zwrotnicę z usterką napędu, która nie da się ustawić
+   * z kontrolą. Droga to łańcuch do 3 przebiegów manewrowych od miejsca, gdzie skład stoi (przebieg od odcinka pod
+   * składem albo z jego toru), po którym skład mieści się na torze docelowym: długi skład za krótkim odcinkiem toru przed
+   * sygnalizatorem potrzebuje dalszego przebiegu (Szkolna: Tm1 → Tm2 kończy się na T2e, 180 m składu – dalej Tm2 → C2
+   * przez T2). Bez takiej drogi – każdy przebieg na tor docelowy, jak dotąd. Usterka sygnalizatora ma obejście –
+   * zezwolenie dyżurnego (Ir-9 § 10 ust. 15) – więc terminu nie przesuwa.
    */
   #taskBlocked(task, tr) {
     const ilk = this.ilk, time = this.time;
     const trackOf = (sid) => String(ilk.sections.get(sid)?.track ?? '');
     const here = String(this.#trackOf(tr) ?? ''), goal = String(task.toTrack);
-    // skład jeszcze nie stoi na torze stacyjnym (np. pociąg czeka przed semaforem wjazdowym) – to nie droga manewru
-    if (!here || here === goal) return false;
+    const occ = tr.occupiedSections();
+    // skład jeszcze nie stoi na torze stacyjnym (np. pociąg czeka przed semaforem wjazdowym) – to nie droga manewru;
+    // cały na torze docelowym – zadanie zaraz zaliczone
+    if (!here || [...occ].every((sid) => trackOf(sid) === goal)) return false;
     const shunts = ilk.routeList().filter((r) => r.kind === 'shunt' && r.sections.length);
     const into = shunts.filter((r) => trackOf(r.sections.at(-1)) === goal);
-    const direct = into.filter((r) => trackOf(r.approach) === here);
-    const candidates = direct.length ? direct : into;
+    // miejsce na torze docelowym na drodze łańcucha (odcinki toru docelowego, każdy raz)
+    const room = (path) => [...new Set(path.flatMap((r) => r.sections))].filter((sid) => trackOf(sid) === goal)
+      .reduce((m, sid) => m + (ilk.sections.get(sid)?.length ?? 0), 0);
+    const starts = shunts.filter((r) => occ.has(r.approach) || trackOf(r.approach) === here);
+    const ways = trainRouteChains(shunts, starts, (r, path) => trackOf(r.sections.at(-1)) === goal && room(path) >= tr.length);
+    const candidates = ways.length ? ways : into.map((r) => [r]);
     if (!candidates.length) return false;
-    const occ = tr.occupiedSections();
     const routeBlocked = (r) => r.sections.some((sid) => { if (occ.has(sid)) return false; const s = ilk.sections.get(sid); return !!(s?.forced || s?.axleFault || s?.defect); })
       || [...r.points, ...r.flank].some((q) => { const p = ilk.points.get(q.id); return p && p.faultUntil > time && (p.position !== q.position || !p.control); });
-    return candidates.every(routeBlocked);
+    return candidates.every((path) => path.some(routeBlocked));
   }
 
   /**

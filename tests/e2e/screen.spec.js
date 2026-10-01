@@ -151,14 +151,19 @@ test('sygnalizatory na linii toru: symbol w punkcie, gdzie semafor stoi (krawęd
     const st = window.sim.station;
     const CELL = 40;
     const out = {};
-    for (const t of st.tiles.filter((x) => x.type === 'signal')) {
+    const signals = st.tiles.filter((x) => x.type === 'signal');
+    const edge = (t) => `${t.at.x + (t.dir === 'E' ? 1 : 0)},${t.at.y}`;
+    for (const t of signals) {
       const g = document.querySelector(`#desk .scr-el.signal[data-signal="${t.id}"]`);
-      const m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(g.getAttribute('transform'));
-      const expX = t.at.x * CELL + (t.dir === 'E' ? CELL : 0), expY = t.at.y * CELL + CELL / 2;
-      out[t.id] = { dx: Math.abs(+m[1] - expX), dy: Math.abs(+m[2] - expY), body: g.querySelector('.sig-body').getAttribute('class'), labelBelow: +g.querySelector('.sig-label').getAttribute('y') > 0, dir: t.dir, kind: t.kind };
+      const m = /translate\(([-\d.]+),([-\d.]+)\) scale\(([-\d.]+)\)/.exec(g.getAttribute('transform'));
+      // dwa sygnalizatory na jednym złączu (tu D2 i Tm2): każdy cofnięty o 14 jednostek symbolu na swoją kostkę
+      const twin = signals.some((o) => o !== t && edge(o) === edge(t));
+      const expX = t.at.x * CELL + (t.dir === 'E' ? CELL : 0) + (twin ? (t.dir === 'E' ? -14 : 14) * +m[3] : 0), expY = t.at.y * CELL + CELL / 2;
+      out[t.id] = { dx: Math.abs(+m[1] - expX), dy: Math.abs(+m[2] - expY), body: g.querySelector('.sig-body').getAttribute('class'), labelBelow: +g.querySelector('.sig-label').getAttribute('y') > 0, dir: t.dir, kind: t.kind, twin };
     }
     return out;
   });
+  expect(Object.entries(pos).filter(([, p]) => p.twin).map(([id]) => id).sort()).toEqual(['D2', 'Tm2']);
   for (const [id, p] of Object.entries(pos)) {
     expect(p.dx, `${id}: x`).toBeLessThan(0.01);
     expect(p.dy, `${id}: y na linii toru`).toBeLessThan(0.01);

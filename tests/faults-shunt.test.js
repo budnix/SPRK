@@ -12,7 +12,8 @@ import { faultSim, runWithFault, stuck, unjustified, leftovers, Clock } from './
  *
  * Część 1 – zadania manewrowe przy usterce na drodze manewru. Osobowy 90201 kończy bieg na torze 2; skład odstawia się na
  * tor 3 (przebieg D2-kT3m: Ms2 na semaforze D2, zwrotnica Zw3 na „−”, odcinki T2e, Iz3, T3w, T3) i podstawia z powrotem
- * na tor 2 (przebieg Tm1-Tm2: Ms2 na tarczy Tm1, odcinki T3w, Iz3, T2e, T2), potem odjeżdża jako 90202 o 08:12. Usterka:
+ * na tor 2 (przebieg Tm1-Tm2: Ms2 na tarczy Tm1, odcinki T3w, Iz3, T2e – Tm2 stoi na złączu T2e | T2; skład ma 180 m,
+ * więc dalej Tm2-C2 przez T2), potem odjeżdża jako 90202 o 08:12. Usterka:
  * semafor / tarcza bez Ms2, napęd zwrotnicy Zw3, fałszywa zajętość odcinka drogi – przed manewrem albo w czasie jazdy
  * składu; krótka (4 min, naprawa przed terminem zadania) i długa (25 min). Ruch prowadzi automat.
  *  - krótka: zadania wykonane w terminie po naprawie, bez kar, bez niezmienników, stan po zmianie czysty;
@@ -76,13 +77,16 @@ const CASES = [
   // podstawienie: przebieg Tm1-Tm2
   { when: 'away', type: 'signal-fail', target: 'Tm1', move: 'podstaw-90202', permit: true, what: 'tarcza Tm1 bez Ms2 (przebieg nastawiony, Tm1 na Ms1)' },
   { when: 'away', type: 'false-occupancy', target: 'Iz3', move: 'podstaw-90202', what: 'zajętość Iz3 (rozjazd Zw3)' },
-  { when: 'away', type: 'false-occupancy', target: 'T2', move: 'podstaw-90202', what: 'zajętość T2 (tor docelowy)' },
+  // T2 nie leży w Tm1-Tm2, ale 180-metrowy skład mieści się na torze 2 dopiero za Tm2 (Tm2-C2) – droga zadania zamknięta
+  { when: 'away', type: 'false-occupancy', target: 'T2', move: 'podstaw-90202', what: 'zajętość T2 (tor docelowy, za Tm2)' },
   // usterka napędu objawia się dopiero po przestawieniu – Zw3 zostaje na „−” po odstawieniu
   { when: 'away', type: 'point-control', target: 'Zw3', move: null, what: 'zwrotnica Zw3 już w położeniu przebiegu – bez przestawiania, bez wpływu' },
   // usterka w czasie jazdy składu: przebieg nie rozwiązuje się za składem – doraźne zwolnienie bez kary; T3w zajęty
   // z usterki zamyka też drogę podstawienia
   { when: 'awayMoving', type: 'false-occupancy', target: 'T3w', move: 'podstaw-90202', dPz: 'D2-kT3m', what: 'zajętość T3w przed czołem jadącego składu (odstawienie)' },
-  { when: 'backMoving', type: 'false-occupancy', target: 'T2e', move: null, dPz: 'Tm1-Tm2', what: 'zajętość T2e przed czołem jadącego składu (podstawienie)' },
+  // T2e to ostatni odcinek przebiegu Tm1-Tm2 (Tm2 na złączu T2e | T2): skład jedzie dalej w Tm2-C2, przebieg zwalnia się
+  // po naprawie – nic nie czeka na T2e, więc bez doraźnego zwolnienia (dawniej Tm2 stała w T2 i przebieg trzymał tor 2)
+  { when: 'backMoving', type: 'false-occupancy', target: 'T2e', move: null, what: 'zajętość T2e przed czołem jadącego składu (podstawienie)' },
 ];
 
 /** Sygnalizator uszkodzony: zezwolenie dyżurnego radiem (raz, dla przebiegu od tego sygnalizatora), manewr przed naprawą. */

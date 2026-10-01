@@ -291,6 +291,23 @@ test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – ko�
   assert.ok(sim2.clock.time < end, 'koniec przed 08:49 – po ostatnim pociągu, nie po czasie');
 });
 
+test('Szkolna: tarcza Tm2 na złączu T2e | T2 (jak D2) – przebieg Tm1 → Tm2 kończy się na T2e i nie utwierdza toru 2 do C2', () => {
+  const sim = new Simulation(szkolna, { disruptions: 'none' });
+  const topo = sim.ilk.topo;
+  for (const id of ['Tm2', 'D2']) {
+    const sg = topo.signals.get(id);
+    const t = topo.trackAt(sg.at.x, sg.at.y), nb = topo.neighbour(t, sg.dir);
+    assert.notEqual(t.section, nb.tile.section, `${id} stoi na granicy odcinków`);
+    assert.deepEqual([t.section, nb.tile.section].sort(), ['T2', 'T2e'], `${id}: złącze T2e | T2`);
+  }
+  assert.deepEqual(sim.ilk.routes.get('Tm1-Tm2').sections, ['T3w', 'Iz3', 'T2e']);
+  assert.deepEqual(sim.ilk.routes.get('Tm2-C2').sections, ['T2']);
+  // nastawiony przebieg Tm1 → Tm2 nie utwierdza toru 2 – wjazd na tor 2 od zachodu (A → D2) zostaje możliwy
+  assert.ok(sim.ilk.setRoute('Tm1-Tm2').ok);
+  assert.equal(sim.ilk.sections.get('T2').route ?? null, null);
+  assert.deepEqual(sim.ilk.routeProblems(sim.ilk.routes.get('A-D2')).filter((p) => p.section === 'T2'), []);
+});
+
 test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocześnie (drogi ochronne T2e / T1w kończą się przed rozjazdami)', () => {
   const sim = new Simulation(szkolna, { disruptions: 'none' });
   const G = (id) => ({ kind: 'signal', id, color: 'green' });

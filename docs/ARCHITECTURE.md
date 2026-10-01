@@ -598,7 +598,10 @@ albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#make
   zadanie przepada 10 min po swoim terminie (inaczej zostawałoby w toku do końca zmiany, a automat czekałby na nie
   bez końca). Termin przesuwa `Traffic.#shiftTask` (w dzienniku z powodem): o opóźnienie składu od sąsiada – gdy
   sąsiad je zgłasza – i o czas, gdy `Traffic.#taskBlocked` widzi, że każda droga manewrowa do toru docelowego jest
-  zamknięta usterką bez obejścia (`task.faultShift`; zadanie z `afterTask` przesuwa się razem z nim). Skład stojący
+  zamknięta usterką bez obejścia (`task.faultShift`; zadanie z `afterTask` przesuwa się razem z nim). Droga to łańcuch
+  do 3 przebiegów manewrowych od miejsca składu (`trainRouteChains` z `src/model/trainPaths.js`), po którym cały skład
+  mieści się na torze docelowym – długi skład za krótkim odcinkiem przed sygnalizatorem potrzebuje dalszego przebiegu
+  (Szkolna: Tm1 → Tm2 kończy się na T2e, 180 m – dalej Tm2 → C2); bez takiej drogi – każdy przebieg na tor docelowy. Skład stojący
   wtedy ma `faultBlocked` (bez kary za przetrzymanie), a późny odjazd pociągu z tego składu liczy się bez tych minut.
   Skład przekazany jako nowy pociąg (`unit`) traci zezwolenie pociągu, którym przyjechał
   (`Train.clearAuthority`) – rusza dopiero na sygnał semafora wyjazdowego. Skład z zadaniem manewrowym w toku

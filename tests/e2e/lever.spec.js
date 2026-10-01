@@ -185,7 +185,10 @@ test('semafory kształtowe na planie: ramiona Sr1 / Sr2 / Sr3, tarcza ostrzegawc
   await ctl(page, 'routerelease', 'A').click();
   await setRoute('A-D2');
   expect(await sem('A')).toEqual({ aspect: 'Sr3', upper: -45, lower: -45, lowerShown: true, warn: 'Ot3' });
-  // tarcza manewrowa kształtowa: M2 – tarcza obrócona do poziomu (spłaszczona)
+  // tarcza manewrowa kształtowa: M2 – tarcza obrócona do poziomu (spłaszczona); najpierw zwolnienie A-D2 – przebiegi od
+  // tarcz Szkolnej prowadzą przez tor 2 (Tm2-C2: T2) albo drogę ochronną A-D2 (Tm1-Tm2: T2e)
+  await ctl(page, 'lever', 'A²').click();
+  await ctl(page, 'routerelease', 'A').click();
   const tm = await page.evaluate(() => [...window.sim.ilk.routes.values()].find((r) => r.kind === 'shunt' && window.sim.ilk.signals.get(r.start).kind === 'tm').id);
   await setRoute(tm);
   const flat = await page.evaluate((rid) => new DOMMatrix(getComputedStyle(window.desk.signalRefs.get(window.sim.ilk.routes.get(rid).start).disc).transform).d, tm);

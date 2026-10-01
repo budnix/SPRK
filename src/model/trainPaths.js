@@ -46,13 +46,14 @@ export function entryPath(ilk, routes, starts, track, depth = 3) {
 
 /**
  * Wszystkie łańcuchy do `depth` przebiegów z `trainRoutes` zaczynające się jednym z `starts` i kończące przebiegiem
- * spełniającym `goal` (każdy następny przebieg od semafora końcowego poprzedniego, bez powtórzeń).
+ * spełniającym `goal(ostatni, łańcuch)` (każdy następny przebieg od semafora końcowego poprzedniego, bez powtórzeń).
+ * Także dla przebiegów manewrowych (`Traffic`: droga zadania manewrowego).
  */
 export function trainRouteChains(trainRoutes, starts, goal, depth = 3) {
   const out = [];
   const walk = (path) => {
     const last = path[path.length - 1];
-    if (goal(last)) { out.push(path); return; }
+    if (goal(last, path)) { out.push(path); return; }
     if (path.length >= depth || last.end.type !== 'signal') return;
     for (const r of trainRoutes) if (r.start === last.end.id && !path.includes(r)) walk([...path, r]);
   };
