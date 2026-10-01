@@ -7,6 +7,7 @@ import { t } from '../i18n/index.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
 import { relationOf } from '../model/categories.js';
 import { blockSymbol, blockSymbolShapes, hasKoSymbol, koSymbol } from './blockSymbol.js';
+import { trainLabelX } from './trainLabel.js';
 
 const C = CELL / 2;
 const PAD = 12;
@@ -424,6 +425,7 @@ export class ScreenBase extends PanelView {
     kids.push(text(-dir * 2, side > 0 ? 18 : -12, name, { class: `scr-text sig-label${tile.kind === 'tm' ? ' tm' : ''}` }),
       this.#hit({ kind: 'signal', id: tile.id }, 0, 0, 10));
     const g = this.#sym(cx, cy, `scr-el signal ${tile.kind}`, kids, sx);
+    (this.sigAnchors ??= []).push({ cx, cy, sx }); // symbol na linii toru – numer pociągu go nie przykrywa (#trackSpan)
     g.setAttribute('data-signal', tile.id); // opis tarczy to sam numer – identyfikator sygnalizatora w atrybucie
     this.layerSignals.appendChild(g);
     this.signalRefs.set(tile.id, { body, label: kids.find((k) => k.classList?.contains('sig-label')), g, tile });
@@ -572,8 +574,38 @@ export class ScreenBase extends PanelView {
   }
 
   placeTrainLabel(label, headTile) {
-    // numer pociągu w osi toru (Ie-104.1 §8 pkt 29)
-    label.setAttribute('transform', `translate(${(headTile.x - this.x0) * CELL + C},${(headTile.y * CELL + C) * this.ry})`);
+    // numer pociągu w osi toru (Ie-104.1 §8 pkt 29), przy czole, ale w całości na odcinku toru – nie na sygnalizatorze
+    // za jego końcem („Wyświetlacz numeru pociągu” pkt 2, 5a; `trainLabel.js`)
+    const cx = trainLabelX((headTile.x - this.x0) * CELL + C, this.#trackSpan(headTile), 17 * this.S);
+    label.setAttribute('transform', `translate(${cx},${(headTile.y * CELL + C) * this.ry})`);
+  }
+
+  /**
+   * Zakres na planie (jednostki rysunku) prostego odcinka toru stacyjnego pod kostką czoła, bez symboli sygnalizatorów
+   * na jego końcach (trójkąt sięga do 7 jednostek symbolu w głąb toru); inny odcinek – null.
+   */
+  #trackSpan(tile) {
+    if (!tile.section || !this.station.sections?.[tile.section]?.track) return null;
+    const key = `${tile.section}:${tile.y}:${tile.x}:${this.x0}:${this.x1}:${this.S}`;
+    if (this.spanCache?.has(key)) return this.spanCache.get(key);
+    const on = new Set(this.station.tiles.filter((t) => t.section === tile.section && t.type === 'track' && t.y === tile.y && !t.derailer).map((t) => t.x));
+    let a = tile.x, b = tile.x;
+    while (on.has(a - 1) && a - 1 >= this.x0) a--;
+    while (on.has(b + 1) && b + 1 <= this.x1) b++;
+    let span = null;
+    if (on.has(tile.x)) {
+      let [x0, x1] = [(a - this.x0) * CELL, (b + 1 - this.x0) * CELL];
+      const y = (tile.y * CELL + C) * this.ry, reach = 7 * this.S;
+      for (const s of this.sigAnchors || []) {
+        if (Math.abs(s.cy - y) > 1) continue;
+        const sx = s.cx + s.sx * this.S;
+        if (sx + reach > x0 && sx - reach < x0 + CELL) x0 = Math.max(x0, sx + reach);
+        if (sx - reach < x1 && sx + reach > x1 - CELL) x1 = Math.min(x1, sx - reach);
+      }
+      span = [x0, x1];
+    }
+    (this.spanCache ??= new Map()).set(key, span);
+    return span;
   }
 }
 

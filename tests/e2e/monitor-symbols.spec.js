@@ -196,3 +196,34 @@ for (const [station, params, table] of [
     expect(res.seen).toBe('EW'); // wyjazdy po obu stronach (głowica prawa – lustrzane odbicie lewej)
   });
 }
+
+/*
+ * Numer pociągu w całości na torze (Ie-104.1 §8 „Wyświetlacz numeru pociągu” pkt 2): dawniej numer stał na środku
+ * kostki czoła i przy symbolach 150% wychodził poza tor – na Szkolnej 6101 przy końcu toru 1 przykrywał w połowie D1.
+ */
+test('numer pociągu przy końcu toru nie przykrywa semafora (Szkolna, 6101 przy D1, symbole 150%)', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { symScale: '1.5' }, params: { scenariusz: 'zmiana' } });
+  await expect.poll(() => page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+  await page.evaluate(() => { window.sim.press({ kind: 'block', exit: 'W', btn: 'Poz' }); });
+  await expect.poll(() => page.evaluate(() => window.sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' }).ok)).toBe(true);
+  // 6101 wjeżdża na tor 1 i staje przy D1 (czoło w ostatniej kostce toru)
+  await page.evaluate(() => {
+    const c = window.sim.clock; c.paused = false; c.speed = 1;
+    for (let i = 0; i < 2400; i++) {
+      window.sim.step(0.5);
+      const tr = window.sim.traffic.trains.find((x) => String(x.nr) === '6101');
+      if (tr?.entered && tr.v === 0 && tr.hasStopped) break;
+    }
+    c.paused = true;
+  });
+  const res = await page.evaluate(() => {
+    const lab = [...document.querySelectorAll('#desk .scr-train')].find((g) => g.textContent.includes('6101'));
+    const s = document.querySelector('#desk .scr-el.signal[data-signal="D1"] .sig-body');
+    if (!lab || !s) return 'brak numeru albo semafora';
+    const a = lab.querySelector('rect').getBoundingClientRect(), b = s.getBoundingClientRect();
+    const overlap = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    return { overlap: Math.round(overlap), gap: Math.round(b.left - a.right) };
+  });
+  expect(res).not.toBe('brak numeru albo semafora');
+  expect(res.overlap, `numer na semaforze D1 (${JSON.stringify(res)})`).toBe(0);
+});
