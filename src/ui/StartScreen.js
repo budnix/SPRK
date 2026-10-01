@@ -1,7 +1,7 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
 import { difficultyMark, logoSvg, signalSvg } from './brand.js';
-import { getSrk } from '../srk/registry.js';
+import { getSrk, listSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
 import { getMission } from '../tutorial/missions.js';
 import { REGIONS } from '../model/regions.js';
@@ -14,6 +14,7 @@ import {
   parentRoute, bestResult, missionDone,
 } from './catalog.js';
 import { loadProgress, loadLastShift } from './progress.js';
+import { polandMapSvg, regionMapSvg } from './map/mapSvg.js';
 
 export { dutyStations } from './catalog.js';
 
@@ -136,7 +137,6 @@ export class StartScreen {
   /** Rysuje ekran adresu `route`: nagłówek (tytuł, okruszki, „wstecz”) i treść. */
   render(route) {
     if (route.view === 'station' && !dutyStations(STATIONS).some((s) => s.id === route.id)) route = { view: 'service', mode: 'list' };
-    if (route.view === 'service' && route.mode === 'map') route = { view: 'service', mode: 'list' }; // mapa – osobny krok
     this.route = route;
     this.progress = loadProgress();
     const crumbs = [];
@@ -151,17 +151,17 @@ export class StartScreen {
       case 'service':
         title = t('start.duty');
         crumbs.push(home, { label: t('start.duty'), route });
-        this.#renderService();
+        this.#renderService(route.mode);
         break;
       case 'region':
         title = REGIONS[route.region];
-        crumbs.push(home, { label: t('start.duty'), route: { view: 'service', mode: 'list' } }, { label: REGIONS[route.region], route });
+        crumbs.push(home, { label: t('start.duty'), route: { view: 'service', mode: 'map' } }, { label: REGIONS[route.region], route });
         this.#renderRegion(route.region);
         break;
       case 'station': {
         const st = STATIONS.find((s) => s.id === route.id);
         title = st.name;
-        crumbs.push(home, { label: t('start.duty'), route: { view: 'service', mode: 'list' } });
+        crumbs.push(home, { label: t('start.duty'), route: { view: 'service', mode: 'map' } });
         if (st.region) crumbs.push({ label: REGIONS[st.region], route: { view: 'region', region: st.region } });
         crumbs.push({ label: st.name, route });
         this.#renderStation(st);
@@ -231,7 +231,7 @@ export class StartScreen {
           </section>
         </nav>
         <div class="st-arrow" aria-hidden="true"><span class="st-rail"></span>${signalSvg('stop', 54)}<span class="st-rail"></span></div>
-        ${this.#briefingHtml()}
+        ${this.#briefingHtml({ form: false })}
       </div>`;
     this.view.querySelector('.st-mission-list').addEventListener('click', (ev) => {
       const b = ev.target.closest('.st-mission'); if (!b) return;
@@ -241,8 +241,11 @@ export class StartScreen {
     if (n && this.missions[n - 1]) this.#selectMission(n - 1);
   }
 
-  /** Odprawa: miniatura, tytuł, opis i parametry zmiany (scenariusz, okręg, zakłócenia, ziarno) z przyciskiem startu. */
-  #briefingHtml({ open = false, station = null } = {}) {
+  /**
+   * Odprawa: miniatura, tytuł, opis i parametry zmiany (scenariusz, okręg, zakłócenia, ziarno) z przyciskiem startu;
+   * odprawa misji (`form: false`) – bez parametrów: misja zawsze bez zakłóceń, szkolenie to tylko misje.
+   */
+  #briefingHtml({ open = false, station = null, form = true } = {}) {
     return `<aside id="st-briefing" class="st-briefing${open ? ' open' : ''}">
         <div class="st-bplaceholder${open ? ' hidden' : ''}">${signalSvg('stop', 96)}<div>${t('start.placeholder')}</div></div>
         <div class="st-bcontent${open ? '' : ' hidden'}">
@@ -253,7 +256,7 @@ export class StartScreen {
           <p class="muted st-bdesc" id="st-station-desc"></p>
           <div class="st-best"></div>
           <div id="st-params" class="st-params">
-            <div class="st-form">
+            ${form ? `<div class="st-form">
               <label id="st-district-wrap" class="hidden">${t('start.district')} <select id="st-district"></select></label>
               <p class="muted" id="st-district-desc"></p>
               <label>${t('start.scenario')} <select id="st-scenario"></select></label>
@@ -264,7 +267,7 @@ export class StartScreen {
               <details class="st-adv"><summary>${t('start.advanced')}</summary>
                 <label>${t('start.seed')} <input id="st-seed" inputmode="numeric" placeholder="${t('start.seedPh')}"></label>
               </details>
-            </div>
+            </div>` : ''}
             <div class="order-actions"><button type="button" id="st-go" class="tb primary st-go">${t('start.go')}</button></div>
           </div>
         </div>
@@ -273,20 +276,20 @@ export class StartScreen {
 
   #bindGo() {
     const root = this.view;
-    root.querySelector('#st-level').value = this.current.level || 'low';
+    if (root.querySelector('#st-level')) root.querySelector('#st-level').value = this.current.level || 'low';
     root.querySelector('#st-go').addEventListener('click', () => {
+      // odprawa misji: zawsze samouczek, bez zakłóceń
+      if (this.mission) { this.#go(this.mission.station.id, this.mission.scenario.id, 'none'); return; }
       const scId = root.querySelector('#st-scenario').value;
-      // odprawa misji: samouczek albo pełna zmiana tej stacji szkoleniowej na wybranym stanowisku
-      if (this.mission && scId === this.mission.scenario.id) { this.#go(this.mission.station.id, scId, 'none'); return; }
       const extra = {};
       if (!root.querySelector('#st-district-wrap').classList.contains('hidden')) extra.okreg = root.querySelector('#st-district').value;
       const seed = root.querySelector('#st-seed').value.trim();
       if (seed) extra.seed = seed;
-      this.#go(this.mission ? this.mission.station.id : this.selected, scId, root.querySelector('#st-level').value, extra);
+      this.#go(this.selected, scId, root.querySelector('#st-level').value, extra);
     });
   }
 
-  /** Odprawa misji wprowadzającej: opis, liczba kroków, wybór – samouczek albo pełna zmiana stacji szkoleniowej. */
+  /** Odprawa misji wprowadzającej: opis, stacja, liczba kroków i start misji (bez parametrów zmiany). */
   #selectMission(i) {
     const m = this.missions[i]; if (!m) return;
     this.mission = m; this.selected = null;
@@ -298,15 +301,7 @@ export class StartScreen {
     b.querySelector('.st-bdiff').innerHTML = `${difficultyMark(1)} <small>${t('start.tutorial')}${steps ? ` · ${t('start.steps', { n: steps })}` : ''}</small>`;
     b.querySelector('.st-bmeta').innerHTML = `<div>${esc(m.station.name)} – ${esc(m.station.location || '')}</div>`;
     this.view.querySelector('#st-station-desc').textContent = m.scenario.description || '';
-    // wybór zmiany: samouczek (domyślnie) albo pełna zmiana stacji szkoleniowej na tym samym pulpicie co misja – misja
-    // nie zmienia pulpitu (stacje szkoleniowe nie są w „Służbie”, więc tu jest wejście do ich pełnej zmiany)
-    const srkOf = (sc) => getSrk(sc.srk || m.station.srk).id; // jak Simulation: nieznane / brak → typ E
-    const shifts = (m.station.scenarios || []).filter((sc) => !sc.tutorial && srkOf(sc) === srkOf(m.scenario));
-    this.#scenarioChoice([{ ...m.scenario, name: t('start.missionOption', { name: missionName(m.scenario) }), description: '' }, ...shifts], m.scenario.id, (sc) => {
-      const tut = sc.id === m.scenario.id;
-      this.view.querySelector('#st-go').textContent = t(tut ? 'start.goMission' : 'start.go');
-      this.view.querySelector('.st-adv').classList.toggle('hidden', tut);
-    });
+    this.view.querySelector('#st-go').textContent = t('start.goMission');
   }
 
   /** Lista scenariuszy w odprawie: opis wybranego, poziom zakłóceń (wymuszony przez scenariusz – zablokowany). */
@@ -338,40 +333,49 @@ export class StartScreen {
 
   // --- służba: lista z wyszukiwarką i filtrami ---------------------------------------------------------------------
 
-  #renderService() {
+  #renderService(mode = 'map') {
+    this.mode = mode;
     const duty = dutyStations(STATIONS);
     const f = this.filters;
-    const srks = [...new Set(duty.flatMap(stationSrks))];
-    const diffs = [...new Set(duty.map((s) => s.difficulty))].sort((a, b) => a - b);
+    // wszystkie rodzaje stanowisk z rejestru (z liczbą posterunków – przybywa ich z każdym nowym stanowiskiem) i pełna
+    // skala trudności 1–5 – filtr nie zmienia kształtu, gdy dochodzą posterunki
+    const srkCount = (id) => duty.filter((s) => stationSrks(s).includes(id)).length;
+    const srks = listSrk().map((x) => x.id);
+    const diffs = [1, 2, 3, 4, 5];
     const eras = erasOf(duty);
     const regions = Object.keys(regionCounts(duty)).sort((a, b) => REGIONS[a].localeCompare(REGIONS[b], 'pl'));
     const chip = (attr, value, label, on) => `<button type="button" class="st-chip" ${attr}="${esc(value)}" aria-pressed="${on}">${esc(label)}</button>`;
     this.view.innerHTML = `<div class="st-service">
       <div class="st-toolbar">
-        <label class="st-search">${uiIcon('search', 15)}<input type="search" id="st-search" placeholder="${t('start.search')}" aria-label="${t('start.searchLabel')}" value="${esc(f.query)}" autocomplete="off"><kbd aria-hidden="true">/</kbd></label>
+        <div class="st-toprow">
+          <label class="st-search">${uiIcon('search', 15)}<input type="search" id="st-search" placeholder="${t('start.search')}" aria-label="${t('start.searchLabel')}" value="${esc(f.query)}" autocomplete="off"><kbd aria-hidden="true">/</kbd></label>
+          <nav class="seg st-mode" aria-label="${t('start.modeLabel')}"><a class="tb${mode === 'map' ? ' active' : ''}" href="#/sluzba" data-mode="map"${mode === 'map' ? ' aria-current="page"' : ''}>${t('start.modeMap')}</a><a class="tb${mode === 'list' ? ' active' : ''}" href="#/sluzba/lista" data-mode="list"${mode === 'list' ? ' aria-current="page"' : ''}>${t('start.modeList')}</a></nav>
+        </div>
         <div class="st-filters">
-          ${srks.length > 1 ? `<div class="st-fgroup" role="group" aria-label="${t('start.filterSrk')}"><span class="st-flabel">${t('start.filterSrk')}</span>${srks.map((id) => chip('data-srk', id, srkLabel(id), f.srk.includes(id))).join('')}</div>` : ''}
-          <div class="st-fgroup" role="group" aria-label="${t('start.difficulty')}"><span class="st-flabel">${t('start.difficulty')}</span>${diffs.map((d) => chip('data-diff', d, String(d), f.difficulty.includes(d))).join('')}</div>
+          <label class="st-fsel">${t('start.filterSrk')} <select id="st-srk"><option value="">${t('start.srkAll')}</option>${srks.map((id) => `<option value="${esc(id)}">${esc(srkLabel(id))} (${srkCount(id)})</option>`).join('')}</select></label>
+          <div class="st-fgroup st-fdiff" role="group" aria-label="${t('start.difficulty')}"><span class="st-flabel">${t('start.difficulty')}</span>${diffs.map((d) => chip('data-diff', d, String(d), f.difficulty.includes(d))).join('')}</div>
           ${eras.years.length + (eras.now ? 1 : 0) > 1 ? `<label class="st-fsel">${t('start.era')} <select id="st-era"><option value="">${t('start.eraAll')}</option>${eras.now ? `<option value="now">${t('start.eraToday')}</option>` : ''}${eras.years.map((y) => `<option value="${y}">${y}</option>`).join('')}</select></label>` : ''}
           ${regions.length > 1 ? `<label class="st-fsel">${t('start.filterRegion')} <select id="st-region"><option value="">${t('start.regionAll')}</option>${regions.map((r) => `<option value="${r}">${esc(REGIONS[r])}</option>`).join('')}</select></label>` : ''}
           <label class="st-check"><input type="checkbox" id="st-notplayed"${f.notPlayed ? ' checked' : ''}> ${t('start.notPlayed')}</label>
-          <div class="seg st-sort" aria-label="${t('start.sortLabel')}"><button type="button" class="tb" data-sort="name">${t('start.sortName')}</button><button type="button" class="tb" data-sort="difficulty">${t('start.sortDiff')}</button></div>
+          <div class="seg st-sort${mode === 'map' ? ' hidden' : ''}" aria-label="${t('start.sortLabel')}"><button type="button" class="tb" data-sort="name">${t('start.sortName')}</button><button type="button" class="tb" data-sort="difficulty">${t('start.sortDiff')}</button></div>
         </div>
       </div>
       <div class="st-count" id="st-count" aria-live="polite"></div>
-      <div id="st-list" class="st-list"></div>
+      ${mode === 'map' ? `<div class="st-mapwrap"><div class="st-map" id="st-map"></div><aside class="st-mapside" id="st-mapside"></aside></div>` : '<div id="st-list" class="st-list"></div>'}
     </div>`;
     const v = this.view;
+    v.querySelector('#st-srk').value = f.srk[0] || '';
+    v.querySelector('#st-srk').addEventListener('change', (ev) => { f.srk = ev.target.value ? [ev.target.value] : []; this.#renderList(); });
     if (v.querySelector('#st-era')) v.querySelector('#st-era').value = f.era == null ? '' : String(f.era);
     if (v.querySelector('#st-region')) v.querySelector('#st-region').value = f.region || '';
     v.querySelector('#st-search').addEventListener('input', (ev) => { f.query = ev.target.value; this.#renderList(); });
     v.querySelector('#st-search').addEventListener('keydown', (ev) => {
-      if (ev.key === 'Enter') { const first = v.querySelector('#st-list .st-card'); if (first) this.navigate({ view: 'station', id: first.dataset.id }); }
+      if (ev.key === 'Enter') { const first = this.#found()[0]; if (first) this.navigate({ view: 'station', id: first.id }); }
     });
     v.querySelector('.st-filters').addEventListener('click', (ev) => {
       const b = ev.target.closest('.st-chip, .st-sort button'); if (!b) return;
       if (b.dataset.sort) { this.#setSort(b.dataset.sort); return; }
-      const [list, value] = b.dataset.srk ? [f.srk, b.dataset.srk] : [f.difficulty, Number(b.dataset.diff)];
+      const [list, value] = [f.difficulty, Number(b.dataset.diff)];
       const i = list.indexOf(value);
       if (i >= 0) list.splice(i, 1); else list.push(value);
       b.setAttribute('aria-pressed', String(i < 0));
@@ -380,7 +384,7 @@ export class StartScreen {
     v.querySelector('#st-era')?.addEventListener('change', (ev) => { const x = ev.target.value; f.era = x === '' ? null : x === 'now' ? 'now' : Number(x); this.#renderList(); });
     v.querySelector('#st-region')?.addEventListener('change', (ev) => { f.region = ev.target.value || null; this.#renderList(); });
     v.querySelector('#st-notplayed').addEventListener('change', (ev) => { f.notPlayed = ev.target.checked; this.#renderList(); });
-    this.#bindCards(v.querySelector('#st-list'));
+    if (mode === 'list') this.#bindCards(v.querySelector('#st-list'));
     this.#renderList();
   }
 
@@ -390,17 +394,33 @@ export class StartScreen {
     this.#renderList();
   }
 
-  /** Lista po filtrach: przy zapytaniu najtrafniejsze pierwsze, inaczej wybrana kolejność. */
+  /** Posterunki po filtrach: przy zapytaniu najtrafniejsze pierwsze, inaczej wybrana kolejność. */
+  #found() {
+    const sorted = sortStations(placesOf(STATIONS).map((eds) => eds[0]), this.sort);
+    const { query, ...rest } = this.filters;
+    return filterStations(query ? searchStations(sorted, query) : sorted, { ...rest, progress: this.progress });
+  }
+
+  /** Wynik filtrów: lista kart albo mapa (województwa z liczbą pasujących, kropki stacji) z wynikami obok. */
   #renderList() {
     const v = this.view;
     for (const b of v.querySelectorAll('.st-sort button')) b.classList.toggle('active', b.dataset.sort === this.sort);
-    const all = placesOf(STATIONS).map((eds) => eds[0]);
-    const sorted = sortStations(all, this.sort);
-    const { query, ...rest } = this.filters;
-    const found = filterStations(query ? searchStations(sorted, query) : sorted, { ...rest, progress: this.progress });
-    v.querySelector('#st-count').textContent = t('start.results', { n: found.length, total: all.length });
-    v.querySelector('#st-list').innerHTML = found.length ? found.map((s) => this.#card(s)).join('')
-      : `<div class="st-empty">${t('start.noResults')}</div>`;
+    const total = placesOf(STATIONS).length;
+    const found = this.#found();
+    v.querySelector('#st-count').textContent = t('start.results', { n: found.length, total });
+    if (this.mode !== 'map') {
+      v.querySelector('#st-list').innerHTML = found.length ? found.map((s) => this.#card(s)).join('')
+        : `<div class="st-empty">${t('start.noResults')}</div>`;
+      return;
+    }
+    const counts = regionCounts(found);
+    v.querySelector('#st-map').innerHTML = polandMapSvg({ counts, stations: found, label: (name, n) => t('start.mapRegion', { name, n }) });
+    const f = this.filters;
+    const filtered = f.query || f.srk.length || f.difficulty.length || f.era != null || f.region || f.notPlayed;
+    // obok mapy: bez filtrów – województwa z posterunkami, z filtrami – pasujące posterunki
+    v.querySelector('#st-mapside').innerHTML = filtered
+      ? (found.length ? `<ul class="st-mini">${found.map((s) => `<li><a href="${routeHash({ view: 'station', id: s.id })}" data-id="${s.id}"><b>${esc(s.name)}</b>${difficultyMark(s.difficulty)}<span>${esc(REGIONS[s.region] || '')} · ${esc(srkBadge(s))}</span></a>${stamp(bestResult(this.progress, s.id))}</li>`).join('')}</ul>` : `<div class="st-empty">${t('start.noResults')}</div>`)
+      : `<h3><span class="st-kicker">${t('start.duty')}</span>${t('start.regions')}</h3><ul class="st-mini">${Object.entries(counts).sort((a, b) => REGIONS[a[0]].localeCompare(REGIONS[b[0]], 'pl')).map(([r, n]) => `<li><a href="${routeHash({ view: 'region', region: r })}" data-region="${r}"><b>${esc(REGIONS[r])}</b><span>${t('start.regionCount', { n })}</span></a></li>`).join('')}</ul><p class="muted st-maphint">${t('start.mapHint')}</p>`;
   }
 
   /** Karta posterunku: miniatura, nazwa, trudność, położenie, stanowisko; najlepsza ocena jako pieczątka. */
@@ -433,11 +453,24 @@ export class StartScreen {
 
   #renderRegion(region) {
     const list = sortStations(placesOf(STATIONS).map((eds) => eds[0]).filter((s) => s.region === region), this.sort);
+    const mark = (st) => { const b = bestResult(this.progress, st.id); return b ? `played grade-${b.grade}` : ''; };
     this.view.innerHTML = `<div class="st-region">
+      <figure class="st-rmap">${regionMapSvg(region, list, { mark })}<div class="st-rinfo" id="st-rinfo" aria-live="polite"><span class="muted">${t('start.regionInfoHint')}</span></div><figcaption class="muted">${t('start.regionMapNote')}</figcaption></figure>
       <section class="st-rlist"><h3><span class="st-kicker">${t('start.duty')}</span>${t('start.regionStations', { n: list.length })}</h3>
         <div id="st-list" class="st-list">${list.map((s) => this.#card(s)).join('') || `<div class="st-empty">${t('start.noResults')}</div>`}</div></section>
     </div>`;
     this.#bindCards(this.view.querySelector('#st-list'));
+    // karta posterunku na tablicy: najechanie albo fokus na przystanku – tablica z nazwą, trudność, stanowisko, ocena
+    const info = this.view.querySelector('#st-rinfo');
+    const show = (ev) => {
+      const stop = ev.target.closest?.('.rm-stop'); if (!stop) return;
+      const st = STATIONS.find((x) => x.id === stop.dataset.id); if (!st) return;
+      info.innerHTML = `<span class="st-rinfo-name">${esc(st.name)}</span>${difficultyMark(st.difficulty)}<span class="st-rinfo-srk">${esc(srkBadge(st))} · ${t('start.scen', { n: (st.scenarios || []).filter((x) => !x.tutorial).length })}</span>${stamp(bestResult(this.progress, st.id))}`;
+      info.classList.add('on');
+    };
+    const svg = this.view.querySelector('.rm-region');
+    svg.addEventListener('pointerover', show);
+    svg.addEventListener('focusin', show);
   }
 
   // --- strona stacji ----------------------------------------------------------------------------------------------

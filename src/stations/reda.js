@@ -140,6 +140,7 @@ export default {
   location: 'Linia 202 Gdańsk – Stargard za Rumią, węzeł z linią 213 Reda – Hel; powiat wejherowski, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 213],              // linie kolejowe (jak w `location`)
+  geo: [54.5944, 18.3533],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'Regionalne i dalekobieżne na peronie II, pociągi z Helu na peronie I i Ia, towarowe przelotem torem 3 i zdawcze na tory ładunkowe.',
   difficulty: 4,
   startTime: '05:55',

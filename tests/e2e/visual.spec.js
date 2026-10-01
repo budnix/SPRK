@@ -136,3 +136,40 @@ test('wygląd karty pociągu na zakładce „Pociągi” (Szkolna): postój po g
   // panel pod pulpitem – karta na całą szerokość, przyciski trybu jazdy i zmiany czoła z prawej
   expect(await shot(page, '#trains .train-card[data-nr="6101"]', 1350, 100)).toMatchSnapshot('train-card-szkolna.png');
 });
+
+// ekrany wyboru (StartScreen): tytuł, lista posterunków, mapa Polski i schemat regionu jako tablica dyspozytorska
+async function startWithProgress(page, hash) {
+  await page.addInitScript(() => {
+    localStorage.setItem('sprk.settings', JSON.stringify({ theme: 'dark' }));
+    localStorage.setItem('sprk.progress', JSON.stringify({ stations: { sopot: { zmiana: { grade: 'dobrze', total: 24 } } }, missions: { 'szkolna/nauka-1': true } }));
+    localStorage.setItem('sprk.lastShift', JSON.stringify({ search: '?stacja=gdynia-glowna&scenariusz=zmiana&zaklocenia=low' }));
+  });
+  await page.goto(`/${hash}`, { waitUntil: 'load' });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(200);
+}
+
+test('wygląd ekranu tytułowego: ostatnia zmiana, służba, szkolenie, ustawienia, semafor', async ({ page }) => {
+  await startWithProgress(page, '#/');
+  await expect(page.locator('#st-last')).toBeVisible();
+  expect(await shot(page, '#start .start-screen', 1280, 600)).toMatchSnapshot('start-title.png');
+});
+
+test('wygląd listy posterunków: wyszukiwarka, filtry, karty z trudnością i pieczątką oceny', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba/lista');
+  await expect(page.locator('.st-card[data-id=sopot] .st-stamp')).toBeVisible();
+  expect(await shot(page, '#start .start-screen', 1280, 720)).toMatchSnapshot('start-list.png');
+});
+
+test('wygląd mapy Polski: tablica z siatką, województwo z posterunkami i liczbą, lampki stacji', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba');
+  await expect(page.locator('#st-map .mp-region.has')).toHaveCount(1);
+  expect(await shot(page, '#st-map', 900, 700)).toMatchSnapshot('start-map.png');
+});
+
+test('wygląd schematu regionu: tory z podkładami (OSM), lampki przystanków, tablice z nazwami, karta posterunku', async ({ page }) => {
+  await startWithProgress(page, '#/sluzba/pomorskie');
+  await page.locator('.rm-stop[data-id=sopot]').focus();
+  await expect(page.locator('#st-rinfo')).toHaveClass(/on/);
+  expect(await shot(page, '.st-rmap', 1200, 720)).toMatchSnapshot('start-region.png');
+});

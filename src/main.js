@@ -42,9 +42,10 @@ const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings
 // ekran wyboru: ustawienia z ekranu tytułowego otwiera ten sam ekran ustawień co menu (zmienna niżej – wołana później)
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
-}, { onSettings: () => settingsScreen.show() });
+}, { onSettings: () => settingsScreen.show({ fromStart: true }) });
 if (!params.get('scenariusz')) startScreen.show();
-else saveLastShift(location.search); // kafelek „Ostatnia zmiana” na ekranie tytułowym
+else saveLastShift(location.search);
+document.documentElement.classList.remove('boot-start'); // ekran startowy już zakrywa pulpit (index.html) // kafelek „Ostatnia zmiana” na ekranie tytułowym
 /** „Nowa zmiana…” w trakcie zmiany (menu, raport): od razu lista posterunków; tytuł jest przy wejściu do gry. */
 const newShift = () => startScreen.show({ view: 'service', mode: 'list' });
 

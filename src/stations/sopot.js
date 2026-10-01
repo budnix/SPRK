@@ -169,6 +169,7 @@ export default {
   location: 'Linie 202 Gdańsk – Gdynia i 250 (SKM), woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 250],              // linie kolejowe (jak w `location`)
+  geo: [54.4408, 18.5622],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min, regionalne i dalekobieżne z postojem przy peronie II, odstawianie składów; przejazd to trzy przebiegi.',
   difficulty: 4,
   startTime: '05:55',

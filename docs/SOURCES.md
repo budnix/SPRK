@@ -1200,3 +1200,25 @@ różne nastawnie różnych zarządców; w symulatorze jedno stanowisko prowadzi
 wikimapia – Nastawnia „Sp” Sopot; docplayer – projekt wykonawczy TG-7 stacja Gdynia Główna (E65); rynek-kolejowy.pl –
 przetarg PKP SKM na przebudowę srk Gdynia Chylonia; gov.pl – załącznik do umowy PKP SKM (posterunki linii 250);
 Wikipedia – linia kolejowa nr 202, stacja Gdynia Orłowo; PKP PLK – projekt E65 LCS Gdańsk/LCS Gdynia.
+
+## Mapa wyboru posterunku (`src/ui/map/poland.js`, pola `region`, `geo`, `lines`)
+
+* Kształty województw: Natural Earth, „Admin 1 – States, Provinces”, 1:10m (domena publiczna,
+  https://www.naturalearthdata.com/about/terms-of-use/), uproszczone skryptem `scripts/poland-map.mjs` (adres pliku,
+  suma SHA-256, tolerancja i rzut w nagłówku wyniku). Identyfikatory i nazwy województw jak w TERYT (`src/model/regions.js`).
+* Współrzędne stacji (`geo`, sprawdzone 1.10.2026) – z artykułów polskiej Wikipedii o stacjach (szablon współrzędnych,
+  zaokrąglenie do 4 miejsc, ok. 10 m): Sopot https://pl.wikipedia.org/wiki/Sopot_(stacja_kolejowa) 54,4408 / 18,5622;
+  Gdynia Orłowo https://pl.wikipedia.org/wiki/Gdynia_Or%C5%82owo 54,4767 / 18,5490; Gdynia Chylonia
+  https://pl.wikipedia.org/wiki/Gdynia_Chylonia 54,5456 / 18,4639; Gdynia Główna https://pl.wikipedia.org/wiki/Gdynia_G%C5%82%C3%B3wna
+  54,5211 / 18,5294; Rumia https://pl.wikipedia.org/wiki/Rumia_(stacja_kolejowa) 54,5689 / 18,3867; Reda
+  https://pl.wikipedia.org/wiki/Reda_(stacja_kolejowa) 54,5944 / 18,3533; Tczew https://pl.wikipedia.org/wiki/Tczew_(stacja_kolejowa)
+  54,0978 / 18,7883; Pruszcz Gdański https://pl.wikipedia.org/wiki/Pruszcz_Gda%C5%84ski_(stacja_kolejowa) 54,2581 / 18,6469;
+  Gdańsk Główny https://pl.wikipedia.org/wiki/Gda%C5%84sk_G%C5%82%C3%B3wny 54,3572 / 18,6444. Województwo (`region`) i linie
+  (`lines`) – z opisu położenia stacji (`location`), tych samych źródeł co plan stacji.
+* Przebieg linii na schemacie województwa (`src/ui/map/railLines.js`): © autorzy OpenStreetMap
+  (https://www.openstreetmap.org/copyright), Open Database License 1.0 – relacje `route=railway` z numerem linii PKP PLK
+  w `ref`, pobrane przez Overpass API skryptem `scripts/rail-lines.mjs` (stan OSM, obszar i uproszczenie w nagłówku pliku;
+  plik jest bazą pochodną na ODbL). Podpis źródła pod schematem w grze (`start.regionMapNote`).
+* Przyjęte: linia bez relacji w OSM – odcinek prosty między kolejnymi posterunkami z gry tej linii (kolejność wzdłuż
+  kierunku głównego rozkładu stacji); tory upraszczane do ok. 65 m; stacja może leżeć do 1 km od toru (współrzędne to
+  budynek, linia kończy się w głowicy). Jak dodać miasto: `docs/MAP-DATA.md`.

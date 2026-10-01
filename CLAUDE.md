@@ -76,6 +76,12 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
 5b. Barwy urządzenia jako zmienne `--desk-*` / `--mon-*` (są poza wymogiem motywu jasnego).
 6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
 
+## Nowy posterunek na mapie wyboru
+
+- Pola `region`, `geo`, `lines` (i `place` / `era` dla edycji z innego roku), współrzędne z Wikipedii, przebieg linii
+  z OpenStreetMap (`node scripts/rail-lines.mjs`, licencja ODbL – podpis pod schematem zostaje): `docs/MAP-DATA.md`,
+  skill `posterunek-na-mapie` (`.claude/skills/`).
+
 ## Interfejs (wygląd)
 
 - Jedna czcionka w całej aplikacji: Inter z plików w `src/fonts/` (zmienna `--font`). Nie dodawaj innych krojów ani

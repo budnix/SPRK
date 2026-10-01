@@ -14,13 +14,15 @@ test('ekran startowy bez parametrów: tytuł → Służba (lista alfabetycznie /
   await expect(page.locator('#st-last')).toHaveCount(0);
   await expect(page.locator('.st-card, .st-mission')).toHaveCount(0);
   await page.click('#st-service');
-  await expect(page).toHaveURL(/#\/sluzba$/);
+  await expect(page).toHaveURL(/#\/sluzba$/); // służba zaczyna się od mapy – lista obok
+  await page.click('.st-mode a[data-mode=list]');
+  await expect(page).toHaveURL(/#\/sluzba\/lista$/);
   // domyślnie alfabetycznie
   const names = await page.locator('.st-card .st-name').allTextContents();
   expect(names.length).toBeGreaterThanOrEqual(9);
   expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'pl')));
   expect(await page.locator('.st-card .st-diff').first()).toBeVisible();
-  // wg trudności: skala 1–5 niemalejąco, wybór zapamiętany po przeładowaniu (adres #/sluzba zostaje)
+  // wg trudności: skala 1–5 niemalejąco, wybór zapamiętany po przeładowaniu (adres #/sluzba/lista zostaje)
   await page.click('.st-sort button[data-sort=difficulty]');
   const diffList = await page.locator('.st-card .st-diff b').allTextContents();
   const counts = diffList.map((s) => Number(s.split('/')[0]));
@@ -46,7 +48,7 @@ test('ekran startowy bez parametrów: tytuł → Służba (lista alfabetycznie /
   await page.click('#st-up');
   await expect(page).toHaveURL(/#\/sluzba\/pomorskie$/);
   await page.goBack(); await page.goBack();
-  await expect(page).toHaveURL(/#\/sluzba$/);
+  await expect(page).toHaveURL(/#\/sluzba\/lista$/);
   await page.click('.st-card[data-id=sopot]');
   await expect(page.locator('#st-briefing')).toHaveClass(/open/);
   await expect(page.locator('#st-params')).toBeVisible();

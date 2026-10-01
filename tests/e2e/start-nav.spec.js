@@ -10,7 +10,7 @@ import { openShift } from './helpers.js';
 const ids = (page) => page.locator('#st-list .st-card').evaluateAll((els) => els.map((e) => e.dataset.id));
 
 test('wyszukiwarka: bez polskich znaków, nazwa w całości pierwsza, Enter otwiera pierwszy wynik; „/” przenosi do pola; brak wyników', async ({ page }) => {
-  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   const all = (await ids(page)).length;
   await expect(page.locator('#st-count')).toHaveText(`${all} z ${all} posterunków`);
   await page.locator('#st-title').focus();
@@ -32,15 +32,24 @@ test('wyszukiwarka: bez polskich znaków, nazwa w całości pierwsza, Enter otwi
   await expect(page.locator('#st-search')).toHaveValue('gdynia glowna');
 });
 
-test('filtry: stanowisko, trudność, tylko niegrane – łączą się; drugie kliknięcie wyłącza', async ({ page }) => {
+test('filtry: stanowisko (lista), trudność 1–5, tylko niegrane – łączą się; drugie kliknięcie wyłącza', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sprk.progress', JSON.stringify({ stations: { sopot: { zmiana: { grade: 'dobrze', total: 20 } } } })));
-  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
   const all = await ids(page);
-  await page.click('.st-chip[data-srk="E"]');
-  await expect(page.locator('.st-chip[data-srk="E"]')).toHaveAttribute('aria-pressed', 'true');
+  // stanowisko: lista wszystkich rodzajów z rejestru z liczbą posterunków (rodzajów przybywa – lista, nie przyciski)
+  const opts = await page.locator('#st-srk option').allTextContents();
+  expect(opts).toHaveLength(7);
+  expect(opts).toContain('typ E · pulpit kostkowy (2)');
+  expect(opts).toContain('IZH-111 · pulpit ciemny (0)');
+  await page.selectOption('#st-srk', 'E');
   await expect.poll(() => ids(page)).toEqual(['reda', 'rumia']);
-  await page.click('.st-chip[data-srk="E"]');
+  await page.selectOption('#st-srk', '');
   await expect.poll(() => ids(page)).toEqual(all);
+  // trudność: zawsze pełna skala 1–5 (także stopnie bez posterunków)
+  expect(await page.locator('.st-fdiff .st-chip').allTextContents()).toEqual(['1', '2', '3', '4', '5']);
+  await page.click('.st-chip[data-diff="1"]');
+  await expect(page.locator('#st-list .st-empty')).toBeVisible();
+  await page.click('.st-chip[data-diff="1"]');
   await page.click('.st-chip[data-diff="3"]');
   await expect.poll(() => ids(page)).toEqual(['gdynia-orlowo']);
   await page.click('.st-chip[data-diff="4"]');
@@ -59,6 +68,7 @@ test('adresy i „wstecz”: tytuł → służba → strona stacji; okruszki; Es
   await expect(page).toHaveURL(/#\/$/);
   await expect(page.locator('#st-up')).toBeHidden();
   await page.click('#st-service');
+  await page.click('.mp-region[data-region=pomorskie]'); // mapa → województwo → karta
   await page.click('.st-card[data-id=tczew]');
   await expect(page.locator('#st-crumbs')).toHaveText(/Start\s*›\s*Służba\s*›\s*pomorskie\s*›\s*Tczew/);
   // okruszek województwa – region z posterunkami
@@ -79,6 +89,7 @@ test('adresy i „wstecz”: tytuł → służba → strona stacji; okruszki; Es
   await expect(page).toHaveURL(/#\/sluzba$/);
   await page.goto('/#/stacja/nie-ma-takiej', { waitUntil: 'load' });
   await expect(page.locator('#st-search')).toBeVisible();
+  await expect(page.locator('#st-list')).toBeVisible();
   // stacja szkoleniowa nie ma strony w służbie – tylko w szkoleniu
   await page.goto('/#/stacja/szkolna', { waitUntil: 'load' });
   await expect(page.locator('#st-search')).toBeVisible();
@@ -117,13 +128,61 @@ test('misja ukończona: znacznik na linii szkoleniowej i licznik na ekranie tytu
   await expect(page.locator('#st-training')).toContainText('Ukończone misje: 1 z 6');
 });
 
-test('ustawienia z ekranu tytułowego leżą nad nim; zamknięcie wraca na tytuł', async ({ page }) => {
+test('ustawienia z ekranu tytułowego leżą nad nim, przycisk „Wróć do menu”; zamknięcie wraca na tytuł; z menu zmiany – „Wróć do zmiany”', async ({ page }) => {
   await page.goto('/', { waitUntil: 'load' });
   await page.click('#st-settings');
   await expect(page.locator('#settings')).toBeVisible();
+  await expect(page.locator('#se-close')).toHaveText('‹ Wróć do menu'); // nie „do zmiany” – zmiany jeszcze nie ma
   const top = await page.evaluate(() => { const r = document.querySelector('#settings .se-cat').getBoundingClientRect(); return !!document.elementFromPoint(r.left + 5, r.top + 5)?.closest('#settings'); });
   expect(top).toBe(true);
   await page.click('#se-close');
   await expect(page.locator('#settings')).toBeHidden();
   await expect(page.locator('#st-service')).toBeVisible();
+  await openShift(page, 'szkolna');
+  await page.click('#btn-menu'); await page.click('#menu-settings');
+  await expect(page.locator('#se-close')).toHaveText('‹ Wróć do zmiany');
+});
+
+test('wejście bez zmiany w adresie: pulpit ukryty od pierwszej klatki (bez mignięcia przed ekranem tytułowym); ze zmianą – widoczny', async ({ page }) => {
+  // bez skryptu gry widać to, co przeglądarka pokazuje przed jego załadowaniem
+  await page.route(/\/src\/main\.js|\/assets\/index-[^/]*\.js/, (route) => route.abort());
+  await page.goto('/', { waitUntil: 'load' });
+  expect(await page.evaluate(() => [document.documentElement.classList.contains('boot-start'), getComputedStyle(document.getElementById('app')).visibility])).toEqual([true, 'hidden']);
+  await page.goto('/?stacja=szkolna&scenariusz=zmiana', { waitUntil: 'load' });
+  expect(await page.evaluate(() => [document.documentElement.classList.contains('boot-start'), getComputedStyle(document.getElementById('app')).visibility])).toEqual([false, 'visible']);
+  await page.unroute(/\/src\/main\.js|\/assets\/index-[^/]*\.js/);
+  // z grą: ekran startowy otwarty, klasa zdjęta
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('#start')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.classList.contains('boot-start'))).toBe(false);
+});
+
+test('mapa: województwa z liczbą posterunków, klik – region z rzeczywistym przebiegiem linii, przystanek – strona stacji; wyszukiwanie obok mapy', async ({ page }) => {
+  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  await expect(page.locator('.st-mode a[data-mode=map]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#st-map .mp-region')).toHaveCount(16);
+  await expect(page.locator('#st-map .mp-region.has')).toHaveCount(1);
+  await expect(page.locator('#st-map .mp-region[data-region=pomorskie] .mp-count text')).toHaveText('9');
+  await expect(page.locator('#st-map .mp-dot')).toHaveCount(9);
+  // obok mapy: województwa; wyszukiwanie – pasujące posterunki, Enter otwiera pierwszy
+  await expect(page.locator('#st-mapside a[data-region=pomorskie]')).toBeVisible();
+  await page.fill('#st-search', 'tczew');
+  await expect(page.locator('#st-mapside a[data-id]')).toHaveCount(1);
+  await expect(page.locator('#st-map .mp-dot')).toHaveCount(1);
+  await page.fill('#st-search', '');
+  // klik w województwo (odnośnik SVG) – schemat regionu
+  await page.click('#st-map .mp-region[data-region=pomorskie]');
+  await expect(page).toHaveURL(/#\/sluzba\/pomorskie$/);
+  await expect(page.locator('.rm-region .rm-stop')).toHaveCount(9);
+  expect(await page.locator('.rm-region .rm-rail[data-line="202"]').count()).toBeGreaterThan(0);
+  await expect(page.locator('.st-rmap figcaption')).toContainText('OpenStreetMap');
+  await page.click('.rm-region .rm-stop[data-id=tczew]');
+  await expect(page).toHaveURL(/#\/stacja\/tczew$/);
+  await expect(page.locator('#st-briefing .st-bname')).toHaveText('Tczew');
+  // przełącznik widoku: lista i z powrotem mapa
+  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  await page.click('.st-mode a[data-mode=list]');
+  await expect(page.locator('#st-list .st-card')).toHaveCount(9);
+  await page.click('.st-mode a[data-mode=map]');
+  await expect(page.locator('#st-map svg')).toBeVisible();
 });

@@ -27,6 +27,8 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await page.click('#start .st-logo');
   await expect(page.locator('#start .st-tagline')).toHaveText('Railway Traffic Control Simulator');
   await page.click('#st-service');
+  await expect(page.locator('.st-mode a[data-mode=map]')).toHaveText('Map');
+  await page.click('.st-mode a[data-mode=list]');
   await expect(page.locator('#start .st-card .st-diff b').first()).toHaveText(/\/5$/);
   await page.click('#st-close');
   await page.evaluate(() => window.sim.endShift('all-done'));

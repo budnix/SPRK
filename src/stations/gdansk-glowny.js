@@ -115,6 +115,7 @@ export default {
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. (koniec), linia 202 Gdańsk Gł. – Stargard, 250 (SKM), 227 i 249; Gdańsk, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [9, 202, 250, 227, 249], // linie kolejowe (jak w `location`)
+  geo: [54.3572, 18.6444],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min Śródmieście ↔ Wrzeszcz, Regio i IC/EIC linii 9 przez perony I/II, pociągi kończące bieg na peronach IV/V, towarowe na Zaspę Towarową.',
   difficulty: 5,
   startTime: '05:55',

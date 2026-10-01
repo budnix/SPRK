@@ -123,6 +123,7 @@ export default {
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. przed Pszczółkami, węzeł z liniami 131, 203 i 726/728; powiat tczewski, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [9, 131, 203, 726, 728], // linie kolejowe (jak w `location`)
+  geo: [54.0978, 18.7883],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'IC/EIC i Regio linii 9 na peronie III, pociągi z Bydgoszczy i do Chojnic na peronach I/II, towarowe torami 9–15 do Zajączkowa i Szymankowa.',
   difficulty: 5,
   startTime: '05:55',

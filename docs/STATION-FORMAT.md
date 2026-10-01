@@ -280,6 +280,8 @@ i na liście z wyszukiwarką. Posterunek do służby ma `region` (identyfikator 
 `pomorskie`, `slaskie`, `warminsko-mazurskie`) i `lines` (numery linii kolejowych – te same co w `location`; z nich
 powstaje schemat regionu: kolejne posterunki tej samej linii łączy odcinek). `geo` to współrzędne stacji (stopnie,
 [szerokość, długość], w granicach Polski) – źródło w `docs/SOURCES.md`. Stacje szkoleniowe (z misją) tych pól nie mają.
+Po dodaniu posterunku trzeba odświeżyć przebieg linii (`node scripts/rail-lines.mjs`); źródła, licencje i kroki –
+`docs/MAP-DATA.md` (skill `posterunek-na-mapie`).
 
 Era: jedno miejsce może mieć kilka edycji – osobnych plików stacji z własnym planem, rozkładem, taborem i **jednym**
 rodzajem stanowiska (`srk`), np. `gdynia-glowna` (stan dzisiejszy) i `gdynia-glowna-2010` z `place: 'gdynia-glowna'`

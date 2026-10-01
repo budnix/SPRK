@@ -210,6 +210,7 @@ export default {
   location: 'Linie 202, 250 (SKM) i 201 – główna stacja Gdyni, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 250, 201],         // linie kolejowe (jak w `location`)
+  geo: [54.5211, 18.5294],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
   traffic: 'Największy ruch: 10 torów peronowych, SKM, dalekobieżne, towarowe; cała stacja z jednego stanowiska (ekrany).',
   difficulty: 5,
   startTime: '05:55',

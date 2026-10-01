@@ -191,8 +191,10 @@ failure, a block failure, a peak with heavy disruptions).
 * Popups can be dragged anywhere; by default they avoid the track plan and the command bars.
 * Station select like a game, with its own address for every screen (the browser Back button works): a title screen
   (last shift, duty, training, settings), the training line with the six missions as stops (finished ones are ticked),
-  the duty list with a search box (no Polish letters needed – "gdansk", a line number like "202", the equipment) and
-  filters (workstation, difficulty, era, voivodeship, not played yet), a page per voivodeship and a station page with a
+  duty on a map of Poland (voivodeships with their station count) or as a list, with a search box (no Polish letters
+  needed – "gdansk", a line number like "202", the equipment) and filters (workstation, difficulty 1–5, era,
+  voivodeship, not played yet), a dispatcher's board per voivodeship with the real course of the railway lines
+  (OpenStreetMap) and the stations as lamps with station signs, and a station page with a
   station sign, era tabs when a place has several editions, the shift choice and a green "start" button. Your best grade
   is stamped on the station card; the difficulty shows as one to five lamps. The shift report stamps the grade and shows the totals as
   desk counters with a status lamp; in settings the categories are stops on a track and the chosen option lights its

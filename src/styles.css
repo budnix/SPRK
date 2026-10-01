@@ -62,6 +62,10 @@
   --sc-rail: #4a5562; --sc-sleeper: #262d36; --sc-lens-off: #2b3239;
   --sc-go: #1d9a52; --sc-go-hover: #22ad5d; --sc-on-go: #ffffff;
   --sc-warn-plate: #ffc63d; --sc-on-warn-plate: #1c1300;
+  /* mapa i schemat regionu jako tablica dyspozytorska: ciemna, z siatką, w obu motywach (jak pulpit i monitor) */
+  --sc-board: #0a1017; --sc-board-grid: rgba(110,150,190,0.08); --sc-board-land: #121a24; --sc-board-own: #17263a;
+  --sc-board-edge: #26323f; --sc-board-coast: #3d6a99; --sc-board-label: #7f93a8; --sc-board-text: #dfe7ef;
+  --sc-board-rail: #58677a; --sc-board-rail-hot: #a9bcd0; --sc-board-sleeper: #2a3542; --sc-board-housing: #05080c;
   /* paski i menu stanowiska komputerowego – barwy monitora, niezależne od motywu */
   --mon-special-mark: #ff8c00; --mon-special-sz: #3c3c3c;
   /* barwy obrazu wg Ie-104.1 tab. 1: jeden różowy (255,0,255) dla zwalniania czasowego i zamknięć; turkusowe numery
@@ -140,12 +144,19 @@
   --sc-rail: #9aa3ad; --sc-sleeper: #d5dadf; --sc-lens-off: #3a424b;
   --sc-go: #1a8a4a; --sc-go-hover: #157a40; --sc-on-go: #ffffff;
   --sc-warn-plate: #f2b705; --sc-on-warn-plate: #1c1300;
+  --sc-board: #0a1017; --sc-board-grid: rgba(110,150,190,0.08); --sc-board-land: #121a24; --sc-board-own: #17263a;
+  --sc-board-edge: #26323f; --sc-board-coast: #3d6a99; --sc-board-label: #7f93a8; --sc-board-text: #dfe7ef;
+  --sc-board-rail: #58677a; --sc-board-rail-hot: #a9bcd0; --sc-board-sleeper: #2a3542; --sc-board-housing: #05080c;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; background: var(--bg); color: var(--text); font: 14px/1.35 var(--font); -webkit-text-size-adjust: 100%; }
 /* kontrolki formularzy domyślnie biorą czcionkę systemu – tu dziedziczą czcionkę aplikacji */
 button, input, select, textarea { font-family: inherit; }
 #app { height: 100%; display: flex; flex-direction: column; }
+/* wejście bez zmiany w adresie: od pierwszej klatki tło ekranu startowego, pulpit ukryty (bez mignięcia pulpitu z rozkładem
+   przed ekranem tytułowym); main.js zdejmuje klasę po otwarciu ekranu startowego */
+html.boot-start body { background: var(--sc-bg); }
+html.boot-start #app { visibility: hidden; }
 #topbar { display: flex; align-items: center; gap: 16px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto; }
 .brand { display: flex; gap: 10px; align-items: center; }
 /* logo SVG na pasku górnym: kolory z motywu interfejsu (jasny/ciemny), nie z ekranów pełnych */
@@ -767,6 +778,68 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .st-adv { margin: 6px 0 2px; font-size: 12px; color: var(--sc-muted); }
 .st-adv summary { cursor: pointer; padding: 2px 0; }
 .st-adv summary:focus-visible { outline: 2px solid var(--sc-accent); outline-offset: 2px; }
+/* służba: przełącznik mapa / lista obok wyszukiwarki */
+.st-toprow { display: flex; gap: 10px; align-items: stretch; }
+.st-toprow .st-search { flex: 1 1 auto; min-width: 0; }
+.st-mode { display: inline-flex; }
+.st-mode .tb { text-decoration: none; display: inline-flex; align-items: center; padding: 0 14px; background: var(--sc-panel2); color: var(--sc-text); border-color: var(--sc-border); }
+.st-mode .tb.active { background: var(--sc-accent); color: var(--sc-on-accent); border-color: var(--sc-accent); }
+/* mapa Polski (src/ui/map/mapSvg.js): województwa z posterunkami wyróżnione, liczba jak zapalona lampka */
+.st-mapwrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+@media (max-width: 860px) { .st-mapwrap { grid-template-columns: minmax(0, 1fr); } }
+.st-map { background: var(--sc-board); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 10px; overflow: hidden; }
+.mp-poland { display: block; width: 100%; height: auto; max-height: calc(100vh - 330px); }
+.mp-shape { fill: var(--sc-board-land); stroke: var(--sc-board-edge); stroke-width: 1.2; transition: fill .15s; }
+.mp-region.has .mp-shape { fill: var(--sc-board-own); stroke: var(--sc-board-coast); stroke-width: 2; }
+.mp-region:hover .mp-shape, .mp-region:focus-visible .mp-shape { fill: var(--sc-board-own); stroke: var(--sc-lamp-green); stroke-width: 2.4; }
+.mp-region:focus { outline: none; }
+.mp-name { fill: var(--sc-board-label); font-size: 16px; text-anchor: middle; pointer-events: none; }
+.mp-region.has .mp-name { fill: var(--sc-board-text); font-weight: 700; }
+.mp-count circle { r: 16px; fill: var(--sc-go); filter: drop-shadow(0 0 4px var(--sc-glow-green)); }
+.mp-count text { fill: var(--sc-on-go); font-size: 17px; font-weight: 800; text-anchor: middle; dominant-baseline: central; }
+.mp-dot { fill: var(--sc-lamp-yellow); stroke: var(--sc-board-housing); stroke-width: 1.5; filter: drop-shadow(0 0 3px var(--sc-glow-yellow)); pointer-events: none; }
+.st-mapside { background: var(--sc-panel); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 10px 12px; }
+.st-mapside h3 { font-size: 15px; margin: 2px 0 8px; display: flex; align-items: baseline; gap: 10px; }
+.st-mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.st-mini li { position: relative; }
+.st-mini a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: center; text-decoration: none; color: var(--sc-text); background: var(--sc-panel2); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 8px 10px; }
+.st-mini a:hover, .st-mini a:focus-visible { border-color: var(--sc-accent); outline: none; }
+.st-mini a span { grid-column: 1 / -1; font-size: 11.5px; color: var(--sc-muted); }
+.st-mini .st-stamp { position: absolute; right: 8px; bottom: 7px; }
+.st-maphint { font-size: 12px; margin: 10px 0 0; }
+/* schemat regionu: tory (szyna z podkładem) między przystankami, numery linii, przystanki z nazwą */
+.st-rmap { position: relative; margin: 0; background: var(--sc-panel); border: 1px solid var(--sc-border); border-radius: var(--radius-sm); padding: 10px; }
+.st-rmap figcaption { font-size: 11.5px; margin-top: 6px; }
+.rm-region { display: block; width: 100%; height: auto; }
+.rm-board { fill: var(--sc-board); }
+.rm-gridline { fill: none; stroke: var(--sc-board-grid); stroke-width: 1; }
+.rm-gridfill { pointer-events: none; }
+.rm-shape { fill: var(--sc-board-land); stroke: var(--sc-board-edge); stroke-width: 1; }
+.rm-shape.own { fill: var(--sc-board-own); stroke: var(--sc-board-coast); stroke-width: 1.5; }
+.rm-sleepers { stroke: var(--sc-board-sleeper); stroke-width: 7; stroke-dasharray: 1.6 4.4; fill: none; }
+.rm-rail { stroke: var(--sc-board-rail); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.rm-sleepers.hot { stroke: var(--sc-board-rail); stroke-width: 9; }
+.rm-rail.hot { stroke: var(--sc-board-rail-hot); stroke-width: 3; }
+.rm-line { fill: var(--sc-board-label); font-size: 12px; font-weight: 700; text-anchor: end; paint-order: stroke; stroke: var(--sc-board); stroke-width: 4px; stroke-linejoin: round; }
+/* przystanek: lampka w obudowie (żółta – niegrany, zielona – grany), nazwa na tablicy stacyjnej */
+.rm-halo { fill: var(--sc-glow-yellow); opacity: 0.35; transition: opacity .2s; }
+.rm-housing { fill: var(--sc-board-housing); stroke: var(--sc-board-rail-hot); stroke-width: 1.5; }
+.rm-lamp { fill: var(--sc-lamp-yellow); }
+.rm-stop.played .rm-halo { fill: var(--sc-glow-green); }
+.rm-stop.played .rm-lamp { fill: var(--sc-lamp-green); }
+.rm-plate rect { fill: var(--sc-plate); }
+.rm-plate .rm-plate-edge { fill: none; stroke: var(--sc-plate-edge); stroke-width: 1.2; }
+.rm-plate text { fill: var(--sc-plate-text); font-size: 14px; font-weight: 700; letter-spacing: 0.2px; }
+.rm-stop:hover .rm-halo, .rm-stop:focus-visible .rm-halo { opacity: 0.9; }
+.rm-stop:hover .rm-plate rect:first-child, .rm-stop:focus-visible .rm-plate rect:first-child { fill: var(--sc-accent); }
+.rm-stop:focus { outline: none; }
+.st-rinfo { position: absolute; left: 22px; bottom: 44px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; max-width: min(440px, calc(100% - 44px)); background: var(--sc-board-housing); color: var(--sc-board-text); border: 1px solid var(--sc-board-edge); border-left: 4px solid var(--sc-lamp-yellow); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 12.5px; pointer-events: none; }
+.st-rinfo.on { border-left-color: var(--sc-lamp-green); }
+.st-rinfo .muted { color: var(--sc-board-label); }
+.st-rinfo-name { font-size: 15px; font-weight: 800; }
+.st-rinfo-srk { flex-basis: 100%; color: var(--sc-board-label); }
+.st-rinfo .st-stamp { background: var(--sc-board-housing); }
+@media (hover: none) { .st-rinfo:not(.on) { display: none; } }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
 /* zakładka „Zadania”: karty zadań manewrowych scenariusza */
 .tasks-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 2px; font-size: 14px; }
@@ -1031,7 +1104,7 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
 /* miganie lampek i sygnałów (.blink) niesie informację o stanie urządzeń – zostaje; wyłączane są ruchy ozdobne */
 @media (prefers-reduced-motion: reduce) {
   .tut-hl, svg .tut-hl, .panel-tabs .tb.flash { animation: none; }
-  #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card, .st-no, .sg-lens, .se-cat::before, .se-choice input[type=radio] { transition: none; }
+  #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card, .st-no, .sg-lens, .se-cat::before, .se-choice input[type=radio], .rm-halo, .mp-shape { transition: none; }
   .rp-gword { animation: none; }
   .screen.ebi .ebi-sel, .screen.ebi .ebi-sel .sel-frame { animation: none; }
   * { scroll-behavior: auto !important; }
