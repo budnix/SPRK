@@ -10,7 +10,7 @@ beginners. Runs in desktop browsers and on iPad. Plain JavaScript (ES modules) a
 
 Play it: **https://budnix.github.io/SPRK/**
 
-![Start screen: missions, stations and the briefing panel](docs/screenshots/start.png)
+![Station select: the Pomeranian voivodeship as a dispatcher board – real track course, stations as lamps with station signs](docs/screenshots/start.png)
 
 ## Screenshots
 
