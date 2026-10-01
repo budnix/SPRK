@@ -20,6 +20,13 @@ import { MapView } from './map/MapView.js';
 export { dutyStations } from './catalog.js';
 
 const SORT_KEY = 'sprk.startSort';
+/** Ostatnio oglądany ekran wyboru (mapa, lista, województwo, szkolenie) i widok mapy – „Nowa zmiana…” wraca tam. */
+const LAST_VIEW_KEY = 'sprk.startLastView';
+const MAP_VIEW_KEY = 'sprk.startMapView';
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* brak pamięci – pomijamy */ } },
+};
 
 /** Posterunki w kolejności: alfabetycznie (domyślnie) lub wg trudności (skala 1–5), potem alfabetycznie. */
 export function sortStations(stations, by) {
@@ -140,6 +147,7 @@ export class StartScreen {
     if (route.view === 'station' && !dutyStations(STATIONS).some((s) => s.id === route.id)) route = { view: 'service', mode: 'list' };
     this.route = route;
     this.progress = loadProgress();
+    if (['service', 'region', 'training'].includes(route.view)) store.set(LAST_VIEW_KEY, routeHash(route));
     const crumbs = [];
     const home = { label: t('start.home'), route: { view: 'title' } };
     let title = t('app.tagline');
@@ -415,9 +423,9 @@ export class StartScreen {
       return;
     }
     const counts = regionCounts(found);
-    // mapa zostaje w tym samym miejscu i przybliżeniu przy zmianie filtrów
-    const keep = this.mapView?.host?.isConnected ? this.mapView.view : null;
-    this.#mount(v.querySelector('#st-map .st-mapview'), found, { view: keep });
+    // mapa zostaje w tym samym miejscu i przybliżeniu przy zmianie filtrów i po powrocie z gry („Nowa zmiana…”)
+    const keep = this.mapView?.host?.isConnected ? this.mapView.view : store.get(MAP_VIEW_KEY);
+    this.#mount(v.querySelector('#st-map .st-mapview'), found, { view: keep, remember: true });
     const f = this.filters;
     const filtered = f.query || f.srk.length || f.difficulty.length || f.era != null || f.region || f.notPlayed;
     // obok mapy: bez filtrów – województwa z posterunkami, z filtrami – pasujące posterunki
@@ -473,12 +481,13 @@ export class StartScreen {
   }
 
   /** Przybliżana mapa (MapView) z posterunkami `stations`; `view` – początkowy wycinek (inaczej cała Polska). */
-  #mount(host, stations, { view = null } = {}) {
+  #mount(host, stations, { view = null, remember = false } = {}) {
     const mark = (st) => { const b = bestResult(this.progress, st.id); return b ? `played grade-${b.grade}` : ''; };
     const card = host.parentElement.querySelector('.st-rinfo');
     this.mapView = new MapView(host, {
       stations, counts: regionCounts(stations), mark, view, label: (name, n) => t('start.mapRegion', { name, n }),
       labels: { in: t('start.zoomIn'), out: t('start.zoomOut'), home: t('start.zoomHome'), map: t('start.mapLabel') },
+      onChange: remember ? (v) => { clearTimeout(this.saveView); this.saveView = setTimeout(() => store.set(MAP_VIEW_KEY, v), 300); } : null,
       // karta posterunku: nazwa, trudność, stanowisko, ocena
       onHover: (id) => {
         const st = STATIONS.find((x) => x.id === id); if (!st) return;
@@ -533,6 +542,12 @@ export class StartScreen {
     history.replaceState(null, '', location.pathname + hash);
     openDialog(this.root);
     this.render(parseRoute(hash));
+  }
+
+  /** Ostatnio oglądany ekran wyboru (zapamiętany przy rysowaniu), a bez niego – lista posterunków. */
+  showLast() {
+    const saved = store.get(LAST_VIEW_KEY);
+    this.show(typeof saved === 'string' && saved.startsWith('#/') ? parseRoute(saved) : { view: 'service', mode: 'list' });
   }
 
   hide() {

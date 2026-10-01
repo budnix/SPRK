@@ -63,6 +63,7 @@ export class MapView {
       // numer linii przy krótkim na ekranie odcinku zasłaniałby przystanki
       if (el.classList.contains('mv-lnum')) el.classList.toggle('short', Number(el.dataset.len) / px < 70);
     }
+    this.opts.onChange?.(v);
     this.host.querySelector('[data-zoom="in"]').disabled = z >= ZOOM.max * 0.999;
     this.host.querySelector('[data-zoom="out"]').disabled = z <= ZOOM.min * 1.001;
   }

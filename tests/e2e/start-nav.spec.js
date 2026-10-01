@@ -259,3 +259,44 @@ test('ekran województwa: ta sama mapa przybliżona do posterunków – tablice 
   await expect(page.locator('#st-rmapfig .mv-stop[data-id=sopot] .rm-plate')).toBeHidden();
 });
 
+
+test('ekran wczytywania: od pierwszej klatki (bez skryptu gry widać semafor i napis), co najmniej 1 s, po zbudowaniu pulpitu znika', async ({ page }) => {
+  await page.route(/\/src\/main\.js|\/assets\/index-[^/]*\.js/, (route) => route.abort());
+  await page.goto('/?stacja=sopot&scenariusz=zmiana', { waitUntil: 'load' });
+  await expect(page.locator('#boot')).toBeVisible();
+  await expect(page.locator('#boot-text')).toHaveText('Wczytywanie posterunku…');
+  await expect(page.locator('#boot .boot-sig .sg-lens')).toHaveCount(3);
+  await page.goto('/', { waitUntil: 'load' });
+  await expect(page.locator('#boot-text')).toHaveText('Wczytywanie…');
+  await page.unroute(/\/src\/main\.js|\/assets\/index-[^/]*\.js/);
+  await page.goto('/?stacja=sopot&scenariusz=zmiana', { waitUntil: 'load' });
+  await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
+  // widoczny co najmniej 1 s od początku wczytywania (bez mignięcia), potem zdjęty (nie zasłania gry)
+  expect(await page.evaluate(() => [!!document.getElementById('boot'), performance.now() < 900])).not.toEqual([false, true]);
+  await expect(page.locator('#boot')).toHaveCount(0);
+  expect(await page.evaluate(() => performance.now())).toBeGreaterThan(1000);
+});
+
+test('„Nowa zmiana…” wraca do ostatnio oglądanego ekranu wyboru – mapy w tym samym przybliżeniu (bez zapisu – lista)', async ({ page }) => {
+  await page.goto('/#/sluzba', { waitUntil: 'load' });
+  const svg = page.locator('#st-map .mv-svg');
+  await page.click('#st-map .mv-btn[data-zoom=in]'); await page.click('#st-map .mv-btn[data-zoom=in]');
+  await expect.poll(async () => Number(await svg.getAttribute('data-zoom'))).toBeGreaterThan(2);
+  await page.waitForTimeout(400); // zapis widoku mapy (po 0,3 s spokoju)
+  const zoomed = Number(await svg.getAttribute('data-zoom'));
+  // z mapy przez stronę stacji do zmiany
+  await page.goto('/#/stacja/sopot', { waitUntil: 'load' });
+  await page.click('#st-go');
+  await page.waitForURL(/stacja=sopot/);
+  await page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await expect(page).toHaveURL(/#\/sluzba$/);
+  await expect(svg).toBeVisible();
+  expect(Number(await svg.getAttribute('data-zoom'))).toBeCloseTo(zoomed, 0);
+  // szkolenie: ostatnio oglądana misja
+  await page.goto('/#/szkolenie/3', { waitUntil: 'load' });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'nauka-3' } });
+  await page.click('#btn-menu'); await page.click('#menu-new');
+  await expect(page).toHaveURL(/#\/szkolenie\/3$/);
+  await expect(page.locator('#st-briefing .st-bname')).toContainText('Misja 3');
+});

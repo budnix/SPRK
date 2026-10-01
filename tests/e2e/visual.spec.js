@@ -13,6 +13,7 @@ const HIDE_GLYPHS = `* { -webkit-text-fill-color: transparent !important; text-s
   svg text, svg tspan { fill: transparent !important; stroke: transparent !important; }`;
 
 async function shot(page, selector, width, height) {
+  await page.waitForFunction(() => !document.getElementById('boot')); // ekran wczytywania zdjęty
   await page.addStyleTag({ content: HIDE_GLYPHS });
   // miganie monitora to przełączana klasa (wspólna faza, Ie-104.1 §4 ust. 17) – zatrzymana w fazie jasnej przed zrzutem
   await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); window.desk?.inner?.setAttribute('data-ph', '0'); });

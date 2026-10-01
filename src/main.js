@@ -46,8 +46,8 @@ const startScreen = new StartScreen(document.getElementById('start'), {
 if (!params.get('scenariusz')) startScreen.show();
 else saveLastShift(location.search);
 document.documentElement.classList.remove('boot-start'); // ekran startowy już zakrywa pulpit (index.html) // kafelek „Ostatnia zmiana” na ekranie tytułowym
-/** „Nowa zmiana…” w trakcie zmiany (menu, raport): od razu lista posterunków; tytuł jest przy wejściu do gry. */
-const newShift = () => startScreen.show({ view: 'service', mode: 'list' });
+/** „Nowa zmiana…” w trakcie zmiany (menu, raport): ostatnio oglądany ekran wyboru (mapa, lista, województwo, szkolenie). */
+const newShift = () => startScreen.showLast();
 
 const sim = new Simulation(station, {
   speed: 1,
@@ -368,3 +368,15 @@ if (mission && params.get('scenariusz')) {
 
 // Dla debugowania w konsoli
 window.sim = sim; window.desk = desk; window.side = side; window.tutorial = tutorial; window.viewport = viewport;
+
+// ekran wczytywania (index.html): zdjęty, gdy pulpit i panel są zbudowane, a czcionka wczytana (najdłużej 1,5 s czekania),
+// ale nie wcześniej niż BOOT_MIN_MS od początku wczytywania strony – krótkie mignięcie wygląda jak błąd
+const BOOT_MIN_MS = 1000;
+const bootEl = document.getElementById('boot');
+Promise.all([
+  Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1500))]),
+  new Promise((r) => setTimeout(r, Math.max(0, BOOT_MIN_MS - performance.now()))), // performance.now() – od początku nawigacji
+]).then(() => requestAnimationFrame(() => {
+  bootEl?.classList.add('done');
+  setTimeout(() => bootEl?.remove(), 300);
+}));

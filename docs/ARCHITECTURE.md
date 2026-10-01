@@ -446,7 +446,11 @@ tylko z adresu, więc przycisk „wstecz” przeglądarki i odświeżenie dział
   zmiany (okręg tylko dla stacji z `districts`, scenariusz, zakłócenia; ziarno w „Zaawansowane”) i start.
 Nagłówek ma okruszki (Start › Służba › województwo › stacja) i „‹ Wstecz” (`catalog.parentRoute`); Esc bez trwającej
 zmiany – piętro wyżej. Przy wejściu do gry (bez `scenariusz` w adresie) otwiera się tytuł; „Nowa zmiana…” w trakcie
-zmiany (menu, raport) – od razu lista posterunków. Wejście bez zmiany w adresie: skrypt w `index.html` dodaje klasę
+zmiany (menu, raport) – ostatnio oglądany ekran wyboru (mapa w tym samym przybliżeniu, lista, województwo, szkolenie;
+`localStorage`), a bez zapisu – lista posterunków. Ekran wczytywania (`#boot` w `index.html`, semafor ze światłami
+zapalanymi po kolei, napis wg języka z ustawień) jest od pierwszej klatki; `main.js` zdejmuje go po zbudowaniu pulpitu
+i wczytaniu czcionki, nie wcześniej niż 1 s od początku wczytywania (`BOOT_MIN_MS` – bez mignięcia; przy błędzie skryptu
+znika sam) – bez pustego układu przed pulpitem. Wejście bez zmiany w adresie: skrypt w `index.html` dodaje klasę
 `boot-start` (pulpit ukryty od pierwszej klatki, tło ekranu startowego), `main.js` zdejmuje ją po otwarciu ekranu – bez
 mignięcia pulpitu przed tytułem. Ustawienia otwarte z tytułu mają „Wróć do menu”, z menu zmiany – „Wróć do zmiany”. Otwarcie ekranu zdejmuje parametry zmiany z adresu (odświeżenie
 zostaje na wyborze), „Wróć do zmiany” je przywraca; start zmiany ładuje adres `?stacja=…` bez części „#”.

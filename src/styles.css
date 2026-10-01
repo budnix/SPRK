@@ -101,6 +101,7 @@
   --ctl-h: 28px;
   --z-edge: 3; --z-status: 5; --z-tab: 6; --z-tutorial: 70; --z-gloss: 71; --z-cmd-menu: 80; --z-confirm: 81;
   --z-menu: 85; --z-help: 86; --z-report: 87; --z-start: 88; --z-settings: 90; /* ustawienia otwierają się też z ekranu tytułowego */
+  --z-boot: 95; /* ekran wczytywania nad wszystkim, do końca budowy pulpitu */
 }
 /* Motyw jasny – zmienia tylko interfejs, kostki pulpitu pozostają bez zmian */
 :root[data-theme="light"] {
@@ -157,6 +158,15 @@ button, input, select, textarea { font-family: inherit; }
    przed ekranem tytułowym); main.js zdejmuje klasę po otwarciu ekranu startowego */
 html.boot-start body { background: var(--sc-bg); }
 html.boot-start #app { visibility: hidden; }
+/* ekran wczytywania (index.html): semafor ze światłami zapalanymi po kolei; main.js zdejmuje go po zbudowaniu pulpitu */
+#boot { position: fixed; inset: 0; z-index: var(--z-boot); display: flex; align-items: center; justify-content: center; background: var(--sc-bg); pointer-events: none; transition: opacity .25s; }
+#boot.done { opacity: 0; }
+.boot-box { display: flex; flex-direction: column; align-items: center; gap: 16px; color: var(--sc-muted); font: 600 13px var(--font); letter-spacing: 1.5px; text-transform: uppercase; }
+.boot-sig .sg-lens { animation: boot-lamp 1.5s steps(1) infinite; }
+.boot-sig .sg-r { fill: var(--sc-lamp-red); animation-delay: 0s; }
+.boot-sig .sg-y { fill: var(--sc-lamp-yellow); animation-delay: -0.5s; }
+.boot-sig .sg-g { fill: var(--sc-lamp-green); animation-delay: -1s; }
+@keyframes boot-lamp { 0% { opacity: 1; } 33.3% { opacity: 0.12; } }
 #topbar { display: flex; align-items: center; gap: 16px; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex: 0 0 auto; }
 .brand { display: flex; gap: 10px; align-items: center; }
 /* logo SVG na pasku górnym: kolory z motywu interfejsu (jasny/ciemny), nie z ekranów pełnych */
@@ -1132,6 +1142,7 @@ dl.gloss dd { margin: 0 0 0 12px; color: var(--muted); }
   .tut-hl, svg .tut-hl, .panel-tabs .tb.flash { animation: none; }
   #side-toggle svg, .btn-cap, .btn-hl, .st-mission, .st-card, .st-no, .sg-lens, .se-cat::before, .se-choice input[type=radio], .rm-halo, .mp-shape, .mp-outline { transition: none; }
   .rp-gword { animation: none; }
+  .boot-sig .sg-lens { animation: none; } .boot-sig .sg-r, .boot-sig .sg-g { opacity: 0.12; }
   .screen.ebi .ebi-sel, .screen.ebi .ebi-sel .sel-frame { animation: none; }
   * { scroll-behavior: auto !important; }
 }
