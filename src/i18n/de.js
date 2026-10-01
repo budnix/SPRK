@@ -120,7 +120,6 @@ export default {
   'start.steps': '{n} Schritte',
   'start.difficulty': 'Schwierigkeit',
   'start.twoDistricts': 'zwei Bezirke',
-  'start.scen': '{n} Szen.',
   'start.srkScreen': 'Rechner · Monitor',
   'start.srkDesk': 'Typ E · Drucktastenpult',
   'start.srkBoth': 'Arbeitsplatz wählbar',

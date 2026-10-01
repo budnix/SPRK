@@ -120,7 +120,6 @@ export default {
   'start.steps': '{n} steps',
   'start.difficulty': 'difficulty',
   'start.twoDistricts': 'two signal boxes',
-  'start.scen': '{n} scen.',
   'start.srkScreen': 'computer · monitor',
   'start.srkDesk': 'type E · push-button desk',
   'start.srkBoth': 'workstation of your choice',

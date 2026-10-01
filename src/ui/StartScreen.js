@@ -426,7 +426,7 @@ export class StartScreen {
       : `<h3><span class="st-kicker">${t('start.duty')}</span>${t('start.regions')}</h3><ul class="st-mini">${Object.entries(counts).sort((a, b) => REGIONS[a[0]].localeCompare(REGIONS[b[0]], 'pl')).map(([r, n]) => `<li><a href="${routeHash({ view: 'region', region: r })}" data-region="${r}"><b>${esc(REGIONS[r])}</b><span>${t('start.regionCount', { n })}</span></a></li>`).join('')}</ul><p class="muted st-maphint">${t('start.mapHint')}</p>`;
   }
 
-  /** Karta posterunku: miniatura, nazwa, trudność, położenie, stanowisko; najlepsza ocena jako pieczątka. */
+  /** Karta posterunku: miniatura, nazwa, trudność, położenie, stanowisko; najlepsza ocena jako pieczątka (wybór zmiany – na stronie stacji). */
   #card(s) {
     const eds = editionsOf(STATIONS, s).length;
     return `<div class="st-card" data-id="${s.id}" role="button" tabindex="0">
@@ -434,7 +434,7 @@ export class StartScreen {
         <div class="st-body">
           <div class="st-row"><span class="st-name">${esc(s.name)}</span>${difficultyMark(s.difficulty)}</div>
           <div class="st-loc">${esc(s.location || '')}</div>
-          <div class="st-chips"><span class="st-srk${stationViews(s).length > 1 ? ' st-srk-both' : ''}">${srkBadge(s)}</span>${s.districts ? `<span class="st-srk">${t('start.twoDistricts')}</span>` : ''}<span class="st-srk">${t('start.scen', { n: (s.scenarios || []).filter((x) => !x.tutorial).length })}</span>${eds > 1 ? `<span class="st-srk">${t('start.eras', { n: eds })}</span>` : ''}</div>
+          <div class="st-chips"><span class="st-srk${stationViews(s).length > 1 ? ' st-srk-both' : ''}">${srkBadge(s)}</span>${s.districts ? `<span class="st-srk">${t('start.twoDistricts')}</span>` : ''}${eds > 1 ? `<span class="st-srk">${t('start.eras', { n: eds })}</span>` : ''}</div>
           <div class="st-traffic">${esc(s.traffic || '')}</div>
         </div>
         ${stamp(bestResult(this.progress, s.id), 'st-card-stamp')}
@@ -479,10 +479,10 @@ export class StartScreen {
     this.mapView = new MapView(host, {
       stations, counts: regionCounts(stations), mark, view, label: (name, n) => t('start.mapRegion', { name, n }),
       labels: { in: t('start.zoomIn'), out: t('start.zoomOut'), home: t('start.zoomHome'), map: t('start.mapLabel') },
-      // karta posterunku: tablica z nazwą, trudność, stanowisko, liczba zmian, ocena
+      // karta posterunku: nazwa, trudność, stanowisko, ocena
       onHover: (id) => {
         const st = STATIONS.find((x) => x.id === id); if (!st) return;
-        card.innerHTML = `<span class="st-rinfo-name">${esc(st.name)}</span>${difficultyMark(st.difficulty)}<span class="st-rinfo-srk">${esc(srkBadge(st))} · ${t('start.scen', { n: (st.scenarios || []).filter((x) => !x.tutorial).length })}</span>${stamp(bestResult(this.progress, st.id))}`;
+        card.innerHTML = `<span class="st-rinfo-name">${esc(st.name)}</span>${difficultyMark(st.difficulty)}<span class="st-rinfo-srk">${esc(srkBadge(st))}</span>${stamp(bestResult(this.progress, st.id))}`;
         card.classList.add('on');
       },
     });

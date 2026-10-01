@@ -124,7 +124,6 @@ export default {
   'start.steps': '{n} kroków',
   'start.difficulty': 'trudność',
   'start.twoDistricts': 'dwa okręgi',
-  'start.scen': '{n} scen.',
   'start.srkScreen': 'komputerowe · monitor',
   'start.srkDesk': 'typ E · pulpit kostkowy',
   'start.srkBoth': 'stanowisko do wyboru',
