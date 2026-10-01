@@ -102,7 +102,7 @@ Play it: **https://budnix.github.io/SPRK/**
   line speed); freight trains carry the PKP PLK train kind from the Network Statement (TM bulk, TN non-bulk, TD intermodal,
   TK station and siding service, TS empty wagons to/from repair, LT light engine; the third letter is the traction, e.g.
   TME electric, TDS diesel), a length and a gross mass – heavier trains accelerate more slowly; the timetable row tooltip
-  shows the kind, speed, length and mass; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable, non-stop passes, terminating trains, units handed over
+  shows the kind, speed, length and mass; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, running onto an occupied track up to the standing stock (last 50 m at 3 km/h).
 * A point without detection is secured on site from the Equipment tab (a worker, about 3 minutes); then a train can
   pass it on a substitute signal or a written order.

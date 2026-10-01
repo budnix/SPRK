@@ -417,7 +417,7 @@ daje menu elementu końca toru (`#blockMenu`); pulpit kostkowy rysuje blokadę j
 przyciski Ko | Poz | Wbl albo Zk w rzędzie obok – lampka Ko i Pwl, liczniki dKo | dPo wyżej – jak na pulpitach typu
 E; `deskParts.updateBlockLamps`), bez osobnej kostki `block`.
 Perony na pulpicie kostkowym: `DeskRenderer.#buildPlatforms` rysuje obrys z nazwą z tej samej geometrii
-(`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
+(`platformSpans`); krawędź peronowa od strony toru peronowego to podwójna kreska (`edges`, `platformEdgeLines`) na obu stanowiskach. Geometria peronów (`platformSpans`, `platformRanges` – zasięg peronu wzdłuż toru) jest w warstwie logiki, `src/tiles/platforms.js` (`src/render/platforms.js` ją re-eksportuje): model bierze z niej miejsce zatrzymania czoła pociągu – `Train.#platformEndStop` (ostatnia kostka peronu w kierunku jazdy, `stopShort` metrów przed końcem z `Traffic.stopScatter`, tył nie na rozjazdach – inaczej jak dawniej przed semaforem); z peronu pociąg rusza, gdy pierwszy semafor przed czołem nie wskazuje „Stój” (`#clearToLeave`). Opis „tor N” na pulpicie mieści się na jednej kostce (`trackLabelText` pomija dopisek „· Peron …”),
 jest rysowany delikatnie, zawsze nad opisywanym torem, na prostej kostce toru tuż nad paskiem (`trackLabelPlace`);
 własna kostka opisu zostaje pusta, więc opis nigdy nie leży na obrysie peronu.
 

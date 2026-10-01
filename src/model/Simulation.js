@@ -73,7 +73,7 @@ export class Simulation {
     const timetable = this.scenario.timetable
       ? this.scenario.timetable
       : (this.scenario.trains ? station.timetable.filter((t) => this.scenario.trains.includes(t.nr)) : station.timetable);
-    this.traffic = new Traffic(this.station, this.ilk, this.blocks, this.bus, { rng: this.rng, level: this.level, timetable, tasks: this.scenario.tasks });
+    this.traffic = new Traffic(this.station, this.ilk, this.blocks, this.bus, { rng: this.rng, seed: this.seed, level: this.level, timetable, tasks: this.scenario.tasks });
     this.special = new SpecialCommand(); // polecenie specjalne stanowiska komputerowego (Ie-104.1 §11)
     this.comms = new Comms(this);
     this.faults = new Faults(this, this.rng, this.level, this.scenario.faults || []);

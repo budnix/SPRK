@@ -2,6 +2,23 @@ import { categoryOf, speedFor, trainLabel } from './categories.js';
 import { Train } from './Train.js';
 import { Clock } from '../core/Clock.js';
 import { Interlocking } from './Interlocking.js';
+import { platformRanges } from '../tiles/platforms.js';
+
+/** Rozrzut miejsca zatrzymania czoła przy peronie [m]: czoło staje od 0 do tylu metrów przed końcem peronu –
+ *  maszynista nie staje co do metra (przyjęte). */
+export const STOP_SCATTER = 10;
+
+/**
+ * O ile metrów przed końcem peronu staje czoło pociągu `nr` w zmianie o ziarnie `seed`: 0…STOP_SCATTER, stałe dla tej
+ * samej zmiany (powtórka), różne dla pociągów i zmian. Z mieszania ziarna i numeru – nie z generatora zmiany, żeby nie
+ * przesuwać losowania opóźnień i usterek.
+ */
+export function stopScatter(seed, nr) {
+  let h = (Number(seed) ^ 0x9e3779b9) >>> 0;
+  for (const ch of String(nr)) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
+  return ((h >>> 8) % 10001) / 10000 * STOP_SCATTER;
+}
 
 /**
  * Ruch pociągów: rozkład jazdy, posterunki sąsiednie (AI), wprowadzanie pociągów
@@ -21,7 +38,10 @@ export class Traffic {
     this.trains = [];
     this.time = 0;
     this.rng = opts.rng || null;
+    this.seed = opts.seed ?? 0;
     this.level = opts.level || null;
+    // zasięg peronów przy torach – z układu stacji (ten sam peron, który rysuje widok); miejsce zatrzymania czoła
+    this.platforms = platformRanges(station);
     const tt = opts.timetable || station.timetable;
     this.entries = tt.map((t, i) => this.#prepare(t, i));
     // rozkład w kolejności czasu (przyjazd, a dla pociągów zaczynających bieg – odjazd), niezależnie od kolejności
@@ -392,6 +412,8 @@ export class Traffic {
       onExit: (exitId, tr) => this.#onExit(e, exitId, tr),
       onEvent: (ev, tr, arg) => this.#onTrainEvent(e, ev, tr, arg),
       blockedBy: (sectionId) => this.occupiedByOther(sectionId, train.nr), // train.nr zmienia się przy przekazaniu składu
+      platforms: this.platforms,
+      stopShort: stopScatter(this.seed, e.nr),
       stockAt: (tile, inPort, from) => this.stockAt(tile, inPort, train, from),
     });
     return train;

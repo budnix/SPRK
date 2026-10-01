@@ -170,12 +170,23 @@ Przyjęte (uproszczenia gry):
 * Pz przebiegu, do którego prowadzi przebieg poprzedni z sygnałem zezwalającym albo z pociągiem – zwalnianie czasowe,
   jak przy zajętym odcinku zbliżania.
 
-Odjazd i hamowanie (wszystkie stanowiska). Ze źródeł: pociąg rusza z peronu na sygnał zezwalający (Ie-1 §4 ust. 13
-pkt 1); droga hamowania pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4
-i zał. 1). Przyjęte (uproszczenia gry):
+Zatrzymanie, odjazd i hamowanie (wszystkie stanowiska). Ze źródeł: wskaźnik W 4 „Wskaźnik zatrzymania” oznacza
+miejsce, do którego może dojechać czoło zatrzymującego się pociągu – pociąg zatrzymuje się w takiej odległości przed
+nim, aby ruch podróżnych był najdogodniejszy; wskaźnik stoi przy końcu peronu lub przed ukresem (Ie-1, wersja od
+17.01.2026, §17 ust. 15 pkt 4); pociąg rusza z peronu na sygnał zezwalający (Ie-1 §4 ust. 13 pkt 1); droga hamowania
+pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4 i zał. 1). Przyjęte
+(uproszczenia gry):
 
-* pociąg po postoju zostaje przy peronie, dopóki semafor tuż przed nim (do 60 m) wskazuje „Stój”; odjazd w dzienniku
-  i punktualność liczy się od faktycznego ruszenia, więc przetrzymanie to późny odjazd;
+* pociąg z postojem staje czołem przy końcu peronu w kierunku jazdy – gra nie rysuje W 4, więc przyjmuje go przy końcu
+  peronu; peron i jego zasięg wzdłuż toru są te same, które rysuje widok (`src/tiles/platforms.js` – z układu torów
+  stacji, bez danych per stacja); czoło staje 0–10 m przed końcem peronu (rozrzut – maszynista nie staje co do metra;
+  stały dla zmiany o tym samym ziarnie, różny dla pociągów i zmian); gdy tak zatrzymany pociąg nie zmieściłby się na
+  odcinku toru (tył na rozjazdach), staje jak dawniej 12 m przed semaforem końcowym toru peronowego (15 m przed końcem
+  odcinka bez semafora);
+* pociąg po postoju zostaje przy peronie, dopóki pierwszy semafor przed czołem wskazuje „Stój” – także gdy stoi przy
+  końcu peronu daleko przed semaforem (dawniej trzymał go tylko semafor do 60 m); dalszy semafor na „Stój” (przebieg
+  dwustopniowy) nie trzyma – pociąg rusza na sygnał pierwszego; odjazd w dzienniku i punktualność liczy się od
+  faktycznego ruszenia, więc przetrzymanie to późny odjazd;
 * opóźnienie pociągu nie przekracza hamowania nagłego (`EMERGENCY_BRAKE` = 1,3 m/s²); sygnał „Stój” podany bliżej
   niż droga hamowania nagłego pociąg przejeżdża: zdarzenie `spad`, alarm, kara −20 dla dyżurnego (bez kary, gdy
   przyczyna jest po stronie urządzeń: usterka semafora albo – przy nastawionym przebiegu – zajętość odcinka bez taboru

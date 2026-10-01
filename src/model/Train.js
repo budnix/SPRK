@@ -28,6 +28,8 @@ export class Train {
     this.length = def.length ?? 100;
     this.blockedBy = opts.blockedBy || (() => false); // odcinek zajęty przez inny tabor (jazda na tor zajęty – stop przed taborem)
     this.stockAt = opts.stockAt || null; // (kostka, port wejścia) → odległość od wejścia na kostkę do innego taboru albo null
+    this.platforms = opts.platforms || null; // odcinek → { x0, x1 } kolumn przy peronie (tiles/platforms.js)
+    this.stopShort = opts.stopShort ?? 0;    // o ile metrów przed końcem peronu staje czoło (rozrzut, Traffic.stopScatter)
     // prędkość maksymalna i dynamika wg kategorii pociągu (IC/TLK/R/SKM/towarowy…) – `vmax`/`accel`/`brake` wpisu nadpisują
     this.vmax = speedFor(def) * KMH;
     const dyn = dynamicsFor(def);
@@ -226,13 +228,16 @@ export class Train {
         tile = t; inPort = e.dir; outPort = t._def.exits(t, inPort, null)[0];
         seg = { tile, inPort, outPort, len: t._len, virtual: null };
       } else {
-        // Miejsce zatrzymania przy peronie: 12 m przed semaforem końcowym toru peronowego
-        // (lub 15 m przed końcem odcinka peronowego bez semafora)
+        // Miejsce zatrzymania przy peronie: czołem przy końcu peronu (jak przy wskaźniku W4, który stoi przy końcu
+        // peronu) – z rozrzutem kilku metrów; gdy tak zatrzymany pociąg nie zmieściłby się na odcinku toru (tył na
+        // rozjazdach) – jak dotąd 12 m przed semaforem końcowym toru peronowego (lub 15 m przed końcem odcinka bez semafora)
         if (this.#shouldStopAt(tile)) {
           const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
           const nbT = this.topo.neighbour(tile, outPort);
           const sectionEnds = !nbT || nbT.tile.section !== tile.section;
           const platform = this.ilk.sections.get(tile.section)?.platform;
+          const atEnd = this.#platformEndStop(tile, outPort, sigHere ? -12 : sectionEnds ? -15 : 0);
+          if (atEnd != null) constraints.push({ dist: dist + atEnd, speed: 0, reason: 'peron', kind: 'platform', tile });
           if (sigHere) constraints.push({ dist: dist - 12, speed: 0, reason: 'peron', kind: 'platform', tile });
           // tor bez peronu (pociąg kończący bieg): zatrzymanie tylko przed sygnalizatorem na końcu toru
           else if (platform && sectionEnds) constraints.push({ dist: dist - 15, speed: 0, reason: 'peron', kind: 'platform', tile });
@@ -267,9 +272,9 @@ export class Train {
         }
         const exit = this.topo.exitAt(tile, outPort);
         if (exit) {
-          if (this.mode === 'shunt') { constraints.push({ dist, speed: 0, reason: 'granica stacji – manewry', kind: 'signal', signal: exit.id }); return constraints; }
+          if (this.mode === 'shunt') { constraints.push({ dist, speed: 0, reason: 'granica stacji – manewry', kind: 'signal', signal: exit.id, boundary: true }); return constraints; }
           // na szlak tylko przebiegiem wyjazdowym (albo na Sz / rozkaz pisemny z semafora wyjazdowego)
-          if (this.exitAuth !== exit.id && this.exitAuth !== '*') { constraints.push({ dist, speed: 0, reason: 'granica stacji – brak przebiegu wyjazdowego', kind: 'signal', signal: exit.id }); return constraints; }
+          if (this.exitAuth !== exit.id && this.exitAuth !== '*') { constraints.push({ dist, speed: 0, reason: 'granica stacji – brak przebiegu wyjazdowego', kind: 'signal', signal: exit.id, boundary: true }); return constraints; }
           constraints.push({ dist, speed: Math.min(this.lineSpeed, this.vmax), reason: 'szlak', kind: 'limit' });
           return constraints;
         }
@@ -308,6 +313,26 @@ export class Train {
     const req = tile._def.requiredPosition(tile, inPort, outPort);
     if (req === '-') return (this.ilk.points.get(tile.id)?.speedDiverging ?? 40) * KMH;
     return Infinity;
+  }
+
+  /**
+   * Zatrzymanie czołem przy końcu peronu: `tile` to ostatnia kostka przy peronie w kierunku jazdy (`outPort` E / W) –
+   * zwraca przesunięcie miejsca zatrzymania względem końca tej kostki [m] (ujemne: `stopShort` metrów przed końcem
+   * peronu, najwyżej `maxPast`; zawsze na tej kostce – lookahead widzi ją, dopóki czoło na niej jest), albo null: kostka
+   * nie kończy peronu albo tył pociągu nie zmieściłby się na odcinku toru (stanąłby na rozjazdach).
+   */
+  #platformEndStop(tile, outPort, maxPast) {
+    const r = this.platforms?.get(tile.section);
+    if (!r || (outPort !== 'E' && outPort !== 'W') || tile.x !== (outPort === 'E' ? r.x1 : r.x0)) return null;
+    const at = Math.max(-(tile._len ?? 0) + 1, Math.min(-this.stopShort, maxPast));
+    // długość odcinka toru za miejscem zatrzymania (pod pociągiem) – po kostkach tego odcinka w rzędzie, wstecz
+    let behind = (tile._len ?? 0) + at, t = tile, port = outPort === 'E' ? 'W' : 'E';
+    for (let i = 0; i < 200; i++) {
+      const nb = this.topo.neighbour(t, port);
+      if (!nb || nb.tile.section !== tile.section || nb.tile.y !== tile.y) break;
+      behind += nb.tile._len ?? 0; t = nb.tile;
+    }
+    return behind >= this.length + 5 ? at : null;
   }
 
   #shouldStopAt(tile) {
@@ -532,10 +557,16 @@ export class Train {
     return null;
   }
 
-  /** Przed czołem nie stoi tuż semafor (albo granica stacji) nakazujący zatrzymanie – pociąg może ruszyć z peronu. */
+  /**
+   * Pociąg może ruszyć z peronu: pierwszy semafor przed czołem nie wskazuje „Stój” (albo pociąg ma na niego Sz /
+   * rozkaz). Pociąg rusza z peronu na sygnał zezwalający (Ie-1 §4 ust. 13 pkt 1) – także gdy stanął przy końcu peronu
+   * daleko przed semaforem (dawniej trzymał go tylko semafor do 60 m, dalszy pociąg podjeżdżał pod niego). Dalszy
+   * semafor na „Stój” (przebieg dwustopniowy) nie trzyma – pociąg rusza na sygnał pierwszego i staje przed drugim.
+   * Granica stacji (`boundary`) to nie semafor – zezwolenie na szlak pociąg dostaje, mijając semafor wyjazdowy.
+   */
   #clearToLeave() {
-    const stop = this.#lookahead(200).find((c) => c.speed === 0);
-    return !(stop && stop.kind === 'signal' && stop.dist < 60);
+    const first = this.#lookahead(1500, true).find((c) => (c.kind === 'signal' && !c.boundary) || c.kind === 'passed-signal');
+    return !(first && first.kind === 'signal');
   }
 
   #canDepart(time) {
