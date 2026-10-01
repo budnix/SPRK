@@ -256,6 +256,52 @@ Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie
 czeka na niewykonane zadanie `afterTask` (jego termin biegnie).
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
 
+## Wariant scenariusza i automat sprawdzający
+
+Nowy wariant istniejącej stacji to zwykle kopia scenariusza z innym oknem zmiany i podzbiorem pociągów:
+
+```js
+{ id: 'krotka', name: 'Krótka zmiana (07:30–08:35)', startTime: '07:30', endTime: '08:35',
+  trains: [6103, 6104, 90201, 90202] }   // zadania stacji (tasks) dziedziczą się, jeśli ich skład jest w trains
+```
+
+Zasady (z tego, jak gra liczy zmianę):
+
+* `startTime` i `endTime` niczego nie wycinają z rozkładu – gra jedzie całym rozkładem stacji (albo `trains` /
+  `timetable`). Inny start albo inna długość zmiany działa tylko razem z `trains`.
+* Do `trains` wchodzą pociągi, które sąsiad wyprawia po starcie zmiany: przyjazd co najmniej kilka minut po
+  `startTime` (sąsiad wyprawia pociąg ok. jazdy po szlaku + 1,5 min przed przyjazdem; wcześniejszy pociąg pojawi się
+  dopiero na starcie i całe opóźnienie pójdzie na konto dyżurnego). Pociąg stojący od początku zmiany (`startOn`) – z
+  odjazdem po starcie.
+* Odjazd co najmniej 4 min przed `endTime` (od odjazdu do zjazdu ze stacji mijają 1–4 min – bliżej końca kara
+  „nieobsłużony” jest pewna), przyjazd pociągu kończącego bieg – przed `endTime`. Zapas na opóźnienia od sąsiada:
+  przy poziomie `low` 19 min, przy `high` 44 min (opóźnienie poziomu 15 / 40 min + 4 min); pociągi, które nie
+  zdążą, dostają karę „nieobsłużony”. Przy poziomie wybieranym przez gracza to informacja o odporności, przy
+  wymuszonym `disruptions` – uwaga.
+* Łańcuch składu (`unit`) – wszystkie pociągi albo żaden: pociąg ze składu bez pociągu, którym skład przyjeżdża,
+  nie powstanie.
+* Zadania stacji (`tasks` stacji) przechodzą do scenariusza, jeśli ich skład jedzie w zmianie; własne zadania wpisuje
+  się w `tasks` scenariusza, a `tasks: []` wyłącza odziedziczone.
+* Przejścia przez północ nie ma (`endTime` po `startTime` tego samego dnia).
+* Pociągu, który w chwili późniejszego startu już stoi na stacji, nie da się wyrazić przez `trains` – trzeba własnego
+  `timetable` scenariusza z wpisem `startOn` (`from: null`), czołem w stronę wyjazdu (`startOn.dir` = `dir` wyjazdu
+  `to`). Pociąg nie zmienia czoła: wjazd i wyjazd po tej samej stronie stacji to dwa pociągi (kończący bieg + `unit`).
+* Usterka (`faults`): `at` zawsze jako napis „GG:MM” (liczbę gra bierze za sekundy od północy), w czasie ruchu
+  pociągów, których dotyczy – usterka bez wpływu na ruch bez zakłóceń to błąd.
+
+Sprawdzenie wariantu: `npm run check -- <stacja>:<scenariusz>` (`scripts/check-scenario.mjs`, docs/ARCHITECTURE.md
+„Automat sprawdzający scenariusze”). Najpierw sprawdza definicję stacji i scenariusza (`src/model/scenarioCheck.js` –
+błędy widoczne bez grania: okno zmiany, pociągi spoza rozkładu, pociągi, które nie powstaną, nie skończą biegu albo
+musiałyby zmienić czoło, tory i przebiegi, zadania, usterki i zamknięcia wskazujące nieistniejące elementy, literówki
+w polach, rozkład gęstszy niż szlak), potem gra zmianę dyżurnym automatycznym na poziomach `none`, `low`, `high`
+i kilku ziarnach (domyślnie 1–3) do końca zmiany plus zapas i podaje werdykt każdej zmiany: OK / UWAGI / BŁĘDY
+z pociągiem, miejscem i przyczyną. Ocena scenariusza bierze definicję i przebiegi na poziomie scenariusza (bez
+zakłóceń albo wymuszonym `disruptions`); uwagi przy zakłóceniach wybieranych przez gracza to wiersz „Odporność”.
+Kod wyjścia 1 przy błędach, z `--strict` także przy uwagach.
+Każdy scenariusz każdej stacji przechodzi to samo w `npm test` (definicja i jeden przebieg na poziomie scenariusza –
+`none` albo wymuszonym, ziarno 1): bez błędów i bez nowych uwag powtarzalnych – uwagi, które zostają świadomie,
+wpisuje się do `tests/scenario-accepted.js` (komunikat testu podaje gotowy wiersz). Osobny test nie jest potrzebny.
+
 ## Okręgi nastawcze (`districts`) – opcjonalne
 
 Obecnie żadna stacja w grze nie ma okręgów (Gdynia Główna jest prowadzona z jednego stanowiska); mechanizm zostaje

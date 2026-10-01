@@ -148,7 +148,7 @@ export class Faults {
     if (occ && !f.wasOccupied) {
       const closed = !!s.closed;
       this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target})${closed ? ' mimo zamknięcia toru' : ' – tor nie został zamknięty'}`);
-      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: closed ? -80 : -50,
+      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: closed ? -80 : -50, section: f.target,
         msg: `Jazda po torze z usterką nawierzchni (${f.target})${closed ? ' zamkniętym dla ruchu' : ' bez zamknięcia toru'}` });
     }
     f.wasOccupied = occ;

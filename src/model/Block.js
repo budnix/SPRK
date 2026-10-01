@@ -521,7 +521,7 @@ export class LineBlock {
     }
     if (this.needPo) {
       this.needPo = false;
-      this.bus.emit('score', { time: this.time, code: 'no-dpo', points: -10, msg: `Blok początkowy do ${this.neighbour} nie zablokowany (dPo) po wyjeździe pociągu ${train.nr} bez sygnału` });
+      this.bus.emit('score', { time: this.time, code: 'no-dpo', points: -10, nr: train.nr, exit: this.id, msg: `Blok początkowy do ${this.neighbour} nie zablokowany (dPo) po wyjeździe pociągu ${train.nr} bez sygnału` });
     }
     if (this.auto && !this.fault) {
       // SBL: odstęp zwalnia się sam, gdy pociąg go opuści – bez potwierdzenia sąsiada
@@ -536,7 +536,7 @@ export class LineBlock {
       this.occupied = false; this.lineTrain = null;
       this.phone.arrivalConfirmed = train.nr;
       this.#phoneIn(`Pociąg nr ${train.nr} przyjechał o ${Clock.format(this.time)}.`, 5);
-      if (!this.phone.departedReported) this.bus.emit('score', { time: this.time, code: 'no-depart-report', points: -10, msg: `Brak telefonicznego zawiadomienia ${this.neighbour} o odjeździe pociągu ${train.nr}` });
+      if (!this.phone.departedReported) this.bus.emit('score', { time: this.time, code: 'no-depart-report', points: -10, nr: train.nr, exit: this.id, msg: `Brak telefonicznego zawiadomienia ${this.neighbour} o odjeździe pociągu ${train.nr}` });
       this.phone.departedReported = true;
       return;
     }

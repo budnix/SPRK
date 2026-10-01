@@ -21,24 +21,18 @@
  * `tests/survey.test.js`. Zmiany idą równolegle w wątkach `worker_threads` (ten sam plik uruchomiony jako wątek);
  * wynik zmiany nie zależy od liczby wątków ani od tego, co wątek liczył wcześniej (`fingerprint` to sprawdza).
  */
-import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
-import { availableParallelism } from 'node:os';
-import { readFileSync, writeFileSync, realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
-import { Simulation } from '../src/model/Simulation.js';
-import { AutoOperator } from '../src/model/Operator.js';
 import { Clock } from '../src/core/Clock.js';
 import { STATIONS } from '../src/stations/index.js';
-import { violations } from '../tests/invariants.js';
 import { unjustified, leftovers } from '../tests/fault-harness.js';
+import { playShift, trainDone, defaultWorkers, parseCli, runJobs, serveJobs, executedDirectly } from './shift.mjs';
+
+export { trainDone };
 
 const WORKER_ROLE = 'sprk-survey-worker';
 const LEVELS = ['high', 'low', 'none'];
-/** Ile pierwszych naruszeń (z czasem) zapisać dla zmiany. */
-const FIRST_VIOLATIONS = 3;
 /** Zdarzenia oceny, które nigdy nie powinny wystąpić przy automacie. */
 const BAD_EVENTS = new Set(['spad', 'rozprucie']);
 
@@ -56,31 +50,6 @@ export const USAGE = `Użycie: node scripts/survey.mjs [opcje]
   --log                       dziennik zmian z problemem
   --help                      ta pomoc`;
 
-/** Pociąg obsłużony do końca: dojechał do sąsiada, zakończył bieg albo skład przekazano (manewry, odstawienie). */
-export function trainDone(e) {
-  return e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || String(e.status).startsWith('przekazany');
-}
-
-function defaultWorkers() {
-  return Math.max(1, availableParallelism() - 1);
-}
-
-function parseSeeds(text) {
-  const out = [];
-  for (const part of String(text).split(',')) {
-    const p = part.trim();
-    const m = /^(\d+)(?:-(\d+))?$/.exec(p);
-    if (!m) throw new Error(`Niepoprawne ziarna: „${text}” (przykłady: 1-4, 1,2,3)`);
-    const a = Number(m[1]);
-    const b = m[2] != null ? Number(m[2]) : a;
-    if (b < a) throw new Error(`Niepoprawny zakres ziaren: „${p}”`);
-    // `Random` zamienia ziarno 0 na 1 – ziarno 0 powtórzyłoby zmianę z ziarnem 1
-    if (a < 1) throw new Error(`Niepoprawne ziarna: „${p}” (ziarna od 1)`);
-    for (let s = a; s <= b; s++) if (!out.includes(s)) out.push(s);
-  }
-  return out;
-}
-
 /**
  * Opcje wiersza poleceń (`argv` bez `node` i nazwy skryptu). Przyjmuje `--opcja wartość` i `--opcja=wartość`.
  * Zwraca `{ levels, seeds, only, extra, tutorial, workers, json, compare, log, help }`; przy błędzie rzuca wyjątek.
@@ -90,55 +59,22 @@ export function parseArgs(argv = []) {
     levels: ['high', 'low'], seeds: [1, 2, 3, 4], only: null, extra: 120, tutorial: false,
     workers: defaultWorkers(), json: null, compare: null, log: false, help: false,
   };
-  const args = [...argv];
-  while (args.length) {
-    const raw = args.shift();
-    const eq = raw.startsWith('--') ? raw.indexOf('=') : -1;
-    const name = eq > 0 ? raw.slice(0, eq) : raw;
-    const value = () => {
-      if (eq > 0) return raw.slice(eq + 1);
-      if (!args.length || args[0].startsWith('--')) throw new Error(`Opcja ${name} wymaga wartości`);
-      return args.shift();
-    };
-    const flag = () => { if (eq > 0) throw new Error(`Opcja ${name} nie przyjmuje wartości`); return true; };
-    switch (name) {
-      case '--level': {
-        const v = value();
-        if (v === 'all') opts.levels = ['high', 'low'];
-        else if (LEVELS.includes(v)) opts.levels = [v];
-        else throw new Error(`Nieznany poziom zakłóceń: „${v}” (high, low, none, all)`);
-        break;
+  return parseCli(argv, opts, {
+    levels: { all: ['high', 'low'], allowed: LEVELS },
+    custom: (name, { value, flag }) => {
+      switch (name) {
+        case '--only': {
+          const v = value();
+          try { new RegExp(v); } catch (e) { throw new Error(`Niepoprawne wyrażenie --only: ${e.message}`); }
+          opts.only = v;
+          return true;
+        }
+        case '--compare': opts.compare = value(); return true;
+        case '--log': opts.log = flag(); return true;
+        default: return false;
       }
-      case '--seeds': opts.seeds = parseSeeds(value()); break;
-      case '--only': {
-        const v = value();
-        try { new RegExp(v); } catch (e) { throw new Error(`Niepoprawne wyrażenie --only: ${e.message}`); }
-        opts.only = v;
-        break;
-      }
-      case '--extra': {
-        const v = value();
-        const n = Number(v);
-        if (v.trim() === '' || !Number.isFinite(n) || n < 0) throw new Error(`Niepoprawna wartość --extra: „${v}” (minuty, ≥ 0)`);
-        opts.extra = n;
-        break;
-      }
-      case '--workers': {
-        const v = value();
-        const n = Number(v);
-        if (!Number.isInteger(n) || n < 1) throw new Error(`Niepoprawna liczba wątków: „${v}” (liczba całkowita ≥ 1)`);
-        opts.workers = n;
-        break;
-      }
-      case '--json': opts.json = value(); break;
-      case '--compare': opts.compare = value(); break;
-      case '--tutorial': opts.tutorial = flag(); break;
-      case '--log': opts.log = flag(); break;
-      case '--help': case '-h': opts.help = true; break;
-      default: throw new Error(`Nieznana opcja: ${raw}`);
-    }
-  }
-  return opts;
+    },
+  });
 }
 
 /**
@@ -185,31 +121,13 @@ export function surveyShift({ stationId, scenarioId, seed, level = 'none', extra
   const scenario = (station.scenarios || []).find((s) => s.id === scenarioId);
   if (!scenario) throw new Error(`Nieznany scenariusz: ${stationId}:${scenarioId}`);
   const t0 = performance.now();
-  // speed 1: jeden krok 0,5 s = jeden takt silnika, więc niezmienniki są sprawdzane po każdym takcie;
-  // district 'both': na stacji z okręgami automat przeglądu prowadzi całą stację, bez wbudowanych automatów okręgów
-  const sim = new Simulation(station, { scenario: scenario.id, disruptions: level, seed, speed: 1, district: 'both' });
-  const op = new AutoOperator(sim, { district: null, role: 'full' });
   const lines = [];
-  if (log) sim.bus.on('log', (m) => lines.push({ time: m.time, level: m.level, msg: m.msg }));
-  const end = Clock.parse(scenario.endTime || '10:00') + extra * 60;
-  const viol = { count: 0, ticks: 0, first: [] };
-  let prev = new Set();
-  let n = 0;
-  while (sim.clock.time < end) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) op.tick();
-    const v = violations(sim);
-    viol.ticks += v.length;
-    const now = new Set(v);
-    for (const msg of now) {
-      if (prev.has(msg)) continue;
-      viol.count++;
-      const time = Clock.format(sim.clock.time, true);
-      if (viol.first.length < FIRST_VIOLATIONS) viol.first.push({ time, msg });
-      if (log) lines.push({ time: sim.clock.time, level: 'NARUSZENIE', msg });
-    }
-    prev = now;
-  }
+  // pętla zmiany wspólna z automatem sprawdzającym scenariusze (scripts/shift.mjs)
+  const { sim, violations: viol } = playShift({
+    station, scenario: scenario.id, seed, level, extra,
+    onCreate: log ? (s) => s.bus.on('log', (m) => lines.push({ time: m.time, level: m.level, msg: m.msg })) : null,
+    onViolation: log ? (msg, time) => lines.push({ time, level: 'NARUSZENIE', msg }) : null,
+  });
   const tt = sim.traffic.timetable();
   const stuck = tt.filter((e) => !trainDone(e)).map((e) => ({ nr: e.nr, status: String(e.status) }));
   const events = sim.score.items.filter((i) => BAD_EVENTS.has(i.code)).map((i) => ({ code: i.code, time: Clock.format(i.time, true), msg: i.msg }));
@@ -356,37 +274,6 @@ function summaryText(s) {
   return t;
 }
 
-/** Równoległy przegląd w wątkach; wyniki w kolejności `jobs`. Najpierw duże stacje (dłuższe zmiany), żeby nie czekać na ogon. */
-function runParallel(jobs, workers, onProgress) {
-  const order = jobs.map((_, i) => i).sort((a, b) => jobs[b].stationIndex - jobs[a].stationIndex || a - b);
-  const results = new Array(jobs.length);
-  const pool = [];
-  return new Promise((resolveAll, reject) => {
-    let next = 0, done = 0, failed = false;
-    const fail = (err) => { if (failed) return; failed = true; for (const w of pool) w.terminate(); reject(err); };
-    const feed = (w) => {
-      if (next >= order.length) return;
-      const i = order[next++];
-      w.postMessage({ i, job: jobs[i] });
-    };
-    const count = Math.min(workers, jobs.length);
-    for (let k = 0; k < count; k++) {
-      const w = new Worker(new URL(import.meta.url), { workerData: { role: WORKER_ROLE } });
-      pool.push(w);
-      w.on('message', ({ i, result }) => {
-        results[i] = result;
-        done++;
-        onProgress?.(done, jobs.length);
-        if (done === jobs.length) { Promise.all(pool.map((p) => p.terminate())).then(() => resolveAll(results)); return; }
-        feed(w);
-      });
-      w.on('error', fail);
-      w.on('exit', (code) => { if (done < jobs.length && !failed) fail(new Error(`Wątek przeglądu zakończył się przedwcześnie (kod ${code})`)); });
-      feed(w);
-    }
-  });
-}
-
 function runShiftSafe(job) {
   try {
     return surveyShift(job);
@@ -395,14 +282,9 @@ function runShiftSafe(job) {
   }
 }
 
-/** Przegląd listy zmian: w jednym wątku albo w `workers` wątkach; wyniki w kolejności `jobs`. */
-export async function runAll(jobs, workers, onProgress) {
-  if (workers <= 1 || jobs.length <= 1) {
-    const out = [];
-    for (const job of jobs) { out.push(runShiftSafe(job)); onProgress?.(out.length, jobs.length); }
-    return out;
-  }
-  return runParallel(jobs, workers, onProgress);
+/** Przegląd listy zmian: w jednym wątku albo w `workers` wątkach (najpierw duże stacje); wyniki w kolejności `jobs`. */
+export function runAll(jobs, workers, onProgress) {
+  return runJobs(jobs, { workers, url: new URL(import.meta.url), role: WORKER_ROLE, run: runShiftSafe, onProgress });
 }
 
 function printCompare(cmp, file) {
@@ -460,15 +342,8 @@ export async function main(argv) {
 }
 
 // Wątek przeglądu: zmiany z kolejki wątku głównego, jedna po drugiej.
-if (!isMainThread && workerData?.role === WORKER_ROLE) {
-  parentPort.on('message', ({ i, job }) => parentPort.postMessage({ i, result: runShiftSafe(job) }));
-}
+serveJobs(WORKER_ROLE, runShiftSafe);
 
-function executedDirectly() {
-  if (!isMainThread || !process.argv[1]) return false;
-  try { return realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
-}
-
-if (executedDirectly()) {
+if (executedDirectly(import.meta.url)) {
   main(process.argv.slice(2)).then((code) => { process.exitCode = code; }, (e) => { console.error(e?.stack || e); process.exitCode = 1; });
 }

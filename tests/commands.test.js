@@ -184,6 +184,12 @@ test('odmowa nastawienia przebiegu podaje kody przeszkód – logika nie czyta k
   const problems = sim.ilk.routeProblems(route);
   assert.deepEqual(problems.map((p) => p.msg), sim.ilk.checkRoute(route), 'checkRoute to te same przeszkody jako tekst');
   assert.ok(problems.every((p) => p.code && p.msg));
+  // element przeszkody jako pole danych (automat sprawdzający scenariusze przypisuje ją pociągowi albo usterce)
+  assert.ok(problems.some((p) => p.code === 'section-closed' && p.section === 'T1'), JSON.stringify(problems));
+  assert.ok(problems.some((p) => p.code === 'signal-busy' && p.route === 'A-D2'), JSON.stringify(problems));
+  for (const p of problems.filter((q) => q.code.startsWith('section-') || q.code === 'overlap')) assert.ok(sim.ilk.sections.has(p.section), `${p.code}: odcinek w polu section`);
+  for (const p of problems.filter((q) => q.code === 'section-locked')) assert.ok(sim.ilk.active.has(p.route), `${p.code}: przebieg w polu route`);
+  for (const p of problems.filter((q) => q.code === 'point')) assert.ok(sim.ilk.points.has(p.point), `${p.code}: zwrotnica w polu point`);
   // kod źródła: automat i zależności nie dopasowują wyrażeń do komunikatów
   for (const f of ['Operator.js', 'Interlocking.js']) {
     const src = readFileSync(new URL(`../src/model/${f}`, import.meta.url), 'utf8');

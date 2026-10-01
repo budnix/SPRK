@@ -1,5 +1,6 @@
 import { Clock } from '../core/Clock.js';
 import { Interlocking } from './Interlocking.js';
+import { entryPath, routeEndTrack } from './trainPaths.js';
 
 /**
  * Automatyczny operator okręgu nastawczego (nastawniczy / dyżurny ruchu sterowany przez program).
@@ -195,13 +196,7 @@ export class AutoOperator {
     const routes = ilk.routeList();
     const trackOf = (tr) => { for (const sid of tr.occupiedSections()) { const tk = ilk.sections.get(sid)?.track; if (tk) return String(tk); } return null; };
     const fullyOn = (tr, track) => { const secs = [...tr.occupiedSections()].map((s) => ilk.sections.get(s)); return secs.length && secs.every((s) => String(s.track) === String(track)); };
-    const routeTrack = (r) => {
-      const last = r.sections[r.sections.length - 1];
-      const tk = last ? ilk.sections.get(last)?.track : null;
-      if (tk) return String(tk);
-      if (r.end.type === 'signal') { const sg = topo.signals.get(r.end.id); const sec = topo.trackAt(sg.at.x, sg.at.y)?.section; return sec ? String(ilk.sections.get(sec).track ?? '') : null; }
-      return null;
-    };
+    const routeTrack = (r) => routeEndTrack(ilk, r);
     const approachOf = (exitId) => { const ex = sim.station.exits[exitId]; return topo.trackAt(ex.tile.x, ex.tile.y).section; };
 
     // Szlak jednotorowy: czy pociąg sąsiada miałby gdzie wjechać. Nie, gdy każdy tor, na który prowadzi wjazd z tego
@@ -306,20 +301,8 @@ export class AutoOperator {
         if (cands.some((r) => (ilk.active.has(r.id) && !ilk.active.get(r.id).trainEntered) || ilk.pending.some((p) => p.route.id === r.id))) continue;
         // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
         // na których tor peronowy leży za semaforem pośrednim (np. Sopot: A → H → O).
-        const pathTo = (track) => {
-          const queue = cands.map((r) => [r]);
-          const seen = new Set();
-          while (queue.length) {
-            const path = queue.shift();
-            const last = path[path.length - 1];
-            if (routeTrack(last) === String(track) && ilk.sections.get(last.sections.at(-1))?.kind === 'station') return path;
-            if (path.length >= 3 || last.end.type !== 'signal' || seen.has(last.end.id)) continue;
-            seen.add(last.end.id);
-            for (const r of routes) if (r.kind === 'train' && r.start === last.end.id && !r.exit) queue.push([...path, r]);
-          }
-          return null;
-        };
-        const path = pathTo(want);
+        // (wspólne z kontrolą scenariusza: src/model/trainPaths.js)
+        const path = entryPath(ilk, routes, cands, want);
         // Pociąg kończący bieg z zadaniem manewrowym: inny tor tylko taki, z którego da się to zadanie wykonać – skład
         // stojący na torze bez drogi manewrowej do celu zostałby na nim do końca zmiany.
         const job = !e.to && !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && ready(x) && String(x.unit) === String(e.nr)) : null;

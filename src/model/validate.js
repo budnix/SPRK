@@ -76,9 +76,26 @@ export function validateStation(st) {
     if (!isDir(e.dir)) errors.push(`Wyjazd ${id}: zły kierunek`);
     if (!e.name) warnings.push(`Wyjazd ${id}: brak nazwy posterunku sąsiedniego`);
   }
-  const tracks = trackLengths(st);
   if (!Array.isArray(st.timetable)) warnings.push('Brak rozkładu jazdy');
-  else st.timetable.forEach((tr, i) => {
+  else {
+    const tt = validateTimetable(st);
+    errors.push(...tt.errors);
+    warnings.push(...tt.warnings);
+  }
+  return { errors, warnings };
+}
+
+/**
+ * Wpisy rozkładu jazdy (`timetable`, domyślnie rozkład stacji) względem wyjazdów, torów i taboru stacji `st`:
+ * `{ errors, warnings }`. `only` – zbiór wpisów (obiektów), dla których zgłaszać (np. wpisy własnego rozkładu
+ * scenariusza inne niż w rozkładzie stacji); łańcuchy składu (`unit`) i tabor liczą się zawsze z całego `timetable`.
+ */
+export function validateTimetable(st, timetable = st.timetable, only = null) {
+  const errors = [];
+  const warnings = [];
+  const tracks = trackLengths(st);
+  timetable.forEach((tr, i) => {
+    if (only && !only.has(tr)) return;
     if (tr.nr == null) errors.push(`Rozkład #${i}: brak numeru pociągu`);
     if (tr.from && !(st.exits || {})[tr.from]) errors.push(`Rozkład ${tr.nr}: nieznany wyjazd from='${tr.from}'`);
     if (tr.to && !(st.exits || {})[tr.to]) errors.push(`Rozkład ${tr.nr}: nieznany wyjazd to='${tr.to}'`);
@@ -89,8 +106,8 @@ export function validateStation(st) {
     if (exT && exT.direction === 'in') errors.push(`Rozkład ${tr.nr}: wyjazd do ${exT.name} torem wjazdowym '${tr.to}' (direction: 'in')`);
     if (!tr.arr && !tr.dep) errors.push(`Rozkład ${tr.nr}: brak czasu przyjazdu/odjazdu`);
     validateConsist(tr, tracks, errors, warnings);
-    if (tr.unit != null && unitLoop(tr, st.timetable)) errors.push(`Rozkład ${tr.nr}: łańcuch składu (unit) zapętlony – pociąg powstaje ze składu, który powstaje z niego`);
-    validateStock(tr, st.timetable, errors);
+    if (tr.unit != null && unitLoop(tr, timetable)) errors.push(`Rozkład ${tr.nr}: łańcuch składu (unit) zapętlony – pociąg powstaje ze składu, który powstaje z niego`);
+    validateStock(tr, timetable, errors);
   });
   return { errors, warnings };
 }

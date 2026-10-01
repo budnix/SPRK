@@ -105,6 +105,7 @@ test('track-defect: alarm, kara za jazdę po torze bez zamknięcia, wjazd na tor
   s.ilk.updateOccupancy(new Set(['T1']));
   run(s, 1);
   assert.ok(s.score.items.some((i) => i.code === 'track-defect' && i.points < 0));
+  assert.equal(s.score.items.find((i) => i.code === 'track-defect').section, 'T1', 'odcinek w polu danych (automat sprawdzający scenariusze)');
   // zamknięty tor (ITS) nie zwalnia z odpowiedzialności: wjazd pociągu (np. na Sz) karany mocniej niż bez zamknięcia
   const t2 = mk();
   run(t2, 90);

@@ -100,6 +100,8 @@ test('W4: wyjazd na sygnał blokuje blok początkowy sam; wyjazd na Sz – dopie
   s3.ilk.setRoute('D1-E'); run(s3, 8); s3.ilk.substituteSignal('D1');
   run(s3, 10 * 60);
   assert.ok(score(s3, 'no-dpo').length, 'brak dPo po wyjeździe na Sz');
+  assert.equal(score(s3, 'no-dpo')[0].exit, b3.id, 'szlak w polu danych');
+  assert.ok(s3.traffic.timetable().some((e) => String(e.nr) === String(score(s3, 'no-dpo')[0].nr)), 'numer pociągu w polu danych');
   assert.equal(b3.occupied, false, 'sąsiad potwierdził przyjazd');
 });
 

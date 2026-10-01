@@ -225,6 +225,7 @@ npm run dev        # http://localhost:5173  (Vite; add --host to reach it from a
 npm test           # logic tests (node --test)
 npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2e/__screenshots__
 npm run survey     # engine survey: every station × scenario × seed run by the automatic dispatcher (jams, safety checks)
+npm run check -- tczew:zmiana   # scenario checker: definition errors + shifts played by the automatic dispatcher, verdict per shift
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
@@ -265,6 +266,19 @@ Polish railway rules and terminology).
 * `tests/` – Node tests (route matrices, full shifts, missions, faults at fixed moments of a train's journey) and Playwright e2e tests with screenshot baselines,
 * `scripts/survey.mjs` – engine survey (`npm run survey -- --help`): full shifts under disruptions run by the automatic dispatcher;
   reports trains that never reached their destination and safety-check violations; `--json` / `--compare` compare results before and after an engine change,
+* `scripts/check-scenario.mjs` – scenario checker for adding scenario variants quickly (another start or length, a subset of trains, faults):
+  `npm run check -- [station[:scenario] …] [--seeds 1-3] [--level none|low|high|all] [--extra min] [--tutorial] [--strict] [--verbose]`.
+  It first validates the station and checks the scenario definition without playing (`src/model/scenarioCheck.js`: shift window,
+  trains that can't appear, finish or would have to reverse, tracks and routes, shunting tasks, faults and closures pointing at
+  missing elements, misspelled fields, timetable denser than the line), then plays each shift at an accelerated pace with the
+  automatic dispatcher (levels none / low / high, seeds 1–3, until the end of the shift plus a margin) and reports per shift:
+  OK / WARNINGS / ERRORS (plus notes that don't count) with the train, where it stands, since when, why (wait reason, route
+  obstacles, the train in the way) and its last log entries. A scenario's rating comes from its definition and from shifts at
+  its own level (no disruptions, or the level the scenario forces); warnings under player-chosen disruptions are listed as
+  robustness. Exit code 1 on errors (with `--strict` also on warnings). Every scenario of every station also goes through the
+  definition check and one played shift at its own level in `npm test`, which fails on errors and on repeatable warnings not
+  accepted in `tests/scenario-accepted.js`; how to write a variant – `docs/STATION-FORMAT.md`, rules – `docs/ARCHITECTURE.md`
+  („Automat sprawdzający scenariusze”),
 * `docs/ARCHITECTURE.md` – architecture and design rules, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans).
 
 The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published

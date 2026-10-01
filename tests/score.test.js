@@ -66,3 +66,23 @@ test('podpowiedź wymienia pociągi stojące na stacji, gdy rozkład jest wyczer
   assert.match(logs[0], /90201 \(oczekiwany\)/);
   assert.ok(!sim.ended);
 });
+
+test('zdarzenia oceny i wpisy dziennika o pociągu niosą numer pociągu w polu danych (nr) – raport nie czyta komunikatów', () => {
+  const base = szkolna.scenarios.find((s) => s.id === 'zmiana');
+  const sim = new Simulation(szkolna, { scenario: { ...base, endTime: '08:00' }, disruptions: 'none', seed: 1 });
+  const logs = [];
+  sim.bus.on('log', (l) => logs.push(l));
+  let n = 0;
+  const end = Clock.parse('08:01');
+  while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  const nrs = new Set(sim.traffic.timetable().map((e) => String(e.nr)));
+  const TRAIN_CODES = ['punctual', 'late-depart', 'late-pass', 'held', 'wrong-track', 'unfinished', 'task', 'task-failed', 'spad', 'order'];
+  const items = sim.score.items.filter((i) => TRAIN_CODES.includes(i.code));
+  for (const code of ['punctual', 'unfinished', 'task']) assert.ok(items.some((i) => i.code === code), `brak zdarzenia ${code}`);
+  for (const i of items) assert.ok(nrs.has(String(i.nr)), `${i.code} bez numeru pociągu: ${i.msg}`);
+  for (const i of items.filter((x) => x.code.startsWith('task'))) assert.ok(sim.traffic.tasks.some((k) => k.id === i.task), `${i.code}: id zadania w polu task`);
+  // wpisy o ruchu pociągu: ten sam numer w polu danych co w treści
+  const moves = logs.filter((l) => /^Pociąg \d+ (wjeżdża|przyjazd|odjazd|przybył|zatrzymany)/.test(l.msg));
+  assert.ok(moves.length > 10);
+  for (const l of moves) assert.equal(String(l.nr), /^Pociąg (\d+)/.exec(l.msg)[1], l.msg);
+});

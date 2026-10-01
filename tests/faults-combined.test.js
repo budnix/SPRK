@@ -552,5 +552,6 @@ for (const duty of ['no-depart-report', 'no-dpo']) {
     check(r, msg, { second: false });
     assert.deepEqual(atEnd, { reason: 'time', status: 'odjechał', penalty: [-10] }, `${msg}: koniec zmiany`);
     assert.deepEqual(scores(r.sim, duty), [-10], `${msg}: kara ${duty} po dojeździe pociągu do sąsiada po końcu zmiany`);
+    assert.deepEqual(r.sim.score.items.filter((i) => i.code === duty).map((i) => i.exit), [to], `${msg}: szlak w polu danych`);
   });
 }

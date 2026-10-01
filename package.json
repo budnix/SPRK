@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
     "test:all": "npm test && npm run test:e2e",
-    "survey": "node scripts/survey.mjs"
+    "survey": "node scripts/survey.mjs",
+    "check": "node scripts/check-scenario.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

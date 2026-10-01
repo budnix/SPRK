@@ -5,6 +5,7 @@ import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
 import { platformRanges } from '../tiles/platforms.js';
 import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
+import { trainRouteChains } from './trainPaths.js';
 
 /** Rozrzut miejsca zatrzymania czoła przy peronie [m]: czoło staje od 0 do tylu metrów przed końcem peronu –
  *  maszynista nie staje co do metra (przyjęte). */
@@ -181,20 +182,10 @@ export class Traffic {
     const train = ilk.routeList().filter((r) => r.kind === 'train');
     // wjazd: łańcuchy przebiegów od strony `from` (do 3 stopni) kończące się na torze planowym
     const app = e.from ? (() => { const ex = this.station.exits[e.from]; return ilk.topo.trackAt(ex.tile.x, ex.tile.y)?.section; })() : null;
-    const chains = (starts, goal, depth = 3) => {
-      const out = [];
-      const walk = (path) => {
-        const last = path[path.length - 1];
-        if (goal(last)) { out.push(path); return; }
-        if (path.length >= depth || last.end.type !== 'signal') return;
-        for (const r of train) if (r.start === last.end.id && !path.includes(r)) walk([...path, r]);
-      };
-      for (const r of starts) walk([r]);
-      return out;
-    };
-    for (const path of chains(train.filter((r) => r.approach === app), (r) => trackOf(r.sections.at(-1)) === T)) path.forEach((r, i) => add(r, i > 0));
+    // (łańcuchy wspólne z kontrolą scenariusza: src/model/trainPaths.js)
+    for (const path of trainRouteChains(train, train.filter((r) => r.approach === app), (r) => trackOf(r.sections.at(-1)) === T)) path.forEach((r, i) => add(r, i > 0));
     // wyjazd: przebiegi z toru planowego w stronę wyjazdu z rozkładu (do 3 stopni)
-    for (const path of chains(train.filter((r) => trackOf(r.approach) === T), (r) => !!e.to && r.exit === e.to)) path.forEach((r) => add(r, true));
+    for (const path of trainRouteChains(train, train.filter((r) => trackOf(r.approach) === T), (r) => !!e.to && r.exit === e.to)) path.forEach((r) => add(r, true));
     for (const sid of sections) if (ilk.sections.get(sid)?.defect) return true;
     const from = e.requestAt ?? t - 20 * 60;
     return (this.faultList?.() ?? []).some((f) => {
@@ -286,7 +277,7 @@ export class Traffic {
     else tr.orders.push({ signal, used: false, id: order.id });
     // semafor zgasł przed pociągiem z przyczyny po stronie urządzeń – rozkaz uzasadniony
     const justified = this.ilk.faultOnPath(signal, path) || faultSpad || (behind && !!(sig.route && this.ilk.active.get(sig.route)?.faultDrop));
-    this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
+    this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, nr: e.nr, signal, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: behind ? `Rozkaz „S” nr ${order.id} przyjąłem. Jadę dalej do następnego semafora z prędkością do 40 km/h.` : `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 40 km/h.` });
     this.bus.emit('log', { time: this.time, level: 'warn', msg: behind ? `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: dalsza jazda zza semafora ${signal} (40 km/h)` : `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (40 km/h)` });
     this.bus.emit('orders', this.orders);
@@ -441,7 +432,7 @@ export class Traffic {
     switch (ev) {
       case 'enter':
         e.status = 'wjeżdża';
-        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} wjeżdża na stację od ${this.station.exits[e.from]?.name}` });
+        this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} wjeżdża na stację od ${this.station.exits[e.from]?.name}` });
         break;
       case 'fullyIn':
         if (e.from) this.blocks.get(e.from)?.neighbourTrainArrived(tr);
@@ -452,22 +443,22 @@ export class Traffic {
         e.actualTrack = track;
         e.delay = e.arrTime != null ? Math.round((t - e.arrTime) / 60) || 0 : 0;
         this.#journal(e, 'przyjazd', t, track);
-        this.bus.emit('log', { time: t, level: e.delay > 2 ? 'warn' : 'info', msg: `Pociąg ${e.nr} przyjazd tor ${track}${e.delay > 0 ? `, opóźnienie ${e.delay} min` : ''}` });
+        this.bus.emit('log', { time: t, level: e.delay > 2 ? 'warn' : 'info', nr: e.nr, msg: `Pociąg ${e.nr} przyjazd tor ${track}${e.delay > 0 ? `, opóźnienie ${e.delay} min` : ''}` });
         if (track && e.track && String(track) !== String(e.track)) {
-          this.bus.emit('log', { time: t, level: 'warn', msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
+          this.bus.emit('log', { time: t, level: 'warn', nr: e.nr, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast ${e.track}` });
           const plannedClosed = [...this.ilk.sections.values()].some((s) => s.closed && String(s.track) === String(e.track));
           // usterka urządzeń na drodze toru planowego (jego odcinki, przebieg wjazdowy na niego, wyjazd z niego) uzasadnia
           // inny tor – jak przy Sz; usterka gdzie indziej na stacji – nie (przyjęte)
           const fault = this.#plannedTrackFault(e, t);
-          if (fault) this.bus.emit('log', { time: t, level: 'info', msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
-          if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
+          if (fault) this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Zmiana toru pociągu ${e.nr} uzasadniona usterką urządzeń` });
+          if (!plannedClosed && !fault && e.stop) this.bus.emit('score', { time: t, code: 'wrong-track', points: -5, nr: e.nr, msg: `Pociąg ${e.nr} przyjęty na tor ${track} zamiast planowego ${e.track}` });
         }
         break;
       }
       case 'depart': {
         e.actualDep = t; e.status = 'odjeżdża';
         this.#journal(e, 'odjazd', t, e.actualTrack);
-        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} odjazd` });
+        this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} odjazd` });
         // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój); pociąg ze składu innego pociągu –
         // także bez minut, które skład stracił bez winy dyżurnego (opóźnienie od sąsiada, manewry zablokowane usterką)
         let earliest = Math.max(e.depTime ?? 0, (e.actualArr ?? 0) + (e.dwell ?? 40));
@@ -477,8 +468,8 @@ export class Traffic {
           earliest += lost;
         }
         const late = Math.round((t - earliest) / 60);
-        if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
-        else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
+        if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, nr: e.nr, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
+        else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, nr: e.nr, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
         break;
       }
       case 'entry-signal': {
@@ -492,21 +483,21 @@ export class Traffic {
       case 'spad': {
         // pociąg przejechał semafor „Stój” – sygnał zmieniony bliżej niż droga hamowania (odwołanie, SSS; usterka semafora)
         const sig = this.ilk.signals.get(arg);
-        this.bus.emit('log', { time: t, level: 'alarm', msg: `Pociąg ${e.nr} przejechał semafor ${arg} wskazujący „Stój” – hamowanie nagłe` });
+        this.bus.emit('log', { time: t, level: 'alarm', nr: e.nr, msg: `Pociąg ${e.nr} przejechał semafor ${arg} wskazujący „Stój” – hamowanie nagłe` });
         this.bus.emit('alarm', { type: 'spad', nr: e.nr, signal: arg });
         // bez kary, gdy semafor zgasł z przyczyny po stronie urządzeń: usterka semafora albo – przy nastawionym
         // przebiegu – zajętość odcinka bez taboru lub utrata kontroli zwrotnicy
         const act = sig?.route ? this.ilk.active.get(sig.route) : null;
         tr.spadByFault = !!(sig?.failed || act?.faultDrop); // rozkaz „S” zza semafora uzasadniony także po naprawie
-        if (!sig?.failed && !act?.faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
+        if (!sig?.failed && !act?.faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, nr: e.nr, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
         break;
       }
       case 'order-used':
-        this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (40 km/h)` });
+        this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} minął semafor „Stój” na rozkaz pisemny (40 km/h)` });
         break;
       case 'stop':
         if (tr.stoppedAt?.kind === 'signal') {
-          this.bus.emit('log', { time: t, level: 'info', msg: `Pociąg ${e.nr} zatrzymany przed ${tr.stoppedAt.signal}` });
+          this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} zatrzymany przed ${tr.stoppedAt.signal}` });
           tr.stoppedSince = t;
         }
         break;
@@ -518,8 +509,8 @@ export class Traffic {
         if (exitId) this.blocks.get(exitId)?.trainDeparted(tr);
         if (!e.stop && e.arrTime != null) {
           const late = Math.round((t - e.arrTime) / 60) - (e.delayIn || 0);
-          if (late >= 3) this.bus.emit('score', { time: t, code: 'late-pass', points: -late, msg: `Pociąg ${e.nr} (przelot) opóźniony na stacji o ${late} min` });
-          else this.bus.emit('score', { time: t, code: 'punctual', points: 5, msg: `Pociąg ${e.nr} przepuszczony punktualnie` });
+          if (late >= 3) this.bus.emit('score', { time: t, code: 'late-pass', points: -late, nr: e.nr, msg: `Pociąg ${e.nr} (przelot) opóźniony na stacji o ${late} min` });
+          else this.bus.emit('score', { time: t, code: 'punctual', points: 5, nr: e.nr, msg: `Pociąg ${e.nr} przepuszczony punktualnie` });
         }
         if (!e.stop && e.arrTime != null && e.actualArr == null) {
           // przelot – czas przejazdu liczony przy wyjeździe
@@ -547,7 +538,7 @@ export class Traffic {
     if (delay <= 2) this.score.onTime++; else { this.score.delayed++; this.score.totalDelayMin += delay; }
     this.blocks.get(exitId)?.trainArrivedAtNeighbour(tr);
     this.trains = this.trains.filter((x) => x !== tr);
-    this.bus.emit('log', { time: this.time, level: 'info', msg: `Pociąg ${e.nr} przybył do ${this.station.exits[exitId].name}` });
+    this.bus.emit('log', { time: this.time, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} przybył do ${this.station.exits[exitId].name}` });
     this.bus.emit('timetable', this.entries);
   }
 
@@ -566,7 +557,7 @@ export class Traffic {
       if (e.delayIn && !e.announced && time >= (e.arrTime ?? e.depTime) - 12 * 60) {
         e.announced = true;
         this.bus.emit('comms', { time, from: block.neighbour, kind: 'info', text: `Pociąg nr ${e.nr} opóźniony około ${e.delayIn} min.` });
-        this.bus.emit('log', { time, level: 'warn', msg: `${block.neighbour}: pociąg ${e.nr} opóźniony ok. ${e.delayIn} min` });
+        this.bus.emit('log', { time, level: 'warn', nr: e.nr, msg: `${block.neighbour}: pociąg ${e.nr} opóźniony ok. ${e.delayIn} min` });
       }
       // zgłoszenie przepadło przy zmianie trybu blokady (usterka / naprawa) – sąsiad zgłasza pociąg od nowa
       if (e.requested && !block.neighbourRequestAlive(e.nr)) { e.requested = false; e.waitLogged = false; e.status = 'oczekiwany'; this.bus.emit('timetable', this.entries); }
@@ -586,7 +577,7 @@ export class Traffic {
       }
       if (e.requested && !e.dispatched && time > e.neighbourDep + 60 && !e.waitLogged) {
         e.waitLogged = true;
-        this.bus.emit('log', { time, level: 'warn', msg: `${block.neighbour}: pociąg ${e.nr} czeka na pozwolenie na wyprawienie (Poz)` });
+        this.bus.emit('log', { time, level: 'warn', nr: e.nr, msg: `${block.neighbour}: pociąg ${e.nr} czeka na pozwolenie na wyprawienie (Poz)` });
       }
     }
     // Pociągi tworzone ze składu innego pociągu (np. zdawczy powrotny)
@@ -612,7 +603,7 @@ export class Traffic {
       tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
       tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
       e.status = 'na stacji';
-      this.bus.emit('log', { time, level: 'info', msg: `Skład pociągu ${u.nr} przekazany jako pociąg ${e.nr} (odjazd ${e.dep})` });
+      this.bus.emit('log', { time, level: 'info', nr: e.nr, unit: u.nr, msg: `Skład pociągu ${u.nr} przekazany jako pociąg ${e.nr} (odjazd ${e.dep})` });
       this.bus.emit('timetable', this.entries);
     }
     // Pociągi
@@ -651,14 +642,14 @@ export class Traffic {
         if (secs.length && secs.every((sec) => String(sec.track) === String(task.toTrack))) {
           task.done = true; task.doneAt = time;
           const late = time > task.deadlineTime;
-          this.bus.emit('score', { time, code: 'task', points: late ? 0 : 10, msg: `Zadanie manewrowe: ${task.text}${late ? ' (po terminie)' : ''}` });
-          this.bus.emit('log', { time, level: 'info', msg: `Zadanie wykonane: skład ${task.unit} na torze ${task.toTrack}` });
+          this.bus.emit('score', { time, code: 'task', points: late ? 0 : 10, task: task.id, nr: task.unit, msg: `Zadanie manewrowe: ${task.text}${late ? ' (po terminie)' : ''}` });
+          this.bus.emit('log', { time, level: 'info', nr: task.unit, msg: `Zadanie wykonane: skład ${task.unit} na torze ${task.toTrack}` });
           this.bus.emit('tasks', this.tasks);
         }
       }
       if (!task.done && time > task.deadlineTime + 10 * 60) {
         task.failed = true;
-        this.bus.emit('score', { time, code: 'task-failed', points: -10, msg: `Zadanie manewrowe niewykonane w terminie: ${task.text}` });
+        this.bus.emit('score', { time, code: 'task-failed', points: -10, task: task.id, nr: task.unit, msg: `Zadanie manewrowe niewykonane w terminie: ${task.text}` });
         this.bus.emit('tasks', this.tasks);
       }
     }
@@ -681,7 +672,7 @@ export class Traffic {
         const waitingForDep = e.depTime != null && time < e.depTime + 240; // skład czeka na planowy odjazd – to nie przetrzymanie
         if (!ended && !waitingForDep && !e.train.faultBlocked && st === 'stopped' && e.train.stoppedAt?.kind === 'signal' && e.train.stoppedSince && !e.holdScored && time - e.train.stoppedSince > 240) {
           e.holdScored = true;
-          this.bus.emit('score', { time, code: 'held', points: -5, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
+          this.bus.emit('score', { time, code: 'held', points: -5, nr: e.nr, signal: e.train.stoppedAt.signal, msg: `Pociąg ${e.nr} przetrzymany przed ${e.train.stoppedAt.signal} ponad 4 min` });
         }
       }
     }
