@@ -741,13 +741,14 @@ svg.screen .sig-label.stopped { fill: var(--mon-pink); }
 .scr-el:hover .sel-frame { stroke: #3a6fd8; stroke-dasharray: 2 1.5; }
 .scr-el.selected .sel-frame { stroke: #3f8cff; stroke-dasharray: none; }
 .scr-el.alarm .sel-frame { stroke: #ff2419; }
-/* miganie synchroniczne na całym obrazie monitora, 1 Hz, 50/50 (Ie-104.1 §4 ust. 17): wspólna faza – klasa `ph`
-   przełączana co 0,5 s przez widok; bez osobnych animacji o różnych okresach */
-svg.screen.ph .z-field.nocontrol, svg.screen.ph .z-field.trailed, svg.screen.ph .point.trailed .pt-label,
-svg.screen.ph .sig-body.st-sz path, svg.screen.picking.ph .scr-el.selected .sel-frame, svg.screen.ph .scr-el.alarm .sel-frame { visibility: hidden; }
-svg.screen.ph .blk-seg.s-yellow-blink { fill: var(--mon-dark); }
-svg.screen.ph .blk-seg.s-fault { fill: #ff2419; }        /* usterka blokady: biały na przemian z czerwonym */
-svg.screen.ph .blk-ko.s-yellow-blink { fill: none; }
+/* miganie synchroniczne na całym obrazie monitora, 1 Hz, 50/50 (Ie-104.1 §4 ust. 17): wspólna faza – atrybut
+   `data-ph` grupy planu przełączany co 0,5 s przez widok; bez osobnych animacji o różnych okresach. Reguły zaczynają
+   się od grupy planu, nie od rysunku: pola skrajne kopiują ją przez `<use>`, a w kopii nie ma przodków spoza grupy */
+[data-ph='1'] .z-field.nocontrol, [data-ph='1'] .z-field.trailed, [data-ph='1'] .point.trailed .pt-label,
+[data-ph='1'] .sig-body.st-sz path, svg.screen.picking [data-ph='1'] .scr-el.selected .sel-frame, [data-ph='1'] .scr-el.alarm .sel-frame { visibility: hidden; }
+[data-ph='1'] .blk-seg.s-yellow-blink { fill: var(--mon-dark); }
+[data-ph='1'] .blk-seg.s-fault { fill: #ff2419; }        /* usterka blokady: biały na przemian z czerwonym */
+[data-ph='1'] .blk-ko.s-yellow-blink { fill: none; }
 .screen.picking .hit { cursor: crosshair; }
 .scr-train rect { fill: #c81e14; stroke: #ff6a60; stroke-width: 0.6; }   /* czerwone kasetki numerów pociągów */
 .scr-train-nr { fill: #ffffff; font-size: 7.5px; font-weight: 700; }

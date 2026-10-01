@@ -7,7 +7,7 @@ import { openShift, advance } from './helpers.js';
 
 async function shot(page, selector, width, height) {
   // miganie monitora to przełączana klasa (wspólna faza, Ie-104.1 §4 ust. 17) – zatrzymana w fazie jasnej przed zrzutem
-  await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); });
+  await page.evaluate(() => { if (window.desk?.blinkTimer) { clearInterval(window.desk.blinkTimer); window.desk.blinkTimer = null; } document.querySelector('#desk svg')?.classList.remove('ph'); window.desk?.inner?.setAttribute('data-ph', '0'); });
   const r = await page.locator(selector).boundingBox();
   return page.screenshot({ clip: { x: Math.round(r.x), y: Math.round(r.y), width, height } });
 }

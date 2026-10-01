@@ -43,10 +43,25 @@ export class EdgePanels {
     this.pad = renderer.pad;
     for (const p of [this.left, this.right]) {
       p.querySelector('use').setAttribute('href', `#${renderer.inner.id}`);
-      p.setAttribute('class', `edge-panel ${p.dataset.side} ${this.svg.getAttribute('class') || ''}`); // style monitora / pulpitu
       p.setAttribute('style', this.svg.getAttribute('style') || '');
     }
+    this.#syncClass();
+    // klasa rysunku zmienia się w trakcie pracy – faza migania `ph` co 0,5 s, tryb wskazywania (`picking`) – pola mają ją
+    // mieć tę samą, inaczej elementy migające na polu świecą na stałe
+    this.classWatch?.disconnect();
+    this.classWatch = new MutationObserver(() => this.#syncClass());
+    this.classWatch.observe(this.svg, { attributes: true, attributeFilter: ['class', 'style'] });
     this.update();
+  }
+
+  /** Klasa pól jak rysunku (style monitora / pulpitu, faza migania) i jego zmienne CSS (`--sym`) – bez nadpisywania
+   *  położenia i rozmiaru pól. */
+  #syncClass() {
+    const st = this.svg.style;
+    for (const p of [this.left, this.right]) {
+      p.setAttribute('class', `edge-panel ${p.dataset.side} ${this.svg.getAttribute('class') || ''}`);
+      for (let i = 0; i < st.length; i++) if (st[i].startsWith('--')) p.style.setProperty(st[i], st.getPropertyValue(st[i]));
+    }
   }
 
   /** Po zmianie powiększenia, ekranu lub rozmiaru okna. */

@@ -79,7 +79,11 @@ test('monitor: elementy obrazu migają wspólną fazą – bez własnych animacj
     bad.push(sel.trim());
   }
   assert.deepEqual(bad, []);
-  assert.match(css, /svg\.screen\.ph [^{]*\.z-field\.nocontrol/);
+  // reguły fazy zaczynają się od grupy planu (`data-ph`), nie od rysunku: pola skrajne kopiują grupę przez `<use>`,
+  // a w kopii rysunek nie jest przodkiem – reguła `svg.screen.ph …` nie działała tam i grot na polu świecił na stałe
+  assert.match(css, /\[data-ph='1'\] [^{]*\.z-field\.nocontrol/);
+  assert.match(css, /\[data-ph='1'\] \.blk-seg\.s-yellow-blink/);
+  assert.doesNotMatch(css, /svg\.screen(\.[\w-]+)*\.ph\b/);
 });
 
 // Ogólna klasa `.blink` (animacja CSS z własną fazą) nie trafia na obraz monitora – reguła CSS nie wskazuje elementów

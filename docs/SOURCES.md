@@ -608,7 +608,7 @@ dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sp
   końcami (§8 pkt 32 lit. d); przyjęte: bez opisu „<sygnalizator>k”;
 * blokada na wyjeździe: strzałki kierunkowe – obraz A / B / C z segmentami a i b w barwach z tabel oraz symbol Ko/dKo
   (§8 pkt 20–22; s. 53–63) – szczegóły w sekcji „Blokada liniowa na monitorze i blokada samoczynna”;
-* miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (§4 ust. 17) – wspólna faza (klasa `ph` przełączana przez widok);
+* miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (§4 ust. 17) – wspólna faza (atrybut `data-ph` grupy planu przełączany przez widok, także na polach skrajnych);
 * grupa G4 (stany operacyjne): niebieska ramka – element wybrany, migająca podczas nastawiania przebiegu,
   czerwona migająca – alarm elementu; czerwone kasetki numerów pociągów; czarne tło;
 * polecenia (Ie-104.1 §11–§12; stanowisko `komputerowe`): pasek poleceń (rodzaj → element początkowy → końcowy);

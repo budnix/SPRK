@@ -173,7 +173,8 @@ for (const [station, params, table] of [
             if (Math.sign(box(seg('a')).cx - box(seg('b')).cx) !== way || !pointed(seg('a'), way)) bad.push(`${tag}: strzałka ${pic} w złą stronę`);
           }
           for (const ph of [false, true]) {
-            svg.classList.toggle('ph', ph);
+            // faza: klasa rysunku i atrybut grupy planu (reguły CSS migania zaczynają się od grupy – pola skrajne)
+            svg.classList.toggle('ph', ph); window.desk.inner.setAttribute('data-ph', ph ? '1' : '0');
             const i = ph ? 1 : 0;
             for (const p of parts) {
               const want = phases(p.dataset.seg === 'b' ? cb : ca)[i];
@@ -184,7 +185,7 @@ for (const [station, params, table] of [
             else if (fill(r.ko) !== phases(ko)[i]) bad.push(`${tag}${ph ? ' (ph)' : ''}: Ko ${fill(r.ko)} zamiast ${phases(ko)[i]}`);
             if (r.ko && (r.ko.getAnimations().length || box(r.ko).y1 > Math.min(...parts.map((p) => box(p).y0)))) bad.push(`${tag}: Ko nie nad strzałkami albo z animacją`);
           }
-          svg.classList.remove('ph');
+          svg.classList.remove('ph'); window.desk.inner.setAttribute('data-ph', '0');
         }
         Object.assign(b, saved);
         window.desk.updateBlock(ex);

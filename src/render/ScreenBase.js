@@ -45,7 +45,9 @@ export class ScreenBase extends PanelView {
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
     this.addBackdrop(el('rect', { class: 'scr-bg', x: 0, y: 0, width: this.width, height: this.height }));
     // miganie synchroniczne na całym obrazie, 1 Hz, 50/50 (Ie-104.1 §4 ust. 17): wspólna faza – klasa `ph` na obrazie
-    if (typeof setInterval === 'function') this.blinkTimer = setInterval(() => this.svg.classList.toggle('ph'), 500);
+    // i atrybut `data-ph` grupy planu; reguły CSS migania zaczynają się od grupy, bo pola skrajne rysują ją przez `<use>`,
+    // a w kopii rysunek nie jest przodkiem (przy samej klasie rysunku elementy migające na polu świeciły na stałe)
+    if (typeof setInterval === 'function') this.blinkTimer = setInterval(() => this.inner.setAttribute('data-ph', this.svg.classList.toggle('ph') ? '1' : '0'), 500);
     if (this.readonly) this.addBackdrop(text(this.width / 2, 8, t('desk.readonly', { name: this.title || t('desk.district') }), { class: 'scr-banner' }));
     this.layerTracks = el('g', { class: 'layer-tracks' });
     this.layerMarks = el('g', { class: 'layer-marks' });
@@ -544,7 +546,7 @@ export class ScreenBase extends PanelView {
     const r = this.blockRefs.get(exitId);
     if (!b || !r) return;
     r.g.classList.toggle('blk-occ', !!(b.occupied || b.poBlocked));
-    // strzałki kierunkowe i Ko/dKo wg Ie-104.1 (barwy segmentów – `blockSymbol.js`); miganie: wspólna faza obrazu `ph`
+    // strzałki kierunkowe i Ko/dKo wg Ie-104.1 (barwy segmentów – `blockSymbol.js`); miganie: wspólna faza obrazu (`data-ph`)
     const s = blockSymbol(b);
     r.dir.setAttribute('data-pic', s.pic);
     for (const [pic, g] of Object.entries(r.pics)) {
