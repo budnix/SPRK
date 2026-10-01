@@ -161,7 +161,6 @@ button, input, select, textarea { font-family: inherit; }
 .edge-panel.desk { background: var(--desk-face); }
 #desk-tools { position: relative; display: flex; gap: 6px; align-items: center; padding: 4px 8px; background: var(--panel); border-top: 1px solid var(--border); flex-wrap: wrap; }
 #desk-tools .tb { white-space: nowrap; }
-.hint { color: var(--muted); font-size: 12px; }
 /* komunikat stanu – nakładka nad paskiem narzędzi (poza przepływem flex): pojawienie się dłuższego tekstu
    nie zawija paska i nie przesuwa pulpitu */
 .status { position: absolute; left: 8px; bottom: calc(100% + 6px); max-width: calc(100% - 16px); z-index: var(--z-status); pointer-events: none;
@@ -170,7 +169,6 @@ button, input, select, textarea { font-family: inherit; }
 .status.lv-armed { color: var(--warn); font-weight: 600; }
 .status.lv-warn { color: var(--warn); }
 .status.lv-alarm { color: var(--danger); font-weight: 700; }
-@media (max-width: 1500px) { .hint { display: none; } }
 #side { flex: 0 0 360px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
 /* położenie panelu bocznego */
 /* granica planu i panelu: krawędź panelu do przeciągania myszą (kursor ↕ / ↔) i uchwyt w listwie dla palca */

@@ -59,10 +59,10 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
    podany w polu `input` strategii. Protokół wystawia `armed` (pierwszy wybrany element). Nowe reguły zależności to
    opcje `Interlocking` z wartościami domyślnymi zachowującymi dotychczasowe stanowiska, nie kopia logiki.
 3. Widok: klasa w `src/render/` rozszerzająca `PanelView` (`src/render/PanelView.js` – tam jest opis kontraktu)
-   + `registerView('<rodzaj>', { View, hint, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
+   + `registerView('<rodzaj>', { View, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
    wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
    i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
-4. Teksty: klucze `hint.*`, `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js`. Samouczek: własny plik misji
+4. Teksty: klucze `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js` (stałej podpowiedzi w listwie narzędzi nie ma). Samouczek: własny plik misji
    w `src/tutorial/missions/` (słownik `phrases` z kluczami `LESSON_PHRASES` + własne kroki przez `withSteps`),
    wpis w `src/tutorial/missions.js` i scenariusz stacji z polem `tutorial`. Nowa misja ma własny scenariusz
    (stacja, układ torów, rozkład) – nie powtarza istniejącej. Test „ucznia” w `tests/missions.test.js` musi

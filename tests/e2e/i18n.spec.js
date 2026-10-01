@@ -15,7 +15,6 @@ test('język interfejsu: wybór w ustawieniach przeładowuje widok po angielsku 
   await expect(page.locator('#menu-new')).toHaveText('New shift…');
   await expect(page.locator('#panel-tabs button[data-tab=rj]')).toHaveText('Timetable');
   await expect(page.locator('#panel-tabs button[data-tab=lacznosc]')).toContainText('Comms');
-  await expect(page.locator('#hint')).toContainText('command bar');
   await expect(page.locator('#zoom-fit')).toHaveAttribute('title', 'Fit to window width');
   await expect(page).toHaveTitle(/SPRK – Szkolna/);
   // rozkład: nazwy stacji i statusy modelu pozostają polskie

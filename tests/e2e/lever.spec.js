@@ -35,7 +35,6 @@ test('ława dźwigniowa: dźwignie z numerami i barwami wg rodzaju, drążki z c
   await expect(page.locator('#desk .drazek[data-drazek="d2m"] .drazek-half')).toHaveCount(0);
   const buttons = await page.locator('#desk .btn').evaluateAll((els) => [...new Set(els.map((e) => JSON.parse(e.dataset.ref).kind))]);
   expect(buttons).toEqual(['block']);
-  await expect(page.locator('#hint')).toContainText('dźwignie zwrotnic');
   await page.click('#btn-help');
   await expect(page.locator('#help h2').first()).toContainText('nastawni mechanicznej');
   expect(errors).toEqual([]);

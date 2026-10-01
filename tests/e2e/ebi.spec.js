@@ -12,7 +12,6 @@ test('przebieg: lewy klawisz na początku, prawy na końcu, POC z menu do linii 
   page.on('pageerror', (e) => errors.push(e.message));
   await open(page);
   await expect(page.locator('#desk svg.screen.ebi')).toHaveCount(1);
-  await expect(page.locator('#hint')).toContainText('prawy klawisz');
   await hit(page, 'signal', 'A').click();
   await expect(page.locator('#status')).toContainText('Początek przebiegu A');
   await expect(page.locator('#desk .scr-el.signal.ebi-sel')).toHaveCount(1);

@@ -13,7 +13,6 @@ test('IZH-111: grupa rozkazów nad planem, jeden czarny przycisk adresowy na ele
   await expect(page.locator('#desk svg.desk.izh')).toHaveCount(1);
   expect(await page.locator('.izh-orders button').evaluateAll((els) => els.map((e) => e.dataset.order))).toEqual(['P', 'M', '+', '-', 'STOP', 'Zw', 'Zcz', 'Sz']);
   await expect(page.locator('.izh-counter')).toHaveText('00000');
-  await expect(page.locator('#hint')).toContainText('przycisk adresowy');
   const refs = await page.locator('svg.desk .btn').evaluateAll((els) => els.map((e) => JSON.parse(e.dataset.ref)));
   expect(refs.filter((r) => r.kind === 'group')).toEqual([]);
   expect(refs.filter((r) => r.kind === 'signal').every((r) => r.color === undefined)).toBe(true);

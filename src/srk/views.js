@@ -1,7 +1,7 @@
 /**
  * Warstwa UI strategii srk: rejestr widoków stanowisk. Dla każdego rodzaju stanowiska (`view` w rejestrze srk) –
  * klasa widoku (rozszerza `PanelView`), podpowiedzi i fragment instrukcji. Rejestr srk (registry.js) nie zna DOM,
- * więc widoki są tu, a nie tam. Nowy panel: `registerView('<rodzaj>', { View, hint, armHint, help })`.
+ * więc widoki są tu, a nie tam. Nowy panel: `registerView('<rodzaj>', { View, armHint, help })`.
  */
 import { DeskRenderer } from '../render/DeskRenderer.js';
 import { ScreenRenderer } from '../render/ScreenRenderer.js';
@@ -17,12 +17,12 @@ const DEFAULT_VIEW = 'desk';
 
 /**
  * @param id rodzaj stanowiska (`view` strategii srk)
- * @param def { View – klasa widoku, hint() – podpowiedź obsługi, armHint – { kind: (armed) => tekst },
+ * @param def { View – klasa widoku, armHint – { kind: (armed) => tekst },
  *              help() – HTML instrukcji stanowiska }
  */
 export function registerView(id, def) {
   if (!id || typeof def?.View !== 'function') throw new Error('Widok stanowiska wymaga id i klasy View');
-  VIEWS.set(id, { hint: () => '', armHint: {}, help: () => '', ...def });
+  VIEWS.set(id, { armHint: {}, help: () => '', ...def });
   return def;
 }
 
@@ -32,7 +32,6 @@ export function hasView(id) {
 
 registerView('desk', {
   View: DeskRenderer,
-  hint: () => t('hint.desk'),
   armHint: {
     point: (a) => t('arm.point', { id: a.id }),
     derailer: (a) => t('arm.derailer', { id: a.id }),
@@ -44,7 +43,6 @@ registerView('desk', {
 
 registerView('screen', {
   View: ScreenRenderer,
-  hint: () => t('hint.screen'),
   armHint: {
     signal: (a) => t('arm.screenSignal', { kind: t(a.color === 'white' ? 'arm.screenSignal.shunt' : 'arm.screenSignal.train'), id: a.id }),
   },
@@ -58,7 +56,6 @@ const izhHint = (a) => (a.selection?.length === 2
 
 registerView('izh', {
   View: IzhRenderer,
-  hint: () => t('hint.izh'),
   armHint: { signal: izhHint, end: izhHint, point: izhHint, derailer: izhHint },
   help: () => t('help.izh'),
 });
@@ -66,7 +63,6 @@ registerView('izh', {
 /** Nastawnia mechaniczna: dźwignie i drążki wydają polecenia wprost – bez uzbrajania przycisków. */
 registerView('lever', {
   View: LeverRenderer,
-  hint: () => t('hint.lever'),
   help: () => t('help.lever'),
 });
 
@@ -80,7 +76,6 @@ function ebiHint(a) {
 
 registerView('ebi', {
   View: EbiRenderer,
-  hint: () => t('hint.ebi'),
   armHint: { signal: ebiHint, end: ebiHint, point: ebiHint, derailer: ebiHint, section: ebiHint, station: ebiHint },
   help: () => t('help.ebi'),
 });
@@ -94,7 +89,6 @@ function morHint(a) {
 
 registerView('mor', {
   View: MorRenderer,
-  hint: () => t('hint.mor'),
   armHint: { signal: morHint, end: morHint, point: morHint, derailer: morHint, section: morHint },
   help: () => t('help.mor'),
 });
@@ -111,10 +105,6 @@ export function createView(srk, container, sim, handlers, opts = {}) {
 
 export function viewSize(srk, cols, rows, o = {}) {
   return viewOf(srk).View.size(cols, rows, o);
-}
-
-export function viewHint(srk) {
-  return viewOf(srk).hint();
 }
 
 export function armHint(srk, a) {

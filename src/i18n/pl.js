@@ -13,7 +13,6 @@ export default {
   'menu.settings': 'Ustawienia…',
   'menu.report': 'Raport zmiany',
   'menu.help': 'Instrukcja obsługi',
-  'hint.izh': 'przycisk adresowy elementu, potem przycisk rozkazu · przebieg: początek, koniec, P lub M',
   'arm.izh.signal': 'Wybrany sygnalizator {id} – wskaż koniec przebiegu albo rozkaz: STOP (zamknięcie), Sz, Zcz, Zw (odwołanie zamknięcia)',
   'arm.izh.end': 'Wybrany koniec toru {id} – rozkaz Zcz lub Zw zwalnia przebieg, który się tu kończy',
   'arm.izh.point': 'Wybrana zwrotnica {id} – rozkaz: + / − (przestawienie), STOP (zamknięcie), Zw (odwołanie zamknięcia)',
@@ -24,11 +23,9 @@ export default {
       <p>Każdy element ma jeden <b>przycisk adresowy</b>: semafor i tarcza na środku swojej kostki, zwrotnica, wykolejnica i koniec toru przy sobie. <b>Przyciski rozkazów</b> są w osobnej grupie nad planem. Najpierw naciśnij przycisk adresowy (podświetli się), potem rozkaz – masz na to 10 s. Ponowne naciśnięcie tego samego adresu odwołuje wybór.</p>
       <p><b>Przebieg</b>: adres sygnalizatora początkowego, adres końca (sygnalizator albo koniec toru) i rozkaz <b>P</b> (pociągowy) lub <b>M</b> (manewrowy). Sygnały na semaforach pośrednich podają się same. <b>Zwrotnica</b>: adres i <b>+</b> albo <b>−</b>; <b>STOP</b> zamyka zwrotnicę (czerwona lampka), <b>Zw</b> odwołuje zamknięcie. <b>STOP</b> z adresem sygnalizatora zamyka go – sygnał „Stój” do odwołania rozkazem <b>Zw</b> (lampka miga na czerwono). <b>Zcz</b> z adresem końca przebiegu zwalnia przebieg pociągowy po 120 s, <b>Zw</b> zwalnia przebieg manewrowy od razu. <b>Sz</b> podaje sygnał zastępczy (licznik).</p>
       <p>To <b>pulpit ciemny</b>: w stanie zasadniczym lampki są wygaszone. Ciemny powtarzacz oznacza sygnał „Stój”. Szczeliny zwrotnicy świecą po wybraniu jej adresu, przy zamknięciu oraz gdy odcinek jest utwierdzony (białe) lub zajęty (czerwone). Blokadę liniową obsługuje się przyciskami na kostkach przy końcu toru.</p>`,
-  'hint.lever': 'dźwignie zwrotnic → drążek przebiegowy → blok przebiegowy → dźwignia sygnałowa · po przejeździe: dźwignia na „Stój”, drążek z powrotem',
   'start.srkMech': 'mechaniczna · ława dźwigniowa',
   'start.srkEbi': 'EBILock 950 · linia poleceń',
   'start.srkMor': 'MOR-3 · menu obiektów',
-  'hint.mor': 'kliknij obiekt = menu poleceń · przebieg: początek, potem cel (sygnalizator, tor, trójkąt) i Pociąg / Manewr · fioletowe i czerwone – potwierdzenie',
   'arm.mor.object': 'Wybrany {id} – polecenie z menu albo kliknij cel przebiegu',
   'arm.mor.route': 'Przebieg {path} – wybierz Pociąg albo Manewr',
   'arm.mor.pending': '{cmd} – potwierdź albo odwołaj (inne polecenia wstrzymane)',
@@ -42,7 +39,6 @@ export default {
   'mor.cancel': 'Odwołaj',
   'mor.confirmText': 'Polecenie {cmd} – potwierdź zamiar użycia.',
   'mor.specialText': 'Polecenie specjalne {cmd} – sprawdź obiekt i polecenie, potem potwierdź (licznik poleceń specjalnych).',
-  'hint.ebi': 'prawy klawisz (na tablecie: przytrzymaj) = menu obiektu · przebieg: lewy na początku, prawy na końcu · polecenie → Wykonaj · F12 = linia poleceń',
   'arm.ebi.route': 'Przebieg {path} – wybierz POC / MAN z menu (prawy klawisz na końcu) i naciśnij Wykonaj',
   'arm.ebi.start': 'Początek przebiegu {id} – prawym klawiszem (na tablecie: przytrzymaj) wskaż koniec przebiegu',
   'arm.ebi.via': 'Kilka dróg {path} – wskaż element pośredni (błękitna ramka) albo wybierz polecenie dla drogi zasadniczej',
@@ -90,8 +86,6 @@ export default {
   'tools.showSide': 'Pokaż panel boczny',
   'status.tutorialDone': 'Samouczek zakończony',
   // podpowiedzi stanowiska
-  'hint.desk': 'kliknij = naciśnij · przytrzymaj / prawy przycisk = wyciągnij',
-  'hint.screen': 'pasek poleceń lub menu elementu · przebieg: początek, potem koniec · OPS / Esc = odwołaj',
   'arm.point': 'Zwrotnica {id} uzbrojona – naciśnij Zw (przestawienie) lub Zz (zamknięcie)',
   'arm.derailer': 'Wykolejnica {id} uzbrojona – naciśnij Zw',
   'arm.signal': '{kind} początek przebiegu {id} – naciśnij przycisk końca przebiegu',

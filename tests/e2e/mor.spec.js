@@ -13,7 +13,6 @@ test('przebieg: kliknięcie semafora – fioletowa obwódka i menu, kliknięcie 
   page.on('pageerror', (e) => errors.push(e.message));
   await open(page);
   await expect(page.locator('#desk svg.screen.mor')).toHaveCount(1);
-  await expect(page.locator('#hint')).toContainText('kliknij obiekt');
   await hit(page, 'signal', 'A').click();
   await expect(page.locator('#desk .scr-el.signal.mor-sel')).toHaveCount(1);
   expect(await codes(page)).toEqual(['Stop', 'SZ']);

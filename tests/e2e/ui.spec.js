@@ -409,3 +409,11 @@ test('rozkład: litery kategorii pociągu na środku plakietki w pionie', async 
   expect(res.length).toBeGreaterThan(3);
   expect(res.filter((x) => Math.abs(x.top - x.bottom) > 0.5), JSON.stringify(res)).toEqual([]);
 });
+
+// Listwa narzędzi bez stałej podpowiedzi obsługi stanowiska – na szerokim oknie pokazywał się sam tekst („pasek poleceń
+// lub menu elementu · …”), bez działania; podpowiedzi dają pasek stanu (uzbrojony element) i instrukcja „?”
+test('listwa narzędzi bez stałej podpowiedzi obsługi także na szerokim oknie', async ({ page }) => {
+  await page.setViewportSize({ width: 1800, height: 900 });
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await expect(page.locator('#desk-tools #hint, #desk-tools .hint')).toHaveCount(0);
+});
