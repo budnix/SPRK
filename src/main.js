@@ -229,9 +229,13 @@ updateSpeed();
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { help.hide(); toggleMenu(false); report.hide(); if (params.get('scenariusz')) startScreen.hide(); return; }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  // skrót zegara zdejmuje fokus z przycisku (np. zakładki klikniętej myszą) – inaczej klawisz włącza w Chrome ramkę
+  // fokusu na tym przycisku, a spacja by go „klikała”
+  const shortcut = e.code === 'Space' || (/^[1-5]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey);
+  if (shortcut && document.activeElement?.tagName === 'BUTTON') document.activeElement.blur();
   if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
   // klawisze 1–5 – prędkości z nagłówka po kolei (1×, 2×, 5×, 10×, 30×)
-  if (/^[1-5]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) speedEl.querySelectorAll('.speed-btn')[+e.key - 1]?.click();
+  else if (shortcut) speedEl.querySelectorAll('.speed-btn')[+e.key - 1]?.click();
 });
 
 /* ---- zoom pulpitu ---- */

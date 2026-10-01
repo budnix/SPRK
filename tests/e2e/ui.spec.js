@@ -440,3 +440,16 @@ test('rozkład: podpowiedź o pociągu tylko na komórce numeru, nie na wierszu'
   await expect(row.locator('td.nr')).toHaveAttribute('title', /km\/h/);
   expect(await row.locator('td:not(.nr)[title], td:not(.nr) [title]').count()).toBe(0);
 });
+
+// Skrót klawiszowy po kliknięciu zakładki: zakładka ma fokus z kliknięcia; naciśnięcie klawisza przełączało Chrome
+// w tryb klawiatury i na zakładce „Rozkład” pojawiała się ramka fokusu – skrót zegara zdejmuje fokus z przycisku
+test('skróty klawiszowe po kliknięciu zakładki nie zostawiają ramki fokusu na zakładce', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  await page.click('#panel-tabs button[data-tab=rj]');
+  for (const key of ['1', '2', 'Space']) {
+    await page.keyboard.press(key);
+    const focus = await page.evaluate(() => { const a = document.activeElement; return a && a !== document.body && a.matches(':focus-visible') ? (a.dataset.tab || a.id || a.tagName) : null; });
+    expect(focus, `klawisz ${key}`).toBeNull();
+  }
+  expect(await page.evaluate(() => window.sim.clock.paused)).toBe(true); // spacja nadal pauzuje (a nie „klika” zakładki)
+});
