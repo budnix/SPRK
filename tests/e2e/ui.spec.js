@@ -386,3 +386,26 @@ test('łączność: powiadomienia domyślnie włączone, przełącznik w zakład
   await page.click('button[data-tab="lacznosc"]');
   await expect(page.locator('#comms-notify')).not.toBeChecked();
 });
+
+// Oznaczenie kategorii w rozkładzie („R”, „TME”): litery na środku plakietki w pionie. Pomiar: linia bazowa tekstu
+// w plakietce (pusty element wyrównany do linii bazowej) i wysokość liter z measureText – odstęp od góry i od dołu
+// plakietki różni się najwyżej o 0,5 px (dawniej 0,8 px przy 100% – na ekranie Retina przy 110% widać to wyraźnie).
+test('rozkład: litery kategorii pociągu na środku plakietki w pionie', async ({ page }) => {
+  await openShift(page, 'tczew');
+  const res = await page.locator('table.rj .cat').evaluateAll((els) => els.slice(0, 12).map((b) => {
+    const cs = getComputedStyle(b);
+    const probe = document.createElement('span');
+    probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+    b.appendChild(probe);
+    const base = probe.getBoundingClientRect().top;
+    probe.remove();
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const m = ctx.measureText(b.textContent.trim());
+    const r = b.getBoundingClientRect();
+    const top = base - m.actualBoundingBoxAscent - r.top, bottom = r.bottom - (base + m.actualBoundingBoxDescent);
+    return { text: b.textContent.trim(), top: Math.round(top * 10) / 10, bottom: Math.round(bottom * 10) / 10 };
+  }));
+  expect(res.length).toBeGreaterThan(3);
+  expect(res.filter((x) => Math.abs(x.top - x.bottom) > 0.5), JSON.stringify(res)).toEqual([]);
+});

@@ -420,7 +420,9 @@ table.rj tr.done td { color: var(--muted); }
 table.rj td.nr { font-weight: 700; font-variant-numeric: tabular-nums; }
 table.rj td.rel { font-size: 11px; }
 table.rj td.rel .via { font-size: 10px; color: var(--muted); }
-table.rj .cat { display: inline-block; min-width: 26px; padding: 0 4px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 700; text-align: center; color: var(--cat-text); background: var(--cat-tow); vertical-align: 1px; }
+/* oznaczenie kategorii: pudełko tekstu przycięte do wysokości wersalików (od linii wersalików do bazowej) i równy
+   odstęp nad i pod – litery na środku plakietki niezależnie od metryk czcionki w systemie (macOS / iPadOS) */
+table.rj .cat { display: inline-block; min-width: 26px; padding: 3px 4px; line-height: 1; text-box: trim-both cap alphabetic; border-radius: var(--radius-sm); font-size: 10px; font-weight: 700; text-align: center; color: var(--cat-text); background: var(--cat-tow); vertical-align: 1px; }
 table.rj .cat-IC, table.rj .cat-EIC { background: var(--cat-ic); }
 table.rj .cat-EIP { background: var(--cat-eip); }
 table.rj .cat-TLK { background: var(--cat-tlk); }
