@@ -410,17 +410,18 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 .badge { background: var(--danger); color: var(--on-danger); border-radius: var(--radius-pill); padding: 0 5px; font-size: 10px; margin-left: 4px; }
 .tab { overflow: auto; flex: 1 1 auto; padding: 8px; }
 .hidden { display: none !important; }
-table.rj { width: 100%; border-collapse: collapse; font-size: 12px; }
+/* treść zakładek panelu o 1 px większa niż dawniej (czytelność przy zwykłym powiększeniu przeglądarki) */
+table.rj { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.rj th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 3px; border-bottom: 1px solid var(--border2); }
 table.rj td { padding: 4px 3px; border-bottom: 1px solid var(--border3); vertical-align: top; }
 table.rj tr.active td { background: var(--row-active); }
 table.rj tr.done td { color: var(--muted); }
 table.rj td.nr { font-weight: 700; font-variant-numeric: tabular-nums; }
-table.rj td.rel { font-size: 11px; }
-table.rj td.rel .via { font-size: 10px; color: var(--muted); }
+table.rj td.rel { font-size: 12px; }
+table.rj td.rel .via { font-size: 11px; color: var(--muted); }
 /* oznaczenie kategorii: pudełko tekstu przycięte do wysokości wersalików (od linii wersalików do bazowej) i równy
    odstęp nad i pod – litery na środku plakietki niezależnie od metryk czcionki w systemie (macOS / iPadOS) */
-table.rj .cat { display: inline-block; min-width: 26px; padding: 3px 4px; line-height: 1; text-box: trim-both cap alphabetic; border-radius: var(--radius-sm); font-size: 10px; font-weight: 700; text-align: center; color: var(--cat-text); background: var(--cat-tow); vertical-align: 1px; }
+table.rj .cat { display: inline-block; min-width: 26px; padding: 3px 4px; line-height: 1; text-box: trim-both cap alphabetic; border-radius: var(--radius-sm); font-size: 11px; font-weight: 700; text-align: center; color: var(--cat-text); background: var(--cat-tow); vertical-align: 1px; }
 table.rj .cat-IC, table.rj .cat-EIC { background: var(--cat-ic); }
 table.rj .cat-EIP { background: var(--cat-eip); }
 table.rj .cat-TLK { background: var(--cat-tlk); }
@@ -428,29 +429,29 @@ table.rj .cat-R { background: var(--cat-r); }
 table.rj .cat-SKM { background: var(--cat-skm); }
 table.rj .cat-TOW, table.rj .cat-TOWP, table.rj .cat-ZD, table.rj .cat-LT { background: var(--cat-tow); }
 table.rj .cat-EZT { background: var(--cat-ezt); }
-table.rj td.st { font-size: 11px; }
-table.rj .act { color: var(--accent); font-size: 10px; }
+table.rj td.st { font-size: 12px; }
+table.rj .act { color: var(--accent); font-size: 11px; }
 .delay { color: var(--danger); font-weight: 700; }
-.score { color: var(--muted); font-size: 11px; margin-top: 8px; }
-ul.log { list-style: none; padding: 0; margin: 0; font-size: 12px; }
+.score { color: var(--muted); font-size: 12px; margin-top: 8px; }
+ul.log { list-style: none; padding: 0; margin: 0; font-size: 13px; }
 ul.log li { padding: 3px 0; border-bottom: 1px solid var(--border3); }
 ul.log li .t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
 ul.log li.lv-warn { color: var(--warn); }
 ul.log li.lv-alarm { color: var(--danger); font-weight: 700; }
-.alert { background: var(--warn); color: var(--on-warn); padding: 6px 8px; border-radius: var(--radius); margin-bottom: 6px; font-size: 12px; font-weight: 600; }
+.alert { background: var(--warn); color: var(--on-warn); padding: 6px 8px; border-radius: var(--radius); margin-bottom: 6px; font-size: 13px; font-weight: 600; }
 .alert-rozprucie { background: var(--danger); color: var(--on-danger); }
-#tab-stan h4 { margin: 10px 0 4px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-#tab-stan .blk { font-size: 12px; padding: 3px 0; }
-#tab-stan .point-onsite { font-size: 12px; padding: 3px 0; }
+#tab-stan h4 { margin: 10px 0 4px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+#tab-stan .blk { font-size: 13px; padding: 3px 0; }
+#tab-stan .point-onsite { font-size: 13px; padding: 3px 0; }
 #tab-stan .point-onsite .tb { margin-left: 6px; }
 .warn { color: var(--warn); font-weight: 600; }
-ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
+ul.plain { list-style: none; padding: 0; margin: 0; font-size: 13px; }
 .muted { color: var(--muted); }
 /* zakładka „Pociągi”: karty pociągów na posterunku ze stanem i sterowaniem (tryb jazdy, czoło) */
-.train-card { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: var(--radius); font-size: 12px; }
+.train-card { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: var(--radius); font-size: 13px; }
 .train-card.moving { border-left-color: var(--accent); }
 .train-card.shunt { border-left-color: var(--warn); }
-.train-card .train-head { font-weight: 600; font-size: 13px; }
+.train-card .train-head { font-weight: 600; font-size: 14px; }
 .train-card .train-head .rel { font-weight: 400; color: var(--muted); margin-left: 6px; }
 .train-card .train-state { grid-column: 1; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; line-height: 1.4; } /* ikony i tekst w jednej osi */
 .train-card .train-state b { color: var(--text); font-weight: 600; }
@@ -481,20 +482,20 @@ ul.plain { list-style: none; padding: 0; margin: 0; font-size: 12px; }
 .sw.y { background: #ffc61a; } .sw.w { background: #fff8dc; } .sw.r { background: #ff2a1e; }
 
 /* ---- rozkazy pisemne ---- */
-.order-form label { display: block; font-size: 12px; color: var(--muted); margin: 6px 0; }
-.order-form select, .order-form input, .order-form textarea { width: 100%; box-sizing: border-box; background: var(--input-bg); color: var(--text); border: 1px solid var(--border2); border-radius: var(--radius); padding: 5px 6px; font-size: 13px; margin-top: 2px; font-family: inherit; }
+.order-form label { display: block; font-size: 13px; color: var(--muted); margin: 6px 0; }
+.order-form select, .order-form input, .order-form textarea { width: 100%; box-sizing: border-box; background: var(--input-bg); color: var(--text); border: 1px solid var(--border2); border-radius: var(--radius); padding: 5px 6px; font-size: 14px; margin-top: 2px; font-family: inherit; }
 .order-form textarea { resize: vertical; }
 /* przełącznik powiadomień w zakładce Łączność */
-.comms-notify { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin: 2px 0 8px; cursor: pointer; }
+.comms-notify { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin: 2px 0 8px; cursor: pointer; }
 .comms-notify input { accent-color: var(--accent); margin: 0; }
 .order-actions { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-.order-msg { font-size: 12px; }
+.order-msg { font-size: 13px; }
 .order-msg.ok { color: var(--accent); }
 .order-msg.err { color: var(--warn); }
-.muted.small { font-size: 11px; }
-ol.orders { padding-left: 18px; font-size: 12px; }
+.muted.small { font-size: 12px; }
+ol.orders { padding-left: 18px; font-size: 13px; }
 ol.orders li { margin-bottom: 8px; }
-.order-text { color: var(--muted); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }
+.order-text { color: var(--muted); font-size: 12px; margin-top: 2px; white-space: pre-wrap; }
 
 /* ---- łączność, raport, start ---- */
 ul.comms li.out { color: var(--text); }
@@ -615,15 +616,15 @@ ul.comms li.in.kind-ask, ul.comms li.in.kind-radio { color: var(--warn); }
 .st-params .order-actions { margin-top: 10px; }
 .bar.closed { stroke: #f2c318; animation: blink 1s steps(1) infinite; }
 /* zakładka „Zadania”: karty zadań manewrowych scenariusza */
-.tasks-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 2px; font-size: 13px; }
+.tasks-head { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 2px; font-size: 14px; }
 .tasks-head span { margin-left: auto; font-variant-numeric: tabular-nums; }
 #tasks-desc { margin: 0 0 8px; }
-.task-card { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 8px; align-items: start; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: var(--radius); font-size: 12px; }
+.task-card { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 8px; align-items: start; padding: 8px 10px; margin: 0 0 6px; background: var(--panel2); border: 1px solid var(--border2); border-left: 3px solid var(--border2); border-radius: var(--radius); font-size: 13px; }
 .task-card .task-no { color: var(--muted); font-variant-numeric: tabular-nums; }
 .task-card .task-mark { line-height: 0; padding-top: 1px; }
 .task-card .task-text { font-weight: 600; }
-.task-card .task-meta { margin-top: 2px; font-size: 11px; }
-.task-card .task-status { margin-top: 2px; font-size: 11px; color: var(--muted); }
+.task-card .task-meta { margin-top: 2px; font-size: 12px; }
+.task-card .task-status { margin-top: 2px; font-size: 12px; color: var(--muted); }
 .task-card.active { border-left-color: var(--accent); }
 .task-card.active .task-status { color: var(--accent); }
 .task-card.waiting { opacity: 0.7; }
@@ -640,7 +641,7 @@ svg.desk.readonly .btn { cursor: not-allowed; }
 #desk-tabs button { background: var(--panel2); color: var(--muted); border: 1px solid var(--border2); border-bottom: none; border-radius: var(--radius) var(--radius) 0 0; padding: 5px 12px; font-size: 13px; cursor: pointer; }
 #desk-tabs button.active { background: var(--panel); color: var(--text); font-weight: 600; }
 #desk-tabs button .ai { font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 4px; }
-.cmd { font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border3); }
+.cmd { font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border3); }
 .cmd.pending { color: var(--warn); font-weight: 600; }
 .cmd.done { color: var(--muted); }
 .cmd .t { color: var(--muted); margin-right: 6px; }
@@ -753,7 +754,7 @@ svg.screen .sig-label.stopped { fill: var(--mon-pink); }
 /* pasek poleceń stanowiska komputerowego (także linia poleceń EBILock – .ebi-bar) */
 #cmd-host { flex: 0 0 auto; }
 .scr-cmdbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; padding: 4px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
-.scr-cmdbar button { background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 3px 8px; font: 600 11px var(--font); cursor: pointer; }
+.scr-cmdbar button { background: var(--mon-bg); color: var(--mon-text); border: 1px solid var(--mon-border); border-radius: var(--radius-sm); padding: 5px 10px; font: 600 12px var(--font); cursor: pointer; }
 .scr-cmdbar button:hover { background: var(--mon-bg2); }
 .scr-cmdbar button.active { background: var(--mon-active); border-color: var(--mon-active-border); color: var(--mon-on-active); }
 .scr-cmdbar button.special { color: var(--mon-special); }

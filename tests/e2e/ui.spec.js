@@ -417,3 +417,16 @@ test('listwa narzędzi bez stałej podpowiedzi obsługi także na szerokim oknie
   await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
   await expect(page.locator('#desk-tools #hint, #desk-tools .hint')).toHaveCount(0);
 });
+
+// Czytelność: treść zakładek panelu (rozkład, zadania…) o 1 px większa, przyciski paska poleceń monitora większe
+// (czcionka 12 px, większe pole) – przy powiększeniu przeglądarki 110% dawne 12 / 11 px było za małe
+test('panel i pasek poleceń: tekst rozkładu i zadań 13 px, przyciski paska poleceń 12 px', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  const fs = (sel) => page.locator(sel).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(await fs('table.rj td')).toBe(13);
+  expect(await fs('.scr-cmdbar button')).toBe(12);
+  expect((await page.locator('.scr-cmdbar button').first().boundingBox()).height).toBeGreaterThanOrEqual(24);
+  await page.click('button[data-tab="zadania"]');
+  expect(await fs('.task-card')).toBe(13);
+  expect(await fs('.tasks-head')).toBe(14);
+});
