@@ -12,6 +12,11 @@ export const SUBSTITUTE_SPEED = 40;
 export const SBL_FIRST_BLOCK = 1000;
 /** Dojazd do taboru na torze zajętym: ostatnie metry (przyjęte) z prędkością do 3 km/h (Dz.U. 2015 poz. 360 §9 ust. 4). */
 export const STOCK_CREEP = 50;
+/**
+ * Miejsce zatrzymania czoła przy peronie (przyjęte, docs/SOURCES.md „Miejsce zatrzymania przy peronie”): ta część
+ * długości peronu od wejścia na peron; pociąg dłuższy niż połowa peronu staje na jego środku.
+ */
+export const PLATFORM_STOP = 0.75;
 
 /**
  * Maszynista (przyjęte, docs/SOURCES.md „Hamowanie jak maszynista”): hamuje z opóźnieniem planowanym – częścią
@@ -99,6 +104,7 @@ export class Train {
     this.shuntPermit = null;     // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora manewrowego { signal, route }
     this.spad = null;            // przejechany semafor „Stój” – hamowanie nagłe do zatrzymania
     this.cabChange = null;       // zmiana czoła w toku: { since, until, quiet } – maszynista przechodzi do drugiej kabiny
+    this.platformPlans = new Map(); // miejsce zatrzymania przy peronie: odcinek, rząd i kierunek → plan (#platformPlan)
   }
 
   /**
@@ -301,16 +307,17 @@ export class Train {
         tile = t; inPort = e.dir; outPort = t._def.exits(t, inPort, null)[0];
         seg = { tile, inPort, outPort, len: t._len, virtual: null };
       } else {
-        // Miejsce zatrzymania przy peronie: czołem przy końcu peronu (jak przy wskaźniku W4, który stoi przy końcu
-        // peronu) – z rozrzutem kilku metrów; gdy tak zatrzymany pociąg nie zmieściłby się na odcinku toru (tył na
-        // rozjazdach) – jak dotąd 12 m przed semaforem końcowym toru peronowego (lub 15 m przed końcem odcinka bez semafora)
+        // Miejsce zatrzymania przy peronie: pociąg staje wzdłuż peronu – czoło na 3/4 peronu, dłuższy pociąg na środku
+        // peronu, przy torze czołowym przy końcu peronu (#platformPlan) – z rozrzutem kilku metrów; gdy pociąg nie
+        // zmieściłby się przy peronie na odcinku toru (tył na rozjazdach) – jak dotąd 12 m przed semaforem końcowym toru
+        // peronowego (lub 15 m przed końcem odcinka bez semafora)
         if (this.#shouldStopAt(tile)) {
           const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
           const nbT = this.topo.neighbour(tile, outPort);
           const sectionEnds = !nbT || nbT.tile.section !== tile.section;
           const platform = this.ilk.sections.get(tile.section)?.platform;
-          const atEnd = this.#platformEndStop(tile, outPort, sigHere ? -12 : sectionEnds ? -15 : 0);
-          if (atEnd != null) constraints.push({ dist: dist + atEnd, speed: 0, reason: 'peron', kind: 'platform', tile });
+          const at = this.#platformStop(tile, outPort);
+          if (at != null) constraints.push({ dist: dist + at, speed: 0, reason: 'peron', kind: 'platform', tile });
           if (sigHere) constraints.push({ dist: dist - 12, speed: 0, reason: 'peron', kind: 'platform', tile });
           // tor bez peronu (pociąg kończący bieg): zatrzymanie tylko przed sygnalizatorem na końcu toru
           else if (platform && sectionEnds) constraints.push({ dist: dist - 15, speed: 0, reason: 'peron', kind: 'platform', tile });
@@ -389,23 +396,55 @@ export class Train {
   }
 
   /**
-   * Zatrzymanie czołem przy końcu peronu: `tile` to ostatnia kostka przy peronie w kierunku jazdy (`outPort` E / W) –
-   * zwraca przesunięcie miejsca zatrzymania względem końca tej kostki [m] (ujemne: `stopShort` metrów przed końcem
-   * peronu, najwyżej `maxPast`; zawsze na tej kostce – lookahead widzi ją, dopóki czoło na niej jest), albo null: kostka
-   * nie kończy peronu albo tył pociągu nie zmieściłby się na odcinku toru (stanąłby na rozjazdach).
+   * Miejsce zatrzymania czoła przy peronie na odcinku kostki `tile`, w jej rzędzie, przy jeździe portem `outPort` (E / W);
+   * położenia [m] od początku odcinka w tym rzędzie, w kierunku jazdy. Peron od `p0` do `p1` (Lp = p1 − p0), pociąg
+   * długości L: czoło na `p0 + max(PLATFORM_STOP · Lp, (Lp + L) / 2)` – pociąg stoi wzdłuż peronu, ludzie nie idą na sam
+   * koniec; `stopShort` metrów wcześniej (rozrzut). Najdalej jak dotąd przy końcu peronu: `stopShort` m przed nim, przed
+   * semaforem na końcu peronu 12 m, przed końcem odcinka 15 m; tor czołowy (kozioł za peronem na tym odcinku) – tam, jak
+   * dotąd (pociąg dojeżdża do kozła). Tył nie na rozjazdach: czoło co najmniej L + 5 m od początku odcinka; gdy się nie
+   * da – null (zatrzymanie przed semaforem jak dotąd). Wynik `{ at, tiles }`: miejsce zatrzymania i kostki odcinka
+   * (kostka → { start, end }); pamiętany dla pociągu (długość i rozrzut stałe).
    */
-  #platformEndStop(tile, outPort, maxPast) {
+  #platformPlan(tile, outPort) {
     const r = this.platforms?.get(tile.section);
-    if (!r || (outPort !== 'E' && outPort !== 'W') || tile.x !== (outPort === 'E' ? r.x1 : r.x0)) return null;
-    const at = Math.max(-(tile._len ?? 0) + 1, Math.min(-this.stopShort, maxPast));
-    // długość odcinka toru za miejscem zatrzymania (pod pociągiem) – po kostkach tego odcinka w rzędzie, wstecz
-    let behind = (tile._len ?? 0) + at, t = tile, port = outPort === 'E' ? 'W' : 'E';
-    for (let i = 0; i < 200; i++) {
-      const nb = this.topo.neighbour(t, port);
-      if (!nb || nb.tile.section !== tile.section || nb.tile.y !== tile.y) break;
-      behind += nb.tile._len ?? 0; t = nb.tile;
+    if (!r || (outPort !== 'E' && outPort !== 'W') || tile.x < r.x0 || tile.x > r.x1) return null;
+    const key = `${tile.section}:${tile.y}:${outPort}`;
+    if (this.platformPlans.has(key)) return this.platformPlans.get(key);
+    const same = (nb) => nb && nb.tile.section === tile.section && nb.tile.y === tile.y;
+    let first = tile;
+    for (let i = 0, nb; i < 400 && same(nb = this.topo.neighbour(first, OPPOSITE[outPort])); i++) first = nb.tile;
+    const tiles = new Map();
+    let pos = 0, p0 = null, p1 = null, last = null, buffer = false;
+    for (let t = first, i = 0; t && i < 400; i++) {
+      const len = t._len ?? 0;
+      tiles.set(t, { start: pos, end: pos + len });
+      if (t.x >= r.x0 && t.x <= r.x1 && t.type !== 'buffer') { p0 ??= pos; p1 = pos + len; last = t; }
+      if (t.type === 'buffer' && last) buffer = true;
+      pos += len;
+      const nb = this.topo.neighbour(t, outPort);
+      t = same(nb) ? nb.tile : null;
     }
-    return behind >= this.length + 5 ? at : null;
+    let plan = null;
+    if (last) {
+      const nbLast = this.topo.neighbour(last, outPort);
+      const sigEnd = this.topo.signalsAt(last, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
+      const maxPast = sigEnd ? -12 : (!nbLast || nbLast.tile.section !== tile.section) ? -15 : 0;
+      const max = p1 + Math.max(-(last._len ?? 0) + 1, Math.min(-this.stopShort, maxPast));
+      const Lp = p1 - p0, L = this.length;
+      const want = buffer ? max : Math.min(max, p0 + Math.max(PLATFORM_STOP * Lp, (Lp + L) / 2) - this.stopShort);
+      const at = Math.max(want, L + 5);
+      if (at <= max) plan = { at, tiles };
+    }
+    this.platformPlans.set(key, plan);
+    return plan;
+  }
+
+  /** Przesunięcie miejsca zatrzymania przy peronie (#platformPlan) względem końca kostki `tile` [m, ≤ 0], gdy na niej wypada. */
+  #platformStop(tile, outPort) {
+    const plan = this.#platformPlan(tile, outPort);
+    const own = plan?.tiles.get(tile);
+    if (!own || plan.at <= own.start || plan.at > own.end) return null;
+    return plan.at - own.end;
   }
 
   #shouldStopAt(tile) {

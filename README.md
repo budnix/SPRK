@@ -116,7 +116,7 @@ Play it: **https://budnix.github.io/SPRK/**
   up and eases off over the last metres before the stop; braking depends on the train – multiple units brake hardest,
   loco-hauled passenger trains as their speed requires, freight trains by their load (a heavy or long freight train
   needs much longer to stop and a long one stops without easing off); a signal dropping to "Stop" too close still means
-  full or emergency braking; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
+  full or emergency braking; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the train stops along the drawn platform rather than at its far end: the head at about three quarters of the platform, a train longer than half the platform in its middle, a stub track up to the platform end – a few metres different every time – and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, running onto an occupied track up to the standing stock (last 50 m at 3 km/h).
 * A point without detection is secured on site from the Equipment tab (a worker, about 3 minutes); then a train can
   pass it on a substitute signal or a written order.

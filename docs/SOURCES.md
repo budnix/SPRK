@@ -181,12 +181,17 @@ nim, aby ruch podróżnych był najdogodniejszy; wskaźnik stoi przy końcu pero
 pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4 i zał. 1). Przyjęte
 (uproszczenia gry):
 
-* pociąg z postojem staje czołem przy końcu peronu w kierunku jazdy – gra nie rysuje W 4, więc przyjmuje go przy końcu
-  peronu; peron i jego zasięg wzdłuż toru są te same, które rysuje widok (`src/tiles/platforms.js` – z układu torów
-  stacji, bez danych per stacja); czoło staje 0–10 m przed końcem peronu (rozrzut – maszynista nie staje co do metra;
-  stały dla zmiany o tym samym ziarnie, różny dla pociągów i zmian); gdy tak zatrzymany pociąg nie zmieściłby się na
-  odcinku toru (tył na rozjazdach), staje jak dawniej 12 m przed semaforem końcowym toru peronowego (15 m przed końcem
-  odcinka bez semafora);
+* Miejsce zatrzymania przy peronie (`Train.#platformPlan`, `PLATFORM_STOP`): gra nie rysuje W 4 i przyjmuje go przy
+  końcu peronu jako granicę; „ruch podróżnych najdogodniejszy” gra rozumie tak, że pociąg stoi wzdłuż peronu, a nie przy
+  samym jego końcu (podróżni nie idą na koniec peronu) – czoło na 3/4 długości peronu od wejścia na peron, a pociąg
+  dłuższy niż połowa peronu na środku peronu (czoło na (Lp + L) / 2). Liczby 3/4 i „środek” są przyjęte – Ie-1 ich nie
+  podaje. Peron i jego zasięg wzdłuż toru są te same, które rysuje widok (`src/tiles/platforms.js` – z układu torów
+  stacji, bez danych per stacja); czoło staje 0–10 m wcześniej (rozrzut – maszynista nie staje co do metra; stały dla
+  zmiany o tym samym ziarnie, różny dla pociągów i zmian), najdalej jak dotąd przy końcu peronu. Tor czołowy (kozioł za
+  peronem na tym samym odcinku, np. Zacisze, Gdańsk Gł. 7–15) – pociąg dojeżdża jak dotąd do końca peronu. Tył pociągu
+  nie wystaje na rozjazdy: czoło co najmniej długość pociągu + 5 m od początku odcinka toru; gdy pociąg nie mieści się
+  przy peronie na odcinku, staje jak dawniej 12 m przed semaforem końcowym toru peronowego (15 m przed końcem odcinka
+  bez semafora). Dawniej czoło stawało zawsze 0–10 m przed końcem peronu;
 * pociąg po postoju zostaje przy peronie, dopóki pierwszy semafor przed czołem wskazuje „Stój” – także gdy stoi przy
   końcu peronu daleko przed semaforem (dawniej trzymał go tylko semafor do 60 m); dalszy semafor na „Stój” (przebieg
   dwustopniowy) nie trzyma – pociąg rusza na sygnał pierwszego; odjazd w dzienniku i punktualność liczy się od
