@@ -79,6 +79,7 @@ export class ScreenBase extends PanelView {
     this.svg.style.setProperty('--sym', String(this.S));
     this.svg.style.setProperty('--symb', String(Math.min(this.S, 1.15)));
     for (const sym of this.symbols) this.#place(sym);
+    for (const box of this.counterBoxes || []) this.#placeCounter(box);
     for (const { label } of this.trainLabels.values()) label.firstChild.setAttribute('transform', `scale(${this.S})`);
     this.#declutter();
   }
@@ -191,7 +192,9 @@ export class ScreenBase extends PanelView {
       this.layerTracks.appendChild(el('rect', { class: `platform ${p.kind}`, x: rx, y: ry, width: rw, height: h, rx: 2 }));
       // krawędź peronowa od strony toru peronowego: podwójna kreska
       for (const [x1, y1, x2, y2] of platformEdgeLines(rx, ry, rw, h, p.edges, 2.5)) this.layerTracks.appendChild(el('line', { class: 'platform-edge', x1, y1, x2, y2 }));
-      this.layerTracks.appendChild(text((p.labelX + 0.5 - this.x0) * CELL, y, p.name, { class: 'scr-text platform-label', 'dominant-baseline': 'central' }));
+      // nazwa peronu rośnie ze skalą symboli (dawniej stałe 7 px), ale mieści się w prostokącie peronu (gęste rzędy)
+      const fs = `min(calc(6.5px * var(--sym, 1)), ${(h * 0.7).toFixed(1)}px)`;
+      this.layerTracks.appendChild(text((p.labelX + 0.5 - this.x0) * CELL, y, p.name, { class: 'scr-text platform-label', 'dominant-baseline': 'central', style: `font-size: ${fs}` }));
     }
   }
 
@@ -242,10 +245,16 @@ export class ScreenBase extends PanelView {
         text(C, 15, c.label, { class: 'scr-text small' }),
         text(C, 25, '00000', { class: 'scr-text counter' }),
       ]);
-      g.setAttribute('transform', `translate(${(c.x - this.x0) * CELL},${c.y * CELL * this.ry})`);
+      // pole licznika rośnie ze skalą symboli (wokół swojego środka) – dawniej stałe i najmniejsze na obrazie
+      (this.counterBoxes ??= []).push({ g, x: (c.x - this.x0) * CELL, y: c.y * CELL * this.ry });
+      this.#placeCounter(this.counterBoxes.at(-1));
       this.layerMarks.appendChild(g);
       this.counterRefs.set(c.id, g.querySelector('.counter'));
     }
+  }
+
+  #placeCounter({ g, x, y }) {
+    g.setAttribute('transform', `translate(${x + C},${y + 19}) scale(${this.S}) translate(${-C},-19)`);
   }
 
   #build() {

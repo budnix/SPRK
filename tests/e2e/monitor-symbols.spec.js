@@ -227,3 +227,24 @@ test('numer pociągu przy końcu toru nie przykrywa semafora (Szkolna, 6101 przy
   expect(res).not.toBe('brak numeru albo semafora');
   expect(res.overlap, `numer na semaforze D1 (${JSON.stringify(res)})`).toBe(0);
 });
+
+/*
+ * Skala symboli 150%: wszystkie napisy obrazu rosną razem z symbolami. Dawniej liczniki dPz / Sz miały stałe pole
+ * (5,8 px przy nazwach sygnalizatorów 10,2 px), nazwa peronu – stałe 7 px (reguła .scr-text wygrywała z rozmiarem
+ * nazwy peronu), opisy szlaków i wykolejnic – mniejszą czcionkę, a strzałki kierunkowe blokady były niewiele ponad
+ * połowę strzałki szlaku.
+ */
+test('skala symboli 150%: napisy obrazu nie mniejsze niż 90% nazw sygnalizatorów, strzałki kierunkowe co najmniej 70% strzałki szlaku', async ({ page }) => {
+  await openShift(page, 'szkolna', { settings: { symScale: '1.5' }, params: { scenariusz: 'zmiana' } });
+  const res = await page.evaluate(() => {
+    const svg = document.querySelector('#desk svg.screen');
+    const size = (t) => parseFloat(getComputedStyle(t).fontSize) * Math.hypot(t.getScreenCTM().a, t.getScreenCTM().b);
+    const texts = [...svg.querySelectorAll('text')].filter((t) => t.textContent.trim() && t.getBoundingClientRect().width > 0);
+    const sig = size(svg.querySelector('.sig-label'));
+    const small = texts.filter((t) => size(t) < 0.9 * sig).map((t) => `${t.textContent.trim()} (${t.getAttribute('class')}): ${size(t).toFixed(1)} px`);
+    const blk = svg.querySelector('.blk-dir').getBoundingClientRect().height, arrow = svg.querySelector('.exit-arrow').getBoundingClientRect().height;
+    return { sig: sig.toFixed(1), small, ratio: blk / arrow };
+  });
+  expect(res.small, `nazwy sygnalizatorów ${res.sig} px`).toEqual([]);
+  expect(res.ratio).toBeGreaterThanOrEqual(0.7);
+});

@@ -56,10 +56,12 @@ export function koSymbol(b) {
  *   `A` – [grot w stronę szlaku, prostokąt, grot w stronę stacji]
  */
 export function blockSymbolShapes(dir) {
-  const c = -dir, y0 = -12, H = 4, h = 2, L = 8;             // środek, oś, pół-wysokość grotu i trzonu, pół-długość
-  const X = (u) => c + dir * u;                               // u > 0 – w stronę szlaku
-  const n = (v) => Math.round(v * 100) / 100;
+  // F – powiększenie symbolu względem strzałki szlaku (przy 1 strzałki kierunkowe były wyraźnie mniejsze od niej)
+  const F = 1.25, c = -dir, y0 = -13, H = 4 * F, h = 2 * F, L = 8;  // środek, oś, pół-wysokość grotu i trzonu, pół-długość
+  const X = (u) => c + dir * u * F;                           // u > 0 – w stronę szlaku (jednostki przed powiększeniem)
+  const n = (v) => Math.sign(v) * Math.round(Math.abs(v) * 100) / 100; // symetrycznie względem zera – lustro dokładne
   const poly = (pts) => `M${pts.map(([u, y]) => `${n(X(u))},${n(y)}`).join(' L')} Z`;
+  // Ko/dKo nad strzałkami (1,5 jednostki odstępu), wysokość 3
   const bar = (u0, u1) => poly([[u0, y0 - h], [u1, y0 - h], [u1, y0 + h], [u0, y0 + h]]);
   const head = (s, base) => poly([[s * base, y0 - H], [s * L, y0], [s * base, y0 + H]]);
   // grot obrazu „A” z krótkim trzonem (jak na rysunku: dwie strzałki i prostokąt między nimi)
@@ -69,6 +71,6 @@ export function blockSymbolShapes(dir) {
     A: [arrow(1), bar(-1.6, 1.6), arrow(-1)],
     B: { a: head(-1, 4.6), b: bar(-4, L) },
     C: { a: head(1, 4.6), b: bar(-L, 4) },
-    ko: { x: n(Math.min(ku0, ku1)), y: -20.5, width: n(Math.abs(ku1 - ku0)), height: 3 },
+    ko: { x: n(Math.min(ku0, ku1)), y: n(y0 - H - 1.5 - 3), width: n(n(Math.max(ku0, ku1)) - n(Math.min(ku0, ku1))), height: 3 },
   };
 }
