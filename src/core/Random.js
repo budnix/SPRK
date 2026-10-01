@@ -25,6 +25,16 @@ export class Random {
   }
 }
 
+/**
+ * Ziarno z ziarna zmiany i tekstu (FNV-1a, 32 bity): `basis` – wartość mieszana z ziarnem, rozróżnia zastosowania
+ * (rozrzut zatrzymania przy peronie, tabor pociągu). Własne ciągi losowe pociągów nie zużywają losowań zmiany.
+ */
+export function mixSeed(seed, text, basis = 0x811c9dc5) {
+  let h = ((seed >>> 0) ^ basis) >>> 0;
+  for (const ch of String(text)) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0;
+  return h;
+}
+
 export const DISRUPTION_LEVELS = {
   none: { label: 'brak', delayChance: 0, delayMax: 0, faults: [0, 0], extraTrains: 0 },
   low: { label: 'małe', delayChance: 0.3, delayMax: 15, faults: [1, 2], extraTrains: 0 },

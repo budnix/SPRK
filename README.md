@@ -105,7 +105,13 @@ Play it: **https://budnix.github.io/SPRK/**
   shows the kind, speed, length and mass; each train shows its rolling stock – a multiple unit such as „2 × EN57” or
   a locomotive such as „ET22”, drawn each shift from types that run in the Tricity area (SKM, Polregio, PKP Intercity,
   freight carriers; diesel units on non-electrified lines), the same set for a train formed from an arriving one – in
-  the timetable tooltip and on the trains tab (display only, it does not change speed); full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
+  the timetable tooltip and on the trains tab; the train runs with exactly that stock, using published vehicle data:
+  a multiple unit starts with its type's acceleration (two coupled units like one), a locomotive's starting tractive
+  effort is shared by its own mass and the load behind it (coaches from the train length, or the freight train's gross
+  mass), and at speed the vehicle's power limits acceleration – a longer or heavier train, or an older or weaker
+  vehicle, takes longer to reach line speed (an EN57 needs much longer than an Impuls, a diesel 754 with a long TLK
+  minutes); a vehicle slower than the timetable is not assigned unless the station pins it, and then it limits the
+  train's speed (shown in the tooltip); braking follows the train category; full relations in the timetable (e.g. IC 5100 „Kaszub” Kraków Gł. – Gdynia Gł.), platform stops per timetable (the head stops at the platform end – taken from the drawn platform – a few metres short of it, a little different every time, and the train waits there for the exit signal), non-stop passes, terminating trains, units handed over
   as new trains, shunting under Ms2 with two-stage moves, running onto an occupied track up to the standing stock (last 50 m at 3 km/h).
 * A point without detection is secured on site from the Equipment tab (a worker, about 3 minutes); then a train can
   pass it on a substitute signal or a written order.

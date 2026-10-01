@@ -74,6 +74,8 @@ test('szybki pociąg (IC 160 km/h) zatrzymuje się przy peronie: horyzont hamowa
   const sim = makeSim();
   const e = sim.traffic.timetable().find((x) => x.nr === 5310);
   e.name = 'IC Warszawa – Gdańsk'; e.cat = 'IC'; delete e.vmax;
+  // tabor wybrano przy tworzeniu rozkładu dla pociągu Regio (zespół, np. EN57 – 120 km/h) – IC bez taboru jedzie wg kategorii
+  e.rollingStock = null;
   let n = 0;
   const { autoDispatch } = { autoDispatch: null };
   const helpers = await_import();

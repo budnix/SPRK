@@ -78,6 +78,14 @@ export function categoryOf(entry) {
   return entry.kind === 'tow' ? 'TM' : 'R';
 }
 
+/**
+ * Trakcja pociągu – litera z zał. 6.3: rodzaje towarowe i pojazdy luzem (kategorie z `tractions`) – pole `traction`
+ * wpisu, domyślnie E; pociągi pasażerskie – null (ich trakcję daje tabor).
+ */
+export function tractionOf(entry) {
+  return CATEGORIES[categoryOf(entry)].tractions ? (entry.traction ?? 'E') : null;
+}
+
 /** Prędkość maksymalna pociągu [km/h]: `vmax` wpisu albo domyślna kategorii. */
 export function speedFor(entry) {
   return entry.vmax ?? CATEGORIES[categoryOf(entry)].vmax;

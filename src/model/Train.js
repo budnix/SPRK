@@ -1,4 +1,4 @@
-import { speedFor, dynamicsFor } from './categories.js';
+import { trainDynamics } from './rollingStock.js';
 import { Interlocking } from './Interlocking.js';
 import { OPPOSITE } from '../tiles/directions.js';
 
@@ -30,11 +30,9 @@ export class Train {
     this.stockAt = opts.stockAt || null; // (kostka, port wejścia) → odległość od wejścia na kostkę do innego taboru albo null
     this.platforms = opts.platforms || null; // odcinek → { x0, x1 } kolumn przy peronie (tiles/platforms.js)
     this.stopShort = opts.stopShort ?? 0;    // o ile metrów przed końcem peronu staje czoło (rozrzut, Traffic.stopScatter)
-    // prędkość maksymalna i dynamika wg kategorii pociągu (IC/TLK/R/SKM/towarowy…) – `vmax`/`accel`/`brake` wpisu nadpisują
-    this.vmax = speedFor(def) * KMH;
-    const dyn = dynamicsFor(def);
-    this.accel = dyn.accel;
-    this.brake = dyn.brake;
+    // tabor wpisu (Traffic: `e.rollingStock` – ten sam pokazuje panel) albo null – wtedy dynamika kategorii
+    this.stock = opts.stock ?? null;
+    this.applyDynamics(def);
     this.v = 0;
     this.trail = [];
     this.head = 0;           // odległość czoła wzdłuż śladu
@@ -66,6 +64,23 @@ export class Train {
     this.shuntRoute = null;      // przebieg manewrowy, na którego sygnał Ms2 skład minął sygnalizator
     this.shuntPermit = null;     // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora manewrowego { signal, route }
     this.spad = null;            // przejechany semafor „Stój” – hamowanie nagłe do zatrzymania
+  }
+
+  /**
+   * Prędkość maksymalna i dynamika jazdy pociągowej z wpisu `def` i taboru (`trainDynamics`): przy utworzeniu, przy
+   * przekazaniu składu jako inny pociąg i po powrocie z manewrów. `vmax` / `accel` / `brake` wpisu nadpisują.
+   */
+  applyDynamics(def = this.def) {
+    const dyn = trainDynamics(def, this.stock);
+    this.vmax = dyn.vmax * KMH;
+    this.accel = dyn.accel;
+    this.brake = dyn.brake;
+    this.power = dyn.power; // kW/t albo null – przyspieszenie przy prędkości v najwyżej power / v
+  }
+
+  /** Przyspieszenie przy prędkości `v` [m/s]: przy ruszaniu `accel`, wyżej ograniczone mocą (power / v). */
+  accelAt(v) {
+    return this.power ? Math.min(this.accel, this.power / Math.max(v, 0.1)) : this.accel;
   }
 
   /** Utrata zezwolenia (zmiana czoła, zmiana rodzaju jazdy) – dalsza jazda dopiero na nowy sygnał. */
@@ -379,7 +394,7 @@ export class Train {
     if (this.spad) { allowed = 0; decel = EMERGENCY_BRAKE; }
     decel = Math.min(decel, Math.max(this.brake, EMERGENCY_BRAKE));
     const v0 = this.v;
-    if (this.v < allowed) this.v = Math.min(allowed, this.v + this.accel * dt);
+    if (this.v < allowed) this.v = Math.min(allowed, this.v + this.accelAt(this.v) * dt);
     else this.v = Math.max(allowed, this.v - decel * dt);
     // pociąg utworzony ze składu (holdUntil) rusza bez postoju handlowego – odjazd rejestruje się przy pierwszym ruchu
     if (this.holdUntil && this.mode === 'train' && !this.departedAt && this.v > 0) { this.departedAt = time; this.onEvent('depart', this); }

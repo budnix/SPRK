@@ -1,8 +1,10 @@
-import { categoryOf, speedFor, trainLabel } from './categories.js';
+import { categoryOf, trainLabel } from './categories.js';
 import { Train } from './Train.js';
 import { Clock } from '../core/Clock.js';
+import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
 import { platformRanges } from '../tiles/platforms.js';
+import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
 
 /** Rozrzut miejsca zatrzymania czoła przy peronie [m]: czoło staje od 0 do tylu metrów przed końcem peronu –
  *  maszynista nie staje co do metra (przyjęte). */
@@ -14,8 +16,7 @@ export const STOP_SCATTER = 10;
  * przesuwać losowania opóźnień i usterek.
  */
 export function stopScatter(seed, nr) {
-  let h = (Number(seed) ^ 0x9e3779b9) >>> 0;
-  for (const ch of String(nr)) h = Math.imul(h ^ ch.charCodeAt(0), 0x01000193) >>> 0;
+  let h = mixSeed(Number(seed), nr, 0x9e3779b9);
   h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 0;
   return ((h >>> 8) % 10001) / 10000 * STOP_SCATTER;
 }
@@ -43,7 +44,9 @@ export class Traffic {
     // zasięg peronów przy torach – z układu stacji (ten sam peron, który rysuje widok); miejsce zatrzymania czoła
     this.platforms = platformRanges(station);
     const tt = opts.timetable || station.timetable;
-    this.entries = tt.map((t, i) => this.#prepare(t, i));
+    // tabor pociągów – raz na zmianę, dla całego rozkładu (ten sam pokazuje panel i z nim jedzie pociąg)
+    const stock = stockPlan(tt, this.seed);
+    this.entries = tt.map((t, i) => this.#prepare(t, i, stock.get(t)));
     // rozkład w kolejności czasu (przyjazd, a dla pociągów zaczynających bieg – odjazd), niezależnie od kolejności
     // w definicji stacji (tam pociągi bywają pogrupowane liniami, np. SKM osobno od dalekobieżnych)
     this.entries.sort((a, b) => (a.arrTime ?? a.depTime) - (b.arrTime ?? b.depTime));
@@ -290,12 +293,14 @@ export class Traffic {
     return { ok: true, order };
   }
 
-  #prepare(t, i) {
+  #prepare(t, i, rollingStock = null) {
     const arr = t.arr ? Clock.parse(t.arr) : null;
     const dep = t.dep ? Clock.parse(t.dep) : null;
     const exitFrom = t.from ? this.station.exits[t.from] : null;
     const lineLen = exitFrom?.lineLength ?? 3000;
-    const vline = Math.min(speedFor(t), exitFrom?.lineSpeed ?? 100) / 3.6;
+    // jazda po szlaku z prędkością pociągu z jego taborem (wolniejszy pojazd – sąsiad wyprawia go wcześniej, jak rozkład
+    // ułożony dla tego pojazdu)
+    const vline = Math.min(trainSpeed(t, rollingStock), exitFrom?.lineSpeed ?? 100) / 3.6;
     const lineTravel = lineLen / vline;              // s na szlaku
     const stationRun = 90;                           // s od granicy pulpitu do peronu (ok.)
     const ref = arr ?? dep;
@@ -304,7 +309,7 @@ export class Traffic {
       idx: i, ...t, cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
       neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
       status: t.from ? 'oczekiwany' : (t.unit ? 'oczekuje na skład' : 'na stacji'), requested: false, dispatched: false,
-      train: null, actualArr: null, actualDep: null, delay: 0, track: t.track,
+      train: null, actualArr: null, actualDep: null, delay: 0, track: t.track, rollingStock,
     };
   }
 
@@ -369,7 +374,10 @@ export class Traffic {
 
   /** Dodanie pociągu do rozkładu w trakcie zmiany (pociąg nadzwyczajny). */
   addTrain(def) {
-    const e = this.#prepare(def, this.entries.length);
+    // tabor: pociąg ze składu innego (`unit`) – jak tamten; inaczej własne losowanie (tabor rozkładu się nie zmienia)
+    const root = rootOf(def, this.entries);
+    const stock = root !== def && root.rollingStock !== undefined ? root.rollingStock : stockFor(def, [def], this.seed);
+    const e = this.#prepare(def, this.entries.length, stock);
     e.extra = true;
     this.entries.push(e);
     this.entries.sort((a, b) => (a.arrTime ?? a.depTime) - (b.arrTime ?? b.depTime));
@@ -415,6 +423,8 @@ export class Traffic {
       platforms: this.platforms,
       stopShort: stopScatter(this.seed, e.nr),
       stockAt: (tile, inPort, from) => this.stockAt(tile, inPort, train, from),
+      // tabor wpisu (ten sam pokazuje panel) – daje pociągowi przyspieszenie, hamowanie i prędkość pojazdu
+      stock: e.rollingStock,
     });
     return train;
   }
@@ -587,7 +597,7 @@ export class Traffic {
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
       // nowy pociąg rusza dopiero na sygnał semafora przed sobą – nie na zezwoleniu pociągu, którym skład przyjechał
       tr.clearAuthority();
-      tr.vmax = speedFor(e) / 3.6; tr.holdUntil = e.depTime; tr.orders = [];
+      tr.applyDynamics(e); tr.holdUntil = e.depTime; tr.orders = []; // tabor ten sam (skład), wpis nowy – np. inna masa
       tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
       tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
       e.status = 'na stacji';
@@ -686,7 +696,7 @@ export class Traffic {
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     e.train.mode = 'train';
     e.train.clearAuthority(); // pociąg utworzony ze składu rusza dopiero na sygnał semafora
-    e.train.vmax = speedFor(e) / 3.6;
+    e.train.applyDynamics(e);
     e.train.state = 'stopped';
     return true;
   }

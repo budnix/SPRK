@@ -54,7 +54,8 @@ przebiegu). Wyjątki – ograniczenie na całej drodze przebiegu: przebieg na to
 §66 ust. 3; pole `mainKind` odcinka, oznaczone na fikcyjnych stacjach szkoleniowych – na stacjach rzeczywistych gra
 nie zgaduje, które tory są dodatkowe) i Sr3 na kształtowym semaforze wjazdowym (§65 pkt 3; Ie-1 §4 ust. 5 pkt 3).
 Zwrotnicę w kierunku zwrotnym pokonuje cały pociąg, nie tylko czoło, z szybkością dla kierunku zwrotnego
-(`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojej kategorii (`categories.js`).
+(`speedDiverging`). Pociąg przyspiesza i hamuje zgodnie z dynamiką swojego taboru (`rollingStock.js`, „Tabor pociągów –
+dynamika”), a gdy źródło nie podaje danych typu – zgodnie z dynamiką kategorii (`categories.js`).
 
 Rodzaje pociągów towarowych (wszystkie stanowiska). Ze źródła – PKP PLK, Regulamin sieci 2025/2026, zał. 6.3 „Wzór
 wniosku o przydzielenie trasy pociągu z instrukcją wypełniania wniosku”, część „Klasyfikacja pociągów stosowana
@@ -98,8 +99,10 @@ Przyjęte w grze:
   i do długości torów): masowe (TM) cięższe (2000–3000 t), intermodalne (TD) i niemasowe (TN) lżejsze (700–1800 t),
   zdawcze (TK) krótkie (220–400 m, 400–650 t), próżne wagony do naprawy (TS) – 600 t na 480 m. Gra nie zna ładunku
   ani wagonów – nazwy relacji go nie podają.
-  Trakcję spalinową (S) mają niektóre pociągi zdawcze i towarowe; trakcja nie zmienia dynamiki.
-* Dynamika: prędkość, przyspieszenie, hamowanie i masa odniesienia (`refMass`) kategorii są wartościami gry.
+  Trakcję spalinową (S) mają niektóre pociągi zdawcze i towarowe; trakcja wybiera lokomotywę, a ta – dynamikę.
+* Dynamika: prędkość, przyspieszenie, hamowanie i masa odniesienia (`refMass`) kategorii są wartościami gry. Pociąg
+  z lokomotywą z katalogu taboru, dla której źródła podają siłę pociągową i masę, przyspiesza z tych danych i z `mass`
+  („Tabor pociągów – dynamika”); wartości kategorii zostają dla lokomotyw bez danych i dla hamowania.
   Przyspieszenie kategorii obowiązuje przy masie odniesienia (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t, TS 800 t,
   TK 600 t); pociąg o masie `mass` ma przyspieszenie razy `refMass / mass` (ta sama siła pociągowa, większa masa),
   w granicach 0,5–1,5 przyspieszenia kategorii. Hamowanie nie zależy od masy – zgodnie z Ir-1 §21 hamulce dobiera się
@@ -585,9 +588,10 @@ rozkład jazdy fikcyjny.
 ## Tabor pociągów (`src/model/rollingStock.js`)
 
 Podpowiedź numeru pociągu w rozkładzie i karta na zakładce „Pociągi” pokazują tabor: zespół trakcyjny („skład:
-2 × EN57”) albo lokomotywę („lokomotywa ET22”). To tylko opis – prędkość, dynamika i długość pociągu dalej biorą się
-z wpisu rozkładu i kategorii. Katalog to stan na 1.10.2026; wszystkie źródła sprawdzone 1.10.2026. Typ, którego
-jazdy w rejonie Trójmiasta źródło nie potwierdza, nie wchodzi do katalogu.
+2 × EN57”) albo lokomotywę („lokomotywa ET22”). Pociąg jedzie z tym taborem: przyspieszenie, hamowanie i prędkość
+pojazdu biorą się z danych typu („Tabor pociągów – dynamika” niżej); długość pociągu – z wpisu rozkładu. Katalog to stan na 1.10.2026;
+wszystkie źródła sprawdzone 1.10.2026. Typ, którego jazdy w rejonie Trójmiasta źródło nie potwierdza, nie wchodzi do
+katalogu.
 
 Ze źródeł – elektryczne zespoły trakcyjne SKM Trójmiasto (linia 250) i Polregio (oddział pomorski):
 
@@ -599,7 +603,7 @@ Ze źródeł – elektryczne zespoły trakcyjne SKM Trójmiasto (linia 250) i Po
   nie rozróżnia;
 * EN71 – 4 człony, 86,84 m, 110 km/h; SKM (https://pl.wikipedia.org/wiki/EN71; skm.pkp.pl jak wyżej);
 * 31WE Impuls – 4 człony, 74,4 m, 2 zespoły SKM (https://www.rynek-kolejowy.pl/wiadomosci/impulsy-dla-skm-trojmiasto-gotowe-duzo-zdjec-75565.html,
-  26.02.2016); prędkości źródło nie podaje (`vmax: null`);
+  26.02.2016); „Maksymalna prędkość eksploatacyjna 160 km/h” (Newag – adres w „Tabor pociągów – dynamika”);
 * 31WEbb Impuls 2 – 4 człony, ok. 75 m, 160 km/h (https://pomorskie.eu/press/taborowa-rewolucja-na-pomorzu-nowe-pojazdy-na-torach-skm/,
   7.12.2023); własność województwa: w SKM i 13 zespołów w Polregio (kolejowyportal.pl jak wyżej), w Polregio m.in.
   Elbląg – Gdynia Chylonia (https://pulsgdanska.pl/transport/kolej/nowe-impulsy-trafily/M9g33Qq7N32HzTdq41Oa, 6.04.2024);
@@ -698,12 +702,160 @@ Przyjęte (decyzje gry, nie dane ze źródła):
   przydział do tych linii przyjęty); Kartuzy (Gdańsk Gł.) – SA133, SA136 (PKM); TLK Hel – Warszawa na odcinku przed
   Gdynią Główną (Reda, Rumia, Chylonia) – 754. W Gdyni Głównej, gdzie zmienia się lokomotywę, gra pokazuje lokomotywę
   elektryczną, z którą pociąg odjeżdża (postój w rozkładzie gry nie obejmuje zmiany lokomotywy);
-* długość: zespoły pasują, gdy ich łączna długość różni się od długości pociągu z rozkładu najwyżej o 20 %
+* długość: zespoły z puli pasują, gdy ich łączna długość różni się od długości pociągu z rozkładu najwyżej o 20 %
   (`STOCK_LENGTH_TOLERANCE`); gdy żaden typ nie pasuje – zestaw o najmniejszej różnicy; najwyżej 2 zespoły w pociągu
-  (ED160 – 1). Przykład: SKM 130 m → 2 × EN57 (129,9 m), 2 × 31WE, 2 × 31WEbb albo 2 × 58WE; EN71 do 130 m nie pasuje;
-* losowanie na zmianę: ciąg losowy z ziarna zmiany i numeru pociągu (osobny od losowań opóźnień i usterek – przebieg
-  zmiany się nie zmienia); kolejny pociąg tej samej linii (ta sama kategoria, te same szlaki `from` i `to`) dostaje inny
-  typ niż poprzedni, gdy pasuje więcej typów; pociąg ze składu innego (`unit`) ma tabor tamtego pociągu.
+  (ED160 – 1). Przykład: SKM 130 m → 2 × EN57 (129,9 m), 2 × 31WE, 2 × 31WEbb albo 2 × 58WE; EN71 do 130 m nie pasuje.
+  Przypięta lista typów (`stock`) to wybór autora stacji – może przyjechać każdy typ z listy, z liczbą zespołów
+  najbliższą długości pociągu (np. Kartuzy 130 m: 2 × SA133, 83,4 m; Kościerzyna 80 m: 1 × SA136, 55,6 m);
+* typy z pul, których nie dostaje żaden pociąg rozkładów gry: ED250 – w rozkładach gry nie ma pociągów EIP;
+  ED160 – pociągi IC / EIC w rozkładach gry mają 250–350 m, a jeden zespół (152,9 m, jazdy dwóch zespołów źródła nie
+  potwierdzają) odbiega od nich o więcej niż 20 %; EN71 – pociągi SKM w rozkładach gry mają 130 m, a jeden zespół
+  (86,84 m) i dwa (173,7 m) odbiegają o więcej niż 20 %. Długości pociągów w rozkładach to dane stacji, więc tabor do
+  nich się dopasowuje, nie odwrotnie; typy zostają w katalogu – dostaje je pociąg o pasującej długości;
+* losowanie na zmianę: ciąg losowy z ziarna zmiany i numeru pociągu (osobny od losowań opóźnień i usterek); tabor
+  wybiera się raz, przy tworzeniu rozkładu zmiany, a pociąg nadzwyczajny dodany w trakcie zmiany losuje osobno;
+  kolejny pociąg tej samej linii (ta sama kategoria, te same szlaki `from` i `to`, w kolejności godzin) dostaje inny
+  typ niż poprzedni, gdy pasuje więcej typów; pociąg, który zaczyna albo kończy bieg na stacji, losuje sam (szlak
+  z jednej strony nie odróżnia relacji – do Gdańska Gł. jednym szlakiem wjeżdżają pociągi z Helu i z Kartuz); pociąg
+  ze składu innego (`unit`) ma tabor tamtego pociągu.
+
+
+### Tabor pociągów – dynamika
+
+Pociąg jedzie z dynamiką swojego taboru (`trainDynamics` w `src/model/rollingStock.js`). Wszystkie źródła sprawdzone
+1.10.2026. Wzory (przyjęte – uproszczona fizyka jazdy):
+
+* zespół trakcyjny: przy ruszaniu przyspieszenie rozruchu typu (`accel`); przy prędkości v najwyżej P / (m · v), gdzie
+  P – moc zespołu (`power`), m – masa własna zespołu (`mass`, bez podróżnych). Kilka zespołów w pociągu przyspiesza jak
+  jeden: każdy ma własny napęd i własną masę (EN57 – „Jednostki EN57 są przystosowane do jazdy w trakcji wielokrotnej”,
+  każdy zespół z własnym członem silnikowym – DSU EN57/EN71 niżej; Impuls – „Sterowanie wielokrotne wymagane do
+  2 pojazdów”, napęd na każdy wózek napędny – OPZ SKM i Newag niżej; ED160 – „Multiple unit train control with two
+  vehicles”; ED250 – jazdy dwóch zespołów w trakcji podwójnej; SA13x – sterowanie ukrotnione do 3 pojazdów, każdy
+  z dwoma zespołami napędowymi);
+* lokomotywa: przy ruszaniu F / (m_lok + m_skł), najwyżej `LOCO_ACCEL_MAX` = 1,0 m/s² (przyjęte: lokomotywa luzem ma
+  F / m 2–3,5 m/s², czego pojazd nie osiąga – poślizg kół); przy prędkości v najwyżej P / ((m_lok + m_skł) · v);
+  m_skł – pociąg towarowy: `mass` wpisu (masa brutto składu); pasażerski: wagony = zaokrąglone (długość pociągu −
+  długość lokomotywy) / 26,4 m, po 50 t każdy (masa wagonu bez podróżnych – przyjęte);
+* hamowanie: żadne ze źródeł nie podaje opóźnienia hamowania służbowego typu (są tylko wymagania przetargów: 31WE –
+  „Droga hamowania służbowego nie więcej niż 1200 m od Vmax”, 45WE – „Nie więcej niż 1000 m od 160 km/h”, i hamowanie
+  nagłe), więc każdy pociąg hamuje wartością kategorii (Ir-1 §21 – wyżej); pole `brake` typu czeka na źródło;
+* prędkość: typ wolniejszy niż pociąg ogranicza pociąg; podpowiedź rozkładu pokazuje tę prędkość, a sąsiedni posterunek
+  wyprawia pociąg tak, by przy tej prędkości przyjechał o czasie. Pula losuje tylko typy nie wolniejsze niż pociąg
+  z rozkładu (przyjęte: przewoźnik daje pojazd, który pojedzie wg rozkładu – EP07, 125 km/h, nie do IC 160 km/h);
+  typ przypięty polem `stock` zostaje i ogranicza pociąg (754: TLK Hel – Warszawa 100 km/h);
+* siła rozruchowa: gdy źródło podaje tylko maksymalną siłę pociągową (bez „przy rozruchu”), gra bierze ją (przyjęte:
+  największą siłę lokomotywa ma przy ruszaniu); moc spalinowych – trakcyjna lub na obręczy kół, gdy źródło ją podaje,
+  inaczej moc silnika (przyjęte – trochę zawyżona);
+* bez oporów ruchu (toczenia, powietrza, łuków, pochyleń) – przyjęte; dlatego pociąg rozpędza się trochę szybciej niż
+  w rzeczywistości. Sprawdzian: EN57 do 100 km/h – w grze 88 s, wg Medcom 120 s; bez ograniczenia mocą byłoby 56 s;
+* brak danej w źródle → wartość kategorii: przyspieszenie EN71, 31WEbb, SA133, SA136 i lokomotywy 111Eo; ograniczenie
+  mocą tylko przy znanej mocy i masie (bez niego: EN71, 31WEbb, 58WE, 111Eo); `accel` wpisu – stałe przyspieszenie.
+
+Ze źródeł – zespoły elektryczne:
+
+* EN57 – „Przyspieszenie 0÷40 km/h [m/s2] 0,5” (EN57; EN57AKM – 1,0), „Moc ciągła [kW] 608”, „Czas rozpędzania do
+  100 km/h [s] 120” (Medcom, folder „EN57AKM”, 2009:
+  https://web.archive.org/web/20130612180325id_/http://www.medcom.com.pl/dl/MEDCOM_EN57AKM.pdf); masa własna (próżna)
+  123 t (PKP PLK, Regulamin sieci 2026/2027, zał. 13 v.21 „Wykaz zarejestrowanych pojazdów trakcyjnych w aplikacji
+  ISZTP i SKRJ”, kolumna „Masa własna EZT i A. – próżna”:
+  https://www.plk-sa.pl/files/public/user_upload/pdf/Reg_przydzielania_tras/Regulamin_sieci_2026-2027/v.21/zal_13_Reg26_27_v21_POL-ANG.xlsx
+  – dalej „zał. 13”); trakcja wielokrotna (Przewozy Regionalne, DSU EN57/EN71, 2010:
+  http://web.archive.org/web/20140912081146/http://www.pomorskie.eu/res/BIP/UMWP/zamowienia_publiczne/zamowienia/2012/015/dsu_en57_en71_spot___wersja_ostateczna_zatwierdzona.pdf).
+  Katalog nie rozróżnia EN57AKM (SKM) – wartości EN57 (przyjęte). Prędkość w katalogu: 120 km/h (konstrukcyjna, jak
+  wyżej; EN57AKM – 120 km/h w zał. 13), choć DSU i zał. 13 podają dla EN57 110 km/h – przyjęte, bo katalog obejmuje
+  też EN57AKM; przez to pula SKM / Regio (120 km/h) może dostać EN57;
+* EN71 – masa własna 178 t (zał. 13); przyspieszenia i mocy źródła nie podają (pl.wikipedia – bez przypisu);
+* 31WE – „Przyspieszenie rozruchu ≥ 1,0 m/s²”, „Moc znamionowa 2 000 kW”, „Maksymalna prędkość eksploatacyjna
+  160 km/h” (Newag, „Elektryczne zespoły trakcyjne”: https://www.newag.pl/wp-content/uploads/2025/01/Elektryczne-Zespoly-Trakcyjne-PL.pdf);
+  wymaganie SKM: „Przyśpieszenie rozruchu (przy nominalnym obciążeniu) średnie, min. 1,0 m/s2” (OPZ, 11.2014, w
+  dokumentacji przetargowej: https://web.archive.org/web/20160304214952/http://www.skm.pkp.pl/uploads/tx_przetargi/dokumentacja_przetargowa_94ecf3.zip);
+  masa własna 145 t (zał. 13);
+* 31WEbb – masa własna 145 t, 160 km/h (zał. 13); przyspieszenia i mocy tego typu źródła nie podają;
+* 58WE – „Przyśpieszenie określono na co najmniej 1,1 m/s2” – wymaganie zamówienia (rynek-kolejowy.pl, 27.03.2023 –
+  adres przy 58WE wyżej); przyjęte jako przyspieszenie typu (pojazdy odebrane spełniają wymagania); masa własna
+  165,5 t (zał. 13); mocy źródła nie podają; prędkość: zał. 13 – 160 km/h, wymaganie przetargu – 120 km/h, więc
+  `vmax` zostaje null;
+* 45WE (w Polregio EN90) – „Przyspieszenie rozruchu ≥ 1,0 m/s²”, „Moc znamionowa 2 000 kW” (Newag jak wyżej);
+  EN90: „cztery silniki trakcyjne o mocy 500kW każdy” (rynek-kolejowy.pl, 45WE032 – adres wyżej); masa własna EN90
+  168 t (zał. 13);
+* ED250 – „Przyspieszenie rozruchu: 0,49 m/s2”, moc ciągła 5664 kW, masa służbowa 410 t
+  (https://pl.wikipedia.org/wiki/Alstom_EMU250, za „Technika Transportu Szynowego” 9/2013); pierwsze jazdy dwóch
+  zespołów z pasażerami w 2016 r. (tamże; https://kurier-kolejowy.pl/aktualnosci/18724/nocne-testy-pendolino-zestawionego-z-dwoch-ed250.html);
+* ED160 – „Starting acceleration, gross 0.6 m/s2”, „Continuous output at wheel 2000 kW” (Stadler, „FLIRT PKP
+  Intercity”: https://www.stadlerrail.com/api/docs/x/c7781cb689/flirt_pkp-intercity_en.pdf); „Masa służbowa: 257 t”
+  (https://psmkms.krakow.pl/index.php/kolej/elektryczne-zespoly-trakcyjne/1465-ed160).
+
+Ze źródeł – zespoły spalinowe:
+
+* SA133 (Pesa 218Mc) – masa służbowa 82 t (https://pl.wikipedia.org/wiki/Pesa_218M, SA133-001÷024 – zespołów pomorskich
+  tabela nie obejmuje, przyjęto tę samą masę); „Moc znamionowa silników spalinowych – 2x382 kW” (PESA, DSU 218Mc,
+  2011: https://bip.lubuskie.pl/system/obj/17751_218Mc_DSU__282011-01-31_29.pdf); przyspieszenia źródła nie podają.
+  „Opóźnienie hamowania – średnia wartość 1,6 m/s²” z DSU nie mówi, czy to hamowanie służbowe, i jest większe niż
+  hamowanie nagłe w grze – nie użyte;
+* SA136 (Pesa 219M Atribo) – „Masa służbowa: 108 t” (https://www.htp.org.pl/pesa-219m-atribo-z-ziemi-polskiej-do-wloch-i-z-powrotem/),
+  „Moc znamionowa: 2 x 382 kW” (https://psmkms.krakow.pl/index.php/kolej/autobusy-szynowe/1190-sa136); przyspieszenia
+  źródła nie podają;
+* SA137 / SA138 (Newag 220M / 221M) – „przyspieszenie rozruchu = 0,45 m/s²”, „masa służbowa = 220M: 82 t, 221M:
+  105 t”, dwa zespoły napędowe z silnikiem „o mocy 390 kW” (https://pl.wikipedia.org/wiki/Newag_220M/221M, za „Świat
+  Kolei” 5/2011).
+
+Ze źródeł – lokomotywy pasażerskie i wagony:
+
+* EU160 (Newag E4DCU – https://www.railvolution.net/news/griffins-for-pkp-ic) i EU200 – „Siła pociągowa przy rozruchu
+  310 kN”, „Moc ciągła 5,6 MW”, „Masa służbowa 79 t” (wersja DC), „Długość lokomotywy ze zderzakami 19 900 mm”
+  (https://www.newag.pl/oferta/griffin/); EU200 – „Masa służbowa lokomotywy 88 000 kg”
+  (https://www.polrails.net/lokomotywa-elektryczna-newag-griffin-e200-e4msua-006-2024r/4970);
+* EP07 – „siła pociągowa = 21,5 T” (maksymalna; https://pl.wikipedia.org/wiki/EP07) = 211 kN (przeliczenie
+  21,5 t × 9,81); moc ciągła 2000 kW, masa służbowa 80 t (4E), długość 15 915 mm (tamże). 280 kN podawane w innych
+  źródłach to wartość EU07 (inne przełożenie) – nie użyta;
+* 754 – „Anfahrzugkraft 180 kN”, długość ze zderzakami 16 540 mm (https://de.wikipedia.org/wiki/ČSD-Baureihe_T_478.4;
+  cs.wikipedia podaje „Maximální tažná síla 215 kN” i 16 500 mm – przyjęto siłę opisaną jako siła przy ruszaniu);
+  moc do trakcji 1325 kW („výkon pro trakci 1325 kW”), „hmotnost ve službě” 74,4 t
+  (https://cs.wikipedia.org/wiki/Lokomotiva_754);
+* wagon UIC-Z – „długość ze zderzakami 26,4 m” (https://pl.wikipedia.org/wiki/UIC-Z); masa 50 t – wagony Z1 156A,
+  158A, 159A (https://pl.wikipedia.org/wiki/HCP_Z1, tabela, za „Świat Kolei” 7/2014); PKP Intercity w przetargu
+  22/01/TUT/2017: „Długość wagonu: nie więcej niż 26,4 m ze zderzakami”, „Całkowita masa w stanie służbowym … ≤ 50 t”
+  (https://www.intercity.pl/dokumenty/przetargi/rok%202017/Dostawa%2055%20wagon%C3%B3w%20osobowych%20z%20przegl%C4%85dem%20P3%20(03.06.2017)/Za%C5%82%C4%85cznik%20nr%2010.3%20do%20SIWZ%20-%20Opis%20oferowanego%20wagonu%202%20klasy%20przedzia%C5%82owego.pdf).
+  Wagony Z2 (144A, 145A) mają ok. 45 t (https://en.wikipedia.org/wiki/HCP_Z2) – gra bierze 50 t dla każdego wagonu.
+
+Ze źródeł – lokomotywy towarowe:
+
+* ET22 – siła pociągowa (maksymalna) 411 kN, moc ciągła 3000 kW, masa służbowa 120 t, długość 19 240 mm
+  (https://pl.wikipedia.org/wiki/Pafawag_201E);
+* ET41 – „Siła pociągowa lokomotywy w trakcie rozruchu może osiągać przy tzw. ‚rozruchu wysokim’ wartość 550 kN”
+  („Trakcja i Wagony” 4/1978, przedruk: https://pl.misc.kolej.narkive.com/DMfzpWm5/archiwum-trakcji-i-wagonow-et41);
+  moc ciągła 4000 kW, masa służbowa 167 t, długość 31 860 mm (https://pl.wikipedia.org/wiki/HCP_203E);
+* EU07 – „Siła pociągowa przy rozruchu 280 kN” (https://www.ecco-rail.eu/wp-content/uploads/EU07.pdf); moc ciągła
+  2000 kW, masa służbowa 80 t (4E), długość 15 915 mm (https://pl.wikipedia.org/wiki/Pafawag_4E/HCP_303E);
+* EU46 (Vectron MS – PKP Cargo ma wersję wielosystemową, https://pl.wikipedia.org/wiki/Siemens_Vectron) – „Starting
+  tractive effort [kN] 300”, moc „6,000 (DC 3 kV)” kW, „Length over buffers [mm] 18,980” (Siemens:
+  https://assets.new.siemens.com/siemens/assets/api/uuid:36c74d44-da30-410b-8f30-5c00fb8950ff/mo-vectron-technical-data-en.pdf);
+  masa służbowa 87 t (wersja wielosystemowa, pl.wikipedia jak wyżej);
+* E6ACT – „siła pociągowa maks. 375 kN”, „moc 5000 kW” (Lotos, 2011:
+  https://www.lotos.pl/322/p,174,n,3417/grupa_kapitalowa/centrum_prasowe/aktualnosci/dragon_w_lotos_kolej); „Masa
+  służbowa 119 t”, długość ze zderzakami 20 330 mm (Newag, katalog lokomotyw elektrycznych, s. 30:
+  https://www.newag.pl/wp-content/uploads/2024/11/tinywow_Lokomotywy-Elektryczne_74017630.pdf);
+* E6ACTa – „Siła pociągowa przy rozruchu 410 kN” (katalog Newag jak wyżej), „Masa służbowa: 119 t”, „Długość
+  lokomotywy ze zderzakami: 20 330 mm” (https://www.newag.pl/oferta/dragon-2/), „Moc ciągła: 5000 kW”
+  (https://www.transportszynowy.pl/Kolej/e6acta-d);
+* 111Eo – moc 5600 kW (rynek-kolejowy.pl – adres przy 111Eo wyżej); siły, masy i długości tej odmiany źródła nie podają;
+* Class 66 – „Starting tractive effort 409 kN”, „Power output at wheel rim 1,850 kW”, „Weight in working order
+  129.6 t”, „Length 21.400 m” (Akiem: https://www.akiem.com/wp-content/uploads/2018/07/Fiche_Class-66-EN-new.pdf);
+  lokomotywy 66/6 Freightlinera mają 467 kN (https://en.wikipedia.org/wiki/EMD_Class_66) – katalog ich nie rozróżnia;
+* 311D – „Starting tractive effort: 392 kN” (https://www.mainlinediesels.net/index.php?lang=en&nav=1001087); „Masa
+  służbowa [kg] 120 000”, „Całkowita długość ze zderzakami [mm] 17 550”, moc silnika 2133 kW (Kowalski, Szewczyk,
+  „Technika Transportu Szynowego” 3/2008, tab. 1: https://www.kilkaminut.pl/wp-content/uploads/2025/11/modernizacja_311d.pdf);
+* ST44 – siła przy ruszaniu „38,3 тс (375 кН)” (https://ru.wikipedia.org/wiki/М62_(тепловоз)); masa służbowa 116,5 t,
+  długość ze zderzakami 17 550 mm (TTS 3/2008 jak wyżej); „Traktionsleistung: 1271 kW”
+  (https://de.wikipedia.org/wiki/PKP-Baureihe_ST44);
+* ST45 (Pesa 301Dd) – „Maksymalna siła pociągowa: 330 kN”, „Masa w stanie służbowym: 97 t”, „Długość ze zderzakami:
+  18990 mm” (https://www.rynek-kolejowy.pl/wiadomosci/bedzie-wiecej-st45-51358.html); moc silnika 1300 kW (ograniczona
+  z 1500 kW: https://www.bh-ruda.pl/publikacje/silniki/item/2094-powerpack-mtu-w-lokomotywie-pesy);
+* ST48 (Newag 15D) i SM48 (TEM2) – „Siła pociągowa rozruchu teoretyczna 372,8 kN”, „Masa służbowa (z pełnymi zapasami)
+  116 t”, „Długość ze zderzakami 16 970 mm”, moc silnika 1550 kW (15D) i 882 kW (TEM2) (Newag, katalog lokomotyw
+  spalinowych, s. 32: https://www.newag.pl/wp-content/uploads/2025/01/Lokomotywy-Spalinowe-PL-2_74079862.pdf);
+* SM42 – „Siła pociągowa rozruchu teoretyczna 219 kN”, moc silnika 590 kW, masa służbowa 74 t, długość ze zderzakami
+  14 240 mm (katalog Newag jak wyżej, s. 16, kolumna „przed modernizacją”).
 
 ## Blokada liniowa na monitorze i blokada samoczynna
 

@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { ROLLING_STOCK, STOCK_KINDS, STOCK_LENGTH_TOLERANCE, candidatesFor, chainOf, stockFor } from '../src/model/rollingStock.js';
-import { CATEGORIES, categoryOf, relationOf } from '../src/model/categories.js';
+import { ROLLING_STOCK, STOCK_KINDS, STOCK_LENGTH_TOLERANCE, byTime, candidatesFor, chainOf, lineKey, stockFor, trainSpeed } from '../src/model/rollingStock.js';
+import { CATEGORIES, categoryOf, relationOf, speedFor, tractionOf } from '../src/model/categories.js';
+import { stopScatter } from '../src/model/Traffic.js';
+import { mixSeed } from '../src/core/Random.js';
 import { validateStation } from '../src/model/validate.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { STATIONS } from '../src/stations/index.js';
@@ -111,7 +113,8 @@ test('każdy pociąg na każdej stacji ma tabor; zespoły pasują długością, 
         const cat = CATEGORIES[categoryOf(e)];
         if (cat.tractions) assert.equal(STOCK_KINDS[t.kind].traction, e.traction ?? 'E', `${st.id}/${e.nr}: trakcja ${s.id}`);
         else assert.ok(!t.pools.includes('freight') || t.pools.length > 1, `${st.id}/${e.nr}: pociąg pasażerski bez lokomotywy towarowej (${s.id})`);
-        if (STOCK_KINDS[t.kind].unit && !e.unit) {
+        // długość w tolerancji – tabor z puli; przypięta lista to wybór autora stacji (każdy typ z listy może przyjechać)
+        if (STOCK_KINDS[t.kind].unit && !e.unit && !chainOf(e, tt).some((x) => x.stock != null)) {
           const len = e.length ?? 100;
           assert.ok(Math.abs(s.count * t.length - len) <= STOCK_LENGTH_TOLERANCE * len, `${st.id}/${e.nr}: ${s.label} (${(s.count * t.length).toFixed(1)} m) na ${len} m`);
         }
@@ -121,9 +124,8 @@ test('każdy pociąg na każdej stacji ma tabor; zespoły pasują długością, 
 });
 
 test('kolejny pociąg tej samej linii ma inny tabor niż poprzedni, gdy pasuje więcej typów (ziarna 1–5)', () => {
-  // linia: ta sama kategoria i te same szlaki wjazdu i wyjazdu; kolejność godzin; pociągi ze składu innego – jak tamten
-  const lineKey = (e) => `${categoryOf(e)}|${e.from ?? ''}|${e.to ?? ''}`;
-  const time = (e) => e.arr ?? e.dep;
+  // linia (`lineKey`): ta sama kategoria i te same szlaki wjazdu i wyjazdu, kolejność `byTime`; pociąg, który zaczyna albo
+  // kończy bieg na stacji, jest sam; pociągi ze składu innego – jak tamten
   let checked = 0;
   for (const seed of [1, 2, 3, 4, 5]) {
     for (const st of STATIONS) {
@@ -131,11 +133,12 @@ test('kolejny pociąg tej samej linii ma inny tabor niż poprzedni, gdy pasuje w
       const lines = new Map();
       for (const e of tt) {
         if (e.unit != null && tt.some((x) => String(x.nr) === String(e.unit))) continue;
+        if (lineKey(e) == null) continue;
         if (!lines.has(lineKey(e))) lines.set(lineKey(e), []);
         lines.get(lineKey(e)).push(e);
       }
       for (const [key, list] of lines) {
-        list.sort((a, b) => (time(a) < time(b) ? -1 : time(a) > time(b) ? 1 : 0));
+        list.sort(byTime);
         for (let i = 1; i < list.length; i++) {
           if (list[i].stock || candidatesFor(list[i]).length < 2) continue;
           const a = stockFor(list[i - 1], tt, seed), b = stockFor(list[i], tt, seed);
@@ -146,30 +149,13 @@ test('kolejny pociąg tej samej linii ma inny tabor niż poprzedni, gdy pasuje w
     }
   }
   assert.ok(checked > 100, `sprawdzone pary: ${checked}`);
-  // przypięta lista typów też się zmienia: pociągi Hel – Reda nie mają tego samego zespołu
-  const reda = station('reda');
-  for (const seed of [1, 2, 3]) assert.notEqual(stockFor(entry(reda, 55702), reda.timetable, seed).id, stockFor(entry(reda, 55700), reda.timetable, seed).id);
 });
 
-test('tabor tylko do pokazania: dobór nie zużywa losowań zmiany', () => {
+test('dobór taboru nie zużywa losowań zmiany (opóźnienia i usterki losują się tak samo)', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'high', seed: 5 });
   const state = sim.rng.state;
   for (const e of sim.traffic.timetable()) stockFor(e, sim.traffic.timetable(), sim.seed);
   assert.equal(sim.rng.state, state);
-});
-
-test('pociąg nadzwyczajny dodany w trakcie zmiany nie zmienia taboru pociągów z rozkładu', () => {
-  const sopot = station('sopot');
-  for (const seed of [1, 2, 3, 4, 5]) {
-    const sim = new Simulation(sopot, { scenario: 'zmiana', seed });
-    const tt = sim.traffic.timetable();
-    const before = new Map(tt.map((e) => [e, stockFor(e, tt, seed).label]));
-    // kopia pociągu SKM przesunięta w czasie – ta sama kategoria i szlaki (jak #planExtraTrains)
-    const base = sopot.timetable.find((e) => e.nr === 91101);
-    const extra = sim.traffic.addTrain({ ...base, nr: base.nr + 1000, name: `${base.name} nadzwyczajny`, arr: '07:20', dep: '07:21' });
-    for (const [e, label] of before) assert.equal(stockFor(e, tt, seed).label, label, `ziarno ${seed}: ${e.nr}`);
-    assert.ok(stockFor(extra, tt, seed), 'pociąg nadzwyczajny też ma tabor');
-  }
 });
 
 test('walidacja pola stock: znany typ, trakcja pociągu towarowego, jeden tabor dla składu', () => {
@@ -194,4 +180,138 @@ test('walidacja pola stock: znany typ, trakcja pociągu towarowego, jeden tabor 
   assert.deepEqual(errs({ ...os, nr: 1, to: null, terminates: true, stock: unit }, { ...os, nr: 3, from: null, unit: 1, dep: '07:30' }), []);
   // stacje w grze: przypięcia poprawne
   for (const st of STATIONS) assert.deepEqual(validateStation(st).errors.filter((e) => /tabor|stock/.test(e)), [], st.id);
+});
+
+// ── przegląd kodu (commit 2785b4c): poprawki doboru taboru ───────────────────────────────────────────────────────
+
+test('linia pociągu: pociąg bez obu końców (kończy albo zaczyna bieg na stacji) losuje sam – nie dzieli linii z innymi relacjami', () => {
+  // Gdańsk Gł.: Hel – Gdańsk (55620) i Kartuzy – Gdańsk (55610) wjeżdżają tym samym szlakiem i kończą bieg – to nie jedna linia
+  assert.equal(lineKey({ nr: 1, name: 'Regio A – B', from: 'W', to: null }), null);
+  assert.equal(lineKey({ nr: 1, name: 'Regio A – B', from: null, to: 'W' }), null);
+  assert.equal(lineKey({ nr: 1, name: 'Regio A – B', from: 'W', to: 'E' }), 'R|W|E');
+  const gg = station('gdansk-glowny');
+  const labels = new Set();
+  for (let seed = 1; seed <= 200; seed++) labels.add(stockFor(entry(gg, 55620), gg.timetable, seed).id);
+  assert.deepEqual([...labels].sort(), ['SA136', 'SA137', 'SA138'], 'Hel – Gdańsk Gł.: każdy przypięty typ');
+});
+
+test('przypięta lista typów: każdy typ z listy może przyjechać (liczba zespołów dobrana do długości, bez odrzucania)', () => {
+  for (const st of STATIONS) {
+    for (const e of st.timetable) {
+      if (e.stock == null || e.unit != null) continue;
+      const seen = new Set();
+      for (let seed = 1; seed <= 80; seed++) seen.add(stockFor(e, st.timetable, seed).id);
+      assert.deepEqual([...seen].sort(), [...new Set([].concat(e.stock))].sort(), `${st.id}/${e.nr}`);
+    }
+  }
+  // zespoły przypięte do pociągu dłuższego niż dwa zespoły: najlepsza liczba zespołów
+  const s = stockFor({ nr: 1, kind: 'os', name: 'Regio A – B', from: 'W', to: 'E', arr: '07:00', length: 130, stock: 'SA133' }, [], 1);
+  assert.equal(s.label, '2 × SA133');
+});
+
+test('pule taboru: typy, których nie dostaje żaden pociąg rozkładów gry, to tylko te opisane w docs/SOURCES.md', () => {
+  const seen = new Set();
+  for (const st of STATIONS) for (const e of st.timetable) for (let seed = 1; seed <= 20; seed++) seen.add(stockFor(e, st.timetable, seed).id);
+  const never = Object.keys(ROLLING_STOCK).filter((id) => !seen.has(id)).sort();
+  assert.deepEqual(never, ['ED160', 'ED250', 'EN71']);
+  const section = sourcesSection();
+  const at = section.indexOf('nie dostaje żaden pociąg rozkładów gry');
+  assert.ok(at >= 0, 'docs/SOURCES.md: punkt o typach, których nie dostaje żaden pociąg');
+  const bullet = section.slice(at, section.indexOf('\n* ', at));
+  for (const id of never) assert.match(bullet, new RegExp(`${id} – `), `${id}: wyjaśnienie w docs/SOURCES.md`);
+});
+
+test('przypięte typy: tylko własne klucze katalogu (nie „constructor”, „toString”)', () => {
+  const e = (stock) => ({ nr: 1, kind: 'os', name: 'Regio A – B', from: 'W', to: 'E', arr: '07:00', length: 130, stock });
+  assert.equal(stockFor(e(['constructor']), [], 1), null);
+  assert.equal(stockFor(e(['toString', 'EN57']), [], 1).id, 'EN57');
+});
+
+test('zapętlony łańcuch unit: ten sam tabor dla całej pętli, bez wyjątku; walidacja zgłasza błąd', () => {
+  const a = { nr: 1, kind: 'os', name: 'Regio A – B', from: 'W', to: null, arr: '07:00', length: 130, unit: 2 };
+  const b = { nr: 2, kind: 'os', name: 'Regio B – A', from: null, to: 'W', dep: '07:30', length: 130, unit: 1 };
+  for (let seed = 1; seed <= 10; seed++) {
+    const sa = stockFor(a, [a, b], seed);
+    assert.ok(sa, `ziarno ${seed}: tabor`);
+    assert.deepEqual(stockFor(b, [a, b], seed), sa, `ziarno ${seed}: ten sam skład`);
+  }
+  const base = { ...szkolna, timetable: [] };
+  const errs = validateStation({ ...base, timetable: [{ ...a, track: '1', stop: true }, { ...b, track: '1', stop: true }] }).errors;
+  assert.ok(errs.some((x) => /łańcuch składu \(unit\) zapętlony/.test(x)), errs.join('; '));
+});
+
+test('walidacja: ta sama lista typów w innej kolejności w pociągach jednego składu – bez błędu', () => {
+  const base = { ...szkolna, timetable: [] };
+  const a = { nr: 1, kind: 'os', name: 'Regio A – B', from: 'W', to: null, terminates: true, arr: '07:00', track: '1', stop: true, length: 130, stock: ['EN57', '31WE'] };
+  const b = { nr: 2, kind: 'os', name: 'Regio B – A', from: null, to: 'W', dep: '07:30', track: '1', stop: true, length: 130, unit: 1, stock: ['31WE', 'EN57'] };
+  assert.deepEqual(validateStation({ ...base, timetable: [a, b] }).errors.filter((x) => /stock/.test(x)), []);
+});
+
+test('kolejność pociągów linii: godziny liczbowo („9:58” przed „10:05”), potem numer', () => {
+  const mk = (nr, arr) => ({ nr, kind: 'os', name: 'Regio A – B', from: 'W', to: 'E', arr, length: 130, stock: ['EN57', '31WE'] });
+  const a = mk(1, '6:00'), b = mk(2, '9:58'), c = mk(3, '10:05');
+  assert.deepEqual([c, b, a].sort(byTime), [a, b, c]);
+  assert.deepEqual([mk(5, '07:00'), mk(4, '07:00')].sort(byTime).map((x) => x.nr), [4, 5]);
+  for (let seed = 1; seed <= 10; seed++) {
+    const [sa, sb, sc] = [a, b, c].map((x) => stockFor(x, [a, b, c], seed).id);
+    assert.ok(sa !== sb && sb !== sc, `ziarno ${seed}: kolejne pociągi linii (6:00, 9:58, 10:05) – inne typy: ${sa}, ${sb}, ${sc}`);
+  }
+});
+
+test('przewoźnicy w katalogu taboru mają źródło w docs/SOURCES.md', () => {
+  const section = sourcesSection();
+  for (const [id, t] of Object.entries(ROLLING_STOCK)) {
+    for (const op of t.operator.split(/,\s*/)) {
+      const name = op.replace(/\s*\(.*\)$/, '');
+      assert.ok(section.includes(name), `${id}: przewoźnik „${name}” bez źródła`);
+    }
+  }
+});
+
+test('tabor wybierany raz przy tworzeniu rozkładu zmiany: pociąg jedzie z nim, pociąg nadzwyczajny losuje osobno', () => {
+  const sopot = station('sopot');
+  for (const seed of [1, 2, 3]) {
+    const sim = new Simulation(sopot, { scenario: 'zmiana', seed });
+    const tt = sim.traffic.timetable();
+    for (const e of tt) assert.deepEqual(e.rollingStock, stockFor(e, tt, seed), `ziarno ${seed}: ${e.nr}`);
+    const before = new Map(tt.map((e) => [e, e.rollingStock]));
+    const base = sopot.timetable.find((e) => e.nr === 91101);
+    const extra = sim.traffic.addTrain({ ...base, nr: base.nr + 1000, name: `${base.name} nadzwyczajny`, arr: '07:20', dep: '07:21' });
+    for (const [e, st] of before) assert.equal(e.rollingStock, st, `ziarno ${seed}: ${e.nr} – tabor bez zmian`);
+    assert.deepEqual(extra.rollingStock, stockFor(extra, [extra], seed), 'pociąg nadzwyczajny – własne losowanie');
+  }
+});
+
+test('wspólne mieszanie ziarna (mixSeed): rozrzut zatrzymania i ziarno taboru jak dotąd', () => {
+  assert.equal(stopScatter(5, 6101), 6.371);
+  assert.equal(stopScatter(123456789, 'X1'), 9.938);
+  assert.equal(mixSeed(5, 'tabor:6101'), 2272525514);
+  assert.equal(mixSeed(123456789, 'tabor:44560'), 4279671397);
+});
+
+test('trakcja pociągu (tractionOf): rodzaje towarowe i luzem – pole traction, domyślnie E; pasażerskie – brak', () => {
+  assert.equal(tractionOf({ nr: 1, kind: 'tow', name: 'Towarowy' }), 'E');
+  assert.equal(tractionOf({ nr: 1, kind: 'tow', cat: 'TK', traction: 'S', name: 'Towarowy (zdawczy)' }), 'S');
+  assert.equal(tractionOf({ nr: 1, kind: 'tow', name: 'Lokomotywa luzem', traction: 'S' }), 'S');
+  assert.equal(tractionOf({ nr: 1, kind: 'os', name: 'IC A – B', traction: 'S' }), null);
+});
+
+test('pula taboru: typ wolniejszy niż pociąg z rozkładu nie jest losowany (EP07 125 km/h nie do IC 160 km/h); przypięty – ogranicza prędkość', () => {
+  const ic = { nr: 5300, kind: 'os', name: 'IC A – B', from: 'W', to: 'E', arr: '06:05', length: 300 };
+  assert.ok(!candidatesFor(ic).some((s) => s.id === 'EP07'), 'IC 160 km/h');
+  assert.ok(candidatesFor({ ...ic, vmax: 120 }).some((s) => s.id === 'EP07'), 'IC 120 km/h');
+  assert.ok(!candidatesFor({ nr: 1, kind: 'os', name: 'SKM A – B', length: 87 }).some((s) => s.id === 'EN71'), 'EN71 110 km/h nie do SKM 120 km/h');
+  for (const st of STATIONS) {
+    for (const e of st.timetable) {
+      if (chainOf(e, st.timetable).some((x) => x.stock != null)) continue;
+      for (const seed of [1, 2, 3, 4, 5]) {
+        const s = stockFor(e, st.timetable, seed), v = ROLLING_STOCK[s.id].vmax;
+        assert.ok(v == null || v >= speedFor(e), `${st.id}/${e.nr}: ${s.label} (${v} km/h) do pociągu ${speedFor(e)} km/h`);
+      }
+    }
+  }
+  // przypięty wolniejszy typ zostaje i ogranicza pociąg: TLK Hel – Warszawa z 754
+  const reda = station('reda');
+  assert.equal(stockFor(entry(reda, 5301), reda.timetable, 1).id, '754');
+  assert.equal(trainSpeed(entry(reda, 5301), stockFor(entry(reda, 5301), reda.timetable, 1)), 100);
 });

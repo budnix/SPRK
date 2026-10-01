@@ -184,14 +184,15 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 * `traction` – trzecia litera rodzaju pociągu towarowego lub lokomotywy luzem (zał. 6.3): `E` – elektryczna, lokomotywy
   (domyślnie), `S` – spalinowa, lokomotywy, `P` – parowa, `J` / `M` – zespoły trakcyjne elektryczne / spalinowe; tylko
   połączenia z tablic załącznika (np. `TKP`, `TSJ`, ale nie `TMJ`) – inne są błędem walidacji. Etykieta: `cat` + `traction`
-  („TDS 44711”). Trakcja nie zmienia dynamiki.
+  („TDS 44711”). Trakcja wybiera rodzaj lokomotywy (`stock`), a przez nią dynamikę pociągu.
 * `length` – długość pociągu w metrach (cały skład z lokomotywą, tyle zajmuje torów; domyślnie 100). Liczba dodatnia.
   Pociąg dłuższy niż tor stacyjny `track` (suma odcinków z tym numerem toru) daje ostrzeżenie walidacji (Ir-1 §19 ust. 4).
 * `mass` – masa brutto składu w tonach, bez czynnej lokomotywy (zał. 6.3, pole E02; Ir-1 §19 ust. 1 pkt 1); tylko dla
   pociągu towarowego ze składem wagonów (nie `LT`, `TH`, nie osobowe). Nie większa niż 7,2 t/m (nacisk liniowy 71 kN/m)
-  razy `length`. Przyspieszenie kategorii obowiązuje przy jej masie odniesienia (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t,
-  TS 800 t, TK 600 t); pociąg o masie `mass` przyspiesza razy `masa odniesienia / mass`, najwyżej 1,5 i najmniej 0,5
-  przyspieszenia kategorii. Bez `mass` – przyspieszenie kategorii. Hamowanie nie zależy od masy.
+  razy `length`. Pociąg z lokomotywą z katalogu taboru przyspiesza z siłą rozruchową lokomotywy podzieloną przez masę
+  lokomotywy i `mass` (`stock` niżej). Bez danych lokomotywy – przyspieszenie kategorii przy jej masie odniesienia
+  (TM/TG 2000 t, TD/TC 1400 t, TN/TR 1200 t, TS 800 t, TK 600 t) razy `masa odniesienia / mass`, najwyżej 1,5 i najmniej
+  0,5 przyspieszenia kategorii; bez `mass` – przyspieszenie kategorii. Hamowanie nie zależy od masy.
   Obowiązuje mniejsza z prędkości pociągu i szlaku: na szlaku wjazdowym – `lineSpeed` wyjazdu `from`, dopóki cały
   pociąg nie wjedzie na stację; dalej – `lineSpeed` wyjazdu `to` (pociąg kończący bieg – `from`). Na rozjazdach –
   prędkość rozjazdu, przy Sz i rozkazie „S” – 40 km/h do następnego semafora (przy wyjeździe na szlak do końca
@@ -201,13 +202,18 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   przedrostek kategorii i nazwa handlowa w cudzysłowie są z niej wycinane do wyświetlenia (`relationOf`, `brandOf`).
   Rozkład pokazuje etykietę „IC 5100” i relację; sąsiednie posterunki (`from` → `to`) w drugiej linii.
 * `stock` – opcjonalnie tabor pociągu: typ z katalogu `ROLLING_STOCK` (`src/model/rollingStock.js`, np. `'EN57'`) albo
-  lista typów (gra losuje z listy). Bez `stock` gra losuje tabor na zmianę z puli kategorii (SKM, Regio, PKP Intercity,
-  lokomotywy towarowe o trakcji `traction`), dla zespołów trakcyjnych – tyle zespołów, ile mieści długość `length`.
+  lista typów (gra losuje z listy – każdy typ z listy może przyjechać, w liczbie zespołów najbliższej długości `length`;
+  typ wolniejszy niż pociąg ogranicza jego prędkość). Bez `stock` gra losuje tabor na zmianę z puli kategorii (SKM,
+  Regio, PKP Intercity, lokomotywy towarowe o trakcji `traction`) spośród typów nie wolniejszych niż pociąg, dla
+  zespołów trakcyjnych – tyle zespołów, ile mieści długość `length`.
   Pociągi jednego składu (łańcuch `unit`) mają ten sam tabor, więc `stock` wpisuje się raz albo tak samo w każdym
   z nich – różne wartości są błędem walidacji. Nieznany typ i lokomotywa o innej trakcji niż pociąg towarowy (`traction`,
   domyślnie E) to też błędy. Potrzebne tam, gdzie pula kategorii nie pasuje: pociągi pasażerskie z linii
   niezelektryfikowanych (spalinowe zespoły trakcyjne), misje wymagające stałego składu. Tabor widać w podpowiedzi
-  numeru pociągu i na zakładce „Pociągi”; nie zmienia prędkości, dynamiki ani długości pociągu.
+  numeru pociągu i na zakładce „Pociągi”, a pociąg jedzie z jego dynamiką: przyspieszenie rozruchu typu zespołu albo
+  przyspieszenie z siły rozruchowej lokomotywy i masy (wagony z `length`, pociąg towarowy – `mass`), przy prędkości
+  ograniczone mocą pojazdu; hamowanie – kategorii; prędkość typu ogranicza pociąg, gdy jest mniejsza niż `vmax` wpisu /
+  kategorii. Długości pociągu tabor nie zmienia. Pola `accel` i `brake` wpisu mają pierwszeństwo przed taborem.
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
 by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).

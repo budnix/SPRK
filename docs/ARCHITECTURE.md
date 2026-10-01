@@ -7,7 +7,7 @@ src/
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól), controls (pola przycisków
                grupowych stanowiska – miejsce na pulpicie, bez DOM), repeater (lampki powtarzacza sygnalizatora
                na pulpicie typu E dla obrazu sygnału)
-  model/       categories (kategorie pociągów: prędkość, dynamika – przyspieszenie przeliczone na masę składu, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru i dobór zespołu / lokomotywy dla pociągu – tylko do pokazania), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
+  model/       categories (kategorie pociągów: prędkość, dynamika kategorii – przyspieszenie przeliczone na masę składu, gdy pociąg nie ma taboru, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru, dobór zespołu / lokomotywy dla pociągu i dynamika z taboru – przyspieszenie, hamowanie, prędkość pojazdu), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji)
@@ -449,18 +449,38 @@ bilans zdarzeń wg kodu, liczniki dPz/Sz/dPo/dKo/rozprucia i dane zmiany (`endRe
 ## Tabor pociągów (`src/model/rollingStock.js`)
 
 Katalog `ROLLING_STOCK` (zespoły trakcyjne i lokomotywy jeżdżące w rejonie Trójmiasta – źródła w docs/SOURCES.md,
-„Tabor pociągów”) i czysta funkcja `stockFor(entry, timetable, seed)`, którą panel boczny (`SidePanel`) woła przy
-rysowaniu podpowiedzi numeru pociągu i karty na zakładce „Pociągi” (`sim.seed`, `sim.traffic.timetable()`). Tabor to
-tylko opis: nie trafia do `Traffic`, `Train` ani dziennika, nie zmienia prędkości ani dynamiki.
+„Tabor pociągów” i „Tabor pociągów – dynamika”) i czyste funkcje: `stockPlan(timetable, seed)` / `stockFor(entry,
+timetable, seed)` (dobór taboru), `trainSpeed(entry, stock)` i `trainDynamics(entry, stock)` (prędkość i dynamika
+z taboru). `Traffic` wybiera tabor raz, przy tworzeniu rozkładu zmiany (`stockPlan(rozkład, seed)`), i zapisuje go we
+wpisie (`e.rollingStock`); pociąg nadzwyczajny (`addTrain`) dostaje tabor pociągu, z którego składu powstał (`unit`),
+albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#makeTrain` podaje `e.rollingStock` do `Train`
+(`opts.stock`), a panel boczny (`SidePanel`) czyta to samo pole – pokazuje dokładnie tabor, który jedzie, i prędkość
+`trainSpeed` (bez liczenia taboru od nowa przy każdym odświeżeniu).
 
-* pula kategorii (`skm`, `regio`, `ic`, `eip`; pociągi towarowe – lokomotywy o trakcji `traction`, zdawcze także
-  manewrowe), zespoły w liczbie dobranej do długości `length` (tolerancja `STOCK_LENGTH_TOLERANCE`), albo typy
-  przypięte polem `stock` wpisu (typ lub lista typów – pociągi z linii bez sieci);
-* ziarno: własny ciąg `Random` z ziarna zmiany i numeru pociągu – dobór nie zużywa `sim.rng`, więc opóźnienia, usterki
-  i przebieg zmiany (odcisk przeglądu `npm run survey`) zostają te same;
-* pociąg ze składu innego (`unit`) – tabor początku łańcucha (`rootOf`, `chainOf`); kolejne pociągi jednej linii
-  (kategoria + `from` + `to`, w kolejności godzin) losują po kolei, następny bez typu poprzedniego, gdy pasuje inny;
-* walidacja (`validate.js`): znany typ, trakcja lokomotywy jak pociągu towarowego, ten sam `stock` w łańcuchu `unit`.
+* dynamika (`trainDynamics`, wołana przez `Train.applyDynamics` – przy utworzeniu pociągu, przy przekazaniu składu
+  jako inny pociąg i po powrocie z manewrów): { vmax, accel, brake, power }. Zespół trakcyjny – przyspieszenie rozruchu
+  i hamowanie służbowe typu (null – wartość kategorii), moc / masa zespołu, kilka zespołów jak jeden; lokomotywa –
+  siła rozruchowa / (masa lokomotywy + masa ciągnięta), najwyżej `LOCO_ACCEL_MAX`, moc / ta sama masa; masa
+  ciągnięta: pociąg towarowy – `mass` wpisu, pasażerski – wagony `(length − bufferLength) / COACH_LENGTH` po
+  `COACH_MASS`; hamowanie lokomotywy z wagonami – kategorii; prędkość – `trainSpeed`. `Train.accelAt(v)` =
+  min(accel, power / v): przy ruszaniu przyspieszenie z siły, wyżej ograniczone mocą. `accel` / `brake` wpisu mają
+  pierwszeństwo (z `accel` wpisu – stałe przyspieszenie). Pociąg bez taboru (testy tworzące `Train` wprost) albo typ
+  bez danych – dynamika kategorii (`categories.dynamicsFor`), stałe przyspieszenie;
+* sąsiedni posterunek wyprawia pociąg wg `trainSpeed` (wolniejszy pojazd – wcześniej, jak w rozkładzie ułożonym dla
+  niego; `Traffic.#prepare`); przyspieszenia przy tym nie liczy, więc pociąg ruszający wolno przyjeżdża trochę później;
+* pula kategorii (`skm`, `regio`, `ic`, `eip`; pociągi towarowe – lokomotywy o trakcji `tractionOf(entry)`, zdawcze także
+  manewrowe), tylko typy nie wolniejsze niż pociąg (`vmax` typu ≥ `speedFor`, gdy taki typ jest), zespoły w liczbie
+  dobranej do długości `length` (tolerancja `STOCK_LENGTH_TOLERANCE`); albo typy przypięte polem `stock` wpisu (typ lub
+  lista typów) – każdy typ z listy, z liczbą zespołów najbliższą długości, wolniejszy ogranicza prędkość pociągu;
+* ziarno: własny ciąg `Random` z ziarna zmiany i numeru pociągu (`mixSeed` z `src/core/Random.js` – to samo mieszanie
+  co rozrzut zatrzymania `stopScatter`) – dobór nie zużywa `sim.rng`, więc opóźnienia i usterki losują się tak samo;
+  przebieg zmiany zależy od taboru przez dynamikę i prędkość pociągów;
+* pociąg ze składu innego (`unit`) – tabor początku łańcucha (`rootOf`, `chainOf`; zapętlony łańcuch – jeden początek
+  dla całej pętli, `unitLoop`); kolejne pociągi jednej linii (`lineKey`: kategoria + `from` + `to`; pociąg bez `from`
+  albo `to` – linia z jednego pociągu) w kolejności `byTime` (godzina liczbowo, potem numer) losują po kolei, następny
+  bez typu poprzedniego, gdy pasuje inny;
+* walidacja (`validate.js`): znany typ, trakcja lokomotywy jak pociągu towarowego, ten sam `stock` (jako zbiór typów)
+  w łańcuchu `unit`, łańcuch `unit` bez pętli.
 
 ## Misje wprowadzające (`src/tutorial/`)
 

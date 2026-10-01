@@ -230,3 +230,27 @@ test('tabor pociągu: podpowiedź numeru w rozkładzie i karta na zakładce „P
   await page.click('#panel-tabs button[data-tab=pociagi]');
   await expect(page.locator('#trains .train-card[data-nr="6101"] .train-stock')).toHaveText(set(t6101));
 });
+
+test('podpowiedź rozkładu: tabor zapisany w modelu i prędkość z taborem; nazwa handlowa jako tekst, nie znaczniki', async ({ page }) => {
+  await openShift(page, 'reda', { params: { scenariusz: 'zmiana', seed: '3' } });
+  await page.click('#panel-tabs button[data-tab=rj]');
+  const tip = (nr) => page.locator('table.rj tbody td.nr', { hasText: new RegExp(`\\b${nr}$`) }).getAttribute('title');
+  // TLK Hel – Warszawa z lokomotywą 754 (100 km/h): pociąg TLK (140 km/h) jedzie i jest opisany z prędkością lokomotywy
+  const t5301 = await tip(5301);
+  expect(t5301).toContain(' · 100 km/h');
+  expect(t5301).toMatch(/ · lokomotywa 754 Nurek$/);
+  // każdy wiersz: tabor = tabor wpisu w modelu (e.rollingStock), nie liczony w panelu od nowa
+  const model = await page.evaluate(() => window.sim.traffic.timetable().map((e) => [e.nr, e.rollingStock?.label ?? null]));
+  expect(model.every(([, label]) => label)).toBe(true);
+  for (const [nr, label] of model) expect((await tip(nr)).endsWith(` ${label}`), `${nr}: ${label}`).toBe(true);
+  // nazwa handlowa z danych trafia do podpowiedzi i wiersza jako tekst
+  await page.evaluate(() => {
+    const base = window.sim.traffic.timetable().find((e) => e.nr === 5301);
+    window.sim.traffic.addTrain({ nr: 99001, kind: 'os', name: 'TLK Hel – Warszawa Wsch.', brand: 'A<b>B</b>"C', from: base.from, to: base.to, arr: '07:40', dep: '07:42', track: '3', stop: true, length: 300 });
+  });
+  const row = page.locator('table.rj tbody tr', { has: page.locator('td.nr', { hasText: /\b99001$/ }) });
+  await expect(row).toHaveCount(1);
+  expect(await tip(99001)).toContain('„A<b>B</b>"C”');
+  await expect(row.locator('td.rel i')).toHaveText('„A<b>B</b>"C”');
+  await expect(row.locator('td.rel b')).toHaveCount(0);
+});

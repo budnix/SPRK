@@ -2,8 +2,8 @@ import { hasTileDef, getTileDef } from '../tiles/registry.js';
 import { isDir } from '../tiles/directions.js';
 import { hasSrk } from '../srk/registry.js';
 import { controlsFit, legacyButtons, controlAnchor } from '../tiles/controls.js';
-import { CATEGORIES, categoryKey, categoryOf, MAX_TONNES_PER_METRE } from './categories.js';
-import { ROLLING_STOCK, STOCK_KINDS, chainOf, pinnedTypes } from './rollingStock.js';
+import { CATEGORIES, categoryKey, categoryOf, tractionOf, MAX_TONNES_PER_METRE } from './categories.js';
+import { ROLLING_STOCK, STOCK_KINDS, chainOf, pinnedTypes, unitLoop } from './rollingStock.js';
 
 /**
  * Walidacja definicji stacji (schemat v1). Zwraca { errors: [], warnings: [] }.
@@ -80,6 +80,7 @@ export function validateStation(st) {
     if (exT && exT.direction === 'in') errors.push(`Rozkład ${tr.nr}: wyjazd do ${exT.name} torem wjazdowym '${tr.to}' (direction: 'in')`);
     if (!tr.arr && !tr.dep) errors.push(`Rozkład ${tr.nr}: brak czasu przyjazdu/odjazdu`);
     validateConsist(tr, tracks, errors, warnings);
+    if (tr.unit != null && unitLoop(tr, st.timetable)) errors.push(`Rozkład ${tr.nr}: łańcuch składu (unit) zapętlony – pociąg powstaje ze składu, który powstaje z niego`);
     validateStock(tr, st.timetable, errors);
   });
   return { errors, warnings };
@@ -96,16 +97,17 @@ function validateStock(tr, timetable, errors) {
   if (!ids.length || ids.some((id) => typeof id !== 'string')) { errors.push(`${where}: tabor (stock) to typ albo niepusta lista typów`); return; }
   const unknown = ids.filter((id) => !Object.hasOwn(ROLLING_STOCK, id));
   if (unknown.length) { errors.push(`${where}: nieznany typ taboru ${unknown.join(', ')} (stock)`); return; }
-  const key = categoryKey(tr.cat) ?? categoryOf(tr);
-  if (CATEGORIES[key]?.tractions) {
-    const traction = tr.traction ?? 'E';
+  const traction = tractionOf(tr);
+  if (traction) {
     for (const id of ids) {
       const k = STOCK_KINDS[ROLLING_STOCK[id].kind].traction;
       if (k !== traction) errors.push(`${where}: tabor ${id} (trakcja ${k}) niezgodny z trakcją pociągu ${traction}`);
     }
   }
-  const same = JSON.stringify(ids);
-  const other = chainOf(tr, timetable).find((x) => x !== tr && x.stock != null && JSON.stringify(pinnedTypes(x.stock)) !== same);
+  // ta sama lista typów – jako zbiór (kolejność bez znaczenia)
+  const same = new Set(ids);
+  const differs = (x) => { const o = new Set(pinnedTypes(x.stock)); return o.size !== same.size || [...o].some((id) => !same.has(id)); };
+  const other = chainOf(tr, timetable).find((x) => x !== tr && x.stock != null && differs(x));
   if (other) errors.push(`${where}: tabor (stock) inny niż w pociągu ${other.nr} tego samego składu (unit)`);
 }
 
