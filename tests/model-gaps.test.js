@@ -302,10 +302,11 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.ok(logo.includes('class="lg-lens on"'), 'semafor z zapalonym światłem');
 });
 
-test('ustawienia domyślne: pulpit na środku, motyw ciemny, panel na dole, cały pulpit na jednym ekranie, symbole 125 %, odstęp normalny, pola skrajne włączone, język automatycznie, rozmowy telefoniczne automatycznie, rozmiar panelu domyślny', async () => {
+test('ustawienia domyślne: pulpit na środku, motyw ciemny, panel na dole, cały pulpit na jednym ekranie, symbole 125 %, odstęp normalny, pola skrajne włączone, język automatycznie, rozmowy telefoniczne automatycznie, powiadomienia łączności włączone, rozmiar panelu domyślny', async () => {
   const { DEFAULTS, Settings } = await import('../src/ui/Settings.js');
   // + rozmowy telefoniczne przy sprawnej blokadzie: domyślnie same (audyt realizmu, grupa 4 – W26 / W31)
-  assert.deepEqual(DEFAULTS, { deskPos: 'middle', sidePos: 'bottom', theme: 'dark', sideCollapsed: false, screens: 'off', symScale: '1.25', rowScale: '1', edgePanels: 'on', lang: 'auto', phoneRoutine: 'auto', sideSize: null, sideWidth: null });
+  // + powiadomienia z łączności (licznik, podświetlenie zakładki): domyślnie włączone – przełącznik w zakładce Łączność
+  assert.deepEqual(DEFAULTS, { deskPos: 'middle', sidePos: 'bottom', theme: 'dark', sideCollapsed: false, screens: 'off', symScale: '1.25', rowScale: '1', edgePanels: 'on', lang: 'auto', phoneRoutine: 'auto', commsNotify: 'on', sideSize: null, sideWidth: null });
   assert.equal(Settings.resolveTheme('system', true), 'dark'); assert.equal(Settings.resolveTheme('system', false), 'light');
   assert.equal(Settings.resolveTheme('dark', false), 'dark'); assert.equal(Settings.resolveTheme('light', true), 'light');
 });
