@@ -269,7 +269,7 @@ test('perony: każdy odcinek peronowy ma nazwę peronu (napis), pociągi osobowe
 test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 1–5; sortowanie i lista misji', async () => {
   const { STATIONS } = await import('../src/stations/index.js');
   const { sortStations, missionList, missionName, dutyStations } = await import('../src/ui/StartScreen.js');
-  const { difficultyMark, logoSvg } = await import('../src/ui/brand.js');
+  const { difficultyMark, logoSvg, signalSvg } = await import('../src/ui/brand.js');
   for (const st of STATIONS) {
     assert.ok(st.location && st.traffic, `${st.id}: brak location/traffic`);
     assert.ok(Number.isInteger(st.difficulty) && st.difficulty >= 1 && st.difficulty <= 5, `${st.id}: trudność ${st.difficulty}`);
@@ -289,7 +289,7 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   // nazwa misji bez numeru i dopisku „(samouczek)” – numer dodaje ekran startowy („Misja 1: Misja 1: …” był błędem)
   assert.deepEqual(missions.map((m) => missionName(m.scenario)), ['stanowisko komputerowe', 'pulpit kostkowy typu E', 'pulpit typu IZH-111', 'nastawnia mechaniczna', 'stanowisko EBILock 950', 'stanowisko MOR-3']);
   assert.equal(missionName({ name: 'Nauka obsługi' }), 'Nauka obsługi');
-  // skala trudności bez gwiazdek: 3 segmenty zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
+  // skala trudności bez gwiazdek: 3 lampki zapalone z 5, liczba; logo SVG z czterema kostkami-literami i semaforem
   const mark = difficultyMark(3, 'trudność');
   assert.equal((mark.match(/<i class="on">/g) || []).length, 3);
   assert.equal((mark.match(/<i>/g) || []).length, 2);
@@ -300,6 +300,12 @@ test('ekran startowy: każdy posterunek ma położenie, opis ruchu i trudność 
   assert.match(logo, /<svg[^>]*aria-label="SPRK"/);
   assert.deepEqual(logo.match(/class="lg-ch">(\w)</g).map((m) => m.slice(-2, -1)), ['S', 'P', 'R', 'K']);
   assert.ok(logo.includes('class="lg-lens on"'), 'semafor z zapalonym światłem');
+  // semafor ekranu startowego: trzy światła, zapalone jedno – czerwone („Stój”) albo zielone („wolna droga”)
+  const lit = (svg) => [...svg.matchAll(/class="sg-lens (sg-[gyr]) on"/g)].map((m) => m[1]);
+  assert.equal((signalSvg().match(/class="sg-lens /g) || []).length, 3);
+  assert.deepEqual(lit(signalSvg()), ['sg-r'], 'domyślnie „Stój”');
+  assert.deepEqual(lit(signalSvg('go')), ['sg-g']);
+  assert.match(signalSvg('stop', 54), /height="54" aria-hidden="true"/);
 });
 
 test('ustawienia domyślne: pulpit na środku, motyw ciemny, panel na dole, cały pulpit na jednym ekranie, symbole 125 %, odstęp normalny, pola skrajne włączone, język automatycznie, rozmowy telefoniczne automatycznie, powiadomienia łączności włączone, rozmiar panelu domyślny', async () => {

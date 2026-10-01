@@ -189,9 +189,12 @@ failure, a block failure, a peak with heavy disruptions).
   requests, entry and exit routes, a non-stop freight, a crossing, STOP and route release, points, shunting a
   terminating unit, a substitute signal after a signal fault and telephone announcements after a block fault.
 * Popups can be dragged anywhere; by default they avoid the track plan and the command bars.
-* Start screen like a mission select: missions first, then station cards with a schematic thumbnail, location, traffic
-  and a star rating, sortable alphabetically or by difficulty; the briefing panel on the right sets district,
-  scenario, disruptions and seed.
+* Start screen like a mission select: missions first, as stops on a training line, then station cards with a schematic
+  thumbnail, location, traffic and a difficulty of one to five lamps, sortable alphabetically or by difficulty; a signal
+  between the list and the briefing shows "Stop" until you pick something and "proceed" after; the briefing panel on the
+  right shows the station name on a station sign and sets district, scenario, disruptions and seed. The shift report
+  stamps the grade and shows the totals as desk counters with a status lamp; in settings the categories are stops on a
+  track and the chosen option lights its lamp.
 
 ### Desk and screens
 * Wide stations are split into logical screens that fit the browser width (cuts avoid point groups, two-column overlap,

@@ -1,6 +1,6 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
-import { difficultyMark, logoSvg } from './brand.js';
+import { difficultyMark, logoSvg, signalSvg } from './brand.js';
 import { getSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
 import { getMission } from '../tutorial/missions.js';
@@ -84,9 +84,9 @@ export class StartScreen {
             <div id="st-list" class="st-list"></div>
           </section>
         </nav>
-        <div class="st-arrow" aria-hidden="true"><span class="st-rail"></span><span class="st-chev">›</span><span class="st-rail"></span></div>
+        <div class="st-arrow" aria-hidden="true"><span class="st-rail"></span>${signalSvg('stop', 54)}<span class="st-rail"></span></div>
         <aside id="st-briefing" class="st-briefing">
-          <div class="st-bplaceholder"><div class="st-bpicon">‹</div><div>${t('start.placeholder')}</div></div>
+          <div class="st-bplaceholder">${signalSvg('stop', 96)}<div>${t('start.placeholder')}</div></div>
           <div class="st-bcontent hidden">
             <div class="st-bthumb"></div>
             <div class="st-btitle"><span class="st-bname"></span><span class="st-bdiff"></span></div>

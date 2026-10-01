@@ -22,7 +22,21 @@ export function logoSvg(height = 46) {
   </svg>`;
 }
 
-/** Skala trudności 1–5: pięć płaskich segmentów i liczba, bez gwiazdek. `label` – słowo przed liczbą (np. „trudność”). */
+/**
+ * Semafor świetlny (komora z trzema światłami na maszcie, jak w logo) – znak „stój / wolna droga” na ekranie startowym.
+ * Świeci światło z klasą `on`; `aspect` 'stop' – czerwone, 'go' – zielone. Ekran może przełączać światła samym CSS
+ * (klasy `.sg-g`, `.sg-r`), bez przerysowania.
+ */
+export function signalSvg(aspect = 'stop', height = 64) {
+  const lens = (cy, cls) => `<circle cx="12" cy="${cy}" r="4.6" class="sg-lens ${cls}${(aspect === 'go' && cls === 'sg-g') || (aspect === 'stop' && cls === 'sg-r') ? ' on' : ''}"/>`;
+  return `<svg class="sg-svg" viewBox="0 0 24 64" height="${height}" aria-hidden="true">
+    <path d="M12 38V60M5 61H19" class="sg-mast"/>
+    <rect x="3" y="1.5" width="18" height="37" rx="3" class="sg-head"/>
+    ${lens(9.5, 'sg-g')}${lens(20, 'sg-y')}${lens(30.5, 'sg-r')}
+  </svg>`;
+}
+
+/** Skala trudności 1–5: pięć lampek (zapalone – stopień trudności) i liczba, bez gwiazdek. `label` – słowo przed liczbą (np. „trudność”). */
 export function difficultyMark(d, label = '') {
   const n = Math.max(0, Math.min(5, Number(d) || 0));
   const segs = Array.from({ length: 5 }, (_, i) => `<i${i < n ? ' class="on"' : ''}></i>`).join('');
