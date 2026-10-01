@@ -161,7 +161,9 @@ export class PanelView {
       }
       entry.label.style.display = this.inWindow(headTile.x) ? '' : 'none';
       this.placeTrainLabel(entry.label, headTile, tr);
-      entry.text.textContent = `${tr.nr}${tr.v > 0.3 ? '' : ' ■'}`;
+      // sam numer – Ie-104.1 („Wyświetlacz numeru pociągu”) zna tylko „*” (drugi pociąg niewyświetlany) i „!” (dodatkowa
+      // informacja); znaku postoju ani czoła nie ma – miejsce pociągu pokazuje położenie numeru na torze
+      entry.text.textContent = String(tr.nr);
     }
     for (const [nr, entry] of this.trainLabels) if (!seen.has(nr)) { entry.label.remove(); this.trainLabels.delete(nr); }
     this.updateCounters();

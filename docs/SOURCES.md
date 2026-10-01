@@ -1039,7 +1039,7 @@ dKo) i `ebilock` (linia poleceń EBIScreen – sekcja niżej); różnią się sp
   tło obrazu szarzeje; potwierdzenie najwcześniej po 5 s, po 60 s bez potwierdzenia polecenie odwołuje się samo,
   w tym czasie inne polecenia są zablokowane (`src/srk/special.js`); rejestrowane w licznikach, odwołanie OPS.
 
-Numery torów to sama liczba, ciemnoszara, w linii toru, a numery pociągów – w osi toru (Ie-104.1 §8 pkt 29–30), w całości na odcinku toru, przy czole pociągu, nie na sygnalizatorze za końcem toru (§8 „Wyświetlacz numeru pociągu” pkt 2 i 5a, s. 73–74; `src/render/trainLabel.js`); perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
+Numery torów to sama liczba, ciemnoszara, w linii toru, a numery pociągów – w osi toru (Ie-104.1 §8 pkt 29–30), w całości na odcinku toru, przy czole pociągu, nie na sygnalizatorze za końcem toru (§8 „Wyświetlacz numeru pociągu” pkt 2 i 5a, s. 73–74; `src/render/trainLabel.js`); w kasetce sam numer – wyświetlacz zna tylko „*” (drugi pociąg niewyświetlany przy braku miejsca, pkt 5a) i „!” (dodatkowa informacja, pkt 5b), bez znaku postoju ani czoła; perony jako szare prostokąty z nazwą i podwójną kreską na krawędzi peronowej – jak na pulpitach nastawczych (numeracja rzymska,
 jak w nomenklaturze PKP: peron I, II; tory arabskie). Polecenia w menu elementów mają formę rzeczownikową zgodną
 z terminologią Ie-1 / Ir-1 (nastawienie przebiegu, zwolnienie przebiegu, danie pozwolenia, zwolnienie bloku końcowego,
 podanie sygnału zastępczego, przestawienie zwrotnicy, zamknięcie indywidualne).

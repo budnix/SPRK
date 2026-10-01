@@ -257,3 +257,27 @@ test('podpowiedź rozkładu: tabor zapisany w modelu i prędkość z taborem; na
   await expect(row.locator('td.rel i')).toHaveText('„A<b>B</b>"C”');
   await expect(row.locator('td.rel b')).toHaveCount(0);
 });
+
+// Ie-104.1 „Wyświetlacz numeru pociągu”: w kasetce sam numer (znaki dodatkowe tylko „*” i „!”); dawniej stojący pociąg
+// miał dopisany „■”, który gracze brali za oznaczenie czoła
+test('numer pociągu na monitorze i pulpicie bez dopisków – także pociąg stojący', async ({ page }) => {
+  for (const scenario of ['zmiana', 'zmiana-e']) {
+    await openShift(page, 'szkolna', { params: { scenariusz: scenario } });
+    await expect.poll(() => page.evaluate(() => window.sim.blocks.get('W').request)).toBe('theirs');
+    await page.evaluate(() => {
+      const sim = window.sim, c = sim.clock;
+      sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
+      c.paused = false;
+      for (let i = 0; i < 2400; i++) {
+        sim.step(0.5);
+        if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+        const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
+        if (tr?.entered && tr.v === 0 && tr.hasStopped) break;
+      }
+      c.paused = true;
+    });
+    await page.waitForTimeout(300);
+    await expect(page.locator('#desk .scr-train-nr, #desk .train-nr, #desk text', { hasText: /^6101/ }).first()).toHaveText('6101');
+    expect(await page.evaluate(() => document.querySelector('#desk').textContent.includes('■'))).toBe(false);
+  }
+});
