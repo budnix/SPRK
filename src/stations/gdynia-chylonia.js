@@ -252,6 +252,6 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min, regionalne z postojem, IC/TLK przelotem, towarowe z Portu i do Portu, odstawianie składów na tor 22 i do Postojowej.', endTime: '08:15' },
     { id: 'usterka-rg2', name: 'Usterka blokady od Rumi', description: 'Blokada toru 2 linii 202 od Rumi bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'RG2', at: '06:45', duration: 40 }], disruptions: 'none' },
     { id: 'tor-1-zamkniety', name: 'Tor 1 zamknięty', description: 'Tor 1 zamknięty do naprawy – pociągi z Rumi torem 2 lub 3.', endTime: '08:15', closedSections: [{ section: 'T1', from: '05:55', to: '08:15' }], disruptions: 'low' },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:45', disruptions: 'high' },
   ],
 };

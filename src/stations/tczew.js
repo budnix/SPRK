@@ -190,6 +190,6 @@ export default {
   scenarios: [
     { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'Węzeł: IC/EIC i Regio linii 9, pociągi z Bydgoszczy (131) i do Chojnic (203) z nawrotem, towarowe do Zajączkowa i Szymankowa. Poziom zakłóceń do wyboru.', endTime: '08:15' },
     { id: 'usterka-zb', name: 'Usterka blokady od Zajączkowa ZTB', description: 'Jednotorowa blokada 728 bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'ZB', at: '06:30', duration: 40 }] },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:50', disruptions: 'high' },
   ],
 };

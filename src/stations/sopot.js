@@ -217,6 +217,6 @@ export default {
   scenarios: [
     { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min, regionalne i IC/TLK z postojem przy peronie II, odstawianie składów na tor 13 i tor 4 i powrót jako nowe pociągi.', endTime: '08:15' },
     { id: 'usterka-gd', name: 'Usterka blokady od Gdańska', description: 'Blokada toru 2 linii 202 od Gdańska Oliwy bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'GD2', at: '06:40', duration: 40 }], disruptions: 'none' },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:45', disruptions: 'high' },
   ],
 };

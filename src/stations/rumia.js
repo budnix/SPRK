@@ -188,6 +188,6 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana – pulpit kostkowy typu E (05:55–08:15)', srk: 'E', description: 'SKM co 15 min w obu kierunkach na torze 5, regionalne na peronie II, IC/TLK przelotem, towarowe torem 3 i zdawczy na tor 6. Wyjazdy na zachód dwustopniowo (semafor toru, potem semafor na szlaku). Poziom zakłóceń do wyboru.', endTime: '08:15' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (05:55–08:15)', srk: 'komputerowe', description: 'Ten sam rozkład na stanowisku komputerowym (po modernizacji linii 202): przebiegi złożone nastawiają obie części wyjazdu na zachód naraz.', endTime: '08:15' },
     { id: 'usterka-rd2', name: 'Usterka blokady od Redy', description: 'Blokada toru 2 od Redy bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'RD2', at: '06:30', duration: 40 }] },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:45', disruptions: 'high' },
   ],
 };

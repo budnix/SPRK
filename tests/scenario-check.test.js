@@ -154,6 +154,16 @@ test('definicja: koniec zmiany – ta sama granica co w przebiegu (odjazd co naj
   assert.ok(!errorCodes(check({ ...base, trains: [90201], tasks: [], endTime: '07:54' })).has('tt-after-end'));
 });
 
+test('scenariusze „szczyt” (wymuszony poziom high): koniec zmiany co najmniej 44 min po ostatnim pociągu – opóźniony od sąsiada zdąży', () => {
+  // przy opóźnieniu od sąsiada do 40 min krótszy zapas dawał karę „nieobsłużony” (−10) bez winy dyżurnego
+  const forced = STATIONS.flatMap((st) => (st.scenarios || []).filter((sc) => sc.disruptions === 'high').map((sc) => [st, sc]));
+  assert.ok(forced.length >= 9, `scenariusze z wymuszonym poziomem high: ${forced.length}`);
+  for (const [st, sc] of forced) {
+    const slack = check(sc.id, st).filter((f) => f.code === 'sc-slack').map((f) => f.msg);
+    assert.deepEqual(slack, [], `${st.id}:${sc.id} (koniec ${sc.endTime})`);
+  }
+});
+
 test('definicja: zapas na opóźnienia od sąsiada – poziom gracza: informacja, poziom wymuszony: uwaga, ta sama liczba', () => {
   for (const l of ['low', 'high']) assert.equal(levelSlackMin(l), DISRUPTION_LEVELS[l].delayMax + LATE_SLACK / 60);
   // Szkolna: 15 min zapasu – bez zakłóceń w porządku, przy low (19 min) i high (44 min) informacja o odporności

@@ -265,7 +265,7 @@ export default {
 
   scenarios: [
     { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min w obu kierunkach, pociągi regionalne i IC, dwa składy kończące bieg i wracające, towarowe przelotem i z Portu.', endTime: '08:20' },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia: opóźnienia, usterki, pociąg nadzwyczajny.', endTime: '08:30', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia: opóźnienia, usterki, pociąg nadzwyczajny.', endTime: '08:45', disruptions: 'high' },
     { id: 'awaria-glowicy', name: 'Awaria w głowicy zachodniej', description: 'Semafor A1 bez sygnału i fałszywa zajętość rozjazdu 26 w porze przyjazdów od Gdańska.', endTime: '08:20', faults: [{ type: 'signal-fail', target: 'A1', at: '06:20', duration: 15 }, { type: 'false-occupancy', target: 'Iz26', at: '07:05', duration: 10 }], disruptions: 'none' },
   ],
 };

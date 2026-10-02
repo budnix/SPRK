@@ -187,6 +187,6 @@ export default {
   scenarios: [
     { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'SKM co 15 min w obu kierunkach na peronie III, Regio i IC/EIC linii 9 przez perony I/II, pociągi kończące bieg od Wrzeszcza na peronach IV/V, towarowe na Zaspę Towarową i z Brzeźna. Poziom zakłóceń do wyboru.', endTime: '08:15' },
     { id: 'usterka-zt', name: 'Usterka blokady od Zaspy Towarowej', description: 'Jednotorowa blokada 227 bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'ZT', at: '06:30', duration: 40 }] },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:50', disruptions: 'high' },
   ],
 };

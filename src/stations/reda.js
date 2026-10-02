@@ -190,6 +190,6 @@ export default {
     { id: 'zmiana', name: 'Pełna zmiana – pulpit kostkowy typu E (05:55–08:15)', srk: 'E', description: 'Regionalne i dalekobieżne na peronie II, wahadła do Helu z toru 11, TLK z Helu przez peron I, towarowe torem 3. Wyjazdy dwustopniowo (semafor toru, potem Szn na szlaku). Poziom zakłóceń do wyboru.', endTime: '08:15' },
     { id: 'zmiana-lcs', name: 'Pełna zmiana – stanowisko komputerowe (05:55–08:15)', srk: 'komputerowe', description: 'Ten sam rozkład na stanowisku komputerowym (po modernizacji linii 202): przebiegi złożone nastawiają obie części wyjazdu naraz.', endTime: '08:15' },
     { id: 'usterka-hl', name: 'Usterka blokady od Helu', description: 'Blokada linii 213 bez łączności przez 40 min – zapowiadanie telefoniczne na jednotorowym szlaku.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'HL', at: '06:30', duration: 40 }] },
-    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:25', disruptions: 'high' },
+    { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:35', disruptions: 'high' },
   ],
 };
