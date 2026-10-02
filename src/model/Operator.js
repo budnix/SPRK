@@ -1,6 +1,6 @@
 import { Clock } from '../core/Clock.js';
 import { Interlocking } from './Interlocking.js';
-import { entryPath, routeEndTrack } from './trainPaths.js';
+import { entryPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from './trainPaths.js';
 
 /**
  * Automatyczny operator okręgu nastawczego (nastawniczy / dyżurny ruchu sterowany przez program).
@@ -220,18 +220,16 @@ export class AutoOperator {
     if (ilk.holdRoute) this.#releasePassed();
     this.#recoverRoutes();
     const routes = ilk.routeList();
-    const trackOf = (tr) => { for (const sid of tr.occupiedSections()) { const tk = ilk.sections.get(sid)?.track; if (tk) return String(tk); } return null; };
+    const trackOf = (tr) => trainTrack(ilk, tr);
     const fullyOn = (tr, track) => { const secs = [...tr.occupiedSections()].map((s) => ilk.sections.get(s)); return secs.length && secs.every((s) => String(s.track) === String(track)); };
     const routeTrack = (r) => routeEndTrack(ilk, r);
-    const approachOf = (exitId) => { const ex = sim.station.exits[exitId]; return topo.trackAt(ex.tile.x, ex.tile.y).section; };
 
     // Szlak jednotorowy: czy pociąg sąsiada miałby gdzie wjechać. Nie, gdy każdy tor, na który prowadzi wjazd z tego
     // szlaku, zajmuje (albo ma już nastawiony wjazd) pociąg, który sam czeka na ten szlak – po Poz żaden by nie ruszył.
     // Wtedy automat wstrzymuje pociąg sąsiada („Stój pociąg nr …”) i najpierw wyprawia swój.
     const deadEnd = (b) => {
       if (b.auto || b.fixed || this.role === 'executive') return false;
-      const app = approachOf(b.id);
-      const tracks = new Set(routes.filter((r) => r.kind === 'train' && r.approach === app).map(routeTrack).filter(Boolean));
+      const tracks = new Set(entryRoutes(ilk, b.id, routes).map(routeTrack).filter(Boolean));
       if (!tracks.size) return false;
       const claimed = new Set();
       for (const o of sim.traffic.timetable()) {
@@ -239,7 +237,7 @@ export class AutoOperator {
         if (o.to !== b.id || !tr || tr.finished) continue;
         if (tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal())) continue; // już wyjeżdża
         if (tr.entered && !tr.entryPending) { const tk = trackOf(tr); if (tk) claimed.add(tk); continue; }
-        const ahead = ilk.routesSet().find((x) => x.route.kind === 'train' && Interlocking.routeAhead(x.state) && x.route.approach === (o.from ? approachOf(o.from) : null));
+        const ahead = ilk.routesSet().find((x) => x.route.kind === 'train' && Interlocking.routeAhead(x.state) && x.route.approach === (o.from ? exitApproach(ilk, o.from) : null));
         if (ahead) { const tk = routeTrack(ahead.route); if (tk) claimed.add(tk); }
       }
       return [...tracks].every((tk) => claimed.has(tk));
@@ -331,8 +329,7 @@ export class AutoOperator {
         if (ahead) continue;
         let want = this.trackFor ? this.trackFor(e) : e.track;
         if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) continue; want = c.track; e._cmdAccept = c; }
-        const app = approachOf(e.from);
-        const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
+        const cands = entryRoutes(ilk, e.from, routes);
         // przebieg od semafora wjazdowego już czeka na ten pociąg (nastawiony albo w nastawianiu)
         if (cands.some((r) => this.#onItsWay(ilk.routeState(r.id)))) continue;
         // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
@@ -376,8 +373,8 @@ export class AutoOperator {
           if (!xb || xb.auto || xb.fixed || this.role === 'executive') return false;
           const coming = xb.direction === 'in' || xb.phone.clearedFor != null || xb.awaitingEntry || (xb.occupied && !xb.lineOurs);
           if (!coming) return false;
-          const tk = routeTrack(r), xapp = approachOf(e.to);
-          const theirs = [...new Set(routes.filter((x) => x.kind === 'train' && x.approach === xapp).map(routeTrack).filter(Boolean))];
+          const tk = routeTrack(r);
+          const theirs = [...new Set(entryRoutes(ilk, e.to, routes).map(routeTrack).filter(Boolean))];
           if (!theirs.includes(tk)) return false; // na ten tor pociąg z przeciwka i tak nie wjeżdża
           const held = (t) => sim.traffic.timetable().some((o) => o !== e && (o.to === e.to || o.to == null) && o.train && !o.train.finished
             && o.train.entered && !o.train.entryPending && trackOf(o.train) === t);

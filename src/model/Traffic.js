@@ -5,7 +5,7 @@ import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
 import { platformRanges } from '../tiles/platforms.js';
 import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
-import { trainRouteChains } from './trainPaths.js';
+import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
 
 /**
  * Od planowego odjazdu (przejazdu) do zjazdu ze stacji – pociąg „odjechał”, obsłużony – mija 1–4 min (zmierzone automatem
@@ -209,9 +209,8 @@ export class Traffic {
     const add = (r, withSignal) => { for (const sid of r.sections) sections.add(sid); for (const p of r.points) points.add(p.id); if (withSignal) signals.add(r.start); };
     const train = ilk.routeList().filter((r) => r.kind === 'train');
     // wjazd: łańcuchy przebiegów od strony `from` (do 3 stopni) kończące się na torze planowym
-    const app = e.from ? (() => { const ex = this.station.exits[e.from]; return ilk.topo.trackAt(ex.tile.x, ex.tile.y)?.section; })() : null;
     // (łańcuchy wspólne z kontrolą scenariusza: src/model/trainPaths.js)
-    for (const path of trainRouteChains(train, train.filter((r) => r.approach === app), (r) => trackOf(r.sections.at(-1)) === T)) path.forEach((r, i) => add(r, i > 0));
+    for (const path of trainRouteChains(train, entryRoutes(ilk, e.from, train), (r) => trackOf(r.sections.at(-1)) === T)) path.forEach((r, i) => add(r, i > 0));
     // wyjazd: przebiegi z toru planowego w stronę wyjazdu z rozkładu (do 3 stopni)
     for (const path of trainRouteChains(train, train.filter((r) => trackOf(r.approach) === T), (r) => !!e.to && r.exit === e.to)) path.forEach((r) => add(r, true));
     for (const sid of sections) if (ilk.sections.get(sid)?.defect) return true;
@@ -583,11 +582,7 @@ export class Traffic {
   }
 
   #trackOf(tr) {
-    for (const sid of tr.occupiedSections()) {
-      const s = this.ilk.sections.get(sid);
-      if (s?.track) return s.track;
-    }
-    return null;
+    return trainTrack(this.ilk, tr);
   }
 
   #onExit(e, exitId, tr) {

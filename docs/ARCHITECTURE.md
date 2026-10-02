@@ -263,6 +263,10 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   Testy: `tests/faults-shunt.test.js`.
 * Przebieg po usterce: `Interlocking.routeStuck(act)` – pociąg przejechał odcinek wykazujący zajętość z usterki, więc
   przebieg sam się nie rozwiąże; doraźne zwolnienie jest wtedy bez kary.
+* Małe pytania o układ mają jedno miejsce (`trainPaths.js`): `exitApproach(ilk, szlak)` – odcinek zbliżania szlaku,
+  `entryRoutes(ilk, szlak, przebiegi)` – przebiegi pociągowe wjazdowe od jego strony, `trainTrack(ilk, skład)` – tor,
+  na którym stoi skład. Korzystają z nich automat dyżurnego, ruch, polecenia między okręgami, kontrola scenariusza
+  i pomocnik testów usterek (`tests/train-paths.test.js`).
 * Drogi pociągu po przebiegach pociągowych (`trainPaths.js`: `entryPath` – wjazd na tor, do 3 przebiegów przez semafory
   pośrednie; `trainRouteChains` – wszystkie łańcuchy, np. wyjazd z toru na szlak) są wspólne dla automatu dyżurnego,
   ruchu (`Traffic` – usterka na drodze toru planowego) i kontroli scenariusza (`scenarioCheck.js`).

@@ -3,6 +3,7 @@ import { EventBus } from '../core/EventBus.js';
 import { Clock } from '../core/Clock.js';
 import { Random, DISRUPTION_LEVELS } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
+import { exitApproach, trainTrack } from './trainPaths.js';
 import { LineBlock } from './Block.js';
 import { Traffic } from './Traffic.js';
 import { Faults } from './Faults.js';
@@ -179,12 +180,12 @@ export class Simulation {
         const r = set.route;
         if (r.kind !== 'train' || !Interlocking.routeLocked(set.state)) continue;
         if (c.kind === 'accept' && e.from) {
-          const app = this.ilk.topo.trackAt(this.station.exits[e.from].tile.x, this.station.exits[e.from].tile.y).section;
+          const app = exitApproach(this.ilk, e.from);
           const last = r.sections[r.sections.length - 1];
           if (r.approach === app && String(this.ilk.sections.get(last)?.track) === String(c.track)) done = true;
         }
         if (c.kind === 'dispatch' && r.exit === c.exit && e.train && !e.train.finished) {
-          const cur = [...e.train.occupiedSections()].map((sid) => this.ilk.sections.get(sid)?.track).find(Boolean);
+          const cur = trainTrack(this.ilk, e.train);
           if (String(this.ilk.sections.get(r.approach)?.track) === String(cur)) done = true;
         }
       }

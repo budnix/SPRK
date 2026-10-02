@@ -1,6 +1,7 @@
 import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
 import { Interlocking } from '../src/model/Interlocking.js';
+import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
 import { autoDispatch, allArrived } from './helpers.js';
 import { violations, watchEvents } from './invariants.js';
 
@@ -24,14 +25,11 @@ export function faultSim(station, { srk, timetable, endTime = '10:00', seed = 1,
 const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 /** Odcinek przed granicą stacji od strony wjazdu `exitId` (odcinek zbliżania przebiegów wjazdowych). */
 export function approachOf(sim, exitId) {
-  const ex = sim.station.exits[exitId];
-  return sim.ilk.topo.trackAt(ex.tile.x, ex.tile.y).section;
+  return exitApproach(sim.ilk, exitId);
 }
 /** Przebiegi pociągowe wjazdowe od strony, z której przyjeżdża pociąg `nr`. */
 export function entryRoutes(sim, nr) {
-  const e = entryOf(sim, nr);
-  const app = e?.from ? approachOf(sim, e.from) : null;
-  return app ? sim.ilk.routeList().filter((r) => r.kind === 'train' && r.approach === app) : [];
+  return routesFrom(sim.ilk, entryOf(sim, nr)?.from);
 }
 /**
  * Nastawiony (czynny) przebieg wjazdowy pociągu `nr` albo null. Zwraca zapis przebiegu z zależności – testy usterek

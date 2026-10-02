@@ -3,7 +3,7 @@ import { validateStation, validateTimetable } from './validate.js';
 import { FAULT_TYPES } from './Faults.js';
 import { LATE_SLACK } from './Traffic.js';
 import { trainSpeed } from './rollingStock.js';
-import { entryPath as findEntryPath, trainRouteChains, routeEndTrack } from './trainPaths.js';
+import { entryPath as findEntryPath, trainRouteChains, routeEndTrack, entryRoutes } from './trainPaths.js';
 import { Clock } from '../core/Clock.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
 import { hasSrk } from '../srk/registry.js';
@@ -200,13 +200,12 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   const shuntRoutes = allRoutes.filter((r) => r.kind === 'shunt');
   const trackOfSec = (sid) => { const t = ilk.sections.get(sid)?.track; return t == null ? null : String(t); };
   const routeTrack = (r) => routeEndTrack(ilk, r) || null;
-  const approachOf = (exitId) => { const ex = exits[exitId]; return ex ? topo.trackAt(ex.tile.x, ex.tile.y)?.section : null; };
   const avoids = (closed) => (r) => !closed || !r.sections.some((s) => closed.has(s));
   // wjazd jak w automacie dyżurnego, wyjazd jak w ruchu (`trainPaths.js`): do 3 przebiegów pociągowych
   const entryPath = (from, T, closed = null) => {
     const ok = avoids(closed);
     const routes = trainRoutes.filter(ok);
-    return findEntryPath(ilk, routes, routes.filter((r) => r.approach === approachOf(from)), T);
+    return findEntryPath(ilk, routes, entryRoutes(ilk, from, routes), T);
   };
   const exitPath = (T, to, closed = null) => {
     const routes = trainRoutes.filter(avoids(closed));

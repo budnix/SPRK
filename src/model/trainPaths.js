@@ -5,8 +5,35 @@
  * kontrola scenariusza nie rozjedzie się z tym, co zrobi automat. (Przebieg złożony od semafora do przycisku końca –
  * osobno: `Interlocking.routeChains`.)
  *
- * Moduł logiki: bez DOM; przebiegi i odcinki z `Interlocking` (`routeList()`, `sections`, `topo`).
+ * Tu też małe pytania o układ, które zadają te same moduły (i narzędzia): odcinek zbliżania szlaku (`exitApproach`),
+ * przebiegi wjazdowe od strony szlaku (`entryRoutes`), tor, na którym stoi skład (`trainTrack`).
+ *
+ * Moduł logiki: bez DOM; przebiegi i odcinki z `Interlocking` (`routeList()`, `sections`, `topo`, `station`).
  */
+
+/**
+ * Odcinek przed granicą stacji od strony szlaku `exitId` – odcinek zbliżania przebiegów wjazdowych z tego szlaku;
+ * null, gdy stacja nie ma takiego szlaku.
+ */
+export function exitApproach(ilk, exitId) {
+  const ex = ilk.station.exits?.[exitId];
+  return ex ? ilk.topo.trackAt(ex.tile.x, ex.tile.y)?.section ?? null : null;
+}
+
+/** Przebiegi pociągowe wjazdowe od strony szlaku `exitId` (spośród `routes`, domyślnie wszystkich przebiegów stacji). */
+export function entryRoutes(ilk, exitId, routes = ilk.routeList()) {
+  const app = exitApproach(ilk, exitId);
+  return app == null ? [] : routes.filter((r) => r.kind === 'train' && r.approach === app);
+}
+
+/** Tor (numer jako napis), na którym stoi albo którym jedzie skład `train`: pierwszy zajęty odcinek z numerem toru; null – żaden. */
+export function trainTrack(ilk, train) {
+  for (const sid of train.occupiedSections()) {
+    const tk = ilk.sections.get(sid)?.track;
+    if (tk) return String(tk);
+  }
+  return null;
+}
 
 /**
  * Tor (numer jako napis), na którym kończy się przebieg: tor ostatniego odcinka drogi, a gdy ten nie ma numeru – tor
