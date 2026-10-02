@@ -17,24 +17,11 @@
  * tor 18 (plac ładunkowy), tor 6a, bocznice, tarcze manewrowe i wykolejnice głowic, semafor B (jazda po torze
  * lewym); linia 226 jako jeden tor dwukierunkowy.
  */
+import { createLayout, track as T, run as H, signal as SIG } from '../tiles/layout.js';
 
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, toe, straight, diverge) => ({ x, y, type: 'point', id: `Zw${id}`, label: String(id), toe, straight, diverge, section: `Iz${id}` });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
-const point = (x, y, id, toe, straight, diverge) => { sec(`Iz${id}`, { length: 60, kind: 'point' }); tiles.push(P(x, y, id, toe, straight, diverge)); };
-const diag = (x, y, ports, id) => tiles.push(T(x, y, ports, `Iz${id}`));
-const plain = (id, x1, x2, y, len) => { sec(id, { length: len ?? (x2 - x1 + 1) * 20, kind: 'plain' }); tiles.push(...H(x1, x2, y, id)); };
-const stub = (x, y, port, id) => { sec(`S${id}`, { length: 30, kind: 'siding' }); tiles.push({ x, y, type: 'buffer', port, section: `S${id}`, endButton: { id: `k${id}`, color: 'white' } }); };
-/** Przejście między torami: kostka a (toe `toeA`, zwrotny `divA`), ukos, kostka b. */
-const crossover = (xa, ya, idA, toeA, divA, xb, yb, idB, toeB, divB, diagPorts) => {
-  point(xa, ya, idA, toeA, toeA === 'W' ? 'E' : 'W', divA); diag((xa + xb) / 2, (ya + yb) / 2, diagPorts, idA);
-  point(xb, yb, idB, toeB, toeB === 'W' ? 'E' : 'W', divB);
-};
+const { tiles, sections, section: sec, point, diag, plain, stub, crossover, lineExit } = createLayout();
+const westExit = (y, id, text) => lineExit({ side: 'W', y, id, text, from: 0, to: 5 });
+const eastExit = (y, id, text) => lineExit({ side: 'E', y, id, text, from: 114, to: 119 });
 
 // ---- tytuł, przyciski ----
 tiles.push({ x: 48, y: 0, type: 'label', text: 'PRUSZCZ GDAŃSKI', size: 13, span: 20 });
@@ -51,8 +38,6 @@ for (const [nr, y, len, peron] of TRACKS) {
 }
 
 // ---- szlaki ----
-const westExit = (y, id, text) => { sec(`Zb${id}`, { length: 400, kind: 'approach' }); tiles.push({ ...T(0, y, ['W', 'E'], `Zb${id}`), endButton: { id: `k${id}`, color: 'green' }, text }, ...H(1, 5, y, `Zb${id}`)); };
-const eastExit = (y, id, text) => { sec(`Zb${id}`, { length: 400, kind: 'approach' }); tiles.push(...H(114, 118, y, `Zb${id}`), { ...T(119, y, ['W', 'E'], `Zb${id}`), endButton: { id: `k${id}`, color: 'green' }, text }); };
 westExit(4, 'SP', 'Stara Piła 229'); westExit(8, 'PS2', 'Pszczółki 9 t.2'); westExit(10, 'PS1', 'Pszczółki 9 t.1'); westExit(12, 'ZT', 'Zajączkowo 260');
 eastExit(8, 'GD2', 'Gdańsk Płd. 9 t.2'); eastExit(10, 'GD1', 'Gdańsk Płd. 9 t.1'); eastExit(12, 'GP', 'Gdańsk Port Płn. 226');
 tiles.push(SIG(5, 5, 'P', 'semafor', { x: 5, y: 4 }, 'E', { entry: true }), SIG(5, 11, 'C', 'semafor', { x: 5, y: 10 }, 'E', { entry: true }),

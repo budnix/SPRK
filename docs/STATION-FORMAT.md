@@ -28,6 +28,17 @@ export default {
 };
 ```
 
+## Budowa planu (`src/tiles/layout.js`)
+
+Kostki i odcinki pisze się pomocnikami z `src/tiles/layout.js`, nie własnymi kopiami (pilnuje tego
+`tests/layout.test.js`): `createLayout()` daje `tiles`, `sections` i części złożone, które dopisują kostkę i jej odcinek
+naraz – `point(x, y, n, ostrze, zasadniczy, zwrotny, długość?)` (kostka `Zw<n>` w odcinku `Iz<n>`, 60 m), `diag` (ukos
+w odcinku zwrotnicy), `plain(id, x1, x2, y, długość?)` (20 m na kostkę), `stub(x, y, port, id)` (żeberko `S<id>` 30 m
+z kozłem i białym przyciskiem `k<id>`), `crossover(…)` (dwie zwrotnice i ukos), `lineExit({ side: 'W' | 'E', y, id,
+text, from, to, section?, length? })` (odcinek zbliżania `Zb<id>` 400 m, zielony przycisk `k<id>` i nazwa sąsiada na
+kostce skrajnej). Pojedyncze kostki: `track`, `run`, `signal`, `buffer`, `pointTile`. Plan wpisany jako dane (tablica
+kostek, obiekt odcinków – stacje szkoleniowe) też jest dozwolony.
+
 ## Siatka i porty
 
 Każda kostka zajmuje pole `(x, y)`; `x` rośnie w prawo (wschód), `y` w dół.

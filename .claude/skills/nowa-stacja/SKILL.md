@@ -29,8 +29,10 @@ sprawdza poprzedni.
 
 1. **Nagłówek pliku** (komentarz): skąd układ, siatka (`desk.cols` × `desk.rows`), który tor na którym `y`, strony świata
    (zachód po lewej), semafory wg planu, uproszczenia. Następna sesja czyta stację z tego komentarza.
-2. **Tory, rozjazdy, semafory** małymi funkcjami pomocniczymi jak we wzorach (`T`, `H`, `P`, `SIG`, `sec`, `point`,
-   `crossover`) – sekcje „Siatka i porty”, „Typy kostek”, „Odcinki izolowane”. Długości torów stacyjnych z planu
+2. **Tory, rozjazdy, semafory** pomocnikami z `src/tiles/layout.js` (`createLayout()`: `point`, `diag`, `plain`, `stub`,
+   `crossover`, `lineExit`; kostki `track`, `run`, `signal` – opis: `docs/STATION-FORMAT.md` „Budowa planu”), nie
+   własnymi kopiami – pilnuje tego `tests/layout.test.js`. Wzory użycia: Pruszcz, Tczew, Gdańsk Gł. Sekcje formatu:
+   „Siatka i porty”, „Typy kostek”, „Odcinki izolowane”. Długości torów stacyjnych z planu
    (`length` odcinka; od nich zależy, czy pociąg się mieści), perony przez `platform`.
 3. **Szlaki** (`exits`, sekcja „Szlaki”): jeden wpis na tor szlakowy; rodzaj blokady wg źródła – bez `direction` Eap
    jednotorowa, `direction: 'out' | 'in'` linia dwutorowa, `block: 'sbl'` blokada samoczynna; `lineLength`, `lineSpeed`.

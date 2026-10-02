@@ -14,9 +14,7 @@
  *
  * Siatka: 32 × 10 kostek. Współrzędne (x,y) od lewego górnego rogu.
  */
-
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
+import { track as T, run as H } from '../../src/tiles/layout.js';
 
 export default {
   schemaVersion: 1,

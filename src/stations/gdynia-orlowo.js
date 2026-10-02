@@ -10,14 +10,8 @@
  * Rozjazdy: 1–7 (głowica zachodnia), 25, 26, 31–37 (głowica wschodnia), SKM: 1–2 (zachód), 51–54 (wschód).
  * Pominięto: tory 8, 10 Bazy EZ Sopot, bocznice 14 i 24, tor 152.
  */
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, label, toe, straight, diverge, section) => ({ x, y, type: 'point', id, label, toe, straight, diverge, section });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
+import { createLayout, track as T, run as H, pointTile as P, signal as SIG } from '../tiles/layout.js';
+const { tiles, sections, section: sec, lineExit } = createLayout();
 
 // ---- blokady, przyciski ----
 tiles.push({ x: 26, y: 0, type: 'label', text: 'GDYNIA ORŁOWO', size: 12, span: 18 });
@@ -35,8 +29,8 @@ tiles.push({ x: 30, y: 3, type: 'label', text: 'tor 6 · Baza EZ Sopot', span: 5
   { x: 30, y: 11, type: 'label', text: 'tor 3', span: 2, size: 8 }, { x: 30, y: 13, type: 'label', text: 'tor 502 · Peron I', span: 4, size: 8 }, { x: 30, y: 15, type: 'label', text: 'tor 501 · Peron I', span: 4, size: 8 });
 
 // ---- zachód: linia 202 (rzędy 6, 8) ----
-sec('ZbB', { length: 400, kind: 'approach' }); tiles.push({ ...T(0, 6, ['W', 'E'], 'ZbB'), endButton: { id: 'kS2', color: 'green' }, text: 'Sopot t.2' }, ...H(1, 5, 6, 'ZbB'));
-sec('ZbA', { length: 400, kind: 'approach' }); tiles.push({ ...T(0, 8, ['W', 'E'], 'ZbA'), endButton: { id: 'kS1', color: 'green' }, text: 'Sopot t.1' }, ...H(1, 5, 8, 'ZbA'));
+lineExit({ side: 'W', y: 6, id: 'S2', text: 'Sopot t.2', from: 0, to: 5, section: 'ZbB' });
+lineExit({ side: 'W', y: 8, id: 'S1', text: 'Sopot t.1', from: 0, to: 5, section: 'ZbA' });
 sec('W2a', { length: 30, kind: 'plain' }); tiles.push(T(6, 6, ['W', 'E'], 'W2a'));
 sec('Iz1', { length: 80, kind: 'point' }); tiles.push(P(7, 6, 'Zw1', '1', 'W', 'E', 'SE', 'Iz1'), T(8, 7, ['NW', 'SE'], 'Iz1'), P(9, 8, 'Zw2', '2', 'E', 'W', 'NW', 'Iz1'));
 sec('W1a', { length: 60, kind: 'plain' }); tiles.push(...H(6, 8, 8, 'W1a'));
@@ -48,8 +42,8 @@ sec('Iz4', { length: 60, kind: 'point' }); tiles.push(P(11, 8, 'Zw4', '4', 'W', 
 tiles.push(SIG(5, 5, 'B', 'semafor', { x: 5, y: 6 }, 'E', { entry: true }), SIG(5, 7, 'A', 'semafor', { x: 5, y: 8 }, 'E', { entry: true }));
 tiles.push(SIG(6, 9, 'Tm1', 'tm', { x: 6, y: 8 }, 'W'), SIG(7, 9, 'Tm2', 'tm', { x: 6, y: 8 }, 'E'));
 // ---- zachód: SKM (rzędy 12, 14) ----
-sec('ZbA502', { length: 400, kind: 'approach' }); tiles.push({ ...T(0, 12, ['W', 'E'], 'ZbA502'), endButton: { id: 'kS502', color: 'green' }, text: 'Sopot 502' }, ...H(1, 5, 12, 'ZbA502'));
-sec('ZbA501', { length: 400, kind: 'approach' }); tiles.push({ ...T(0, 14, ['W', 'E'], 'ZbA501'), endButton: { id: 'kS501', color: 'green' }, text: 'Sopot 501' }, ...H(1, 5, 14, 'ZbA501'));
+lineExit({ side: 'W', y: 12, id: 'S502', text: 'Sopot 502', from: 0, to: 5, section: 'ZbA502' });
+lineExit({ side: 'W', y: 14, id: 'S501', text: 'Sopot 501', from: 0, to: 5, section: 'ZbA501' });
 sec('W502a', { length: 80, kind: 'plain' }); tiles.push(...H(6, 9, 12, 'W502a'));
 sec('W501a', { length: 40, kind: 'plain' }); tiles.push(...H(6, 7, 14, 'W501a'));
 sec('IzS1', { length: 80, kind: 'point' }); tiles.push(P(8, 14, 'ZwS1', '1', 'W', 'E', 'NE', 'IzS1'), T(9, 13, ['SW', 'NE'], 'IzS1'), P(10, 12, 'ZwS2', '2', 'E', 'W', 'SW', 'IzS1'));
@@ -79,13 +73,13 @@ sec('Iz35', { length: 80, kind: 'point' }); tiles.push(P(56, 6, 'Zw35', '35', 'W
 sec('E2b', { length: 30, kind: 'plain' }); tiles.push(T(57, 6, ['W', 'E'], 'E2b'));
 sec('Iz37', { length: 80, kind: 'point' }); tiles.push(P(58, 6, 'Zw37', '37', 'W', 'E', 'SE', 'Iz37'), T(59, 7, ['NW', 'SE'], 'Iz37'), P(60, 8, 'Zw34', '34', 'E', 'W', 'NW', 'Iz37'));
 sec('E2c', { length: 200, kind: 'plain' }); tiles.push(...H(59, 63, 6, 'E2c'));
-sec('ZbM', { length: 400, kind: 'approach' }); tiles.push(...H(64, 68, 6, 'ZbM'), { ...T(69, 6, ['W', 'E'], 'ZbM'), endButton: { id: 'kZ2', color: 'green' }, text: 'Gdynia t.2' });
+lineExit({ side: 'E', y: 6, id: 'Z2', text: 'Gdynia t.2', from: 64, to: 69, section: 'ZbM' });
 sec('E1', { length: 50, kind: 'plain' }); tiles.push(...H(50, 51, 8, 'E1'));
 sec('Iz31', { length: 70, kind: 'point' }); tiles.push(P(52, 8, 'Zw31', '31', 'E', 'W', 'SW', 'Iz31'), T(51, 9, ['NE', 'SW'], 'Iz31'), T(50, 10, ['W', 'NE'], 'Iz31'));
 sec('E1b', { length: 120, kind: 'plain' }); tiles.push(...H(53, 57, 8, 'E1b'));
 sec('E1c', { length: 30, kind: 'plain' }); tiles.push(T(59, 8, ['W', 'E'], 'E1c'));
 sec('E1d', { length: 80, kind: 'plain' }); tiles.push(...H(61, 63, 8, 'E1d'));
-sec('ZbL', { length: 400, kind: 'approach' }); tiles.push(...H(64, 68, 8, 'ZbL'), { ...T(69, 8, ['W', 'E'], 'ZbL'), endButton: { id: 'kZ1', color: 'green' }, text: 'Gdynia t.1' });
+lineExit({ side: 'E', y: 8, id: 'Z1', text: 'Gdynia t.1', from: 64, to: 69, section: 'ZbL' });
 tiles.push(SIG(64, 5, 'M', 'semafor', { x: 64, y: 6 }, 'W', { entry: true }), SIG(64, 7, 'L', 'semafor', { x: 64, y: 8 }, 'W', { entry: true }));
 tiles.push(SIG(62, 7, 'Tm5', 'tm', { x: 62, y: 6 }, 'E'), SIG(63, 7, 'Tm6', 'tm', { x: 62, y: 6 }, 'W')); // tor 2 za rozjazdem 37 – zmiana kierunku przy manewrach tor 4 ↔ tor 6
 tiles.push(SIG(61, 9, 'Tm14', 'tm', { x: 61, y: 8 }, 'E'), SIG(62, 9, 'Tm12', 'tm', { x: 61, y: 8 }, 'W'));
@@ -95,11 +89,11 @@ sec('IzS51', { length: 80, kind: 'point' }); tiles.push(P(56, 12, 'ZwS51', '51',
 sec('E502b', { length: 40, kind: 'plain' }); tiles.push(...H(57, 58, 12, 'E502b'));
 sec('IzS53', { length: 80, kind: 'point' }); tiles.push(P(59, 12, 'ZwS54', '54', 'W', 'E', 'SE', 'IzS53'), T(60, 13, ['NW', 'SE'], 'IzS53'), P(61, 14, 'ZwS53', '53', 'E', 'W', 'NW', 'IzS53'));
 sec('E502c', { length: 60, kind: 'plain' }); tiles.push(...H(60, 63, 12, 'E502c'));
-sec('ZbP', { length: 400, kind: 'approach' }); tiles.push(...H(64, 68, 12, 'ZbP'), { ...T(69, 12, ['W', 'E'], 'ZbP'), endButton: { id: 'kZ502', color: 'green' }, text: 'Gdynia 502' });
+lineExit({ side: 'E', y: 12, id: 'Z502', text: 'Gdynia 502', from: 64, to: 69, section: 'ZbP' });
 sec('E501', { length: 180, kind: 'plain' }); tiles.push(...H(50, 57, 14, 'E501'));
 sec('E501b', { length: 40, kind: 'plain' }); tiles.push(...H(59, 60, 14, 'E501b'));
 sec('E501c', { length: 40, kind: 'plain' }); tiles.push(...H(62, 63, 14, 'E501c'));
-sec('ZbR', { length: 400, kind: 'approach' }); tiles.push(...H(64, 68, 14, 'ZbR'), { ...T(69, 14, ['W', 'E'], 'ZbR'), endButton: { id: 'kZ501', color: 'green' }, text: 'Gdynia 501' });
+lineExit({ side: 'E', y: 14, id: 'Z501', text: 'Gdynia 501', from: 64, to: 69, section: 'ZbR' });
 tiles.push(SIG(64, 11, 'P', 'semafor', { x: 64, y: 12 }, 'W', { entry: true }), SIG(64, 13, 'R', 'semafor', { x: 64, y: 14 }, 'W', { entry: true }));
 tiles.push({ x: 2, y: 4, type: 'label', text: 'linia 202', span: 2, size: 7 }, { x: 2, y: 10, type: 'label', text: 'linia 250 SKM', span: 3, size: 7 });
 

@@ -10,8 +10,7 @@
  * tarcza Tm1 (wyjazd z bocznicy); w nastawni mechanicznej – semafory i tarcze kształtowe. Szlaki: Wierzbno (W), Grabowiec (E) – blokada Eap.
  * Kroki samouczka: src/tutorial/missions/mech.js.
  */
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
+import { track as T, run as H } from '../tiles/layout.js';
 
 const os = (nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: 120, vmax: 100, dwell: 60 });
 

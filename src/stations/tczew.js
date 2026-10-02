@@ -17,18 +17,11 @@
  * tor 17, grupy towarowe 15x/20x/30x/40x/50x, bocznice i tarcze manewrowe głowic; semafory A2/E2 i D1/D2 (jazdy
  * po torze lewym) pominięte; tory 7–15 wyjeżdżają na wschód tylko do Zajączkowa, na zachód – do Szymankowa.
  */
+import { createLayout, track as T, run as H, signal as SIG } from '../tiles/layout.js';
 
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, toe, straight, diverge, section) => ({ x, y, type: 'point', id: `Zw${id}`, label: String(id), toe, straight, diverge, section: section || `Iz${id}` });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
-const point = (x, y, id, toe, straight, diverge, len = 60) => { sec(`Iz${id}`, { length: len, kind: 'point' }); tiles.push(P(x, y, id, toe, straight, diverge)); };
-const diag = (x, y, ports, id) => tiles.push(T(x, y, ports, `Iz${id}`));
-const plain = (id, x1, x2, y, len) => { sec(id, { length: len ?? (x2 - x1 + 1) * 20, kind: 'plain' }); tiles.push(...H(x1, x2, y, id)); };
+const { tiles, sections, section: sec, point, diag, plain, lineExit } = createLayout();
+const westExit = (y, id, text) => lineExit({ side: 'W', y, id, text, from: 0, to: 5 });
+const eastExit = (y, id, text) => lineExit({ side: 'E', y, id, text, from: 114, to: 119 });
 
 // ---- tytuł, przyciski ----
 tiles.push({ x: 50, y: 0, type: 'label', text: 'TCZEW', size: 13, span: 16 });
@@ -49,8 +42,6 @@ for (const [nr, y, len, peron] of TRACKS) {
 }
 
 // ---- szlaki: zachód (x 0–5), wschód (x 114–119) ----
-const westExit = (y, id, text) => { sec(`Zb${id}`, { length: 400, kind: 'approach' }); tiles.push({ ...T(0, y, ['W', 'E'], `Zb${id}`), endButton: { id: `k${id}`, color: 'green' }, text }, ...H(1, 5, y, `Zb${id}`)); };
-const eastExit = (y, id, text) => { sec(`Zb${id}`, { length: 400, kind: 'approach' }); tiles.push(...H(114, 118, y, `Zb${id}`), { ...T(119, y, ['W', 'E'], `Zb${id}`), endButton: { id: `k${id}`, color: 'green' }, text }); };
 westExit(4, 'GK2', 'Górki 131 t.2'); westExit(6, 'GK1', 'Górki 131 t.1');
 westExit(14, 'SZ2', 'Szymankowo 9 t.2'); westExit(16, 'SZ1', 'Szymankowo 9 t.1');
 eastExit(4, 'ML2', 'Malinowo 203 t.2'); eastExit(6, 'ML1', 'Malinowo 203 t.1');

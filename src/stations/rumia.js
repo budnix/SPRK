@@ -17,16 +17,11 @@
  * na 3 (rozjazd 8) jako 8a–8b; rozjazdy 29/30 na końcu torów 6/4 jako łuki do rozjazdu 31; bocznice 14 i 16 pominięte,
  * tor 13 jako żeberko za rozjazdem 34; tarcza L pominięta.
  */
+import { createLayout, track as T, run as H, pointTile as P, signal as SIG, buffer as BUF } from '../tiles/layout.js';
 
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, label, toe, straight, diverge, section) => ({ x, y, type: 'point', id, label, toe, straight, diverge, section });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-const BUF = (x, y, port, section, id) => ({ x, y, type: 'buffer', port, section, endButton: { id, color: 'white' } });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
+const { tiles, sections, section: sec, lineExit } = createLayout();
+const westExit = (y, id, section, text) => lineExit({ side: 'W', y, id, text, from: 0, to: 5, section });
+const eastExit = (y, id, section, text) => lineExit({ side: 'E', y, id, text, from: 89, to: 95, section, length: 500 });
 
 // ---- tytuł, przyciski, opisy ----
 tiles.push({ x: 40, y: 0, type: 'label', text: 'RUMIA', size: 12, span: 16 });
@@ -34,10 +29,6 @@ tiles.push({ x: 1, y: 7, type: 'label', text: 'linia 202', span: 2, size: 7 }, {
   { x: 85, y: 11, type: 'label', text: 'linia 202 · Reda', span: 4, size: 7 }, { x: 38, y: 1, type: 'label', text: 'tor 8 · plac ładunkowy', span: 5, size: 7 });
 
 // ---- zachód: tory szlakowe (x 0–5), semafory wjazdowe A, A2 i wyjazdowe na szlaku D312, G311 ----
-const westExit = (y, id, sec_, text) => {
-  sec(sec_, { length: 400, kind: 'approach' });
-  tiles.push({ ...T(0, y, ['W', 'E'], sec_), endButton: { id: `k${id}`, color: 'green' }, text }, ...H(1, 5, y, sec_));
-};
 westExit(8, 'GC2', 'ZbGC2', 'Chylonia 202 t.2'); westExit(10, 'GC1', 'ZbGC1', 'Chylonia 202 t.1');
 westExit(12, 'GS2', 'ZbGS2', 'Cisowa 250 t.2'); westExit(14, 'GS1', 'ZbGS1', 'Cisowa 250 t.1');
 tiles.push(SIG(5, 9, 'A', 'semafor', { x: 5, y: 10 }, 'E', { entry: true }), SIG(5, 15, 'A2', 'semafor', { x: 5, y: 14 }, 'E', { entry: true }));
@@ -117,10 +108,6 @@ sec('Iz37', { length: 90, kind: 'point' }); tiles.push(P(80, 10, 'Zw37', '37', '
 sec('E2d', { length: 120, kind: 'plain' }); tiles.push(...H(83, 88, 8, 'E2d'));
 sec('E1d', { length: 140, kind: 'plain' }); tiles.push(...H(81, 88, 10, 'E1d'));
 // ---- wschód: szlaki do Redy (Eap dwutorowa, semafor wjazdowy R) ----
-const eastExit = (y, id, sec_, text) => {
-  sec(sec_, { length: 500, kind: 'approach' });
-  tiles.push(...H(89, 94, y, sec_), { ...T(95, y, ['W', 'E'], sec_), endButton: { id: `k${id}`, color: 'green' }, text });
-};
 eastExit(8, 'RD2', 'ZbRD2', 'Reda 202 t.2'); eastExit(10, 'RD1', 'ZbRD1', 'Reda 202 t.1');
 tiles.push(SIG(89, 7, 'R', 'semafor', { x: 89, y: 8 }, 'W', { entry: true }));
 

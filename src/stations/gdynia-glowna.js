@@ -17,10 +17,8 @@
  *
  * Siatka 100 × 28. Tory: 10 (y=2), 9 (4), 8 (6), 7 (8), 6 (10), 5 (12), 4 (14), 3 (16), 2 (18), 1 (20), 502 (22), 501 (24).
  */
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, toe, straight, diverge, section, extra = {}) => ({ x, y, type: 'point', id: `Zw${id}`, label: String(id), toe, straight, diverge, section, ...extra });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
+import { createLayout, track as T, run as H, signal as SIG, pointTile } from '../tiles/layout.js';
+const P = (x, y, id, toe, straight, diverge, section, extra = {}) => pointTile(x, y, `Zw${id}`, String(id), toe, straight, diverge, section, extra);
 
 const TRACKS = [
   // [nr, y, dł. użyteczna, peron, x początku toru peronowego (za głowicą zachodnią)]
@@ -31,8 +29,7 @@ const TRACKS = [
 // koniec toru peronowego (x) i początek odcinka wschodniego – wg głowicy wschodniej
 const EAST_END = { 10: 85, 9: 87, 8: 89, 7: 87, 6: 85, 5: 83, 4: 81, 3: 79, 2: 77, 1: 75, 502: 74, 501: 83 };
 
-const tiles = [];
-const sections = {};
+const { tiles, sections, lineExit } = createLayout();
 
 // ---------------- blokady i przyciski ----------------
 tiles.push({ x: 38, y: 0, type: 'label', text: 'GDYNIA GŁÓWNA', size: 13, span: 24 });
@@ -58,15 +55,13 @@ for (const [nr, y, len, peron, x0] of TRACKS) {
 
 // ---------------- głowica zachodnia ----------------
 // linia 201 (tor 10) – od Gdyni Wielki Kack
-sections.ZbB1 = { length: 400, kind: 'approach' };
-tiles.push({ ...T(0, 2, ['W', 'E'], 'ZbB1'), endButton: { id: 'kK', color: 'green' }, text: 'Wlk. Kack' }, ...H(1, 5, 2, 'ZbB1'));
+lineExit({ side: 'W', y: 2, id: 'K', text: 'Wlk. Kack', from: 0, to: 5, section: 'ZbB1' });
 sections.W201 = { length: 180, kind: 'plain' };
 tiles.push(...H(6, 12, 2, 'W201'));
 sections.Iz25 = { length: 60, kind: 'point' };
 tiles.push(P(13, 2, 25, 'E', 'W', 'SW', 'Iz25'), T(12, 3, ['NE', 'SW'], 'Iz25'));
 // linia 202 tor 1 (A1) – wiersz toru 8
-sections.ZbA1 = { length: 400, kind: 'approach' };
-tiles.push({ ...T(0, 6, ['W', 'E'], 'ZbA1'), endButton: { id: 'kG1', color: 'green' }, text: 'Gdańsk t.1' }, ...H(1, 5, 6, 'ZbA1'));
+lineExit({ side: 'W', y: 6, id: 'G1', text: 'Gdańsk t.1', from: 0, to: 5, section: 'ZbA1' });
 sections.W1a = { length: 60, kind: 'plain' };
 tiles.push(...H(6, 7, 6, 'W1a'));
 sections.Iz3 = { length: 80, kind: 'point' };
@@ -78,8 +73,7 @@ tiles.push(P(11, 4, 22, 'SW', 'NE', 'E', 'Iz22'));
 sections.Iz16 = { length: 60, kind: 'point' };
 tiles.push(P(10, 6, 16, 'W', 'E', 'SE', 'Iz16'), T(11, 7, ['NW', 'SE'], 'Iz16'));
 // linia 202 tor 2 (A2) – wiersz toru 7
-sections.ZbA2 = { length: 400, kind: 'approach' };
-tiles.push({ ...T(0, 8, ['W', 'E'], 'ZbA2'), endButton: { id: 'kG2', color: 'green' }, text: 'Gdańsk t.2' }, ...H(1, 5, 8, 'ZbA2'));
+lineExit({ side: 'W', y: 8, id: 'G2', text: 'Gdańsk t.2', from: 0, to: 5, section: 'ZbA2' });
 sections.W2a = { length: 120, kind: 'plain' };
 tiles.push(...H(7, 11, 8, 'W2a'));
 sections.Iz23 = { length: 40, kind: 'point' };
@@ -95,16 +89,14 @@ tiles.push(P(25, 20, 21, 'NW', 'E', 'SW', 'Iz21'), T(24, 21, ['NE', 'SW'], 'Iz21
 sections.Iz15 = { length: 40, kind: 'point' };
 tiles.push(P(23, 22, 15, 'W', 'E', 'NE', 'Iz15'));
 // SKM 502 / 501 od Gdyni Orłowo
-sections.ZbA502 = { length: 400, kind: 'approach' };
-tiles.push({ ...T(0, 22, ['W', 'E'], 'ZbA502'), endButton: { id: 'kS2', color: 'green' }, text: 'Orłowo 502' }, ...H(1, 5, 22, 'ZbA502'));
+lineExit({ side: 'W', y: 22, id: 'S2', text: 'Orłowo 502', from: 0, to: 5, section: 'ZbA502' });
 sections.W502a = { length: 260, kind: 'plain' };
 tiles.push(...H(6, 17, 22, 'W502a'));
 sections.Iz11 = { length: 80, kind: 'point' };
 tiles.push(P(18, 22, 11, 'E', 'W', 'SW', 'Iz11'), T(17, 23, ['NE', 'SW'], 'Iz11'), P(16, 24, 13, 'W', 'E', 'NE', 'Iz11'));
 sections.W502b = { length: 90, kind: 'plain' };
 tiles.push(...H(19, 22, 22, 'W502b'));
-sections.ZbA501 = { length: 400, kind: 'approach' };
-tiles.push({ ...T(0, 24, ['W', 'E'], 'ZbA501'), endButton: { id: 'kS1', color: 'green' }, text: 'Orłowo 501' }, ...H(1, 5, 24, 'ZbA501'));
+lineExit({ side: 'W', y: 24, id: 'S1', text: 'Orłowo 501', from: 0, to: 5, section: 'ZbA501' });
 sections.W501a = { length: 220, kind: 'plain' };
 tiles.push(...H(6, 15, 24, 'W501a'));
 sections.W501b = { length: 50, kind: 'plain' };
@@ -137,8 +129,7 @@ sections.Iz61 = { length: 80, kind: 'point' };
 tiles.push(P(93, 6, 61, 'W', 'E', 'SE', 'Iz61'), T(94, 7, ['NW', 'SE'], 'Iz61'), P(95, 8, 62, 'E', 'W', 'NW', 'Iz61'));
 sections.E1b = { length: 50, kind: 'plain' };
 tiles.push(...H(94, 95, 6, 'E1b'));
-sections.ZbB = { length: 400, kind: 'approach' };
-tiles.push(...H(96, 98, 6, 'ZbB'), { ...T(99, 6, ['W', 'E'], 'ZbB'), endButton: { id: 'kC1', color: 'green' }, text: 'Chylonia t.1' });
+lineExit({ side: 'E', y: 6, id: 'C1', text: 'Chylonia t.1', from: 96, to: 99, section: 'ZbB' });
 // tor 7 / linia 202 tor 2
 sections.Iz42 = { length: 60, kind: 'point' };
 tiles.push(P(88, 8, 42, 'E', 'W', 'SW', 'Iz42'), T(87, 9, ['NE', 'SW'], 'Iz42'));
@@ -146,8 +137,7 @@ sections.Iz43 = { length: 40, kind: 'point' };
 tiles.push(P(89, 8, 43, 'W', 'E', 'NE', 'Iz43'));
 sections.E2a = { length: 100, kind: 'plain' };
 tiles.push(...H(90, 94, 8, 'E2a'));
-sections.ZbA = { length: 400, kind: 'approach' };
-tiles.push(...H(96, 98, 8, 'ZbA'), { ...T(99, 8, ['W', 'E'], 'ZbA'), endButton: { id: 'kC2', color: 'green' }, text: 'Chylonia t.2' });
+lineExit({ side: 'E', y: 8, id: 'C2', text: 'Chylonia t.2', from: 96, to: 99, section: 'ZbA' });
 // drabina w dół (na zachód): 41 → 40 → 36 → 35 → 34 → 33
 const ladderE = [[86, 10, 41], [84, 12, 40], [82, 14, 36], [80, 16, 35], [78, 18, 34]];
 for (const [x, y, id] of ladderE) {
@@ -163,8 +153,7 @@ tiles.push(P(75, 22, 31, 'E', 'W', 'NE', 'Iz31'));
 // linia 201 do Gdyni Port (z toru 1)
 sections.EP = { length: 350, kind: 'plain' };
 tiles.push(...H(78, 93, 20, 'EP'));
-sections.ZbS = { length: 400, kind: 'approach' };
-tiles.push(...H(94, 98, 20, 'ZbS'), { ...T(99, 20, ['W', 'E'], 'ZbS'), endButton: { id: 'kP', color: 'green' }, text: 'Gdynia Port' });
+lineExit({ side: 'E', y: 20, id: 'P', text: 'Gdynia Port', from: 94, to: 99, section: 'ZbS' });
 // SKM wschód
 sections.E502b = { length: 220, kind: 'plain' };
 tiles.push(...H(76, 85, 22, 'E502b'));
@@ -172,16 +161,14 @@ sections.Iz63 = { length: 80, kind: 'point' };
 tiles.push(P(86, 22, 63, 'W', 'E', 'SW', 'Iz63'), T(85, 23, ['NE', 'SW'], 'Iz63'), P(84, 24, 64, 'E', 'W', 'NE', 'Iz63'));
 sections.E502c = { length: 160, kind: 'plain' };
 tiles.push(...H(87, 93, 22, 'E502c'));
-sections.ZbL502 = { length: 400, kind: 'approach' };
-tiles.push(...H(94, 98, 22, 'ZbL502'), { ...T(99, 22, ['W', 'E'], 'ZbL502'), endButton: { id: 'kR2', color: 'green' }, text: 'Chylonia 502' });
+lineExit({ side: 'E', y: 22, id: 'R2', text: 'Chylonia 502', from: 94, to: 99, section: 'ZbL502' });
 sections.E501b = { length: 70, kind: 'plain' };
 tiles.push(...H(85, 87, 24, 'E501b'));
 sections.Iz66 = { length: 60, kind: 'point' };
 tiles.push(P(88, 24, 66, 'W', 'E', 'SE', 'Iz66'), T(89, 25, ['NW', 'SE'], 'Iz66'), T(90, 26, ['NW', 'E'], 'Iz66'));
 sections.E501c = { length: 120, kind: 'plain' };
 tiles.push(...H(89, 93, 24, 'E501c'));
-sections.ZbL501 = { length: 400, kind: 'approach' };
-tiles.push(...H(94, 98, 24, 'ZbL501'), { ...T(99, 24, ['W', 'E'], 'ZbL501'), endButton: { id: 'kR1', color: 'green' }, text: 'Chylonia 501' });
+lineExit({ side: 'E', y: 24, id: 'R1', text: 'Chylonia 501', from: 94, to: 99, section: 'ZbL501' });
 // bocznica 51
 sections.T51w = { length: 25, kind: 'siding', track: '51' };
 sections.T51 = { length: 150, kind: 'siding', track: '51' };

@@ -12,27 +12,16 @@
  * p.o. Sopot Wyścigi jest tylko opisem na odcinku zbliżania. Rozjazd 41 grupy SKM ma id Zw41s (na planie numer 41
  * występuje dwukrotnie).
  */
+import { createLayout, track as T, run as H, pointTile as P, signal as SIG, buffer as BUF } from '../tiles/layout.js';
 
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, label, toe, straight, diverge, section) => ({ x, y, type: 'point', id, label, toe, straight, diverge, section });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-const BUF = (x, y, port, section, id) => ({ x, y, type: 'buffer', port, section, endButton: { id, color: 'white' } });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
+const { tiles, sections, section: sec, lineExit } = createLayout();
+const approach = (x0, x1, y, section, btn, text, dirW = true) => lineExit({ side: dirW ? 'W' : 'E', y, id: btn, text, from: x0, to: x1, section });
 
 // ---- blokady, przyciski, opisy ----
 tiles.push({ x: 30, y: 0, type: 'label', text: 'SOPOT', size: 12, span: 18 });
 tiles.push({ x: 1, y: 6, type: 'label', text: 'linia 202', span: 2, size: 7 }, { x: 12, y: 11, type: 'label', text: 'p.o. Sopot Wyścigi · linia 250 SKM', span: 8, size: 7 });
 
 // ---- zachód: odcinki zbliżania ----
-const approach = (x0, x1, y, sec_, btn, text, dirW = true) => {
-  sec(sec_, { length: 400, kind: 'approach' });
-  const end = { ...T(dirW ? x0 : x1, y, ['W', 'E'], sec_), endButton: { id: `k${btn}`, color: 'green' }, text };
-  tiles.push(end, ...H(dirW ? x0 + 1 : x0, dirW ? x1 : x1 - 1, y, sec_));
-};
 approach(0, 5, 4, 'ZbA', 'GD1', 'Gdańsk 202 t.1'); approach(0, 5, 8, 'ZbB', 'GD2', 'Gdańsk 202 t.2');
 approach(0, 27, 10, 'ZbA502', 'GS2', 'Gdańsk 250 t.502'); approach(0, 27, 12, 'ZbA501', 'GS1', 'Gdańsk 250 t.501');
 tiles.push(SIG(5, 3, 'A', 'semafor', { x: 5, y: 4 }, 'E', { entry: true }), SIG(5, 9, 'B', 'semafor', { x: 5, y: 8 }, 'E', { entry: true }),

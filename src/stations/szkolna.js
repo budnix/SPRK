@@ -13,9 +13,7 @@
  * Ko, Wbl, przelot, krzyżowanie, manewry ze składem kończącym bieg, usterka semafora – Sz,
  * usterka blokady – zapowiadanie telefoniczne). Kroki samouczka: src/tutorial/missions.js.
  */
-
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
+import { track as T, run as H } from '../tiles/layout.js';
 
 export default {
   schemaVersion: 1,

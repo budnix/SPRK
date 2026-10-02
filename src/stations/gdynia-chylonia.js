@@ -10,16 +10,11 @@
  * Uproszczenia względem planu: tor 1 wpięty w tor 2 przez rozjazd 30 (bez przejścia 30–31 na tor 501), rozjazd krzyżowy 38
  * jako dwie zwrotnice 38a/38b, pominięto semafor L502 i tarcze T21/T22 przy kozłach torów 21/22.
  */
+import { createLayout, track as T, run as H, pointTile as P, signal as SIG, buffer as BUF } from '../tiles/layout.js';
 
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const P = (x, y, id, label, toe, straight, diverge, section) => ({ x, y, type: 'point', id, label, toe, straight, diverge, section });
-const SIG = (x, y, id, kind, at, dir, extra = {}) => ({ x, y, type: 'signal', id, kind, at, dir, ...extra });
-const BUF = (x, y, port, section, id) => ({ x, y, type: 'buffer', port, section, endButton: { id, color: 'white' } });
-
-const tiles = [];
-const sections = {};
-const sec = (id, def) => { sections[id] = def; return id; };
+const { tiles, sections, section: sec, lineExit } = createLayout();
+const westExit = (y, id, section, text) => lineExit({ side: 'W', y, id, text, from: 0, to: 5, section });
+const eastExit = (y, id, section, text, x0 = 101) => lineExit({ side: 'E', y, id, text, from: x0, to: 111, section });
 
 // ---- blokady, przyciski, opisy ----
 tiles.push({ x: 28, y: 0, type: 'label', text: 'GDYNIA CHYLONIA', size: 12, span: 20 });
@@ -45,10 +40,6 @@ tiles.push(SIG(71, 1, 'G502', 'semafor', { x: 70, y: 2 }, 'E', { shunting: true 
   SIG(71, 17, 'M3', 'semafor', { x: 70, y: 16 }, 'E', { shunting: true }));
 
 // ---- zachód: odcinki zbliżania i semafory wjazdowe A, B, C, D ----
-const westExit = (y, id, sec_, text) => {
-  sec(sec_, { length: 400, kind: 'approach' });
-  tiles.push({ ...T(0, y, ['W', 'E'], sec_), endButton: { id: `k${id}`, color: 'green' }, text }, ...H(1, 5, y, sec_));
-};
 westExit(2, 'GS1', 'ZbA', 'Gdynia Gł. 250 t.1'); westExit(8, 'GS2', 'ZbB', 'Gdynia Gł. 250 t.2');
 westExit(12, 'GG1', 'ZbC', 'Gdynia Gł. 202 t.1'); westExit(14, 'GG2', 'ZbD', 'Gdynia Gł. 202 t.2');
 tiles.push(SIG(5, 1, 'A', 'semafor', { x: 5, y: 2 }, 'E', { entry: true }), SIG(5, 9, 'B', 'semafor', { x: 5, y: 8 }, 'E', { entry: true }),
@@ -154,10 +145,6 @@ sec('E1c', { length: 300, kind: 'plain' }); tiles.push(...H(89, 104, 14, 'E1c'),
 tiles.push(SIG(84, 13, 'Tm26', 'tm', { x: 84, y: 12 }, 'E'), SIG(84, 15, 'Tm27', 'tm', { x: 84, y: 14 }, 'E'), SIG(90, 15, 'Tm31', 'tm', { x: 90, y: 14 }, 'W'));
 
 // ---- wschód: odcinki zbliżania i semafory wjazdowe U, T, S, R, P ----
-const eastExit = (y, id, sec_, text, x0 = 101) => {
-  sec(sec_, { length: 400, kind: 'approach' });
-  tiles.push(...H(x0, 110, y, sec_), { ...T(111, y, ['W', 'E'], sec_), endButton: { id: `k${id}`, color: 'green' }, text });
-};
 eastExit(2, 'RS1', 'ZbU', 'Cisowa 250 t.1'); eastExit(8, 'RS2', 'ZbT', 'Cisowa 250 t.2');
 eastExit(10, 'RG1', 'ZbS', 'Rumia 202 t.1'); eastExit(12, 'RG2', 'ZbR', 'Rumia 202 t.2'); eastExit(16, 'PORT', 'ZbP', 'Gdynia Port', 108);
 tiles.push(SIG(101, 1, 'U', 'semafor', { x: 101, y: 2 }, 'W', { entry: true }), SIG(101, 9, 'T', 'semafor', { x: 101, y: 8 }, 'W', { entry: true }),

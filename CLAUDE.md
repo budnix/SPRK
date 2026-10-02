@@ -94,7 +94,8 @@
 
 - Czysty JavaScript (moduły ES), bez frameworków. Vite tylko jako serwer dev/build. Testy: `node --test`.
 - Logika symulacji (`src/model/`) nie może zależeć od DOM – testy działają w Node.
-- Nowe kostki pulpitu: wpis w `src/tiles/registry.js` + funkcja rysująca w `src/render/tileArt.js`.
+- Nowe kostki pulpitu: wpis w `src/tiles/registry.js` + funkcja rysująca w `src/render/tileArt.js`. Plan stacji pisze się
+  pomocnikami z `src/tiles/layout.js` (`createLayout`), nie kopiami w pliku stacji (`tests/layout.test.js`).
 - Definicje stacji wg `docs/STATION-FORMAT.md`; walidacja w `src/model/validate.js`. Stacja opisuje tor
   i sygnalizację – przycisków stanowiska (grupowych, rozkazów, blokady) do definicji stacji się nie wpisuje.
 - Teksty interfejsu (menu, ekrany, panel, pomoc) przez `t()` z `src/i18n/`: nowy tekst = klucz w `pl.js`, `en.js` i `de.js`

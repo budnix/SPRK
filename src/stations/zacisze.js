@@ -8,9 +8,8 @@
  * Semafory: A (wjazdowy od Modrzewia), B1, B2, B3 (wyjazdowe z torów 1–3). Zwrotnice: 1 (tor 1 / pozostałe),
  * 2 (tor 2 / tor 3). Kroki samouczka: src/tutorial/missions/izh.js.
  */
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
-const BUF = (x, y, section, id) => ({ x, y, type: 'buffer', port: 'W', section, endButton: { id, color: 'white' } });
+import { track as T, run as H, buffer } from '../tiles/layout.js';
+const BUF = (x, y, section, id) => buffer(x, y, 'W', section, id);
 
 const shuttle = (nr, arr, track, extra = {}) => ({ nr, kind: 'os', name: 'Osobowy Modrzew – Zacisze', from: 'W', to: null, arr, track, stop: true, terminates: true, length: 110, vmax: 80, ...extra });
 const back = (nr, unit, dep, track, extra = {}) => ({ nr, kind: 'os', name: 'Osobowy Zacisze – Modrzew', unit, from: null, to: 'W', dep, track, stop: true, length: 110, vmax: 80, ...extra });

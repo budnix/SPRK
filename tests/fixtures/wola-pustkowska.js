@@ -13,8 +13,7 @@
  * Semafory: A (wjazd od Krasnego, tor 2), B (wjazd od Zalesia, tor 1), C (wjazd od Borków, tor 3),
  *           D1, D2, D3 (wyjazd na zachód), E2, E3 (wyjazd na wschód / do Borków).
  */
-const T = (x, y, ports, section, extra = {}) => ({ x, y, type: 'track', ports, section, ...extra });
-const H = (x1, x2, y, section, extra = {}) => Array.from({ length: x2 - x1 + 1 }, (_, i) => T(x1 + i, y, ['W', 'E'], section, extra));
+import { track as T, run as H } from '../../src/tiles/layout.js';
 
 export default {
   schemaVersion: 1,

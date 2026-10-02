@@ -6,7 +6,8 @@ src/
   data/        glossary (słownik skrótów Ie-1 / Ir-1 – dymki samouczka, instrukcja, podpowiedzi przycisków)
   tiles/       directions (porty), registry (rejestr typów kostek + schemat pól), controls (pola przycisków
                grupowych stanowiska – miejsce na pulpicie, bez DOM), repeater (lampki powtarzacza sygnalizatora
-               na pulpicie typu E dla obrazu sygnału)
+               na pulpicie typu E dla obrazu sygnału), layout (budowa planu stacji: kostki i odcinki z konwencjami
+               nazw, długości i przycisków – zwrotnica, ukos, odcinek prosty, żeberko, przejście, wyjazd na szlak)
   model/       categories (kategorie pociągów: prędkość, dynamika kategorii – przyspieszenie przeliczone na masę składu, gdy pociąg nie ma taboru, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru, dobór zespołu / lokomotywy dla pociągu i dynamika z taboru – przyspieszenie, hamowanie, prędkość pojazdu), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
