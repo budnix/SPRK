@@ -1,6 +1,7 @@
 import { Simulation, EXTRA_TRAIN, extraTrainShifts } from './Simulation.js';
 import { validateStation, validateTimetable } from './validate.js';
 import { FAULT_TYPES } from './Faults.js';
+import { LATE_SLACK } from './Traffic.js';
 import { trainSpeed } from './rollingStock.js';
 import { entryPath as findEntryPath, trainRouteChains, routeEndTrack } from './trainPaths.js';
 import { Clock } from '../core/Clock.js';
@@ -34,13 +35,8 @@ import { hasSrk } from '../srk/registry.js';
 /** Pola scenariusza z docs/STATION-FORMAT.md – inne to zwykle literówka (pole po cichu pomijane). */
 export const SCENARIO_KEYS = ['id', 'name', 'description', 'trains', 'timetable', 'startTime', 'endTime', 'faults', 'closedSections', 'disruptions', 'tasks', 'tutorial', 'srk'];
 
-/**
- * Pociąg odjeżdżający (z `to`) musi mieć planowy odjazd co najmniej tyle sekund przed końcem zmiany: od odjazdu do
- * zjazdu ze stacji (pociąg „odjechał” – obsłużony) mija 1–4 min (zmierzone automatem na wszystkich stacjach). Ta sama
- * granica w przebiegu (`scripts/check-scenario.mjs`): pociąg, który wg planu i opóźnienia od sąsiada nie zdąży
- * tyle przed końcem, nie mieści się w zmianie.
- */
-export const LATE_SLACK = 4 * 60;
+/** Granica „pociąg mieści się w zmianie” – jedna dla oceny, kontroli definicji i werdyktu przebiegu (`Traffic.js`). */
+export { LATE_SLACK };
 /** Zapas planu (min) przy poziomie zakłóceń: najdłuższe opóźnienie od sąsiada + czas na wyjazd ze stacji. */
 export function levelSlackMin(levelId) {
   return (DISRUPTION_LEVELS[levelId]?.delayMax ?? 0) + LATE_SLACK / 60;
@@ -287,7 +283,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     for (const L of levels) {
       const need = levelSlackMin(L);
       if (!DISRUPTION_LEVELS[L].delayMax || slack >= need) continue;
-      levelNote('sc-slack', `Ostatnie zdarzenie rozkładu (pociąg ${lastEvent.nr}, ${hm(lastEvent.time)}) ${slack} min przed końcem zmiany ${sc.endTime}; przy poziomie ${L} (opóźnienie od sąsiada do ${DISRUPTION_LEVELS[L].delayMax} min) potrzeba ${need} min – pociągi opóźnione bardziej nie zdążą (kara „nieobsłużony” bez winy dyżurnego)`, lastEvent.nr);
+      levelNote('sc-slack', `Ostatnie zdarzenie rozkładu (pociąg ${lastEvent.nr}, ${hm(lastEvent.time)}) ${slack} min przed końcem zmiany ${sc.endTime}; przy poziomie ${L} (opóźnienie od sąsiada do ${DISRUPTION_LEVELS[L].delayMax} min) potrzeba ${need} min – pociągi opóźnione bardziej nie zdążą (bez kary, ale zmiana kończy się bez ich obsługi)`, lastEvent.nr);
     }
   }
   // ---- konflikty planu: ten sam tor, ten sam szlak ----

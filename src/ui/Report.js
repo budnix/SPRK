@@ -32,13 +32,13 @@ export class Report {
     const c = r.counters || {};
     const ended = r.ended;
     const endLine = ended
-      ? t('rp.ended', { time: hm(r.endedAt), reason: t(`rp.end.${r.endReason}`) }) + (r.unfinished.length ? t('rp.unfinished', { list: r.unfinished.map((u) => `${esc(u.label)} (${esc(u.status)})`).join(', ') }) : '')
+      ? t('rp.ended', { time: hm(r.endedAt), reason: t(`rp.end.${r.endReason}`) }) + (r.unfinished.length ? t('rp.unfinished', { list: r.unfinished.map((u) => `${esc(u.label)} (${esc(u.status)}${u.excused ? t('rp.unfinished.excused') : ''})`).join(', ') }) : '')
       : t('rp.live', { time: hm(r.now) });
     const tile = (k, v, s = '', cls = '') => `<div class="rp-tile ${cls}"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
     const tasksDone = r.tasks.filter((t) => t.done).length;
     const wrongComms = r.byCode.find((b) => b.code === 'comms-wrong')?.n || 0;
     const tiles = [
-      tile(t('rp.t.trains'), `${r.done} / ${r.trains}`, t('rp.t.trains.s'), r.done === r.trains ? 'good' : r.unfinished.length ? 'bad' : ''),
+      tile(t('rp.t.trains'), `${r.done} / ${r.trains}`, t('rp.t.trains.s'), r.done === r.trains ? 'good' : r.unfinished.some((u) => !u.excused) ? 'bad' : ''),
       tile(t('rp.t.onTime'), String(r.onTime), t('rp.t.onTime.s'), r.onTime ? 'good' : ''),
       tile(t('rp.t.delayed'), String(r.delayed), r.delayed ? t('rp.t.delayed.s', { n: r.delayMinutes }) : t('rp.t.none'), r.delayed ? 'bad' : 'good'),
       r.tasks.length ? tile(t('rp.t.tasks'), `${tasksDone} / ${r.tasks.length}`, t('rp.t.tasks.s'), tasksDone === r.tasks.length ? 'good' : r.tasks.some((t) => t.failed) ? 'bad' : '') : '',

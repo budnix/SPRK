@@ -256,6 +256,7 @@ export default {
   'rp.pts': 'pkt',
   'rp.ended': 'Zmiana zakończona o {time} – {reason}',
   'rp.unfinished': '; nieobsłużone: {list}',
+  'rp.unfinished.excused': ' – opóźniony od sąsiada, bez kary',
   'rp.live': 'Zmiana trwa – stan na {time}',
   'rp.end.all-done': 'wszystkie pociągi obsłużone',
   'rp.end.time': 'koniec czasu zmiany',

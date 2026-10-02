@@ -143,7 +143,9 @@ Play it: **https://budnix.github.io/SPRK/**
   shunting path to the target track. A substitute signal given with a two-step command (EBILock SZI → SZW, MOR-3,
   the monitor's special command) is judged when you choose it, so a fault repaired before you confirm still excuses
   it. Shift report with a score for every procedural
-  decision.
+  decision. A train left unhandled at the end of the shift costs points only if you could have handled it: one that
+  a neighbour sent too late to make it before the end is listed as "delayed by the neighbour, no penalty", and extra
+  trains at high disruptions are always planned inside the shift.
 
 ### Stations
 The fictional training stations (Szkolna, Jodłowa, Zacisze, Olszyny, Brzezina, Kalinowo) are not in the list of stations for a

@@ -250,6 +250,7 @@ export default {
   'rp.pts': 'Pkt.',
   'rp.ended': 'Schicht beendet um {time} – {reason}',
   'rp.unfinished': '; nicht abgefertigt: {list}',
+  'rp.unfinished.excused': ' – vom Nachbarn verspätet, ohne Abzug',
   'rp.live': 'Schicht läuft – Stand {time}',
   'rp.end.all-done': 'alle Züge abgefertigt',
   'rp.end.time': 'Schichtzeit abgelaufen',

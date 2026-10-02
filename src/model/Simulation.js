@@ -324,8 +324,15 @@ export class Simulation {
   }
 
   #finalScore() {
+    const now = this.clock.time;
     for (const e of this.traffic.timetable()) {
-      if (!Traffic.isDone(e)) this.bus.emit('score', { time: this.clock.time, code: 'unfinished', points: -10, nr: e.nr, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany (${e.status})` });
+      if (Traffic.isDone(e)) continue;
+      // pociąg, który przez opóźnienie od sąsiada (albo składu, z którego powstaje) nie mógł zdążyć przed końcem zmiany –
+      // bez kary (przyjęte: kara tylko za pociąg, który dało się obsłużyć); pozycja 0 pkt zostaje w raporcie
+      if (this.traffic.lateFromOutside(e, now)) {
+        const lag = Math.round(this.traffic.inboundLag(e) / 60);
+        this.bus.emit('score', { time: now, code: 'unfinished-late', points: 0, nr: e.nr, lag, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany – opóźniony ${lag} min bez winy posterunku, nie zdążyłby (bez kary)` });
+      } else this.bus.emit('score', { time: now, code: 'unfinished', points: -10, nr: e.nr, msg: `Pociąg ${e.nr} nie obsłużony do końca zmiany (${e.status})` });
     }
     // obowiązki blokady niewykonane do końca zmiany – kara jak przy dojeździe pociągu do sąsiada; obowiązek się zamyka,
     // żeby dojazd pociągu po końcu zmiany (symulacja biegnie dalej) nie doliczył jej drugi raz

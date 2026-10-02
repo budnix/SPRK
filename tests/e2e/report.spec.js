@@ -52,3 +52,24 @@ test('raport z menu w trakcie zmiany: „Stan oceny – zmiana trwa”, przycisk
   await rep.locator('.rp-actions .close').click();
   await expect(rep).toBeHidden();
 });
+
+test('raport: pociąg opóźniony od sąsiada ponad koniec zmiany – nieobsłużony „bez kary”, bez pozycji −10; kafelek pociągów nie jest czerwony', async ({ page }) => {
+  await openShift(page, 'szkolna', { params: { scenariusz: 'zmiana' } });
+  // każdy pociąg od sąsiada +120 min: żaden nie zdąży przed końcem zmiany (pociąg ze składu dziedziczy opóźnienie składu)
+  await page.evaluate(() => {
+    const tr = window.sim.traffic;
+    for (const e of tr.timetable()) if (e.from) tr.setInboundDelay(e, 120);
+    window.sim.endShift('time');
+  });
+  const rep = page.locator('#report');
+  await expect(rep).toBeVisible();
+  await expect(rep.locator('.rp-end')).toContainText('nieobsłużone');
+  const n = await page.evaluate(() => window.sim.traffic.timetable().length);
+  expect((await rep.locator('.rp-end').textContent()).split('opóźniony od sąsiada, bez kary').length - 1).toBe(n);
+  const r = await page.evaluate(() => { const x = window.sim.report(); return { total: x.total, codes: x.items.map((i) => i.code), excused: x.unfinished.map((u) => u.excused) }; });
+  expect(r.codes.filter((c) => c === 'unfinished')).toEqual([]);
+  expect(r.codes.filter((c) => c === 'unfinished-late').length).toBe(n);
+  expect(r.excused.every(Boolean)).toBe(true);
+  expect(r.total).toBe(0);
+  await expect(rep.locator('.rp-tile').first()).not.toHaveClass(/bad/);
+});

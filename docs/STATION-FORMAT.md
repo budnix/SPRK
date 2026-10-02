@@ -275,9 +275,9 @@ Zasady (z tego, jak gra liczy zmianę):
   odjazdem po starcie.
 * Odjazd co najmniej 4 min przed `endTime` (od odjazdu do zjazdu ze stacji mijają 1–4 min – bliżej końca kara
   „nieobsłużony” jest pewna), przyjazd pociągu kończącego bieg – przed `endTime`. Zapas na opóźnienia od sąsiada:
-  przy poziomie `low` 19 min, przy `high` 44 min (opóźnienie poziomu 15 / 40 min + 4 min); pociągi, które nie
-  zdążą, dostają karę „nieobsłużony”. Przy poziomie wybieranym przez gracza to informacja o odporności, przy
-  wymuszonym `disruptions` – uwaga.
+  przy poziomie `low` 19 min, przy `high` 44 min (opóźnienie poziomu 15 / 40 min + 4 min); pociągi, które przez
+  opóźnienie od sąsiada nie zdążą, zostają nieobsłużone bez kary – zmiana kończy się bez nich. Przy poziomie wybieranym
+  przez gracza to informacja o odporności, przy wymuszonym `disruptions` – uwaga.
 * Łańcuch składu (`unit`) – wszystkie pociągi albo żaden: pociąg ze składu bez pociągu, którym skład przyjeżdża,
   nie powstanie.
 * Zadania stacji (`tasks` stacji) przechodzą do scenariusza, jeśli ich skład jedzie w zmianie; własne zadania wpisuje

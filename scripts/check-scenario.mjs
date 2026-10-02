@@ -92,24 +92,10 @@ poziomu. Uwagi z poziomów wybieranych przez gracza (low, high) – wiersz „od
 const same = (a, b) => String(a) === String(b);
 const faultRef = (f) => ({ type: f.type, target: f.target, scripted: !!f.scripted });
 
-/** Opóźnienie (s), które pociąg wnosi bez winy dyżurnego: od sąsiada, składu, z którego powstaje, i usterek zadań. */
-function inboundLag(sim, e) {
-  let lag = (e.delayIn || 0) * 60;
-  if (e.unit != null) lag += unitLag(sim, e);
-  return lag;
-}
-
-/** Opóźnienie (s) składu, z którego powstaje pociąg `e`: od sąsiada i z usterek na drodze zadań składu. */
-function unitLag(sim, e) {
-  const u = sim.traffic.timetable().find((x) => same(x.nr, e.unit));
-  return (u?.delayIn || 0) * 60 + (sim.traffic.tasks || []).filter((k) => same(k.unit, e.unit)).reduce((a, k) => a + (k.faultShift || 0), 0);
-}
-
-/** Godzina planowej obsługi pociągu przesunięta o opóźnienie od sąsiada (także składu, z którego powstaje) i usterki zadań. */
-function expectedDone(sim, e) {
-  const plan = e.depTime ?? e.arrTime;
-  return plan == null ? null : plan + inboundLag(sim, e);
-}
+// opóźnienie wniesione bez winy dyżurnego i planowa obsługa przesunięta o nie – reguły oceny (`Traffic`)
+const inboundLag = (sim, e) => sim.traffic.inboundLag(e);
+const unitLag = (sim, e) => sim.traffic.unitLag(e);
+const expectedDone = (sim, e) => sim.traffic.expectedDone(e);
 
 /** Gdzie jest pociąg (dane, bez tekstu). */
 function whereOf(sim, e) {
@@ -675,7 +661,7 @@ export function verdict(r) {
     const lv = r.effectiveLevel;
     const slack = DISRUPTION_LEVELS[lv]?.delayMax ? ` Przy poziomie ${lv} zapas planu ${levelSlackMin(lv)} min (uwaga sc-slack definicji).` : '';
     const short = lateIn.map((u) => { const tr = r.trains.find((x) => same(x.nr, u.nr)); return `${T(u.nr)} +${tr?.lagMin ?? 0} min`; });
-    note('late-inbound', `${plural(lateIn.length, 'pociąg', 'pociągi', 'pociągów')} nie zdąży przed końcem zmiany ${hm(r.endTime)} przez opóźnienie wniesione (potrzeba co najmniej ${LATE_SLACK / 60} min na wyjazd ze stacji): ${list.join(', ')} – kara „nieobsłużony” bez winy dyżurnego.${slack}`, undefined, `${lateIn.length} poc.: ${short.join(', ')}`);
+    note('late-inbound', `${plural(lateIn.length, 'pociąg', 'pociągi', 'pociągów')} nie zdąży przed końcem zmiany ${hm(r.endTime)} przez opóźnienie wniesione (potrzeba co najmniej ${LATE_SLACK / 60} min na wyjazd ze stacji): ${list.join(', ')} – bez kary (opóźnienie z zewnątrz), ale zmiana kończy się bez ich obsługi.${slack}`, undefined, `${lateIn.length} poc.: ${short.join(', ')}`);
   }
   if (extras.length) {
     info('extra-after-end', `Pociągi nadzwyczajne bez obsługi do końca zmiany ${hm(r.endTime)}: ${extras.map((u) => T(u.nr, [`obsługa ok. ${hm(u.expectedDone)}`])).join(', ')} – planowane tak, żeby mieściły się w zmianie (ostatnie zdarzenie co najmniej ${EXTRA_TRAIN.endSlack / 60} min przed końcem); nie zdążyły przez opóźnienie w ruchu`, undefined, `${extras.length} poc.: ${extras.map((u) => `${T(u.nr)} ok. ${hm(u.expectedDone)}`).join(', ')}`);

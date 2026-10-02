@@ -322,6 +322,10 @@ Przyjęte (uproszczenia gry):
   odcinki, przebieg na niego od strony wjazdu, przebieg z niego w stronę wyjazdu (zajętość z usterki, licznik osi,
   pęknięta szyna, zwrotnica bez kontroli, semafor tych przebiegów bez sygnału) – czynnej między zgłoszeniem pociągu
   a jego przyjazdem; usterka gdzie indziej na stacji – −5 (przyjęte; wcześniej uzasadniała każda usterka na stacji);
+* kara „nieobsłużony” (−10 na koniec zmiany) tylko za pociąg, który dało się obsłużyć (przyjęte): pociąg, który przez
+  opóźnienie od sąsiada – albo składu, z którego powstaje – nie zdążyłby odjechać co najmniej 4 min przed końcem
+  zmiany, zostaje w raporcie jako nieobsłużony bez kary. Wcześniej przy poziomie „duże” (opóźnienia do 40 min) zwykła
+  zmiana, która kończy się 10–34 min po ostatnim pociągu, dawała −10 bez winy dyżurnego;
 * pociąg nadzwyczajny (poziom „duże”) mieści się w zmianie (przyjęte): sąsiad zapowiada go 25 min przed przyjazdem,
   nie przed startem zmiany, a jego odjazd (przy przelocie – przejazd) wypada co najmniej 10 min przed końcem zmiany –
   kara „nieobsłużony” ma dotyczyć pociągu, który dało się obsłużyć. Wcześniej pociąg nadzwyczajny mógł być zaplanowany

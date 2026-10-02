@@ -60,6 +60,7 @@ scenariusze”). Ten skill to lista kroków.
 - `Nieznany scenariusz` w `npm run check` – literówka w `id` albo scenariusz nie jest w `scenarios` stacji.
 - `late-inbound` przy `high` wybranym przez gracza to informacja (opóźnienia od sąsiada do 40 min); przy wymuszonym
   `disruptions: 'high'` – uwaga, gdy powtarza się we wszystkich ziarnach: wydłuż `endTime` (zapas 44 min) albo przyjmij.
+  Pociąg, który przez opóźnienie od sąsiada nie zdąży, nie daje kary „nieobsłużony” – ale gracz go nie obsłuży.
 - Nowa stacja spoza `src/stations/index.js`: `checkScenario(station, scenario)` i `checkShift({ station, scenario })`
   przyjmują obiekty.
 - Różne werdykty między ziarnami – zakłócenia są losowe; patrz zmiany z BŁĘDAMI (`--seeds` z ich ziarnem i `--verbose`).

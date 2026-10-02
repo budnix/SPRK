@@ -54,7 +54,8 @@ export class Score {
       onTime: onTime.length,
       delayed: delayed.length,
       delayMinutes: delayed.reduce((a, r) => a + r.delay, 0),
-      unfinished: rows.filter((r) => !r.done).map((r) => ({ nr: r.nr, label: r.label, status: r.status })),
+      // `excused` – nieobsłużony bez kary: opóźniony z zewnątrz, nie zdążyłby przed końcem zmiany (`unfinished-late`)
+      unfinished: rows.filter((r) => !r.done).map((r) => ({ nr: r.nr, label: r.label, status: r.status, excused: this.items.some((i) => i.code === 'unfinished-late' && String(i.nr) === String(r.nr)) })),
       delays,
       rows,
       tasks,

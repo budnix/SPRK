@@ -250,6 +250,7 @@ export default {
   'rp.pts': 'pts',
   'rp.ended': 'Shift ended at {time} – {reason}',
   'rp.unfinished': '; not handled: {list}',
+  'rp.unfinished.excused': ' – delayed by the neighbour, no penalty',
   'rp.live': 'Shift in progress – state at {time}',
   'rp.end.all-done': 'all trains handled',
   'rp.end.time': 'shift time is up',

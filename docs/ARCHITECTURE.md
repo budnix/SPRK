@@ -860,6 +860,15 @@ wiersz „Odporność”; `--verbose` – pełne ustalenia, tabela pociągów, z
 (scenariusze wg oceny, uwagi powtarzalne, zmiany wg werdyktu, błędy, uwagi na poziomie scenariusza, odporność,
 informacje, czas).
 
+**Kara „nieobsłużony”** (`Simulation.#finalScore`): −10 za pociąg nieobsłużony na koniec zmiany (`unfinished`), ale nie
+za pociąg, którego nie dało się obsłużyć przez opóźnienie wniesione z zewnątrz – `Traffic.lateFromOutside`: opóźnienie
+od sąsiada albo składu, z którego pociąg powstaje (`inboundLag`, `unitLag` – ta sama liczba co przy karze za
+przetrzymanie), a planowa obsługa przesunięta o nie (`expectedDone`) wypada mniej niż `LATE_SLACK` (4 min) przed końcem.
+Taki pociąg dostaje pozycję 0 pkt `unfinished-late` (z polem `lag`), w raporcie zostaje na liście nieobsłużonych
+z `excused` („opóźniony od sąsiada, bez kary”), a kafelek pociągów nie jest czerwony, gdy wszystkie nieobsłużone są
+takie. Werdykt automatu (`late-inbound`) liczy to samo tymi samymi funkcjami. Testy: `tests/unfinished-late.test.js`,
+`tests/e2e/report.spec.js`.
+
 **Pociąg nadzwyczajny** (poziom „duże”, `Simulation.#planExtraTrains`): kopia losowego pociągu przelotowego z rozkładu
 stacji przesunięta o 25…70 min (`EXTRA_TRAIN`), mieszcząca się w zmianie (`extraTrainShifts`): zapowiedź 25 min przed
 przyjazdem nie przed startem, ostatnie zdarzenie co najmniej 10 min przed końcem. Losowania są dwa jak dotąd (pociąg,
@@ -869,7 +878,7 @@ się nie mieści – zmiana bez nadzwyczajnego (`extra-none` w kontroli definicj
 
 **Luki silnika i automatu** (zgłaszane przez automat jako informacje albo uwagi, do decyzji właściciela): pociąg
 stojący od początku zmiany nie dostaje zdarzenia „odjazd” – silnik nie trzyma go do planowego odjazdu (stan
-„zatrzymany”, nie „postój”), więc automat wyprawia go od razu, a odjazdu po planie nie karze; kara „nieobsłużony” (−10) jest naliczana także za opóźnienie od sąsiada;
+„zatrzymany”, nie „postój”), więc automat wyprawia go od razu, a odjazdu po planie nie karze;
 automat nie zeruje licznika osi, nie zamyka toru z usterką nawierzchni, nie podaje sygnału zastępczego na wjeździe
 (tylko na wyjeździe przy usterce blokady) i nie mówi, na co czekał, gdy stoi bez przeszkody z zewnątrz.
 

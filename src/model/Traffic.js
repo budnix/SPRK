@@ -7,6 +7,14 @@ import { platformRanges } from '../tiles/platforms.js';
 import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
 import { trainRouteChains } from './trainPaths.js';
 
+/**
+ * Od planowego odjazdu (przejazdu) do zjazdu ze stacji – pociąg „odjechał”, obsłużony – mija 1–4 min (zmierzone automatem
+ * na wszystkich stacjach): pociąg, który wg planu i opóźnienia wniesionego z zewnątrz nie ma tylu sekund do końca zmiany,
+ * nie mieści się w zmianie. Ta sama granica w ocenie (`Simulation`: bez kary „nieobsłużony”), w kontroli definicji
+ * (`scenarioCheck.js`) i w werdykcie przebiegu (`scripts/check-scenario.mjs`).
+ */
+export const LATE_SLACK = 4 * 60;
+
 /** Rozrzut miejsca zatrzymania czoła przy peronie [m]: czoło staje od 0 do tylu metrów przed końcem peronu –
  *  maszynista nie staje co do metra (przyjęte). */
 export const STOP_SCATTER = 10;
@@ -373,6 +381,36 @@ export class Traffic {
     return !!s && (s.size > 1 || !s.has(nr));
   }
 
+  /**
+   * Opóźnienie (s) składu, z którego powstaje pociąg `e` (`unit`), bez winy dyżurnego: opóźnienie składu od sąsiada
+   * i czas usterek bez obejścia na drodze jego zadań manewrowych; pociąg bez `unit` – 0.
+   */
+  unitLag(e) {
+    if (e.unit == null) return 0;
+    const u = this.entries.find((x) => String(x.nr) === String(e.unit));
+    return (u?.delayIn || 0) * 60 + this.tasks.filter((k) => String(k.unit) === String(e.unit)).reduce((a, k) => a + (k.faultShift || 0), 0);
+  }
+
+  /** Opóźnienie (s), które pociąg wnosi bez winy dyżurnego: od sąsiada i ze składu, z którego powstaje. */
+  inboundLag(e) {
+    return (e.delayIn || 0) * 60 + this.unitLag(e);
+  }
+
+  /** Planowa obsługa pociągu (odjazd, a bez odjazdu przyjazd) przesunięta o opóźnienie wniesione; null – bez planu. */
+  expectedDone(e) {
+    const plan = e.depTime ?? e.arrTime;
+    return plan == null ? null : plan + this.inboundLag(e);
+  }
+
+  /**
+   * Pociąg, którego nie dało się obsłużyć do chwili `end` przez opóźnienie wniesione z zewnątrz: ma takie opóźnienie,
+   * a jego planowa obsługa przesunięta o nie wypada mniej niż `LATE_SLACK` przed `end`. Bez kary „nieobsłużony”.
+   */
+  lateFromOutside(e, end) {
+    const done = this.expectedDone(e);
+    return this.inboundLag(e) > 0 && done != null && done > end - LATE_SLACK;
+  }
+
   /** Dodanie pociągu do rozkładu w trakcie zmiany (pociąg nadzwyczajny). */
   addTrain(def) {
     // tabor: pociąg ze składu innego (`unit`) – jak tamten; inaczej własne losowanie (tabor rozkładu się nie zmienia)
@@ -472,11 +510,7 @@ export class Traffic {
         // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój); pociąg ze składu innego pociągu –
         // także bez minut, które skład stracił bez winy dyżurnego (opóźnienie od sąsiada, manewry zablokowane usterką)
         let earliest = Math.max(e.depTime ?? 0, (e.actualArr ?? 0) + (e.dwell ?? 40));
-        if (e.unit) {
-          const u = this.entries.find((x) => String(x.nr) === String(e.unit));
-          const lost = (u?.delayIn || 0) * 60 + this.tasks.filter((k) => String(k.unit) === String(e.unit)).reduce((a, k) => a + (k.faultShift || 0), 0);
-          earliest += lost;
-        }
+        earliest += this.unitLag(e);
         const late = Math.round((t - earliest) / 60);
         if (late >= 2) this.bus.emit('score', { time: t, code: 'late-depart', points: -late, nr: e.nr, msg: `Pociąg ${e.nr} przetrzymany na stacji ${late} min` });
         else if (e.depTime != null && t - e.depTime <= 60) this.bus.emit('score', { time: t, code: 'punctual', points: 5, nr: e.nr, msg: `Pociąg ${e.nr} wyprawiony punktualnie` });
