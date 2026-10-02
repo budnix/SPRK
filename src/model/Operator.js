@@ -88,11 +88,11 @@ export class AutoOperator {
   /** Nastawnia mechaniczna: po przejeździe dźwignia sygnałowa na „Stój” i drążek w położenie zasadnicze. */
   #releasePassed() {
     const ilk = this.sim.ilk;
-    for (const act of [...ilk.active.values()]) {
-      if (!act.passed || !this.#inDistrict(act.route.start)) continue;
-      ilk.cancelSignal(act.route.start);
+    for (const { id, route } of ilk.routesSet()) {
+      if (!ilk.routeFrame(id)?.passed || !this.#inDistrict(route.start)) continue;
+      ilk.cancelSignal(route.start);
       // blok niezwolniony przez pociąg (usterka) – zwalniacz
-      if (!ilk.releaseRoute(act.route.start).ok && act.blocked) ilk.releaseRoute(act.route.start, true);
+      if (!ilk.releaseRoute(route.start).ok && ilk.routeFrame(id)?.blocked) ilk.releaseRoute(route.start, true);
     }
   }
 
@@ -161,19 +161,21 @@ export class AutoOperator {
    */
   #recoverRoutes() {
     const sim = this.sim, ilk = sim.ilk, t = sim.clock.time;
-    for (const id of this.stuckSince.keys()) if (!ilk.active.has(id)) this.stuckSince.delete(id);
-    for (const act of [...ilk.active.values()]) {
-      if (!this.#inDistrict(act.route.start) || act.timedRelease || ilk.signals.get(act.route.start).substitute) continue;
-      if (!act.trainEntered) {
+    for (const id of this.stuckSince.keys()) if (!Interlocking.routeLocked(ilk.routeState(id))) this.stuckSince.delete(id);
+    for (const { id, route } of ilk.routesSet()) {
+      const state = ilk.routeState(id); // stan w tej chwili – zwolnienie wcześniejszego przebiegu w tej pętli mogło go zmienić
+      if (!Interlocking.routeLocked(state)) continue;
+      if (!this.#inDistrict(route.start) || state === 'releasing' || ilk.signals.get(route.start).substitute) continue;
+      if (Interlocking.routeAhead(state)) {
         if (ilk.manualSignal) continue; // nastawnia mechaniczna: sygnał trzyma dźwignia – sam nie gaśnie
-        if (act.route.kind === 'train' && act.signalOff && ilk.releaseRoute(act.route.start, false).ok) this.#forgetRoute(act.route);
+        if (route.kind === 'train' && state === 'signal-off' && ilk.releaseRoute(route.start, false).ok) this.#forgetRoute(route);
         continue;
       }
-      if (!ilk.routeStuck(act)) { this.stuckSince.delete(act.id); continue; }
-      if (!this.stuckSince.has(act.id)) { this.stuckSince.set(act.id, t); continue; }
-      if (t - this.stuckSince.get(act.id) < 20) continue;
-      if (ilk.manualSignal) ilk.cancelSignal(act.route.start); // dźwignia sygnałowa na „Stój” przed zwalniaczem
-      ilk.releaseRoute(act.route.start, true);
+      if (state !== 'stuck') { this.stuckSince.delete(id); continue; }
+      if (!this.stuckSince.has(id)) { this.stuckSince.set(id, t); continue; }
+      if (t - this.stuckSince.get(id) < 20) continue;
+      if (ilk.manualSignal) ilk.cancelSignal(route.start); // dźwignia sygnałowa na „Stój” przed zwalniaczem
+      ilk.releaseRoute(route.start, true);
     }
   }
 
@@ -218,8 +220,8 @@ export class AutoOperator {
         if (o.to !== b.id || !tr || tr.finished) continue;
         if (tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal())) continue; // już wyjeżdża
         if (tr.entered && !tr.entryPending) { const tk = trackOf(tr); if (tk) claimed.add(tk); continue; }
-        const act = [...ilk.active.values()].find((a) => a.route.kind === 'train' && !a.trainEntered && a.route.approach === (o.from ? approachOf(o.from) : null));
-        if (act) { const tk = routeTrack(act.route); if (tk) claimed.add(tk); }
+        const ahead = ilk.routesSet().find((x) => x.route.kind === 'train' && Interlocking.routeAhead(x.state) && x.route.approach === (o.from ? approachOf(o.from) : null));
+        if (ahead) { const tk = routeTrack(ahead.route); if (tk) claimed.add(tk); }
       }
       return [...tracks].every((tk) => claimed.has(tk));
     };
@@ -279,9 +281,9 @@ export class AutoOperator {
       // tak samo, gdy blokada daje drogę, ale sygnału już nie (Pwl: sygnał wyjazdowy był raz podany i odwołany)
       const xb = e.to ? sim.blocks.get(e.to) : null;
       if (xb && tr.v === 0 && !leaving && (e.depTime == null || t >= e.depTime)) {
-        const act = [...ilk.active.values()].find((a) => a.route.exit === e.to && a.route.kind === 'train' && !a.trainEntered);
-        const sig = act && ilk.signals.get(act.route.start);
-        const noSignal = xb.fault || (xb.gate('route').ok && !xb.gate('signal', act?.id).ok);
+        const ahead = ilk.routesSet().find((x) => x.route.exit === e.to && x.route.kind === 'train' && Interlocking.routeAhead(x.state));
+        const sig = ahead && ilk.signals.get(ahead.route.start);
+        const noSignal = xb.fault || (xb.gate('route').ok && !xb.gate('signal', ahead?.id).ok);
         if (sig && noSignal && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
       }
 
@@ -298,9 +300,8 @@ export class AutoOperator {
         const inside = e._entryPath.findLastIndex((id) => ilk.routes.get(id)?.sections.some((sid) => occ.has(sid)));
         if (inside >= 0) e._entryPath = e._entryPath.slice(inside + 1);
         const waits = (id) => {
-          const act = ilk.active.get(id);
-          if (act) return !act.trainEntered && (ilk.manualSignal || (!act.signalOff && !act.timedRelease));
-          return ilk.pending.some((p) => p.route.id === id);
+          const state = ilk.routeState(id);
+          return state === 'waiting' || state === 'setting' || (ilk.manualSignal && Interlocking.routeAhead(state));
         };
         const next = e._entryPath.find((id) => !waits(id));
         if (next) { this.#setRoute(next); continue; }
@@ -318,7 +319,7 @@ export class AutoOperator {
         const app = approachOf(e.from);
         const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
         // przebieg od semafora wjazdowego już czeka na ten pociąg (nastawiony albo w nastawianiu)
-        if (cands.some((r) => (ilk.active.has(r.id) && !ilk.active.get(r.id).trainEntered) || ilk.pending.some((p) => p.route.id === r.id))) continue;
+        if (cands.some((r) => { const state = ilk.routeState(r.id); return Interlocking.routeAhead(state) || state === 'setting'; })) continue;
         // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
         // na których tor peronowy leży za semaforem pośrednim (np. Sopot: A → H → O).
         // (wspólne z kontrolą scenariusza: src/model/trainPaths.js)
@@ -405,9 +406,9 @@ export class AutoOperator {
         const occ = tr.occupiedSections();
         // przebieg dla tego składu już czeka – skład zaraz ruszy; sygnalizator uszkodzony (nie da Ms2) – zezwolenie radiem
         const mine = (x) => x.kind === 'shunt' && (x.start === tr.nextSignal() || occ.has(x.approach));
-        const waiting = routes.find((x) => mine(x) && ilk.active.has(x.id) && !ilk.active.get(x.id).trainEntered);
+        const waiting = routes.find((x) => mine(x) && Interlocking.routeAhead(ilk.routeState(x.id)));
         if (waiting && ilk.signals.get(waiting.start)?.failed && !tr.shuntPermit && tr.v === 0) sim.comms.send('shunt-permit', { nr: e.nr }, { silent: true });
-        if (waiting || routes.some((x) => mine(x) && ilk.pending.some((p) => p.route.id === x.id))) continue;
+        if (waiting || routes.some((x) => mine(x) && ilk.routeState(x.id) === 'setting')) continue;
         const head = ['E', 'NE', 'SE'].includes(tr.direction) ? 'E' : 'W';
         const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
         // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg
@@ -444,7 +445,7 @@ export class AutoOperator {
         // Wyjazd dwustopniowy: brak przebiegu wprost na szlak – najpierw do semafora pośredniego (np. G502 → A502 → szlak),
         // potem od niego na szlak.
         let staged = false;
-        const waiting = (pred) => [...ilk.active.values()].some((a) => !a.trainEntered && pred(a.route)) || ilk.pending.some((p) => pred(p.route));
+        const waiting = (pred) => ilk.routesSet().some((x) => (Interlocking.routeAhead(x.state) || x.state === 'setting') && pred(x.route));
         // pierwszy stopień wyjazdu przepadł, zanim pociąg ruszył – wyjazd zaczyna się od nowa
         if (e._viaSignal && tr.nextSignal() !== e._viaSignal && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === e._viaSignal)) e._viaSignal = null;
         if (e._viaSignal) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === e._viaSignal);

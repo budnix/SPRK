@@ -25,11 +25,14 @@ test('stan przebiegu (typ E): brak → nastawiany → czeka na pociąg → sygna
   assert.deepEqual(ilk.routesSet(), []);
   sim.press(G('A')); sim.press(G('D2')); // A-D2: zwrotnica 1 się przestawia
   assert.equal(ilk.routeState('A-D2'), 'setting');
+  assert.deepEqual([ilk.routeInfo('A-D2').state, ilk.routeInfo('A-D2').faultDrop], ['setting', false]);
   assert.deepEqual([ilk.routeFrom('A').id, ilk.routeFrom('A').state, ilk.routeFrom('A').route.kind], ['A-D2', 'setting', 'train']);
   assert.deepEqual(ilk.routesSet().map((x) => `${x.id}:${x.state}`), ['A-D2:setting']);
   run(sim, 10);
   assert.equal(ilk.routeState('A-D2'), 'waiting');
   assert.deepEqual(info(sim, 'A-D2'), { id: 'A-D2', route: ilk.routes.get('A-D2'), state: 'waiting', faultDrop: false });
+  assert.deepEqual(ilk.routeInfo('A-D2'), info(sim, 'A-D2'), 'pytanie o przebieg – ten sam opis co na liście');
+  assert.equal(ilk.routeInfo('A-D1'), null);
   assert.equal(ilk.routeFrom('A').state, 'waiting');
   assert.equal(ilk.routeState('A-D1'), 'none', 'inny przebieg od tego samego semafora');
   // dyżurny odwołuje sygnał: przebieg zostaje utwierdzony, pociąg jeszcze nie wjechał – to nie usterka
@@ -39,6 +42,8 @@ test('stan przebiegu (typ E): brak → nastawiany → czeka na pociąg → sygna
   sim.press(PZ); sim.press(G('A'));
   assert.equal(ilk.routeState('A-D2'), 'none');
   assert.equal(ilk.routeFrame('A-D2'), null);
+  // utwierdzony: każdy stan poza „nie ma go” i „nastawiany”
+  assert.deepEqual(['none', 'setting', 'waiting', 'signal-off', 'releasing', 'entered', 'stuck'].filter(Interlocking.routeLocked), ['waiting', 'signal-off', 'releasing', 'entered', 'stuck']);
   // przed pociągiem: czeka, sygnał na „Stój” albo zwalnianie czasowe
   assert.deepEqual(['none', 'setting', 'waiting', 'signal-off', 'releasing', 'entered', 'stuck'].filter(Interlocking.routeAhead), ['waiting', 'signal-off', 'releasing']);
 });

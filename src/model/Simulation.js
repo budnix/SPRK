@@ -175,9 +175,9 @@ export class Simulation {
       const e = this.traffic.timetable().find((x) => String(x.nr) === String(c.nr));
       if (!e) continue;
       let done = false;
-      for (const act of this.ilk.active.values()) {
-        const r = act.route;
-        if (r.kind !== 'train') continue;
+      for (const set of this.ilk.routesSet()) {
+        const r = set.route;
+        if (r.kind !== 'train' || !Interlocking.routeLocked(set.state)) continue;
         if (c.kind === 'accept' && e.from) {
           const app = this.ilk.topo.trackAt(this.station.exits[e.from].tile.x, this.station.exits[e.from].tile.y).section;
           const last = r.sections[r.sections.length - 1];

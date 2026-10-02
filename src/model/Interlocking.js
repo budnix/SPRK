@@ -962,6 +962,23 @@ export class Interlocking {
     return state === 'waiting' || state === 'signal-off' || state === 'releasing';
   }
 
+  /** Przebieg jest utwierdzony (nastawiony): każdy stan poza „nie ma go” i „w nastawianiu”. */
+  static routeLocked(state) {
+    return state !== 'none' && state !== 'setting';
+  }
+
+  #routeEntry(act) {
+    return { id: act.id, route: act.route, state: this.routeState(act.id), faultDrop: !!act.faultDrop };
+  }
+
+  /** Przebieg `routeId` – nastawiony albo nastawiany: `{ id, route, state, faultDrop }`; null, gdy go nie ma. */
+  routeInfo(routeId) {
+    const act = this.active.get(routeId);
+    if (act) return this.#routeEntry(act);
+    const p = this.pending.find((x) => x.route.id === routeId);
+    return p ? { id: routeId, route: p.route, state: 'setting', faultDrop: false } : null;
+  }
+
   /** Sygnał przebiegu `routeId` zgasł przed pociągiem z przyczyny po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli). */
   routeFaultDrop(routeId) {
     return !!this.active.get(routeId)?.faultDrop;
@@ -970,7 +987,7 @@ export class Interlocking {
   /** Przebiegi nastawione (w kolejności nastawienia), potem nastawiane: `{ id, route, state, faultDrop }`. */
   routesSet() {
     const out = [];
-    for (const act of this.active.values()) out.push({ id: act.id, route: act.route, state: this.routeState(act.id), faultDrop: !!act.faultDrop });
+    for (const act of this.active.values()) out.push(this.#routeEntry(act));
     for (const p of this.pending) out.push({ id: p.route.id, route: p.route, state: 'setting', faultDrop: false });
     return out;
   }
@@ -978,7 +995,7 @@ export class Interlocking {
   /** Przebieg od sygnalizatora `signalId` (nastawiony albo nastawiany): `{ id, route, state, faultDrop }` albo null. */
   routeFrom(signalId) {
     const act = this.signals.get(signalId)?.route ? this.active.get(this.signals.get(signalId).route) : null;
-    if (act) return { id: act.id, route: act.route, state: this.routeState(act.id), faultDrop: !!act.faultDrop };
+    if (act) return this.#routeEntry(act);
     const p = this.pending.find((x) => x.route.start === signalId);
     return p ? { id: p.route.id, route: p.route, state: 'setting', faultDrop: false } : null;
   }

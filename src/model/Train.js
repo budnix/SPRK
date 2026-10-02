@@ -607,7 +607,7 @@ export class Train {
    * Sr3 (§65 pkt 3; Ie-1 §4 ust. 5 pkt 3).
    */
   #zoneOf(sig, speed) {
-    const route = sig.route && this.ilk.active.get(sig.route)?.route;
+    const route = sig.route && this.ilk.routeInfo(sig.route)?.route;
     if (!route) return null;
     const pointSections = new Set([...this.ilk.points.values()].map((p) => p.section));
     const whole = route.sections.some((id) => this.ilk.sections.get(id)?.mainKind === 'dodatkowy') || (sig.aspect === 'Sr3' && !!sig.tile.entry);
@@ -624,12 +624,11 @@ export class Train {
   #shuntPermitted() {
     // zezwolenie dyżurnego na jazdę obok uszkodzonego sygnalizatora – dla jednego przebiegu manewrowego (Ir-9 § 10 ust. 16)
     if (this.shuntPermit) {
-      const pa = this.ilk.active.get(this.shuntPermit.route);
-      if (pa && !pa.trainEntered) { this.shuntRoute = pa.id; return true; }
+      if (Interlocking.routeAhead(this.ilk.routeState(this.shuntPermit.route))) { this.shuntRoute = this.shuntPermit.route; return true; }
       this.shuntPermit = null;
     }
-    const act = this.shuntRoute && this.ilk.active.get(this.shuntRoute);
-    if (act) {
+    const act = this.shuntRoute ? this.ilk.routeInfo(this.shuntRoute) : null;
+    if (act && Interlocking.routeLocked(act.state)) {
       const occ = this.occupiedSections();
       if (occ.has(act.route.approach) || act.route.sections.some((sid) => occ.has(sid))) return true;
     }
@@ -720,7 +719,7 @@ export class Train {
             this.onEvent('spad', this, sig.id);
           } else if (this.mode === 'train') {
             // zezwolenie od minionego semafora: przebieg (i ewentualny wyjazd na szlak), Sz albo rozkaz – na dowolny wyjazd
-            const act = sig.route && this.ilk.active.get(sig.route);
+            const act = sig.route && this.ilk.routeInfo(sig.route);
             this.authority = true;
             this.exitAuth = (order || sig.aspect === 'Sz') ? '*' : act?.route.kind === 'train' ? (act.route.exit ?? null) : null;
           } else if (Interlocking.isShuntProceed(sig.aspect)) this.shuntRoute = sig.route;

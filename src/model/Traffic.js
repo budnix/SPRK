@@ -115,17 +115,17 @@ export class Traffic {
     if (proceed) return null;
     if (sig.failed) return { code: 'signal-failed', signal };
     if (sig.stopped || this.ilk.allStop) return { code: 'signal-stopped', signal };
-    if (this.ilk.pending.some((p) => p.route.start === signal)) return { code: 'route-setting', signal };
-    const act = sig.route ? this.ilk.active.get(sig.route) : null;
-    if (!act) {
+    const set = this.ilk.routeFrom(signal);
+    if (set?.state === 'setting') return { code: 'route-setting', signal };
+    if (!set) {
       // przebiegu wyjazdowego nie da się nastawić przez blokadę szlaku pociągu (np. bez łączności i bez zapytania) –
       // to jest przyczyna, nie sam brak przebiegu
       const b = e.to && [...this.ilk.routes.values()].some((r) => r.kind === 'train' && r.start === signal && r.exit === e.to) ? this.blocks.get(e.to) : null;
       const g = b?.gate('route');
       return g && !g.ok && g.code ? { code: g.code, signal, neighbour: b.neighbour } : { code: 'no-route', signal };
     }
-    const b = act.route.exit ? this.blocks.get(act.route.exit) : null;
-    const g = b?.gate('signal', act.id);
+    const b = set.route.exit ? this.blocks.get(set.route.exit) : null;
+    const g = b?.gate('signal', set.id);
     if (g && !g.ok && g.code) return { code: g.code, signal, neighbour: b.neighbour };
     return { code: 'signal-stop', signal };
   }
@@ -243,7 +243,7 @@ export class Traffic {
     if (tr.v > 0.05) return { ok: false, reason: `skład nr ${nr} jest w ruchu` };
     // przebieg manewrowy czekający na ten skład: od sygnalizatora przed nim albo takiego, przed którym skład stoi
     const occ = tr.occupiedSections(), next = tr.nextSignal();
-    const act = [...this.ilk.active.values()].find((a) => a.route.kind === 'shunt' && !a.trainEntered && (a.route.start === next || occ.has(a.route.approach)));
+    const act = this.ilk.routesSet().find((x) => x.route.kind === 'shunt' && Interlocking.routeAhead(x.state) && (x.route.start === next || occ.has(x.route.approach)));
     if (!act) return { ok: false, reason: `przed składem nr ${nr} nie ma nastawionego przebiegu manewrowego` };
     const sig = this.ilk.signals.get(act.route.start);
     if (!sig?.failed) return { ok: false, reason: `sygnalizator ${act.route.start} jest sprawny – zezwolenie daje się sygnałem na sygnalizatorze` };
@@ -285,8 +285,8 @@ export class Traffic {
       // pociąg stojący za semaforem sam zajmuje początek tej drogi
       if (behind ? this.occupiedByOther(sid, e.nr) : s.physical) problems.push(`odcinek ${sid} zajęty`);
       if (s.route) {
-        const act = this.ilk.active.get(s.route);
-        if (act && act.route.start !== signal) problems.push(`odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
+        const held = this.ilk.routeInfo(s.route);
+        if (held && held.route.start !== signal) problems.push(`odcinek ${sid} utwierdzony w przebiegu ${s.route}`);
       }
     }
     if (path.exit) {
@@ -304,7 +304,7 @@ export class Traffic {
     if (behind) tr.resumeAfterStop();
     else tr.orders.push({ signal, used: false, id: order.id });
     // semafor zgasł przed pociągiem z przyczyny po stronie urządzeń – rozkaz uzasadniony
-    const justified = this.ilk.faultOnPath(signal, path) || faultSpad || (behind && !!(sig.route && this.ilk.active.get(sig.route)?.faultDrop));
+    const justified = this.ilk.faultOnPath(signal, path) || faultSpad || (behind && !!(sig.route && this.ilk.routeFaultDrop(sig.route)));
     this.bus.emit('score', { time: this.time, code: 'order', points: justified ? 0 : -10, nr: e.nr, signal, msg: `Rozkaz pisemny „S” dla ${e.nr}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     this.bus.emit('comms', { time: this.time + 8, from: `maszynista poc. ${e.nr}`, kind: 'radio', nr: e.nr, text: behind ? `Rozkaz „S” nr ${order.id} przyjąłem. Jadę dalej do następnego semafora z prędkością do 40 km/h.` : `Rozkaz „S” nr ${order.id} przyjąłem. Jadę obok semafora ${signal} z prędkością do 40 km/h.` });
     this.bus.emit('log', { time: this.time, level: 'warn', msg: behind ? `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: dalsza jazda zza semafora ${signal} (40 km/h)` : `Rozkaz pisemny „S” nr ${order.id} dla pociągu ${e.nr}: przejazd obok ${signal} (40 km/h)` });
@@ -530,8 +530,8 @@ export class Traffic {
       case 'entry-signal': {
         // przejazd „Stój” na semaforze wjazdowym z przyczyny po stronie urządzeń (jak przy karze za spad niżej)
         const sig = !arg.onSignal ? this.ilk.signals.get(arg.signal) : null;
-        const act = sig?.route ? this.ilk.active.get(sig.route) : null;
-        const overrun = !!sig && !arg.byOrder && !Interlocking.isTrainProceed(sig.aspect) && (!!sig.failed || !!act?.faultDrop);
+        const faultDrop = !!sig?.route && this.ilk.routeFaultDrop(sig.route);
+        const overrun = !!sig && !arg.byOrder && !Interlocking.isTrainProceed(sig.aspect) && (!!sig.failed || faultDrop);
         if (e.from) this.blocks.get(e.from)?.entryPassed(arg.onSignal, overrun);
         break;
       }
@@ -542,9 +542,9 @@ export class Traffic {
         this.bus.emit('alarm', { type: 'spad', nr: e.nr, signal: arg });
         // bez kary, gdy semafor zgasł z przyczyny po stronie urządzeń: usterka semafora albo – przy nastawionym
         // przebiegu – zajętość odcinka bez taboru lub utrata kontroli zwrotnicy
-        const act = sig?.route ? this.ilk.active.get(sig.route) : null;
-        tr.spadByFault = !!(sig?.failed || act?.faultDrop); // rozkaz „S” zza semafora uzasadniony także po naprawie
-        if (!sig?.failed && !act?.faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, nr: e.nr, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
+        const faultDrop = !!sig?.route && this.ilk.routeFaultDrop(sig.route);
+        tr.spadByFault = !!(sig?.failed || faultDrop); // rozkaz „S” zza semafora uzasadniony także po naprawie
+        if (!sig?.failed && !faultDrop) this.bus.emit('score', { time: t, code: 'spad', points: -20, nr: e.nr, msg: `Sygnał „Stój” na ${arg} podany przed pociągiem ${e.nr} bliżej niż droga hamowania` });
         break;
       }
       case 'cab-ready':
