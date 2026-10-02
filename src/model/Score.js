@@ -4,7 +4,7 @@
  * rozprucie, błędne telefonogramy, opóźnienia zawinione), dodatnie za punktualne wyprawienia.
  */
 import { relationOf, categoryLabel } from './categories.js';
-import { Traffic } from './Traffic.js';
+import { isHandled } from './timetable/phase.js';
 
 export class Score {
   constructor(bus) {
@@ -34,7 +34,7 @@ export class Score {
       nr: e.nr, label: e.label ?? String(e.nr), cat: e.cat ?? null, catLabel: e.cat ? categoryLabel(e) : null, relation: relationOf(e), from: e.from ?? null, to: e.to ?? null,
       arr: e.arr ?? null, dep: e.dep ?? null, actualArr: e.actualArr ?? null, actualDep: e.actualDep ?? null,
       track: e.track ?? '', actualTrack: e.actualTrack ?? null, delay: e.delay || 0, delayIn: e.delayIn || 0,
-      stop: !!e.stop, status: e.status, done: Traffic.isDone(e),
+      stop: !!e.stop, status: e.status, done: isHandled(e),
     }));
     const done = rows.filter((r) => r.done);
     const onTime = done.filter((r) => r.delay <= 2);

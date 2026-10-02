@@ -155,7 +155,7 @@ export class SidePanel {
     const platformTracks = [...new Set([...sim.ilk.sections.values()].filter((x) => x.kind === 'station' && x.track).map((x) => String(x.track)))];
     const candidates = () => sim.traffic.timetable().filter((e) => {
       const done = (k) => sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === k);
-      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.status !== 'na następnym posterunku';
+      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.phase !== 'at-neighbour';
       const departing = e.to && sim.exitDistrict(e.to) === other && e.train && !e.train.finished && e.train.entered && !done('dispatch');
       return arriving || departing;
     }).map((e) => {
@@ -397,7 +397,7 @@ export class SidePanel {
       // tu widać, którym torem szlakowym pociąg przyjeżdża i wyjeżdża
       const side = (id) => (id ? (ex[id].label || ex[id].name) : this.sim.station.name);
       const via = `${side(e.from)} → ${side(e.to)}`;
-      const cls = e.status === 'odjechał' || e.status === 'zakończył bieg' ? 'done' : (e.train ? 'active' : '');
+      const cls = e.phase === 'departed' || e.phase === 'ended' ? 'done' : (e.train ? 'active' : '');
       const delay = e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : '';
       const cat = CATEGORIES[e.cat], brand = brandOf(e);
       // długość pociągu i (towarowy) masa brutto składu

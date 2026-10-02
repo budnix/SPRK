@@ -40,3 +40,19 @@ Każdy przebieg utwierdzony, do którego pociąg jeszcze nie wjechał: czeka na 
 
 **Zgaszenie sygnału z usterki**:
 Samoczynne przejście sygnalizatora na „Stój” przed pociągiem z przyczyny po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli), a nie z powodu taboru na drodze przebiegu. Uzasadnia sygnał zastępczy i rozkaz pisemny.
+
+### Pociąg w rozkładzie
+
+**Wpis rozkładu**:
+Jeden pociąg w rozkładzie zmiany: jego definicja z rozkładu stacji albo scenariusza, plan (godziny w sekundach, chwila wyprawienia przez sąsiada) i to, co się z nim dzieje w trakcie zmiany.
+_Unikaj_: wiersz, rekord, pozycja rozkładu
+
+**Etap pociągu**:
+Gdzie jest pociąg wpisu rozkładu i co się z nim dzieje: oczekiwany u sąsiada, żądanie pozwolenia, na szlaku, wjeżdża, jedzie, stoi przed sygnalizatorem, postój, na stacji, manewruje, odjeżdża, odjechał, na następnym posterunku, zakończył bieg, przekazany jako inny pociąg.
+_Unikaj_: status (to tylko napis etapu), stan pociągu (stan jazdy składu to co innego)
+
+**Pociąg obsłużony**:
+Pociąg, za który stacja już odpowiedziała: wyprawiony na szlak (także jeszcze w drodze do sąsiada), zakończył bieg albo jego skład przejął inny pociąg.
+
+**Pociąg skończony**:
+Pociąg, z którym nic już się nie stanie: dojechał do następnego posterunku, zakończył bieg albo jego skład przejął inny pociąg. Pociąg obsłużony, ale jeszcze w drodze do sąsiada, nie jest skończony.

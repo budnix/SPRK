@@ -46,6 +46,25 @@ const logicFiles = [
 ];
 const allowedTarget = (rel) => LOGIC_DIRS.some((d) => rel.startsWith(`src/${d}/`)) || (rel.startsWith('src/srk/') && rel !== 'src/srk/views.js');
 
+/**
+ * Rola każdego katalogu w src/ – granice warstw sprawdza się po katalogach, więc nowy katalog musi tu trafić, inaczej
+ * test przestałby go sprawdzać po cichu. Nowa funkcja (vertical slice) w logice: podkatalog katalogu logiki, np.
+ * src/model/timetable/; widok tej funkcji – w src/render albo src/ui.
+ */
+const FOLDER_ROLES = {
+  logic: [...LOGIC_DIRS, 'srk'],          // bez DOM, testowane w Node (srk/views.js – widok)
+  view: ['render', 'ui', 'tutorial'],      // DOM, zmiany stanu tylko przez polecenia symulacji
+  data: ['stations', 'i18n', 'data', 'fonts'], // definicje stacji, teksty, słownik, pliki czcionek
+};
+
+test('każdy katalog w src/ ma rolę w granicach warstw (logika, widok, dane) – nowy katalog trzeba tu przypisać', () => {
+  const known = Object.values(FOLDER_ROLES).flat();
+  const dirs = readdirSync(SRC).filter((name) => statSync(join(SRC, name)).isDirectory());
+  assert.deepEqual(dirs.filter((d) => !known.includes(d)), [], 'katalog bez roli w tests/layers.test.js (FOLDER_ROLES)');
+  assert.deepEqual(known.filter((d) => !dirs.includes(d)), [], 'rola dla katalogu, którego nie ma');
+  assert.equal(new Set(known).size, known.length, 'katalog w dwóch rolach');
+});
+
 test('logika (model, core, tiles, srk bez views.js) importuje tylko logikę', () => {
   assert.ok(logicFiles.length > 10, 'znaleziono pliki logiki');
   const bad = [];
@@ -70,7 +89,7 @@ test('logika nie używa globalnych obiektów przeglądarki', () => {
 });
 
 test('widok nie zmienia stanu zależności ani blokad wprost (tylko przez polecenia symulacji)', () => {
-  const viewFiles = [...['render', 'ui', 'tutorial'].flatMap((d) => walk(join(SRC, d))), join(SRC, 'main.js')];
+  const viewFiles = [...FOLDER_ROLES.view.flatMap((d) => walk(join(SRC, d))), join(SRC, 'main.js')];
   const WRITE = /\.(?:ilk|blocks\.get\([^)]*\))\??\.\w+\s*(?:=(?!=)|\+\+|--|[-+*/]=)/;
   const bad = [];
   for (const file of viewFiles) {
@@ -94,6 +113,28 @@ test('zapisu przebiegu w zależnościach nie czyta nikt poza zależnościami –
   }
   assert.deepEqual(bad, [], `Zapis przebiegu czytany poza zależnościami – zapytaj o stan (Interlocking.routeState …):\n${bad.join('\n')}`);
   assert.ok(files.length > 80 && files.some((f) => f.endsWith('check-scenario.mjs')) && files.some((f) => f.endsWith('stan-zmiany.mjs')), 'test przegląda źródła, skrypty i skrypty skilli');
+});
+
+test('o etap pociągu pyta się kodu etapu – kod gry i narzędzi nie porównuje napisu dla człowieka (status)', () => {
+  // napis etapu (`e.status`, po polsku) powstaje w src/model/timetable/phase.js i służy tylko do pokazania (CLAUDE.md:
+  // działanie nie może zależeć od treści komunikatu); decyzje – na `e.phase`, `isHandled`, `isFinished`
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const files = [...walk(SRC), ...walkAll(join(ROOT, 'scripts')), ...walkAll(join(ROOT, '.claude', 'skills'))]
+    .filter((f) => posix(relative(ROOT, f)) !== 'src/model/timetable/phase.js' && !posix(relative(ROOT, f)).startsWith('src/i18n/'));
+  const TEXTS = ['oczekiwany', 'oczekuje na skład', 'żądanie pozwolenia', 'na szlaku', 'wjeżdża', 'jedzie', 'postój', 'na stacji', 'manewruje',
+    'odjeżdża', 'odjechał', 'na następnym posterunku', 'zakończył bieg'];
+  const literal = new RegExp(`(['"\`])(?:${TEXTS.join('|')})\\1|(['"\`])(?:przekazany|stoi przed)`);
+  const compare = /\.status\s*[!=]==|\.status\??\.(?:startsWith|includes|endsWith|match)\(|\.test\([^)]*\.status\)/;
+  const bad = [];
+  for (const file of files) {
+    const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+    code.split('\n').forEach((line, i) => {
+      // polecenia dyżurnego (`c.status`: pending / done) i wyniki zmian automatu (`s.status`: ok / warn / error) to inne pola
+      const own = line.replace(/\b(?:c|cmd|s|r|shift)\.status\s*[!=]==\s*'(?:pending|done|ok|warn|error)'/g, '');
+      if (literal.test(own) || compare.test(own)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`);
+    });
+  }
+  assert.deepEqual(bad, [], `Decyzja na podstawie napisu etapu pociągu – użyj e.phase / isHandled / isFinished:\n${bad.join('\n')}`);
 });
 
 test('widoki stanowisk (src/render/*Renderer.js) nie importują się nawzajem', () => {

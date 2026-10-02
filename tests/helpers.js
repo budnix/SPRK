@@ -15,12 +15,13 @@ export function run(sim, seconds, each) {
 
 /** Wszystkie pociągi rozkładu dotarły do sąsiada / zakończyły bieg (zmiana kończy się wcześniej – po wyprawieniu ostatniego). */
 export function allArrived(sim) {
-  return sim.traffic.timetable().every((e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'));
+  return sim.traffic.timetable().every(isFinished);
 }
 
 export { Clock, station };
 
 import { AutoOperator } from '../src/model/Operator.js';
+import { isFinished } from '../src/model/timetable/phase.js';
 
 /**
  * Uniwersalny dyżurny automatyczny (cała stacja) – opakowanie AutoOperator z możliwością

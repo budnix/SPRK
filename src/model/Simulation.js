@@ -14,6 +14,7 @@ import { validateStation } from './validate.js';
 import { getSrk } from '../srk/registry.js';
 import { ButtonProtocol } from '../srk/buttons.js';
 import { SpecialCommand } from '../srk/special.js';
+import { isHandled } from './timetable/phase.js';
 
 const OTHER_DISTRICT = 'Element w okręgu obsługiwanym przez drugą nastawnię';
 
@@ -63,7 +64,7 @@ export class Simulation {
     // rozmowy telefoniczne przy sprawnej blokadzie: 'auto' (domyślnie) albo 'manual' (ustawienie gracza)
     // samouczki uczą obsługi urządzeń – rozmowy idą w nich zawsze same
     this.phoneRoutine = opts.phoneRoutine === 'manual' && !this.scenario.tutorial ? 'manual' : 'auto';
-    const nextTrain = (exitId) => this.traffic?.timetable().filter((e) => e.to === exitId && e.actualDep == null && e.status !== 'na następnym posterunku')
+    const nextTrain = (exitId) => this.traffic?.timetable().filter((e) => e.to === exitId && e.actualDep == null && e.phase !== 'at-neighbour')
       .sort((a, b) => (a.depTime ?? a.arrTime ?? 0) - (b.depTime ?? b.arrTime ?? 0))[0]?.nr ?? null;
     // każdy szlak ma własny ciąg losowy z ziarna zmiany – losowania blokady nie przesuwają opóźnień ani usterek
     Object.keys(station.exits || {}).forEach((id, i) => {
@@ -302,7 +303,7 @@ export class Simulation {
     if (this.ended) return;
     const tt = this.traffic.timetable();
     const tasks = this.traffic.tasks || [];
-    const trainsDone = tt.length && tt.every(Traffic.isDone);
+    const trainsDone = tt.length && tt.every(isHandled);
     const tasksDone = tasks.every((t) => t.done || t.failed);
     // pociąg „odjechał”, ale blokada czeka jeszcze na dyżurnego (dPo, telefonogram o odjeździe, Ko) – zmiana trwa
     const duties = this.#blockDuties();
@@ -313,7 +314,7 @@ export class Simulation {
       const last = Math.max(...tt.map((e) => Math.max(e.arrTime ?? 0, e.depTime ?? 0)), ...tasks.map((t) => t.deadlineTime || 0));
       if (this.clock.time >= last + 3 * 60) {
         this.lateHinted = true;
-        const left = [...tt.filter((e) => !Traffic.isDone(e)).map((e) => `${e.label ?? e.nr} (${e.status})`), ...tasks.filter((t) => !t.done && !t.failed).map((t) => `zadanie: ${t.text}`), ...duties.map((d) => d.text)];
+        const left = [...tt.filter((e) => !isHandled(e)).map((e) => `${e.label ?? e.nr} (${e.status})`), ...tasks.filter((t) => !t.done && !t.failed).map((t) => `zadanie: ${t.text}`), ...duties.map((d) => d.text)];
         this.bus.emit('log', { time: this.clock.time, level: 'warn', msg: `Rozkład wyczerpany – do zakończenia zmiany: ${left.join('; ')}` });
       }
     }
@@ -332,7 +333,7 @@ export class Simulation {
   #finalScore() {
     const now = this.clock.time;
     for (const e of this.traffic.timetable()) {
-      if (Traffic.isDone(e)) continue;
+      if (isHandled(e)) continue;
       // pociąg, który przez opóźnienie od sąsiada (albo składu, z którego powstaje) nie mógł zdążyć przed końcem zmiany –
       // bez kary (przyjęte: kara tylko za pociąg, który dało się obsłużyć); pozycja 0 pkt zostaje w raporcie
       if (this.traffic.lateFromOutside(e, now)) {

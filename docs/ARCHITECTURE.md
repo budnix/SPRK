@@ -11,7 +11,10 @@ src/
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
                Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji),
-               scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze)
+               scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze),
+               trainPaths (drogi pociągu po przebiegach, odcinek zbliżania szlaku, tor składu);
+               timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): phase (etap pociągu – kod,
+               szczegół, napis dla człowieka; „obsłużony” i „skończony”)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
@@ -51,6 +54,16 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 * **Zależności nie znają stanowiska.** `Interlocking` przyjmuje polecenia zależnościowe (przebieg z jawnym rodzajem,
   zwolnienie, „Stój”, zwrotnica, zamknięcie, Sz). Przyciski, kolory i uzbrojenie to sprawa protokołu obsługi
   (`src/srk/buttons.js`); widok nie zmienia stanu modelu wprost.
+* **Etap pociągu to dane, napis tylko do pokazania.** Wpis rozkładu ma kod etapu (`e.phase`: `expected`, `on-line`,
+  `running`, `held` + `heldAt`, `dwell`, `departed`, `at-neighbour`, `ended`, `handed-over` + `handedTo`…) i napis
+  po polsku (`e.status`), który powstaje z kodu w `src/model/timetable/phase.js` (`setPhase`, jedyna droga zmiany
+  etapu – używa jej tylko `Traffic`). Decyzje gry, automatu i narzędzi – na kodzie: `isHandled(e)` (pociąg obsłużony,
+  także wyprawiony w drodze do sąsiada – koniec zmiany, ocena), `isFinished(e)` (skończony do końca – zator
+  w automacie sprawdzającym, przegląd, testy pełnych zmian). Porównywanie napisu w źródłach i skryptach wykrywa
+  `tests/layers.test.js`. Testy mogą sprawdzać napis – jest taki sam jak dotąd.
+* **Nowa funkcja w logice – podkatalog katalogu logiki** (np. `src/model/timetable/`), żeby granice warstw dalej ją
+  sprawdzały; każdy katalog w `src/` ma rolę (logika, widok, dane) w `tests/layers.test.js` – nowy katalog bez roli
+  to błąd testu.
 * **O stan przebiegu pyta się zależności.** Zapis nastawionego przebiegu (`Interlocking.active`, `pending` i ich pola)
   to implementacja zależności. Inne moduły pytają: `routeState(id)` – jedno słowo na całe życie przebiegu
   (`none`, `setting`, `waiting`, `signal-off`, `releasing`, `entered`, `stuck` – gdy pasuje kilka, wygrywa dalszy na liście),

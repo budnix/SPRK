@@ -20,6 +20,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 import { Clock } from '../src/core/Clock.js';
 import { violations } from '../tests/invariants.js';
 import { leftovers } from '../tests/fault-harness.js';
+import { isFinished } from '../src/model/timetable/phase.js';
 
 /** Ile pierwszych naruszeń (z czasem) zapisać dla zmiany. */
 export const FIRST_VIOLATIONS = 3;
@@ -50,7 +51,7 @@ export function parseSeeds(text) {
 
 /** Pociąg obsłużony do końca: dojechał do sąsiada, zakończył bieg albo skład przekazano (manewry, odstawienie). */
 export function trainDone(e) {
-  return e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || String(e.status).startsWith('przekazany');
+  return isFinished(e);
 }
 
 /**

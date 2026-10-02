@@ -4,6 +4,7 @@ import { Interlocking } from '../src/model/Interlocking.js';
 import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
 import { autoDispatch, allArrived } from './helpers.js';
 import { violations, watchEvents } from './invariants.js';
+import { isFinished } from '../src/model/timetable/phase.js';
 
 /*
  * Usterki w wybranej chwili jazdy pociągu – wspólna podstawa testów `tests/faults-*.test.js`.
@@ -118,8 +119,7 @@ export function runWithFault(sim, { when, fault, until = '11:00', dispatch = aut
 
 /** Pociągi, które nie dojechały (numer i stan) – do komunikatów asercji. */
 export function stuck(sim) {
-  const ok = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || String(e.status).startsWith('przekazany');
-  return sim.traffic.timetable().filter((e) => !ok(e)).map((e) => `${e.nr}: ${e.status}`);
+  return sim.traffic.timetable().filter((e) => !isFinished(e)).map((e) => `${e.nr}: ${e.status}`);
 }
 
 /** Kary za czynności, które przy usterce są wymuszone: Sz, rozkaz „S”, doraźne zwolnienie, dPo / dKo. */

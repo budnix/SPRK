@@ -6,6 +6,7 @@ import { Interlocking } from './Interlocking.js';
 import { platformRanges } from '../tiles/platforms.js';
 import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
 import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
+import { setPhase, initialPhase } from './timetable/phase.js';
 
 /**
  * Od planowego odjazdu (przejazdu) do zjazdu ze stacji – pociąg „odjechał”, obsłużony – mija 1–4 min (zmierzone automatem
@@ -41,11 +42,6 @@ export class Traffic {
    */
   static shown(hhmm) {
     return typeof hhmm === 'string' && Clock.parse(hhmm) >= 86400 ? Clock.format(Clock.parse(hhmm)) : hhmm;
-  }
-
-  /** Pociąg obsłużony: wyprawiony na szlak (albo dotarł do sąsiada), zakończył bieg lub przekazany jako inny pociąg. */
-  static isDone(e) {
-    return e.status === 'odjechał' || e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
   }
 
   constructor(station, ilk, blocks, bus, opts = {}) {
@@ -323,13 +319,15 @@ export class Traffic {
     const stationRun = 90;                           // s od granicy pulpitu do peronu (ok.)
     const ref = arr ?? dep;
     const neighbourDep = t.from ? ref - lineTravel - stationRun : null;
-    return {
+    const e = {
       idx: i, ...t, ...(t.arr ? { arr: Traffic.shown(t.arr) } : {}), ...(t.dep ? { dep: Traffic.shown(t.dep) } : {}),
       cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
       neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
-      status: t.from ? 'oczekiwany' : (t.unit ? 'oczekuje na skład' : 'na stacji'), requested: false, dispatched: false,
+      phase: null, heldAt: null, handedTo: null, status: null, requested: false, dispatched: false,
       train: null, actualArr: null, actualDep: null, delay: 0, track: t.track, rollingStock,
     };
+    setPhase(e, initialPhase(t));
+    return e;
   }
 
   /** Losowe opóźnienia pociągów od sąsiadów (poziom zakłóceń). */
@@ -458,7 +456,7 @@ export class Traffic {
     for (let i = tiles.length - 1; i >= 0 && len < train.length; i--) { use.unshift(tiles[i]); len += tiles[i]._len; }
     train.placeOnTrack(use, e.startOn.dir);
     train.hasStopped = true;
-    e.train = train; e.status = 'na stacji';
+    e.train = train; setPhase(e, 'at-station');
     this.trains.push(train);
   }
 
@@ -489,14 +487,14 @@ export class Traffic {
     const t = this.time;
     switch (ev) {
       case 'enter':
-        e.status = 'wjeżdża';
+        setPhase(e, 'entering');
         this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} wjeżdża na stację od ${this.station.exits[e.from]?.name}` });
         break;
       case 'fullyIn':
         if (e.from) this.blocks.get(e.from)?.neighbourTrainArrived(tr);
         break;
       case 'arrive': {
-        e.actualArr = t; e.status = e.terminates ? 'zakończył bieg' : 'na stacji';
+        e.actualArr = t; setPhase(e, e.terminates ? 'ended' : 'at-station');
         const track = this.#trackOf(tr);
         e.actualTrack = track;
         e.delay = e.arrTime != null ? Math.round((t - e.arrTime) / 60) || 0 : 0;
@@ -514,7 +512,7 @@ export class Traffic {
         break;
       }
       case 'depart': {
-        e.actualDep = t; e.status = 'odjeżdża';
+        e.actualDep = t; setPhase(e, 'departing');
         this.#journal(e, 'odjazd', t, e.actualTrack);
         this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} odjazd` });
         // Opóźnienie zawinione na stacji: odjazd później niż max(plan, przyjazd + postój); pociąg ze składu innego pociągu –
@@ -560,7 +558,7 @@ export class Traffic {
         }
         break;
       case 'leave': {
-        e.status = 'odjechał';
+        setPhase(e, 'departed');
         // blokada szlaku, na który pociąg wjechał – nie zawsze szlaku z rozkładu (np. jazda po torze lewym po Zk)
         const exitId = typeof arg === 'string' ? arg : e.to;
         e.actualExit = exitId;
@@ -586,7 +584,7 @@ export class Traffic {
   }
 
   #onExit(e, exitId, tr) {
-    e.status = 'na następnym posterunku';
+    setPhase(e, 'at-neighbour');
     const delay = (e.depTime != null && e.actualDep != null ? Math.round((e.actualDep - e.depTime) / 60) : e.delay) || 0;
     e.delay = delay;
     if (delay <= 2) this.score.onTime++; else { this.score.delayed++; this.score.totalDelayMin += delay; }
@@ -614,17 +612,17 @@ export class Traffic {
         this.bus.emit('log', { time, level: 'warn', nr: e.nr, msg: `${block.neighbour}: pociąg ${e.nr} opóźniony ok. ${e.delayIn} min` });
       }
       // zgłoszenie przepadło przy zmianie trybu blokady (usterka / naprawa) – sąsiad zgłasza pociąg od nowa
-      if (e.requested && !block.neighbourRequestAlive(e.nr)) { e.requested = false; e.waitLogged = false; e.status = 'oczekiwany'; this.bus.emit('timetable', this.entries); }
+      if (e.requested && !block.neighbourRequestAlive(e.nr)) { e.requested = false; e.waitLogged = false; setPhase(e, 'expected'); this.bus.emit('timetable', this.entries); }
       if (!e.requested && time >= e.requestAt) {
         // Jeden pociąg naraz na szlaku – żądanie, gdy blokada wolna
         const earlier = this.entries.some((o) => o !== e && o.from === e.from && !o.dispatched && o.requestAt < e.requestAt);
-        if (!earlier && block.neighbourRequests(e.nr)) { e.requested = true; e.status = 'żądanie pozwolenia'; this.bus.emit('timetable', this.entries); }
+        if (!earlier && block.neighbourRequests(e.nr)) { e.requested = true; setPhase(e, 'permission-requested'); this.bus.emit('timetable', this.entries); }
       }
       if (e.requested && time >= e.neighbourDep && block.canNeighbourDispatch(e.nr)) {
         e.dispatched = true;
         const train = this.#makeTrain(e);
         train.placeOnLine(e.from, this.station.exits[e.from].lineLength ?? 3000);
-        e.train = train; e.status = 'na szlaku';
+        e.train = train; setPhase(e, 'on-line');
         this.trains.push(train);
         block.neighbourTrainEntered(train);
         this.bus.emit('timetable', this.entries);
@@ -649,14 +647,14 @@ export class Traffic {
       // pociąg, który przyjeżdża ze szlaku, musi najpierw dojechać – postój przed semaforem wjazdowym to nie przyjazd
       if (u.from && u.actualArr == null) continue;
       e.attached = true; e.train = tr;
-      u.status = `przekazany jako ${e.nr}`; u.train = null;
+      setPhase(u, 'handed-over', { nr: e.nr }); u.train = null;
       tr.def = e; tr.nr = e.nr; tr.mode = 'train'; tr.hasStopped = true; tr.state = 'stopped';
       // nowy pociąg rusza dopiero na sygnał semafora przed sobą – nie na zezwoleniu pociągu, którym skład przyjechał
       tr.clearAuthority();
       tr.applyDynamics(e); tr.holdUntil = e.depTime; tr.orders = []; // tabor ten sam (skład), wpis nowy – np. inna masa
       tr.onExit = (exitId, t) => this.#onExit(e, exitId, t);
       tr.onEvent = (ev, t, ...rest) => this.#onTrainEvent(e, ev, t, ...rest);
-      e.status = 'na stacji';
+      setPhase(e, 'at-station');
       this.bus.emit('log', { time, level: 'info', nr: e.nr, unit: u.nr, msg: `Skład pociągu ${u.nr} przekazany jako pociąg ${e.nr} (odjazd ${e.dep})` });
       this.bus.emit('timetable', this.entries);
     }
@@ -712,14 +710,14 @@ export class Traffic {
     // Stan rozkładu
     for (const e of this.entries) {
       if (e.train && !e.train.finished) {
-        if (e.status === 'odjechał') continue; // na szlaku do sąsiada – status zostaje (nie „jedzie”)
+        if (e.phase === 'departed') continue; // na szlaku do sąsiada – etap zostaje (nie „jedzie”)
         if (!e.actualTrack || (e.unit && e.train.v === 0)) { const tr = this.#trackOf(e.train); if (tr) e.actualTrack = tr; }
         const st = e.train.state;
         const ended = e.terminates && e.actualArr != null; // pociąg zakończył bieg – dalej tylko manewry
-        if (ended) e.status = st === 'moving' ? 'manewruje' : 'zakończył bieg';
-        else if (st === 'dwell') e.status = 'postój';
-        else if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal') e.status = `stoi przed ${e.train.stoppedAt.signal}`;
-        else if (st === 'moving' && e.train.entered) e.status = e.train.mode === 'shunt' ? 'manewruje' : 'jedzie';
+        if (ended) setPhase(e, st === 'moving' ? 'shunting' : 'ended');
+        else if (st === 'dwell') setPhase(e, 'dwell');
+        else if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal') setPhase(e, 'held', { signal: e.train.stoppedAt.signal });
+        else if (st === 'moving' && e.train.entered) setPhase(e, e.train.mode === 'shunt' ? 'shunting' : 'running');
         if (e.train.state === 'dwell' && e.depTime != null && time > e.depTime + 60) {
           e.delay = Math.round((time - e.depTime) / 60);
         }

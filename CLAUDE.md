@@ -41,7 +41,8 @@
 ## Granice warstw (pierwsze trzy i zakaz importów między widokami pilnuje `tests/layers.test.js`)
 
 - Logika – `src/model/`, `src/core/`, `src/tiles/`, `src/srk/` poza `views.js` – importuje tylko logikę i nie używa
-  `document`, `window`, `localStorage` ani innych obiektów przeglądarki.
+  `document`, `window`, `localStorage` ani innych obiektów przeglądarki. Kod nowej funkcji grupuj w podkatalogu
+  katalogu logiki (np. `src/model/timetable/`); nowy katalog w `src/` wymaga roli w `FOLDER_ROLES` tego testu.
 - Zależności (`Interlocking`) nie znają przycisków ani kolorów. Przyciski pulpitu typu E tłumaczy na polecenia
   `src/srk/buttons.js`; stanowiska bez przycisków wydają polecenia wprost: `Simulation.execute({ type, … })`.
 - Widok nie zmienia stanu modelu wprost (żadnych przypisań do `sim.ilk.*`, `sim.blocks.*`) – tylko przez

@@ -28,7 +28,6 @@ import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { Clock } from '../src/core/Clock.js';
 import { DISRUPTION_LEVELS } from '../src/core/Random.js';
-import { Traffic } from '../src/model/Traffic.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { validateStation } from '../src/model/validate.js';
 import { EXTRA_TRAIN } from '../src/model/Simulation.js';
@@ -40,6 +39,7 @@ import { MISSIONS } from '../src/tutorial/missions.js';
 import pl from '../src/i18n/pl.js';
 import { unjustified, leftovers } from '../tests/fault-harness.js';
 import { playShift, trainDone, defaultWorkers, parseCli, runJobs, serveJobs, executedDirectly } from './shift.mjs';
+import { isHandled } from '../src/model/timetable/phase.js';
 
 const WORKER_ROLE = 'sprk-check-worker';
 /** Poziomy zakłóceń w kolejności wydruku; `--level all` = wszystkie trzy (w przeglądzie silnika `all` = high i low). */
@@ -186,7 +186,7 @@ class ShiftProbe {
    */
   reason(e, t) {
     const sim = this.sim;
-    if (Traffic.isDone(e)) return null;
+    if (isHandled(e)) return null;
     if (e.depTime != null && t < e.depTime && (e.actualArr != null || !e.from)) return null;
     const r = sim.traffic.waitReason(e, t);
     if (r) return { code: r.code, signal: r.signal ?? null, neighbour: r.neighbour ?? null };
@@ -233,7 +233,7 @@ class ShiftProbe {
       case 'signal-fail': case 'route-block': return live && tr.nextSignal() === f.target;
       case 'block-fail':
         if (e.from === f.target && e.requested && !tr?.entered) return true;
-        return live && e.to === f.target && (e.status === 'odjechał' || (tr.entered && e.actualDep == null && t >= (e.depTime ?? e.arrTime ?? 0) - 120));
+        return live && e.to === f.target && (e.phase === 'departed' || (tr.entered && e.actualDep == null && t >= (e.depTime ?? e.arrTime ?? 0) - 120));
       case 'point-control': { const p = this.sim.ilk.points.get(f.target); return live && !!p && tr.occupiedSections().has(p.section); }
       default: return live && tr.occupiedSections().has(f.target);
     }
@@ -245,7 +245,7 @@ class ShiftProbe {
     const active = sim.faults.list.filter((f) => f.active);
     for (const e of sim.traffic.timetable()) {
       const x = this.#of(e);
-      if (x.doneAt == null && Traffic.isDone(e)) x.doneAt = t;
+      if (x.doneAt == null && isHandled(e)) x.doneAt = t;
       const tr = e.train;
       // pociąg stojący od początku zmiany rusza bez zdarzenia „odjazd” (actualDep zostaje puste) – odjazd z obserwacji
       if (x.movedAt == null && e.startOn && !e.from && e.actualDep == null && tr && !tr.finished && tr.mode === 'train' && tr.v > 0) x.movedAt = t;
@@ -349,7 +349,7 @@ class ShiftProbe {
     this.end = {
       score: rep.total, grade: rep.grade, onTime: rep.onTime, delayed: rep.delayed, delayMinutes: rep.delayMinutes,
       byCode: rep.byCode.map(({ code, n, points }) => ({ code, n, points })),
-      unfinished: sim.traffic.timetable().filter((e) => !Traffic.isDone(e)).map((e) => this.standing(e, t)),
+      unfinished: sim.traffic.timetable().filter((e) => !isHandled(e)).map((e) => this.standing(e, t)),
     };
   }
 }
