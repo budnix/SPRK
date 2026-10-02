@@ -389,6 +389,21 @@ test('łączność: powiadomienia domyślnie włączone, przełącznik w zakład
 // Oznaczenie kategorii w rozkładzie („R”, „TME”): litery na środku plakietki w pionie. Pomiar: linia bazowa tekstu
 // w plakietce (pusty element wyrównany do linii bazowej) i wysokość liter z measureText – odstęp od góry i od dołu
 // plakietki różni się najwyżej o 0,5 px (dawniej 0,8 px przy 100% – na ekranie Retina przy 110% widać to wyraźnie).
+test('rozkład: komórki wiersza wyśrodkowane w pionie względem dwuwierszowej relacji (numer, godziny, tor, stan)', async ({ page }) => {
+  await openShift(page, 'reda');
+  await page.click('#panel-tabs button[data-tab=rj]');
+  const rows = await page.locator('table.rj tbody tr').evaluateAll((trs) => trs.slice(0, 6).map((tr) => {
+    const row = tr.getBoundingClientRect();
+    const mid = (el) => { const r = document.createRange(); r.selectNodeContents(el); const b = r.getBoundingClientRect(); return b.top + b.height / 2 - (row.top + row.height / 2); };
+    return { height: row.height, lines: tr.querySelector('td.rel').children.length || 1, offs: [...tr.children].filter((td) => td.textContent.trim()).map((td) => mid(td)) };
+  }));
+  expect(rows.length).toBeGreaterThan(3);
+  for (const r of rows) {
+    expect(r.height).toBeGreaterThan(30); // relacja i droga przez stację – dwa wiersze
+    for (const off of r.offs) expect(Math.abs(off)).toBeLessThanOrEqual(2);
+  }
+});
+
 test('rozkład: litery kategorii pociągu na środku plakietki w pionie', async ({ page }) => {
   await openShift(page, 'tczew');
   const res = await page.locator('table.rj .cat').evaluateAll((els) => els.slice(0, 12).map((b) => {

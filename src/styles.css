@@ -469,7 +469,8 @@ svg.desk { width: 100%; height: 100%; display: block; touch-action: manipulation
 /* treść zakładek panelu o 1 px większa niż dawniej (czytelność przy zwykłym powiększeniu przeglądarki) */
 table.rj { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.rj th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 3px; border-bottom: 1px solid var(--border2); }
-table.rj td { padding: 4px 3px; border-bottom: 1px solid var(--border3); vertical-align: top; }
+/* komórki wyśrodkowane w pionie: relacja ma dwa wiersze (relacja i droga przez stację), numer, godziny, tor i stan – jeden */
+table.rj td { padding: 4px 3px; border-bottom: 1px solid var(--border3); vertical-align: middle; }
 table.rj tr.active td { background: var(--row-active); }
 table.rj tr.done td { color: var(--muted); }
 table.rj td.nr { font-weight: 700; font-variant-numeric: tabular-nums; }
