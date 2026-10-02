@@ -19,7 +19,7 @@ const scripts = Object.keys(JSON.parse(readFileSync(join(ROOT, 'package.json'), 
 /** Napisy w odwrotnych apostrofach (także w blokach kodu – każdy wiersz osobno). */
 const quoted = (text) => [...text.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]);
 /** Ścieżka pliku projektu: zaczyna się od katalogu projektu, bez miejsc do wypełnienia (`<id>`, `*`, `…`) i odstępów. */
-const isPath = (s) => /^(src|tests|docs|scripts|\.claude)\/[\w./-]+$/.test(s) || /^(README|CLAUDE)\.md$/.test(s);
+const isPath = (s) => /^(src|tests|docs|scripts|\.claude)\/[\w./-]+$/.test(s) || /^(README|CLAUDE|GLOSSARY)\.md$/.test(s);
 
 test('skille projektu: nagłówek z nazwą równą katalogowi i opisem, kiedy użyć', () => {
   assert.deepEqual(names, ['diagnoza-zatoru', 'nowa-stacja', 'nowe-stanowisko', 'nowy-scenariusz', 'posterunek-na-mapie', 'zasada-ze-zrodla']);

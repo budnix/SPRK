@@ -33,7 +33,8 @@
   czcionka rasteryzuje się inaczej na każdym systemie, a układ, kształty i barwy – tak samo, więc ten sam wzorzec
   przechodzi lokalnie i w CI. Treść napisów sprawdzają asercje w testach zachowania.
 - Dokumentacja zgodna z kodem w tym samym commicie: `docs/ARCHITECTURE.md` (moduły, zasady), `docs/STATION-FORMAT.md`
-  (pola definicji stacji), `README.md` (funkcje widoczne dla gracza, po angielsku).
+  (pola definicji stacji), `README.md` (funkcje widoczne dla gracza, po angielsku), `GLOSSARY.md` (pojęcia i ich
+  nazwy – co znaczą, bez szczegółów kodu; nowe pojęcie albo zmiana znaczenia istniejącego).
 - Bez nowych zależności npm (także deweloperskich) bez zgody właściciela.
 - Bez sekretów, kluczy i danych osobowych w repozytorium.
 

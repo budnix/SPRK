@@ -273,7 +273,11 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   trzeba nastawić, mówią urządzenia – stopień, w którym pociąg już jest (także po minięciu semafora na Sz / rozkaz),
   schodzi z planu; stopień, który czeka na pociąg, zostaje w planie i po zgaszeniu z usterki jest nastawiany od nowa
   (także dla pociągu przed semaforem wjazdowym); gdy wszystkie stopnie czekają, automat zajmuje się wyjazdem (pociąg
-  bez postoju). Po
+  bez postoju). Automat zadaje o przebieg trzy różne pytania i każde ma nazwę (`Operator.js`): przebieg jest przed
+  pociągiem (`Interlocking.routeAhead` – zajmuje tor i szlak), przebieg dla pociągu jest w drodze (`#onItsWay` – także
+  z sygnałem na „Stój” i zwalniany czasowo: drugiego nie nastawiać) i stopień poprowadzi pociąg taki, jaki jest
+  (`#carries`). Nie zastępuje się jednego drugim: próba ujednolicenia dała polecenia nastawiania co takt podczas
+  zwalniania czasowego. Po
   usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa (poza nastawnią
   mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg z `routeStuck` (na nastawni mechanicznej
   najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym

@@ -85,6 +85,25 @@ export class AutoOperator {
     return res;
   }
 
+  /*
+   * Trzy pytania automatu o przebieg (stan z `Interlocking.routeState`) – różne, nie do zamiany jedno na drugie:
+   *  - `Interlocking.routeAhead(stan)` – przebieg jest przed pociągiem (utwierdzony, pociąg nie wjechał): zajmuje tor
+   *    i szlak, a jego sygnalizator może wymagać Sz;
+   *  - `#onItsWay(stan)` – przebieg dla pociągu jest utwierdzony przed nim albo właśnie się nastawia: drugiego nie
+   *    nastawiać. Liczy się także przebieg z sygnałem na „Stój” i zwalniany czasowo – utwierdzenie trwa, polecenie
+   *    dostałoby odmowę (zwalnianie czasowe po usterce: polecenie co takt aż do zwolnienia);
+   *  - `#carries(stan)` – zaplanowany stopień poprowadzi pociąg taki, jaki jest: czeka z sygnałem albo się nastawia.
+   *    Stopień z sygnałem na „Stój” albo zwalniany nie poprowadzi – trzeba go nastawić od nowa (w nastawni
+   *    mechanicznej sygnał trzyma dźwignia, więc każdy przebieg przed pociągiem się liczy).
+   */
+  #onItsWay(state) {
+    return Interlocking.routeAhead(state) || state === 'setting';
+  }
+
+  #carries(state) {
+    return state === 'waiting' || state === 'setting' || (this.sim.ilk.manualSignal && Interlocking.routeAhead(state));
+  }
+
   /** Nastawnia mechaniczna: po przejeździe dźwignia sygnałowa na „Stój” i drążek w położenie zasadnicze. */
   #releasePassed() {
     const ilk = this.sim.ilk;
@@ -299,11 +318,7 @@ export class AutoOperator {
         const occ = tr.occupiedSections();
         const inside = e._entryPath.findLastIndex((id) => ilk.routes.get(id)?.sections.some((sid) => occ.has(sid)));
         if (inside >= 0) e._entryPath = e._entryPath.slice(inside + 1);
-        const waits = (id) => {
-          const state = ilk.routeState(id);
-          return state === 'waiting' || state === 'setting' || (ilk.manualSignal && Interlocking.routeAhead(state));
-        };
-        const next = e._entryPath.find((id) => !waits(id));
+        const next = e._entryPath.find((id) => !this.#carries(ilk.routeState(id)));
         if (next) { this.#setRoute(next); continue; }
       }
       // ---- wjazd ----
@@ -319,7 +334,7 @@ export class AutoOperator {
         const app = approachOf(e.from);
         const cands = routes.filter((r) => r.kind === 'train' && r.approach === app);
         // przebieg od semafora wjazdowego już czeka na ten pociąg (nastawiony albo w nastawianiu)
-        if (cands.some((r) => { const state = ilk.routeState(r.id); return Interlocking.routeAhead(state) || state === 'setting'; })) continue;
+        if (cands.some((r) => this.#onItsWay(ilk.routeState(r.id)))) continue;
         // Ścieżka przebiegów do toru docelowego (BFS po przebiegach pociągowych, do 3 stopni) – dla stacji,
         // na których tor peronowy leży za semaforem pośrednim (np. Sopot: A → H → O).
         // (wspólne z kontrolą scenariusza: src/model/trainPaths.js)
@@ -408,7 +423,7 @@ export class AutoOperator {
         const mine = (x) => x.kind === 'shunt' && (x.start === tr.nextSignal() || occ.has(x.approach));
         const waiting = routes.find((x) => mine(x) && Interlocking.routeAhead(ilk.routeState(x.id)));
         if (waiting && ilk.signals.get(waiting.start)?.failed && !tr.shuntPermit && tr.v === 0) sim.comms.send('shunt-permit', { nr: e.nr }, { silent: true });
-        if (waiting || routes.some((x) => mine(x) && ilk.routeState(x.id) === 'setting')) continue;
+        if (routes.some((x) => mine(x) && this.#onItsWay(ilk.routeState(x.id)))) continue;
         const head = ['E', 'NE', 'SE'].includes(tr.direction) ? 'E' : 'W';
         const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
         // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg
@@ -445,7 +460,7 @@ export class AutoOperator {
         // Wyjazd dwustopniowy: brak przebiegu wprost na szlak – najpierw do semafora pośredniego (np. G502 → A502 → szlak),
         // potem od niego na szlak.
         let staged = false;
-        const waiting = (pred) => ilk.routesSet().some((x) => (Interlocking.routeAhead(x.state) || x.state === 'setting') && pred(x.route));
+        const waiting = (pred) => ilk.routesSet().some((x) => this.#onItsWay(x.state) && pred(x.route));
         // pierwszy stopień wyjazdu przepadł, zanim pociąg ruszył – wyjazd zaczyna się od nowa
         if (e._viaSignal && tr.nextSignal() !== e._viaSignal && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === e._viaSignal)) e._viaSignal = null;
         if (e._viaSignal) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === e._viaSignal);
