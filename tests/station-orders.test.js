@@ -92,7 +92,7 @@ test('KZW: odwołanie zwalniania czasowego – przebieg zostaje utwierdzony', ()
 /* Usterka nawierzchni zgłoszona przez maszynistę (track-defect): tor trzeba zamknąć (ITS); jazda po torze z usterką bez
    zamknięcia kosztuje punkty, wjazd na tor zamknięty – więcej; przyjęcie na inny tor – bez kary; usterki nie losuje się. */
 test('track-defect: alarm, kara za jazdę po torze bez zamknięcia, wjazd na tor zamknięty (ITS) karany mocniej; tylko ze scenariusza', async () => {
-  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  const { FAULT_TYPES } = await import('../src/model/faults/types.js');
   assert.ok(FAULT_TYPES.includes('track-defect'));
   const mk = () => new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'track-defect', target: 'T1', at: '07:01', duration: 30 }] } });
   const s = mk();
@@ -146,7 +146,7 @@ const axleSim = (duration = 120) => new Simulation(szkolna, { disruptions: 'none
 const occupy = (s, set) => { s.traffic.currentOccupancy = () => new Set(set); run(s, 1); };
 
 test('axle-counter: pojawia się po zjeździe pociągu, zerowanie, przejazd kontrolny zwalnia odcinek; tylko ze scenariusza', async () => {
-  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  const { FAULT_TYPES } = await import('../src/model/faults/types.js');
   assert.ok(FAULT_TYPES.includes('axle-counter'));
   const s = axleSim();
   run(s, 90);

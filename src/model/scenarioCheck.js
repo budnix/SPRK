@@ -1,6 +1,6 @@
 import { Simulation, EXTRA_TRAIN, extraTrainShifts } from './Simulation.js';
 import { validateStation, validateTimetable } from './validate.js';
-import { FAULT_TYPES } from './Faults.js';
+import { FAULTS, FAULT_TYPES } from './faults/types.js';
 import { LATE_SLACK } from './Traffic.js';
 import { trainSpeed } from './rollingStock.js';
 import { entryPath as findEntryPath, trainRouteChains, routeEndTrack, entryRoutes } from './trainPaths.js';
@@ -51,7 +51,6 @@ export const TASK_GRACE = 10 * 60;
 const FAULT_DEFAULT_MIN = 10;
 /** Pociąg od sąsiada: od granicy pulpitu do peronu ok. 90 s (Traffic.#prepare). */
 const STATION_RUN = 90;
-const SECTION_FAULTS = new Set(['false-occupancy', 'track-defect', 'axle-counter']);
 
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 // godziny 24–47: następna doba w zmianie przez północ („25:10” = 01:10 następnego dnia; `Clock.stamp`) – dozwolone tylko
@@ -445,22 +444,14 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   const rawSection = new Map((station.tiles || []).filter((t) => t.section).map((t) => [`${t.x},${t.y}`, t.section]));
   const partsOf = (id) => { const o = new Set(); for (const t of sim.station.tiles) if (t.section && rawSection.get(`${t.x},${t.y}`) === id) o.add(t.section); return o; };
   const checkSplit = (id, w) => { const parts = partsOf(id); if (parts.size > 1) warn('split-section', `${w}: odcinek ${id} jest w grze podzielony (${[...parts].join(', ')}) – dotyczy tylko części ${id}`); };
-  const targetExists = {
-    'signal-fail': (id) => ilk.signals.has(id),
-    'route-block': (id) => ilk.signals.get(id)?.kind === 'semafor',
-    'point-control': (id) => ilk.points.has(id),
-    'false-occupancy': (id) => ilk.sections.has(id),
-    'track-defect': (id) => ilk.sections.has(id),
-    'axle-counter': (id) => ilk.sections.has(id),
-    'block-fail': (id) => sim.blocks.has(id),
-  };
   const faults = sc.faults || [];
   const faultWindow = [];
   for (const f of faults) {
     const w = `Usterka ${f.type} ${f.target}`;
     if (!FAULT_TYPES.includes(f.type)) { error('fault-type', `${w}: nieznany rodzaj usterki (${FAULT_TYPES.join(', ')}) – nic się nie stanie`); continue; }
-    if (!targetExists[f.type](f.target)) error('fault-target', `${w}: nie ma takiego elementu – usterka nic nie zrobi, a dziennik i tak ją pokaże`);
-    else if (SECTION_FAULTS.has(f.type)) checkSplit(f.target, w);
+    const kind = FAULTS[f.type];
+    if (!kind.exists(sim, f.target)) error('fault-target', `${w}: nie ma takiego elementu – usterka nic nie zrobi, a dziennik i tak ją pokaże`);
+    else if (kind.target === 'section') checkSplit(f.target, w);
     else if (f.type === 'signal-fail' && ilk.signals.get(f.target)?.kind !== 'semafor') warn('fault-shunt-signal', `${w}: ${f.target} to tarcza manewrowa – usterka nie dotyczy pociągów (tylko manewrów)`);
     // `at` liczbą gra przyjęłaby jako sekundy od północy (450 → 00:07:30) – zawsze napis GG:MM
     if (!isTime(f.at)) { error('fault-time', `${w}: at ${JSON.stringify(f.at)} – czas jako napis „GG:MM”${typeof f.at === 'number' ? ` (liczbę gra bierze jako sekundy od północy: ${Clock.format(f.at, true)})` : ''}`); continue; }
@@ -470,11 +461,11 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     faultWindow.push({ f, at, len });
     if (at < start) warn('fault-before-start', `${w}: at ${hm(at)} przed startem zmiany – czynna od pierwszej chwili`);
     if (end != null && at >= end) error('fault-after-end', `${w}: at ${hm(at)} nie przed końcem zmiany ${sc.endTime} – usterka nie wystąpi`);
-    // licznik osi gracz zeruje sam (MOR-3), a samouczek celowo trzyma usterkę do końca lekcji
-    else if (end != null && at + len > end && f.type !== 'axle-counter' && !sc.tutorial) warn('fault-past-end', `${w}: ${hm(at)} + ${len / 60} min trwa po końcu zmiany ${sc.endTime}`);
-    if (f.type === 'route-block' && !ilk.routeBlock) error('fault-srk', `${w}: blok przebiegowy ma tylko nastawnia mechaniczna (srk ${sim.srk.id}) – usterka bez skutku`);
-    if (f.type === 'axle-counter' && sim.srk.id !== 'mor3') warn('fault-srk', `${w}: zerowanie licznika osi (ZeroLO) ma tylko stanowisko MOR-3 (srk ${sim.srk.id}) – gracz czeka na naprawę`);
-    if (f.type === 'axle-counter' || f.type === 'track-defect') info('fault-automat', `${w}: automat dyżurnego jej nie obsługuje (${f.type === 'axle-counter' ? 'nie zeruje licznika osi' : 'nie zamyka toru'}) – sprawdzenie przebiegu automatem tego nie oceni`);
+    // usterkę, którą gracz usuwa sam (licznik osi – MOR-3), i samouczek (celowo do końca lekcji) – bez uwagi
+    else if (end != null && at + len > end && !kind.outlastsShift && !sc.tutorial) warn('fault-past-end', `${w}: ${hm(at)} + ${len / 60} min trwa po końcu zmiany ${sc.endTime}`);
+    const need = kind.requires?.(sim);
+    if (need) (need.level === 'error' ? error : warn)('fault-srk', `${w}: ${need.msg}`);
+    if (!kind.automat) info('fault-automat', `${w}: automat dyżurnego jej nie obsługuje (${kind.automatGap}) – sprawdzenie przebiegu automatem tego nie oceni`);
   }
   for (let i = 0; i < faultWindow.length; i++) for (let j = i + 1; j < faultWindow.length; j++) {
     const a = faultWindow[i], b = faultWindow[j];

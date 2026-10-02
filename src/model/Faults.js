@@ -1,30 +1,12 @@
 import { Clock } from '../core/Clock.js';
+import { FAULTS, FAULT_TYPES } from './faults/types.js';
 
 /**
- * Usterki urządzeń srk i zakłócenia – generowane losowo (poziom trudności) lub
- * zadane w scenariuszu. Każda usterka ma czas wystąpienia, czas trwania,
- * `apply(sim)` i `clear(sim)`.
- *
- * Typy:
- *  - signal-fail     – semafor nie podaje sygnału zezwalającego (pozostaje Sz i rozkaz „S”)
- *  - point-control   – po przestawieniu zwrotnica nie odzyskuje kontroli przez pewien czas
- *  - false-occupancy – odcinek wskazuje zajętość bez pociągu (pozostaje Sz po potwierdzeniu)
- *  - block-fail      – blokada liniowa bez łączności elektrycznej: zapowiadanie telefoniczne
- *  - route-block     – nastawnia mechaniczna: pociąg nie zwalnia bloku przebiegowego utwierdzającego (urządzenie
- *                      oddziaływania) – drążek przebiegu od semafora `target` cofa się tylko zwalniaczem
- *  - track-defect    – usterka nawierzchni zgłoszona przez maszynistę (np. pęknięta szyna) na odcinku `target`:
- *                      dyżurny zamyka tor (ITS); wjazd pociągu na tor z usterką bez zamknięcia kosztuje punkty.
- *                      Tylko ze scenariusza – nie losuje się (tor zamyka się poleceniem stanowiska komputerowego)
- *  - axle-counter    – od `at` licznik osi odcinka `target` myli się przy najbliższym przejeździe: gdy pociąg zjedzie
- *                      z odcinka, ten dalej wskazuje zajętość (`axleFault`). Dyżurny zeruje licznik (`axle-reset`, MOR-3:
- *                      ZeroLO), odcinek zostaje zajęty (ciemnoczerwony) do przejazdu kontrolnego – wjazd i wyjazd
- *                      pociągu (na sygnał zastępczy) po zerowaniu go zwalnia. Bez zerowania usterkę usuwa automatyk po
- *                      `duration` od jej wystąpienia. Tylko ze scenariusza (zerowanie ma stanowisko MOR-3)
+ * Harmonogram usterek urządzeń srk i zakłóceń – generowanych losowo (poziom trudności) lub zadanych w scenariuszu.
+ * Każda usterka ma czas wystąpienia (`at`) i trwania (`duration`); co się dzieje przy jej początku i końcu, czego
+ * dotyczy i czy się losuje – mówi jej rodzaj w `src/model/faults/types.js` (jedno miejsce na rodzaj). Tu: kiedy
+ * usterka zaczyna się i kończy, nakładanie się dwóch usterek jednego elementu, losowanie.
  */
-export const FAULT_TYPES = ['signal-fail', 'point-control', 'false-occupancy', 'block-fail', 'route-block', 'track-defect', 'axle-counter'];
-/** Usterki, których nie losuje się przy zakłóceniach (tylko w scenariuszu). */
-const SCRIPTED_ONLY = new Set(['track-defect', 'axle-counter']);
-
 export class Faults {
   constructor(sim, rng, level, scripted = []) {
     this.sim = sim;
@@ -53,14 +35,11 @@ export class Faults {
     // i usterka z takim czasem nie pojawiała się nigdy
     const end = (sim.endTime ?? sim.clock.time + 2 * 3600) - 15 * 60;
     if (end <= start) return;
-    const semafory = [...sim.ilk.signals.values()].filter((s) => s.kind === 'semafor').map((s) => s.id);
-    const points = [...sim.ilk.points.keys()];
-    const sections = [...sim.ilk.sections.values()].filter((s) => s.kind !== 'approach').map((s) => s.id);
-    const exits = [...sim.blocks.keys()];
+    // rodzaje, które się losują na tej stacji (np. blok przebiegowy – tylko nastawnia mechaniczna), w kolejności rodzajów
+    const random = FAULT_TYPES.filter((t) => FAULTS[t].pool(sim) != null);
     for (let i = 0; i < n; i++) {
-      // usterka bloku przebiegowego tylko tam, gdzie jest blok (nastawnia mechaniczna); na innych stanowiskach losowanie bez zmian
-      const type = this.rng.pick(FAULT_TYPES.filter((t) => !SCRIPTED_ONLY.has(t) && (sim.ilk.routeBlock || t !== 'route-block')));
-      const pool = { 'signal-fail': semafory, 'point-control': points, 'false-occupancy': sections, 'block-fail': exits, 'route-block': semafory }[type];
+      const type = this.rng.pick(random);
+      const pool = FAULTS[type].pool(sim);
       if (!pool.length) continue;
       this.list.push({
         type, target: this.rng.pick(pool),
@@ -89,19 +68,18 @@ export class Faults {
   tick(time) {
     this.time = time;
     for (const f of this.list) {
-      // licznik osi: od `at` odcinek jest „uzbrojony” – zależność ustawia usterkę w chwili zjazdu taboru, bez taktu przerwy
-      if (f.type === 'axle-counter' && !f.active && !f.done && time >= f.at) { const s = this.sim.ilk.sections.get(f.target); if (s) s.axleArmed = true; }
-      if (!f.active && !f.done && time >= f.at && this.#ready(f)) {
+      const kind = FAULTS[f.type];
+      if (kind?.arm && !f.active && !f.done && time >= f.at) kind.arm(this.sim, f);
+      if (!f.active && !f.done && time >= f.at && (kind?.ready ? kind.ready(this.sim, f) : true)) {
         f.active = true; f.since = time;
         // druga usterka tego samego elementu, gdy pierwsza trwa: element już jest niesprawny – nie ustawia się go od nowa
-        // (np. blokada nie gubi zapytania o drogę), a napęd zwrotnicy wraca dopiero po późniejszej z nich
+        // (np. blokada nie gubi zapytania o drogę); rodzaj może przedłużyć usterkę (napęd zwrotnicy – `overlap`)
         if (!this.#twin(f)) this.#apply(f);
-        else if (f.type === 'point-control') { const p = this.sim.ilk.points.get(f.target); if (p) p.faultUntil = Math.max(p.faultUntil || 0, time + f.duration); }
+        else kind?.overlap?.(this.sim, f, time);
       }
       // naprawa – dopiero po ostatniej z nakładających się usterek elementu
       if (f.active && time >= (f.since ?? f.at) + f.duration) { f.active = false; f.done = true; if (!this.#twin(f)) this.#clear(f); }
-      if (f.active && f.type === 'track-defect') this.#defectRide(f);
-      if (f.active && f.type === 'axle-counter') this.#pilotRide(f);
+      if (f.active) kind?.during?.(this.sim, f, this.#ctx(f));
     }
   }
 
@@ -110,170 +88,25 @@ export class Faults {
     return this.list.find((x) => x !== f && x.active && x.type === f.type && x.target === f.target) ?? null;
   }
 
-  /** Usterka licznika osi pojawia się, gdy pociąg zjedzie z odcinka (po `at`); inne usterki – o czasie `at`. */
-  #ready(f) {
-    if (f.type !== 'axle-counter') return true;
-    const s = this.sim.ilk.sections.get(f.target);
-    if (!s) return false;
-    if (s.axleFault) return true; // zależność już wykazała zajętość przy zjeździe pociągu (odcinek uzbrojony)
-    if (s.physical) { f.trainSeen = true; return false; }
-    return !!f.trainSeen;
-  }
-
-  /**
-   * Po zerowaniu licznika osi – przejazd kontrolny: nowy wjazd pociągu na odcinek i wyjazd z niego zwalnia odcinek. Tabor
-   * stojący na odcinku w chwili zerowania musi najpierw zjechać (jego wyjazd nie jest przejazdem kontrolnym).
-   */
-  #pilotRide(f) {
-    const s = this.sim.ilk.sections.get(f.target);
-    if (!s?.resetPending) return;
-    f.pilot ??= s.physical ? 'leave' : 'enter';
-    if (f.pilot === 'leave' && !s.physical) f.pilot = 'enter';
-    else if (f.pilot === 'enter' && s.physical) f.pilot = 'inside';
-    else if (f.pilot === 'inside' && !s.physical) {
-      f.active = false; f.done = true; f.pilot = 'done';
-      this.#clear(f);
-    }
-  }
-
-  /**
-   * Pociąg wjechał na tor z usterką nawierzchni (tabor stojący tam przy zgłoszeniu się nie liczy). Pociągi zatrzymuje się
-   * przed przeszkodą (Ir-1 §75), więc każdy nowy wjazd jest karany; na tor zamknięty (ITS, np. na Sz) – mocniej.
-   * Urządzenie wjazdu nie blokuje – odpowiada za to dyżurny.
-   */
-  #defectRide(f) {
-    const s = this.sim.ilk.sections.get(f.target);
-    if (!s) return;
-    const occ = !!s.physical;
-    if (occ && !f.wasOccupied) {
-      const closed = !!s.closed;
-      this.#log('warn', `Pociąg wjechał na tor z usterką nawierzchni (odcinek ${f.target})${closed ? ' mimo zamknięcia toru' : ' – tor nie został zamknięty'}`);
-      this.sim.bus.emit('score', { time: this.time, code: 'track-defect', points: closed ? -80 : -50, section: f.target,
-        msg: `Jazda po torze z usterką nawierzchni (${f.target})${closed ? ' zamkniętym dla ruchu' : ' bez zamknięcia toru'}` });
-    }
-    f.wasOccupied = occ;
-  }
-
   #log(level, msg) {
     this.sim.bus.emit('log', { time: this.time, level, msg });
   }
 
+  /** Kontekst rodzaju usterki: chwila, dziennik i wcześniejszy koniec usterki (np. po przejeździe kontrolnym). */
+  #ctx(f) {
+    return {
+      time: this.time,
+      log: (level, msg) => this.#log(level, msg),
+      finish: () => { f.active = false; f.done = true; this.#clear(f); },
+    };
+  }
+
   #apply(f) {
-    const sim = this.sim;
-    switch (f.type) {
-      case 'signal-fail': {
-        const s = sim.ilk.signals.get(f.target);
-        if (!s) return;
-        s.failed = true; sim.ilk.refreshSignals();
-        // semafor: dla pociągu Sz albo rozkaz „S”; dla manewrów (także tarcza) – zezwolenie dyżurnego (Ir-9 § 10 ust. 15)
-        const shunt = 'Manewry: po nastawieniu przebiegu – zezwolenie radiem (Łączność).';
-        this.#log('alarm', s.kind === 'semafor'
-          ? `USTERKA: semafor ${f.target} nie podaje sygnału zezwalającego (żarówka / obwód). Pociąg: Sz; gdy nie można – rozkaz „S”. ${shunt}`
-          : `USTERKA: tarcza manewrowa ${f.target} nie podaje sygnału Ms2 (żarówka / obwód). ${shunt}`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'point-control': {
-        const p = sim.ilk.points.get(f.target);
-        if (!p) return;
-        p.faultUntil = (f.since ?? f.at) + f.duration; // od chwili wystąpienia (usterka ze scenariusza może zacząć się później niż `at`)
-        this.#log('alarm', `USTERKA: zwrotnica ${f.target} – po przestawieniu nie uzyska kontroli położenia (napęd). Wezwano automatyka.`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'false-occupancy': {
-        const s = sim.ilk.sections.get(f.target);
-        if (!s) return;
-        s.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy());
-        this.#log('alarm', `USTERKA: odcinek ${f.target} wskazuje zajętość bez pociągu (obwód torowy). Po sprawdzeniu toru – Sz.`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'block-fail': {
-        const b = sim.blocks.get(f.target);
-        if (!b) return;
-        b.setFault(true);
-        this.#log('alarm', `USTERKA: blokada liniowa do ${b.neighbour} bez łączności – zapowiadanie telefoniczne (zakładka Łączność).`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'axle-counter': {
-        const s = sim.ilk.sections.get(f.target);
-        if (!s) return;
-        s.axleFault = true; s.resetPending = false;
-        sim.ilk.refreshOccupancy();
-        this.#log('alarm', `USTERKA: licznik osi odcinka ${f.target}${s.track ? ` (tor ${s.track})` : ''} wskazuje zajętość po przejeździe pociągu. Sprawdź, że tor jest wolny, i wyzeruj licznik (ZeroLO); pierwszy pociąg wjedzie na sygnał zastępczy.`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'track-defect': {
-        const s = sim.ilk.sections.get(f.target);
-        if (!s) return;
-        s.defect = true;
-        f.wasOccupied = !!s.physical; // pociąg, który już tam jest, zgłosił usterkę – może zjechać
-        this.#log('alarm', `USTERKA: maszynista zgłasza pękniętą szynę na odcinku ${f.target}${s.track ? ` (tor ${s.track})` : ''}. Zamknij tor dla ruchu (ITS) i prowadź pociągi innym torem.`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      case 'route-block': {
-        const s = sim.ilk.signals.get(f.target);
-        if (!s) return;
-        s.blockStuck = true;
-        this.#log('alarm', `USTERKA: urządzenie oddziaływania pociągu za semaforem ${f.target} – blok przebiegowy nie zwolni się sam. Po przejeździe sprawdź, że pociąg minął miejsce końca pociągu, i użyj zwalniacza.`);
-        sim.bus.emit('alarm', { type: 'fault', fault: f });
-        break;
-      }
-      default:
-    }
+    const kind = FAULTS[f.type];
+    if (kind?.apply(this.sim, f, this.#ctx(f))) this.sim.bus.emit('alarm', { type: 'fault', fault: f });
   }
 
   #clear(f) {
-    const sim = this.sim;
-    switch (f.type) {
-      case 'signal-fail': {
-        const s = sim.ilk.signals.get(f.target);
-        if (s) { s.failed = false; sim.ilk.refreshSignals(); }
-        this.#log('info', `Usterka semafora ${f.target} usunięta.`);
-        break;
-      }
-      case 'point-control': {
-        const p = sim.ilk.points.get(f.target);
-        if (p) { p.faultUntil = 0; if (!p.moving && !p.control && !p.trailed) { p.control = true; sim.bus.emit('point', p); } }
-        this.#log('info', `Zwrotnica ${f.target} – napęd naprawiony, kontrola położenia.`);
-        break;
-      }
-      case 'false-occupancy': {
-        const s = sim.ilk.sections.get(f.target);
-        if (s) { s.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
-        this.#log('info', `Odcinek ${f.target} – obwód torowy sprawny.`);
-        break;
-      }
-      case 'block-fail': {
-        const b = sim.blocks.get(f.target);
-        if (b) b.setFault(false);
-        this.#log('info', `Blokada liniowa do ${b?.neighbour} – łączność przywrócona.`);
-        break;
-      }
-      case 'axle-counter': {
-        const s = sim.ilk.sections.get(f.target);
-        const pilot = f.pilot === 'done'; // po przejeździe kontrolnym; inaczej – upłynął czas usterki (automatyk)
-        if (s) { s.axleFault = false; s.axleArmed = false; s.resetPending = false; sim.ilk.refreshOccupancy(); sim.bus.emit('section', s); }
-        this.#log('info', pilot ? `Odcinek ${f.target} – przejazd kontrolny po zerowaniu licznika osi, odcinek wolny.` : `Licznik osi odcinka ${f.target} naprawiony (automatyk).`);
-        break;
-      }
-      case 'track-defect': {
-        const s = sim.ilk.sections.get(f.target);
-        if (s) s.defect = false;
-        this.#log('info', `Odcinek ${f.target}${s?.track ? ` (tor ${s.track})` : ''} – nawierzchnia naprawiona, tor można otworzyć (ITO).`);
-        break;
-      }
-      case 'route-block': {
-        const s = sim.ilk.signals.get(f.target);
-        if (s) s.blockStuck = false;
-        this.#log('info', `Urządzenie oddziaływania pociągu za semaforem ${f.target} naprawione.`);
-        break;
-      }
-      default:
-    }
+    FAULTS[f.type]?.clear(this.sim, f, this.#ctx(f));
   }
 }

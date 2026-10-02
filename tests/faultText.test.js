@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FAULT_TYPES } from '../src/model/Faults.js';
+import { FAULT_TYPES } from '../src/model/faults/types.js';
 import { faultAlarm, faultListText } from '../src/ui/faultText.js';
 import { setLang } from '../src/i18n/index.js';
 

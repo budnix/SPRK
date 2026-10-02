@@ -10,13 +10,15 @@ src/
                nazw, długości i przycisków – zwrotnica, ukos, odcinek prosty, żeberko, przejście, wyjazd na szlak)
   model/       categories (kategorie pociągów: prędkość, dynamika kategorii – przyspieszenie przeliczone na masę składu, gdy pociąg nie ma taboru, etykieta; rodzaje pociągów towarowych z zał. 6.3 Regulaminu sieci), rollingStock (katalog taboru, dobór zespołu / lokomotywy dla pociągu i dynamika z taboru – przyspieszenie, hamowanie, prędkość pojazdu), normalize (podział łącznic na odcinek na zwrotnicę, bez DOM), Topology (graf toru z kostek; `branchGates` – kostki odcinka zwrotnicowego za ramieniem zwrotnicy), Interlocking (zależności; `onSetBranch` – czy kostka jest na drodze ustawionej zwrotnicami, widoki świecą tylko ją), Block (blokada Eap / jednokierunkowa /
                samoczynna SBL + AI sąsiada + zapowiadanie telefoniczne), Train (ruch pociągu, manewry, rozkazy; szybkość z obrazu do końca okręgu zwrotnicowego, rozjazd pod całym pociągiem),
-               Traffic (rozkład, ruch, zadania manewrowe), Faults (usterki), Comms (łączność), Score (ocena),
+               Traffic (rozkład, ruch, zadania manewrowe), Faults (harmonogram usterek), Comms (łączność), Score (ocena),
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji),
                scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze),
                trainPaths (drogi pociągu po przebiegach, odcinek zbliżania szlaku, tor składu);
                check/ – zmiana grana automatem bez widoku (play: `playShift`, `settled`), niezmienniki bezpieczeństwa
                (invariants), wynik po stronie urządzeń i oceny (outcome: `leftovers`, `unjustified`) – dla automatu
                sprawdzającego, przeglądu silnika, skilla diagnoza-zatoru i testów;
+               faults/ – rodzaje usterek, każdy w jednym wpisie (types: cel, losowanie, automat, droga pociągu,
+               początek i koniec usterki, wymagania wobec stanowiska);
                shift/ – wybór zmiany: choice (adres ⇄ wybór, opcje symulacji, służba dla ziarna), offers (co posterunek
                oferuje: służba, scenariusze specjalne, stanowiska do wyboru, stacja szkoleniowa);
                timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja

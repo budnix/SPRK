@@ -110,6 +110,13 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
 * Tor docelowy z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): przebieg pociągowy jest
   zakończony, gdy zwolniły się wszystkie odcinki przed torem docelowym i pociąg stoi na tym torze – także wtedy, gdy
   do ostatniego odcinka nie dojechał (`tests/mech.test.js`).
+* Rodzaj usterki opisuje jeden wpis w `src/model/faults/types.js` (`FAULTS`): element (`target`: sygnalizator,
+  zwrotnica, odcinek, szlak), cele losowania (`pool` – null: tylko ze scenariusza), czy automat dyżurnego go obsługuje,
+  czy usterka na drodze pociągu uzasadnia inny tor (`blocksPath`), początek i koniec (`apply` / `clear`) oraz kroki
+  szczególne (`arm`, `ready`, `overlap`, `during` – licznik osi, nawierzchnia, napęd zwrotnicy). Harmonogram
+  (`src/model/Faults.js`), kontrola definicji, ruch i automat sprawdzający czytają ten opis – nowy rodzaj usterki to wpis
+  tam, opis w panelu (`src/ui/faultText.js`) i test (`tests/fault-types.test.js`). Kolejność rodzajów jest stała: od
+  niej zależy losowanie (to samo ziarno – te same usterki).
 * Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy). Dwie usterki
   tego samego rodzaju na jednym elemencie mogą się nałożyć (losowanie, scenariusz): druga nie ustawia elementu od nowa,
   naprawa przychodzi po ostatniej (`Faults.#twin`; napęd zwrotnicy – do późniejszego końca).

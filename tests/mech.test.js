@@ -258,7 +258,7 @@ test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe
 });
 
 test('mechaniczna – usterka bloku przebiegowego trafia do losowania tylko na nastawni mechanicznej', async () => {
-  const { FAULT_TYPES } = await import('../src/model/Faults.js');
+  const { FAULT_TYPES } = await import('../src/model/faults/types.js');
   assert.ok(FAULT_TYPES.includes('route-block'));
   for (let seed = 1; seed < 30; seed++) {
     const s = new Simulation(szkolna, { scenario: { id: 't', name: 't', endTime: '12:00', srk: 'E' }, disruptions: 'high', seed });

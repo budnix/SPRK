@@ -9,6 +9,7 @@ import { playShift } from '../../src/model/check/play.js';
 import { unjustified, leftovers } from '../../src/model/check/outcome.js';
 import { isHandled, isFinished } from '../../src/model/timetable/phase.js';
 import { verdict, LINE_CODES } from './verdict.mjs';
+import { FAULTS } from '../../src/model/faults/types.js';
 
 /**
  * Raport zmiany zagranej automatem dyżurnego (`checkShift`): pętla zmiany wspólna z przeglądem silnika
@@ -145,17 +146,17 @@ class ShiftProbe {
     const out = [];
     let routes = null;
     for (const f of active) {
-      switch (f.type) {
-        case 'signal-fail': case 'route-block':
+      switch (FAULTS[f.type]?.target) {
+        case 'signal':
           if (r.signal === f.target) out.push(f);
           break;
-        case 'block-fail':
+        case 'block':
           if ((f.target === e.to && BLOCK_CODES.has(r.code)) || (f.target === e.from && r.code === 'neighbour-wait')) out.push(f);
           break;
         default:
           if (!ROUTE_CODES.has(r.code)) break;
           routes ??= this.routesFor(e, r.signal);
-          if (routes.some((rt) => (f.type === 'point-control' ? [...rt.points, ...rt.flank].some((p) => p.id === f.target) : rt.sections.includes(f.target) || (rt.overlap || []).includes(f.target)))) out.push(f);
+          if (routes.some((rt) => (FAULTS[f.type]?.target === 'point' ? [...rt.points, ...rt.flank].some((p) => p.id === f.target) : rt.sections.includes(f.target) || (rt.overlap || []).includes(f.target)))) out.push(f);
       }
     }
     return out;
@@ -165,12 +166,12 @@ class ShiftProbe {
   #present(f, e, t) {
     const tr = e.train;
     const live = !!tr && !tr.finished;
-    switch (f.type) {
-      case 'signal-fail': case 'route-block': return live && tr.nextSignal() === f.target;
-      case 'block-fail':
+    switch (FAULTS[f.type]?.target) {
+      case 'signal': return live && tr.nextSignal() === f.target;
+      case 'block':
         if (e.from === f.target && e.requested && !tr?.entered) return true;
         return live && e.to === f.target && (e.phase === 'departed' || (tr.entered && e.actualDep == null && t >= (e.depTime ?? e.arrTime ?? 0) - 120));
-      case 'point-control': { const p = this.sim.ilk.points.get(f.target); return live && !!p && tr.occupiedSections().has(p.section); }
+      case 'point': { const p = this.sim.ilk.points.get(f.target); return live && !!p && tr.occupiedSections().has(p.section); }
       default: return live && tr.occupiedSections().has(f.target);
     }
   }

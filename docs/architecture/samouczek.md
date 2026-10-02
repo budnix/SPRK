@@ -16,7 +16,7 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
   | 5 `ebi` | EBILock 950 (EBIScreen) | Brzezina – linia dwutorowa z blokadą samoczynną | menu pod prawym klawiszem, linia poleceń i „Wykonaj”, polecenie z klawiatury, wyprzedzanie, okno zdarzeń i alarmów; usterka: pęknięta szyna – zamknięcie toru ITS, przyjęcie na tor 3, otwarcie ITO |
   | 6 `mor` | MOR-3 (MOR-1) | Kalinowo – węzeł trzech linii jednotorowych z Eap | menu obiektów, przebieg kliknięciem celu (semafor, tor, trójkąt) i przeciąganiem, blokada z menu trójkąta, krzyżowanie w węźle, alarm dwuklikiem, zwrotnice Minus / Stop / oStop; usterka: licznik osi (ZeroLO, przejazd kontrolny na SZ) |
 
-  Każda misja uczy innej usterki – razem wszystkie siedem rodzajów (`src/model/Faults.js`; `route-block` tylko na
+  Każda misja uczy innej usterki – razem wszystkie siedem rodzajów (`src/model/faults/types.js`; `route-block` tylko na
   nastawni mechanicznej, także w losowaniu; `track-defect` i `axle-counter` tylko w scenariuszu). Wjazd na tor z pękniętą szyną bez
   zamknięcia kosztuje punkty; przyjęcie na inny tor, gdy planowy jest zamknięty, jest bez kary. Zwalniacz przy bloku niezwolnionym przez usterkę nie kosztuje punktów. Przyjęcie pociągu na tor
   inny niż planowy nie jest karane, gdy usterka była na drodze toru planowego (`Traffic.#plannedTrackFault`: jego

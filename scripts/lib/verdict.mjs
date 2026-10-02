@@ -3,6 +3,7 @@ import { DISRUPTION_LEVELS } from '../../src/core/Random.js';
 import { EXTRA_TRAIN } from '../../src/model/Simulation.js';
 import { hasErrors, LATE_SLACK, TASK_GRACE, levelSlackMin } from '../../src/model/scenarioCheck.js';
 import pl from '../../src/i18n/pl.js';
+import { FAULTS } from '../../src/model/faults/types.js';
 
 /**
  * Werdykt zmiany zagranej automatem (`verdict`): ustalenia BŁĄD / uwaga / informacja z raportu zmiany
@@ -16,11 +17,8 @@ const MARGIN_MIN = 5;
 const NOTABLE_MIN = 5;
 const PLAN_DELAY_ERROR_MIN = 15;
 export const LINE_CODES = new Set(['line-occupied', 'no-permission', 'po-blocked', 'line-inbound', 'sbl-direction', 'neighbour-wait']);
-const AUTOMAT_CANNOT = new Set(['axle-counter', 'track-defect']);
-const FAULT_NAMES = {
-  'signal-fail': 'semafora', 'route-block': 'bloku przebiegowego', 'point-control': 'napędu zwrotnicy',
-  'false-occupancy': 'kontroli zajętości', 'axle-counter': 'licznika osi', 'track-defect': 'nawierzchni (pęknięta szyna)', 'block-fail': 'blokady liniowej',
-};
+/** Nazwa rodzaju usterki w dopełniaczu („usterka semafora”) – z opisu rodzaju (src/model/faults/types.js). */
+const FAULT_NAMES = Object.fromEntries(Object.entries(FAULTS).map(([type, f]) => [type, f.name]));
 const WORKAROUND = 'gracz użyłby sygnału zastępczego / rozkazu „S”, zerowania licznika albo innego toru';
 
 const same = (a, b) => String(a) === String(b);
@@ -192,7 +190,7 @@ export function verdict(r) {
     // stoi teraz przez usterkę albo przez usterki stał co najmniej 5 min, a z winy stacji mniej niż 5 min
     if (u.faultsNow?.length || (own.min < NOTABLE_MIN && (tr?.faultMin ?? 0) >= NOTABLE_MIN)) {
       const fs = u.faultsNow?.length ? u.faultsNow : u.faults;
-      const cannot = fs.length && fs.every((f) => AUTOMAT_CANNOT.has(f.type));
+      const cannot = fs.length && fs.every((f) => FAULTS[f.type]?.automat === false);
       info(cannot ? 'automat-limit' : 'fault-wait', `${T(u.nr)} nieobsłużony na koniec zmiany – ${faultsText(fs, r.effectiveLevel)} na jego drodze; ${cannot ? 'automat jej nie usuwa' : 'automat czeka na naprawę'} (${WORKAROUND})`, u.nr, `${T(u.nr)} nieobsłużony – ${faultsText(fs, r.effectiveLevel)}`);
       continue;
     }

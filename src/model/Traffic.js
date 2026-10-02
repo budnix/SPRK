@@ -6,6 +6,7 @@ import { platformRanges } from '../tiles/platforms.js';
 import { rootOf, stockFor, stockPlan } from './rollingStock.js';
 import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
 import { setPhase } from './timetable/phase.js';
+import { FAULTS } from './faults/types.js';
 import { createEntry, shownTime } from './timetable/entry.js';
 
 /**
@@ -208,12 +209,10 @@ export class Traffic {
       if (!(f.active || f.done)) return false;
       const since = f.since ?? f.at;
       if (since > t || since + f.duration < from) return false;
-      switch (f.type) {
-        case 'false-occupancy': case 'axle-counter': case 'track-defect': return sections.has(f.target);
-        case 'point-control': return points.has(f.target);
-        case 'signal-fail': return signals.has(f.target);
-        default: return false;
-      }
+      // usterka na drodze pociągu (rodzaj usterki: `blocksPath`, element: `target`)
+      const kind = FAULTS[f.type];
+      if (!kind?.blocksPath) return false;
+      return ({ section: sections, point: points, signal: signals })[kind.target]?.has(f.target) ?? false;
     });
   }
 

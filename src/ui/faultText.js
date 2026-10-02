@@ -2,7 +2,7 @@ import { t } from '../i18n/index.js';
 
 /**
  * Opisy usterek dla panelu (bez DOM): alarm w dzienniku i wpis na liście w zakładce Urządzenia. Każdy rodzaj usterki
- * z `FAULT_TYPES` (src/model/Faults.js) ma tu swój opis – pilnuje tego test (brak wpisu dawał „undefined”).
+ * z `FAULT_TYPES` (src/model/faults/types.js) ma tu swój opis – pilnuje tego test (brak wpisu dawał „undefined”).
  */
 const ALARM = {
   'signal-fail': (f) => t('sp.alarm.fault.signal', { id: f.target }),
