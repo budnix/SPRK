@@ -13,6 +13,9 @@ src/
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji),
                scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze),
                trainPaths (drogi pociągu po przebiegach, odcinek zbliżania szlaku, tor składu);
+               check/ – zmiana grana automatem bez widoku (play: `playShift`, `settled`), niezmienniki bezpieczeństwa
+               (invariants), wynik po stronie urządzeń i oceny (outcome: `leftovers`, `unjustified`) – dla automatu
+               sprawdzającego, przeglądu silnika, skilla diagnoza-zatoru i testów;
                timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja
                tylko do odczytu, plan, przebieg zmiany; godziny do pokazania `shownTime`), phase (etap pociągu – kod,
                szczegół, napis dla człowieka; „obsłużony” i „skończony”)
@@ -43,6 +46,7 @@ src/
   i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
   stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze, Olszyny; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
+scripts/       narzędzia (npm run check / survey / seed-scan, dane mapy i pociągów z nazwami); lib/ – ich logika bez wyjścia
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
 
@@ -81,9 +85,9 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
   zgasł z usterki urządzeń (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia, blok
   przebiegowy). Znaczenie stanów: `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`.
   Pilnuje tego `tests/layers.test.js`: poza `Interlocking.js` żaden plik źródeł, skryptów ani skryptów skilli nie czyta
-  `ilk.active`, `ilk.pending` ani pól zapisu przebiegu. Wyjątek świadomy: testy samych zależności i dwa miejsca
-  w pomocnikach testów (`tests/invariants.js` – które odcinki przebieg jeszcze trzyma, `tests/fault-harness.js` –
-  postęp pociągu w przebiegu), bo sprawdzają właśnie ten zapis.
+  `ilk.active`, `ilk.pending` ani pól zapisu przebiegu. Spójność samego zapisu (odcinek najwyżej w jednym przebiegu)
+  sprawdzają zależności: `lockConflicts()` – korzysta z tego niezmiennik bezpieczeństwa. Wyjątek świadomy: testy samych
+  zależności i pomocnik testów usterek (`tests/fault-harness.js` – postęp pociągu w przebiegu).
 * **Stacja opisuje tor, stanowisko – swoje przyciski.** Definicja stacji nie zawiera przycisków grupowych pulpitu.
   Ich pola podaje `src/tiles/controls.js` (`deskControls(station)`: miejsce domyślne albo wskazówka
   `desk.controls`), a rysuje je widok stanowiska – tak samo jak kostki blokady liniowej (`blockLayout.js`).
@@ -794,10 +798,11 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   scenariusz, posterunek na mapie, stanowisko, diagnoza zatoru, zasada ze źródła) i `CLAUDE.md`: każda wymieniona
   ścieżka, polecenie `npm run` i skill istnieją; skrypt diagnozy zatoru działa. Zmiana nazwy pliku albo polecenia
   wymaga więc poprawienia skilla w tym samym commicie.
-* `tests/invariants.js` – niezmienniki bezpieczeństwa sprawdzane w każdym takcie (dwa pociągi na odcinku, odcinek
-  w dwóch przebiegach, sygnał zezwalający bez przebiegu albo na zajęty odcinek – poza nastawnią mechaniczną,
-  zwrotnica przestawiana pod taborem, dwa pociągi na jednym torze szlakowym) oraz zdarzenia „spad” i „rozprucie”.
-  Wspólne dla macierzy, testów usterek i przeglądu; sprawdza je `tests/invariants.test.js`.
+* `src/model/check/invariants.js` – niezmienniki bezpieczeństwa sprawdzane w każdym takcie (dwa pociągi na odcinku,
+  odcinek w dwóch przebiegach – `Interlocking.lockConflicts`, sygnał zezwalający bez przebiegu albo na zajęty odcinek
+  – poza nastawnią mechaniczną, zwrotnica przestawiana pod taborem, dwa pociągi na jednym torze szlakowym) oraz
+  zdarzenia „spad” i „rozprucie”. Wspólne dla macierzy, testów usterek, automatu sprawdzającego i przeglądu; sprawdza
+  je `tests/invariants.test.js`; asercja dla testów – `safety` w `tests/invariants.js`.
 * Usterki w ustalonej chwili jazdy pociągu (`tests/fault-harness.js`): usterka zaczyna się przy zdarzeniu (pociąg
   zgłoszony, przebieg nastawiony, pociąg w przebiegu, przy peronie, wyjazd, na szlaku) – `Faults.add` – a cel wskazuje
   się względem pociągu. Ruch prowadzi automat; czynności, których automat nie robi (Sz, rozkaz „S”, ZeroLO, ITS / ITO),
@@ -856,7 +861,13 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   zatorze, naruszeniu, spad, rozpruciu, karze wymuszonej usterką albo pozostałościach po zmianie. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
   jego czyste funkcje sprawdza `tests/survey.test.js`. Pętlę zmiany (`playShift`: krok 0,5 s, automat co 2 s,
   niezmienniki po każdym takcie), kolejkę wątków (`runJobs` / `serveJobs` / `runParallel`) i wspólne opcje wiersza
-  poleceń (`parseCli`) dzieli z automatem sprawdzającym scenariusze (`scripts/shift.mjs`).
+  poleceń (`parseCli`) dzieli z automatem sprawdzającym scenariusze: pętla zmiany, niezmienniki i stan urządzeń po
+  zmianie są w logice (`src/model/check/`: `play.js`, `invariants.js`, `outcome.js` – używają ich też testy i skill
+  diagnoza-zatoru), wątki i opcje – w bibliotece narzędzi (`scripts/lib/workers.mjs`, `scripts/lib/cli.mjs`).
+* `scripts/` – wiersz poleceń narzędzi (opcje, wątki, wydruk); ich logika bez wyjścia – `scripts/lib/`: raport zmiany
+  zagranej automatem (`shift-report.mjs`, `checkShift`), werdykt i ocena scenariusza (`verdict.mjs`), wątki
+  (`workers.mjs`), wspólne opcje (`cli.mjs`). Testy importują `scripts/lib/`, a skrypty tylko po to, by sprawdzić
+  wiersz poleceń; źródła i skrypty nie importują niczego z `tests/` (`tests/layers.test.js`).
 * `scripts/check-scenario.mjs` (`npm run check`) – automat sprawdzający scenariusze (sekcja niżej); jego reguły
   i statyczne kontrole sprawdza `tests/scenario-check.test.js` (każdy kod błędu na celowo zepsutym wariancie Szkolnej,
   przebiegi z błędem, zatorem i sondą usterek, werdykt i ocena scenariusza na raportach wzorcowych, wiersz poleceń),

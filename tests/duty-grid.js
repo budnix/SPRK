@@ -4,7 +4,7 @@ import { STATIONS } from '../src/stations/index.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { DUTY_MINUTES, buildDuty, hasDuty } from '../src/model/duty.js';
 import { isTraining, shiftChoices } from '../src/ui/catalog.js';
-import { checkShift } from '../scripts/check-scenario.mjs';
+import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { getSrk } from '../src/srk/registry.js';
 /** Nazwa stanowiska jak w raporcie automatu. */
 const srkLabel = (id) => { const x = getSrk(id); return x.short || x.name || x.id; };

@@ -5,7 +5,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 import { LineBlock } from '../src/model/Block.js';
 import { EventBus } from '../src/core/EventBus.js';
 import sopot from '../src/stations/sopot.js';
-import { violations } from './invariants.js';
+import { violations } from '../src/model/check/invariants.js';
 import { Clock } from './helpers.js';
 
 /*

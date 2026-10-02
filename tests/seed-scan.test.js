@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { seededRandom } from '../scripts/random-seed.mjs';
 import { parseArgs, failedTests, testFiles, HELP } from '../scripts/seed-scan.mjs';
-import { defaultWorkers } from '../scripts/shift.mjs';
+import { defaultWorkers } from '../scripts/lib/workers.mjs';
 
 /* Szukanie testów przypadkowych (`scripts/seed-scan.mjs`): powtarzalne „losowe” ziarna i odczyt wyniku testów. */
 

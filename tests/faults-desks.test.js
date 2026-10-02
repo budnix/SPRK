@@ -6,7 +6,8 @@ import olszyny from '../src/stations/olszyny.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { autoDispatch, run } from './helpers.js';
-import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
 /*
  * Usterki obsługiwane przez protokół obsługi stanowiska (podstawa: `tests/fault-harness.js`). Pozostałe testy usterek

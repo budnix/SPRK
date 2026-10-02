@@ -153,6 +153,21 @@ test('przebieg zmiany we wpisie rozkładu zmienia tylko ruch (Traffic) – inne 
   assert.deepEqual(bad, [], `Zapis przebiegu zmiany we wpisie rozkładu poza Traffic:\n${bad.join('\n')}`);
 });
 
+test('zależności w jedną stronę: źródła i skrypty nie importują niczego z tests/ (wspólna logika – src/model/check/, narzędzia – scripts/lib/)', () => {
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const files = [...walk(SRC), ...walkAll(join(ROOT, 'scripts')), ...walkAll(join(ROOT, '.claude', 'skills'))];
+  const bad = [];
+  for (const file of files) {
+    const code = readFileSync(file, 'utf8');
+    const specs = [...importsOf(code), ...[...code.matchAll(/root\((['"])([^'"]+)\1\)/g)].map((m) => `/${m[2]}`)];
+    for (const spec of specs) {
+      const target = spec.startsWith('/') ? spec.slice(1) : posix(relative(ROOT, resolve(dirname(file), spec)));
+      if (target.startsWith('tests/')) bad.push(`${posix(relative(ROOT, file))} → ${target}`);
+    }
+  }
+  assert.deepEqual(bad, [], `Import z tests/ w kodzie gry albo narzędzi:\n${bad.join('\n')}`);
+});
+
 test('widoki stanowisk (src/render/*Renderer.js) nie importują się nawzajem', () => {
   const renderers = walk(join(SRC, 'render')).filter((f) => /Renderer\.js$/.test(f));
   assert.ok(renderers.length >= 2, 'znaleziono widoki stanowisk');

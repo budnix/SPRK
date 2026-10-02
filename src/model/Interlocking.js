@@ -1010,6 +1010,23 @@ export class Interlocking {
     return act ? { lever: !!act.lever, blocked: !!act.blocked, passed: !!act.passed, blockStuck: !!act.stuck } : null;
   }
 
+  /**
+   * Spójność własnego zapisu przebiegów (niezmiennik bezpieczeństwa): odcinek utwierdzony najwyżej w jednym przebiegu,
+   * poza torem stacyjnym kończącym dwa przebiegi manewrowe (Ie-4 §43 ust. 5). Zwraca `{ section, first, second }`
+   * dla każdego odcinka w dwóch przebiegach (id przebiegów w kolejności nastawienia); pusta lista – zapis spójny.
+   */
+  lockConflicts() {
+    const out = [];
+    const owners = new Map();
+    for (const act of this.active.values()) for (const s of act.lockedSections) {
+      if (act.released.has(s)) continue;
+      const other = owners.get(s);
+      if (other && !(other.sharedEnd && act.sharedEnd)) out.push({ section: s, first: other.id, second: act.id });
+      owners.set(s, act);
+    }
+    return out;
+  }
+
   /** Przebieg (nastawiony lub nastawiany), który kończy się na elemencie `endId` – semaforze albo przycisku końca. */
   routeEndingAt(endId) {
     for (const act of this.active.values()) if (act.route.endButton === endId) return act.route;

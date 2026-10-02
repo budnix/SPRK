@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { autoDispatch, allArrived } from './helpers.js';
-import { violations, watchEvents } from './invariants.js';
-import { faultSim, runWithFault, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
+import { violations, watchEvents } from '../src/model/check/invariants.js';
+import { faultSim, runWithFault, stuck, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
 /*
  * Manewry przy usterkach i ochrona drogi pociągu jadącego na Sz / rozkaz „S” (podstawa: `tests/fault-harness.js`).

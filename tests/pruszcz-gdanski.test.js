@@ -6,7 +6,7 @@ import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
 import { autoDispatch, allArrived } from './helpers.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
-import { checkShift } from '../scripts/check-scenario.mjs';
+import { checkShift } from '../scripts/lib/shift-report.mjs';
 
 test('Pruszcz Gdański: definicja poprawna, brak urwanych torów, przebiegi linii 9, 260, 229 i 226 zgodne z układem; tylko stanowisko komputerowe', () => {
   assert.deepEqual(validateStation(pruszcz).errors, []);

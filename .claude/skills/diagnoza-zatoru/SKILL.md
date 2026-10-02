@@ -67,7 +67,8 @@ a powinien móc – silnik; jeśli nie i słusznie – rozkład.
 ## 4. Zmniejsz przypadek
 
 Cel: jeden pociąg, jedna usterka, stałe ziarno, kilka minut zmiany. Pomocnicze funkcje są w `tests/fault-harness.js`
-(`faultSim` – stacja z własnym krótkim rozkładem, `runWithFault`, `stuck`, `unjustified`, `leftovers`) i w
+(`faultSim` – stacja z własnym krótkim rozkładem, `runWithFault`, `stuck`), w `src/model/check/` (`playShift`,
+niezmienniki `violations`, kary wymuszone `unjustified`, stan urządzeń po zmianie `leftovers`) i w
 `tests/helpers.js` (`makeSim`, `run`, `autoDispatch`). Usterkę losową z poziomu `high` zamień na usterkę ze scenariusza
 (`faults: [{ type, target, at, duration }]`) – typ, cel i godzinę pokazuje skrypt („Usterki czynne”) i `--verbose`.
 Jeśli po zmniejszeniu błąd znika, brakuje drugiego pociągu albo kolejności zdarzeń – dokładaj po jednym.

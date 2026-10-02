@@ -5,7 +5,7 @@ import { CAB_CHANGE_MIN, CAB_CHANGE_MAX, cabChangeTime } from '../src/model/Trai
 import { DRIVER_REPLY } from '../src/model/Comms.js';
 import szkolna from '../src/stations/szkolna.js';
 import sopot from '../src/stations/sopot.js';
-import { playShift } from '../scripts/shift.mjs';
+import { playShift } from '../src/model/check/play.js';
 import { run } from './helpers.js';
 
 /**

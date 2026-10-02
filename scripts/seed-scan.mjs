@@ -15,7 +15,8 @@ import { tmpdir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
-import { defaultWorkers, executedDirectly } from './shift.mjs';
+import { defaultWorkers } from './lib/workers.mjs';
+import { executedDirectly } from './lib/cli.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PRELOAD = join(ROOT, 'scripts', 'random-seed.mjs');

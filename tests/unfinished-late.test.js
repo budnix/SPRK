@@ -5,7 +5,7 @@ import { LATE_SLACK } from '../src/model/Traffic.js';
 import { LATE_SLACK as CHECK_SLACK } from '../src/model/scenarioCheck.js';
 import { Clock } from '../src/core/Clock.js';
 import szkolna from '../src/stations/szkolna.js';
-import { playShift } from '../scripts/shift.mjs';
+import { playShift } from '../src/model/check/play.js';
 import { run } from './helpers.js';
 
 /*

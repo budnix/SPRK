@@ -5,8 +5,9 @@ import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { autoDispatch, allArrived, Clock } from './helpers.js';
 import sopot from '../src/stations/sopot.js';
-import { checkShift } from '../scripts/check-scenario.mjs';
-import { faultSim, runWithFault, stuck, leftovers } from './fault-harness.js';
+import { checkShift } from '../scripts/lib/shift-report.mjs';
+import { faultSim, runWithFault, stuck } from './fault-harness.js';
+import { leftovers } from '../src/model/check/outcome.js';
 
 /* Automat dyżurnego (AutoOperator) – decyzje, które nie mogą kończyć się zatorem. */
 

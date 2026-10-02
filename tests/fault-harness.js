@@ -3,7 +3,8 @@ import { Clock } from '../src/core/Clock.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
 import { autoDispatch, allArrived } from './helpers.js';
-import { violations, watchEvents } from './invariants.js';
+import { violations, watchEvents } from '../src/model/check/invariants.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { isFinished } from '../src/model/timetable/phase.js';
 
 /*
@@ -120,26 +121,6 @@ export function runWithFault(sim, { when, fault, until = '11:00', dispatch = aut
 /** Pociągi, które nie dojechały (numer i stan) – do komunikatów asercji. */
 export function stuck(sim) {
   return sim.traffic.timetable().filter((e) => !isFinished(e)).map((e) => `${e.nr}: ${e.status}`);
-}
-
-/** Kary za czynności, które przy usterce są wymuszone: Sz, rozkaz „S”, doraźne zwolnienie, dPo / dKo. */
-export function unjustified(sim) {
-  return sim.score.items.filter((i) => ['Sz', 'Sz-points', 'order', 'dPz', 'dPo', 'dKo'].includes(i.code) && i.points < 0).map((i) => `${i.code} ${i.points}: ${i.msg}`);
-}
-
-/** Stan po naprawie i przejeździe: bez wiszących przebiegów, blokady w stanie zasadniczym, semafory na „Stój”. */
-export function leftovers(sim) {
-  const out = [];
-  for (const x of sim.ilk.routesSet()) if (x.state !== 'setting') out.push(`przebieg ${x.id} czynny`);
-  for (const [id, b] of sim.blocks) {
-    // blok początkowy zablokowany bez pociągu na szlaku albo niewykorzystane pozwolenie / kierunek Eap – szlak dla sąsiada
-    // zostałby zamknięty (kierunek SBL zostaje, dopóki ktoś go nie zmieni – to nie pozostałość)
-    const stale = !b.occupied && (b.poBlocked || (!b.auto && !b.fixed && (b.permission || b.direction != null)));
-    if (b.occupied || b.fault || b.koPending || b.needPo || b.request || b.awaitingEntry || stale) out.push(`blokada ${id}: ${JSON.stringify({ occupied: b.occupied, fault: b.fault, ko: b.koPending, needPo: b.needPo, request: b.request, awaitingEntry: b.awaitingEntry, poBlocked: b.poBlocked, permission: b.permission, direction: b.direction })}`);
-  }
-  for (const s of sim.ilk.signals.values()) if (s.aspect && s.aspect !== 'S1' && s.aspect !== 'Sr1' && s.aspect !== 'Ms1' && s.aspect !== 'M1') out.push(`${s.id}: ${s.aspect}`);
-  for (const s of sim.ilk.sections.values()) if (s.occupied && !s.physical) out.push(`odcinek ${s.id} zajęty bez taboru`);
-  return out;
 }
 
 export { Clock };

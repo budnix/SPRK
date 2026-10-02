@@ -7,7 +7,8 @@ import brzezina from '../src/stations/brzezina.js';
 import { EventBus } from '../src/core/EventBus.js';
 import { LineBlock } from '../src/model/Block.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { faultSim, runWithFault, at, target, stuck, unjustified, leftovers, exitActive, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, target, stuck, exitActive, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { autoDispatch } from './helpers.js';
 
 /*

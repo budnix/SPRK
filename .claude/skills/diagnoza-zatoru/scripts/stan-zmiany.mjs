@@ -19,7 +19,7 @@ import { pathToFileURL } from 'node:url';
 
 const root = (p) => import(pathToFileURL(join(process.cwd(), p)).href);
 const { STATIONS } = await root('src/stations/index.js');
-const { playShift } = await root('scripts/shift.mjs');
+const { playShift } = await root('src/model/check/play.js');
 const { Clock } = await root('src/core/Clock.js');
 const { buildDuty } = await root('src/model/duty.js');
 

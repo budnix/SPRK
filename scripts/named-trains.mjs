@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { executedDirectly } from './shift.mjs';
+import { executedDirectly } from './lib/cli.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const BASE = 'https://www.vagonweb.cz/razeni/';

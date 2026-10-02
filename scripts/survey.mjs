@@ -26,10 +26,12 @@ import { performance } from 'node:perf_hooks';
 import { createHash } from 'node:crypto';
 import { Clock } from '../src/core/Clock.js';
 import { STATIONS } from '../src/stations/index.js';
-import { unjustified, leftovers } from '../tests/fault-harness.js';
-import { playShift, trainDone, defaultWorkers, parseCli, runJobs, serveJobs, executedDirectly } from './shift.mjs';
+import { playShift } from '../src/model/check/play.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
+import { isFinished } from '../src/model/timetable/phase.js';
+import { defaultWorkers, runJobs, serveJobs } from './lib/workers.mjs';
+import { parseCli, executedDirectly } from './lib/cli.mjs';
 
-export { trainDone };
 
 const WORKER_ROLE = 'sprk-survey-worker';
 const LEVELS = ['high', 'low', 'none'];
@@ -122,14 +124,14 @@ export function surveyShift({ stationId, scenarioId, seed, level = 'none', extra
   if (!scenario) throw new Error(`Nieznany scenariusz: ${stationId}:${scenarioId}`);
   const t0 = performance.now();
   const lines = [];
-  // pętla zmiany wspólna z automatem sprawdzającym scenariusze (scripts/shift.mjs)
+  // pętla zmiany wspólna z automatem sprawdzającym scenariusze (src/model/check/play.js)
   const { sim, violations: viol } = playShift({
     station, scenario: scenario.id, seed, level, extra,
     onCreate: log ? (s) => s.bus.on('log', (m) => lines.push({ time: m.time, level: m.level, msg: m.msg })) : null,
     onViolation: log ? (msg, time) => lines.push({ time, level: 'NARUSZENIE', msg }) : null,
   });
   const tt = sim.traffic.timetable();
-  const stuck = tt.filter((e) => !trainDone(e)).map((e) => ({ nr: e.nr, status: String(e.status) }));
+  const stuck = tt.filter((e) => !isFinished(e)).map((e) => ({ nr: e.nr, status: String(e.status) }));
   const events = sim.score.items.filter((i) => BAD_EVENTS.has(i.code)).map((i) => ({ code: i.code, time: Clock.format(i.time, true), msg: i.msg }));
   const trace = createHash('sha1');
   for (const e of tt) trace.update(`${e.nr}|${e.actualArr ?? ''}|${e.actualDep ?? ''}|${e.status}\n`);

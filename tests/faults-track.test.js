@@ -7,7 +7,8 @@ import brzezina from '../src/stations/brzezina.js';
 import jodlowa from '../src/stations/jodlowa.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
-import { faultSim, runWithFault, at, target, stuck, unjustified, leftovers, entryActive, exitActive, entryRoutes, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, target, stuck, entryActive, exitActive, entryRoutes, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { autoDispatch } from './helpers.js';
 
 /*
@@ -247,7 +248,7 @@ test('false-occupancy pod pociągiem naprawiona w trakcie jazdy: przebieg rozwi�
 /*
  * Zajętość toru planowego albo drogi wjazdu, zanim przebieg wjazdowy jest nastawiony (sąsiad ma pozwolenie, pociąg jeszcze
  * u niego): przebieg nie utwierdza się nad odcinkiem zajętym (także z usterki), a zwrotnic na nim się nie przestawia
- * (niezmiennik w `tests/invariants.js`); wjazd po naprawie.
+ * (niezmiennik w `src/model/check/invariants.js`); wjazd po naprawie.
  */
 test('false-occupancy toru planowego i drogi wjazdu przed nastawieniem: przebieg nie utwierdza się nad zajętym odcinkiem', () => {
   for (const [st, srk, dir, track] of cases(DESKS)) for (const tgt of ['planned', 'plannedFirst']) for (const dur of [2, 12]) {

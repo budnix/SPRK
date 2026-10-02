@@ -4,7 +4,8 @@ import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { autoDispatch } from './helpers.js';
-import { faultSim, runWithFault, at, target, entryActive, entryRoutes, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, target, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
 /*
  * Dwie różne usterki naraz na drodze jednego pociągu (podstawa: `tests/fault-harness.js`). Szkolna – pięć stanowisk

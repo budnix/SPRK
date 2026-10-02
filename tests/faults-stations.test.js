@@ -6,7 +6,8 @@ import rumia from '../src/stations/rumia.js';
 import jodlowa from '../src/stations/jodlowa.js';
 import brzezina from '../src/stations/brzezina.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { faultSim, runWithFault, at, entryActive, entryRoutes, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { autoDispatch } from './helpers.js';
 
 /*

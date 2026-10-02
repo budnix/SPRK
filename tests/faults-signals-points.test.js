@@ -5,7 +5,8 @@ import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
 import { autoDispatch, allArrived } from './helpers.js';
-import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, unjustified, leftovers, Clock } from './fault-harness.js';
+import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
+import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
 /*
  * Usterki semafora (signal-fail) i napędu zwrotnicy (point-control) w wybranej chwili jazdy pociągu
