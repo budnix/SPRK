@@ -1,6 +1,6 @@
 # Format definicji stacji (schemat v1)
 
-Stacja to moduł ES eksportujący obiekt (docelowo także JSON z edytora). Przykład: `src/stations/stare-pustkowie.js`.
+Stacja to moduł ES eksportujący obiekt (docelowo także JSON z edytora). Przykład: `tests/fixtures/stare-pustkowie.js` (mała stacja testowa); stacje gry: `src/stations/`.
 Walidacja: `validateStation(def)` w `src/model/validate.js`.
 
 ```js

@@ -7,6 +7,9 @@ description: Dodanie nowego posterunku / miasta (albo nowej ery istniejącej sta
 
 Pełny opis danych, źródeł i licencji: `docs/MAP-DATA.md` – przeczytaj go najpierw. Ten skill to lista kroków.
 
+Zakres: tylko umieszczenie posterunku na mapie i w katalogu. Sama stacja (układ torów, sygnalizacja, przebiegi, rozkład)
+powstaje wg `docs/STATION-FORMAT.md`, a jej scenariusze – skill `nowy-scenariusz`.
+
 ## Kroki
 
 1. **Pola stacji** (`src/stations/<id>.js`, `docs/STATION-FORMAT.md` „Miejsce i era”):
@@ -32,7 +35,11 @@ Pełny opis danych, źródeł i licencji: `docs/MAP-DATA.md` – przeczytaj go n
 5a. **Służba o wybranej porze**: nowy posterunek ma ją od razu – rozkład stacji jest wzorcem, z którego gra buduje
    każdą porę doby (`src/model/duty.js`, `docs/STATION-FORMAT.md` „Służba o wybranej porze”). Sprawdź kilka pór:
    `npm run check -- <stacja> --start 6 --minutes 120`, `--start 1 --minutes 180`, `--start 19 --minutes 120`;
-   `npm test` (`tests/duty-grid.js`) przechodzi po całej siatce sam.
+   `npm test` (`tests/duty-grid.js`) przechodzi po całej siatce sam. Żeby służby wyglądały wiarygodnie, wzorzec
+   powinien mieć co najmniej jeden towarowy przelot (`kind: 'tow'`, `from` i `to` – z niego biorą parametry nocne
+   pociągi towarowe), a pociągi dalekobieżne – relacje z nazwami stacji jak w rozkładzie PKP Intercity („Kraków Gł. –
+   Gdynia Gł.”): wtedy ich powtórzenia dostają nazwy rzeczywistych pociągów tej trasy z `src/model/data/namedTrains.js`
+   (lista z całej Polski; odświeżenie na nowy rozkład roczny: `node scripts/named-trains.mjs --year <rok>`).
 6. **Dokumentacja** w tym samym commicie: `docs/SOURCES.md` (źródła), README (lista stacji), w razie zmian w skryptach –
    `docs/MAP-DATA.md`.
 

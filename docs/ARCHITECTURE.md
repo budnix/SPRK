@@ -126,7 +126,7 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'ebilock' | 'mor3' | 'izh111' | 'me
 
 Dodanie nowego systemu (np. mechanicznego z pulpitem kluczowym, EbiScreen, ILTOR): wpis w `registry.js`
 (parametry) + ewentualny nowy widok w `views.js` / `render/` + sposób wydawania poleceń (`sim.execute` albo własny
-protokół obsługi w `src/srk/`, bez DOM); lista kroków jest w `CLAUDE.md`. Różnice w samych zależnościach (np. brak
+protokół obsługi w `src/srk/`, bez DOM); lista kroków jest w skillu `nowe-stanowisko` (`.claude/skills/`). Różnice w samych zależnościach (np. brak
 liczników, inne zwalnianie) należy dodawać jako opcje `Interlocking` sterowane przez `model`, nie jako
 osobne kopie logiki.
 
@@ -736,6 +736,10 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`),
   polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
+* `tests/skills.test.js` – skille projektu (`.claude/skills/*/SKILL.md` – listy kroków dla sesji AI: nowa stacja,
+  scenariusz, posterunek na mapie, stanowisko, diagnoza zatoru, zasada ze źródła) i `CLAUDE.md`: każda wymieniona
+  ścieżka, polecenie `npm run` i skill istnieją; skrypt diagnozy zatoru działa. Zmiana nazwy pliku albo polecenia
+  wymaga więc poprawienia skilla w tym samym commicie.
 * `tests/invariants.js` – niezmienniki bezpieczeństwa sprawdzane w każdym takcie (dwa pociągi na odcinku, odcinek
   w dwóch przebiegach, sygnał zezwalający bez przebiegu albo na zajęty odcinek – poza nastawnią mechaniczną,
   zwrotnica przestawiana pod taborem, dwa pociągi na jednym torze szlakowym) oraz zdarzenia „spad” i „rozprucie”.

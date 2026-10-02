@@ -50,37 +50,29 @@
 
 ## Nowe stanowisko obsługi (system srk, panel)
 
-Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `tests/izh111.test.js`,
-`tests/e2e/izh.spec.js`).
+- Wpis w `src/srk/registry.js`, protokół obsługi w `src/srk/` (bez DOM, test w Node), widok rozszerzający `PanelView`,
+  teksty, misja samouczka, testy e2e, dostępność w grze i dokumentacja – kroki 0–6: skill `nowe-stanowisko`
+  (`.claude/skills/`). Wzór: pulpit typu IZH-111.
 
-0. Źródła: opis obsługi urządzeń z podaniem, co jest faktem ze źródła, a co założeniem – `docs/SOURCES.md`.
-   Nie wymyślaj zasad kolejowych; czego źródło nie podaje, oznacz jako przyjęte.
-1. Wpis w `src/srk/registry.js` (`id`, `name`, `view`, parametry `model`, opcjonalnie `input`) + test.
-2. Sposób wydawania poleceń: `Simulation.execute` albo własny protokół obsługi w `src/srk/` (bez DOM, test w Node)
-   podany w polu `input` strategii. Protokół wystawia `armed` (pierwszy wybrany element). Nowe reguły zależności to
-   opcje `Interlocking` z wartościami domyślnymi zachowującymi dotychczasowe stanowiska, nie kopia logiki.
-3. Widok: klasa w `src/render/` rozszerzająca `PanelView` (`src/render/PanelView.js` – tam jest opis kontraktu)
-   + `registerView('<rodzaj>', { View, armHint, help })` w `src/srk/views.js`. Baza daje rysunek z marginesem,
-   wycinek kolumn, subskrypcje zdarzeń, odświeżanie, liczniki i etykiety pociągów; widok dostarcza `static PAD`
-   i metody `update*`, `createTrainLabel`, `placeTrainLabel`. Kontraktu pilnuje `tests/views.test.js`.
-4. Teksty: klucze `arm.*`, `help.*` w `pl.js`, `en.js`, `de.js` (stałej podpowiedzi w listwie narzędzi nie ma). Samouczek: własny plik misji
-   w `src/tutorial/missions/` (słownik `phrases` z kluczami `LESSON_PHRASES` + własne kroki przez `withSteps`),
-   wpis w `src/tutorial/missions.js` i scenariusz stacji z polem `tutorial`. Nowa misja ma własny scenariusz
-   (stacja, układ torów, rozkład) – nie powtarza istniejącej. Test „ucznia” w `tests/missions.test.js` musi
-   przejść wszystkie kroki z pociągami o czasie.
-5. Testy e2e: scenariusz „kliknięcia → stan symulacji” w `tests/e2e/`, zrzut w `visual.spec.js` i wpis widoku
-   w teście kontraktu w `tests/e2e/ui.spec.js`. Wybieraj elementy przez `#desk …` – stałe pola skrajne kopiują
-   klasy rysunku.
-5a. Dostępność w grze: scenariusz z polem `srk` na stacji, etykieta karty w `VIEW_BADGE` (`src/ui/StartScreen.js`)
-   i klucz `start.srk*`. Testy treści stacji (lista scenariuszy) trzeba wtedy rozszerzyć – uzasadnij w commicie.
-5b. Barwy urządzenia jako zmienne `--desk-*` / `--mon-*` (są poza wymogiem motywu jasnego).
-6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
+## Nowa stacja i scenariusz
+
+- Nowa stacja od planu schematycznego do testów i dokumentacji: skill `nowa-stacja`. Scenariusz albo wariant zmiany
+  (inne okno, usterka, zamknięcie toru): skill `nowy-scenariusz`.
 
 ## Nowy posterunek na mapie wyboru
 
 - Pola `region`, `geo`, `lines` (i `place` / `era` dla edycji z innego roku), współrzędne z Wikipedii, przebieg linii
   z OpenStreetMap (`node scripts/rail-lines.mjs`, licencja ODbL – podpis pod schematem zostaje): `docs/MAP-DATA.md`,
   skill `posterunek-na-mapie` (`.claude/skills/`).
+
+## Narzędzia i diagnoza
+
+- `npm run check -- <stacja>[:<scenariusz>] [--verbose]` – automat sprawdzający scenariusze: definicja bez grania, potem
+  zmiany grane dyżurnym automatycznym z werdyktem; służba o wybranej porze: `--start <godzina> --minutes <n>`.
+- `npm run survey` – przegląd silnika: pełne zmiany pod zakłóceniami; `--json` / `--compare` przed i po zmianie silnika.
+- `npm run seed-scan` – szukanie testów, które padają tylko przy niektórych losowych ziarnach (zmiana bez `seed`).
+- Pociąg stoi, zator, test zmiany pada: skill `diagnoza-zatoru`. Reguła ruchu albo urządzeń z przepisu: skill
+  `zasada-ze-zrodla`.
 
 ## Interfejs (wygląd)
 

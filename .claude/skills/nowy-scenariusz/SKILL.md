@@ -19,7 +19,12 @@ scenariusze”). Ten skill to lista kroków.
    - zadania: odziedziczone ze stacji, gdy ich skład jest w `trains`; własne w `tasks` scenariusza, `tasks: []` – bez zadań;
    - usterka (`faults`, `at: 'GG:MM'` jako napis) w czasie ruchu pociągów, których dotyczy (inaczej scenariusz jej
      nie sprawdza – błąd `fault-no-effect`);
-   - wymuszony poziom zakłóceń `disruptions` tylko, gdy wariant ma sens na jednym poziomie (np. szczyt = high).
+   - wymuszony poziom zakłóceń `disruptions` tylko, gdy wariant ma sens na jednym poziomie (np. szczyt = high);
+   - zmiana przez północ: godziny następnej doby po 24:00 (`endTime: '25:00'`, pociąg o 00:20 to `arr: '24:20'`) –
+     gra pokaże je jak na zegarze. Bez `endTime` po 24:00 godzina „26:15” jest błędem (`tt-time`), bo zwykle to literówka;
+   - stacja z kilkoma stanowiskami (Rumia, Reda): scenariusz specjalny bez pola `srk` gracz uruchamia na wybranym
+     stanowisku, więc musi działać na każdym – `npm test` gra go na każdym sam (`workstationRuns` w
+     `tests/scenario-runs.js`). Pole `srk` w scenariuszu wpisuj tylko wtedy, gdy ma sens na jednym stanowisku.
    Nie wymyślaj zasad kolejowych – rozkład i układ torów stacji zostają takie, jak są w definicji.
 2. **Sprawdź automatem**: `npm run check -- <stacja>:<id>` (poziomy none / low / high, ziarna 1–3; szczegóły:
    `--verbose`, więcej ziaren: `--seeds 1-8`). Najpierw „Definicja” (błędy widoczne bez grania), potem wiersz każdej
@@ -61,7 +66,9 @@ scenariusze”). Ten skill to lista kroków.
 Na posterunkach do służby gracz nie wybiera już zwykłej zmiany z listy, tylko godzinę startu i długość – rozkład buduje
 `src/model/duty.js` z rozkładu stacji (`docs/STATION-FORMAT.md` „Służba o wybranej porze”). Nowy wariant ma sens jako
 scenariusz **specjalny** (z `faults` albo `closedSections`) – tylko takie są na liście. Zmiana rozkładu stacji zmienia
-wzorzec wszystkich służb: sprawdź `npm run check -- <stacja> --start <godzina> --minutes <30|60|120|180>` dla kilku pór.
+wzorzec wszystkich służb: sprawdź `npm run check -- <stacja> --start <godzina> --minutes <30|60|120|180>` dla kilku pór
+(rano, w dzień, w nocy). Rozkład służby zależy od ziarna i stanowiska – automat sprawdza każde osobno (`--seeds 1-5`),
+a `npm test` przechodzi po siatce godzin i długości (`tests/duty-grid.js`).
 
 ## Gdy coś nie działa
 
@@ -72,3 +79,6 @@ wzorzec wszystkich służb: sprawdź `npm run check -- <stacja> --start <godzina
 - Nowa stacja spoza `src/stations/index.js`: `checkScenario(station, scenario)` i `checkShift({ station, scenario })`
   przyjmują obiekty.
 - Różne werdykty między ziarnami – zakłócenia są losowe; patrz zmiany z BŁĘDAMI (`--seeds` z ich ziarnem i `--verbose`).
+- Test raz przechodzi, raz nie (zwykle dopiero w CI) – zmiana utworzona bez `seed` dostaje losowe ziarno. Znajdź je:
+  `npm run seed-scan -- --only <fragment nazwy pliku>`; poprawka to ziarno wpisane w teście albo zapas wynikający
+  z modelu, nie luźniejsza asercja.
