@@ -175,10 +175,16 @@ test('definicja: zapas na opóźnienia od sąsiada – poziom gracza: informacja
   // scenariusz wymusza poziom – zapas należy do zamysłu autora (uwaga)
   assert.ok(warningCodes(check({ ...base, disruptions: 'low' })).has('sc-slack'));
   assert.ok(!check({ ...base, disruptions: 'low', endTime: '08:55' }).some((f) => f.code === 'sc-slack'), '20 min ≥ 19 min');
-  // pociągi nadzwyczajne po końcu zmiany – własność generatora silnika: informacja
-  assert.ok(!check('zmiana').some((f) => f.code === 'extra-outside'));
-  assert.ok(infoCodes(check({ ...base, disruptions: 'high' })).has('extra-outside'));
-  assert.ok(infoCodes(check('zmiana', szkolna, { level: 'high' })).has('extra-outside'));
+  // pociąg nadzwyczajny mieści się w zmianie (generator) – w pełnej zmianie bez informacji; gdy żaden pociąg rozkładu
+  // stacji się nie mieści (zmiana krótsza niż zapowiedź + przesunięcie + zapas), poziom high idzie bez nadzwyczajnego
+  for (const f of [check('zmiana'), check({ ...base, disruptions: 'high' }), check('zmiana', szkolna, { level: 'high' })]) {
+    assert.ok(!f.some((x) => x.code.startsWith('extra-')), 'pełna zmiana Szkolnej: nadzwyczajny się mieści');
+  }
+  const short = { ...base, id: 'krotka', startTime: '07:00', endTime: '07:30', trains: [6101, 6102] };
+  const none = check({ ...short, disruptions: 'high' }).filter((x) => x.code === 'extra-none');
+  assert.deepEqual(none.map((x) => x.level), ['info']);
+  assert.match(none[0].msg, /25…70 min nie mieści się w zmianie 07:00–07:30.*bez pociągu nadzwyczajnego/);
+  assert.ok(!check(short).some((x) => x.code === 'extra-none'), 'bez zakłóceń nie ma pociągów nadzwyczajnych');
 });
 
 test('definicja: uwagi – okno startu, odziedziczone zadania, gęsty szlak (wjazdy i wyjazdy), zadania, usterki, własny rozkład', () => {
@@ -425,11 +431,11 @@ test('werdykt: pociąg nieobsłużony na koniec zmiany – plan, opóźnienie wn
   // pociąg ze składu: opóźnienie odziedziczone po składzie, nie „+0 min od sąsiada”
   const fromUnit = verdict(shift({ ...end, trains: [train({ nr: 2, label: 'R 2', unit: 1, lagMin: 26, unitLagMin: 26 }), train({ delayIn: 26, lagMin: 26 })], unfinished: [stuck({ nr: 2, expectedDone: 8.98 * 3600 })] })).findings[0];
   assert.match(fromUnit.msg, /R 2 \(skład z R 1, \+26 min, obsługa ok\. 08:58\)/);
-  // pociąg nadzwyczajny – generator silnika (informacja, bez rady o endTime)
+  // pociąg nadzwyczajny – planowany w zmianie, nie zdążył przez opóźnienie w ruchu (informacja, bez rady o endTime)
   const extra = verdict(shift({ ...end, trains: [train(), train({ nr: 2, label: 'R 2', extra: true })], unfinished: [stuck({ nr: 2, expectedDone: 9.2 * 3600 })] })).findings;
   assert.deepEqual(extra.map((f) => `${f.level}:${f.code}`), ['info:extra-after-end']);
-  assert.match(extra[0].msg, /R 2 \(nadzwyczajny, obsługa ok\. 09:12\).*generator silnika/);
-  assert.doesNotMatch(extra[0].msg, /wydłuż endTime/);
+  assert.match(extra[0].msg, /R 2 \(nadzwyczajny, obsługa ok\. 09:12\).*co najmniej 10 min przed końcem.*opóźnienie w ruchu/);
+  assert.doesNotMatch(extra[0].msg, /wydłuż endTime|generator silnika/);
   // usterka teraz na drodze – automat czeka na naprawę; licznik osi / nawierzchnia – automat jej nie usuwa
   assert.deepEqual(codesOf(shift({ ...end, trains: trainsWith(), unfinished: [stuck({ faults: [{ type: 'signal-fail', target: 'A' }], faultsNow: [{ type: 'signal-fail', target: 'A' }] })] })), ['info:fault-wait']);
   assert.deepEqual(codesOf(shift({ ...end, trains: trainsWith(), unfinished: [stuck({ faults: [{ type: 'axle-counter', target: 'T2' }], faultsNow: [{ type: 'axle-counter', target: 'T2' }] })] })), ['info:automat-limit']);

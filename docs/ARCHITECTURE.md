@@ -758,7 +758,7 @@ nieznana stacja.
 
 **Poziomy ustaleń.** `error` (BŁĄD) – do poprawy; `warning` (uwaga) – ryzyko kar albo rzecz nietypowa w zamyśle
 scenariusza; `info` – wypisywane, bez wpływu na ocenę: odporność na zakłócenia wybierane przez gracza i ograniczenia
-silnika / automatu (pociągi nadzwyczajne po końcu zmiany, automat czeka na naprawę usterki, nie zeruje licznika osi,
+silnika / automatu (pociąg nadzwyczajny, który nie zdążył przed końcem zmiany, automat czeka na naprawę usterki, nie zeruje licznika osi,
 nie zamyka toru). **Poziom scenariusza** to `none` albo wymuszony `disruptions` – zamysł autora; `low` / `high`
 wybierane przez gracza sprawdzają odporność.
 
@@ -799,7 +799,7 @@ liczba w uwadze `sc-slack` definicji i w `late-inbound` przebiegu.
    zadanie po terminie / bez `afterTask` / odziedziczone i pominięte / na tor przyjazdu (bez manewrów) / z terminem po
    odjeździe następcy / zostawiające skład na innym torze niż następca, usterka przed startem / po końcu (bez licznika
    osi i samouczków) / na tarczy manewrowej / na odcinku podzielonym przez łącznicę, zamknięcie poza oknem albo toru
-   planowego. Informacje: `sc-slack` przy poziomach gracza, pociągi nadzwyczajne (`extra-outside`), usterka, której
+   planowego. Informacje: `sc-slack` przy poziomach gracza, zmiana za krótka na pociąg nadzwyczajny (`extra-none`), usterka, której
    automat nie obsługuje (`fault-automat`). Listę misji podaje wywołujący – logika nie importuje samouczka.
 2. **Przebieg** – `checkShift(job)`: zmiana grana `playShift` (jak przegląd) z obserwatorem; `station` – obiekt stacji
    (np. nowej, spoza `src/stations/index.js`, także z okręgami) zamiast `stationId`, `scenario` – obiekt zamiast
@@ -839,8 +839,8 @@ liczba w uwadze `sc-slack` definicji i w `late-inbound` przebiegu.
      zwłoka automatu albo przyczyna nieznana), odjazd pociągu stojącego od początku zmiany po planie (bez kary w grze),
      inny tor (`wrong-track`, z pociągiem na torze planowym), zadanie po terminie / nierozstrzygnięte / przepadłe przy
      usterce, zadanie po końcu zmiany (`task-after-end` – bez kary w grze), niewykonany obowiązek blokady.
-   - INFORMACJE: pociągi nadzwyczajne bez obsługi do końca zmiany (`extra-after-end` – generator silnika, bez rady o
-     `endTime`), automat czeka na naprawę (`fault-wait`, z oznaczeniem usterki losowej poziomu), usterki, których
+   - INFORMACJE: pociągi nadzwyczajne bez obsługi do końca zmiany (`extra-after-end` – planowane w zmianie, nie zdążyły
+     przez opóźnienie w ruchu), automat czeka na naprawę (`fault-wait`, z oznaczeniem usterki losowej poziomu), usterki, których
      automat nie usuwa, i jazda po pękniętej szynie z usterki scenariusza (`automat-limit`), odjazd przed planem
      pociągu stojącego od początku zmiany (`early-depart`). Progi to stałe silnika: kara za przetrzymanie od 2 min /
      przed semaforem od 4 min, za przelot od 3 min, termin zadania + 10 min, opóźnienia od sąsiada poziomów.
@@ -860,10 +860,16 @@ wiersz „Odporność”; `--verbose` – pełne ustalenia, tabela pociągów, z
 (scenariusze wg oceny, uwagi powtarzalne, zmiany wg werdyktu, błędy, uwagi na poziomie scenariusza, odporność,
 informacje, czas).
 
+**Pociąg nadzwyczajny** (poziom „duże”, `Simulation.#planExtraTrains`): kopia losowego pociągu przelotowego z rozkładu
+stacji przesunięta o 25…70 min (`EXTRA_TRAIN`), mieszcząca się w zmianie (`extraTrainShifts`): zapowiedź 25 min przed
+przyjazdem nie przed startem, ostatnie zdarzenie co najmniej 10 min przed końcem. Losowania są dwa jak dotąd (pociąg,
+przesunięcie): gdy wylosowany pociąg się mieści, zmiana przebiega jak przedtem; inaczej z tych samych liczb wychodzi
+pociąg i przesunięcie spośród mieszczących się, bez dodatkowych losowań (reszta zakłóceń zmiany ta sama); gdy żaden
+się nie mieści – zmiana bez nadzwyczajnego (`extra-none` w kontroli definicji). Test: `tests/extra-trains.test.js`.
+
 **Luki silnika i automatu** (zgłaszane przez automat jako informacje albo uwagi, do decyzji właściciela): pociąg
 stojący od początku zmiany nie dostaje zdarzenia „odjazd” – silnik nie trzyma go do planowego odjazdu (stan
-„zatrzymany”, nie „postój”), więc automat wyprawia go od razu, a odjazdu po planie nie karze; pociągi nadzwyczajne
-planowane są bez względu na `endTime`; kara „nieobsłużony” (−10) jest naliczana także za opóźnienie od sąsiada;
+„zatrzymany”, nie „postój”), więc automat wyprawia go od razu, a odjazdu po planie nie karze; kara „nieobsłużony” (−10) jest naliczana także za opóźnienie od sąsiada;
 automat nie zeruje licznika osi, nie zamyka toru z usterką nawierzchni, nie podaje sygnału zastępczego na wjeździe
 (tylko na wyjeździe przy usterce blokady) i nie mówi, na co czekał, gdy stoi bez przeszkody z zewnątrz.
 

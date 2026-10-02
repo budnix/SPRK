@@ -1,4 +1,4 @@
-import { Simulation } from './Simulation.js';
+import { Simulation, EXTRA_TRAIN, extraTrainShifts } from './Simulation.js';
 import { validateStation, validateTimetable } from './validate.js';
 import { FAULT_TYPES } from './Faults.js';
 import { trainSpeed } from './rollingStock.js';
@@ -55,8 +55,6 @@ export const TASK_GRACE = 10 * 60;
 const FAULT_DEFAULT_MIN = 10;
 /** Pociąg od sąsiada: od granicy pulpitu do peronu ok. 90 s (Traffic.#prepare). */
 const STATION_RUN = 90;
-/** Pociąg nadzwyczajny: wzorzec + 25…70 min (Simulation.#planExtraTrains). */
-const EXTRA_SHIFT_MIN = 25;
 const SECTION_FAULTS = new Set(['false-occupancy', 'track-defect', 'axle-counter']);
 
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
@@ -506,11 +504,10 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     const nrs = new Set((station.timetable || []).map((x) => String(x.nr)));
     const clash = pool.filter((x) => nrs.has(String(x.nr + 1000)));
     if (clash.length) warn('extra-nr', `Poziom ${L}: numer pociągu nadzwyczajnego (nr + 1000) pokrywa się z rozkładem dla ${clash.map((x) => x.nr).join(', ')}`);
-    // Simulation.#planExtraTrains: przyjazd = wzorzec + 25…70 min, bez względu na koniec zmiany – własność generatora
-    // silnika, nie scenariusza (autor usunąłby ją tylko zapasem 70 min), więc informacja
-    if (end != null) {
-      const late = pool.filter((x) => { const r = Clock.parse(x.arr || x.dep); return r + EXTRA_SHIFT_MIN * 60 >= end - LATE_SLACK; });
-      if (late.length) info('extra-outside', `Poziom ${L}: ${late.length} poc. rozkładu stacji (np. ${late.slice(0, 3).map((x) => x.nr).join(', ')}) może dać pociąg nadzwyczajny po końcu zmiany – generator silnika (wzorzec + ${EXTRA_SHIFT_MIN}…70 min) nie patrzy na endTime`);
+    // Simulation.#planExtraTrains: kopia mieści się w zmianie (`extraTrainShifts`); gdy żaden pociąg rozkładu stacji się
+    // nie mieści, zmiana idzie bez pociągu nadzwyczajnego – informacja (poziom miał go dać)
+    if (pool.length && !pool.some((x) => extraTrainShifts(x, start, end))) {
+      info('extra-none', `Poziom ${L}: żaden pociąg rozkładu stacji przesunięty o ${EXTRA_TRAIN.shiftMin}…${EXTRA_TRAIN.shiftMax} min nie mieści się w zmianie ${hm(start)}–${end != null ? hm(end) : '…'} (zapowiedź ${EXTRA_TRAIN.announce / 60} min przed przyjazdem, ostatnie zdarzenie ${EXTRA_TRAIN.endSlack / 60} min przed końcem) – zmiana bez pociągu nadzwyczajnego`);
     }
   }
   return out;

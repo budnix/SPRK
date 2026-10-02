@@ -31,6 +31,7 @@ import { DISRUPTION_LEVELS } from '../src/core/Random.js';
 import { Traffic } from '../src/model/Traffic.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { validateStation } from '../src/model/validate.js';
+import { EXTRA_TRAIN } from '../src/model/Simulation.js';
 import { checkScenario, hasErrors, LATE_SLACK, TASK_GRACE, levelSlackMin, shuntReach } from '../src/model/scenarioCheck.js';
 import { STATIONS } from '../src/stations/index.js';
 import { MISSIONS } from '../src/tutorial/missions.js';
@@ -677,7 +678,7 @@ export function verdict(r) {
     note('late-inbound', `${plural(lateIn.length, 'pociąg', 'pociągi', 'pociągów')} nie zdąży przed końcem zmiany ${hm(r.endTime)} przez opóźnienie wniesione (potrzeba co najmniej ${LATE_SLACK / 60} min na wyjazd ze stacji): ${list.join(', ')} – kara „nieobsłużony” bez winy dyżurnego.${slack}`, undefined, `${lateIn.length} poc.: ${short.join(', ')}`);
   }
   if (extras.length) {
-    info('extra-after-end', `Pociągi nadzwyczajne bez obsługi do końca zmiany ${hm(r.endTime)}: ${extras.map((u) => T(u.nr, [`obsługa ok. ${hm(u.expectedDone)}`])).join(', ')} – generator silnika planuje je (wzorzec + 25…70 min) bez względu na endTime; wydłużenie zmiany tego nie załatwi`, undefined, `${extras.length} poc.: ${extras.map((u) => `${T(u.nr)} ok. ${hm(u.expectedDone)}`).join(', ')}`);
+    info('extra-after-end', `Pociągi nadzwyczajne bez obsługi do końca zmiany ${hm(r.endTime)}: ${extras.map((u) => T(u.nr, [`obsługa ok. ${hm(u.expectedDone)}`])).join(', ')} – planowane tak, żeby mieściły się w zmianie (ostatnie zdarzenie co najmniej ${EXTRA_TRAIN.endSlack / 60} min przed końcem); nie zdążyły przez opóźnienie w ruchu`, undefined, `${extras.length} poc.: ${extras.map((u) => `${T(u.nr)} ok. ${hm(u.expectedDone)}`).join(', ')}`);
   }
   // czynności wymuszone usterką i stan po zmianie
   for (const f of r.forced) error('forced', `Kara za czynność, której nie wymusiła usterka: ${f}`);

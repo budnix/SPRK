@@ -17,6 +17,25 @@ import { SpecialCommand } from '../srk/special.js';
 const OTHER_DISTRICT = 'Element w okręgu obsługiwanym przez drugą nastawnię';
 
 /**
+ * Pociąg nadzwyczajny (poziom „duże”): kopia pociągu przelotowego z rozkładu stacji przesunięta o `shiftMin`…`shiftMax`
+ * minut. Mieści się w zmianie (przyjęte): sąsiad zapowiada go `announce` s przed przyjazdem – nie przed startem zmiany –
+ * a jego ostatnie zdarzenie (odjazd, przy przelocie przejazd) wypada co najmniej `endSlack` s przed końcem zmiany, żeby
+ * dyżurny zdążył go obsłużyć (kara „nieobsłużony” tylko za pociąg, który dało się obsłużyć).
+ */
+export const EXTRA_TRAIN = { shiftMin: 25, shiftMax: 70, announce: 25 * 60, endSlack: 10 * 60 };
+
+/**
+ * Przesunięcia [min], przy których kopia pociągu `base` mieści się w zmianie od `start` do `end` [s] (`end` null – bez
+ * końca): `{ lo, hi }` albo null, gdy żadne. Ta sama reguła w generatorze (`Simulation`) i w kontroli scenariusza.
+ */
+export function extraTrainShifts(base, start, end) {
+  const first = Clock.parse(base.arr || base.dep), last = Clock.parse(base.dep || base.arr);
+  const lo = Math.max(EXTRA_TRAIN.shiftMin, Math.ceil((start + EXTRA_TRAIN.announce - first) / 60));
+  const hi = end == null ? EXTRA_TRAIN.shiftMax : Math.min(EXTRA_TRAIN.shiftMax, Math.floor((end - EXTRA_TRAIN.endSlack - last) / 60));
+  return lo <= hi ? { lo, hi } : null;
+}
+
+/**
  * Symulacja: spina zegar, zależności (Interlocking), blokady liniowe, ruch, usterki,
  * łączność i ocenę zmiany.
  *
@@ -188,16 +207,34 @@ export class Simulation {
     return list.find((x) => x.id === sc) || list[0] || { id: 'zmiana', name: 'Zmiana', startTime: station.startTime };
   }
 
-  /** Pociągi nadzwyczajne (poziom „duże”): kopia losowego pociągu z rozkładu przesunięta w czasie. */
+  /**
+   * Pociągi nadzwyczajne (poziom „duże”): kopia losowego pociągu z rozkładu przesunięta w czasie tak, żeby mieściła się
+   * w zmianie (`extraTrainShifts`). Losowania jak dotąd (pociąg, przesunięcie) – zmiana, w której wylosowany pociąg się
+   * mieści, przebiega bez zmian; inaczej z tych samych liczb wychodzi pociąg i przesunięcie spośród mieszczących się
+   * (bez dodatkowych losowań – reszta zakłóceń zmiany zostaje ta sama). Żaden się nie mieści – zmiana bez nadzwyczajnego.
+   */
   #planExtraTrains() {
     const out = [];
     if (!this.level.extraTrains || !this.station.timetable.length) return out;
+    const start = this.clock.time, end = this.endTime;
+    const pool = this.station.timetable.filter((t) => t.from && t.to);
     for (let i = 0; i < this.level.extraTrains; i++) {
-      const base = this.rng.pick(this.station.timetable.filter((t) => t.from && t.to));
+      let base = this.rng.pick(pool);
       if (!base) continue;
-      const shift = this.rng.int(25, 70) * 60;
+      let minutes = this.rng.int(EXTRA_TRAIN.shiftMin, EXTRA_TRAIN.shiftMax);
+      let fit = extraTrainShifts(base, start, end);
+      if (!fit || minutes < fit.lo || minutes > fit.hi) {
+        if (!fit) {
+          const others = pool.filter((t) => extraTrainShifts(t, start, end));
+          if (!others.length) continue;
+          base = others[pool.indexOf(base) % others.length];
+          fit = extraTrainShifts(base, start, end);
+        }
+        minutes = fit.lo + (minutes - EXTRA_TRAIN.shiftMin) % (fit.hi - fit.lo + 1);
+      }
+      const shift = minutes * 60;
       const ref = Clock.parse(base.arr || base.dep) + shift;
-      const at = ref - 25 * 60;
+      const at = ref - EXTRA_TRAIN.announce;
       const def = { ...base, nr: base.nr + 1000, name: `${base.name} nadzwyczajny`, arr: Clock.format(ref), dep: base.dep ? Clock.format(Clock.parse(base.dep) + shift) : undefined };
       out.push({ at, def, done: false });
     }
