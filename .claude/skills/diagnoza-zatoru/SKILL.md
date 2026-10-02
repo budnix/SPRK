@@ -22,7 +22,7 @@ npm run check -- <stacja> --start <godzina> --minutes <30|60|120|180> --seeds <z
 
 Automat gra zmianę dyżurnym automatycznym i wypisuje dla każdego nieobsłużonego pociągu: gdzie stoi, od kiedy, przyczynę
 postoju, przeszkody przebiegu, pociąg, który mu przeszkadza, i ostatnie wpisy dziennika. Opis raportu:
-`docs/ARCHITECTURE.md` („Automat sprawdzający scenariusze”). Jeśli automat przechodzi, a gracz ma zator, różnicą są
+`docs/architecture/testy-i-narzedzia.md` („Automat sprawdzający scenariusze”). Jeśli automat przechodzi, a gracz ma zator, różnicą są
 czynności gracza albo widok stanowiska – wtedy odtwarzaj w przeglądarce (Playwright, `tests/e2e/`).
 
 ## 2. Znajdź pierwszy pociąg, który stanął

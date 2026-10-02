@@ -6,7 +6,7 @@ description: Dodanie nowego scenariusza albo wariantu scenariusza SPRK (inna dł
 # Nowy scenariusz albo wariant
 
 Format scenariusza: `docs/STATION-FORMAT.md` („Scenariusze”, „Rozkład jazdy”, „Zadania manewrowe”, „Wariant scenariusza
-i automat sprawdzający”) – przeczytaj najpierw. Reguły automatu: `docs/ARCHITECTURE.md` („Automat sprawdzający
+i automat sprawdzający”) – przeczytaj najpierw. Reguły automatu: `docs/architecture/testy-i-narzedzia.md` („Automat sprawdzający
 scenariusze”). Ten skill to lista kroków.
 
 ## Kroki

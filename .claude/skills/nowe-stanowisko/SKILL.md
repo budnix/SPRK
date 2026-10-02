@@ -33,7 +33,7 @@ Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `
 5a. Dostępność w grze: scenariusz z polem `srk` na stacji, etykieta karty w `VIEW_BADGE` (`src/ui/StartScreen.js`)
    i klucz `start.srk*`. Testy treści stacji (lista scenariuszy) trzeba wtedy rozszerzyć – uzasadnij w commicie.
 5b. Barwy urządzenia jako zmienne `--desk-*` / `--mon-*` (są poza wymogiem motywu jasnego).
-6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/ARCHITECTURE.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
+6. Dokumentacja: sekcja „Strategie systemów srk” w `docs/architecture/stanowiska.md`, pole `srk` w `docs/STATION-FORMAT.md`, README.
 
 ## Kolejność pracy
 

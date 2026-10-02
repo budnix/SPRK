@@ -333,7 +333,7 @@ Zasady (z tego, jak gra liczy zmianę):
 * Usterka (`faults`): `at` zawsze jako napis „GG:MM” (liczbę gra bierze za sekundy od północy), w czasie ruchu
   pociągów, których dotyczy – usterka bez wpływu na ruch bez zakłóceń to błąd.
 
-Sprawdzenie wariantu: `npm run check -- <stacja>:<scenariusz>` (`scripts/check-scenario.mjs`, docs/ARCHITECTURE.md
+Sprawdzenie wariantu: `npm run check -- <stacja>:<scenariusz>` (`scripts/check-scenario.mjs`, docs/architecture/testy-i-narzedzia.md
 „Automat sprawdzający scenariusze”). Najpierw sprawdza definicję stacji i scenariusza (`src/model/scenarioCheck.js` –
 błędy widoczne bez grania: okno zmiany, pociągi spoza rozkładu, pociągi, które nie powstaną, nie skończą biegu albo
 musiałyby zmienić czoło, tory i przebiegi, zadania, usterki i zamknięcia wskazujące nieistniejące elementy, literówki

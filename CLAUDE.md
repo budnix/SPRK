@@ -32,7 +32,7 @@
   Windows) – `npm run test:e2e:update`, bez kontenera. Litery są na zrzutach przezroczyste (`HIDE_GLYPHS`): ta sama
   czcionka rasteryzuje się inaczej na każdym systemie, a układ, kształty i barwy – tak samo, więc ten sam wzorzec
   przechodzi lokalnie i w CI. Treść napisów sprawdzają asercje w testach zachowania.
-- Dokumentacja zgodna z kodem w tym samym commicie: `docs/ARCHITECTURE.md` (moduły, zasady), `docs/STATION-FORMAT.md`
+- Dokumentacja zgodna z kodem w tym samym commicie: `docs/ARCHITECTURE.md` (mapa modułów, zasady) i plik obszaru w `docs/architecture/`, `docs/STATION-FORMAT.md`
   (pola definicji stacji), `README.md` (funkcje widoczne dla gracza, po angielsku), `GLOSSARY.md` (pojęcia i ich
   nazwy – co znaczą, bez szczegółów kodu; nowe pojęcie albo zmiana znaczenia istniejącego).
 - Bez nowych zależności npm (także deweloperskich) bez zgody właściciela.

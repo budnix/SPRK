@@ -6,7 +6,7 @@ import pl from '../../src/i18n/pl.js';
 
 /**
  * Werdykt zmiany zagranej automatem (`verdict`): ustalenia BŁĄD / uwaga / informacja z raportu zmiany
- * (`shift-report.mjs`, `checkShift`) wg reguł z docs/ARCHITECTURE.md („Automat sprawdzający scenariusze”), ocena
+ * (`shift-report.mjs`, `checkShift`) wg reguł z docs/architecture/testy-i-narzedzia.md („Automat sprawdzający scenariusze”), ocena
  * scenariusza z definicji i zmian (`scenarioStatus`), uwagi powtarzalne (`deterministicWarnings`) i teksty ustaleń
  * (po polsku, jak komunikaty modelu; przyczyny postoju – z tekstów panelu `sp.wait.*`). Czyste funkcje: bez wątków
  * i wyjścia – testuje je tests/scenario-check.test.js. Tu zmienia się reguły oceny, nie w skrypcie.
@@ -146,7 +146,7 @@ function holderText(r, w) {
  * `findings` – `{ level: 'error' | 'warning' | 'info', code, msg, train?, brief? }` (`info` nie zmienia statusu).
  * Poziom scenariusza (`baseLevel`: none albo wymuszony `disruptions`) jest jego zamysłem – tam uwagi są uwagami; na
  * poziomie wybieranym przez gracza część z nich to informacja o odporności (pociągi za końcem zmiany przez opóźnienie
- * od sąsiada). Pełna lista reguł: docs/ARCHITECTURE.md („Automat sprawdzający scenariusze”).
+ * od sąsiada). Pełna lista reguł: docs/architecture/testy-i-narzedzia.md („Automat sprawdzający scenariusze”).
  */
 export function verdict(r) {
   const findings = [];

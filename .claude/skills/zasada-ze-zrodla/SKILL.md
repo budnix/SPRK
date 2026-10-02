@@ -27,7 +27,7 @@ przepisu. Dlatego każda zasada ma w `docs/SOURCES.md` dwie wyraźnie rozdzielon
 4. **Test** odtwarzający regułę w tym samym commicie; zmiana istniejącego testu – z uzasadnieniem w commicie, co się
    zmieniło w regule. Testów „wszystkich kombinacji” (`tests/matrix-*.test.js`) nie osłabia się – jeśli reguła je
    narusza, to albo reguła jest zła, albo test wymaga decyzji właściciela.
-5. **Dokumentacja** w tym samym commicie: `docs/ARCHITECTURE.md` (gdzie reguła mieszka), `README.md` po angielsku, gdy
+5. **Dokumentacja** w tym samym commicie: plik obszaru w `docs/architecture/` (gdzie reguła mieszka; mapa – `docs/ARCHITECTURE.md`), `README.md` po angielsku, gdy
    gracz ją widzi.
 
 ## Gdy źródło milczy albo są dwa odczytania

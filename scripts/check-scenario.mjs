@@ -15,7 +15,7 @@
  *     przyczyn postoju pociągów (`Traffic.waitReason`), przy postoju ponad 5 min – przeszkody przebiegu
  *     (`Interlocking.routeProblems`) z przypisaniem do pociągu albo usterki; migawka pociągów nieobsłużonych w chwili
  *     końca zmiany; po zapasie – zator, naruszenia zależności, spad / rozprucie, kary wymuszone usterką, stan urządzeń,
- *  3. werdykt zmiany (`verdict`, scripts/lib/verdict.mjs): BŁĘDY / UWAGI / OK (+ informacje bez wpływu na ocenę) wg reguł z docs/ARCHITECTURE.md
+ *  3. werdykt zmiany (`verdict`, scripts/lib/verdict.mjs): BŁĘDY / UWAGI / OK (+ informacje bez wpływu na ocenę) wg reguł z docs/architecture/testy-i-narzedzia.md
  *     („Automat sprawdzający scenariusze”),
  *  4. ocena scenariusza: definicja, przebiegi na poziomie scenariusza (bez zakłóceń albo wymuszonym `disruptions`)
  *     i błędy z każdego poziomu; uwagi z poziomów wybieranych przez gracza – osobno, jako odporność.

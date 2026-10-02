@@ -296,7 +296,7 @@ Polish railway rules and terminology).
   its own level (no disruptions, or the level the scenario forces); warnings under player-chosen disruptions are listed as
   robustness. Exit code 1 on errors (with `--strict` also on warnings). Every scenario of every station also goes through the
   definition check and one played shift at its own level in `npm test`, which fails on errors and on repeatable warnings not
-  accepted in `tests/scenario-accepted.js`; how to write a variant – `docs/STATION-FORMAT.md`, rules – `docs/ARCHITECTURE.md`
+  accepted in `tests/scenario-accepted.js`; how to write a variant – `docs/STATION-FORMAT.md`, rules – `docs/architecture/testy-i-narzedzia.md`
   („Automat sprawdzający scenariusze”),
 * `scripts/named-trains.mjs` – builds `src/model/data/namedTrains.js`, the list of named PKP Intercity trains (category, name,
   stations along the route) used for long-distance trains in generated duties; run it again when the yearly timetable changes,
@@ -304,7 +304,7 @@ Polish railway rules and terminology).
   different one on every run and may fail once in a hundred runs, usually in CI. The script runs every test file under many
   repeatable seed sets (`scripts/random-seed.mjs`, `SPRK_RAND=<n>`), one process per file and set on all cores, and prints
   the tests that failed with the command that reproduces each failure,
-* `docs/ARCHITECTURE.md` – architecture and design rules, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans).
+* `docs/ARCHITECTURE.md` – module map and design rules, with one file per area in `docs/architecture/`, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans).
 
 The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published
 descriptions of the equipment, not the dependency tables of specific signal boxes. Report differences – the model
