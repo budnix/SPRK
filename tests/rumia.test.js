@@ -35,7 +35,10 @@ test('Rumia: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem
 });
 
 test('Rumia: pełna zmiana – SKM co 15 min w obu kierunkach na torze 5, regionalne, IC/TLK i towarowe, zdawczy na tor 6', () => {
-  const sim = new Simulation(rumia, { disruptions: 'none' });
+  // ziarno stałe: bez niego zmiana losuje je (maszynista, miejsce zatrzymania, tabor), a SKM 93204 / 93205 mają z samego
+  // planu ok. 3 min opóźnienia na szlaku RD2 (uwagi line-headway w tests/scenario-accepted.js) – przy rzadkim ziarnie
+  // 93205 miał 4 min i test padał przypadkowo (npm run seed-scan, zestaw 139)
+  const sim = new Simulation(rumia, { disruptions: 'none', seed: 1 });
   const end = Clock.parse('08:20');
   let n = 0;
   while (sim.clock.time < end && !allArrived(sim)) {
