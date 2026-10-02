@@ -185,6 +185,13 @@ test('definicja: godziny po 24:00 tylko w zmianie przez północ (endTime po 24:
   assert.match(wrong.msg, /zmiana przez północ ma godziny następnej doby po 24:00 \(01:00 → endTime: '25:00'\)/);
 });
 
+test('definicja: scenariusz z listą trains – błąd zapisu godziny wskazuje pociąg, który go ma (definicja z wpisu, nie z indeksu w rozkładzie stacji)', () => {
+  const station = { ...szkolna, timetable: szkolna.timetable.map((e) => (e.nr === 6102 ? { ...e, arr: '26:15' } : e)) };
+  const timeErrors = (sc) => check(sc, station).filter((f) => f.code === 'tt-time').map((f) => f.train);
+  assert.deepEqual(timeErrors({ ...base, trains: [6102, 6103] }), [6102]);
+  assert.deepEqual(timeErrors({ ...base, trains: [6101, 6103] }), [], 'pociąg z błędem nie jedzie w tej zmianie');
+});
+
 test('scenariusze „szczyt” (wymuszony poziom high): koniec zmiany co najmniej 44 min po ostatnim pociągu – opóźniony od sąsiada zdąży', () => {
   // przy opóźnieniu od sąsiada do 40 min krótszy zapas dawał karę „nieobsłużony” (−10) bez winy dyżurnego
   const forced = STATIONS.flatMap((st) => (st.scenarios || []).filter((sc) => sc.disruptions === 'high').map((sc) => [st, sc]));

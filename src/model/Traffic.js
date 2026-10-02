@@ -1,12 +1,12 @@
-import { categoryOf, trainLabel } from './categories.js';
 import { Train, cabChangeTime, driverFactor } from './Train.js';
 import { Clock } from '../core/Clock.js';
 import { mixSeed } from '../core/Random.js';
 import { Interlocking } from './Interlocking.js';
 import { platformRanges } from '../tiles/platforms.js';
-import { rootOf, stockFor, stockPlan, trainSpeed } from './rollingStock.js';
+import { rootOf, stockFor, stockPlan } from './rollingStock.js';
 import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
-import { setPhase, initialPhase } from './timetable/phase.js';
+import { setPhase } from './timetable/phase.js';
+import { createEntry, shownTime } from './timetable/entry.js';
 
 /**
  * Od planowego odjazdu (przejazdu) do zjazdu ze stacji – pociąg „odjechał”, obsłużony – mija 1–4 min (zmierzone automatem
@@ -36,13 +36,6 @@ export function stopScatter(seed, nr) {
  * na pulpit, zajętość odcinków, dziennik ruchu.
  */
 export class Traffic {
-  /**
-   * Godzina z danych do pokazania: zapis po północy („24:30” – zmiana przez północ, `Clock.stamp`) jak na zegarze
-   * („00:30”); pozostałe bez zmian. Chwile do obliczeń (`arrTime`, `depTime`, `deadlineTime`) zostają bez zawijania.
-   */
-  static shown(hhmm) {
-    return typeof hhmm === 'string' && Clock.parse(hhmm) >= 86400 ? Clock.format(Clock.parse(hhmm)) : hhmm;
-  }
 
   constructor(station, ilk, blocks, bus, opts = {}) {
     this.station = station;
@@ -69,7 +62,7 @@ export class Traffic {
       .filter((t) => this.entries.some((e) => String(e.nr) === String(t.unit)))
       .map((t) => ({ ...t, deadlineTime: Clock.parse(t.deadline), afterTime: t.after ? Clock.parse(t.after) : 0, done: false, failed: false, doneAt: null }))
       // godziny po północy (zapis „24:30” w danych zmiany przez północ) pokazuje się jak na zegarze
-      .map((t) => ({ ...t, deadline: Traffic.shown(t.deadline), ...(t.after ? { after: Traffic.shown(t.after) } : {}) }));
+      .map((t) => ({ ...t, deadline: shownTime(t.deadline), ...(t.after ? { after: shownTime(t.after) } : {}) }));
     this.journal = [];
     this.orders = [];
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
@@ -307,27 +300,8 @@ export class Traffic {
     return { ok: true, order };
   }
 
-  #prepare(t, i, rollingStock = null) {
-    const arr = t.arr ? Clock.parse(t.arr) : null;
-    const dep = t.dep ? Clock.parse(t.dep) : null;
-    const exitFrom = t.from ? this.station.exits[t.from] : null;
-    const lineLen = exitFrom?.lineLength ?? 3000;
-    // jazda po szlaku z prędkością pociągu z jego taborem (wolniejszy pojazd – sąsiad wyprawia go wcześniej, jak rozkład
-    // ułożony dla tego pojazdu)
-    const vline = Math.min(trainSpeed(t, rollingStock), exitFrom?.lineSpeed ?? 100) / 3.6;
-    const lineTravel = lineLen / vline;              // s na szlaku
-    const stationRun = 90;                           // s od granicy pulpitu do peronu (ok.)
-    const ref = arr ?? dep;
-    const neighbourDep = t.from ? ref - lineTravel - stationRun : null;
-    const e = {
-      idx: i, ...t, ...(t.arr ? { arr: Traffic.shown(t.arr) } : {}), ...(t.dep ? { dep: Traffic.shown(t.dep) } : {}),
-      cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
-      neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
-      phase: null, heldAt: null, handedTo: null, status: null, requested: false, dispatched: false,
-      train: null, actualArr: null, actualDep: null, delay: 0, track: t.track, rollingStock,
-    };
-    setPhase(e, initialPhase(t));
-    return e;
+  #prepare(t, i, rollingStock = null, extra = false) {
+    return createEntry(t, { idx: i, station: this.station, rollingStock, extra });
   }
 
   /** Losowe opóźnienia pociągów od sąsiadów (poziom zakłóceń). */
@@ -424,8 +398,7 @@ export class Traffic {
     // tabor: pociąg ze składu innego (`unit`) – jak tamten; inaczej własne losowanie (tabor rozkładu się nie zmienia)
     const root = rootOf(def, this.entries);
     const stock = root !== def && root.rollingStock !== undefined ? root.rollingStock : stockFor(def, [def], this.seed);
-    const e = this.#prepare(def, this.entries.length, stock);
-    e.extra = true;
+    const e = this.#prepare(def, this.entries.length, stock, true);
     this.entries.push(e);
     this.entries.sort((a, b) => (a.arrTime ?? a.depTime) - (b.arrTime ?? b.depTime));
     this.bus.emit('timetable', this.entries);
@@ -742,7 +715,7 @@ export class Traffic {
     if (e.train.mode !== 'shunt' && !quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'shunt' });
     e.train.mode = 'shunt';
     e.train.clearAuthority();
-    e.train.def.stop = false;
+    e.train.def.stopCancelled = true; // postój przy peronie już nie dotyczy składu w manewrach (definicja zostaje)
     e.train.state = 'moving';
     e.train.vmax = 25 / 3.6;
     return true;

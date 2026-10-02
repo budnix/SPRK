@@ -13,7 +13,8 @@ src/
                Operator (automat dyżurnego / nastawni), Simulation (spięcie, scenariusze), validate (walidacja stacji),
                scenarioCheck (statyczne sprawdzenie scenariusza – automat sprawdzający scenariusze),
                trainPaths (drogi pociągu po przebiegach, odcinek zbliżania szlaku, tor składu);
-               timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): phase (etap pociągu – kod,
+               timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja
+               tylko do odczytu, plan, przebieg zmiany; godziny do pokazania `shownTime`), phase (etap pociągu – kod,
                szczegół, napis dla człowieka; „obsłużony” i „skończony”)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
@@ -54,6 +55,13 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 * **Zależności nie znają stanowiska.** `Interlocking` przyjmuje polecenia zależnościowe (przebieg z jawnym rodzajem,
   zwolnienie, „Stój”, zwrotnica, zamknięcie, Sz). Przyciski, kolory i uzbrojenie to sprawa protokołu obsługi
   (`src/srk/buttons.js`); widok nie zmienia stanu modelu wprost.
+* **Wpis rozkładu ma trzy części o różnych właścicielach** (`src/model/timetable/entry.js`, `createEntry`): definicja
+  pociągu z rozkładu stacji albo scenariusza – tylko do odczytu (przypisanie to TypeError; zapis z danych, także godziny
+  po północy, w `e.source`; jedyny wyjątek: `e.stop` jest fałszem po przejściu składu w manewry – `stopCancelled`), plan
+  (`arrTime`, `depTime`, `neighbourDep`, `requestAt`, `rollingStock`, `extra`) i przebieg zmiany (etap, skład, rzeczywiste
+  godziny i tor, opóźnienia, flagi rozmów). Plan i przebieg zmienia tylko `Traffic` – zapis gdzie indziej w źródłach
+  i skryptach wykrywa `tests/layers.test.js`. Czytelnicy czytają wpis jak zwykły obiekt. Inny pociąg w teście albo
+  scenariuszu – w jego rozkładzie (`scenario.timetable`), nie przez nadpisanie wpisu.
 * **Etap pociągu to dane, napis tylko do pokazania.** Wpis rozkładu ma kod etapu (`e.phase`: `expected`, `on-line`,
   `running`, `held` + `heldAt`, `dwell`, `departed`, `at-neighbour`, `ended`, `handed-over` + `handedTo`…) i napis
   po polsku (`e.status`), który powstaje z kodu w `src/model/timetable/phase.js` (`setPhase`, jedyna droga zmiany
@@ -575,7 +583,7 @@ korzysta z listy od razu, o ile relacje jej pociągów dalekobieżnych mają naz
 
 Przez północ: w danych zmiany godziny następnej doby to 24, 25… (`Clock.stamp` – zapis bez zawijania; `Clock.parse`
 czyta „25:10” jako ciąg dalszy zmiany; `endTime` „26:00” = 02:00). Symulacja liczy chwile bez zawijania, a do pokazania
-służy `Clock.format` (zawija dobę) i `Traffic.shown` – wpisy rozkładu i terminy zadań po północy mają napisy „00:30”
+służy `Clock.format` (zawija dobę) i `shownTime` (`src/model/timetable/entry.js`) – wpisy rozkładu i terminy zadań po północy mają napisy „00:30”
 obok chwil `arrTime` / `depTime` / `deadlineTime`. Kto potrzebuje chwili, bierze pole `*Time`, nie napis. Kontrola
 definicji czyta godziny z definicji (nie z rozkładu zmiany): godziny 24–47 dopuszcza tylko w scenariuszu z `endTime` po
 24:00 (w zwykłej zmianie „26:15” to błąd `tt-time`), a godziny w nazwie zmiany porównuje z oknem modulo doba.

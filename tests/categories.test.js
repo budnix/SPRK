@@ -70,11 +70,13 @@ test('rozkłady stacji trójmiejskich: pełne relacje, kategorie IC/TLK/R/SKM i 
 });
 
 test('szybki pociąg (IC 160 km/h) zatrzymuje się przy peronie: horyzont hamowania i prędkość drogowa na stacji', () => {
-  // Stare Pustkowie: osobowy 5310 jako IC 160 km/h – wjazd z szlaku 100 km/h, postój na torze 1
-  const sim = makeSim();
+  // Stare Pustkowie: osobowy 5310 jako IC 160 km/h – wjazd z szlaku 100 km/h, postój na torze 1 (pociąg zmieniony
+  // w rozkładzie zmiany – definicja wpisu jest tylko do odczytu)
+  const ic = ({ vmax, ...t }) => ({ ...t, name: 'IC Warszawa – Gdańsk', cat: 'IC' });
+  const timetable = makeSim().station.timetable.map((t) => (t.nr === 5310 ? ic(t) : t));
+  const sim = makeSim({ scenario: { id: 't', name: 't', timetable } });
   const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  e.name = 'IC Warszawa – Gdańsk'; e.cat = 'IC'; delete e.vmax;
-  // tabor wybrano przy tworzeniu rozkładu dla pociągu Regio (zespół, np. EN57 – 120 km/h) – IC bez taboru jedzie wg kategorii
+  // IC bez taboru jedzie wg kategorii (tabor to część planu wpisu)
   e.rollingStock = null;
   let n = 0;
   const { autoDispatch } = { autoDispatch: null };

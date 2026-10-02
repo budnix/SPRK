@@ -137,6 +137,22 @@ test('o etap pociągu pyta się kodu etapu – kod gry i narzędzi nie porównuj
   assert.deepEqual(bad, [], `Decyzja na podstawie napisu etapu pociągu – użyj e.phase / isHandled / isFinished:\n${bad.join('\n')}`);
 });
 
+test('przebieg zmiany we wpisie rozkładu zmienia tylko ruch (Traffic) – inne moduły i narzędzia go czytają', () => {
+  // wpis rozkładu (src/model/timetable/entry.js): definicja tylko do odczytu, plan i przebieg zmiany – zapis w Traffic
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const owners = new Set(['src/model/Traffic.js', 'src/model/timetable/entry.js', 'src/model/timetable/phase.js']);
+  const files = [...walk(SRC), ...walkAll(join(ROOT, 'scripts')), ...walkAll(join(ROOT, '.claude', 'skills'))].filter((f) => !owners.has(posix(relative(ROOT, f))));
+  const LIVE = ['phase', 'heldAt', 'handedTo', 'status', 'train', 'requested', 'dispatched', 'announced', 'delayIn', 'delay', 'actualArr', 'actualDep',
+    'actualTrack', 'actualExit', 'attached', 'waitLogged', 'holdScored', 'stopCancelled', 'arrTime', 'depTime', 'neighbourDep', 'requestAt', 'rollingStock', 'extra'];
+  // wpis rozkładu w kodzie to zwykle `e`, `entry`, `u` albo wynik timetable().find(…)
+  const WRITE = new RegExp(`(?:\\b(?:e|entry|u)|\\.find\\([^)]*\\))\\.(?:${LIVE.join('|')})\\s*(?:=(?!=)|\\+=|-=|\\+\\+|--)`);
+  const bad = [];
+  for (const file of files) {
+    stripped(readFileSync(file, 'utf8')).split('\n').forEach((line, i) => { if (WRITE.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`); });
+  }
+  assert.deepEqual(bad, [], `Zapis przebiegu zmiany we wpisie rozkładu poza Traffic:\n${bad.join('\n')}`);
+});
+
 test('widoki stanowisk (src/render/*Renderer.js) nie importują się nawzajem', () => {
   const renderers = walk(join(SRC, 'render')).filter((f) => /Renderer\.js$/.test(f));
   assert.ok(renderers.length >= 2, 'znaleziono widoki stanowisk');

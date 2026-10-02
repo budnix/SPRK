@@ -187,7 +187,6 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   }
   const ilk = sim.ilk, topo = ilk.topo;
   const tt = sim.traffic.timetable();
-  const ttDefs = sc.timetable ?? station.timetable ?? [];
   const exits = sim.station.exits || {};
   const exitName = (id) => `${exits[id]?.name ?? id} (${id})`;
   if (!tt.length) error('tt-empty', `Pusty rozkład zmiany – scenariusz bez ruchu niczego nie sprawdza${end == null ? '; bez endTime zmiana nie skończy się nigdy' : ''}`);
@@ -222,8 +221,8 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   let lastEvent = null;
   for (const e of tt) {
     const w = `Pociąg ${e.nr}`;
-    // zapis z definicji (rozkład zmiany pokazuje godziny po północy już jak na zegarze – `Traffic.shown`)
-    const def = ttDefs[e.idx] ?? e;
+    // zapis z definicji (`e.source`) – wpis rozkładu pokazuje godziny po północy już jak na zegarze (`shownTime`)
+    const def = e.source;
     for (const k of ['arr', 'dep']) if (def[k] != null && !isTime(def[k])) error('tt-time', `${w}: ${k} „${def[k]}” – czas w formacie GG:MM${isLate(def[k]) ? ' (godziny po 24:00 tylko w zmianie przez północ: endTime po 24:00)' : ''}`, e.nr);
     if (e.arrTime != null && e.depTime != null && e.depTime < e.arrTime) error('tt-dep-before-arr', `${w}: odjazd ${e.dep} przed przyjazdem ${e.arr} – punktualności nie da się ocenić`, e.nr);
     if (!e.from && !e.startOn && e.unit == null) error('tt-no-spawn', `${w}: bez from, startOn i unit – pociąg nigdy nie powstanie`, e.nr);
