@@ -115,7 +115,7 @@ const sopotTrain = (nr, arr, dep, extra = {}) => ({ nr, kind: 'os', name: 'Regio
 /** Oba stopnie wjazdu pociągu `nr` nastawione, pociąg jeszcze przed semaforem wjazdowym A. */
 const bothStagesBeforeA = (nr) => (sim) => {
   const tr = sim.traffic.timetable().find((e) => e.nr === nr)?.train;
-  return !!tr && sim.ilk.active.has('A-H') && sim.ilk.active.has('H-O') && !sim.ilk.active.get('A-H').trainEntered;
+  return !!tr && Interlocking.routeAhead(sim.ilk.routeState('A-H')) && Interlocking.routeLocked(sim.ilk.routeState('H-O'));
 };
 /** Zmiana z usterką w chwili `when`; liczy nastawienia przebiegów i odmowy (polecenie wydane, urządzenia odmówiły). */
 function entryFault(timetable, when, fault, each = null) {

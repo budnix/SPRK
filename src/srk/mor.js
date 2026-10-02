@@ -23,7 +23,8 @@ import { EventLog } from './eventLog.js';
 /** Poziomy poleceń: zwykłe, do potwierdzenia (fioletowe), specjalne (czerwone, licznik poleceń specjalnych). */
 export const LEVEL = { normal: 'normal', confirm: 'confirm', special: 'special' };
 
-const signalActive = (ilk, id) => { const s = ilk.signals.get(id); return s?.route ? ilk.active.get(s.route) : null; };
+/** Utwierdzony przebieg od sygnalizatora `id` (`{ id, route, state }`) albo null – nastawiany się nie liczy. */
+const signalActive = (ilk, id) => { const set = ilk.routeFrom(id); return set && set.state !== 'setting' ? set : null; };
 
 /**
  * Menu obiektów (kolejność jak w opisie SPE; bez poleceń, których gra nie ma – lista w docs/SOURCES.md). `when` –
@@ -34,8 +35,8 @@ export const MOR_MENUS = {
     { code: 'Stój', name: 'sygnał „Stój” bez zwalniania przebiegu', when: (ilk, id) => !!ilk.signals.get(id).route, cmd: (id) => ({ type: 'stop', signal: id }) },
     { code: 'Stop', name: 'zablokowanie sygnału zezwalającego (stopowanie)', when: (ilk, id) => !ilk.signals.get(id).stopped, cmd: (id) => ({ type: 'signal-stop', signal: id, on: true }) },
     { code: 'oStop', name: 'odwołanie stopowania', level: LEVEL.confirm, when: (ilk, id) => !!ilk.signals.get(id).stopped, cmd: (id) => ({ type: 'signal-stop', signal: id, on: false }) },
-    { code: 'ZCZ', name: 'zwolnienie czasowe przebiegu', when: (ilk, id) => !!signalActive(ilk, id) && !signalActive(ilk, id).timedRelease, cmd: (id) => ({ type: 'release', signal: id, timed: true }) },
-    { code: 'oZCZ', name: 'odwołanie zwolnienia czasowego', when: (ilk, id) => !!signalActive(ilk, id)?.timedRelease, cmd: (id) => ({ type: 'cancel-timed', signal: id }) },
+    { code: 'ZCZ', name: 'zwolnienie czasowe przebiegu', when: (ilk, id) => !!signalActive(ilk, id) && signalActive(ilk, id).state !== 'releasing', cmd: (id) => ({ type: 'release', signal: id, timed: true }) },
+    { code: 'oZCZ', name: 'odwołanie zwolnienia czasowego', when: (ilk, id) => signalActive(ilk, id)?.state === 'releasing', cmd: (id) => ({ type: 'cancel-timed', signal: id }) },
     { code: 'SZ', name: 'sygnał zastępczy', level: LEVEL.special, when: (ilk, id) => ilk.signals.get(id).kind === 'semafor' && ilk.signals.get(id).canSubstitute, cmd: (id) => ({ type: 'substitute', signal: id }) },
     { code: 'ZD', name: 'natychmiastowe zwolnienie przebiegu', when: (ilk, id) => !!signalActive(ilk, id), cmd: (id) => ({ type: 'release', signal: id }), check: (ilk, id) => {
       const act = signalActive(ilk, id);

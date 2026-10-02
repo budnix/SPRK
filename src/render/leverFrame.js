@@ -93,25 +93,20 @@ export function signalLevers(ilk, frame, signalId) {
  * pośrednim: `pos` jak przy przebiegu, `half: true`.
  */
 export function leverStates(ilk, frame) {
-  const held = [...ilk.active.values(), ...ilk.half.values()];
-  const lockedPoints = new Set();
-  for (const act of held) for (const id of act.lockedPoints) lockedPoints.add(id);
-  const lockedDerailers = new Set();
-  for (const act of held) for (const id of act.lockedDerailers) lockedDerailers.add(id);
   const levers = {};
   for (const l of frame.levers) {
     if (l.kind === 'point') {
       const p = ilk.points.get(l.id);
-      levers[l.id] = { down: p.target === '-', locked: lockedPoints.has(l.id) || p.individualLock, moving: p.moving, fault: p.trailed || (!p.control && !p.moving) };
+      levers[l.id] = { down: p.target === '-', locked: !!ilk.pointLockedByRoute(l.id) || p.individualLock, moving: p.moving, fault: p.trailed || (!p.control && !p.moving) };
     } else if (l.kind === 'derailer') {
       const d = ilk.derailers.get(l.id);
-      levers[l.id] = { down: d.target === 'off', locked: lockedDerailers.has(l.id) || d.individualLock, moving: d.moving, fault: false };
+      levers[l.id] = { down: d.target === 'off', locked: !!ilk.derailerLockedByRoute(l.id) || d.individualLock, moving: d.moving, fault: false };
     } else {
       const s = ilk.signals.get(l.signal);
-      const act = s.route ? ilk.active.get(s.route) : null;
+      const set = s.route ? ilk.routeInfo(s.route) : null;
       // przebieg manewrowy z semafora rozprzężonego – dźwignią pierwszą (uproszczenie gry)
-      const mine = !!act && (!l.aspect || l.aspect === (act.route.kind === 'train' ? ilk.shapedAspect(act.route) : 'Sr2'));
-      levers[l.id] = { down: mine && !!act.lever, locked: !mine, moving: false, fault: !!s.failed };
+      const mine = !!set && (!l.aspect || l.aspect === (set.route.kind === 'train' ? ilk.shapedAspect(set.route) : 'Sr2'));
+      levers[l.id] = { down: mine && !!ilk.routeFrame(set.id)?.lever, locked: !mine, moving: false, fault: !!s.failed };
     }
   }
   const drazki = {};
@@ -119,11 +114,11 @@ export function leverStates(ilk, frame) {
     const sig = ilk.signals.get(d.start);
     const halfId = sig.route ? null : ilk.half.get(d.start)?.id;
     const set = d.routes.find((r) => (sig.route ?? halfId) === r.id);
-    const act = set && !halfId ? ilk.active.get(set.id) : null;
+    const parts = set && !halfId ? ilk.routeFrame(set.id) : null;
     drazki[d.id] = {
       pos: set?.pos ?? null, route: set?.id ?? null, half: !!set && !!halfId,
       // okienko bloku przebiegowego: białe – zablokowany (wolno podać sygnał), czerwone – położenie zasadnicze
-      blocked: !!act?.blocked, passed: !!act?.passed,
+      blocked: !!parts?.blocked, passed: !!parts?.passed,
     };
   }
   return { levers, drazki };

@@ -440,8 +440,9 @@ export class SidePanel {
         : `<button type="button" class="tb" data-point="${escapeHtml(p.id)}" data-on="1">${t('sp.point.secure')}</button>`;
       return `<div class="point-onsite${p.control ? '' : ' warn'}"><b>${t('sp.point.name', { id: escapeHtml(p.id) })}</b> · ${state} ${btn}</div>`;
     }).join('') : `<span class="muted">${t('sp.none')}</span>`);
-    const routes = [...this.sim.ilk.active.values()].map((a) => `<li>${a.id} (${t(a.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${a.timedRelease ? t('sp.route.timed') : ''}${a.trainEntered ? t('sp.route.entered') : ''}</li>`)
-      .concat(this.sim.ilk.pending.map((p) => `<li>${t('sp.route.setting', { id: p.route.id })}</li>`));
+    // przebiegi nastawione, potem nastawiane – stan z zależności (`Interlocking.routesSet`)
+    const routes = this.sim.ilk.routesSet().map((x) => (x.state === 'setting' ? `<li>${t('sp.route.setting', { id: x.id })}</li>`
+      : `<li>${x.id} (${t(x.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${x.state === 'releasing' ? t('sp.route.timed') : ''}${x.state === 'entered' || x.state === 'stuck' ? t('sp.route.entered') : ''}</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || `<li class="muted">${t('sp.none')}</li>`;
     const c = this.sim.ilk.counters;
     const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);

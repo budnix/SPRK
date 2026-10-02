@@ -21,6 +21,8 @@ export function violations(sim) {
     }
   }
   // 2. Odcinek utwierdzony najwyżej w jednym przebiegu (wyjątek: tor stacyjny kończący dwa przebiegi manewrowe, Ie-4 §43 ust. 5)
+  //    (ten niezmiennik sprawdza sam zapis przebiegu w zależnościach – które odcinki przebieg jeszcze trzyma – więc
+  //    czyta go wprost; pozostałe pytają o stan przebiegu)
   const owners = new Map();
   for (const act of ilk.active.values()) for (const s of act.lockedSections) {
     if (act.released.has(s)) continue;
@@ -32,10 +34,10 @@ export function violations(sim) {
   //    pociągowego są wolne (stała kontrola sygnału – poza nastawnią mechaniczną, gdzie sygnał trzyma dźwignia)
   for (const sig of ilk.signals.values()) {
     if (!sig.aspect || !Interlocking.isProceed(sig.aspect) || sig.aspect === 'Sz') continue;
-    const act = ilk.active.get(sig.route);
-    if (!act) { out.push(`${sig.id} pokazuje ${sig.aspect} bez przebiegu`); continue; }
-    if (!act.trainEntered && act.route.kind === 'train' && !ilk.manualSignal) {
-      for (const s of act.lockedSections) if (ilk.sections.get(s).occupied) out.push(`${sig.id} (${sig.aspect}) zezwala na zajęty odcinek ${s}`);
+    const set = ilk.routeInfo(sig.route);
+    if (!set || set.state === 'setting') { out.push(`${sig.id} pokazuje ${sig.aspect} bez przebiegu`); continue; }
+    if (Interlocking.routeAhead(set.state) && set.route.kind === 'train' && !ilk.manualSignal) {
+      for (const s of set.route.sections) if (ilk.sections.get(s).occupied) out.push(`${sig.id} (${sig.aspect}) zezwala na zajęty odcinek ${s}`);
     }
   }
   // 4. Zwrotnica nie przestawia się pod taborem. Zajętość z usterki, która pojawi się w trakcie przestawiania, nie

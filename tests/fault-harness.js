@@ -33,7 +33,11 @@ export function entryRoutes(sim, nr) {
   const app = e?.from ? approachOf(sim, e.from) : null;
   return app ? sim.ilk.routeList().filter((r) => r.kind === 'train' && r.approach === app) : [];
 }
-/** Nastawiony (czynny) przebieg wjazdowy pociągu `nr` albo null. */
+/**
+ * Nastawiony (czynny) przebieg wjazdowy pociągu `nr` albo null. Zwraca zapis przebiegu z zależności – testy usterek
+ * wybierają chwilę wg postępu pociągu w przebiegu (`front`, `released`), czego stan przebiegu celowo nie podaje;
+ * o sam stan pytaj `sim.ilk.routeState(a.id)`.
+ */
 export function entryActive(sim, nr) {
   const ids = new Set(entryRoutes(sim, nr).map((r) => r.id));
   return [...sim.ilk.active.values()].find((a) => ids.has(a.id)) ?? null;
@@ -51,15 +55,15 @@ export const at = {
   /** pociąg jedzie po szlaku do stacji */
   onLineIn: (nr) => (sim) => { const tr = entryOf(sim, nr)?.train; return !!tr && !tr.entered; },
   /** przebieg wjazdowy nastawiony (sygnał zezwalający), pociąg jeszcze nie wjechał */
-  entrySet: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && !a.trainEntered && Interlocking.isProceed(sim.ilk.signals.get(a.route.start).aspect); },
+  entrySet: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && Interlocking.routeAhead(sim.ilk.routeState(a.id)) && Interlocking.isProceed(sim.ilk.signals.get(a.route.start).aspect); },
   /** pociąg w przebiegu wjazdowym (minął semafor, przebieg jeszcze się nie rozwiązał) */
   entering: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && a.trainEntered && a.released.size < a.lockedSections.length - 1; },
   /** pociąg stoi przy peronie (po przyjeździe, przed odjazdem) */
   standing: (nr) => (sim) => { const e = entryOf(sim, nr); return !!e?.train && e.actualArr != null && e.actualDep == null && e.train.v === 0; },
   /** przebieg wyjazdowy nastawiony, pociąg jeszcze nie ruszył */
-  exitSet: (nr) => (sim) => { const a = exitActive(sim, nr); return !!a && !a.trainEntered; },
+  exitSet: (nr) => (sim) => { const a = exitActive(sim, nr); return !!a && Interlocking.routeAhead(sim.ilk.routeState(a.id)); },
   /** pociąg wyjeżdża: jest w przebiegu wyjazdowym albo już na szlaku, jeszcze nie dojechał do sąsiada */
-  leaving: (nr) => (sim) => { const e = entryOf(sim, nr); const a = exitActive(sim, nr); return !!e?.train && !e.train.finished && (!!a?.trainEntered || (e.actualDep != null && !!sim.blocks.get(e.to)?.occupied)); },
+  leaving: (nr) => (sim) => { const e = entryOf(sim, nr); const a = exitActive(sim, nr); return !!e?.train && !e.train.finished && ((!!a && ['entered', 'stuck'].includes(sim.ilk.routeState(a.id))) || (e.actualDep != null && !!sim.blocks.get(e.to)?.occupied)); },
 };
 
 /** Cele usterek względem pociągu `nr` – (sim) => id. */
@@ -81,7 +85,7 @@ export const target = {
   exitSignal: (nr) => (sim) => exitActive(sim, nr)?.route.start,
   /** zwrotnica przebiegu wyjazdowego (pierwsza w przebiegu, który jest nastawiony od toru pociągu) */
   exitPoint: (nr) => (sim) => {
-    const a = [...sim.ilk.active.values()].find((x) => x.route.kind === 'train' && !x.trainEntered && sim.ilk.sections.get(x.route.approach)?.physical && entryOf(sim, nr)?.train?.occupiedSections().has(x.route.approach));
+    const a = sim.ilk.routesSet().find((x) => x.route.kind === 'train' && Interlocking.routeAhead(x.state) && sim.ilk.sections.get(x.route.approach)?.physical && entryOf(sim, nr)?.train?.occupiedSections().has(x.route.approach));
     return a?.route.points[0]?.id;
   },
 };
@@ -128,7 +132,7 @@ export function unjustified(sim) {
 /** Stan po naprawie i przejeździe: bez wiszących przebiegów, blokady w stanie zasadniczym, semafory na „Stój”. */
 export function leftovers(sim) {
   const out = [];
-  for (const a of sim.ilk.active.values()) out.push(`przebieg ${a.id} czynny`);
+  for (const x of sim.ilk.routesSet()) if (x.state !== 'setting') out.push(`przebieg ${x.id} czynny`);
   for (const [id, b] of sim.blocks) {
     // blok początkowy zablokowany bez pociągu na szlaku albo niewykorzystane pozwolenie / kierunek Eap – szlak dla sąsiada
     // zostałby zamknięty (kierunek SBL zostaje, dopóki ktoś go nie zmieni – to nie pozostałość)

@@ -218,7 +218,7 @@ export class EbiLockProtocol {
       if (!end) return refuse(`${def.code}: nieznany koniec przebiegu ${args[1]}`);
       if (args[2] && !via) return refuse(`${def.code}: nieznany element pośredni ${args[2]}`);
       if (def.code === 'PZA') {
-        const act = [...ilk.active.values()].find((a) => a.route.start === start && (a.route.end.id === end || a.route.endButton === end));
+        const act = ilk.routesSet().find((x) => x.state !== 'setting' && x.route.start === start && (x.route.end.id === end || x.route.endButton === end));
         if (!act) return refuse(`PZA: brak nastawionego przebiegu od ${start} do ${end}`);
         return { ok: true, cmd: { type: 'release', signal: start, emergency: true } };
       }

@@ -80,6 +80,22 @@ test('widok nie zmienia stanu zależności ani blokad wprost (tylko przez polece
   assert.deepEqual(bad, [], `Widok zmienia stan modelu wprost:\n${bad.join('\n')}`);
 });
 
+test('zapisu przebiegu w zależnościach nie czyta nikt poza zależnościami – inne moduły i narzędzia pytają o stan przebiegu', () => {
+  // `Interlocking.active` / `pending` i pola zapisu przebiegu to implementacja zależności (docs/ARCHITECTURE.md,
+  // „O stan przebiegu pyta się zależności”): routeState, routesSet, routeFrom, routeInfo, routeFaultDrop, routeFrame
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const files = [...walk(SRC), ...walkAll(join(ROOT, 'scripts')), ...walkAll(join(ROOT, '.claude', 'skills'))]
+    .filter((f) => posix(relative(ROOT, f)) !== 'src/model/Interlocking.js');
+  const RECORD = /\bilk\??\.(?:active|pending)\b|\.(?:trainEntered|signalOff|faultDrop|lockedSections|lockedPoints|lockedDerailers|timedRelease)\b/;
+  const bad = [];
+  for (const file of files) {
+    const lines = stripped(readFileSync(file, 'utf8')).split('\n');
+    lines.forEach((line, i) => { if (RECORD.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`); });
+  }
+  assert.deepEqual(bad, [], `Zapis przebiegu czytany poza zależnościami – zapytaj o stan (Interlocking.routeState …):\n${bad.join('\n')}`);
+  assert.ok(files.length > 80 && files.some((f) => f.endsWith('check-scenario.mjs')) && files.some((f) => f.endsWith('stan-zmiany.mjs')), 'test przegląda źródła, skrypty i skrypty skilli');
+});
+
 test('widoki stanowisk (src/render/*Renderer.js) nie importują się nawzajem', () => {
   const renderers = walk(join(SRC, 'render')).filter((f) => /Renderer\.js$/.test(f));
   assert.ok(renderers.length >= 2, 'znaleziono widoki stanowisk');

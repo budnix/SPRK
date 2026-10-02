@@ -10,7 +10,7 @@ import { A } from '../phrases.js';
 const sig = (id) => ({ ref: { kind: 'signal', id, color: 'green' } });
 const tri = (id) => ({ ref: { kind: 'end', id } });
 const B = (sim, exit) => sim.blocks.get(exit);
-const set = (sim, id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
+const set = (sim, id) => sim.ilk.routeState(id) !== 'none';
 const T2 = (sim) => sim.ilk.sections.get('T2');
 const pt = (sim, id) => sim.ilk.points.get(id);
 const blk = (exit) => `kliknij trójkąt <b>${exit}</b> przy końcu toru`;

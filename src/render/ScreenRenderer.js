@@ -140,8 +140,7 @@ export class ScreenRenderer extends ScreenBase {
         : { mode: 'sstop', label: 'Zastopowanie sygnalizatora (Stop)', run: exec({ type: 'signal-stop', signal: ref.id, on: true }) });
       items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (ZCZ)', run: exec({ type: 'release', signal: ref.id }) });
       // ZDP – przebiegu pociągowego: polecenie specjalne; ZDM – manewrowego: zwykłe (Ie-104.1 §12)
-      const act = s.route && this.ilk.active.get(s.route);
-      if (act?.route.kind === 'shunt') items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu manewrowego (ZDM)', run: exec({ type: 'release', signal: ref.id, emergency: true }) });
+      if (this.ilk.routeInfo(s.route)?.route.kind === 'shunt') items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu manewrowego (ZDM)', run: exec({ type: 'release', signal: ref.id, emergency: true }) });
       else items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu pociągowego (ZDP)', special: true, target: ref, cmd: { type: 'release', signal: ref.id, emergency: true } });
       if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Sygnał zastępczy (SZ)', special: true, target: ref, cmd: { type: 'substitute', signal: ref.id } });
       return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };

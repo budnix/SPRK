@@ -55,9 +55,14 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
   to implementacja zależności. Inne moduły pytają: `routeState(id)` – jedno słowo na całe życie przebiegu
   (`none`, `setting`, `waiting`, `signal-off`, `releasing`, `entered`, `stuck` – gdy pasuje kilka, wygrywa dalszy na liście),
   `Interlocking.routeAhead(stan)` – przebieg przed pociągiem (utwierdzony, pociąg jeszcze nie wjechał), `routesSet()`
-  – lista nastawionych i nastawianych `{ id, route, state, faultDrop }`, `routeFrom(sygnalizator)`, `routeFaultDrop(id)`
-  – sygnał zgasł z usterki urządzeń (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia,
-  blok przebiegowy). Znaczenie stanów: `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`.
+  – lista nastawionych i nastawianych `{ id, route, state, faultDrop }`, `routeFrom(sygnalizator)` i `routeInfo(id)` –
+  ten sam opis dla jednego przebiegu, `Interlocking.routeLocked(stan)` – utwierdzony, `routeFaultDrop(id)` – sygnał
+  zgasł z usterki urządzeń (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia, blok
+  przebiegowy). Znaczenie stanów: `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`.
+  Pilnuje tego `tests/layers.test.js`: poza `Interlocking.js` żaden plik źródeł, skryptów ani skryptów skilli nie czyta
+  `ilk.active`, `ilk.pending` ani pól zapisu przebiegu. Wyjątek świadomy: testy samych zależności i dwa miejsca
+  w pomocnikach testów (`tests/invariants.js` – które odcinki przebieg jeszcze trzyma, `tests/fault-harness.js` –
+  postęp pociągu w przebiegu), bo sprawdzają właśnie ten zapis.
 * **Stacja opisuje tor, stanowisko – swoje przyciski.** Definicja stacji nie zawiera przycisków grupowych pulpitu.
   Ich pola podaje `src/tiles/controls.js` (`deskControls(station)`: miejsce domyślne albo wskazówka
   `desk.controls`), a rysuje je widok stanowiska – tak samo jak kostki blokady liniowej (`blockLayout.js`).

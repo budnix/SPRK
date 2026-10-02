@@ -463,9 +463,9 @@ export class ScreenBase extends PanelView {
     if (sec.occupied && sec.resetPending) return 'occ-reset'; // ciemnoczerwony – zajęty, po zerowaniu licznika osi
     if (sec.occupied) return 'occ';
     if (sec.route) {
-      const act = this.ilk.active.get(sec.route);
-      if (act?.timedRelease) return 'timed';
-      return act?.route.kind === 'shunt' ? 'rt-shunt' : 'rt-train';
+      const set = this.ilk.routeInfo(sec.route);
+      if (set?.state === 'releasing') return 'timed';
+      return set?.route.kind === 'shunt' ? 'rt-shunt' : 'rt-train';
     }
     return 'free';
   }
@@ -536,14 +536,14 @@ export class ScreenBase extends PanelView {
     if (!s || !r) return;
     const a = s.aspect;
     let st = 'base';
-    const isEnd = [...this.ilk.active.values()].some((act) => act.route.end.type === 'signal' && act.route.end.id === id);
+    const isEnd = this.ilk.routesSet().some((x) => x.state !== 'setting' && x.route.end.type === 'signal' && x.route.end.id === id);
     const stopped = !!(s.stopped || this.ilk.allStop);
-    const act = s.route && this.ilk.active.get(s.route);
+    const releasing = this.ilk.routeState(s.route) === 'releasing';
     if (a === 'Sz') st = 'sz';
     else if (a === 'Ms2') st = 'shunt';
     else if (a && a !== 'S1' && a !== 'Ms1') st = 'train';
     // EBIScreen: sygnalizator w trakcie zwalniania czasowego – fioletowy (bsk.isdr.pl/srk_ebilock.php)
-    else if (act?.timedRelease && this.constructor.TIMED_SIGNAL) st = 'timed';
+    else if (releasing && this.constructor.TIMED_SIGNAL) st = 'timed';
     // czerwony (początek / koniec utwierdzonego przebiegu) ma pierwszeństwo przed różowym (zastopowany)
     else if (s.route != null || isEnd) st = 'locked';
     else if (stopped) st = 'stopped';

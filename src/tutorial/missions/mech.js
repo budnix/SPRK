@@ -12,7 +12,8 @@ const block = (start) => ({ ref: { kind: 'routeblock', id: start } });
 const pt = (sim, id) => sim.ilk.points.get(id);
 const wk = (sim) => sim.ilk.derailers.get('Wk1');
 const settled = (x, pos) => x.position === pos && !x.moving;
-const route = (sim, id) => sim.ilk.active.get(id) || null;
+/** Części nastawni przy przebiegu: dźwignia sygnałowa, blok przebiegowy, przejazd (`Interlocking.routeFrame`). */
+const route = (sim, id) => sim.ilk.routeFrame(id);
 const B = (sim, exit) => sim.blocks.get(exit);
 const departed = (sim, nr) => entry(sim, nr)?.actualDep != null || atNeighbour(sim, nr);
 const WIE = 'Wierzbna', GRA = 'Grabowca';

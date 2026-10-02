@@ -9,7 +9,7 @@ import { A } from '../phrases.js';
  */
 const sig = (id) => ({ ref: { kind: 'signal', id, color: 'green' } });
 const line = { cmd: 'line' };
-const set = (sim, id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
+const set = (sim, id) => sim.ilk.routeState(id) !== 'none';
 const defect = (sim) => sim.faults.list.find((f) => f.type === 'track-defect');
 const closed = (sim) => !!sim.ilk.sections.get('T1')?.closed;
 /** Przebieg myszą: lewy klawisz na początku, prawy na końcu, POC z menu, „Wykonaj”. */

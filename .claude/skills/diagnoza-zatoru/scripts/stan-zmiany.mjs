@@ -55,7 +55,7 @@ const line = (sim, e) => {
   const faults = (sim.faults?.active?.() ?? []).map((f) => `${f.type} ${f.target ?? ''}`.trim());
   // bez listy zajętych odcinków – zmienia się co sekundę jazdy i zagłusza ślad (jest w zrzucie na końcu)
   return [e.status, tr ? `${tr.mode}/${tr.state}` : '–', `sygnał ${signal ?? '–'}${sig ? `=${sig.aspect}` : ''}`,
-    `postój ${sim.traffic.waitReason(e)?.code ?? '–'}`, `automat ${JSON.stringify(robot)}`, `przebiegi ${[...sim.ilk.active.values()].map((a) => a.id).join(',') || '–'}`,
+    `postój ${sim.traffic.waitReason(e)?.code ?? '–'}`, `automat ${JSON.stringify(robot)}`, `przebiegi ${sim.ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id).join(',') || '–'}`,
     `usterki ${faults.join(',') || '–'}`].join(' | ');
 };
 playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim) => {
@@ -95,7 +95,8 @@ playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim) =
     const robot = Object.fromEntries(Object.entries(e).filter(([k, v]) => k.startsWith('_') && v != null && typeof v !== 'function'));
     console.log(`  notatki automatu przy pociągu: ${JSON.stringify(robot)}`);
   }
-  console.log(`\nPrzebiegi nastawione: ${[...ilk.active.values()].map((a) => a.id).join(', ') || '–'}; w nastawianiu: ${ilk.pending.map((p) => p.route.id).join(', ') || '–'}`);
+  const set = ilk.routesSet();
+  console.log(`\nPrzebiegi nastawione: ${set.filter((x) => x.state !== 'setting').map((x) => `${x.id} (${x.state})`).join(', ') || '–'}; w nastawianiu: ${set.filter((x) => x.state === 'setting').map((x) => x.id).join(', ') || '–'}`);
   console.log(`Odcinki zajęte: ${[...ilk.sections.entries()].filter(([, s]) => s.occupied).map(([id]) => id).join(', ') || '–'}`);
   const faults = (sim.faults?.active?.() ?? []).map((f) => `${f.type} ${f.target ?? ''} od ${hm(f.at)}`);
   console.log(`Usterki czynne: ${faults.join('; ') || '–'}`);

@@ -25,7 +25,7 @@ export function entry(sim, nr) { return sim.traffic.timetable().find((e) => Stri
 export function atNeighbour(sim, nr) { return entry(sim, nr)?.status === 'na następnym posterunku'; }
 export function arrived(sim, nr) { const e = entry(sim, nr); return !!e && e.actualArr != null; }
 export function blockFree(b) { return !b.koPending && !b.occupied && b.direction == null && !b.poBlocked; }
-export function active(sim, id) { return sim.ilk.active.has(id); }
+export function active(sim, id) { const state = sim.ilk.routeState(id); return state !== 'none' && state !== 'setting'; }
 
 /** Klucze słownika tekstów, których wymagają wspólne lekcje. */
 export const LESSON_PHRASES = ['view', 'anchor', 'signal', 'release', 'releaseNames', 'requestSign', 'koSign', 'blockPress', 'trainRoute', 'trainRouteMenu',

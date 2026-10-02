@@ -107,7 +107,7 @@ export class IzhRenderer extends PanelView {
     setLamp(r.lamps.green, !stop && a !== 'Ms2' && a !== 'Sz' ? 'green' : 'off');
     setLamp(r.lamps.white, a === 'Ms2' ? 'white' : a === 'Sz' ? 'white blink' : 'off');
     // lampka kontrolna przy przycisku sygnalizatora końcowego miga podczas zwalniania czasowego przebiegu
-    const timed = [...this.ilk.active.values()].some((act) => act.timedRelease && act.route.endButton === id);
+    const timed = this.ilk.routesSet().some((x) => x.state === 'releasing' && x.route.endButton === id);
     // sygnalizator zamknięty rozkazem STOP – lampka miga na czerwono (do odwołania rozkazem Zw)
     // stan sygnalizatora pokazują tylko lampki powtarzacza – przycisk adresowy nie świeci (bsk.isdr.pl/srk_izh111.php)
     setLamp(r.ctl, s.stopped ? 'red blink' : timed ? 'white blink' : 'off');

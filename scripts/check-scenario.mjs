@@ -168,11 +168,11 @@ class ShiftProbe {
     const secs = new Set([...ilk.sections.values()].filter((s) => same(s.track, e.track)).map((s) => s.id));
     const occ = this.#occupancy();
     for (const [s, n] of occ) if (secs.has(s) && !same(n, nr)) return { train: n };
-    for (const act of ilk.active.values()) {
-      if (!act.route.sections.some((s) => secs.has(s))) continue;
-      const n = this.#trainOfRoute(act.id, occ);
+    for (const set of ilk.routesSet()) {
+      if (set.state === 'setting' || !set.route.sections.some((s) => secs.has(s))) continue;
+      const n = this.#trainOfRoute(set.id, occ);
       if (n != null && same(n, nr)) continue;
-      return { route: act.id, ...(n != null ? { train: n } : {}) };
+      return { route: set.id, ...(n != null ? { train: n } : {}) };
     }
     if ([...secs].some((s) => ilk.sections.get(s)?.closed)) return { closed: true };
     return null;
@@ -279,7 +279,7 @@ class ShiftProbe {
     const sim = this.sim, ilk = sim.ilk, t = sim.clock.time;
     if (r.code === 'route-setting') {
       // przebieg w nastawianiu: czeka na zwrotnice (przestawianie, brak kontroli – np. usterka napędu)
-      const pend = ilk.pending.find((p) => p.route.start === r.signal);
+      const from = ilk.routeFrom(r.signal), pend = from?.state === 'setting' ? from : null;
       return (pend ? [...pend.route.points, ...pend.route.flank] : []).map((q) => ({ q, p: ilk.points.get(q.id) }))
         .filter(({ q, p }) => p && (p.moving || !p.control || p.position !== q.position))
         .map(({ q, p }) => ({ route: pend.route.id, code: 'point', point: q.id, msg: `Zwrotnica ${q.id} ${p.moving ? 'w trakcie przestawiania' : 'bez kontroli położenia'}`, ...(p.faultUntil > t ? { fault: 'point-control' } : {}), ...(p.moving && !(p.faultUntil > t) ? { own: true } : {}) }));
@@ -315,9 +315,9 @@ class ShiftProbe {
   /** Pociąg przebiegu `routeId` (czynnego albo w nastawianiu): zajmuje jego odcinek albo stoi przed jego semaforem. */
   #trainOfRoute(routeId, occ) {
     const ilk = this.sim.ilk;
-    const act = ilk.active.get(routeId);
-    if (act) for (const s of act.lockedSections) if (occ.has(s)) return occ.get(s);
-    const route = act?.route ?? ilk.pending.find((p) => p.route.id === routeId)?.route ?? ilk.routes.get(routeId);
+    const set = ilk.routeInfo(routeId);
+    if (set && set.state !== 'setting') for (const s of set.route.sections) if (occ.has(s)) return occ.get(s);
+    const route = set?.route ?? ilk.routes.get(routeId);
     if (!route) return null;
     return this.sim.traffic.timetable().find((o) => o.train && !o.train.finished && o.train.nextSignal() === route.start)?.nr ?? null;
   }
