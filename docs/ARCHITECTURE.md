@@ -716,6 +716,14 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   `Train.shuntPermit` ({ signal, route }) pozwala minąć ten sygnalizator z prędkością 25 km/h w tym jednym przebiegu.
   Automat daje zezwolenie sam, gdy skład czeka przed uszkodzonym sygnalizatorem. Rozkaz „S” dla składu manewrowego –
   odmowa. Testy: `tests/faults-shunt.test.js`, `tests/e2e/trains.spec.js`.
+* `scripts/seed-scan.mjs` (`npm run seed-scan`) – szukanie testów przypadkowych: zmiana tworzona w teście bez `seed`
+  dostaje przy każdym uruchomieniu inne ziarno (`Simulation`: z `Math.random`), więc test z ciasnym zapasem pada raz na
+  sto uruchomień, zwykle w CI. `scripts/random-seed.mjs` (ładowany przez `node --import`) podmienia `Math.random` na
+  generator o ziarnie `SPRK_RAND=<n>` – „losowe” ziarna stają się powtarzalne. Skrypt uruchamia każdy plik testów pod
+  wieloma zestawami (`--runs`, `--from`, `--only`), jedno zadanie na parę (plik, zestaw) w puli procesów na wszystkich
+  rdzeniach; pierwszy zestaw ustala, które pliki w ogóle losują ziarno. Wynik: testy, które nie przeszły, z zestawami
+  i poleceniem do odtworzenia. Poprawka testu: ziarno wpisane w teście albo zapas wynikający z modelu (krok symulacji),
+  nie luźniejsza asercja. Test narzędzia: `tests/seed-scan.test.js`.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie

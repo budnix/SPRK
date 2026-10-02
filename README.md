@@ -230,6 +230,7 @@ npm test           # logic tests (node --test)
 npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2e/__screenshots__
 npm run survey     # engine survey: every station × scenario × seed run by the automatic dispatcher (jams, safety checks)
 npm run check -- tczew:zmiana   # scenario checker: definition errors + shifts played by the automatic dispatcher, verdict per shift
+npm run seed-scan -- --runs 30  # finds flaky tests: runs the Node tests under many repeatable "random" seeds, in parallel
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
@@ -283,6 +284,10 @@ Polish railway rules and terminology).
   definition check and one played shift at its own level in `npm test`, which fails on errors and on repeatable warnings not
   accepted in `tests/scenario-accepted.js`; how to write a variant – `docs/STATION-FORMAT.md`, rules – `docs/ARCHITECTURE.md`
   („Automat sprawdzający scenariusze”),
+* `scripts/seed-scan.mjs` – flaky-test finder (`npm run seed-scan -- --help`): tests that create a shift without a `seed` get a
+  different one on every run and may fail once in a hundred runs, usually in CI. The script runs every test file under many
+  repeatable seed sets (`scripts/random-seed.mjs`, `SPRK_RAND=<n>`), one process per file and set on all cores, and prints
+  the tests that failed with the command that reproduces each failure,
 * `docs/ARCHITECTURE.md` – architecture and design rules, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans).
 
 The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published
