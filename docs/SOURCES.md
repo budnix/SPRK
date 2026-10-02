@@ -872,6 +872,33 @@ Ze źródeł – lokomotywy towarowe:
   14 240 mm (katalog Newag jak wyżej, s. 16, kolumna „przed modernizacją”).
 
 
+## Służba o wybranej porze (`src/model/duty.js`)
+
+Rozkłady stacji w grze obejmują ok. 2 h porannego szczytu. Ruch o innych porach **nie pochodzi z rzeczywistego rozkładu
+jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
+
+* doba to powtórzenia rozkładu stacji co okres wzorca (rozpiętość rozkładu w pełnych godzinach – na stacjach w grze 2 h;
+  pole `duty.period`); pociągi powtórzeń mają numery wzorca powiększone o 100 na okres (zajęty numer – następny wolny
+  o tej samej parzystości), relacje jak we wzorcu (pociągi dalekobieżne – z listy pociągów z nazwami, niżej);
+* pory doby (`DAY_BANDS`) i to, co z wzorca kursuje: szczyt poranny 6–9 i popołudniowy 14–18 – cały wzorzec; dzień 9–14
+  – co drugi pociąg aglomeracyjny (SKM) i regionalny; wieczór 18–22 – co drugi pasażerski; późny wieczór 22–24 – co
+  czwarty aglomeracyjny i regionalny, co drugi dalekobieżny; noc 0–4 – bez aglomeracyjnych i regionalnych, co czwarty
+  dalekobieżny; świt 4–6 – co drugi pasażerski. Pociągi towarowe wzorca kursują przez całą dobę;
+* w miejsce pociągu regionalnego albo dalekobieżnego, który o danej porze nie kursuje, wchodzi pociąg towarowy: w nocy
+  w 60 % takich miejsc, późnym wieczorem 40 %, wieczorem 35 %, o świcie 25 %, w dzień 10 %, w szczytach wcale – jedzie
+  drogą zastępowanego pociągu, bez postoju, z rodzajem, długością, masą i prędkością jednego z pociągów towarowych
+  wzorca stacji (bez zdawczych i lokomotyw luzem), a gdy stacja ich nie ma – TM, 400 m, 1200 t, 80 km/h; numery od 46000.
+  Od innego pociągu na tym samym szlaku dzieli go co najmniej czas przejazdu szlaku i 3 min. Na liniach aglomeracyjnych
+  (SKM) pociągi towarowe nie wchodzą;
+* urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
+  czwartych kursów linii jedzie, decyduje ziarno zmiany – to samo ziarno daje ten sam rozkład;
+* służba zaczyna się o pełnej godzinie i trwa 30 min, 1, 2 albo 3 h – także przez północ (23:00–02:00); pierwszy pociąg
+  co najmniej 3 min po starcie, ostatnie zdarzenie co najmniej 10 min (w służbie 30-minutowej 6 min) przed końcem;
+* powtórzenie pociągu dalekobieżnego to inny pociąg tej samej drogi – z nazwą i relacją z listy „Pociągi z nazwami”
+  (niżej); pociąg wzorca o swojej porze zostaje bez zmian;
+* ze źródeł pochodzi tylko ogólna obserwacja, że ruch pasażerski koncentruje się w szczytach dojazdów, a nocą linie są
+  wolne dla ruchu towarowego – proporcje i liczby są wartościami gry.
+
 ## Pociągi z nazwami (`src/model/data/namedTrains.js`, `scripts/named-trains.mjs`, `src/model/namedTrains.js`)
 
 Ze źródła: pociągi PKP Intercity z nazwami w rozkładzie rocznym 2025/2026 z całej Polski – kategoria (EIP, EIC, IC,

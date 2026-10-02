@@ -217,7 +217,9 @@ export class Simulation {
     const out = [];
     if (!this.level.extraTrains || !this.station.timetable.length) return out;
     const start = this.clock.time, end = this.endTime;
-    const pool = this.station.timetable.filter((t) => t.from && t.to);
+    // wzorce z rozkładu zmiany (własny `timetable` scenariusza – np. służba o wybranej porze), inaczej stacji
+    const pool = (this.scenario.timetable ?? this.station.timetable).filter((t) => t.from && t.to);
+    const taken = new Set(this.traffic.timetable().map((e) => Number(e.nr)));
     for (let i = 0; i < this.level.extraTrains; i++) {
       let base = this.rng.pick(pool);
       if (!base) continue;
@@ -235,7 +237,10 @@ export class Simulation {
       const shift = minutes * 60;
       const ref = Clock.parse(base.arr || base.dep) + shift;
       const at = ref - EXTRA_TRAIN.announce;
-      const def = { ...base, nr: base.nr + 1000, name: `${base.name} nadzwyczajny`, arr: Clock.format(ref), dep: base.dep ? Clock.format(Clock.parse(base.dep) + shift) : undefined };
+      let nr = base.nr + 1000;
+      while (taken.has(nr)) nr += 2; // numer zajęty w rozkładzie zmiany – następny o tej samej parzystości
+      taken.add(nr);
+      const def = { ...base, nr, name: `${base.name} nadzwyczajny`, arr: Clock.stamp(ref), dep: base.dep ? Clock.stamp(Clock.parse(base.dep) + shift) : undefined };
       out.push({ at, def, done: false });
     }
     return out;

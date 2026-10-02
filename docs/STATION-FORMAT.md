@@ -256,6 +256,32 @@ Przed `deadline` +10 pkt, po terminie 0, niewykonane w ciągu 10 min po terminie
 czeka na niewykonane zadanie `afterTask` (jego termin biegnie).
 Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tylko w nastawionym przebiegu manewrowym, za Ms2).
 
+## Służba o wybranej porze (`duty`, opcjonalne)
+
+Posterunek do służby (stacja bez misji samouczka, z pociągami od sąsiada w `timetable`) dostaje wybór godziny startu
+i długości służby **bez dodatkowych danych**: rozkład stacji jest wzorcem ruchu, z którego gra buduje rozkład każdej
+pory doby (`src/model/duty.js`; zasady i liczby – `docs/SOURCES.md` „Służba o wybranej porze”). Co z tego wynika dla
+definicji stacji:
+
+* `timetable` to wzorzec szczytu: pociągi, ich drogi (`from`, `to`, `track`), składy (`unit`) i zadania (`tasks`) –
+  o innych porach kursuje jego część, a w nocy w miejsce pociągów regionalnych i dalekobieżnych jadą towarowe
+  z parametrami pociągów towarowych wzorca. Warto, żeby wzorzec miał choć jeden towarowy przelot (`kind: 'tow'`,
+  `from` i `to`) – bez niego nocne pociągi towarowe dostają parametry przyjęte (TM, 400 m, 1200 t, 80 km/h);
+* wzorzec powtarza się co pełne godziny równe rozpiętości rozkładu (rozkład 06:02–07:58 → co 2 h), więc takt 15 / 30 /
+  60 min zachowuje się na styku powtórzeń. Inny okres: `duty: { period: 90 }` (minuty, pełne kwadranse);
+* zwykłe zmiany w `scenarios` (bez `faults` i `closedSections`) nie są pokazywane na stronie posterunku – zastępuje je
+  służba; zostają jako wzorzec, do testów i pod dawnym adresem. Różne `srk` zwykłych zmian dają pole „Stanowisko”.
+  Scenariusze z `faults` albo `closedSections` są na liście jako specjalne (ich usterki są ustawione pod konkretne
+  pociągi, więc mają stałe okno);
+* pociągi dalekobieżne wzorca (IC, TLK, EIC, EIP) powinny mieć relację z nazwami stacji jak w rozkładzie PKP Intercity
+  („Kraków Gł. – Gdynia Gł.”): powtórzenia takiego pociągu dostają nazwę i relację rzeczywistego pociągu tej drogi
+  z listy `src/model/data/namedTrains.js` (cała Polska; `docs/SOURCES.md` „Pociągi z nazwami”);
+* służba może przejść przez północ: godziny następnej doby gra zapisuje w danych zmiany jako 24, 25… („25:10” = 01:10),
+  a pokazuje jak na zegarze – tak samo można pisać `endTime` i rozkład własnego scenariusza przez północ;
+* sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 30 / 60 / 120 / 180),
+  a `npm test` przechodzi po siatce godzin i długości każdego posterunku (`tests/duty-grid.js`) – nowy posterunek
+  dochodzi tam sam.
+
 ## Wariant scenariusza i automat sprawdzający
 
 Nowy wariant istniejącej stacji to zwykle kopia scenariusza z innym oknem zmiany i podzbiorem pociągów:

@@ -14,6 +14,15 @@ export class Clock {
     return (+h) * 3600 + (+m) * 60 + (+s);
   }
 
+  /**
+   * Zapis chwili do danych (rozkład, okno zmiany) bez zawijania doby: godziny po północy następnego dnia jako 24, 25…
+   * („24:30” = pół godziny po północy) – `parse` czyta je jako ciąg dalszy tej samej zmiany. Do pokazania – `format`.
+   */
+  static stamp(seconds) {
+    const t = Math.floor(seconds), p = (n) => String(n).padStart(2, '0');
+    return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}`;
+  }
+
   static format(seconds, withSeconds = false) {
     const t = Math.floor(seconds) % 86400;
     const h = Math.floor(t / 3600);

@@ -41,9 +41,12 @@ test('ekran startowy bez parametrów: tytuł → Służba (lista alfabetycznie /
   // karta otwiera stronę stacji z parametrami zmiany
   await page.click('.st-card[data-id=rumia]');
   await expect(page).toHaveURL(/#\/stacja\/rumia$/);
+  // zwykłe zmiany („Pełna zmiana”, „Szczyt”) zastępuje służba o wybranej porze i długości; zostaje scenariusz z usterką,
+  // a stanowisko (pulpit typu E / monitor) wybiera się osobno
   const opts = await page.locator('#st-scenario option').allTextContents();
-  expect(opts).toEqual(['Pełna zmiana – pulpit kostkowy typu E (05:55–08:15)', 'Pełna zmiana – stanowisko komputerowe (05:55–08:15)', 'Usterka blokady od Redy', 'Szczyt z zakłóceniami']);
+  expect(opts).toEqual(['Służba – wybierz porę i długość', 'Usterka blokady od Redy']);
   expect(opts.some((o) => /samouczek/i.test(o))).toBe(false);
+  expect(await page.locator('#st-srk option').allTextContents()).toEqual(['Urządzenia przekaźnikowe typu E', 'Komputerowe urządzenia srk (stanowisko z monitorem)']);
   // „wstecz” – do regionu stacji, przeglądarka – z powrotem na listę
   await page.click('#st-up');
   await expect(page).toHaveURL(/#\/sluzba\/pomorskie$/);

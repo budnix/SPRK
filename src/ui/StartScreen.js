@@ -11,9 +11,10 @@ import { uiIcon } from './icons.js';
 import { initDialog, openDialog, closeDialog, isOpen } from './dialog.js';
 import {
   dutyStations, stationSrks, editionsOf, placesOf, searchStations, filterStations, regionCounts, erasOf, parseRoute, routeHash,
-  parentRoute, bestResult, missionDone,
+  parentRoute, bestResult, missionDone, shiftChoices,
 } from './catalog.js';
 import { loadProgress, loadLastShift } from './progress.js';
+import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, normalizeDuty } from '../model/duty.js';
 import { regionBox } from './map/mapSvg.js';
 import { MapView } from './map/MapView.js';
 
@@ -215,7 +216,12 @@ export class StartScreen {
     const last = loadLastShift(); if (!last) return null;
     const p = new URLSearchParams(last.search);
     const st = STATIONS.find((s) => s.id === p.get('stacja'));
-    const sc = st?.scenarios?.find((x) => x.id === p.get('scenariusz'));
+    let sc = st?.scenarios?.find((x) => x.id === p.get('scenariusz'));
+    // służba o wybranej porze: nazwa z godzinami (jak w nagłówku zmiany)
+    if (st && !sc && p.get('scenariusz') === DUTY_ID) {
+      const d = normalizeDuty(p.get('start'), p.get('czas')), hh = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      sc = { name: t('start.dutyName', { from: hh(d.start * 60), to: hh((d.start * 60 + d.minutes) % 1440) }) };
+    }
     if (!st || !sc) return null;
     const level = p.get('zaklocenia');
     const name = sc.tutorial ? t('start.mission', { n: this.missions.findIndex((m) => m.scenario === sc) + 1, name: missionName(sc) }) : st.name;
@@ -268,7 +274,12 @@ export class StartScreen {
             ${form ? `<div class="st-form">
               <label id="st-district-wrap" class="hidden">${t('start.district')} <select id="st-district"></select></label>
               <p class="muted" id="st-district-desc"></p>
-              <label>${t('start.scenario')} <select id="st-scenario"></select></label>
+              <label id="st-srk-wrap" class="hidden">${t('start.srkChoice')} <select id="st-srk"></select></label>
+              <label id="st-scenario-wrap">${t('start.scenario')} <select id="st-scenario"></select></label>
+              <div id="st-duty" class="st-duty hidden">
+                <label>${t('start.dutyStart')} <select id="st-duty-start"></select></label>
+                <div class="st-duty-len" role="group" aria-label="${t('start.dutyLength')}"><span class="st-duty-lab">${t('start.dutyLength')}</span><span id="st-duty-minutes" class="st-duty-btns"></span></div>
+              </div>
               <p class="muted" id="st-scenario-desc"></p>
               <label>${t('start.level')}
                 <select id="st-level">${Object.keys(DISRUPTION_LEVELS).map((k) => `<option value="${k}">${t(`level.${k}`)}</option>`).join('')}</select>
@@ -294,6 +305,11 @@ export class StartScreen {
       if (!root.querySelector('#st-district-wrap').classList.contains('hidden')) extra.okreg = root.querySelector('#st-district').value;
       const seed = root.querySelector('#st-seed').value.trim();
       if (seed) extra.seed = seed;
+      if (scId === DUTY_ID) {
+        // służba: pora, długość i ziarno, z którego powstał pokazany rozkład; stanowisko – gdy stacja ma ich kilka
+        Object.assign(extra, { start: this.duty.start, czas: this.duty.minutes, seed: this.#dutySeed() });
+        if (!root.querySelector('#st-srk-wrap').classList.contains('hidden')) extra.srk = root.querySelector('#st-srk').value;
+      }
       this.#go(this.selected, scId, root.querySelector('#st-level').value, extra);
     });
   }
@@ -521,8 +537,59 @@ export class StartScreen {
       };
       dSel.onchange = updD; updD();
     }
-    const scs = (st.scenarios || [{ id: 'zmiana', name: t('start.fullShift') }]).filter((sc) => !sc.tutorial);
-    this.#scenarioChoice(scs, this.current.station === st.id ? this.current.scenario : null);
+    const choice = shiftChoices(st);
+    if (!choice.duty) {
+      const scs = choice.specials.length ? choice.specials : [{ id: 'zmiana', name: t('start.fullShift') }];
+      this.#scenarioChoice(scs, this.current.station === st.id ? this.current.scenario : null);
+      return;
+    }
+    this.#dutyChoice(st, choice);
+  }
+
+  /** Ziarno służby: wpisane w „Zaawansowane” albo wylosowane przy otwarciu strony posterunku (pokazany rozkład = grany). */
+  #dutySeed() {
+    const typed = this.view.querySelector('#st-seed').value.trim();
+    return /^\d+$/.test(typed) ? Number(typed) : this.duty.seed;
+  }
+
+  /**
+   * Służba o wybranej porze i długości (`model/duty.js`) zamiast zwykłych zmian; scenariusze specjalne (usterka,
+   * zamknięcie toru ze scenariusza) zostają na liście pod nią. Pod wyborem – pora doby i liczba pociągów w rozkładzie,
+   * który powstanie dla tego ziarna; służba bez pociągów (krótkie okno) nie daje się rozpocząć.
+   */
+  #dutyChoice(st, { srks, specials }) {
+    const root = this.view;
+    const same = this.current.station === st.id;
+    const from = same && this.current.scenario === DUTY_ID ? normalizeDuty(this.current.start, this.current.minutes) : normalizeDuty(6, 120);
+    this.duty = { ...from, seed: Math.floor(Math.random() * 1e9) };
+    const srkWrap = root.querySelector('#st-srk-wrap'), srkSel = root.querySelector('#st-srk');
+    if (srks.length > 1) {
+      srkWrap.classList.remove('hidden');
+      srkSel.innerHTML = srks.map((id) => `<option value="${esc(id)}">${esc(getSrk(id).name)}</option>`).join('');
+      if (same && srks.includes(this.current.srk)) srkSel.value = this.current.srk;
+    }
+    const startSel = root.querySelector('#st-duty-start'), lenBox = root.querySelector('#st-duty-minutes');
+    startSel.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}:00 – ${esc(t(`start.band.${bandOf(h * 3600).id}`))}</option>`).join('');
+    startSel.value = String(this.duty.start);
+    const go = root.querySelector('#st-go'), desc = root.querySelector('#st-scenario-desc'), block = root.querySelector('#st-duty');
+    const preview = () => {
+      lenBox.innerHTML = DUTY_MINUTES.map((m) => `<button type="button" class="tb${m === this.duty.minutes ? ' active' : ''}" data-minutes="${m}" aria-pressed="${m === this.duty.minutes}">${esc(t(`start.duty.${m}`))}</button>`).join('');
+      const { stats } = buildDuty(st, { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() });
+      const parts = [['agl', stats.agl], ['reg', stats.reg], ['dal', stats.dal], ['tow', stats.tow]].filter(([, n]) => n).map(([k, n]) => `${t(`start.duty.cls.${k}`)} ${n}`).join(' · ');
+      desc.textContent = `${t(`start.bandDesc.${stats.band}`)} ${stats.trains ? t('start.duty.trains', { n: stats.trains, parts }) : t('start.duty.empty')}`;
+      go.disabled = !stats.trains;
+    };
+    const scs = [{ id: DUTY_ID, name: t('start.dutyPick') }, ...specials];
+    root.querySelector('#st-scenario-wrap').classList.toggle('hidden', !specials.length);
+    this.#scenarioChoice(scs, same ? this.current.scenario : null, (sc) => {
+      const duty = sc.id === DUTY_ID;
+      block.classList.toggle('hidden', !duty);
+      go.disabled = false;
+      if (duty) preview();
+    });
+    startSel.onchange = () => { this.duty.start = Number(startSel.value); preview(); };
+    lenBox.onclick = (ev) => { const b = ev.target.closest('button[data-minutes]'); if (!b) return; this.duty.minutes = Number(b.dataset.minutes); preview(); };
+    root.querySelector('#st-seed').oninput = () => { if (root.querySelector('#st-scenario').value === DUTY_ID) preview(); };
   }
 
   #go(station, scenario, level, extra = {}) {

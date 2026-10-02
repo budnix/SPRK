@@ -27,6 +27,10 @@ export function validateStation(st) {
   if (st.lines != null && !(Array.isArray(st.lines) && st.lines.length && st.lines.every((n) => Number.isInteger(n) && n > 0 && n < 1000) && new Set(st.lines).size === st.lines.length)) {
     errors.push(`lines: lista numerów linii kolejowych (różne liczby 1–999), jest ${JSON.stringify(st.lines)}`);
   }
+  // służba o wybranej porze (src/model/duty.js): okres wzorca rozkładu w minutach – pełne kwadranse
+  if (st.duty != null && !(typeof st.duty === 'object' && (st.duty.period == null || (Number.isInteger(st.duty.period) && st.duty.period >= 30 && st.duty.period % 15 === 0)))) {
+    errors.push(`duty.period: okres wzorca rozkładu w minutach (pełne kwadranse, od 30), jest ${JSON.stringify(st.duty?.period ?? st.duty)}`);
+  }
   for (const sc of st.scenarios || []) if (sc.srk != null && !hasSrk(sc.srk)) errors.push(`Scenariusz ${sc.id}: nieznany system srk: ${sc.srk}`);
   if (!Array.isArray(st.tiles)) { errors.push('Brak listy kostek tiles'); return { errors, warnings }; }
   const occupied = new Map();

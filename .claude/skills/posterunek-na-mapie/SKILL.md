@@ -29,6 +29,10 @@ Pełny opis danych, źródeł i licencji: `docs/MAP-DATA.md` – przeczytaj go n
    przybliżona do posterunków) – obejrzyj, czy tablice z nazwami nie nachodzą na siebie (próg `LEVELS.detail` w
    `src/ui/map/zoom.js` liczy się z najbliższej pary posterunków – test w `tests/map.test.js`) i czy tory nie urywają się
    na krawędzi wycinka.
+5a. **Służba o wybranej porze**: nowy posterunek ma ją od razu – rozkład stacji jest wzorcem, z którego gra buduje
+   każdą porę doby (`src/model/duty.js`, `docs/STATION-FORMAT.md` „Służba o wybranej porze”). Sprawdź kilka pór:
+   `npm run check -- <stacja> --start 6 --minutes 120`, `--start 1 --minutes 180`, `--start 19 --minutes 120`;
+   `npm test` (`tests/duty-grid.js`) przechodzi po całej siatce sam.
 6. **Dokumentacja** w tym samym commicie: `docs/SOURCES.md` (źródła), README (lista stacji), w razie zmian w skryptach –
    `docs/MAP-DATA.md`.
 

@@ -35,6 +35,14 @@ export function stopScatter(seed, nr) {
  * na pulpit, zajętość odcinków, dziennik ruchu.
  */
 export class Traffic {
+  /**
+   * Godzina z danych do pokazania: zapis po północy („24:30” – zmiana przez północ, `Clock.stamp`) jak na zegarze
+   * („00:30”); pozostałe bez zmian. Chwile do obliczeń (`arrTime`, `depTime`, `deadlineTime`) zostają bez zawijania.
+   */
+  static shown(hhmm) {
+    return typeof hhmm === 'string' && Clock.parse(hhmm) >= 86400 ? Clock.format(Clock.parse(hhmm)) : hhmm;
+  }
+
   /** Pociąg obsłużony: wyprawiony na szlak (albo dotarł do sąsiada), zakończył bieg lub przekazany jako inny pociąg. */
   static isDone(e) {
     return e.status === 'odjechał' || e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
@@ -63,7 +71,9 @@ export class Traffic {
     const taskDefs = opts.tasks || station.tasks || [];
     this.tasks = taskDefs
       .filter((t) => this.entries.some((e) => String(e.nr) === String(t.unit)))
-      .map((t) => ({ ...t, deadlineTime: Clock.parse(t.deadline), afterTime: t.after ? Clock.parse(t.after) : 0, done: false, failed: false, doneAt: null }));
+      .map((t) => ({ ...t, deadlineTime: Clock.parse(t.deadline), afterTime: t.after ? Clock.parse(t.after) : 0, done: false, failed: false, doneAt: null }))
+      // godziny po północy (zapis „24:30” w danych zmiany przez północ) pokazuje się jak na zegarze
+      .map((t) => ({ ...t, deadline: Traffic.shown(t.deadline), ...(t.after ? { after: Traffic.shown(t.after) } : {}) }));
     this.journal = [];
     this.orders = [];
     this.score = { onTime: 0, delayed: 0, totalDelayMin: 0 };
@@ -315,7 +325,8 @@ export class Traffic {
     const ref = arr ?? dep;
     const neighbourDep = t.from ? ref - lineTravel - stationRun : null;
     return {
-      idx: i, ...t, cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
+      idx: i, ...t, ...(t.arr ? { arr: Traffic.shown(t.arr) } : {}), ...(t.dep ? { dep: Traffic.shown(t.dep) } : {}),
+      cat: categoryOf(t), label: trainLabel(t), arrTime: arr, depTime: dep,
       neighbourDep, requestAt: t.from ? neighbourDep - 240 : null, delayIn: 0, announced: false,
       status: t.from ? 'oczekiwany' : (t.unit ? 'oczekuje na skład' : 'na stacji'), requested: false, dispatched: false,
       train: null, actualArr: null, actualDep: null, delay: 0, track: t.track, rollingStock,

@@ -486,6 +486,49 @@ ekranów wyboru (`parseRoute` / `routeHash`), schemat regionu (kolejne posterunk
 (najlepsza ocena zmiany, ukończone misje). Województwa i granice Polski do walidacji `region` / `geo`:
 `src/model/regions.js`.
 
+## Służba o wybranej porze (`src/model/duty.js`)
+
+Na posterunkach do służby zwykłe zmiany („Pełna zmiana”, „Szczyt”) zastępuje służba: gracz wybiera pełną godzinę startu
+(0–23) i długość (30 min, 1, 2, 3 h – `DUTY_MINUTES`; służba może przejść przez północ). `buildDuty(station,
+{ start, minutes, seed })` zwraca scenariusz – obiekt dla `Simulation` (`id` `sluzba-<minuty>`, nazwa z godzinami,
+`startTime`, `endTime`, własne `timetable` i `tasks`) – oraz `stats` (pora doby, liczba pociągów wg klasy). Moduł nie
+zna żadnej stacji: wzorcem jest `station.timetable`, więc **nowy posterunek ma służbę bez dodatkowych danych**
+(opcjonalnie `duty.period`).
+
+Budowa: (1) powtórzenia wzorca co `patternPeriod` sięgające okna; pociąg jedzie razem ze swoją grupą – pociągami ze
+składu (`unit`) i zadaniami manewrowymi (terminy, numery i godziny w treści przesunięte); (2) pora doby (`DAY_BANDS`,
+`bandOf`) i klasa pociągu (`trainClass`: aglomeracyjny / regionalny / dalekobieżny / towarowy) mówią, co który kurs
+linii jedzie, a ziarno – który (faza) i co wypada (`DUTY_SKIP`); (3) w miejsce niekursujących pociągów regionalnych
+i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory; odstęp `FREIGHT_GAP` na szlaku); (4) **kontrola
+definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo z uwagą, jakiej nie ma wzorzec stacji
+(styk powtórzeń, pociąg sprzed startu, konflikt toru albo szlaku), wypada – najpierw towarowy spoza wzorca obok. Losowość
+tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesuwają). Okno bez pociągu wzorca daje pusty
+rozkład (bez wyjątku); wybór służby takiej nie startuje. Liczby i pory – przyjęte (`docs/SOURCES.md`).
+
+Pociągi z nazwami: powtórzenie pociągu dalekobieżnego dostaje nazwę i relację pociągu z listy `src/model/data/namedTrains.js`
+(plik generowany przez `scripts/named-trains.mjs` z rozkładu rocznego PKP Intercity, cała Polska), który jedzie tą samą
+drogą – `src/model/namedTrains.js`: `namedTrainsVia(od, do)` (przez miasto początku, potem końca relacji; `cityOf`),
+`namedTrainTitle`. Dobór w `buildDuty`: indeks z numeru wzorca i numeru powtórzenia (ta sama nazwa na każdej stacji na
+trasie), nazwa nie wraca w jednej służbie w tym samym kierunku; pociąg kończący / zaczynający bieg na stacji – tylko
+pociąg z listy kończący / zaczynający w tym mieście. Moduły nie znają stacji – nowa stacja gdziekolwiek w Polsce
+korzysta z listy od razu, o ile relacje jej pociągów dalekobieżnych mają nazwy miast jak na liście.
+
+Przez północ: w danych zmiany godziny następnej doby to 24, 25… (`Clock.stamp` – zapis bez zawijania; `Clock.parse`
+czyta „25:10” jako ciąg dalszy zmiany; `endTime` „26:00” = 02:00). Symulacja liczy chwile bez zawijania, a do pokazania
+służy `Clock.format` (zawija dobę) i `Traffic.shown` – wpisy rozkładu i terminy zadań po północy mają napisy „00:30”
+obok chwil `arrTime` / `depTime` / `deadlineTime`. Kontrola definicji dopuszcza godziny 0–47 i porównuje godziny
+w nazwie zmiany z oknem modulo doba.
+
+Gra: adres `?stacja=…&scenariusz=sluzba&start=<godzina>&czas=<minuty>&seed=…[&srk=…]` (`main.js`: `normalizeDuty`,
+`buildDuty`; bez `seed` losuje je i służba jest inna za każdym razem). Strona posterunku (`StartScreen.#dutyChoice`):
+co pokazać, mówi `catalog.shiftChoices` – służba, scenariusze specjalne (z `faults` albo `closedSections`) i stanowiska
+do wyboru (zwykłe zmiany stacji na różnych stanowiskach → pole „Stanowisko”, parametr `srk`); pod wyborem pora doby
+i liczba pociągów rozkładu, który powstanie (to samo ziarno idzie do adresu). Zwykłe zmiany zostają w definicji stacji:
+są wzorcem, podstawą testów stacji i działają pod dawnym adresem. Wynik gracza zapisuje się pod `sluzba-<minuty>`.
+Pociąg nadzwyczajny (poziom „duże”) jest kopią pociągu z rozkładu służby. Automat: `npm run check -- <stacja> --start
+22 --minutes 120`. Testy: `tests/duty.test.js` (reguły), `tests/duty-grid.js` (każdy posterunek: siatka godzin
+i długości przez kontrolę definicji oraz służby grane automatem), `tests/e2e/duty.spec.js`.
+
 ## Koniec zmiany i raport (`src/model/Score.js`, `src/ui/Report.js`)
 
 Zmiana kończy się sama (`Simulation.#checkEnd`), gdy ostatni pociąg rozkładu jest wyprawiony na szlak (status

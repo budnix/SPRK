@@ -53,7 +53,8 @@ const FAULT_DEFAULT_MIN = 10;
 const STATION_RUN = 90;
 const SECTION_FAULTS = new Set(['false-occupancy', 'track-defect', 'axle-counter']);
 
-const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+// godziny 24–47: następna doba w zmianie przez północ („25:10” = 01:10 następnego dnia; `Clock.stamp`)
+const TIME_RE = /^([0-3]?\d|4[0-7]):[0-5]\d(:[0-5]\d)?$/;
 const isTime = (v) => typeof v === 'string' && TIME_RE.test(v);
 const hm = (s) => (Number.isFinite(s) ? Clock.format(s) : String(s));
 const mins = (s) => Math.ceil(s / 60);
@@ -139,8 +140,9 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   // godziny w nazwie („Pełna zmiana (05:55–08:15)”) – gracz wybiera zmianę po nazwie, więc mają się zgadzać z oknem
   const named = typeof sc.name === 'string' ? /(\d{1,2}:\d{2})\s*[–—-]\s*(\d{1,2}:\d{2})/.exec(sc.name) : null;
   if (named && end != null) {
-    const [from, to] = [named[1], named[2]].map((x) => Clock.parse(x));
-    if (from !== start || to !== end) warn('sc-name-window', `Nazwa „${sc.name}” podaje godziny ${named[1]}–${named[2]}, a zmiana trwa ${hm(start)}–${hm(end)} – popraw nazwę albo startTime / endTime`);
+    // w nazwie godziny jak na zegarze – zmiana przez północ kończy się w danych po 24:00
+    const [from, to] = [named[1], named[2]].map((x) => Clock.parse(x) % 86400);
+    if (from !== start % 86400 || to !== end % 86400) warn('sc-name-window', `Nazwa „${sc.name}” podaje godziny ${named[1]}–${named[2]}, a zmiana trwa ${hm(start)}–${hm(end)} – popraw nazwę albo startTime / endTime`);
   }
   if (sc.trains && sc.timetable) error('sc-trains-ignored', 'trains i timetable naraz – gra bierze timetable, a trains pomija');
   if (sc.trains && !sc.timetable) {
@@ -499,13 +501,11 @@ export function checkScenario(station, scenarioRef, opts = {}) {
       }
     }
   }
-  // ---- pociągi nadzwyczajne (poziom z pociągami nadzwyczajnymi): kopia pociągu z rozkładu STACJI, nr + 1000 ----
+  // ---- pociągi nadzwyczajne (poziom z pociągami nadzwyczajnymi): kopia pociągu z rozkładu zmiany (własny `timetable`
+  // scenariusza), inaczej stacji; numer nr + 1000, a gdy zajęty – następny wolny (Simulation.#planExtraTrains) ----
   for (const L of levels) {
     if (!DISRUPTION_LEVELS[L]?.extraTrains) continue;
-    const pool = (station.timetable || []).filter((x) => x.from && x.to);
-    const nrs = new Set((station.timetable || []).map((x) => String(x.nr)));
-    const clash = pool.filter((x) => nrs.has(String(x.nr + 1000)));
-    if (clash.length) warn('extra-nr', `Poziom ${L}: numer pociągu nadzwyczajnego (nr + 1000) pokrywa się z rozkładem dla ${clash.map((x) => x.nr).join(', ')}`);
+    const pool = (sc.timetable ?? station.timetable ?? []).filter((x) => x.from && x.to);
     // Simulation.#planExtraTrains: kopia mieści się w zmianie (`extraTrainShifts`); gdy żaden pociąg rozkładu stacji się
     // nie mieści, zmiana idzie bez pociągu nadzwyczajnego – informacja (poziom miał go dać)
     if (pool.length && !pool.some((x) => extraTrainShifts(x, start, end))) {

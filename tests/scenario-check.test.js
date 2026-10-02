@@ -523,6 +523,27 @@ test('ocena scenariusza: definicja i poziom scenariusza; poziomy gracza – odpo
 
 // ————————————————————————————————————— wiersz poleceń —————————————————————————————————————
 
+test('wiersz poleceń: służba o wybranej porze (--start, --minutes) – rozkład budowany dla każdego ziarna', () => {
+  assert.equal(parseArgs([]).duty, null);
+  assert.deepEqual(parseArgs(['sopot', '--start', '22', '--minutes=120']).duty, { start: 22, minutes: 120 });
+  assert.deepEqual(parseArgs(['--start', '23', '--minutes', '180']).duty, { start: 23, minutes: 180 }, 'służba przez północ');
+  assert.throws(() => parseArgs(['--start', '23', '--minutes', '90']), /--minutes: do wyboru 30, 60, 120, 180, jest „90”/);
+  assert.throws(() => parseArgs(['--start', '24', '--minutes', '60']), /--start: pełna godzina 0–23/);
+  assert.throws(() => parseArgs(['--minutes', '60']), /--start: pełna godzina 0–23 \(wymagana razem z --minutes\)/);
+  assert.throws(() => parseArgs(['--start', '6']), /--minutes: .*wymagane razem z --start/);
+  const one = listChecks({ targets: ['sopot'], seeds: [1, 2], levels: ['none'], duty: { start: 22, minutes: 120 } });
+  assert.deepEqual(one.scenarios.map((x) => [x.station.id, x.scenario.id, x.scenario.name]), [['sopot', 'sluzba-120', 'Służba 22:00–00:00']]);
+  assert.deepEqual(one.jobs.map((j) => [j.stationId, j.scenarioId, j.seed, j.level, j.duty]), [['sopot', 'sluzba-120', 1, 'none', { start: 22, minutes: 120 }], ['sopot', 'sluzba-120', 2, 'none', { start: 22, minutes: 120 }]]);
+  // bez celów – wszystkie posterunki do służby (bez stacji szkoleniowych)
+  const all = listChecks({ seeds: [1], levels: ['none'], duty: { start: 6, minutes: 60 } }).scenarios.map((x) => x.station.id);
+  assert.ok(all.includes('tczew') && all.includes('rumia') && !all.includes('szkolna') && all.length >= 9);
+  assert.throws(() => listChecks({ targets: ['nieznana'], duty: { start: 6, minutes: 60 } }), /Nieznana stacja/);
+  // zmiana grana z rozkładem służby dla ziarna zmiany
+  const r = checkShift({ stationId: 'sopot', duty: { start: 22, minutes: 60 }, seed: 3, level: 'none', extra: 60 });
+  assert.equal(r.error, undefined);
+  assert.ok(r.trains.length > 0 && r.trains.every((x) => (x.arr ?? x.dep) >= '22:03'), r.trains.map((x) => x.arr ?? x.dep).join(' '));
+});
+
 test('wiersz poleceń: opcje, cele, lista zmian', () => {
   const o = parseArgs([]);
   assert.deepEqual(o.levels, ['none', 'low', 'high']);

@@ -5,6 +5,7 @@ import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
+import { DUTY_ID, buildDuty, normalizeDuty } from './model/duty.js';
 import { saveLastShift, saveResult } from './ui/progress.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
@@ -42,6 +43,7 @@ const viewOpts = () => ({ rowScale: settings.values.rowScale, symScale: settings
 // ekran wyboru: ustawienia z ekranu tytułowego otwiera ten sam ekran ustawień co menu (zmienna niżej – wołana później)
 const startScreen = new StartScreen(document.getElementById('start'), {
   station: params.get('stacja'), scenario: params.get('scenariusz'), level: params.get('zaklocenia'), district: params.get('okreg'),
+  start: params.get('start'), minutes: params.get('czas'), srk: params.get('srk'),
 }, { onSettings: () => settingsScreen.show({ fromStart: true }) });
 if (!params.get('scenariusz')) startScreen.show();
 else saveLastShift(location.search);
@@ -49,11 +51,15 @@ document.documentElement.classList.remove('boot-start'); // ekran startowy już 
 /** „Nowa zmiana…” w trakcie zmiany (menu, raport): ostatnio oglądany ekran wyboru (mapa, lista, województwo, szkolenie). */
 const newShift = () => startScreen.showLast();
 
+// służba o wybranej porze i długości (`scenariusz=sluzba&start=<godzina>&czas=<minuty>`): rozkład buduje się z wzorca
+// stacji dla ziarna zmiany – to samo ziarno w adresie daje tę samą służbę
+const duty = params.get('scenariusz') === DUTY_ID ? normalizeDuty(params.get('start'), params.get('czas')) : null;
+const seed = params.get('seed') ? Number(params.get('seed')) : duty ? Math.floor(Math.random() * 1e9) : undefined;
 const sim = new Simulation(station, {
   speed: 1,
-  scenario: params.get('scenariusz') || undefined,
+  scenario: duty ? buildDuty(station, { ...duty, seed }).scenario : params.get('scenariusz') || undefined,
   disruptions: params.get('zaklocenia') || 'none',
-  seed: params.get('seed') ? Number(params.get('seed')) : undefined,
+  seed,
   district: params.get('okreg') || undefined,
   srk: params.get('srk') || undefined, // tylko do testów/porównań; stanowisko zawsze wynika z definicji stacji lub scenariusza
   phoneRoutine: settings.values.phoneRoutine, // rozmowy telefoniczne przy sprawnej blokadzie: same albo ręcznie

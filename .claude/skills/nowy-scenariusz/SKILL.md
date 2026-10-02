@@ -56,6 +56,13 @@ scenariusze”). Ten skill to lista kroków.
 5. **Na koniec** w tym samym commicie: README (lista scenariuszy stacji, po angielsku), gdy wariant jest widoczny dla
    gracza; zmiana w UI (karta scenariusza) – `npm run test:e2e` na komputerze (bez Dockera).
 
+## Służba o wybranej porze
+
+Na posterunkach do służby gracz nie wybiera już zwykłej zmiany z listy, tylko godzinę startu i długość – rozkład buduje
+`src/model/duty.js` z rozkładu stacji (`docs/STATION-FORMAT.md` „Służba o wybranej porze”). Nowy wariant ma sens jako
+scenariusz **specjalny** (z `faults` albo `closedSections`) – tylko takie są na liście. Zmiana rozkładu stacji zmienia
+wzorzec wszystkich służb: sprawdź `npm run check -- <stacja> --start <godzina> --minutes <30|60|120|180>` dla kilku pór.
+
 ## Gdy coś nie działa
 
 - `Nieznany scenariusz` w `npm run check` – literówka w `id` albo scenariusz nie jest w `scenarios` stacji.

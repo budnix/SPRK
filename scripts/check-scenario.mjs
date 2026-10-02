@@ -32,6 +32,7 @@ import { Traffic } from '../src/model/Traffic.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { validateStation } from '../src/model/validate.js';
 import { EXTRA_TRAIN } from '../src/model/Simulation.js';
+import { DUTY_MINUTES, buildDuty, hasDuty } from '../src/model/duty.js';
 import { checkScenario, hasErrors, LATE_SLACK, TASK_GRACE, levelSlackMin, shuntReach } from '../src/model/scenarioCheck.js';
 import { STATIONS } from '../src/stations/index.js';
 import { MISSIONS } from '../src/tutorial/missions.js';
@@ -81,6 +82,9 @@ export const USAGE = `Użycie: npm run check -- [stacja[:scenariusz] …] [opcje
   --strict                    kod wyjścia 1 także przy uwagach w definicji i na poziomie scenariusza (powtarzalnych)
   --verbose                   wszystkie uwagi, tabela pociągów, zadania i usterki każdej zmiany, dziennik nieobsłużonych
   --workers <n>               liczba wątków (domyślnie rdzenie - 1)
+  --start <godz.> --minutes <n>  służba o wybranej porze zamiast scenariuszy stacji: pełna godzina 0–23 i długość
+                              30 / 60 / 120 / 180 min (także przez północ); rozkład budowany z wzorca stacji
+                              dla każdego ziarna (src/model/duty.js); cele – stacje, bez celów wszystkie posterunki
   --json <plik>               pełne raporty do pliku JSON
   --help                      ta pomoc
 
@@ -371,10 +375,11 @@ function plannedStay(tt, e, end) {
  * pękniętej szynie, kary wymuszone usterką, stan urządzeń po zmianie, niewykonane obowiązki blokady, inny tor (kto
  * zajmował planowy, czy plan sam go dzieli) – oraz werdykt (`verdict`).
  */
-export function checkShift({ station = null, stationId = null, scenarioId = null, scenario = null, seed = 1, level = 'none', extra = 120, settle = true, forceLevel = null }) {
+export function checkShift({ station = null, stationId = null, scenarioId = null, scenario = null, seed = 1, level = 'none', extra = 120, settle = true, forceLevel = null, duty = null }) {
   const st = station ?? STATIONS.find((s) => s.id === stationId);
   if (!st) throw new Error(`Nieznana stacja: ${stationId}`);
-  const sc0 = scenario ?? (st.scenarios || []).find((s) => s.id === scenarioId);
+  // służba o wybranej porze (`duty`: { start, minutes }) – rozkład budowany dla ziarna tej zmiany, jak w grze
+  const sc0 = scenario ?? (duty ? buildDuty(st, { ...duty, seed }).scenario : (st.scenarios || []).find((s) => s.id === scenarioId));
   if (!sc0) throw new Error(`Nieznany scenariusz: ${st.id}:${scenarioId}`);
   const sc = forceLevel ? { ...sc0, disruptions: forceLevel } : sc0;
   const t0 = performance.now();
@@ -784,16 +789,26 @@ export function deterministicWarnings(staticFindings, shift = null) {
  * Zwraca `{ targets, levels, seeds, extra, tutorial, verbose, strict, workers, json, help }`; przy błędzie wyjątek.
  */
 export function parseArgs(argv = []) {
-  const opts = { targets: [], levels: [...LEVELS], seeds: [1, 2, 3], extra: 120, tutorial: false, verbose: false, strict: false, workers: defaultWorkers(), json: null, help: false };
-  return parseCli(argv, opts, {
+  const opts = { targets: [], levels: [...LEVELS], seeds: [1, 2, 3], extra: 120, tutorial: false, verbose: false, strict: false, workers: defaultWorkers(), json: null, help: false, duty: null };
+  let start = null, minutes = null;
+  parseCli(argv, opts, {
     levels: { all: LEVELS, allowed: LEVELS },
     positional: (raw) => opts.targets.push(raw),
-    custom: (name, { flag }) => {
+    custom: (name, { flag, value }) => {
       if (name === '--verbose' || name === '-v') { opts.verbose = flag(); return true; }
       if (name === '--strict') { opts.strict = flag(); return true; }
+      if (name === '--start') { start = Number(value()); return true; }
+      if (name === '--minutes') { minutes = Number(value()); return true; }
       return false;
     },
   });
+  // służba o wybranej porze: pełna godzina startu i długość z dozwolonych (służba może przejść przez północ)
+  if (start != null || minutes != null) {
+    if (!Number.isInteger(start) || start < 0 || start > 23) throw new Error(`--start: pełna godzina 0–23${start == null ? ' (wymagana razem z --minutes)' : `, jest „${start}”`}`);
+    if (!DUTY_MINUTES.includes(minutes)) throw new Error(`--minutes: do wyboru ${DUTY_MINUTES.join(', ')}${minutes == null ? ' (wymagane razem z --start)' : `, jest „${minutes}”`}`);
+    opts.duty = { start, minutes };
+  }
+  return opts;
 }
 
 /**
@@ -804,7 +819,8 @@ export function parseArgs(argv = []) {
  * z poziomem zastąpionym przez none (`forceLevel`), tylko do oceny wpływu usterek.
  * Zwraca `{ scenarios: [{ station, scenario }], jobs: [{ stationId, scenarioId, seed, level, extra, stationIndex, forceLevel? }] }`.
  */
-export function listChecks({ targets = [], levels = [...LEVELS], seeds = [1, 2, 3], extra = 120, tutorial = false } = {}) {
+export function listChecks({ targets = [], levels = [...LEVELS], seeds = [1, 2, 3], extra = 120, tutorial = false, duty = null } = {}) {
+  if (duty) return listDutyChecks({ targets, levels, seeds, extra, duty });
   const scenarios = [];
   const seen = new Set();
   const push = (station, scenario) => { const k = `${station.id}:${scenario.id}`; if (!seen.has(k)) { seen.add(k); scenarios.push({ station, scenario }); } };
@@ -825,6 +841,25 @@ export function listChecks({ targets = [], levels = [...LEVELS], seeds = [1, 2, 
     const lv = scenario.disruptions ? [scenario.disruptions] : LEVELS.filter((l) => levels.includes(l));
     for (const level of lv) for (const seed of seeds) jobs.push({ stationId: station.id, scenarioId: scenario.id, seed, level, extra, stationIndex });
     if (scenario.faults?.length && !lv.includes('none') && seeds.length) jobs.push({ stationId: station.id, scenarioId: scenario.id, seed: seeds[0], level: 'none', extra, stationIndex, forceLevel: 'none' });
+  }
+  return { scenarios, jobs };
+}
+
+/**
+ * Służba o wybranej porze (`duty`: { start, minutes }) na stacjach z `targets` (bez celów – wszystkie posterunki do
+ * służby): rozkład zależy od ziarna, więc każda zmiana buduje swój; definicję pokazuje się dla pierwszego ziarna.
+ */
+function listDutyChecks({ targets, levels, seeds, extra, duty }) {
+  const stations = targets.length ? targets.map((t) => {
+    const station = STATIONS.find((s) => s.id === String(t).split(':')[0]);
+    if (!station) throw new Error(`Nieznana stacja: „${t}” (stacje: ${STATIONS.map((s) => s.id).join(', ')})`);
+    if (!hasDuty(station)) throw new Error(`Stacja „${station.id}” nie ma rozkładu, z którego da się zbudować służbę`);
+    return station;
+  }) : STATIONS.filter((s) => hasDuty(s) && !(s.scenarios || []).some((sc) => sc.tutorial));
+  const scenarios = stations.map((station) => ({ station, scenario: buildDuty(station, { ...duty, seed: seeds[0] ?? 1 }).scenario, duty }));
+  const jobs = [];
+  for (const { station, scenario } of scenarios) {
+    for (const level of LEVELS.filter((l) => levels.includes(l))) for (const seed of seeds) jobs.push({ stationId: station.id, scenarioId: scenario.id, seed, level, extra, stationIndex: STATIONS.indexOf(station), duty });
   }
   return { scenarios, jobs };
 }
@@ -953,7 +988,7 @@ export async function main(argv) {
     }
   }
   const jobs = plan.jobs.filter((j) => !invalid.has(j.stationId));
-  const statics = plan.scenarios.map(({ station, scenario }) => checkScenario(station, scenario.id, { missions, levels: opts.levels }));
+  const statics = plan.scenarios.map(({ station, scenario, duty }) => checkScenario(station, duty ? scenario : scenario.id, { missions, levels: opts.levels }));
   const workers = Math.max(1, Math.min(opts.workers, jobs.length));
   console.log(`Sprawdzanie scenariuszy: ${plural(plan.scenarios.length, 'scenariusz', 'scenariusze', 'scenariuszy')}, ${plural(jobs.length, 'zmiana', 'zmiany', 'zmian')} (poziomy ${opts.levels.join(', ')}; ziarna ${opts.seeds.join(', ')}; zapas ${opts.extra} min), wątki: ${workers}`);
   const tty = process.stderr.isTTY;

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { DICTS, LANGS, detectLang, getLang, setLang, t } from '../src/i18n/index.js';
 
 const placeholders = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
@@ -23,6 +24,15 @@ test('i18n: słowniki en i de mają dokładnie te same klucze co pl, bez pustych
   }
   // klucze pomocy zawierają HTML z tymi samymi nagłówkami (liczba <h3>) w każdym języku
   for (const lang of LANGS) assert.equal((DICTS[lang]['help.body'].match(/<h3>/g) || []).length, 6, `${lang}: sekcje pomocy`);
+});
+
+test('i18n: klucz jest w pliku języka tylko raz – powtórzony po cichu nadpisuje wcześniejszy tekst', () => {
+  for (const lang of LANGS) {
+    const keys = [...readFileSync(new URL(`../src/i18n/${lang}.js`, import.meta.url), 'utf8').matchAll(/^\s*'([^']+)':/gm)].map((m) => m[1]);
+    const twice = keys.filter((k, i) => keys.indexOf(k) !== i);
+    assert.deepEqual(twice, [], `${lang}: powtórzone klucze`);
+    assert.equal(keys.length, Object.keys(DICTS[lang]).length, `${lang}: liczba kluczy w pliku`);
+  }
 });
 
 test('i18n: t() tłumaczy w bieżącym języku, podstawia parametry, brak klucza → polski → sam klucz', () => {
