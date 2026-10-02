@@ -137,7 +137,8 @@ liczba w uwadze `sc-slack` definicji i w `late-inbound` przebiegu.
 
 1. **Definicja** – najpierw `validateStation` (w wierszu poleceń raz na stację, z pełną treścią błędów i uwag; przy
    błędach przebiegi stacji są pomijane), potem `checkScenario(station, scenarioId | obiekt, { missions, levels })`
-   (moduł logiki, bez DOM): lista `{ level, code, msg, train? }`. Kontrole czytają symulację utworzoną bez kroku
+   (moduł logiki, bez DOM): lista `{ level, code, msg, train? }`; konflikt dwóch pociągów (tor, szlak) ma też `pair: true`
+   i `with` – drugi pociąg (dane dla programów, np. budowy służby). Kontrole czytają symulację utworzoną bez kroku
    (rozkład z czasami w sekundach, odcinki i przebiegi po normalizacji, blokady), bez losowych zakłóceń; łańcuchy
    przebiegów wjazdu i wyjazdu są te same co w automacie dyżurnego i w ruchu (`src/model/trainPaths.js`). Błędy:
    stacja niepoprawna (`station-invalid`, każdy błąd walidacji osobno), nieznany / powtórzony scenariusz, pole spoza

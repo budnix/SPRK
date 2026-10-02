@@ -55,11 +55,6 @@ export const DAY_BANDS = [
   { id: 'pozny-wieczor', from: 22, to: 24, every: { agl: 4, reg: 4, dal: 2, tow: 1 }, freight: 0.4 },
 ];
 
-/**
- * Uwagi kontroli definicji o konflikcie dwóch pociągów (ten sam tor, ten sam szlak): gdy obok jest pociąg towarowy spoza
- * wzorca na tej samej drodze, wypada on; przy każdej innej uwadze wypada pociąg, którego uwaga dotyczy.
- */
-const PAIR_CODE = /^(tt-track-overlap|line-)/;
 /** Pociąg towarowy w miejsce pasażerskiego, gdy stacja nie ma we wzorcu żadnego towarowego przelotu (przyjęte). */
 const GENERIC_FREIGHT = { kind: 'tow', cat: 'TM', length: 400, mass: 1200, vmax: 80 };
 /** Numery pociągów towarowych spoza wzorca: od tej liczby (przyjęte), parzystość jak pociągu, w którego miejsce wchodzą. */
@@ -299,7 +294,9 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
         }
         const own = picked.find((p) => p.trains.some((e) => String(e.nr) === String(f.train)));
         if (!own) continue;
-        const near = !own.freight && PAIR_CODE.test(f.code)
+        // uwaga o konflikcie dwóch pociągów (ten sam tor, ten sam szlak – kontrola definicji oznacza ją `pair`): gdy obok
+        // jest pociąg towarowy spoza wzorca na tej samej drodze, wypada on; przy każdej innej uwadze – pociąg z uwagi
+        const near = !own.freight && f.pair
           ? picked.filter((p) => p.freight && Math.abs(p.c.at - own.c.at) <= 20 * 60 && sameWay(p, own)).sort((a, b) => Math.abs(a.c.at - own.c.at) - Math.abs(b.c.at - own.c.at))[0]
           : null;
         out.add(near ?? own);

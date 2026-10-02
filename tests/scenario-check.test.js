@@ -240,6 +240,16 @@ test('definicja: uwagi – okno startu, odziedziczone zadania, gęsty szlak (wja
   const out = check({ ...base, tasks: [], startTime: '06:50', timetable: [{ ...tt(6103), nr: 6107, arr: '07:00', dep: '07:09' }, tt(6101)] }).find((f) => f.code === 'line-headway-out');
   assert.equal(out?.train, 6107);
   assert.match(out.msg, /6107 odjeżdża 07:09, zanim 6101 \(odjazd 07:08\) zwolni szlak/);
+  // konflikt dwóch pociągów to dane ustalenia (`pair`, `with` – drugi pociąg), nie tylko treść: z tego korzysta budowa
+  // służby (src/model/duty.js), żeby nie zgadywać rodzaju uwagi z jej kodu
+  assert.deepEqual([out.pair, out.with], [true, 6101]);
+  const lineHeadway = dense.find((f) => f.code === 'line-headway');
+  assert.deepEqual([lineHeadway.pair, typeof lineHeadway.with], [true, 'number']);
+  // 6102 z przeciwka na tor 1 w tej samej chwili co 6101
+  const overlap = check({ ...base, tasks: [], timetable: [tt(6101), { ...tt(6102), arr: '07:06', dep: '07:08' }] }).find((f) => f.code === 'tt-track-overlap');
+  assert.deepEqual([overlap?.pair, overlap?.train, overlap?.with], [true, 6102, 6101]);
+  assert.ok(check('zmiana').filter((f) => f.pair).every((f) => ['tt-track-overlap', 'line-headway', 'line-headway-out', 'line-opposing'].includes(f.code) && f.with != null));
+  assert.ok(!dense.some((f) => f.code === 'sc-slack' && f.pair), 'inne uwagi nie są konfliktem dwóch pociągów');
   assert.ok(!check('zmiana').some((f) => f.code === 'line-headway-out'));
   // zadania: tor przyjazdu (bez manewrów), termin po odjeździe następcy, skład zostawiony na innym torze niż następca
   assert.ok(warningCodes(check({ ...base, tasks: [{ ...odstaw, toTrack: '2' }] })).has('task-trivial'));

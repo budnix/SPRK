@@ -98,10 +98,11 @@ export function shuntReach(ilk, from) {
 
 export function checkScenario(station, scenarioRef, opts = {}) {
   const out = [];
-  const add = (level, code, msg, train) => out.push(train != null ? { level, code, msg, train } : { level, code, msg });
-  const error = (code, msg, train) => add('error', code, msg, train);
-  const warn = (code, msg, train) => add('warning', code, msg, train);
-  const info = (code, msg, train) => add('info', code, msg, train);
+  // `extra` – dane ustalenia dla programów (np. `pair` i `with` przy konflikcie dwóch pociągów), nie dla człowieka
+  const add = (level, code, msg, train, extra = null) => out.push({ ...(train != null ? { level, code, msg, train } : { level, code, msg }), ...extra });
+  const error = (code, msg, train, extra) => add('error', code, msg, train, extra);
+  const warn = (code, msg, train, extra) => add('warning', code, msg, train, extra);
+  const info = (code, msg, train, extra) => add('info', code, msg, train, extra);
   // ---- stacja: niepoprawna definicja – symulacja nie wystartuje; każdy błąd osobno, z treścią ----
   const sv = validateStation(station);
   if (sv.errors.length) {
@@ -324,7 +325,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     if (x.T !== y.T) continue;
     if ((y.e.unit != null && same(y.e.unit, x.e.nr)) || (x.e.unit != null && same(x.e.unit, y.e.nr))) continue;
     const ov = Math.min(x.b, y.b) - Math.max(x.a, y.a);
-    if (ov > 0) warn('tt-track-overlap', `Tor ${x.T}: pociągi ${x.e.nr} (${hm(x.a)}–${hm(x.b)}) i ${y.e.nr} (${hm(y.a)}–${hm(y.b)}) w planie naraz (${Math.round(ov / 60)} min) – jeden pójdzie na inny tor (kara) albo poczeka`, y.e.nr);
+    if (ov > 0) warn('tt-track-overlap', `Tor ${x.T}: pociągi ${x.e.nr} (${hm(x.a)}–${hm(x.b)}) i ${y.e.nr} (${hm(y.a)}–${hm(y.b)}) w planie naraz (${Math.round(ov / 60)} min) – jeden pójdzie na inny tor (kara) albo poczeka`, y.e.nr, { pair: true, with: x.e.nr });
   }
   const blockKind = (b) => (b.auto ? 'SBL' : b.fixed ? 'Eap jednokierunkowa' : 'Eap');
   // pociąg zwalnia szlak po ok. minucie wyjazdu ze stacji i przejeździe po szlaku (szlak to jeden odstęp – także SBL:
@@ -340,7 +341,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
       const aIn = (A.arrTime ?? A.depTime) - STATION_RUN; // czoło A na granicy stacji
       const lag = mins(aIn - B.neighbourDep);
       if (B.neighbourDep < aIn && lag >= (B.stop ? PLAN_DELAY_MIN : 3)) {
-        warn('line-headway', `Szlak od ${exitName(ex)}, ${blockKind(b)}: pociąg ${B.nr}${B.stop ? '' : ' (przelot)'} musiałby wyjechać od sąsiada o ${hm(B.neighbourDep)}, zanim ${A.nr} zjedzie ze szlaku (${hm(aIn)}) – ok. ${lag} min opóźnienia z samego planu`, B.nr);
+        warn('line-headway', `Szlak od ${exitName(ex)}, ${blockKind(b)}: pociąg ${B.nr}${B.stop ? '' : ' (przelot)'} musiałby wyjechać od sąsiada o ${hm(B.neighbourDep)}, zanim ${A.nr} zjedzie ze szlaku (${hm(aIn)}) – ok. ${lag} min opóźnienia z samego planu`, B.nr, { pair: true, with: A.nr });
       }
     }
     // wyjazdy: następny pociąg na ten szlak dopiero, gdy poprzedni go zwolni
@@ -352,7 +353,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
       const lag = mins(clear - bd);
       const pass = !B.stop && !!B.from;
       if (bd < clear && lag >= (pass ? 3 : PLAN_DELAY_MIN)) {
-        warn('line-headway-out', `Szlak do ${exitName(ex)}, ${blockKind(b)}: pociąg ${B.nr}${pass ? ' (przelot)' : ''} odjeżdża ${hm(bd)}, zanim ${A.nr} (odjazd ${hm(ad)}) zwolni szlak (ok. ${Clock.format(clear, true)}) – ok. ${lag} min opóźnienia z samego planu`, B.nr);
+        warn('line-headway-out', `Szlak do ${exitName(ex)}, ${blockKind(b)}: pociąg ${B.nr}${pass ? ' (przelot)' : ''} odjeżdża ${hm(bd)}, zanim ${A.nr} (odjazd ${hm(ad)}) zwolni szlak (ok. ${Clock.format(clear, true)}) – ok. ${lag} min opóźnienia z samego planu`, B.nr, { pair: true, with: A.nr });
       }
     }
     if (b.fixed) continue;
@@ -364,7 +365,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
       for (const i of tt.filter((e) => e.from === ex && Number.isFinite(e.neighbourDep))) {
         const iEnd = (i.arrTime ?? i.depTime) - 60;
         const ov = Math.min(oEnd, iEnd) - Math.max(od, i.neighbourDep);
-        if (ov >= PLAN_DELAY_MIN * 60) warn('line-opposing', `Szlak ${exitName(ex)}, ${blockKind(b)}: wyjazd ${o.nr} (${hm(od)}–${hm(oEnd)}) i wjazd ${i.nr} od sąsiada (${hm(i.neighbourDep)}–${hm(iEnd)}) naprzeciw – ${Math.round(ov / 60)} min; jeden poczeka`, i.nr);
+        if (ov >= PLAN_DELAY_MIN * 60) warn('line-opposing', `Szlak ${exitName(ex)}, ${blockKind(b)}: wyjazd ${o.nr} (${hm(od)}–${hm(oEnd)}) i wjazd ${i.nr} od sąsiada (${hm(i.neighbourDep)}–${hm(iEnd)}) naprzeciw – ${Math.round(ov / 60)} min; jeden poczeka`, i.nr, { pair: true, with: o.nr });
       }
     }
   }
