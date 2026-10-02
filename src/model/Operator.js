@@ -10,6 +10,15 @@ import { entryPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from 
 const done = (step, reason, acted = false, extra = {}) => ({ step, stop: true, acted, reason, ...extra });
 
 /**
+ * Plan automatu przy pociągu – jego własne notatki, nie pola wpisu rozkładu: `entry` – dalsze stopnie wjazdu
+ * wieloetapowego przed pociągiem (id przebiegów), `via` – semafor pośredni wyjazdu dwustopniowego, `accept` –
+ * wykonywane polecenie dyżurnego „przyjąć pociąg”. Jeden plan na pociąg (kluczem jest wpis rozkładu), wspólny dla
+ * automatów tej samej zmiany: na stacji z okręgami pociąg przechodzi od automatu do automatu.
+ */
+const PLANS = new WeakMap();
+const planOf = (e) => { let plan = PLANS.get(e); if (!plan) PLANS.set(e, plan = { entry: null, via: null, accept: null }); return plan; };
+
+/**
  * Automatyczny operator okręgu nastawczego (nastawniczy / dyżurny ruchu sterowany przez program).
  *
  * Obsługuje w swoim okręgu: pozwolenia i bloki końcowe, zapowiadanie telefoniczne przy usterce,
@@ -32,6 +41,14 @@ export class AutoOperator {
     this.lastAction = -Infinity;
     this.issued = new Set();       // polecenia wydane graczowi (klucze)
     this.stuckSince = new Map();   // przebieg, który nie rozwiązał się za pociągiem → od kiedy
+  }
+
+  /** Plan automatu przy pociągu `nr` – do diagnozy i testów: `{ entry, via, accept }` (kopia) albo null. */
+  plan(nr) {
+    const e = this.sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
+    if (!e) return null;
+    const plan = planOf(e);
+    return { entry: plan.entry ? [...plan.entry] : null, via: plan.via, accept: plan.accept ? { kind: plan.accept.kind, track: plan.accept.track ?? null } : null };
   }
 
   /** Rozmowa radiowa z maszynistą przy zmianie trybu i czoła: automat okręgu obok gracza rozmawia bez dziennika gracza. */
@@ -210,11 +227,11 @@ export class AutoOperator {
     for (const e of this.sim.traffic.timetable()) {
       const tr = e.train;
       if (!tr || tr.finished || tr.nextSignal() !== route.start) continue;
-      if (e.exitRouteSet && route.exit) e.exitRouteSet = false;
       // pierwszy stopień wyjazdu dwustopniowego – wyjazd zacznie się od nowa
-      if (e._viaSignal && route.end.type === 'signal' && route.end.id === e._viaSignal) { e._viaSignal = null; continue; }
+      const plan = planOf(e);
+      if (plan.via && route.end.type === 'signal' && route.end.id === plan.via) { plan.via = null; continue; }
       // kolejny stopień wjazdu wieloetapowego (pociąg minął już semafor wjazdowy) – wraca do planu, jeśli go w nim nie ma
-      if (e.from && !tr.entryPending && !route.exit && !e._entryPath?.includes(route.id)) e._entryPath = [route.id, ...(e._entryPath || [])];
+      if (e.from && !tr.entryPending && !route.exit && !plan.entry?.includes(route.id)) plan.entry = [route.id, ...(plan.entry || [])];
     }
   }
 
@@ -358,18 +375,19 @@ export class AutoOperator {
   #entryStages(e, tr, ctx) {
     const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
     // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
-    // `_entryPath` to plan: stopnie drogi wjazdu przed pociągiem. Czy stopień trzeba nastawić, mówią urządzenia, nie
+    // `plan.entry` to plan: stopnie drogi wjazdu przed pociągiem. Czy stopień trzeba nastawić, mówią urządzenia, nie
     // notatka: stopień, w którym pociąg już jest (wjechał albo minął jego semafor na Sz / rozkaz), i wcześniejsze
     // schodzą z planu; stopień, który czeka na pociąg (nastawiony albo w nastawianiu, semafor nie zgasł), zostaje
     // w planie – gdy usterka go zgasi, a automat zwolni (`#recoverRoutes`), będzie nastawiony od nowa, także dla
     // pociągu, który nie minął jeszcze semafora wjazdowego. Polecenie dostaje tylko pierwszy stopień, którego nie ma.
     // Gdy wszystkie czekają, automat idzie dalej (wyjazd pociągu bez postoju) – plan nie wstrzymuje innych czynności.
-    if (e._entryPath?.length && e.actualArr != null) e._entryPath = null; // pociąg przyjechał – wjazd skończony
-    if (e._entryPath?.length) {
+    const plan = planOf(e);
+    if (plan.entry?.length && e.actualArr != null) plan.entry = null; // pociąg przyjechał – wjazd skończony
+    if (plan.entry?.length) {
       const occ = tr.occupiedSections();
-      const inside = e._entryPath.findLastIndex((id) => ilk.routes.get(id)?.sections.some((sid) => occ.has(sid)));
-      if (inside >= 0) e._entryPath = e._entryPath.slice(inside + 1);
-      const next = e._entryPath.find((id) => !this.#carries(ilk.routeState(id)));
+      const inside = plan.entry.findLastIndex((id) => ilk.routes.get(id)?.sections.some((sid) => occ.has(sid)));
+      if (inside >= 0) plan.entry = plan.entry.slice(inside + 1);
+      const next = plan.entry.find((id) => !this.#carries(ilk.routeState(id)));
       if (next) { const res = this.#setRoute(next); return done('entry-stage', res.ok ? 'route-set' : 'refused', !!res.ok, { route: next }); }
     }
     return null;
@@ -386,7 +404,7 @@ export class AutoOperator {
       const ahead = sim.traffic.timetable().some((o) => o !== e && o.from === e.from && o.train && !o.train.finished && o.train.entryPending && o.train.head > tr.head);
       if (ahead) return done('entry', 'train-ahead');
       let want = this.trackFor ? this.trackFor(e) : e.track;
-      if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) return done('entry', 'no-command'); want = c.track; e._cmdAccept = c; }
+      if (this.role === 'executive') { const c = this.#command(e, 'accept'); if (!c) return done('entry', 'no-command'); want = c.track; planOf(e).accept = c; }
       const cands = entryRoutes(ilk, e.from, routes);
       // przebieg od semafora wjazdowego już czeka na ten pociąg (nastawiony albo w nastawianiu)
       if (cands.some((r) => this.#onItsWay(ilk.routeState(r.id)))) return done('entry', 'on-its-way');
@@ -452,8 +470,8 @@ export class AutoOperator {
         // chwilowo zajęty/utwierdzony tor planowy – czekać
         if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick) || stays(pick)) closed = true; if (closed) continue; break; }
         // plan dalszych stopni – zawsze od nowa: po zmianie toru stary plan nie może zostać przy pociągu
-        e._entryPath = path && pick === path[0] && path.length > 1 ? path.slice(1).map((r) => r.id) : null;
-        if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
+        planOf(e).entry = path && pick === path[0] && path.length > 1 ? path.slice(1).map((r) => r.id) : null;
+        if (planOf(e).accept) this.#complete(planOf(e).accept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
         break;
       }
       return done('entry', 'attempted');
@@ -531,8 +549,9 @@ export class AutoOperator {
       let staged = false;
       const waiting = (pred) => ilk.routesSet().some((x) => this.#onItsWay(x.state) && pred(x.route));
       // pierwszy stopień wyjazdu przepadł, zanim pociąg ruszył – wyjazd zaczyna się od nowa
-      if (e._viaSignal && tr.nextSignal() !== e._viaSignal && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === e._viaSignal)) e._viaSignal = null;
-      if (e._viaSignal) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === e._viaSignal);
+      const plan = planOf(e);
+      if (plan.via && tr.nextSignal() !== plan.via && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === plan.via)) plan.via = null;
+      if (plan.via) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === plan.via);
       else if (!cands.length) {
         const toExit = new Set(routes.filter((r) => r.kind === 'train' && r.exit === exitId).map((r) => r.start));
         cands = routes.filter((r) => r.kind === 'train' && r.end.type === 'signal' && toExit.has(r.end.id) && String(ilk.sections.get(r.approach)?.track) === String(cur));
@@ -550,13 +569,12 @@ export class AutoOperator {
       else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
       else if (!b.fixed && !b.direction && !b.request && !b.occupied) this.#wbl(b, e.nr);
       if (staged) {
-        for (const r of cands) if (waiting((x) => x === r) || this.#setRoute(r.id).ok) { e._viaSignal = r.end.id; break; }
+        for (const r of cands) if (waiting((x) => x === r) || this.#setRoute(r.id).ok) { plan.via = r.end.id; break; }
         return done('exit', 'staged');
       }
       if (waiting((r) => cands.includes(r))) return done('exit', 'on-its-way'); // przebieg wyjazdowy czeka na pociąg
       if (b.gate().ok) {
         for (const r of cands) if (this.#setRoute(r.id).ok) {
-          e.exitRouteSet = true;
           if (cmd) this.#complete(cmd, `Droga przebiegu dla pociągu nr ${e.nr} do ${b.neighbour} przygotowana, semafor ${r.start} otwarty.`);
           break;
         }

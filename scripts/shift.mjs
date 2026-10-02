@@ -83,7 +83,7 @@ export function playShift({ station, scenario, seed, level = 'none', extra = 120
   // district 'both': na stacji z okręgami automat prowadzi całą stację, bez wbudowanych automatów okręgów
   const sim = new Simulation(station, { scenario, disruptions: level, seed, speed: 1, district: 'both' });
   const op = new AutoOperator(sim, { district: null, role: 'full' });
-  onCreate?.(sim);
+  onCreate?.(sim, op);
   const endTime = Number.isFinite(sim.endTime) ? sim.endTime : Clock.parse(DEFAULT_END);
   const until = endTime + extra * 60;
   const viol = { count: 0, ticks: 0, first: [] };
@@ -103,7 +103,7 @@ export function playShift({ station, scenario, seed, level = 'none', extra = 120
       onViolation?.(msg, sim.clock.time);
     }
     prev = now;
-    onTick?.(sim, { opTick });
+    onTick?.(sim, { opTick, op });
     if (settle && n % 120 === 0 && settled(sim, endTime)) break;
   }
   return { sim, violations: viol, endTime, until: sim.clock.time };

@@ -273,7 +273,7 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 * Automat dyżurnego (`Operator.js`) nie prowadzi własnych notatek o przebiegach – pyta urządzenia: wjazd należy się
   pociągowi, który nie minął semafora wjazdowego (`train.entryPending`) i jedzie pierwszy (na SBL pociągi bywają
   w innej kolejności niż w rozkładzie); wyjazd jest „za pociągiem”, gdy minął semafor wyjazdowy (`exitAuth`). Wjazd
-  wieloetapowy (Sopot: A → H → O): przy pociągu jest tylko plan dalszych stopni (`_entryPath`), a o tym, czy stopień
+  wieloetapowy (Sopot: A → H → O): automat ma przy pociągu tylko plan dalszych stopni (`plan.entry` – notatki automatu są jego własne, nie leżą na wpisie rozkładu; `AutoOperator.plan(nr)` do diagnozy), a o tym, czy stopień
   trzeba nastawić, mówią urządzenia – stopień, w którym pociąg już jest (także po minięciu semafora na Sz / rozkaz),
   schodzi z planu; stopień, który czeka na pociąg, zostaje w planie i po zgaszeniu z usterki jest nastawiany od nowa
   (także dla pociągu przed semaforem wjazdowym); gdy wszystkie stopnie czekają, automat zajmuje się wyjazdem (pociąg

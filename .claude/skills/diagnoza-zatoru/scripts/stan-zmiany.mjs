@@ -49,21 +49,21 @@ let from = opt.from != null ? Clock.parse(opt.from) : null;
 if (from != null && from < Clock.parse(scenario.startTime ?? station.startTime ?? '00:00')) from += 24 * 3600;
 let done = false, last = null, header = false;
 /** Stan pociągu w jednym wierszu – do śladu (wypisywany tylko, gdy się zmienił). */
-const line = (sim, e) => {
+const line = (sim, e, op) => {
   const tr = e.train, signal = tr && !tr.finished ? tr.nextSignal?.() : null, sig = signal ? sim.ilk.signals.get(signal) : null;
-  const robot = Object.fromEntries(Object.entries(e).filter(([k, v]) => k.startsWith('_') && v != null && typeof v !== 'function'));
+  const robot = op.plan(e.nr);
   const faults = (sim.faults?.active?.() ?? []).map((f) => `${f.type} ${f.target ?? ''}`.trim());
   // bez listy zajętych odcinków – zmienia się co sekundę jazdy i zagłusza ślad (jest w zrzucie na końcu)
   return [e.status, tr ? `${tr.mode}/${tr.state}` : '–', `sygnał ${signal ?? '–'}${sig ? `=${sig.aspect}` : ''}`,
     `postój ${sim.traffic.waitReason(e)?.code ?? '–'}`, `automat ${JSON.stringify(robot)}`, `przebiegi ${sim.ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id).join(',') || '–'}`,
     `usterki ${faults.join(',') || '–'}`].join(' | ');
 };
-playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim) => {
+playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim, { op }) => {
   if (done) return;
   if (from != null && opt.train != null && sim.clock.time >= from && sim.clock.time < at) {
     const e = sim.traffic.timetable().find((x) => String(x.nr) === String(opt.train));
     if (!header) { header = true; console.log(`Ślad pociągu ${opt.train} od ${hm(sim.clock.time)}:`); }
-    const now = e ? line(sim, e) : 'pociągu nie ma w rozkładzie zmiany';
+    const now = e ? line(sim, e, op) : 'pociągu nie ma w rozkładzie zmiany';
     if (now !== last) { last = now; console.log(`  ${hm(sim.clock.time)}  ${now}`); }
   }
   if (sim.clock.time < at) return;
@@ -91,9 +91,8 @@ playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim) =
     }
     const b = e.to ? sim.blocks.get(e.to) : null;
     if (b) console.log(`  blokada szlaku ${e.to}: ${JSON.stringify(plain(b))}; zgoda na przebieg: ${JSON.stringify(b.gate?.('route'))}`);
-    // pola robocze automatu (zaczynają się od „_”) – tu widać, na co automat czeka
-    const robot = Object.fromEntries(Object.entries(e).filter(([k, v]) => k.startsWith('_') && v != null && typeof v !== 'function'));
-    console.log(`  notatki automatu przy pociągu: ${JSON.stringify(robot)}`);
+    // plan automatu przy pociągu (dalsze stopnie wjazdu, semafor pośredni wyjazdu, polecenie) – tu widać, na co czeka
+    console.log(`  plan automatu przy pociągu: ${JSON.stringify(op.plan(e.nr))}`);
   }
   const set = ilk.routesSet();
   console.log(`\nPrzebiegi nastawione: ${set.filter((x) => x.state !== 'setting').map((x) => `${x.id} (${x.state})`).join(', ') || '–'}; w nastawianiu: ${set.filter((x) => x.state === 'setting').map((x) => x.id).join(', ') || '–'}`);
