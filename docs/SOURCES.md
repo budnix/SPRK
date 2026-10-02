@@ -872,6 +872,26 @@ Ze źródeł – lokomotywy towarowe:
   14 240 mm (katalog Newag jak wyżej, s. 16, kolumna „przed modernizacją”).
 
 
+## Pociągi z nazwami (`src/model/data/namedTrains.js`, `scripts/named-trains.mjs`, `src/model/namedTrains.js`)
+
+Ze źródła: pociągi PKP Intercity z nazwami w rozkładzie rocznym 2025/2026 z całej Polski – kategoria (EIP, EIC, IC,
+TLK), numer, nazwa, stacja początkowa i końcowa z godzinami, ważniejsze stacje po kolei. Źródło: zestawienia pociągów
+vagonweb.cz (https://www.vagonweb.cz/razeni/?rok=2026&zeme=PKPIC – lista kategorii i strona pociągu z polem „Trasa”;
+trasa ma tam charakter orientacyjny, a pierwotnym źródłem jest rozkład jazdy PKP Intercity – portalpasazera.pl,
+intercity.pl). Dla Pomorza porównane z komunikatem PKP Intercity o rozkładzie 2025/2026
+(https://www.intercity.pl/pl/site/o-nas/dzial-prasowy/aktualnosci/nowe-mozliwosci-podrozy-z-pkp-intercity.-rozklad-jazdy-na-sezon-2025/2026-dla-wojewodztwa-pomorskiego.html):
+EIC „Morskie Oko” Gdynia – Zakopane, IC „Lazur”, IC „Kuter”, IC „Zatoka”, TLK „Małopolska”, IC „Gwarek”, IC „Baltic
+Express”. Plik jest generowany (`node scripts/named-trains.mjs`, opis w nagłówku skryptu) – po zmianie rozkładu rocznego
+wystarczy uruchomić go z nowym rokiem; pociąg z trasą skróconą (bez stacji pośrednich w źródle) ma `partial`.
+
+W grze: nazwa jest przypisana do trasy, więc pociąg z listy zastępuje powtórzenie pociągu dalekobieżnego wzorca tylko
+wtedy, gdy jedzie tą samą drogą – przez miasto początku relacji wzorca, a potem przez miasto jej końca (`namedTrainsVia`;
+miasto = nazwa stacji bez dopisku dworca, `cityOf`); pociąg, który na stacji kończy albo zaczyna bieg, zastępuje tylko
+pociąg kończący / zaczynający w tym samym mieście. Przyjęte: godzina – pociąg z listy jedzie w grze o porze powtórzenia
+wzorca, nie o swojej rzeczywistej; kolejność doboru nazw (z numeru wzorca i numeru powtórzenia – ta sama nazwa na
+każdej stacji na trasie); sezonowość i dni kursowania pominięte; numer w grze to numer powtórzenia wzorca, nie numer
+z rozkładu. Relacje stacji fikcyjnych nie mają pociągów na liście – zostają z wzorca.
+
 ## Zmiana czoła i rozmowy z maszynistą (`src/model/Train.js` – `cabChangeTime`, `src/model/Comms.js` – rozmowa)
 
 Ze źródła – Instrukcja o użytkowaniu urządzeń radiołączności pociągowej Ir-5 (R-12), tekst ujednolicony z uchwałą

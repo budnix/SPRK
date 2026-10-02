@@ -284,6 +284,8 @@ Polish railway rules and terminology).
   definition check and one played shift at its own level in `npm test`, which fails on errors and on repeatable warnings not
   accepted in `tests/scenario-accepted.js`; how to write a variant – `docs/STATION-FORMAT.md`, rules – `docs/ARCHITECTURE.md`
   („Automat sprawdzający scenariusze”),
+* `scripts/named-trains.mjs` – builds `src/model/data/namedTrains.js`, the list of named PKP Intercity trains (category, name,
+  stations along the route) used for long-distance trains in generated duties; run it again when the yearly timetable changes,
 * `scripts/seed-scan.mjs` – flaky-test finder (`npm run seed-scan -- --help`): tests that create a shift without a `seed` get a
   different one on every run and may fail once in a hundred runs, usually in CI. The script runs every test file under many
   repeatable seed sets (`scripts/random-seed.mjs`, `SPRK_RAND=<n>`), one process per file and set on all cores, and prints
