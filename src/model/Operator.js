@@ -185,8 +185,8 @@ export class AutoOperator {
       if (e.exitRouteSet && route.exit) e.exitRouteSet = false;
       // pierwszy stopień wyjazdu dwustopniowego – wyjazd zacznie się od nowa
       if (e._viaSignal && route.end.type === 'signal' && route.end.id === e._viaSignal) { e._viaSignal = null; continue; }
-      // kolejny stopień wjazdu wieloetapowego (pociąg minął już semafor wjazdowy)
-      if (e.from && !tr.entryPending && !route.exit) e._entryPath = [route.id, ...(e._entryPath || [])];
+      // kolejny stopień wjazdu wieloetapowego (pociąg minął już semafor wjazdowy) – wraca do planu, jeśli go w nim nie ma
+      if (e.from && !tr.entryPending && !route.exit && !e._entryPath?.includes(route.id)) e._entryPath = [route.id, ...(e._entryPath || [])];
     }
   }
 
@@ -286,12 +286,24 @@ export class AutoOperator {
       }
 
       // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
-      // pociąg już przyjechał (stanął przy peronie) – wjazd skończony: stopień, którego nie dało się nastawić (usterka
-      // na drodze, pociąg wjechał na Sz), nie może wstrzymywać dalszych czynności, inaczej automat nie nastawi wyjazdu
-      if (e._entryPath?.length && e.actualArr != null) e._entryPath = null;
+      // `_entryPath` to plan: stopnie drogi wjazdu przed pociągiem. Czy stopień trzeba nastawić, mówią urządzenia, nie
+      // notatka: stopień, w którym pociąg już jest (wjechał albo minął jego semafor na Sz / rozkaz), i wcześniejsze
+      // schodzą z planu; stopień, który czeka na pociąg (nastawiony albo w nastawianiu, semafor nie zgasł), zostaje
+      // w planie – gdy usterka go zgasi, a automat zwolni (`#recoverRoutes`), będzie nastawiony od nowa, także dla
+      // pociągu, który nie minął jeszcze semafora wjazdowego. Polecenie dostaje tylko pierwszy stopień, którego nie ma.
+      // Gdy wszystkie czekają, automat idzie dalej (wyjazd pociągu bez postoju) – plan nie wstrzymuje innych czynności.
+      if (e._entryPath?.length && e.actualArr != null) e._entryPath = null; // pociąg przyjechał – wjazd skończony
       if (e._entryPath?.length) {
-        if (this.#setRoute(e._entryPath[0]).ok) e._entryPath.shift();
-        continue;
+        const occ = tr.occupiedSections();
+        const inside = e._entryPath.findLastIndex((id) => ilk.routes.get(id)?.sections.some((sid) => occ.has(sid)));
+        if (inside >= 0) e._entryPath = e._entryPath.slice(inside + 1);
+        const waits = (id) => {
+          const act = ilk.active.get(id);
+          if (act) return !act.trainEntered && (ilk.manualSignal || (!act.signalOff && !act.timedRelease));
+          return ilk.pending.some((p) => p.route.id === id);
+        };
+        const next = e._entryPath.find((id) => !waits(id));
+        if (next) { this.#setRoute(next); continue; }
       }
       // ---- wjazd ----
       // Przebiegu wjazdowego potrzebuje pociąg, który nie minął jeszcze semafora wjazdowego (`entryPending`), i to ten,
@@ -368,7 +380,8 @@ export class AutoOperator {
           // inny tor tylko przy torze zamkniętym, przy krzyżowaniu albo gdy tor zajmuje skład, który już nie odjedzie;
           // chwilowo zajęty/utwierdzony tor planowy – czekać
           if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick) || stays(pick)) closed = true; if (closed) continue; break; }
-          if (path && pick === path[0] && path.length > 1) e._entryPath = path.slice(1).map((r) => r.id);
+          // plan dalszych stopni – zawsze od nowa: po zmianie toru stary plan nie może zostać przy pociągu
+          e._entryPath = path && pick === path[0] && path.length > 1 ? path.slice(1).map((r) => r.id) : null;
           if (e._cmdAccept) this.#complete(e._cmdAccept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
           break;
         }

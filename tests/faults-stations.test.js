@@ -106,10 +106,10 @@ const passesOf = (r, sig) => r.obs.passes.filter((p) => p.split(': ')[0].endsWit
  * Dyżurny testu: automat, a gdy `how` ('Sz' | 'S') – przy pociągu gotowym do jazdy przed semaforem, któremu usterka nie
  * pozwala dać sygnału zezwalającego (`blockedAhead`), Sz albo rozkaz „S”. Droga za semaforem: nastawiony przebieg (zwrotnice
  * utwierdzone); bez przebiegu – zwrotnice drogi na tor planowy ustawione i zamknięte (Zz), zdjęte po przejeździe. Przy
- * wjeździe z toru Eap bez stwierdzenia przejazdu – najpierw dKo. `hold` – przebieg, którego semafor zgasł z usterki przed
- * pociągiem, dyżurny trzyma utwierdzony do przejazdu pociągu na Sz / rozkaz (automat wtedy nie działa).
+ * wjeździe z toru Eap bez stwierdzenia przejazdu – najpierw dKo. Automat działa przez cały czas: przebieg zgaszony
+ * z usterki przed pociągiem zwalnia (Pz), a po przejeździe pociągu na Sz / rozkaz nie nastawia go już za pociągiem.
  */
-function attendant(how = null, { hold = false } = {}) {
+function attendant(how = null) {
   const locked = []; // { id, nr, sig } – Zz dyżurnego testu
   const fn = (sim) => {
     for (let i = locked.length - 1; i >= 0; i--) {
@@ -127,9 +127,6 @@ function attendant(how = null, { hold = false } = {}) {
       if (b && !b.auto && !b.fault && !b.koPrepared) sim.execute({ type: 'block', exit: e.from, btn: 'dKo' });
       fn.given.push({ nr: e.nr, sig: sig.id, how, at: now(sim), res: how === 'Sz' ? sim.execute({ type: 'substitute', signal: sig.id }) : sim.traffic.issueOrder({ nr: e.nr, signal: sig.id }) });
     }
-    // automat: przebieg zgaszony z usterki przed pociągiem zwalnia (Pz) i zapamiętuje jako stopień wjazdu do nastawienia od
-    // nowa; gdy pociąg minie semafor na Sz / rozkaz, ten stopień zostaje i blokuje dalszą obsługę pociągu (także wyjazd)
-    if (hold && [...sim.ilk.active.values()].some((a) => a.faultDrop && a.signalOff && !a.trainEntered && sim.traffic.trains.some((tr) => !tr.finished && tr.nextSignal() === a.route.start))) return;
     autoDispatch(sim);
   };
   fn.given = [];
@@ -255,7 +252,7 @@ const routeSets = (sim) => {
  * Sz albo rozkaz „S”. `variant(v, nr, type, target, opcje dyżurnego)` – część opcji `run` zależna od wariantu.
  */
 const VARIANTS = [{ name: 'krótka, pociąg czeka', how: null }, { name: 'długa, Sz', how: 'Sz' }, { name: 'długa, rozkaz „S”', how: 'S' }];
-const variant = (v, nr, type, target, extra = {}) => ({ fault: { type, target, duration: v.how ? 10 : 30 }, repair: v.how ? null : nr, dispatch: attendant(v.how, extra) });
+const variant = (v, nr, type, target) => ({ fault: { type, target, duration: v.how ? 10 : 30 }, repair: v.how ? null : nr, dispatch: attendant(v.how) });
 const expectedPass = (how) => (!how ? 'sygnał' : how === 'Sz' ? 'Sz' : 'rozkaz');
 
 /* ------------------------------------------------------------------ */
@@ -293,7 +290,7 @@ test('Sopot, zajętość bez pociągu w drugim stopniu (H-O), gdy pociąg jest w
   for (const target of ['E2a', 'T2']) for (const v of VARIANTS) {
     if (target === 'T2' && !v.how) continue; // krótka: odcinek drogi za semaforem H wystarcza
     list.push(() => {
-      const r = run({ ...SOPOT, when: inStage(55104, 'A-H', 'H'), ...variant(v, 55104, 'false-occupancy', target, { hold: !!v.how }), setup: routeSets });
+      const r = run({ ...SOPOT, when: inStage(55104, 'A-H', 'H'), ...variant(v, 55104, 'false-occupancy', target), setup: routeSets });
       const msg = label(sopot, 'komputerowe', 55104, `w przebiegu A-H przed H, usterka ${v.name}`, r);
       check(r, msg);
       assert.ok(r.obs.waited.has('55104 H'), `${msg}: 55104 czekał przed H przy zajętości z usterki`);
