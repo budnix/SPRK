@@ -8,8 +8,45 @@ import { isFinished } from '../timetable/phase.js';
 /**
  * Zmiana grana dyżurnym automatycznym bez widoku – wspólna dla automatu sprawdzającego scenariusze
  * (`scripts/check-scenario.mjs`), przeglądu silnika (`scripts/survey.mjs`), skilla diagnoza-zatoru i testów: krok 0,5 s
- * (jeden takt silnika), automat co 2 s, niezmienniki bezpieczeństwa po każdym takcie. Moduł logiki: bez DOM.
+ * (jeden takt silnika), automat co 2 s, niezmienniki bezpieczeństwa po każdym takcie. Rytm gry jest w jednym miejscu –
+ * `play` (z niego korzysta `playShift`, testy przez `play` z `tests/helpers.js`). Moduł logiki: bez DOM.
  */
+
+/** Krok gry bez widoku [s] – przy `speed: 1` jeden takt silnika. */
+export const STEP = 0.5;
+
+/** Dyżurny działa w pierwszym kroku i potem co `OP_EVERY` kroki (co 2 s). */
+export const OP_EVERY = 4;
+
+/**
+ * Gra symulacji `sim` w rytmie gry z automatem: krok `STEP`, dyżurny `dispatch` w pierwszym kroku i potem co
+ * `OP_EVERY` kroki. `dispatch` – funkcja `(sim) => …`, obiekt z `tick()` (np. `AutoOperator`) albo `null` (same kroki).
+ * Zwraca grę `{ until, steps }`; licznik kroków jest wspólny dla kolejnych `until`, więc dyżurny zachowuje rytm
+ * (jedna gra = jedna pętla; nowa gra liczy od nowa).
+ *
+ * `until(end, { stop, each })` – kroki, dopóki czas < `end` i `stop(sim)` nie zwraca true (sprawdzane przed każdym
+ * krokiem); `end` – 'HH:MM', sekundy albo funkcja `() => sekundy` dla końca, który się przesuwa (czytana przed krokiem); `each(sim, { opTick, steps })` – po każdym kroku i dyżurnym (`opTick`: w tym kroku
+ * działał dyżurny, `steps`: kroki tej gry łącznie z tym). Zwraca grę – można dalej: `game.until('07:00').until(…)`.
+ */
+export function play(sim, dispatch) {
+  const tick = dispatch == null ? null : typeof dispatch === 'function' ? () => dispatch(sim) : () => dispatch.tick();
+  let steps = 0;
+  const game = {
+    get steps() { return steps; },
+    until(end, { stop = null, each = null } = {}) {
+      const fixed = typeof end === 'string' ? Clock.parse(end) : end;
+      const limit = typeof end === 'function' ? end : () => fixed;
+      while (sim.clock.time < limit() && !stop?.(sim)) {
+        sim.step(STEP);
+        const opTick = steps++ % OP_EVERY === 0;
+        if (opTick) tick?.();
+        each?.(sim, { opTick, steps });
+      }
+      return game;
+    },
+  };
+  return game;
+}
 
 /** Ile pierwszych naruszeń (z czasem) zapisać dla zmiany. */
 export const FIRST_VIOLATIONS = 3;
@@ -52,11 +89,10 @@ export function playShift({ station, scenario, seed, level = 'none', extra = 120
   const until = endTime + extra * 60;
   const viol = { count: 0, ticks: 0, first: [] };
   let prev = new Set();
-  let n = 0;
-  while (sim.clock.time < until) {
-    sim.step(0.5);
-    const opTick = n++ % 4 === 0;
-    if (opTick) op.tick();
+  const game = play(sim, op);
+  // z `settle`: co minutę czasu symulacji (120 kroków), po kroku – jak sprawdzenie na końcu pętli
+  const stop = settle ? () => game.steps > 0 && game.steps % 120 === 0 && settled(sim, endTime) : null;
+  game.until(until, { stop, each: (_, { opTick }) => {
     const v = violations(sim);
     viol.ticks += v.length;
     const now = new Set(v);
@@ -68,7 +104,6 @@ export function playShift({ station, scenario, seed, level = 'none', extra = 120
     }
     prev = now;
     onTick?.(sim, { opTick, op });
-    if (settle && n % 120 === 0 && settled(sim, endTime)) break;
-  }
+  } });
   return { sim, violations: viol, endTime, until: sim.clock.time };
 }

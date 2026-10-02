@@ -20,6 +20,8 @@
   Kod UI/DOM (`src/render/*Renderer.js`, `src/ui/`, `src/main.js`) sprawdza się w przeglądarce (Playwright,
   Chromium Playwrighta: `npx playwright install chromium` albo `SPRK_CHROMIUM=…`) – co najmniej scenariusz „kliknięcia → stan symulacji” i zrzut ekranu;
   jeśli da się wydzielić logikę bez DOM (jak `screens.js`), wydziel ją i przetestuj w Node.
+- Gra z automatem w teście: `play(sim).until('08:25', { stop: allArrived })` z `tests/helpers.js` (rytm gry z
+  `src/model/check/play.js`) – nie przepisuj pętli „krok 0,5 s, dyżurny co czwarty krok”.
 - Testy „wszystkich kombinacji” (`tests/matrix-*.test.js`) i pełne zmiany stacji (`tests/<stacja>.test.js`)
   są siatką bezpieczeństwa – nie osłabiaj ich asercji, żeby przeszły; napraw przyczynę.
 - Zmiana wymagająca aktualizacji istniejącego testu musi być uzasadniona w commicie (co się zmieniło w regule).

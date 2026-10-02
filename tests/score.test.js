@@ -2,16 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch } from './helpers.js';
+import { play } from './helpers.js';
 import szkolna from '../src/stations/szkolna.js';
 import orlowo from '../src/stations/gdynia-orlowo.js';
 
 test('zmiana kończy się po wyprawieniu ostatniego pociągu na szlak (nie czeka na dojazd do sąsiada) i po zadaniach manewrowych', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   let report = null; sim.bus.on('shift-end', (r) => { report = r; });
-  let n = 0;
-  const end = Clock.parse('09:10');
-  while (sim.clock.time < end && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:10', { stop: () => sim.ended });
   assert.ok(sim.ended, 'zmiana nie zakończyła się sama');
   assert.equal(sim.endReason, 'all-done');
   assert.ok(sim.clock.time < sim.endTime, 'koniec przed czasem zmiany');
@@ -41,8 +39,8 @@ test('zmiana nie kończy się, dopóki zadanie manewrowe nie jest wykonane albo 
   sim.bus.on('log', (l) => { if (/Rozkład wyczerpany/.test(l.msg)) logs.push(l); });
   // wszystkie pociągi obsługuje automat, ale zadania manewrowego nikt nie wykonuje (automat widzi je dopiero po afterTime)
   sim.traffic.tasks[0].afterTime = Infinity;
-  let n = 0;
-  const until = (hhmm) => { const t = Clock.parse(hhmm); while (sim.clock.time < t && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); } };
+  const game = play(sim);
+  const until = (hhmm) => game.until(hhmm, { stop: () => sim.ended });
   until('08:07');
   const tt = sim.traffic.timetable();
   assert.ok(tt.every((e) => e.status !== 'oczekiwany' && e.status !== 'żądanie pozwolenia'), 'rozkład powinien być obsłużony');
@@ -72,9 +70,7 @@ test('zdarzenia oceny i wpisy dziennika o pociągu niosą numer pociągu w polu 
   const sim = new Simulation(szkolna, { scenario: { ...base, endTime: '08:00' }, disruptions: 'none', seed: 1 });
   const logs = [];
   sim.bus.on('log', (l) => logs.push(l));
-  let n = 0;
-  const end = Clock.parse('08:01');
-  while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('08:01');
   const nrs = new Set(sim.traffic.timetable().map((e) => String(e.nr)));
   const TRAIN_CODES = ['punctual', 'late-depart', 'late-pass', 'held', 'wrong-track', 'unfinished', 'task', 'task-failed', 'spad', 'order'];
   const items = sim.score.items.filter((i) => TRAIN_CODES.includes(i.code));

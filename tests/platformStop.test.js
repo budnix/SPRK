@@ -7,7 +7,7 @@ import szkolna from '../src/stations/szkolna.js';
 import { Clock } from '../src/core/Clock.js';
 import { PLATFORM_STOP } from '../src/model/Train.js';
 import zacisze from '../src/stations/zacisze.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, play } from './helpers.js';
 
 /*
  * Miejsce zatrzymania pociągu przy peronie – z układu stacji, bez danych per stacja. Ie-1 (2026) §17 ust. 15 pkt 4:
@@ -22,15 +22,12 @@ const run = ({ trains = [6101, 6102], seed = 1, timetable = null, until = '07:25
   const scenario = { id: 't', name: 't', endTime: '10:00', srk: 'komputerowe', ...(timetable ? { timetable } : { trains }) };
   const sim = new Simulation(szkolna, { scenario, disruptions: 'none', seed });
   const stops = new Map();
-  let n = 0;
-  while (sim.clock.time < Clock.parse(until)) {
-    sim.step(0.5);
-    if (auto && n++ % 4 === 0) autoDispatch(sim);
+  play(sim, auto ? autoDispatch : null).until(until, { each: () => {
     onTick?.(sim);
     for (const tr of sim.traffic.trains) {
       if (!stops.has(tr.nr) && tr.hasStopped && tr.v === 0) { const t = tr.occupiedTiles(); stops.set(tr.nr, { head: t.at(-1).x, tail: t[0].x, at: tr.head, short: tr.stopShort }); }
     }
-  }
+  } });
   return { sim, stops };
 };
 
@@ -124,12 +121,10 @@ test('peron od samego początku odcinka (Szkolna, tor 2): pociąg prawie tak dł
 test('tor czołowy (Zacisze, kozioł za peronem): pociąg dojeżdża do końca peronu jak dotąd', () => {
   const sc = zacisze.scenarios.find((x) => x.id === 'zmiana-lcs');
   const sim = new Simulation(zacisze, { scenario: sc, disruptions: 'none', seed: 1 });
-  let stop = null, n = 0;
-  while (!stop && sim.clock.time < Clock.parse('07:30')) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  let stop = null;
+  play(sim).until('07:30', { stop: () => Boolean(stop), each: () => {
     const tr = sim.traffic.trains.find((t) => t.nr === 7101);
     if (tr?.hasStopped && tr.v === 0) stop = tr.occupiedTiles().at(-1).x;
-  }
+  } });
   assert.equal(stop, 24, 'czoło na ostatniej kostce peronu, przed kozłem');
 });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { EventBus } from '../src/core/EventBus.js';
 import { LineBlock } from '../src/model/Block.js';
 import { FORMULAS } from '../src/model/Comms.js';
+import { play } from './helpers.js';
 
 /*
  * Telefonogramy (audyt realizmu, grupa 4). Wzory Ir-1, Dodatek 2: 1a – zapytanie o drogę, 4a – pozwolenie, 5a – „Stój”,
@@ -119,7 +120,7 @@ test('W26 / W31: tryb ręczny – automat dyżurnego nadaje swoje telefonogramy 
     assert.equal(sim.phoneRoutine, 'manual');
     const op = new AutoOperator(sim, { district: null, role: 'full' });
     const end = Clock.parse(sim.scenario.endTime ?? '09:00');
-    for (let n = 0; sim.clock.time < end; n++) { sim.step(0.5); if (n % 4 === 0) op.tick(); }
+    play(sim, op).until(end);
     const bad = sim.score.items.filter((i) => i.code === 'phone-routine');
     assert.deepEqual(bad.map((i) => i.msg), [], `${id}: kary za telefonogramy automatu`);
     assert.ok(sim.comms.messages.some((m) => m.dir === 'out'), `${id}: automat nadawał telefonogramy`);

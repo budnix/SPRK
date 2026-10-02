@@ -1,12 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock, autoDispatch } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch, play } from './helpers.js';
 
 test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpruć', () => {
   const sim = makeSim();
   const end = Clock.parse('08:40');
-  let n = 0;
-  while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end);
   const tt = sim.traffic.timetable();
   for (const e of tt) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `pociąg ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, '2'); continue; }
@@ -72,12 +71,11 @@ test('status „odjechał” zostaje, gdy pociąg jedzie torem szlakowym do sąs
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
   const after = new Set(); // statusy od chwili, gdy pociąg opuścił stację
-  let n = 0, left = false;
-  while (sim.clock.time < Clock.parse('07:20') && e.status !== 'na następnym posterunku') {
-    sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim);
+  let left = false;
+  play(sim).until('07:20', { stop: () => e.status === 'na następnym posterunku', each: () => {
     if (e.status === 'odjechał') left = true;
     if (left) after.add(e.status);
-  }
+  } });
   assert.equal(e.status, 'na następnym posterunku');
   assert.ok(left, 'pociąg powinien przejść przez status „odjechał”');
   assert.deepEqual([...after].sort(), ['na następnym posterunku', 'odjechał'], 'na szlaku status nie wraca do „jedzie”');

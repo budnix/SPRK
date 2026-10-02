@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import sopot from '../src/stations/sopot.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 
 test('Sopot: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(sopot).errors, []);
@@ -33,18 +33,15 @@ test('Sopot: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem
 test('Sopot: pełna zmiana – przejazdy trzyprzebiegowe, odstawianie na tor 13 i tor 4, dwa składy przekazane', () => {
   const sim = new Simulation(sopot, { disruptions: 'none' });
   const end = Clock.parse('08:20');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.finished) continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s} (${occ.get(s)} i ${tr.nr})`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 29);
   for (const e of tt) {

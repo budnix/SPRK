@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import tczew from '../src/stations/tczew.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 
 test('Tczew: definicja poprawna, brak urwanych torów, przebiegi węzła (9, 131, 203, 726/728) zgodne z układem', () => {
   assert.deepEqual(validateStation(tczew).errors, []);
@@ -40,18 +40,15 @@ test('Tczew: definicja poprawna, brak urwanych torów, przebiegi węzła (9, 131
 test('Tczew: pełna zmiana – IC/Regio linii 9, Bydgoszcz, nawroty do Chojnic, towarowe do Zajączkowa – bez kolizji i przetrzymań', () => {
   const sim = new Simulation(tczew, { disruptions: 'none' });
   const end = Clock.parse('08:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.mode !== 'train') continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 30);
   for (const e of tt) {
@@ -75,8 +72,7 @@ test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat pr
   const e = sim.traffic.timetable().find((x) => x.nr === 44611);
   // 16 min: 44631 dostaje Z → tor 15 (07:49), zanim 44611 dojedzie do E1
   sim.traffic.setInboundDelay(e, 16);
-  let n = 0;
-  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:00', { stop: allArrived });
   const end = sim.traffic.timetable().find((x) => x.nr === 44631);
   assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
   assert.equal(String(end.actualTrack), '15', '44631 kończy bieg na torze 15');
@@ -91,8 +87,7 @@ test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat pr
 test('Tczew: przejazdowy na inny tor tylko z wyjazdem na jego szlak – przy torach 15, 7, 5 zamkniętych nie na tor 1', () => {
   const closedSections = ['T15', 'T7', 'T5'].map((section) => ({ section }));
   const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611], closedSections }, disruptions: 'none' });
-  let n = 0;
-  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:00', { stop: allArrived });
   const e = sim.traffic.timetable().find((x) => x.nr === 44611);
   assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
   assert.ok(['9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack}`);

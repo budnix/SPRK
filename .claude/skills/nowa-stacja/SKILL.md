@@ -74,7 +74,7 @@ toru (`closedSections`). Każdy wariant – skill `nowy-scenariusz`.
 
 - `tests/<id>.test.js` – wzór `tests/pruszcz-gdanski.test.js`: definicja bez błędów i urwanych torów; z każdego semafora
   wjazdowego i wyjazdowego przebiegi dokładnie na te tory i szlaki, które pozwala plan; żaden przebieg nie zawraca;
-  rodzaje blokad; pełna zmiana grana `autoDispatch` – bez kolizji, każdy pociąg na swoim torze, bez opóźnień i przetrzymań.
+  rodzaje blokad; pełna zmiana grana automatem (`play(sim).until(end, { stop: allArrived, each })` z `tests/helpers.js`) – bez kolizji, każdy pociąg na swoim torze, bez opóźnień i przetrzymań.
 - `tests/e2e/desk.spec.js` – blok jak dla Pruszcza: karta posterunku z rodzajem stanowiska, blokady szlaków, semafory
   wjazdowe obecne na stanowisku.
 - Same obejmą nową stację (przechodzą po `STATIONS`): definicja i przebieg każdego scenariusza (`tests/scenario-check*.test.js`),

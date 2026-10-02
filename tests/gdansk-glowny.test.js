@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import gdansk from '../src/stations/gdansk-glowny.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 
 test('Gdańsk Główny: definicja poprawna, brak urwanych torów, przebiegi (9, SKM, 202, 250, 227, 249) i tory czołowe peronów IV/V; tylko stanowisko komputerowe', () => {
   assert.deepEqual(validateStation(gdansk).errors, []);
@@ -37,18 +37,15 @@ test('Gdańsk Główny: definicja poprawna, brak urwanych torów, przebiegi (9, 
 test('Gdańsk Główny: pełna zmiana – SKM co 15 min, Regio i IC/EIC linii 9, pociągi kończące bieg na peronach IV/V i wracające, towarowe na Zaspę i z Brzeźna – bez kolizji i przetrzymań', () => {
   const sim = new Simulation(gdansk, { disruptions: 'none' });
   const end = Clock.parse('08:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.mode !== 'train') continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 37);
   for (const e of tt) {

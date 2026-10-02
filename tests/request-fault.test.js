@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import zacisze from '../src/stations/zacisze.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch, allArrived, run, Clock } from './helpers.js';
+import { allArrived, run, Clock, play } from './helpers.js';
 
 /*
  * Zgłoszenie pociągu przez sąsiada nie może przepaść, gdy blokada liniowa zmienia tryb pracy (usterka łączności albo
@@ -47,8 +47,7 @@ test('Zacisze: usterka blokady kończy się między „droga wolna” a wyprawie
   const tt = sim.traffic.timetable();
   sim.traffic.setInboundDelay(tt.find((e) => e.nr === 7103), 13);
   const end = Clock.parse('10:30');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   const left = tt.filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'))).map((e) => `${e.nr}: ${e.status}`);
   assert.deepEqual(left, []);
 });

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import rumia from '../src/stations/rumia.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived, run } from './helpers.js';
+import { allArrived, run, play } from './helpers.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 
 test('Rumia: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem (wyjazdy na zachód dwustopniowe)', () => {
@@ -40,18 +40,15 @@ test('Rumia: pełna zmiana – SKM co 15 min w obu kierunkach na torze 5, region
   // 93205 miał 4 min i test padał przypadkowo (npm run seed-scan, zestaw 139)
   const sim = new Simulation(rumia, { disruptions: 'none', seed: 1 });
   const end = Clock.parse('08:20');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.mode !== 'train') continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 29);
   for (const e of tt) {
@@ -74,8 +71,7 @@ test('Rumia: pociąg opóźniony u sąsiada i wyprzedzony na szlaku – automat 
   const tt = sim.traffic.timetable();
   for (const [nr, min] of [[93204, 26], [93205, 21], [93207, 5]]) sim.traffic.setInboundDelay(tt.find((e) => e.nr === nr), min);
   const end = Clock.parse('08:20');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   for (const e of tt) {
     if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
     assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
@@ -91,8 +87,7 @@ test('Rumia: pociąg opóźniony u sąsiada i wyprzedzony na szlaku – automat 
 function shiftWithFault(fault) {
   const sim = new Simulation(rumia, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '08:15', faults: [fault] } });
   const end = Clock.parse('09:30');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   return sim;
 }
 const stuckTrains = (sim) => sim.traffic.timetable().filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'))).map((e) => `${e.nr}: ${e.status}`);
@@ -109,10 +104,8 @@ test('Rumia: usterka obwodu torowego pod pociągiem – przebieg nie rozwiązuje
   const sim = new Simulation(rumia, { disruptions: 'none' });
   const from = sim.traffic.timetable().filter((e) => e.from === 'RD2');
   const end = Clock.parse('09:30');
-  let n = 0, faulty = null, stuckSeen = false, repaired = false;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  let faulty = null, stuckSeen = false, repaired = false;
+  play(sim).until(end, { stop: allArrived, each: () => {
     // pierwszy pociąg od Redy jest na pierwszym odcinku przebiegu od semafora R: środkowy odcinek wykazuje zajętość
     if (!faulty) {
       const act = [...sim.ilk.active.values()].find((a) => a.route.start === 'R' && a.trainEntered && a.lockedSections.length >= 3);
@@ -126,7 +119,7 @@ test('Rumia: usterka obwodu torowego pod pociągiem – przebieg nie rozwiązuje
       // obwód torowy naprawiony dopiero po doraźnym zwolnieniu przebiegu
       if (stuckSeen && !act) { faulty.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); repaired = true; }
     }
-  }
+  } });
   assert.ok(faulty && stuckSeen, 'usterka pod pociągiem zatrzymała rozwiązanie przebiegu');
   assert.deepEqual(stuckTrains(sim), []);
   assert.equal(sim.ilk.active.size, 0);

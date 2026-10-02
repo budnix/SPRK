@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import wola from './fixtures/wola-pustkowska.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 
 test('Wola Pustkowska: definicja poprawna, przebiegi zgodne z układem', () => {
   assert.deepEqual(validateStation(wola).errors, []);
@@ -21,16 +21,13 @@ test('Wola Pustkowska: definicja poprawna, przebiegi zgodne z układem', () => {
 test('Wola Pustkowska: pełna zmiana z manewrami i przekazaniem składu, bez naruszeń bezpieczeństwa', () => {
   const sim = new Simulation(wola, { disruptions: 'none' });
   const end = Clock.parse('09:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  play(sim).until(end, { stop: allArrived, each: () => {
     const occ = new Map();
     for (const tr of sim.traffic.trains) {
       if (tr.mode !== 'train') continue;
       for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
     }
-  }
+  } });
   for (const e of sim.traffic.timetable()) {
     if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
     assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
@@ -45,8 +42,7 @@ test('Wola Pustkowska: pełna zmiana z manewrami i przekazaniem składu, bez nar
 test('Wola Pustkowska: scenariusz z blokadą Borków bez łączności – zapowiadanie telefoniczne', () => {
   const sim = new Simulation(wola, { scenario: 'borki-bez-blokady' });
   const end = Clock.parse('09:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   const borki = sim.traffic.timetable().filter((e) => e.from === 'B' || e.to === 'B');
   for (const e of borki) assert.ok(e.status === 'na następnym posterunku' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
   assert.ok(sim.comms.messages.some((m) => m.kind === 'ask'), 'brak pytania telefonicznego');

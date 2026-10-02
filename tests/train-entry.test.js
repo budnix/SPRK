@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, autoDispatch } from './helpers.js';
+import { makeSim, run, play } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { createEntry, shownTime } from '../src/model/timetable/entry.js';
@@ -43,8 +43,8 @@ test('plan i przebieg zmiany są zapisywalne; pole definicji o nazwie pola przeb
 test('skład w manewrach: postój przy peronie już go nie dotyczy (e.stop), a definicja się nie zmienia (Szkolna 90201)', () => {
   const sim = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana', seed: 1 });
   const e = sim.traffic.timetable().find((x) => x.nr === 90201);
-  let shunted = false, n = 0;
-  run(sim, 75 * 60, (s) => { if (n++ % 4 === 0) autoDispatch(s); if (e.phase === 'shunting') shunted = true; });
+  let shunted = false;
+  play(sim).until(sim.clock.time + 75 * 60, { each: () => { if (e.phase === 'shunting') shunted = true; } });
   assert.ok(shunted, 'skład nie manewrował');
   assert.deepEqual([e.stop, e.stopCancelled, e.source.stop], [false, true, true]);
 });

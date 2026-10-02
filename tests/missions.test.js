@@ -10,7 +10,7 @@ import { lessonSteps, withSteps, infoStep, actStep, LESSON_PHRASES } from '../sr
 import { GLOSSARY } from '../src/data/glossary.js';
 import { ORDERS } from '../src/srk/address.js';
 import { STATIONS, getStation } from '../src/stations/index.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 
 /* Samouczki: każda misja to własny plik, własne kroki i własny scenariusz (stacja, układ torów, rozkład) */
 
@@ -377,12 +377,10 @@ test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku �
     for (const sc of st.scenarios.filter((s) => !s.tutorial)) {
       const sim = new Simulation(st, { scenario: sc.id, disruptions: 'none', seed: 5 });
       assert.equal(sim.ilk.topo.tracks.filter((t) => t._openPorts).length, 0, `${id}: urwane porty toru`);
-      let n = 0;
-      while (sim.clock.time < Clock.parse('09:10') && !allArrived(sim) && !sim.ended) {
-        sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim);
+      play(sim).until('09:10', { stop: () => allArrived(sim) || sim.ended, each: () => {
         const occ = new Map();
         for (const tr of sim.traffic.trains) for (const sec of tr.occupiedSections()) { assert.ok(!occ.has(sec) || occ.get(sec) === tr.nr, `${id}: kolizja na ${sec}`); occ.set(sec, tr.nr); }
-      }
+      } });
       for (const e of sim.traffic.timetable()) {
         assert.ok(/na następnym posterunku|odjechał|przekazany|zakończył bieg/.test(e.status), `${id}/${sc.id} ${e.nr}: ${e.status}`);
         if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${id} ${e.nr}: tor`);
@@ -406,13 +404,10 @@ test('stacje misji 5 i 6: pełna zmiana na stanowisku misji z automatem dyżurne
     const shifts = st.scenarios.filter((s) => !s.tutorial);
     assert.deepEqual(shifts.map((s) => s.srk), [st.srk], `${id}: pełna zmiana tylko na stanowisku misji`);
     const sim = new Simulation(st, { scenario: shifts[0].id, disruptions: 'none', seed: 5 });
-    let n = 0;
-    while (sim.clock.time < Clock.parse(shifts[0].endTime) && !allArrived(sim)) {
-      sim.step(0.5);
-      if (n++ % 4 === 0) autoDispatch(sim);
+    play(sim).until(shifts[0].endTime, { stop: allArrived, each: () => {
       const occ = new Map();
       for (const tr of sim.traffic.trains) for (const sec of tr.occupiedSections()) { assert.ok(!occ.has(sec) || occ.get(sec) === tr.nr, `${id}: kolizja na ${sec}`); occ.set(sec, tr.nr); }
-    }
+    } });
     for (const e of sim.traffic.timetable()) {
       assert.equal(e.status, 'na następnym posterunku', `${id}/${e.nr}: ${e.status}`);
       assert.equal(String(e.actualTrack), String(e.track), `${id}/${e.nr}: tor`);

@@ -2,7 +2,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { autoDispatch, allArrived, play } from './helpers.js';
 import { violations, watchEvents } from '../src/model/check/invariants.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { isFinished } from '../src/model/timetable/phase.js';
@@ -102,10 +102,8 @@ export function runWithFault(sim, { when, fault, until = '11:00', dispatch = aut
   let end = Clock.parse(until);
   const events = watchEvents(sim);
   const bad = [];
-  let fired = false, added = null, n = 0, calm = false;
-  while (sim.clock.time < end) {
-    sim.step(0.5);
-    if (n++ % 4 === 0 && dispatch) dispatch(sim);
+  let fired = false, added = null, calm = false;
+  play(sim, dispatch).until(() => end, { each: () => { // koniec przybliża się po naprawie (`settle`)
     if (!fired && when(sim)) {
       const tgt = typeof fault.target === 'function' ? fault.target(sim) : fault.target;
       if (tgt != null) { fired = true; added = sim.faults.add({ type: fault.type, target: tgt, duration: fault.duration ?? 5 }); }
@@ -114,7 +112,7 @@ export function runWithFault(sim, { when, fault, until = '11:00', dispatch = aut
     if (bad.length < 5) for (const v of violations(sim)) bad.push(`${Clock.format(sim.clock.time, true)} ${v}`);
     // po naprawie i przejeździe wszystkich pociągów jeszcze `settle` min – sąsiad potwierdza przyjazd, przebiegi się rozwiązują
     if (!calm && fired && added.done && allArrived(sim)) { calm = true; end = Math.min(end, sim.clock.time + settle * 60); }
-  }
+  } });
   return { sim, fired, fault: added, violations: bad, events, arrived: allArrived(sim) };
 }
 

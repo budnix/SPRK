@@ -5,7 +5,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 import { Train, EMERGENCY_BRAKE, DRIVER_MIN, DRIVER_MAX, EASE_SPEED, EASE_SHARE, driverFactor } from '../src/model/Train.js';
 import { STATIONS } from '../src/stations/index.js';
 import szkolna from '../src/stations/szkolna.js';
-import { Clock } from './helpers.js';
+import { Clock, play } from './helpers.js';
 
 /*
  * Hamowanie jak maszynista (Train.brakeCurve): planowane opóźnienie to część hamowania służbowego (każdy maszynista
@@ -99,8 +99,7 @@ test('pełne zmiany z automatem i maszynistami: żaden pociąg nie mija semafora
     const spads = [];
     sim.bus.on('score', (x) => { if (x.code === 'spad') spads.push(x.msg); });
     const end = Clock.parse(sim.scenario.endTime || '10:00') + 60 * 60;
-    let n = 0;
-    while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) op.tick(); }
+    play(sim, op).until(end);
     assert.deepEqual(spads, [], `${id}: semafor „Stój” minięty`);
     assert.ok(sim.traffic.trains.every((tr) => tr.driver != null), `${id}: każdy pociąg ma maszynistę`);
     assert.equal(sim.traffic.trains.filter((tr) => tr.stoppedAt?.kind === 'spad').length, 0, `${id}: pociąg za semaforem`);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch, allArrived, Clock } from './helpers.js';
+import { allArrived, Clock, play } from './helpers.js';
 import sopot from '../src/stations/sopot.js';
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { faultSim, runWithFault, stuck } from './fault-harness.js';
@@ -19,8 +19,7 @@ test('krzyżowanie na szlaku jednotorowym: tor planowy zajęty przez pociąg, kt
     { nr: 1002, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:14', dep: '07:16', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
   ] } });
   const end = Clock.parse('09:00');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   const tt = sim.traffic.timetable();
   for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
   assert.equal(String(tt.find((e) => e.nr === 1001).actualTrack), '1');
@@ -39,14 +38,12 @@ test('krzyżowanie, gdy tor planowy ma dwa odcinki (Reda: peron I na T23, dalej 
     { nr: 56710, kind: 'os', name: 'Regio Gdynia Gł. – Hel', from: 'RM1', to: 'HL', arr: '07:05', dep: '07:35', track: '3', stop: true, length: 130, vmax: 100, dwell: 40 },
     { nr: 55711, kind: 'os', name: 'Regio Hel – Gdynia Gł.', from: 'HL', to: 'RM2', arr: '07:30', dep: '07:32', track: '3', stop: true, length: 130, vmax: 100, dwell: 40 },
   ] } });
-  let n = 0, met = false;
-  while (sim.clock.time < Clock.parse('09:00') && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  let met = false;
+  play(sim).until('09:00', { stop: allArrived, each: () => {
     const [a, b] = [56710, 55711].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr).train);
     // krzyżowanie naprawdę zachodzi: 56710 stoi na T23, a 55711 jest już na szlaku od Helu
     if (a?.entered && a.v === 0 && a.occupiedSections().has('T23') && b && !b.entered) met = true;
-  }
+  } });
   assert.ok(met, 'pociągi się krzyżują');
   const tt = sim.traffic.timetable();
   for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
@@ -59,10 +56,8 @@ test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nast
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
   const end = Clock.parse('10:30');
-  let n = 0, cancelled = false;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  let cancelled = false;
+  play(sim).until(end, { stop: allArrived, each: () => {
     // semafor wyjazdowy D1 podał sygnał dla 6101, pociąg jeszcze stoi – sygnał odwołany, przebieg zwolniony (raz)
     if (!cancelled && e.train && e.train.v === 0 && e.train.hasStopped && sim.ilk.signals.get('D1').route === 'D1-E' && Interlocking.isTrainProceed(sim.ilk.signals.get('D1').aspect)) {
       sim.ilk.cancelSignal('D1');
@@ -70,7 +65,7 @@ test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nast
       cancelled = true;
       assert.equal(sim.blocks.get('E').pwl, true, 'przeciwwtórność – drugiego sygnału na to pozwolenie nie będzie');
     }
-  }
+  } });
   assert.ok(cancelled, 'sygnał wyjazdowy był podany i odwołany');
   assert.equal(e.status, 'na następnym posterunku', `6101: ${e.status}`);
   assert.ok(sim.ilk.counters.Sz >= 1, 'wyjazd na Sz');
@@ -87,8 +82,7 @@ test('mijanka z dwoma torami (Olszyny): gdy z przeciwka nadjeżdża pociąg, aut
     { nr: 3002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:22', dep: '07:24', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 },
   ] } });
   const end = Clock.parse('10:00');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   const tt = sim.traffic.timetable();
   for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
   const by = (nr) => tt.find((e) => e.nr === nr);

@@ -7,7 +7,7 @@ import { ButtonProtocol } from '../src/srk/buttons.js';
 import { POINT_SWITCH_TIME, TIMED_RELEASE } from '../src/model/Interlocking.js';
 import szkolna from '../src/stations/szkolna.js';
 import sopot from '../src/stations/sopot.js';
-import { run } from './helpers.js';
+import { run, play } from './helpers.js';
 
 /* Urządzenia przekaźnikowe typu IZH-111: przyciski adresowe elementów + przyciski rozkazów (bsk.isdr.pl, srk_izh111) */
 
@@ -183,10 +183,10 @@ test('typ E i stanowisko komputerowe: zwalnianie jak dotąd (opcje zależności 
 });
 
 test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie pociągi obsłużone, bez rozpruć', async () => {
-  const { autoDispatch, allArrived } = await import('./helpers.js');
+  const { allArrived } = await import('./helpers.js');
   const sim = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana-izh' });
   assert.equal(sim.srk.id, 'izh111');
-  for (let i = 0; i < 2 * 60 * 120 && !allArrived(sim) && !sim.ended; i++) { sim.step(0.5); if (i % 4 === 0) autoDispatch(sim); }
+  play(sim).until(sim.clock.time + 2 * 3600, { stop: () => allArrived(sim) || sim.ended });
   const left = sim.traffic.timetable().filter((e) => !/na następnym posterunku|zakończył bieg|przekazany|odjechał/.test(e.status)).map((e) => `${e.nr}: ${e.status}`);
   assert.deepEqual(left, []);
   assert.equal(sim.ilk.counters.rozprucie, 0);

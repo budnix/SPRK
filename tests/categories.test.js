@@ -7,7 +7,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { Train } from '../src/model/Train.js';
 import sopot from '../src/stations/sopot.js';
 import szkolna from '../src/stations/szkolna.js';
-import { makeSim, run, Clock } from './helpers.js';
+import { makeSim, play } from './helpers.js';
 
 test('kategoria pociągu z pola cat albo z nazwy/rodzaju; prędkość i dynamika wg kategorii, vmax wpisu nadpisuje', () => {
   assert.equal(categoryOf({ name: 'IC „Kaszub” Kraków Gł. – Gdynia Gł.', kind: 'os' }), 'IC');
@@ -78,17 +78,11 @@ test('szybki pociąg (IC 160 km/h) zatrzymuje się przy peronie: horyzont hamowa
   const e = sim.traffic.timetable().find((x) => x.nr === 5310);
   // IC bez taboru jedzie wg kategorii (tabor to część planu wpisu)
   e.rollingStock = null;
-  let n = 0;
-  const { autoDispatch } = { autoDispatch: null };
-  const helpers = await_import();
-  async function await_import() { return import('./helpers.js'); }
-  return helpers.then(({ autoDispatch }) => {
-    while (sim.clock.time < Clock.parse('06:20')) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
-    assert.equal(e.train?.vmax, 160 / 3.6, 'pociąg jedzie jako IC');
-    assert.ok(e.actualArr != null, 'IC zatrzymał się na stacji (postój handlowy)');
-    assert.equal(String(e.actualTrack), '1');
-    assert.equal(e.status, 'na następnym posterunku');
-  });
+  play(sim).until('06:20');
+  assert.equal(e.train?.vmax, 160 / 3.6, 'pociąg jedzie jako IC');
+  assert.ok(e.actualArr != null, 'IC zatrzymał się na stacji (postój handlowy)');
+  assert.equal(String(e.actualTrack), '1');
+  assert.equal(e.status, 'na następnym posterunku');
 });
 
 /*

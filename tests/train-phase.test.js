@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, autoDispatch } from './helpers.js';
+import { makeSim, play } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { PHASES, setPhase, initialPhase, isHandled, isFinished } from '../src/model/timetable/phase.js';
@@ -13,16 +13,14 @@ import { PHASES, setPhase, initialPhase, isHandled, isFinished } from '../src/mo
 /** Kolejne różne etapy pociągu `nr` w zmianie prowadzonej automatem; przy każdym takcie sprawdza zgodność napisu z kodem. */
 function phases(sim, nr, seconds) {
   const seen = [];
-  let n = 0;
-  run(sim, seconds, (s) => {
-    if (n++ % 4 === 0) autoDispatch(s);
+  play(sim).until(sim.clock.time + seconds, { each: (s) => {
     for (const e of s.traffic.timetable()) {
       assert.equal(e.status, PHASES[e.phase]({ signal: e.heldAt, nr: e.handedTo }), `${e.nr}: napis „${e.status}” do etapu ${e.phase}`);
     }
     const e = s.traffic.timetable().find((x) => x.nr === nr);
     const k = e.phase === 'held' ? `held:${e.heldAt}` : e.phase === 'handed-over' ? `handed-over:${e.handedTo}` : e.phase;
     if (seen.at(-1) !== k) seen.push(k);
-  });
+  } });
   return seen;
 }
 

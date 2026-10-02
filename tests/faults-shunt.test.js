@@ -287,6 +287,7 @@ function p7Run(srk, how, { onAuth, onPoint }) {
   const e = entryOf(sim, 6101);
   const st = { auth: null, onAuth: null, onPoint: null, unlockAfter: null };
   const end = Clock.parse('07:30');
+  // własna pętla, nie `play`: czynności dyżurnego zaraz po kroku, przed automatem
   let n = 0;
   while (sim.clock.time < end && !allArrived(sim)) {
     sim.step(0.5);

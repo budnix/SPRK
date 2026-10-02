@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, Clock } from './helpers.js';
+import { makeSim, Clock, play } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { AutoOperator } from '../src/model/Operator.js';
 import { TIMED_RELEASE } from '../src/model/Interlocking.js';
@@ -131,14 +131,13 @@ test('nastawnia wykonawcza (okręgi): bez polecenia dyżurnego wjazd czeka z pow
   const go2 = sim.operators[0];
   assert.equal(go2.role, 'executive');
   const player = new AutoOperator(sim, { district: 'GO', role: 'full' });
-  let n = 0;
-  const until = (hhmm) => { while (sim.clock.time < Clock.parse(hhmm)) { sim.step(0.5); if (n++ % 4 === 0) player.tick(); } };
-  until('06:16');
+  const game = play(sim, player);
+  game.until('06:16');
   assert.equal(key(go2.report(55100)), 'entry/no-command');
   assert.deepEqual(go2.plan(55100), { entry: null, via: null, accept: null });
   sim.issueCommand({ kind: 'accept', nr: 55100, track: '6', from: 'GO', to: 'GO2' });
   const after = new Set();
-  while (sim.clock.time < Clock.parse('06:17')) { sim.step(0.5); if (n++ % 4 === 0) player.tick(); after.add(key(go2.report(55100))); }
+  game.until('06:17', { each: () => after.add(key(go2.report(55100))) });
   assert.ok([...after].some((k) => k?.startsWith('entry/route-set:')), [...after].join(', '));
   assert.deepEqual(go2.plan(55100).accept, { kind: 'accept', track: '6' });
 });

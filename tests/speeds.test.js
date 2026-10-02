@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import station from './fixtures/stare-pustkowie.js';
 import gdansk from '../src/stations/gdansk-glowny.js';
-import { run } from './helpers.js';
+import { run, play } from './helpers.js';
 
 /*
  * Prędkości (audyt realizmu, grupa 3).
@@ -102,11 +102,10 @@ async function maxOnTrack(st, scenario, nr, section) {
   const sim = new Simulation(st, { scenario: { ...scenario, trains: [nr] }, disruptions: 'none', seed: 1 });
   const op = new AutoOperator(sim, { district: null, role: 'full' });
   const e = sim.traffic.timetable()[0];
-  let vmax = 0, n = 0;
-  for (let i = 0; i < 2 * 3600 * 2 && !e.train?.hasStopped; i++) {
-    sim.step(0.5); if (n++ % 4 === 0) op.tick();
+  let vmax = 0;
+  play(sim, op).until(sim.clock.time + 2 * 3600, { stop: () => e.train?.hasStopped, each: () => {
     if (e.train?.occupiedSections().has(section)) vmax = Math.max(vmax, kmh(e.train.v));
-  }
+  } });
   assert.ok(e.train?.hasStopped, `pociąg ${nr} nie dojechał`);
   return vmax;
 }

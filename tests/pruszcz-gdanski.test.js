@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 
@@ -36,18 +36,15 @@ test('Pruszcz Gdański: definicja poprawna, brak urwanych torów, przebiegi lini
 test('Pruszcz Gdański: pełna zmiana – Regio i IC linii 9, towarowe Zajączkowo/Pszczółki ↔ Port Północny, Stara Piła ↔ Gdańsk – bez kolizji i przetrzymań', () => {
   const sim = new Simulation(pruszcz, { disruptions: 'none' });
   const end = Clock.parse('08:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.mode !== 'train') continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 21);
   for (const e of tt) {

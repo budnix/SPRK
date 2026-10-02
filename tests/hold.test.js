@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { FORMULAS } from '../src/model/Comms.js';
 import szkolna from '../src/stations/szkolna.js';
 import jodlowa from '../src/stations/jodlowa.js';
-import { autoDispatch, allArrived, run, Clock } from './helpers.js';
+import { allArrived, run, Clock, play } from './helpers.js';
 
 /*
  * Wstrzymanie pociągu sąsiada: „Stój pociąg nr …” (Ir-1, Dodatek 2, wzór 5a). Bez tego żądania pozwolenia od sąsiada
@@ -72,8 +72,7 @@ for (const delay of [6, 10, 14]) {
     const tt = sim.traffic.timetable();
     sim.traffic.setInboundDelay(tt.find((e) => e.nr === 6612), delay);
     const end = Clock.parse('10:00');
-    let n = 0;
-    while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+    play(sim).until(end, { stop: allArrived });
     for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
     for (const nr of [6611, 6612]) assert.equal(String(tt.find((e) => e.nr === nr).actualTrack), '3');
     assert.deepEqual(sim.score.items.filter((i) => i.code === 'unfinished' || i.code === 'comms-wrong' || i.code === 'spad'), []);
@@ -89,8 +88,7 @@ test('Jodłowa: pociąg do Borków stoi na torze 3, a Borki żądają pozwolenia
   const log = [];
   sim.bus.on('log', (m) => log.push(m.msg));
   const end = Clock.parse('09:30');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   const [p, q] = [2001, 2002].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr));
   assert.equal(p.status, 'na następnym posterunku', `2001: ${p.status}`);
   assert.equal(q.status, 'na następnym posterunku', `2002: ${q.status}`);

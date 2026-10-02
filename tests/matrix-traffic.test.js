@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock, autoDispatch } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch, play } from './helpers.js';
 import { safety } from './invariants.js';
 
 /** Dyżurny automatyczny z wyborem toru dla danego pociągu. */
@@ -30,14 +30,11 @@ test('każdy pociąg na tor planowy i na tor zamienny: przyjazd, postój, odjazd
     const sim = makeSim();
     const trackFor = (e) => (variant === 'plan' || e.terminates || e.unit ? e.track : (e.track === '1' ? '2' : '1'));
     const end = Clock.parse('08:40');
-    let n = 0;
     const seen = new Set();
-    while (sim.clock.time < end) {
-      sim.step(0.5);
-      if (n++ % 4 === 0) autoDispatch(sim, trackFor);
+    play(sim, (s) => autoDispatch(s, trackFor)).until(end, { each: () => {
       safety(sim, `${variant} ${Clock.format(sim.clock.time, true)}`);
       for (const tr of sim.traffic.trains) for (const s of tr.occupiedSections()) seen.add(s);
-    }
+    } });
     for (const e of sim.traffic.timetable()) {
       const want = trackFor(e);
       if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${variant} ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, want); continue; }

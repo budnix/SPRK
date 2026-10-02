@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import gdynia from './fixtures/gdynia-glowna-okregi.js'; // okręgi tylko w stacji testowej – w grze Gdynia Główna jest jednym stanowiskiem
 import { Clock } from '../src/core/Clock.js';
@@ -8,8 +8,7 @@ import { AutoOperator } from '../src/model/Operator.js';
 
 function runShift(sim, playerOp) {
   const end = Clock.parse('08:25');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) playerOp.tick(); }
+  play(sim, playerOp).until(end, { stop: allArrived });
 }
 
 function assertAllDone(sim) {
@@ -36,15 +35,15 @@ test('okręgi: sygnalizatory i szlaki przypisane do GO / GO2, przyciski drugiego
 test('gracz jako dyżurny GO: GO2 wykonuje polecenia, bez polecenia pociąg od Gdańska czeka', () => {
   const sim = new Simulation(gdynia, { district: 'GO', scenario: { id: 't', name: 't', trains: [55100], endTime: '06:40' } });
   const go = new AutoOperator(sim, { district: 'GO', role: 'full' }); // gracz obsługuje tylko wschód, poleceń nie wydaje
-  let n = 0;
-  while (sim.clock.time < Clock.parse('06:16')) { sim.step(0.5); if (n++ % 4 === 0) go.tick(); }
+  const game = play(sim, go);
+  game.until('06:16');
   const e = sim.traffic.timetable()[0];
   // linia 202: blokada samoczynna – sąsiad wyprawia bez pozwolenia, ale GO2 bez polecenia nie nastawia wjazdu
   assert.ok(e.train && e.train.v === 0 && e.train.stoppedAt?.kind === 'signal', 'GO2 przyjęło pociąg bez polecenia dyżurnego');
   assert.equal(sim.ilk.active.size, 0, 'przebieg wjazdowy bez polecenia');
   // polecenie: przyjąć na tor 6
   sim.issueCommand({ kind: 'accept', nr: 55100, track: '6', from: 'GO', to: 'GO2' });
-  while (sim.clock.time < Clock.parse('06:30')) { sim.step(0.5); if (n++ % 4 === 0) go.tick(); }
+  game.until('06:30');
   assert.ok(e.train && e.train.entered, 'pociąg nie wjechał po poleceniu');
   assert.equal(sim.commands[0].status, 'done');
   assert.ok(sim.comms.messages.some((m) => m.from === 'GO2' && /przygotowana/.test(m.text)), 'brak meldunku GO2');

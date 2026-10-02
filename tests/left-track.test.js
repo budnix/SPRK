@@ -33,6 +33,7 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
   const res = sim.execute({ type: 'route', start: e.train.nextSignal(), end: sim.ilk.routes.get('C-GD1').endButton, kind: 'train', compound: true });
   assert.ok(res.ok, res.reason);
   let onLine = 0, refused = 0, routeSet = false;
+  // własna pętla, nie `play`: automat wraca dopiero po przyjeździe 9001 i liczy rytm od tej chwili (wspólne `n`)
   while (sim.clock.time < Clock.parse('07:30')) {
     sim.step(0.5);
     routeSet ||= sim.ilk.active.has('C-GD1');

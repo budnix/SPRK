@@ -4,7 +4,7 @@ import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { autoDispatch, allArrived, play } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -395,8 +395,7 @@ test('usterka napędu zwrotnicy trwa od `since`: zwrotnica przestawiona w czasie
 /** Zmiana bez usterki – do porównania (automat co 2 s, jak `runWithFault`). */
 function baseline(st, srk, timetable) {
   const sim = faultSim(st, { srk, timetable });
-  let n = 0;
-  while (!allArrived(sim) && sim.clock.time < Clock.parse('09:00')) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:00', { stop: allArrived });
   return sim;
 }
 const journal = (sim) => sim.traffic.timetable().map((e) => `${e.nr}: tor ${e.actualTrack}, przyjazd ${Clock.format(e.actualArr ?? 0, true)}, odjazd ${Clock.format(e.actualDep ?? 0, true)}`);

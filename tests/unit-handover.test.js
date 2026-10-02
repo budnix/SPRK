@@ -5,7 +5,7 @@ import szkolna from '../src/stations/szkolna.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import sopot from '../src/stations/sopot.js';
 import pustkowie from './fixtures/stare-pustkowie.js';
-import { autoDispatch, allArrived, run, Clock } from './helpers.js';
+import { autoDispatch, allArrived, run, Clock, play } from './helpers.js';
 
 /*
  * Szkolna: osobowy 90201 kończy bieg na torze 2, skład ma być odstawiony na tor 3 (zadanie 1) i podstawiony z powrotem
@@ -40,8 +40,8 @@ test('opóźnienie składu od sąsiada przesuwa termin zadań od chwili zgłosze
   const sim = new Simulation(szkolna, { scenario, disruptions: 'none' });
   sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 90201), 20);
   const [t1, t2] = ['odstaw-90201', 'podstaw-90202'].map((id) => sim.traffic.tasks.find((t) => t.id === id));
-  let n = 0;
-  const until = (hhmm) => { while (sim.clock.time < Clock.parse(hhmm) && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); } };
+  const game = play(sim);
+  const until = (hhmm) => game.until(hhmm, { stop: allArrived });
   // 90201 planowo 07:52 – sąsiad zgłasza opóźnienie 12 min wcześniej (07:40); dyżurny nie zna go przed zgłoszeniem
   until('07:39');
   assert.deepEqual([t1.deadline, t2.deadline], ['08:04', '08:10'], 'przed zgłoszeniem termin bez zmian');
@@ -73,8 +73,7 @@ test('pociąg utworzony ze składu nie jedzie na dawnym zezwoleniu: 90202 stoi p
 test('Szkolna: 90201 opóźniony tak, że zadania manewrowe przepadły – automat wyprawia 90202 wprost z toru 2, bez zatoru', () => {
   const sim = late(37, true);
   const end = Clock.parse('10:30');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   for (const e of sim.traffic.timetable()) assert.ok(['na następnym posterunku', 'zakończył bieg'].includes(e.status) || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
   assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).status, 'na następnym posterunku');
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
@@ -116,13 +115,10 @@ test('skład opóźniony po godzinie „podstaw”: najpierw odstawienie, potem 
     const u = sim.traffic.timetable().find((e) => e.nr === unit), e = sim.traffic.timetable().find((x) => x.nr === next);
     sim.traffic.setInboundDelay(u, delay);
     const [t1, t2] = [away, back].map((id) => sim.traffic.tasks.find((t) => t.id === id));
-    let n = 0;
     // do terminu „podstaw” + 10 min – wtedy zadanie jest wykonane albo przepadło
-    while (sim.clock.time < t2.deadlineTime + 11 * 60) {
-      sim.step(0.5);
-      if (n++ % 4 === 0) autoDispatch(sim);
+    play(sim).until(() => t2.deadlineTime + 11 * 60, { each: () => { // termin przesuwa się po zgłoszeniu opóźnienia
       assert.ok(!t2.done || t1.done, `${name}: podstawienie zaliczone przed odstawieniem`);
-    }
+    } });
     assert.ok(u.actualArr > t2.afterTime, `${name}: skład przyjechał po godzinie „podstaw”`);
     assert.deepEqual([t1.done, t2.done], [done, done], name);
     if (!done) assert.equal(sim.score.items.filter((i) => i.code === 'task-failed').length, 2, name);
@@ -136,8 +132,7 @@ test('Chylonia: oba zadania przepadły, gdy skład był w drodze na tor 22 – a
   const scenario = { id: 't', name: 't', endTime: '10:00', trains: [93151, 93202], tasks: earlier(chylonia.tasks.filter((x) => x.unit === 93151), 30) };
   const sim = new Simulation(chylonia, { scenario, disruptions: 'none' });
   sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 93151), 30);
-  let n = 0;
-  while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('08:30', { stop: allArrived });
   assert.deepEqual(sim.traffic.tasks.map((t) => t.failed), [true, true]);
   const e = sim.traffic.timetable().find((x) => x.nr === 93202);
   assert.equal(e.status, 'na następnym posterunku', e.status);
@@ -152,6 +147,7 @@ test('skład z zadaniem manewrowym w toku nie przechodzi w pociąg: przekazanie 
     sim.traffic.setInboundDelay(sim.traffic.timetable().find((e) => e.nr === 93151), 30);
     const e = sim.traffic.timetable().find((x) => x.nr === 93202);
     const open = () => sim.traffic.tasks.some((x) => !x.done && !x.failed && !(x.afterTask && sim.traffic.tasks.find((y) => y.id === x.afterTask)?.failed));
+    // własna pętla, nie `play`: przekazanie sprawdzane zaraz po kroku, przed dyżurnym
     let n = 0, handedWithOpenTask = false;
     while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) {
       const before = e.attached;
@@ -171,6 +167,7 @@ test('zadanie, którego nie da się wykonać, nie trzyma składu bez końca: prz
   const sim = new Simulation(szkolna, { scenario, disruptions: 'none', seed: 3 });
   const e = sim.traffic.timetable().find((x) => x.nr === 90202);
   const task = sim.traffic.tasks[0];
+  // własna pętla, nie `play`: chwile zapisywane zaraz po kroku, przed dyżurnym
   let n = 0, handedAt = null, failedAt = null;
   while (sim.clock.time < Clock.parse('09:30') && !allArrived(sim)) {
     sim.step(0.5);

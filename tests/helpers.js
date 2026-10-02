@@ -7,7 +7,7 @@ export function makeSim(opts = {}) {
   return sim;
 }
 
-/** Przesuwa symulację o `seconds` sekund czasu symulacji. */
+/** Przesuwa symulację o `seconds` sekund czasu symulacji – same kroki, bez dyżurnego (z dyżurnym: `play`). */
 export function run(sim, seconds, each) {
   const steps = Math.ceil(seconds / 0.5);
   for (let i = 0; i < steps; i++) { sim.step(0.5); if (each) each(sim); }
@@ -22,6 +22,7 @@ export { Clock, station };
 
 import { AutoOperator } from '../src/model/Operator.js';
 import { isFinished } from '../src/model/timetable/phase.js';
+import { play as playLoop } from '../src/model/check/play.js';
 
 /**
  * Uniwersalny dyżurny automatyczny (cała stacja) – opakowanie AutoOperator z możliwością
@@ -31,3 +32,11 @@ export function autoDispatch(sim, trackFor = null) {
   if (!sim._autoOp) sim._autoOp = new AutoOperator(sim, { district: null, role: 'full', trackFor });
   sim._autoOp.tick();
 }
+
+/**
+ * Gra w rytmie gry z automatem (krok 0,5 s, dyżurny co 2 s) – `play` z `src/model/check/play.js`, domyślnie z dyżurnym
+ * `autoDispatch`; `dispatch` – funkcja `(sim) => …`, `AutoOperator` albo `null` (same kroki). Przykład:
+ * `play(sim).until('08:25', { stop: allArrived })`; kilka etapów jednej gry: `const game = play(sim, op);
+ * game.until('06:16'); …; game.until('06:30');` (dyżurny zachowuje rytm). Nie przepisuj pętli `n++ % 4` w teście.
+ */
+export const play = (sim, dispatch = autoDispatch) => playLoop(sim, dispatch);

@@ -11,6 +11,13 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`),
   polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
+* Gra z automatem w teście: `play(sim).until('08:25', { stop: allArrived })` z `tests/helpers.js` (dyżurny domyślnie
+  `autoDispatch`; także `AutoOperator`, funkcja albo `null` – same kroki). Rytm gry (krok 0,5 s, dyżurny w pierwszym
+  kroku i potem co 2 s) jest w jednym miejscu – `play` w `src/model/check/play.js`, z którego korzysta też `playShift`
+  (przegląd, automat sprawdzający). Kilka etapów jednej gry: `const game = play(sim, op); game.until('06:16'); …;
+  game.until('06:30');` – dyżurny zachowuje rytm; `each(sim, { opTick, steps })` – sprawdzenia po każdym kroku; koniec,
+  który się przesuwa: `until(() => sekundy)`. Własną pętlę `n++ % 4` mają tylko testy, które coś robią zaraz po kroku,
+  a przed dyżurnym (z komentarzem przy pętli). Test rytmu: `tests/play.test.js`.
 * `tests/route-state.test.js` – stan przebiegu (`routeState` i pytania pokrewne) na typie E, IZH-111 i nastawni
   mechanicznej: każdy stan osiągany poleceniami i zajętością, bez ustawiania pól zapisu przebiegu.
 * `tests/docs.test.js` – dokumentacja architektury: każdy plik obszaru w tabeli indeksu `docs/ARCHITECTURE.md`, pliki
@@ -81,7 +88,7 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   przebiegu ruchu (`fingerprint`). `--json` zapisuje wyniki, `--compare` porównuje je z zapisanymi (gorzej / lepiej /
   nowe zatory / inny przebieg przy tych samych wskaźnikach) – przed zmianą w silniku i po niej. Kod wyjścia 1 przy
   zatorze, naruszeniu, spad, rozpruciu, karze wymuszonej usterką albo pozostałościach po zmianie. Pełny przegląd (ok. 35 s na 10 rdzeniach) nie wchodzi do `npm test`;
-  jego czyste funkcje sprawdza `tests/survey.test.js`. Pętlę zmiany (`playShift`: krok 0,5 s, automat co 2 s,
+  jego czyste funkcje sprawdza `tests/survey.test.js`. Pętlę zmiany (`playShift`: rytm gry z `play` – krok 0,5 s, automat co 2 s,
   niezmienniki po każdym takcie), kolejkę wątków (`runJobs` / `serveJobs` / `runParallel`) i wspólne opcje wiersza
   poleceń (`parseCli`) dzieli z automatem sprawdzającym scenariusze: pętla zmiany, niezmienniki i stan urządzeń po
   zmianie są w logice (`src/model/check/`: `play.js`, `invariants.js`, `outcome.js` – używają ich też testy i skill

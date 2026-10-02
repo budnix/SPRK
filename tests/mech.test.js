@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { getSrk } from '../src/srk/registry.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import szkolna from '../src/stations/szkolna.js';
-import { run, autoDispatch, allArrived, Clock } from './helpers.js';
+import { run, autoDispatch, allArrived, play } from './helpers.js';
 
 /* Urządzenia mechaniczne scentralizowane: dźwignie zwrotnic, drążek przebiegowy, blok przebiegowy utwierdzający,
    dźwignia sygnałowa (Instrukcja E16 §8–9, Ie-8 §5–9) */
@@ -217,8 +217,7 @@ test('mechaniczna: dźwignia sygnałowa przełożona po przejeździe blokuje cof
 test('mechaniczna: pełna zmiana na Szkolnej z automatem – dźwignie, drążki, bloki; pociągi o czasie, bez kar', () => {
   const sim = new Simulation(szkolna, { scenario: { ...szkolna.scenarios.find((x) => x.id === 'zmiana'), srk: 'mech' }, disruptions: 'none', seed: 5 });
   assert.equal(sim.srk.id, 'mech');
-  let n = 0;
-  while (sim.clock.time < Clock.parse('09:10') && !allArrived(sim) && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:10', { stop: () => allArrived(sim) || sim.ended });
   for (const e of sim.traffic.timetable()) {
     assert.ok(/na następnym posterunku|odjechał|przekazany|zakończył bieg/.test(e.status), `${e.nr}: ${e.status}`);
     assert.ok(e.delay <= 2, `${e.nr}: opóźnienie ${e.delay}`);
@@ -273,8 +272,7 @@ test('mechaniczna – usterka bloku przebiegowego trafia do losowania tylko na n
 test('mechaniczna – automat dyżurnego przy usterce bloku przebiegowego używa zwalniacza; pociągi o czasie', () => {
   const sc = { ...szkolna.scenarios.find((x) => x.id === 'zmiana'), srk: 'mech', faults: [{ type: 'route-block', target: 'A', at: '07:00', duration: 120 }] };
   const sim = new Simulation(szkolna, { scenario: sc, disruptions: 'none', seed: 5 });
-  let n = 0;
-  while (sim.clock.time < Clock.parse('09:10') && !allArrived(sim) && !sim.ended) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until('09:10', { stop: () => allArrived(sim) || sim.ended });
   for (const e of sim.traffic.timetable()) assert.ok(e.delay <= 2 && /na następnym posterunku|odjechał|przekazany|zakończył bieg/.test(e.status), `${e.nr}: ${e.status}, ${e.delay} min`);
   assert.ok(sim.ilk.counters.dPz >= 1, 'zwalniacz użyty');
   assert.deepEqual(sim.score.items.filter((i) => i.points < 0).map((i) => i.msg), []);
@@ -377,9 +375,9 @@ test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy pe
       { nr: 4002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:10', dep: '07:20', track: '2', stop: true, length: 100, vmax: 100, dwell: 60 },
     ] } });
     const e = sim.traffic.timetable()[0];
-    let n = 0;
-    while (sim.clock.time < Clock.parse('07:16') && e.actualArr == null) { sim.step(0.5); if (n++ % 4 === 0) auto(sim); }
-    run(sim, 20, () => { if (n++ % 4 === 0) auto(sim); });
+    const game = play(sim, auto);
+    game.until('07:16', { stop: () => e.actualArr != null });
+    game.until(sim.clock.time + 20);
     assert.ok(e.actualArr != null, `${srk}: pociąg przyjechał`);
     assert.equal(String(e.actualTrack), '2');
     assert.ok(e.train.occupiedSections().has('T2') && !e.train.occupiedSections().has('T2x'), `${srk}: stoi przy peronie, przed odcinkiem T2x`);
@@ -387,7 +385,7 @@ test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy pe
     assert.equal(sim.ilk.active.has('B-C2'), false, `${srk}: przebieg B-C2 zakończony`);
     assert.equal(sim.ilk.sections.get('T2x').route, null, `${srk}: odcinek T2x zwolniony`);
     for (const p of sim.ilk.routes.get('B-C2').points) assert.equal(sim.ilk.pointLockedByRoute(p.id), null, `${srk}: zwrotnica ${p.id} wolna`);
-    while (sim.clock.time < Clock.parse('08:30') && !done(sim)) { sim.step(0.5); if (n++ % 4 === 0) auto(sim); }
+    game.until('08:30', { stop: done });
     assert.equal(e.status, 'na następnym posterunku', `${srk}: ${e.status}`);
   }
 });
@@ -398,10 +396,8 @@ test('nastawnia mechaniczna: usterka obwodu torowego pod pociągiem – przebieg
     { nr: 5002, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:08', dep: '07:10', track: '2', stop: true, length: 100, vmax: 100, dwell: 60 },
   ] } });
   const e = sim.traffic.timetable()[0];
-  let n = 0, faulty = null, stuck = false;
-  while (sim.clock.time < Clock.parse('08:30') && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
+  let faulty = null, stuck = false;
+  play(sim).until('08:30', { stop: allArrived, each: () => {
     const act = sim.ilk.active.get('B-C2');
     // pociąg wjechał w przebieg: odcinek przed nim (przed torem docelowym) wykazuje zajętość bez taboru; naprawa dopiero
     // po zwolnieniu przebiegu – do tego czasu przebieg nie może się rozwiązać sam
@@ -411,7 +407,7 @@ test('nastawnia mechaniczna: usterka obwodu torowego pod pociągiem – przebieg
     }
     if (faulty && act && sim.ilk.routeStuck(act)) stuck = true;
     if (stuck && faulty.forced && !act) { faulty.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
-  }
+  } });
   assert.ok(faulty && stuck, 'przebieg zatrzymany przez usterkę');
   assert.equal(e.status, 'na następnym posterunku', e.status);
   assert.equal(sim.ilk.active.size, 0);

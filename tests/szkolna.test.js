@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { allArrived, play } from './helpers.js';
 import { MissionProgress } from '../src/tutorial/progress.js';
 import { missionSteps, MISSIONS, PHRASES } from '../src/tutorial/missions.js';
 import { GLOSSARY } from '../src/data/glossary.js';
@@ -185,15 +185,14 @@ test('Szkolna: krok z warunkiem spełnionym wcześniej jest przeskakiwany, „wr
 test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez kolizji', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   const end = Clock.parse('09:10');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end, { stop: allArrived });
   for (const e of sim.traffic.timetable()) assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
 });
 
 test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawieniu na tor 3 (afterTask), niezależnie od godziny', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
-  let n = 0;
-  const until = (hhmm, auto) => { const t = Clock.parse(hhmm); while (sim.clock.time < t) { sim.step(0.5); if (auto && n++ % 4 === 0) autoDispatch(sim); } };
+  const game = play(sim), idle = play(sim, null); // bez automatu kroki nie liczą się do jego rytmu
+  const until = (hhmm, auto) => (auto ? game : idle).until(hhmm);
   // ręcznie: przyjąć pociąg 90201 na tor 2 i zostawić go tam stojącego
   until('07:47', true);
   const W = sim.blocks.get('W');
@@ -216,8 +215,8 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
 
 test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowym; przekazanie jako 90202 czeka na tryb pociągowy; odjazd nie przed 08:12', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
-  let n = 0;
-  const until = (hhmm, auto) => { const t = Clock.parse(hhmm); while (sim.clock.time < t) { sim.step(0.5); if (auto && n++ % 4 === 0) autoDispatch(sim); } };
+  const game = play(sim), idle = play(sim, null); // bez automatu kroki nie liczą się do jego rytmu
+  const until = (hhmm, auto) => (auto ? game : idle).until(hhmm);
   const run = (sec) => { for (let i = 0; i < sec * 2; i++) sim.step(0.5); };
   const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
   const G = (id) => ({ kind: 'signal', id, color: 'green' }), Wt = (id) => ({ kind: 'signal', id, color: 'white' });
@@ -274,9 +273,8 @@ test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – ko�
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   sim.autoEnd = false;
   let reports = 0; sim.bus.on('shift-end', () => reports++);
-  let n = 0;
   const end = Clock.parse('08:49');
-  while (sim.clock.time < end) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+  play(sim).until(end);
   const done = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
   assert.ok(sim.traffic.timetable().every(done), 'wszystkie pociągi obsłużone');
   assert.equal(sim.ended, false, 'zmiana trwa, dopóki samouczek nie zakończy misji');
@@ -285,8 +283,7 @@ test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – ko�
   assert.equal(reports, 1, 'raport raz');
   // z automatycznym końcem (zmiana bez misji albo przerwany samouczek) zmiana kończy się sama po ostatnim pociągu
   const sim2 = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
-  n = 0;
-  while (sim2.clock.time < end && !sim2.ended) { sim2.step(0.5); if (n++ % 4 === 0) autoDispatch(sim2); }
+  play(sim2).until(end, { stop: () => sim2.ended });
   assert.equal(sim2.ended, true);
   assert.ok(sim2.clock.time < end, 'koniec przed 08:49 – po ostatnim pociągu, nie po czasie');
 });

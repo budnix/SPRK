@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, autoDispatch } from './helpers.js';
+import { makeSim, play } from './helpers.js';
 import { exitApproach, entryRoutes, trainTrack } from '../src/model/trainPaths.js';
 import sopot from '../src/stations/sopot.js';
 import { Simulation } from '../src/model/Simulation.js';
@@ -45,15 +45,13 @@ test('tor, na którym stoi skład: pierwszy zajęty odcinek z numerem toru, jako
   // prawdziwy pociąg zmiany prowadzonej automatem: po przyjeździe stoi na torze, który zapisał ruch
   // (sprawdzane raz, gdy pociąg z postojem stanie po przyjeździe – skład z zadaniem manewrowym przejeżdża potem na
   // inny tor, a pociąg bez postoju w chwili zapisu przejazdu jest już dalej)
-  let n = 0;
   const checked = new Set();
-  run(sim, 2 * 3600, (s) => {
-    if (n++ % 4 === 0) autoDispatch(s);
+  play(sim).until(sim.clock.time + 2 * 3600, { each: (s) => {
     for (const e of s.traffic.timetable()) {
       if (checked.has(e.nr) || !e.train || !e.stop || e.train.v !== 0 || e.actualArr == null || e.actualDep != null || !e.actualTrack) continue;
       checked.add(e.nr);
       assert.equal(trainTrack(s.ilk, e.train), String(e.actualTrack), `pociąg ${e.nr}`);
     }
-  });
+  } });
   assert.ok(checked.size >= 3, `pociągi sprawdzone przy przyjeździe: ${[...checked]}`);
 });

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import station from './fixtures/stare-pustkowie.js';
-import { run, Clock } from './helpers.js';
+import { run, Clock, play } from './helpers.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 
 const G = (id) => ({ kind: 'signal', id, color: 'green' });
@@ -31,8 +31,7 @@ test('zmiana z ziarnem nie losuje przez Math.random – ta sama zmiana przy tym 
       const op = new AutoOperator(sim, { district: null, role: 'full' });
       const log = [];
       sim.bus.on('log', (m) => log.push(`${Clock.format(m.time, true)} ${m.msg}`));
-      let n = 0;
-      while (sim.clock.time < sim.endTime) { sim.step(0.5); if (n++ % 4 === 0) op.tick(); }
+      play(sim, op).until(sim.endTime);
       return log;
     };
     const a = journal();
@@ -195,15 +194,13 @@ test('koniec zmiany czeka na obowiązki blokady: po wyjeździe na rozkaz „S”
     let departedAt = null;
     E.press = (btn) => (btn === 'dPo' && (dPoAfter == null || sim.clock.time < departedAt + dPoAfter) ? { ok: false } : press(btn)); // dyżurny zwleka z dPo
     const e = sim.traffic.timetable()[0];
-    let atEnd = null, ordered = false, n = 0;
+    let atEnd = null, ordered = false;
     sim.bus.on('shift-end', () => { atEnd = sim.score.items.map((i) => i.code); });
-    while (!sim.ended && sim.clock.time < Clock.parse('08:30')) {
-      sim.step(0.5);
-      if (n++ % 4 === 0) autoDispatch(sim);
+    play(sim).until('08:30', { stop: () => sim.ended, each: () => {
       // semafor D1 z usterką: rozkaz „S” na wyjazd przy nastawionym przebiegu
       if (!ordered && sim.clock.time >= Clock.parse('07:08') && e.train?.v === 0 && [...sim.ilk.active.keys()].some((id) => id.startsWith('D1-'))) ordered = sim.traffic.issueOrder({ nr: 2, signal: 'D1' }).ok;
       if (E.needPo && departedAt == null) departedAt = sim.clock.time;
-    }
+    } });
     return { sim, e, atEnd, departedAt };
   };
   const late = shift(20);
@@ -223,8 +220,7 @@ test('inny tor tylko przez usterkę na drodze toru planowego (semafor wyjazdowy,
   const shift = (faults) => {
     const sim = faultSim(szkolna, { srk: 'E', timetable: [{ nr: 2, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', stop: true, length: 100, vmax: 100, dwell: 60 }], faults });
     const op = new AutoOperator(sim, { district: null, role: 'full', trackFor: () => '2' }); // dyżurny przyjmuje na tor 2
-    let n = 0;
-    while (sim.clock.time < Clock.parse('07:12')) { sim.step(0.5); if (n++ % 4 === 0) op.tick(); }
+    play(sim, op).until('07:12');
     assert.equal(String(sim.traffic.timetable()[0].actualTrack), '2');
     return sim.score.items.filter((i) => i.code === 'wrong-track').map((i) => i.points);
   };

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { autoDispatch, allArrived, play } from './helpers.js';
 
 test('Gdynia Chylonia: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(chylonia).errors, []);
@@ -40,18 +40,15 @@ test('Gdynia Chylonia: definicja poprawna, brak urwanych torów, przebiegi zgodn
 test('Gdynia Chylonia: pełna zmiana – 31 pociągów, wyjazdy dwustopniowe, odstawianie na tor 22 i do Postojowej, skład przekazany', () => {
   const sim = new Simulation(chylonia, { disruptions: 'none' });
   const end = Clock.parse('08:20');
-  let n = 0;
-  while (sim.clock.time < end && !allArrived(sim)) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim);
-    if (n % 20 === 0) {
+  play(sim).until(end, { stop: allArrived, each: (_, { steps }) => {
+    if (steps % 20 === 0) {
       const occ = new Map();
       for (const tr of sim.traffic.trains) {
         if (tr.mode !== 'train') continue;
         for (const s of tr.occupiedSections()) { assert.ok(!occ.has(s) || occ.get(s) === tr.nr, `kolizja na ${s}`); occ.set(s, tr.nr); }
       }
     }
-  }
+  } });
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 31);
   for (const e of tt) {
@@ -73,8 +70,7 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3; skła
   for (const seed of [1, 2]) {
     const sim = new Simulation(chylonia, { scenario: 'tor-1-zamkniety', disruptions: 'none', seed });
     const end = Clock.parse('08:20');
-    let n = 0;
-    while (sim.clock.time < end && !allArrived(sim)) { sim.step(0.5); if (n++ % 4 === 0) autoDispatch(sim); }
+    play(sim).until(end, { stop: allArrived });
     for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
       assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
       assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
@@ -97,14 +93,12 @@ const onTrack2 = (closed) => {
     ...(closed ? { closedSections: [{ section: 'T1', from: '05:55', to: '09:00' }] } : {}) };
   const sim = new Simulation(chylonia, { scenario, disruptions: 'none' });
   const e = sim.traffic.timetable()[0];
-  let n = 0, turns = 0, dir = null;
-  while (sim.clock.time < Clock.parse('08:30')) {
-    sim.step(0.5);
-    if (n++ % 4 === 0) autoDispatch(sim, (x) => (x.nr === 55152 ? '2' : x.track));
+  let turns = 0, dir = null;
+  play(sim, (s) => autoDispatch(s, (x) => (x.nr === 55152 ? '2' : x.track))).until('08:30', { each: () => {
     const d = e.train?.entered && e.train.direction;
     if (d && dir && d !== dir) turns++;
     if (d) dir = d;
-  }
+  } });
   return { sim, e, turns, task: sim.traffic.tasks[0] };
 };
 
