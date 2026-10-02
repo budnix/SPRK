@@ -937,6 +937,62 @@ export class Interlocking {
     return !mid.some((x) => x.s.physical || x.i > (act.front ?? -1));
   }
 
+  /**
+   * Stan przebiegu `routeId` – jedno słowo na całe jego życie (pierwszy pasujący z góry):
+   *  - 'stuck'      pociąg przejechał, a przebieg sam się nie rozwiąże (`routeStuck`) – zostaje doraźne zwolnienie,
+   *  - 'entered'    pociąg minął sygnalizator i jest w przebiegu (albo przejechał, a przebieg czeka na zwolnienie),
+   *  - 'releasing'  zwalnianie czasowe w toku,
+   *  - 'signal-off' utwierdzony, pociąg jeszcze nie wjechał, sygnał na „Stój” (zgaszony z usterki, odwołany przez
+   *                 dyżurnego, w nastawni mechanicznej także przed przełożeniem dźwigni sygnałowej),
+   *  - 'waiting'    utwierdzony, czeka na pociąg, sygnał może zezwalać,
+   *  - 'setting'    w nastawianiu (zwrotnice się przestawiają),
+   *  - 'none'       nie ma go.
+   * Pola zapisu przebiegu (`active`, `pending`) to implementacja – inne moduły pytają o stan (`tests/route-state.test.js`).
+   */
+  routeState(routeId) {
+    const act = this.active.get(routeId);
+    if (!act) return this.pending.some((p) => p.route.id === routeId) ? 'setting' : 'none';
+    if (act.trainEntered) return this.routeStuck(act) ? 'stuck' : 'entered';
+    if (act.timedRelease) return 'releasing';
+    return act.signalOff ? 'signal-off' : 'waiting';
+  }
+
+  /** Przebieg jest przed pociągiem: utwierdzony, pociąg jeszcze do niego nie wjechał (stan z `routeState`). */
+  static routeAhead(state) {
+    return state === 'waiting' || state === 'signal-off' || state === 'releasing';
+  }
+
+  /** Sygnał przebiegu `routeId` zgasł przed pociągiem z przyczyny po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli). */
+  routeFaultDrop(routeId) {
+    return !!this.active.get(routeId)?.faultDrop;
+  }
+
+  /** Przebiegi nastawione (w kolejności nastawienia), potem nastawiane: `{ id, route, state, faultDrop }`. */
+  routesSet() {
+    const out = [];
+    for (const act of this.active.values()) out.push({ id: act.id, route: act.route, state: this.routeState(act.id), faultDrop: !!act.faultDrop });
+    for (const p of this.pending) out.push({ id: p.route.id, route: p.route, state: 'setting', faultDrop: false });
+    return out;
+  }
+
+  /** Przebieg od sygnalizatora `signalId` (nastawiony albo nastawiany): `{ id, route, state, faultDrop }` albo null. */
+  routeFrom(signalId) {
+    const act = this.signals.get(signalId)?.route ? this.active.get(this.signals.get(signalId).route) : null;
+    if (act) return { id: act.id, route: act.route, state: this.routeState(act.id), faultDrop: !!act.faultDrop };
+    const p = this.pending.find((x) => x.route.start === signalId);
+    return p ? { id: p.route.id, route: p.route, state: 'setting', faultDrop: false } : null;
+  }
+
+  /**
+   * Części nastawni mechanicznej przy przebiegu `routeId` (albo null, gdy nie jest nastawiony): `lever` – dźwignia
+   * sygnałowa przełożona, `blocked` – blok przebiegowy zablokowany, `passed` – pociąg przejechał, przebieg trzyma drążek,
+   * `blockStuck` – blok nie zwolnił się po przejeździe (usterka) – zostaje zwalniacz.
+   */
+  routeFrame(routeId) {
+    const act = this.active.get(routeId);
+    return act ? { lever: !!act.lever, blocked: !!act.blocked, passed: !!act.passed, blockStuck: !!act.stuck } : null;
+  }
+
   /** Przebieg (nastawiony lub nastawiany), który kończy się na elemencie `endId` – semaforze albo przycisku końca. */
   routeEndingAt(endId) {
     for (const act of this.active.values()) if (act.route.endButton === endId) return act.route;

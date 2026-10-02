@@ -51,6 +51,13 @@ docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 * **Zależności nie znają stanowiska.** `Interlocking` przyjmuje polecenia zależnościowe (przebieg z jawnym rodzajem,
   zwolnienie, „Stój”, zwrotnica, zamknięcie, Sz). Przyciski, kolory i uzbrojenie to sprawa protokołu obsługi
   (`src/srk/buttons.js`); widok nie zmienia stanu modelu wprost.
+* **O stan przebiegu pyta się zależności.** Zapis nastawionego przebiegu (`Interlocking.active`, `pending` i ich pola)
+  to implementacja zależności. Inne moduły pytają: `routeState(id)` – jedno słowo na całe życie przebiegu
+  (`none`, `setting`, `waiting`, `signal-off`, `releasing`, `entered`, `stuck` – gdy pasuje kilka, wygrywa dalszy na liście),
+  `Interlocking.routeAhead(stan)` – przebieg przed pociągiem (utwierdzony, pociąg jeszcze nie wjechał), `routesSet()`
+  – lista nastawionych i nastawianych `{ id, route, state, faultDrop }`, `routeFrom(sygnalizator)`, `routeFaultDrop(id)`
+  – sygnał zgasł z usterki urządzeń (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia,
+  blok przebiegowy). Znaczenie stanów: `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`.
 * **Stacja opisuje tor, stanowisko – swoje przyciski.** Definicja stacji nie zawiera przycisków grupowych pulpitu.
   Ich pola podaje `src/tiles/controls.js` (`deskControls(station)`: miejsce domyślne albo wskazówka
   `desk.controls`), a rysuje je widok stanowiska – tak samo jak kostki blokady liniowej (`blockLayout.js`).
@@ -741,6 +748,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 * `tests/*.test.js` – logika (`node --test`), bez DOM; macierze przebiegów, pełne zmiany, luki modelu (`model-gaps`), misje (`szkolna`),
   polecenia wprost i protokół przycisków (`commands`), granice warstw (`layers`).
+* `tests/route-state.test.js` – stan przebiegu (`routeState` i pytania pokrewne) na typie E, IZH-111 i nastawni
+  mechanicznej: każdy stan osiągany poleceniami i zajętością, bez ustawiania pól zapisu przebiegu.
 * `tests/skills.test.js` – skille projektu (`.claude/skills/*/SKILL.md` – listy kroków dla sesji AI: nowa stacja,
   scenariusz, posterunek na mapie, stanowisko, diagnoza zatoru, zasada ze źródła) i `CLAUDE.md`: każda wymieniona
   ścieżka, polecenie `npm run` i skill istnieją; skrypt diagnozy zatoru działa. Zmiana nazwy pliku albo polecenia
