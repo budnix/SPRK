@@ -15,16 +15,17 @@ import { autoDispatch } from './helpers.js';
  * Jazda pociągu 8403 (Wierzbno → tor 2 → Grabowiec: wjazd i wyjazd przez zwrotnice w kierunku zwrotnym) pod automatem
  * dyżurnego; zwraca największe szybkości [km/h]: w okręgu zwrotnicowym wjazdu i wyjazdu oraz za nim na wyjeździe.
  */
-function ride(scenario) {
-  const sim = new Simulation(olszyny, { scenario, disruptions: 'none' });
+function ride(scenario, seed) {
+  const sim = new Simulation(olszyny, { scenario, disruptions: 'none', seed });
   const e = sim.traffic.timetable().find((x) => x.nr === 8403);
-  const max = { inZone: 0, outZone: 0, afterZone: 0 };
+  const max = { inZone: 0, outZone: 0, afterZone: 0, step: 0 };
   let leftZone = false;
   for (let i = 0; i < 20000 && !e.train?.finished; i++) {
     autoDispatch(sim);
     sim.step(0.5);
     const tr = e.train;
     if (!tr?.entered || tr.finished) continue;
+    max.step = tr.brake * 0.5 * 3.6; // o tyle [km/h] pociąg zwalnia w jednym kroku symulacji (hamowanie służbowe)
     const occ = tr.occupiedSections();
     const v = tr.v * 3.6;
     const departing = !!tr.departedAt;
@@ -38,13 +39,24 @@ function ride(scenario) {
   return max;
 }
 
+/*
+ * Ziarna stałe (zmiana bez ziarna losuje je – maszynista hamuje w każdej zmianie trochę inaczej, więc test bywał
+ * przypadkowy: ok. 1 % ziaren dawało 41,0 km/h przy zapasie 1 km/h). 660962753 – najgorsze ze znalezionych (41,03 km/h).
+ * Zapas to jeden krok symulacji (0,5 s) hamowania służbowego: czoło mija semafor w trakcie kroku, w którym pociąg
+ * jeszcze dohamowuje do 40 km/h.
+ */
+const SEEDS = [1, 2, 3, 660962753];
+
 for (const scenario of ['zmiana-e', 'zmiana']) {
   test(`okręg zwrotnicowy (${scenario}): do 40 km/h od semafora do końca okręgu, cały pociąg; potem przyspiesza`, () => {
-    const max = ride(scenario);
-    // 1 km/h zapasu: krok symulacji 0,5 s – czoło mija semafor w trakcie kroku, w którym jeszcze dohamowuje do 40 km/h
-    assert.ok(max.inZone > 0 && max.inZone <= 41, `wjazd przez zwrotnice 1 i 3: ${max.inZone.toFixed(1)} km/h`);
-    assert.ok(max.outZone > 0 && max.outZone <= 41, `wyjazd przez zwrotnicę 2: ${max.outZone.toFixed(1)} km/h`);
-    assert.ok(max.afterZone > 45, `za okręgiem zwrotnicowym pociąg przyspiesza: ${max.afterZone.toFixed(1)} km/h`);
+    for (const seed of SEEDS) {
+      const max = ride(scenario, seed);
+      assert.ok(max.step > 0 && max.step < 3, `krok hamowania ${max.step.toFixed(2)} km/h`);
+      const limit = 40 + max.step;
+      assert.ok(max.inZone > 0 && max.inZone <= limit, `ziarno ${seed}, wjazd przez zwrotnice 1 i 3: ${max.inZone.toFixed(2)} km/h (do ${limit.toFixed(2)})`);
+      assert.ok(max.outZone > 0 && max.outZone <= limit, `ziarno ${seed}, wyjazd przez zwrotnicę 2: ${max.outZone.toFixed(2)} km/h`);
+      assert.ok(max.afterZone > 45, `ziarno ${seed}, za okręgiem zwrotnicowym pociąg przyspiesza: ${max.afterZone.toFixed(1)} km/h`);
+    }
   });
 }
 
