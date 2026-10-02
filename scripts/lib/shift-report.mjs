@@ -1,7 +1,8 @@
 import { performance } from 'node:perf_hooks';
 import { Clock } from '../../src/core/Clock.js';
 import { Interlocking } from '../../src/model/Interlocking.js';
-import { buildDuty } from '../../src/model/duty.js';
+import { DUTY_ID } from '../../src/model/duty.js';
+import { simulationOptions } from '../../src/model/shift/choice.js';
 import { shuntReach } from '../../src/model/scenarioCheck.js';
 import { STATIONS } from '../../src/stations/index.js';
 import { playShift } from '../../src/model/check/play.js';
@@ -26,6 +27,10 @@ const ROUTE_CODES = new Set(['no-route', 'signal-stop', 'route-setting']);
 const OWN_POSITION_CODES = new Set(['point-position', 'derailer-position']);
 
 export const same = (a, b) => String(a) === String(b);
+
+/** Służba `duty` (`{ start, minutes, srk? }`) dla ziarna `seed` – tak samo jak w grze (`src/model/shift/choice.js`). */
+export const dutyScenario = (station, duty, seed) =>
+  simulationOptions(station, { scenario: DUTY_ID, duty: { start: duty.start, minutes: duty.minutes }, seed, srk: duty.srk ?? null }).scenario;
 const faultRef = (f) => ({ type: f.type, target: f.target, scripted: !!f.scripted });
 
 // opóźnienie wniesione bez winy dyżurnego i planowa obsługa przesunięta o nie – reguły oceny (`Traffic`)
@@ -312,7 +317,7 @@ export function checkShift({ station = null, stationId = null, scenarioId = null
   if (!st) throw new Error(`Nieznana stacja: ${stationId}`);
   // służba o wybranej porze (`duty`: { start, minutes, srk? }) – rozkład budowany dla ziarna tej zmiany, jak w grze;
   // `scenarioId` – identyfikator w raporcie (służba każdego ziarna i stanowiska to osobny scenariusz)
-  const built = duty ? buildDuty(st, { ...duty, seed }).scenario : null;
+  const built = duty ? dutyScenario(st, duty, seed) : null;
   const sc0 = scenario ?? (built ? { ...built, id: scenarioId ?? built.id } : (st.scenarios || []).find((s) => s.id === scenarioId));
   if (!sc0) throw new Error(`Nieznany scenariusz: ${st.id}:${scenarioId}`);
   const sc = forceLevel ? { ...sc0, disruptions: forceLevel } : sc0;

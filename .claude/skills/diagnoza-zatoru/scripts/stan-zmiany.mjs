@@ -21,7 +21,8 @@ const root = (p) => import(pathToFileURL(join(process.cwd(), p)).href);
 const { STATIONS } = await root('src/stations/index.js');
 const { playShift } = await root('src/model/check/play.js');
 const { Clock } = await root('src/core/Clock.js');
-const { buildDuty } = await root('src/model/duty.js');
+const { DUTY_ID } = await root('src/model/duty.js');
+const { simulationOptions } = await root('src/model/shift/choice.js');
 
 const argv = process.argv.slice(2);
 const opt = { seed: 1, level: 'none' };
@@ -37,7 +38,7 @@ const station = STATIONS.find((s) => s.id === stationId);
 if (!station) { console.error(`Nieznana stacja: ${stationId} (${STATIONS.map((s) => s.id).join(', ')})`); process.exit(2); }
 const seed = Number(opt.seed);
 const scenario = opt.start != null
-  ? buildDuty(station, { start: Number(opt.start), minutes: Number(opt.minutes ?? 120), seed }).scenario
+  ? simulationOptions(station, { scenario: DUTY_ID, duty: { start: Number(opt.start), minutes: Number(opt.minutes ?? 120) }, seed }).scenario
   : (station.scenarios || []).find((s) => s.id === (scenarioId ?? 'zmiana')) ?? (station.scenarios || [])[0];
 if (!scenario) { console.error(`Nieznany scenariusz: ${target}`); process.exit(2); }
 // godzina po północy w zmianie przez północ: „00:40” rozumiane jako ciąg dalszy zmiany

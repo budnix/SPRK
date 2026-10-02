@@ -52,11 +52,14 @@ obok chwil `arrTime` / `depTime` / `deadlineTime`. Kto potrzebuje chwili, bierze
 definicji czyta godziny z definicji (nie z rozkładu zmiany): godziny 24–47 dopuszcza tylko w scenariuszu z `endTime` po
 24:00 (w zwykłej zmianie „26:15” to błąd `tt-time`), a godziny w nazwie zmiany porównuje z oknem modulo doba.
 
-Gra: adres `?stacja=…&scenariusz=sluzba&start=<godzina>&czas=<minuty>&seed=…[&srk=…]` (`main.js`: `normalizeDuty`,
-`buildDuty`; bez `seed` losuje je i służba jest inna za każdym razem). Strona posterunku (`StartScreen.#dutyChoice`):
-co pokazać, mówi `catalog.shiftChoices` – służba, scenariusze specjalne (z `faults` albo `closedSections`) i stanowiska
+Gra: adres `?stacja=…&scenariusz=sluzba&zaklocenia=…&start=<godzina>&czas=<minuty>&seed=…[&srk=…]`. Wybór zmiany
+(`src/model/shift/choice.js`) jest jeden dla gry, strony posterunku i narzędzi: `choiceFromParams` / `choiceToParams`
+(adres ⇄ `{ station, scenario, duty, srk, seed, level, district }`), `simulationOptions` (opcje `Simulation`; służba
+zbudowana dla ziarna – bez `seed` losowanego raz, więc służba jest inna za każdym razem; stanowisko gracza idzie też
+do scenariusza służby), `dutyWindow` (godziny do nazwy). Strona posterunku (`StartScreen.#dutyChoice`): co pokazać,
+mówi `shiftChoices` (`src/model/shift/offers.js`) – służba, scenariusze specjalne (z `faults` albo `closedSections`) i stanowiska
 do wyboru (zwykłe zmiany stacji na różnych stanowiskach → pole „Stanowisko”, parametr `srk` – dla służby i dla
-scenariusza specjalnego bez własnego `srk` w definicji: `catalog.srkChoosable`; scenariusz z własnym `srk` idzie na
+scenariusza specjalnego bez własnego `srk` w definicji: `srkChoosable`; scenariusz z własnym `srk` idzie na
 swoim – `Simulation` bierze stanowisko scenariusza przed parametrem); pod wyborem pora doby
 i liczba pociągów rozkładu, który powstanie (to samo ziarno idzie do adresu). Zwykłe zmiany zostają w definicji stacji:
 są wzorcem, podstawą testów stacji i działają pod dawnym adresem. Wynik gracza zapisuje się pod `sluzba-<minuty>`.

@@ -4,9 +4,10 @@ import { STATIONS } from '../src/stations/index.js';
 import { REGIONS, isRegion, inPoland } from '../src/model/regions.js';
 import { validateStation } from '../src/model/validate.js';
 import {
-  normalize, isTraining, dutyStations, stationSrks, editionsOf, placesOf, matchesQuery, searchStations, filterStations, regionCounts, erasOf,
+  normalize, dutyStations, stationSrks, editionsOf, placesOf, matchesQuery, searchStations, filterStations, regionCounts, erasOf,
   parseRoute, routeHash, parentRoute, lineOrder, regionLayout, GRADES, better, recordResult, bestResult, played, missionDone,
 } from '../src/ui/catalog.js';
+import { isTraining } from '../src/model/shift/offers.js';
 
 /*
  * Katalog posterunków dla ekranów wyboru (src/ui/catalog.js): miejsca i edycje (era), wyszukiwanie, filtry, adresy

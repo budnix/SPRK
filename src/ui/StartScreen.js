@@ -12,8 +12,10 @@ import { uiIcon } from './icons.js';
 import { initDialog, openDialog, closeDialog, isOpen } from './dialog.js';
 import {
   dutyStations, stationSrks, editionsOf, placesOf, searchStations, filterStations, regionCounts, erasOf, parseRoute, routeHash,
-  parentRoute, bestResult, missionDone, shiftChoices, srkChoosable,
+  parentRoute, bestResult, missionDone,
 } from './catalog.js';
+import { shiftChoices, srkChoosable } from '../model/shift/offers.js';
+import { choiceFromParams, choiceToParams, dutyWindow } from '../model/shift/choice.js';
 import { loadProgress, loadLastShift } from './progress.js';
 import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, normalizeDuty } from '../model/duty.js';
 import { regionBox } from './map/mapSvg.js';
@@ -215,16 +217,16 @@ export class StartScreen {
   /** Ostatnia zmiana z pamięci przeglądarki – nazwa posterunku i zmiany (pominięta, gdy stacji już nie ma). */
   #lastShift() {
     const last = loadLastShift(); if (!last) return null;
-    const p = new URLSearchParams(last.search);
-    const st = STATIONS.find((s) => s.id === p.get('stacja'));
-    let sc = st?.scenarios?.find((x) => x.id === p.get('scenariusz'));
+    const choice = choiceFromParams(new URLSearchParams(last.search));
+    const st = STATIONS.find((s) => s.id === choice.station);
+    let sc = st?.scenarios?.find((x) => x.id === choice.scenario);
     // służba o wybranej porze: nazwa z godzinami (jak w nagłówku zmiany)
-    if (st && !sc && p.get('scenariusz') === DUTY_ID) {
-      const d = normalizeDuty(p.get('start'), p.get('czas'));
-      sc = { name: t('start.dutyName', { from: Clock.format(d.start * 3600), to: Clock.format(d.start * 3600 + d.minutes * 60) }) };
+    if (st && !sc && choice.duty) {
+      const w = dutyWindow(choice.duty);
+      sc = { name: t('start.dutyName', { from: Clock.format(w.from), to: Clock.format(w.to) }) };
     }
     if (!st || !sc) return null;
-    const level = p.get('zaklocenia');
+    const level = choice.level;
     const name = sc.tutorial ? t('start.mission', { n: this.missions.findIndex((m) => m.scenario === sc) + 1, name: missionName(sc) }) : st.name;
     const sub = sc.tutorial ? st.name : [sc.name, level && level !== 'none' ? `${t('start.levelShort')}: ${t(`level.${level}`)}` : ''].filter(Boolean).join(' · ');
     return { search: last.search, name, sub };
@@ -300,19 +302,18 @@ export class StartScreen {
     if (root.querySelector('#st-level')) root.querySelector('#st-level').value = this.current.level || 'low';
     root.querySelector('#st-go').addEventListener('click', () => {
       // odprawa misji: zawsze samouczek, bez zakłóceń
-      if (this.mission) { this.#go(this.mission.station.id, this.mission.scenario.id, 'none'); return; }
-      const scId = root.querySelector('#st-scenario').value;
-      const extra = {};
-      if (!root.querySelector('#st-district-wrap').classList.contains('hidden')) extra.okreg = root.querySelector('#st-district').value;
+      if (this.mission) { this.#go({ station: this.mission.station.id, scenario: this.mission.scenario.id, level: 'none' }); return; }
+      const scenario = root.querySelector('#st-scenario').value, duty = scenario === DUTY_ID;
       const seed = root.querySelector('#st-seed').value.trim();
-      if (seed) extra.seed = seed;
-      if (scId === DUTY_ID) {
+      this.#go({
+        station: this.selected, scenario, level: root.querySelector('#st-level').value,
+        district: root.querySelector('#st-district-wrap').classList.contains('hidden') ? null : root.querySelector('#st-district').value,
         // służba: pora, długość i ziarno, z którego powstał pokazany rozkład
-        Object.assign(extra, { start: this.duty.start, czas: this.duty.minutes, seed: this.#dutySeed() });
-      }
-      // stanowisko wybrane przez gracza (pole widać, gdy stacja ma ich kilka, a scenariusz nie ma własnego)
-      if (!root.querySelector('#st-srk-wrap').classList.contains('hidden')) extra.srk = root.querySelector('#st-srk').value;
-      this.#go(this.selected, scId, root.querySelector('#st-level').value, extra);
+        duty: duty ? { start: this.duty.start, minutes: this.duty.minutes } : null,
+        seed: duty ? this.#dutySeed() : seed || null,
+        // stanowisko wybrane przez gracza (pole widać, gdy stacja ma ich kilka, a scenariusz nie ma własnego)
+        srk: root.querySelector('#st-srk-wrap').classList.contains('hidden') ? null : root.querySelector('#st-srk').value,
+      });
     });
   }
 
@@ -601,10 +602,9 @@ export class StartScreen {
     root.querySelector('#st-seed').oninput = () => { if (root.querySelector('#st-scenario').value === DUTY_ID) preview(); };
   }
 
-  #go(station, scenario, level, extra = {}) {
-    const p = new URLSearchParams();
-    p.set('stacja', station); p.set('scenariusz', scenario); p.set('zaklocenia', level);
-    for (const [k, val] of Object.entries(extra)) p.set(k, val);
+  /** Start zmiany: wybór zmiany (src/model/shift/choice.js) → adres gry. */
+  #go(choice) {
+    const p = new URLSearchParams(choiceToParams(choice));
     location.href = `${location.pathname}?${p}`; // bez „#…” – zmiana startuje z czystego adresu
   }
 

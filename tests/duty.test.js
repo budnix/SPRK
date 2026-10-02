@@ -11,7 +11,7 @@ import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
   DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
-import { shiftChoices, srkChoosable, isTraining } from '../src/ui/catalog.js';
+import { shiftChoices, srkChoosable, isTraining } from '../src/model/shift/offers.js';
 import sopot from '../src/stations/sopot.js';
 import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import rumia from '../src/stations/rumia.js';

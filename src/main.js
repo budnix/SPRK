@@ -5,7 +5,7 @@ import { SidePanel } from './ui/SidePanel.js';
 import { Help } from './ui/Help.js';
 import { Settings } from './ui/Settings.js';
 import { StartScreen } from './ui/StartScreen.js';
-import { DUTY_ID, buildDuty, normalizeDuty } from './model/duty.js';
+import { choiceFromParams, simulationOptions } from './model/shift/choice.js';
 import { saveLastShift, saveResult } from './ui/progress.js';
 import { Report } from './ui/Report.js';
 import { EdgePanels } from './ui/EdgePanels.js';
@@ -51,19 +51,11 @@ document.documentElement.classList.remove('boot-start'); // ekran startowy już 
 /** „Nowa zmiana…” w trakcie zmiany (menu, raport): ostatnio oglądany ekran wyboru (mapa, lista, województwo, szkolenie). */
 const newShift = () => startScreen.showLast();
 
-// służba o wybranej porze i długości (`scenariusz=sluzba&start=<godzina>&czas=<minuty>`): rozkład buduje się z wzorca
-// stacji dla ziarna zmiany – to samo ziarno w adresie daje tę samą służbę
-const duty = params.get('scenariusz') === DUTY_ID ? normalizeDuty(params.get('start'), params.get('czas')) : null;
-const seed = params.get('seed') ? Number(params.get('seed')) : duty ? Math.floor(Math.random() * 1e9) : undefined;
+// zmiana z adresu (src/model/shift/choice.js): scenariusz albo służba o wybranej porze (rozkład z wzorca stacji dla
+// ziarna – to samo ziarno w adresie daje tę samą służbę), stanowisko, poziom zakłóceń, okręg
 const sim = new Simulation(station, {
   speed: 1,
-  scenario: duty ? buildDuty(station, { ...duty, seed }).scenario : params.get('scenariusz') || undefined,
-  disruptions: params.get('zaklocenia') || 'none',
-  seed,
-  district: params.get('okreg') || undefined,
-  // stanowisko: z definicji scenariusza, a gdy jej nie ma – parametr `srk` (wybór gracza na stacji z kilkoma
-  // stanowiskami: służba i scenariusze specjalne; testy), inaczej stanowisko stacji
-  srk: params.get('srk') || undefined,
+  ...simulationOptions(station, choiceFromParams(params)),
   phoneRoutine: settings.values.phoneRoutine, // rozmowy telefoniczne przy sprawnej blokadzie: same albo ręcznie
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;

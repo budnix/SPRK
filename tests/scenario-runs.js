@@ -6,7 +6,7 @@ import { MISSIONS } from '../src/tutorial/missions.js';
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { deterministicWarnings } from '../scripts/lib/verdict.mjs';
 import { ACCEPTED } from './scenario-accepted.js';
-import { shiftChoices, srkChoosable } from '../src/ui/catalog.js';
+import { shiftChoices, srkChoosable } from '../src/model/shift/offers.js';
 import { getSrk } from '../src/srk/registry.js';
 /** Nazwa stanowiska jak w raporcie automatu. */
 const srkLabel = (id) => { const x = getSrk(id); return x.short || x.name || x.id; };

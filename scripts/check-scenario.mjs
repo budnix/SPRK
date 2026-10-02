@@ -28,12 +28,12 @@
 import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { validateStation } from '../src/model/validate.js';
-import { DUTY_MINUTES, buildDuty, hasDuty } from '../src/model/duty.js';
-import { isTraining, shiftChoices } from '../src/ui/catalog.js';
+import { DUTY_MINUTES, hasDuty } from '../src/model/duty.js';
+import { isTraining, shiftChoices } from '../src/model/shift/offers.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { STATIONS } from '../src/stations/index.js';
 import { MISSIONS } from '../src/tutorial/missions.js';
-import { checkShift, same } from './lib/shift-report.mjs';
+import { checkShift, same, dutyScenario } from './lib/shift-report.mjs';
 import { verdict, scenarioStatus, deterministicWarnings, plural, hm, hms, marginOf, blockerText } from './lib/verdict.mjs';
 import { defaultWorkers, runJobs, serveJobs } from './lib/workers.mjs';
 import { parseCli, executedDirectly } from './lib/cli.mjs';
@@ -144,7 +144,7 @@ function listDutyChecks({ targets, levels, seeds, extra, duty }) {
     const srks = shiftChoices(station).srks;
     for (const srk of srks.length ? srks : [null]) for (const seed of seeds) {
       const own = srk && srk !== station.srk ? { ...duty, srk } : duty;
-      const built = buildDuty(station, { ...own, seed }).scenario;
+      const built = dutyScenario(station, own, seed);
       const scenario = { ...built, id: `${built.id}${own.srk ? `-${own.srk}` : ''}#${seed}` };
       scenarios.push({ station, scenario, duty: own });
       for (const level of LEVELS.filter((l) => levels.includes(l))) jobs.push({ stationId: station.id, scenarioId: scenario.id, seed, level, extra, stationIndex: STATIONS.indexOf(station), duty: own });

@@ -17,6 +17,8 @@ src/
                check/ – zmiana grana automatem bez widoku (play: `playShift`, `settled`), niezmienniki bezpieczeństwa
                (invariants), wynik po stronie urządzeń i oceny (outcome: `leftovers`, `unjustified`) – dla automatu
                sprawdzającego, przeglądu silnika, skilla diagnoza-zatoru i testów;
+               shift/ – wybór zmiany: choice (adres ⇄ wybór, opcje symulacji, służba dla ziarna), offers (co posterunek
+               oferuje: służba, scenariusze specjalne, stanowiska do wyboru, stacja szkoleniowa);
                timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja
                tylko do odczytu, plan, przebieg zmiany; godziny do pokazania `shownTime`), phase (etap pociągu – kod,
                szczegół, napis dla człowieka; „obsłużony” i „skończony”)
