@@ -4,6 +4,8 @@ import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { autoDispatch, allArrived, Clock } from './helpers.js';
+import sopot from '../src/stations/sopot.js';
+import { checkShift } from '../scripts/check-scenario.mjs';
 
 /* Automat dyżurnego (AutoOperator) – decyzje, które nie mogą kończyć się zatorem. */
 
@@ -91,4 +93,18 @@ test('mijanka z dwoma torami (Olszyny): gdy z przeciwka nadjeżdża pociąg, aut
   assert.ok(by(3002).actualArr < by(3003).actualArr, 'najpierw wjeżdża pociąg z przeciwka');
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
+});
+
+test('wjazd wieloetapowy przy usterce na drodze: po przyjeździe pociągu automat nastawia wyjazd (nie czeka na stopień wjazdu, którego nie nastawił)', () => {
+  // Sopot: wjazd z Gdańska na tor 2 to kilka przebiegów po kolei (A → … → O). Fałszywa zajętość T2a wstrzymuje wjazd;
+  // pociąg przyjeżdża po naprawie, a automat trzymał dalej listę stopni wjazdu do nastawienia i co takt wracał do niej
+  // – wyjazdu nie nastawiał, pociąg stał przy peronie do końca zmiany (znalezione w służbie 19:00, poziom „duże”)
+  const scenario = { id: 't', name: 't', startTime: '20:00', endTime: '21:00', tasks: [], disruptions: 'none',
+    timetable: [{ nr: 55800, kind: 'os', name: 'Regio Gdańsk Gł. – Słupsk', from: 'GD1', to: 'OR1', arr: '20:15', dep: '20:16', track: '2', stop: true, length: 160, vmax: 120, dwell: 40 }],
+    faults: [{ type: 'false-occupancy', target: 'T2a', at: '20:13', duration: 10 }] };
+  const r = checkShift({ station: sopot, scenario, seed: 1, level: 'none', extra: 60 });
+  assert.equal(r.error, undefined, r.error);
+  assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
+  assert.equal(r.trains[0].status, 'na następnym posterunku');
+  assert.equal(r.violations.count, 0);
 });

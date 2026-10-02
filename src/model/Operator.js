@@ -286,6 +286,9 @@ export class AutoOperator {
       }
 
       // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
+      // pociąg już przyjechał (stanął przy peronie) – wjazd skończony: stopień, którego nie dało się nastawić (usterka
+      // na drodze, pociąg wjechał na Sz), nie może wstrzymywać dalszych czynności, inaczej automat nie nastawi wyjazdu
+      if (e._entryPath?.length && e.actualArr != null) e._entryPath = null;
       if (e._entryPath?.length) {
         if (this.#setRoute(e._entryPath[0]).ok) e._entryPath.shift();
         continue;
