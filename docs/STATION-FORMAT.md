@@ -272,13 +272,16 @@ definicji stacji:
 * zwykłe zmiany w `scenarios` (bez `faults` i `closedSections`) nie są pokazywane na stronie posterunku – zastępuje je
   służba; zostają jako wzorzec, do testów i pod dawnym adresem. Różne `srk` zwykłych zmian dają pole „Stanowisko”.
   Scenariusze z `faults` albo `closedSections` są na liście jako specjalne (ich usterki są ustawione pod konkretne
-  pociągi, więc mają stałe okno);
+  pociągi, więc mają stałe okno). Na stacji z kilkoma stanowiskami gracz wybiera stanowisko także dla scenariusza
+  specjalnego – chyba że scenariusz ma własne `srk` (wtedy idzie na swoim); testy grają go na każdym stanowisku
+  (`tests/scenario-runs.js`);
 * pociągi dalekobieżne wzorca (IC, TLK, EIC, EIP) powinny mieć relację z nazwami stacji jak w rozkładzie PKP Intercity
   („Kraków Gł. – Gdynia Gł.”): powtórzenia takiego pociągu dostają nazwę i relację rzeczywistego pociągu tej drogi
   z listy `src/model/data/namedTrains.js` (cała Polska; `docs/SOURCES.md` „Pociągi z nazwami”);
 * służba może przejść przez północ: godziny następnej doby gra zapisuje w danych zmiany jako 24, 25… („25:10” = 01:10),
   a pokazuje jak na zegarze – tak samo można pisać `endTime` i rozkład własnego scenariusza przez północ;
-* sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 30 / 60 / 120 / 180),
+* sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 30 / 60 / 120 / 180;
+  każde ziarno z `--seeds` i każde stanowisko stacji to osobny rozkład – scenariusz `sluzba-<minuty>[-<srk>]#<ziarno>`),
   a `npm test` przechodzi po siatce godzin i długości każdego posterunku (`tests/duty-grid.js`) – nowy posterunek
   dochodzi tam sam.
 
@@ -310,7 +313,9 @@ Zasady (z tego, jak gra liczy zmianę):
   nie powstanie.
 * Zadania stacji (`tasks` stacji) przechodzą do scenariusza, jeśli ich skład jedzie w zmianie; własne zadania wpisuje
   się w `tasks` scenariusza, a `tasks: []` wyłącza odziedziczone.
-* Przejścia przez północ nie ma (`endTime` po `startTime` tego samego dnia).
+* Zmiana przez północ: godziny następnej doby pisze się po 24:00 – `endTime: '25:00'` to 01:00, pociąg o 00:20 ma
+  `arr: '24:20'`; gra pokazuje je jak na zegarze. Godziny po 24:00 są dozwolone tylko w scenariuszu z `endTime` po 24:00
+  (w zwykłej zmianie „26:15” to błąd zapisu); `endTime` wcześniejsze niż start to błąd `sc-window`.
 * Pociągu, który w chwili późniejszego startu już stoi na stacji, nie da się wyrazić przez `trains` – trzeba własnego
   `timetable` scenariusza z wpisem `startOn` (`from: null`), czołem w stronę wyjazdu (`startOn.dir` = `dir` wyjazdu
   `to`). Pociąg nie zmienia czoła: wjazd i wyjazd po tej samej stronie stacji to dwa pociągi (kończący bieg + `unit`).

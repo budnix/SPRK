@@ -79,3 +79,23 @@ test('wariant z późniejszym startem: pociąg nadzwyczajny zapowiadany po starc
   const short = { id: 'krotka', name: 'krótka', startTime: '07:00', endTime: '07:30', trains: [6101, 6102] };
   for (const seed of SEEDS) assert.deepEqual(plan(szkolna, short, seed).extraTrainsPlanned, [], `ziarno ${seed}`);
 });
+
+test('numer pociągu nadzwyczajnego: wzorzec + 1000, a gdy zajęty w rozkładzie zmiany – następny wolny o tej samej parzystości', () => {
+  // rozkład zmiany, w którym numer + 1000 każdego pociągu jest zajęty (6101 i 7101, 6102 i 7102)
+  const base = szkolna.timetable.filter((e) => [6101, 6102].includes(e.nr));
+  const timetable = [...base, ...base.map((e) => ({ ...e, nr: e.nr + 1000, arr: e.arr.replace('07:', '08:'), dep: e.dep.replace('07:', '08:') }))];
+  const scenario = { id: 't', name: 't', endTime: '10:30', tasks: [], timetable };
+  let planned = 0;
+  for (const seed of SEEDS) {
+    const sim = plan(szkolna, scenario, seed);
+    const nrs = sim.traffic.timetable().map((e) => e.nr);
+    for (const x of sim.extraTrainsPlanned) {
+      planned++;
+      assert.ok(!nrs.includes(x.def.nr), `ziarno ${seed}: numer ${x.def.nr} jest już w rozkładzie zmiany`);
+      // wzorzec z rozkładu zmiany (własny timetable scenariusza), numer o tej samej parzystości
+      const from = timetable.find((e) => e.from === x.def.from && e.to === x.def.to && e.track === x.def.track);
+      assert.ok(from && x.def.nr % 2 === from.nr % 2 && x.def.nr > from.nr + 1000, `ziarno ${seed}: ${x.def.nr}`);
+    }
+  }
+  assert.ok(planned >= 30, `zaplanowane: ${planned}`);
+});

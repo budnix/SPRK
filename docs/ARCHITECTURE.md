@@ -501,32 +501,53 @@ składu (`unit`) i zadaniami manewrowymi (terminy, numery i godziny w treści pr
 linii jedzie, a ziarno – który (faza) i co wypada (`DUTY_SKIP`); (3) w miejsce niekursujących pociągów regionalnych
 i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory; odstęp `FREIGHT_GAP` na szlaku); (4) **kontrola
 definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo z uwagą, jakiej nie ma wzorzec stacji
-(styk powtórzeń, pociąg sprzed startu, konflikt toru albo szlaku), wypada – najpierw towarowy spoza wzorca obok. Losowość
-tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesuwają). Okno bez pociągu wzorca daje pusty
-rozkład (bez wyjątku); wybór służby takiej nie startuje. Liczby i pory – przyjęte (`docs/SOURCES.md`).
+(styk powtórzeń, konflikt toru albo szlaku), wypada. Kto wypada: przy uwadze o konflikcie dwóch pociągów (`tt-track-overlap`,
+`line-*`) – pociąg towarowy spoza wzorca na tej samej drodze (ten sam wjazd, wyjazd albo tor, do 20 min obok), a gdy
+takiego nie ma i przy każdej innej uwadze – pociąg, którego uwaga dotyczy; inne pociągi przez nią nie wypadają. Losowość
+tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesuwają). Liczby i pory – przyjęte
+(`docs/SOURCES.md`).
+
+Brzegi okna (`DUTY_EDGE`): pociąg od sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie –
+pierwsze zdarzenie nie wcześniej niż start + czas przejazdu szlaku z prędkością pociągu + 90 s dojazdu do peronu + 2 min
+(`leadOf`; wolniejszy pociąg towarowy – odpowiednio później); pociąg bez wjazdu (stoi od początku, powstaje ze składu)
+– 3 min po starcie. Ostatnie zdarzenie najpóźniej 10 min (służba 30-minutowa: 6 min) przed końcem.
+
+Służba bez pociągów: gdy po kontroli rozkład jest pusty (krótkie okno, środek nocy), po kolei – każdy krok z kontrolą
+definicji – wracają pociągi, które wypadły dla urozmaicenia (`DUTY_SKIP`), potem pociąg towarowy wchodzi w każde wolne
+miejsce (bez losowania udziału), na koniec pojedynczo pociągi wzorca innego kursu linii, której klasa o tej porze
+kursuje. Pociąg klasy, która o tej porze nie kursuje (np. SKM o 02:00), nie wraca. Na posterunkach w grze żadna służba
+nie jest pusta (`tests/duty-grid.js`); stacja z bardzo rzadkim wzorcem może dać pusty rozkład (bez wyjątku) – strona
+posterunku takiej służby nie startuje.
 
 Pociągi z nazwami: powtórzenie pociągu dalekobieżnego dostaje nazwę i relację pociągu z listy `src/model/data/namedTrains.js`
 (plik generowany przez `scripts/named-trains.mjs` z rozkładu rocznego PKP Intercity, cała Polska), który jedzie tą samą
 drogą – `src/model/namedTrains.js`: `namedTrainsVia(od, do)` (przez miasto początku, potem końca relacji; `cityOf`),
 `namedTrainTitle`. Dobór w `buildDuty`: indeks z numeru wzorca i numeru powtórzenia (ta sama nazwa na każdej stacji na
 trasie), nazwa nie wraca w jednej służbie w tym samym kierunku; pociąg kończący / zaczynający bieg na stacji – tylko
-pociąg z listy kończący / zaczynający w tym mieście. Moduły nie znają stacji – nowa stacja gdziekolwiek w Polsce
+pociąg z listy kończący / zaczynający w tym mieście; EIP (zespół trakcyjny) zastępuje tylko EIP, pociągi wagonowe (EIC,
+IC, TLK) – siebie nawzajem: mają wspólną pulę taboru, długość wpisu zostaje z wzorca, a prędkość idzie za nową
+kategorią (TLK 140, IC / EIC 160 km/h), o ile wpis nie ma własnego `vmax`. Moduły nie znają stacji – nowa stacja gdziekolwiek w Polsce
 korzysta z listy od razu, o ile relacje jej pociągów dalekobieżnych mają nazwy miast jak na liście.
 
 Przez północ: w danych zmiany godziny następnej doby to 24, 25… (`Clock.stamp` – zapis bez zawijania; `Clock.parse`
 czyta „25:10” jako ciąg dalszy zmiany; `endTime` „26:00” = 02:00). Symulacja liczy chwile bez zawijania, a do pokazania
 służy `Clock.format` (zawija dobę) i `Traffic.shown` – wpisy rozkładu i terminy zadań po północy mają napisy „00:30”
-obok chwil `arrTime` / `depTime` / `deadlineTime`. Kontrola definicji dopuszcza godziny 0–47 i porównuje godziny
-w nazwie zmiany z oknem modulo doba.
+obok chwil `arrTime` / `depTime` / `deadlineTime`. Kto potrzebuje chwili, bierze pole `*Time`, nie napis. Kontrola
+definicji czyta godziny z definicji (nie z rozkładu zmiany): godziny 24–47 dopuszcza tylko w scenariuszu z `endTime` po
+24:00 (w zwykłej zmianie „26:15” to błąd `tt-time`), a godziny w nazwie zmiany porównuje z oknem modulo doba.
 
 Gra: adres `?stacja=…&scenariusz=sluzba&start=<godzina>&czas=<minuty>&seed=…[&srk=…]` (`main.js`: `normalizeDuty`,
 `buildDuty`; bez `seed` losuje je i służba jest inna za każdym razem). Strona posterunku (`StartScreen.#dutyChoice`):
 co pokazać, mówi `catalog.shiftChoices` – służba, scenariusze specjalne (z `faults` albo `closedSections`) i stanowiska
-do wyboru (zwykłe zmiany stacji na różnych stanowiskach → pole „Stanowisko”, parametr `srk`); pod wyborem pora doby
+do wyboru (zwykłe zmiany stacji na różnych stanowiskach → pole „Stanowisko”, parametr `srk` – dla służby i dla
+scenariusza specjalnego bez własnego `srk` w definicji: `catalog.srkChoosable`; scenariusz z własnym `srk` idzie na
+swoim – `Simulation` bierze stanowisko scenariusza przed parametrem); pod wyborem pora doby
 i liczba pociągów rozkładu, który powstanie (to samo ziarno idzie do adresu). Zwykłe zmiany zostają w definicji stacji:
 są wzorcem, podstawą testów stacji i działają pod dawnym adresem. Wynik gracza zapisuje się pod `sluzba-<minuty>`.
 Pociąg nadzwyczajny (poziom „duże”) jest kopią pociągu z rozkładu służby. Automat: `npm run check -- <stacja> --start
-22 --minutes 120`. Testy: `tests/duty.test.js` (reguły), `tests/duty-grid.js` (każdy posterunek: siatka godzin
+22 --minutes 120` – rozkład służby zależy od ziarna, więc każde ziarno (`--seeds`) i każde stanowisko stacji
+(`shiftChoices(station).srks`) to osobny scenariusz `sluzba-<minuty>[-<srk>]#<ziarno>`: definicja i przebieg dotyczą
+tego samego rozkładu. Testy: `tests/duty.test.js` (reguły), `tests/duty-grid.js` (każdy posterunek: siatka godzin
 i długości przez kontrolę definicji oraz służby grane automatem), `tests/e2e/duty.spec.js`.
 
 ## Koniec zmiany i raport (`src/model/Score.js`, `src/ui/Report.js`)

@@ -3,8 +3,11 @@ import assert from 'node:assert/strict';
 import { STATIONS } from '../src/stations/index.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { DUTY_MINUTES, buildDuty, hasDuty } from '../src/model/duty.js';
-import { isTraining } from '../src/ui/catalog.js';
+import { isTraining, shiftChoices } from '../src/ui/catalog.js';
 import { checkShift } from '../scripts/check-scenario.mjs';
+import { getSrk } from '../src/srk/registry.js';
+/** Nazwa stanowiska jak w raporcie automatu. */
+const srkLabel = (id) => { const x = getSrk(id); return x.short || x.name || x.id; };
 
 /**
  * Służba o wybranej porze na każdym posterunku do służby (`src/model/duty.js`) – nowy posterunek dochodzi tu sam:
@@ -31,14 +34,26 @@ export function dutyGrid(shard) {
         const { scenario, stats } = buildDuty(station, { start, minutes, seed });
         const key = `${station.id} ${scenario.name}, ziarno ${seed}`;
         const findings = checkScenario(station, scenario);
-        const errors = findings.filter((f) => f.level === 'error' && !(f.code === 'tt-empty' && minutes === 30));
+        const errors = findings.filter((f) => f.level === 'error');
         assert.deepEqual(errors.map((f) => `${f.code}: ${f.msg}`), [], key);
         assert.deepEqual(findings.filter((f) => f.level === 'warning' && !known.has(f.code)).map((f) => `${f.code}: ${f.msg}`), [], key);
-        if (minutes >= 60) assert.ok(stats.trains > 0, `${key}: bez pociągów`);
+        assert.ok(stats.trains > 0, `${key}: bez pociągów`);
         built++; trains += stats.trains;
       }
       assert.ok(built >= 50 && trains > built, `${station.id}: ${built} służb, ${trains} pociągów`);
     });
+    // stacja z kilkoma stanowiskami: służba także na drugim stanowisku
+    for (const srk of shiftChoices(station).srks.filter((x) => x !== station.srk)) {
+      test(`służba ${station.id} 06:00 / 60 min na stanowisku ${srk} grana automatem: bez zatoru, naruszeń i błędów werdyktu`, () => {
+        const r = checkShift({ station, duty: { start: 6, minutes: 60, srk }, seed: 1, level: 'none', extra: 120 });
+        assert.deepEqual([r.error, r.srk], [undefined, srkLabel(srk)]);
+        assert.ok(r.trains.length > 0);
+        assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
+        assert.equal(r.violations.count, 0);
+        assert.deepEqual(r.leftovers, [], 'stan urządzeń po zmianie');
+        assert.deepEqual(r.findings.filter((f) => f.level === 'error').map((f) => `${f.code}: ${f.msg}`), [], 'werdykt');
+      });
+    }
     for (const [start, minutes, seed] of PLAYS) {
       test(`służba ${station.id} ${String(start).padStart(2, '0')}:00 / ${minutes} min (ziarno ${seed}) grana automatem: bez zatoru, naruszeń i błędów werdyktu`, () => {
         const r = checkShift({ station, duty: { start, minutes }, seed, level: 'none', extra: 120 });

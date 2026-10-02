@@ -174,3 +174,16 @@ test('wygląd schematu regionu: tory z podkładami (OSM), lampki przystanków, t
   await expect(page.locator('#st-rmapfig .st-rinfo')).toHaveClass(/on/);
   expect(await shot(page, '#st-rmapfig', 1200, 720)).toMatchSnapshot('start-region.png');
 });
+
+test('wygląd strony posterunku (Rumia): scenariusz, stanowisko, godzina startu i długość służby, opis pory, zakłócenia', async ({ page }) => {
+  await startWithProgress(page, '#/stacja/rumia');
+  // ziarno wpisane – opis (liczba pociągów) i jego układ są wtedy stałe
+  await page.locator('.st-adv summary').click();
+  await page.fill('#st-seed', '5');
+  await page.selectOption('#st-duty-start', '22');
+  await page.click('#st-duty-minutes button[data-minutes="180"]');
+  await expect(page.locator('#st-srk-wrap')).toBeVisible();
+  await expect(page.locator('#st-scenario-desc')).toContainText('Pociągi w tej służbie');
+  await page.locator('#st-seed').blur();
+  expect(await shot(page, '#start .start-screen', 1280, 800)).toMatchSnapshot('start-station.png');
+});

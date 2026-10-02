@@ -7,11 +7,11 @@ import { validateStation } from '../src/model/validate.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { NAMED_TRAINS } from '../src/model/data/namedTrains.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from '../src/model/namedTrains.js';
-import { relationOf } from '../src/model/categories.js';
+import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
   DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
-import { shiftChoices, isTraining } from '../src/ui/catalog.js';
+import { shiftChoices, srkChoosable, isTraining } from '../src/ui/catalog.js';
 import sopot from '../src/stations/sopot.js';
 import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import rumia from '../src/stations/rumia.js';
@@ -129,10 +129,15 @@ test('powtórzenie pociągu dalekobieżnego to pociąg z listy pociągów z nazw
       if (!t) continue; // relacja bez pociągu na liście – nazwa wzorca
       renamed++; seen.add(t.name);
       // pociąg z listy jedzie przez stację w tę samą stronę co pociąg wzorca: przez miasto początku, potem końca relacji
-      const base = st.timetable.find((x) => trainClass(x) === 'dal' && x.from === e.from && x.to === e.to && x.track === e.track && namedTrainsVia(...relationOf(x).split(' – ')).includes(t));
+      // pociąg wzorca: ta sama droga przez stację i te same dane składu (długość, tabor, prędkość zostają z wzorca)
+      const base = st.timetable.find((x) => trainClass(x) === 'dal' && x.from === e.from && x.to === e.to && x.track === e.track && namedTrainsVia(...relationOf(x).split(' – ')).includes(t)
+        && x.length === e.length && x.stock === e.stock && x.vmax === e.vmax);
       assert.ok(base, `${st.id} ${sc.name}: ${e.name} bez pociągu wzorca tej drogi`);
       if (!e.to) assert.equal(cityOf(t.stops.at(-1)), cityOf(relationOf(base).split(' – ')[1]), `${st.id}: ${e.name} kończy bieg tutaj`);
       assert.ok(['EIP', 'EIC', 'IC', 'TLK'].includes(t.cat) && e.name.startsWith(`${t.cat} „`));
+      // EIP (zespół trakcyjny) zastępuje tylko EIP, pociągi wagonowe (EIC, IC, TLK) – siebie nawzajem
+      assert.equal(t.cat === 'EIP', categoryOf(base) === 'EIP', `${st.id}: ${e.name} za ${base.name}`);
+      assert.equal(categoryOf(e), t.cat);
     }
     // w jednej służbie nazwa nie wraca w tym samym kierunku
     const dir = dal.filter((e) => titles.has(e.name)).map((e) => `${titles.get(e.name).name}|${e.from ?? ''}`);
@@ -191,9 +196,44 @@ test('okres wzorca: rozpiętość rozkładu w pełnych godzinach albo pole duty.
 });
 
 test('służba w oknie bez pociągu wzorca: pusta, bez wyjątku (wybór służby jej nie startuje)', () => {
-  const { scenario, stats } = buildDuty(pruszcz, { start: 6, minutes: 30, seed: 2 });
+  // stacja z jednym pociągiem co godzinę o pełnej godzinie: w oknie 10:00–10:30 nie ma żadnego (ten z 10:00 musiałby
+  // wyjechać od sąsiada przed startem)
+  const sparse = { ...pruszcz, tasks: [], timetable: [pruszcz.timetable.find((e) => e.from && e.to && trainClass(e) === 'reg')].map((e) => ({ ...e, arr: '07:00', dep: '07:01' })) };
+  assert.equal(patternPeriod(sparse), 3600);
+  const { scenario, stats } = buildDuty(sparse, { start: 10, minutes: 30, seed: 2 });
   assert.equal(stats.trains, 0);
   assert.deepEqual(scenario.timetable, []);
+  assert.ok(buildDuty(sparse, { start: 10, minutes: 120, seed: 2 }).stats.trains > 0);
+});
+
+test('każda służba posterunków w grze ma pociągi – także 30 min i środek nocy; pociąg klasy, która o tej porze nie kursuje, nie wraca', () => {
+  // Gdańsk Gł. 00:00 / 1 h (ziarno 710083518) wychodziła pusta: uwaga o pociągu sprzed startu usuwała po kolei pociągi
+  // towarowe obok, a na końcu sam pociąg. Teraz pociąg od sąsiada wchodzi do służby dopiero, gdy sąsiad wyprawia go po
+  // starcie, a uwaga, która nie jest konfliktem dwóch pociągów, usuwa tylko swój pociąg.
+  const gdansk = STATIONS.find((st) => st.id === 'gdansk-glowny');
+  for (const seed of [710083518, 11, 222, 3333]) for (const start of [0, 2]) {
+    const { scenario, stats } = buildDuty(gdansk, { start, minutes: 60, seed });
+    assert.ok(stats.trains > 0, `Gdańsk Gł. ${start}:00 / 1 h, ziarno ${seed}`);
+    assert.ok(stats.tow > 0, `Gdańsk Gł. ${start}:00, ziarno ${seed}: pociągi towarowe zostają`);
+    assert.deepEqual(checkScenario(gdansk, scenario).filter((f) => f.code.startsWith('tt-') && f.level !== 'info').map((f) => f.code), []);
+  }
+  for (const st of duty) for (const start of [0, 1, 3, 23]) for (const minutes of [30, 60]) for (const seed of [5, 710083518]) {
+    const { scenario, stats } = buildDuty(st, { start, minutes, seed });
+    assert.ok(stats.trains > 0, `${st.id} ${scenario.name}, ziarno ${seed}: bez pociągów`);
+    for (const e of scenario.timetable) assert.ok(bandOf(first(e)).every[trainClass(e)] > 0, `${st.id} ${scenario.name}: ${e.nr} (${trainClass(e)}) o ${e.arr ?? e.dep}`);
+  }
+});
+
+test('pociąg od sąsiada wchodzi do służby, gdy sąsiad wyprawia go po starcie (czas przejazdu szlaku); wolniejszy towarowy – później', () => {
+  for (const st of duty) for (const [start, minutes] of [[6, 60], [0, 120], [19, 60]]) {
+    const { scenario } = buildDuty(st, { start, minutes, seed: 9 });
+    for (const e of scenario.timetable.filter((x) => x.from)) {
+      const x = st.exits[e.from], v = Math.min(e.vmax ?? 160, x.lineSpeed ?? 160) / 3.6;
+      const lead = (x.lineLength ?? 3000) / v + DUTY_EDGE.run + DUTY_EDGE.neighbour;
+      // prędkość wpisu bez `vmax` daje kategoria (co najmniej tyle, co przyjęte tu 160 km/h) – granica z zapasem 1 s
+      assert.ok(first(e) >= start * 3600 + lead - 1, `${st.id} ${scenario.name}: ${e.nr} o ${e.arr}, sąsiad wyprawiłby go przed startem`);
+    }
+  }
 });
 
 test('pociąg nadzwyczajny w służbie: kopia pociągu z rozkładu służby, w jej oknie, z wolnym numerem', () => {
@@ -235,6 +275,12 @@ test('wybór zmiany na stronie posterunku: służba zamiast zwykłych zmian, sce
   assert.deepEqual(shiftChoices(rumia).srks, ['E', 'komputerowe']);
   assert.deepEqual(shiftChoices(rumia).specials.map((sc) => sc.id), ['usterka-rd2']);
   assert.deepEqual(shiftChoices(sopot).srks, ['komputerowe']);
+  // stanowisko wybiera gracz: dla służby i scenariusza specjalnego bez własnego stanowiska, gdy stacja ma ich kilka
+  const special = shiftChoices(rumia).specials[0];
+  assert.equal(srkChoosable(shiftChoices(rumia), null), true, 'służba');
+  assert.equal(srkChoosable(shiftChoices(rumia), special), true, 'scenariusz specjalny bez srk');
+  assert.equal(srkChoosable(shiftChoices(rumia), { ...special, srk: 'komputerowe' }), false, 'scenariusz z własnym stanowiskiem');
+  assert.equal(srkChoosable(shiftChoices(sopot), null), false, 'jedno stanowisko');
   // stacja szkoleniowa: bez służby, wszystkie zmiany bez samouczka
   const tr = shiftChoices(szkolna);
   assert.equal(tr.duty, false);

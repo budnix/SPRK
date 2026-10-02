@@ -61,7 +61,9 @@ const sim = new Simulation(station, {
   disruptions: params.get('zaklocenia') || 'none',
   seed,
   district: params.get('okreg') || undefined,
-  srk: params.get('srk') || undefined, // tylko do testów/porównań; stanowisko zawsze wynika z definicji stacji lub scenariusza
+  // stanowisko: z definicji scenariusza, a gdy jej nie ma – parametr `srk` (wybór gracza na stacji z kilkoma
+  // stanowiskami: służba i scenariusze specjalne; testy), inaczej stanowisko stacji
+  srk: params.get('srk') || undefined,
   phoneRoutine: settings.values.phoneRoutine, // rozmowy telefoniczne przy sprawnej blokadzie: same albo ręcznie
 });
 if (!params.get('scenariusz')) sim.clock.paused = true;

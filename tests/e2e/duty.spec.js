@@ -59,12 +59,23 @@ test('strona posterunku: godzina startu i długość służby, opis pory z liczb
   expect((await sim(page)).times).toEqual(s.times); // to samo ziarno – ta sama służba
 });
 
-test('strona posterunku: stanowisko do wyboru (Rumia), scenariusz specjalny bez pory, okno bez pociągów nie startuje', async ({ page }) => {
+test('strona posterunku: stanowisko do wyboru (Rumia) dla służby i scenariusza specjalnego, scenariusz specjalny bez pory, krótka służba ma pociągi', async ({ page }) => {
   await page.goto('/#/stacja/rumia', { waitUntil: 'load' });
   await expect(page.locator('#st-srk-wrap')).toBeVisible();
+  // scenariusz specjalny bez własnego stanowiska – wybór stanowiska zostaje i nie gubi się przy zmianie scenariusza
   await page.selectOption('#st-srk', 'komputerowe');
+  await page.selectOption('#st-scenario', 'usterka-rd2');
+  await expect(page.locator('#st-srk-wrap')).toBeVisible();
+  await expect(page.locator('#st-duty')).toBeHidden();
+  await page.selectOption('#st-scenario', 'sluzba');
+  await expect(page.locator('#st-srk-wrap')).toBeVisible();
+  await expect(page.locator('#st-srk')).toHaveValue('komputerowe');
   await page.selectOption('#st-duty-start', '1');
-  await page.click('#st-duty-minutes button[data-minutes="60"]');
+  // długość z klawiatury: fokus zostaje na wybranym przycisku (przyciski nie są rysowane od nowa)
+  await page.focus('#st-duty-minutes button[data-minutes="60"]');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#st-duty-minutes button[data-minutes="60"]')).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => document.activeElement?.dataset.minutes)).toBe('60');
   await expect(page.locator('#st-scenario-desc')).toContainText('Noc');
   await page.click('#st-go');
   await page.waitForURL(/scenariusz=sluzba.*srk=komputerowe/);
@@ -85,14 +96,29 @@ test('strona posterunku: stanowisko do wyboru (Rumia), scenariusz specjalny bez 
   await page.click('#st-go');
   await page.waitForURL(/scenariusz=usterka-gd/);
   expect(new URL(page.url()).searchParams.has('start')).toBe(false);
-  // okno bez pociągów (Pruszcz 06:00, 30 min, ziarno 2): start zablokowany, dłuższa służba go odblokowuje
+  // Rumia: scenariusz specjalny na wybranym stanowisku – stanowisko w adresie, zmiana na monitorze; bez zmiany wyboru
+  // – na stanowisku domyślnym (pulpit typu E)
+  await page.goto('/#/stacja/rumia', { waitUntil: 'load' });
+  await page.selectOption('#st-srk', 'komputerowe');
+  await page.selectOption('#st-scenario', 'usterka-rd2');
+  await page.click('#st-go');
+  await page.waitForURL(/scenariusz=usterka-rd2.*srk=komputerowe/);
+  expect(new URL(page.url()).searchParams.has('start')).toBe(false);
+  await ready(page);
+  expect(await sim(page)).toMatchObject({ id: 'usterka-rd2', srk: 'komputerowe' });
+  await page.goto('/#/stacja/rumia', { waitUntil: 'load' });
+  await page.selectOption('#st-scenario', 'usterka-rd2');
+  await page.selectOption('#st-srk', 'E');
+  await page.click('#st-go');
+  await page.waitForURL(/scenariusz=usterka-rd2.*srk=E/);
+  await ready(page);
+  expect((await sim(page)).srk).toBe('E');
+  // krótka służba w szczycie (Pruszcz 06:00, 30 min, ziarno 2 – dawniej bez pociągów): rozkład ma pociągi, start działa
   await page.goto('/#/stacja/pruszcz-gdanski', { waitUntil: 'load' });
   await page.locator('.st-adv summary').click();
   await page.fill('#st-seed', '2');
   await page.click('#st-duty-minutes button[data-minutes="30"]');
-  await expect(page.locator('#st-scenario-desc')).toContainText('nie ma żadnego pociągu');
-  await expect(page.locator('#st-go')).toBeDisabled();
-  await page.click('#st-duty-minutes button[data-minutes="60"]');
+  await expect(page.locator('#st-scenario-desc')).toContainText('Pociągi w tej służbie: 2');
   await expect(page.locator('#st-go')).toBeEnabled();
 });
 

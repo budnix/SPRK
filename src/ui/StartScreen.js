@@ -1,5 +1,6 @@
 import { STATIONS } from '../stations/index.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
+import { Clock } from '../core/Clock.js';
 import { difficultyMark, logoSvg, signalSvg } from './brand.js';
 import { getSrk, listSrk } from '../srk/registry.js';
 import { stationThumbnail } from '../render/thumbnail.js';
@@ -11,7 +12,7 @@ import { uiIcon } from './icons.js';
 import { initDialog, openDialog, closeDialog, isOpen } from './dialog.js';
 import {
   dutyStations, stationSrks, editionsOf, placesOf, searchStations, filterStations, regionCounts, erasOf, parseRoute, routeHash,
-  parentRoute, bestResult, missionDone, shiftChoices,
+  parentRoute, bestResult, missionDone, shiftChoices, srkChoosable,
 } from './catalog.js';
 import { loadProgress, loadLastShift } from './progress.js';
 import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, normalizeDuty } from '../model/duty.js';
@@ -219,8 +220,8 @@ export class StartScreen {
     let sc = st?.scenarios?.find((x) => x.id === p.get('scenariusz'));
     // służba o wybranej porze: nazwa z godzinami (jak w nagłówku zmiany)
     if (st && !sc && p.get('scenariusz') === DUTY_ID) {
-      const d = normalizeDuty(p.get('start'), p.get('czas')), hh = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-      sc = { name: t('start.dutyName', { from: hh(d.start * 60), to: hh((d.start * 60 + d.minutes) % 1440) }) };
+      const d = normalizeDuty(p.get('start'), p.get('czas'));
+      sc = { name: t('start.dutyName', { from: Clock.format(d.start * 3600), to: Clock.format(d.start * 3600 + d.minutes * 60) }) };
     }
     if (!st || !sc) return null;
     const level = p.get('zaklocenia');
@@ -306,10 +307,11 @@ export class StartScreen {
       const seed = root.querySelector('#st-seed').value.trim();
       if (seed) extra.seed = seed;
       if (scId === DUTY_ID) {
-        // służba: pora, długość i ziarno, z którego powstał pokazany rozkład; stanowisko – gdy stacja ma ich kilka
+        // służba: pora, długość i ziarno, z którego powstał pokazany rozkład
         Object.assign(extra, { start: this.duty.start, czas: this.duty.minutes, seed: this.#dutySeed() });
-        if (!root.querySelector('#st-srk-wrap').classList.contains('hidden')) extra.srk = root.querySelector('#st-srk').value;
       }
+      // stanowisko wybrane przez gracza (pole widać, gdy stacja ma ich kilka, a scenariusz nie ma własnego)
+      if (!root.querySelector('#st-srk-wrap').classList.contains('hidden')) extra.srk = root.querySelector('#st-srk').value;
       this.#go(this.selected, scId, root.querySelector('#st-level').value, extra);
     });
   }
@@ -564,7 +566,6 @@ export class StartScreen {
     this.duty = { ...from, seed: Math.floor(Math.random() * 1e9) };
     const srkWrap = root.querySelector('#st-srk-wrap'), srkSel = root.querySelector('#st-srk');
     if (srks.length > 1) {
-      srkWrap.classList.remove('hidden');
       srkSel.innerHTML = srks.map((id) => `<option value="${esc(id)}">${esc(getSrk(id).name)}</option>`).join('');
       if (same && srks.includes(this.current.srk)) srkSel.value = this.current.srk;
     }
@@ -572,8 +573,14 @@ export class StartScreen {
     startSel.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}:00 – ${esc(t(`start.band.${bandOf(h * 3600).id}`))}</option>`).join('');
     startSel.value = String(this.duty.start);
     const go = root.querySelector('#st-go'), desc = root.querySelector('#st-scenario-desc'), block = root.querySelector('#st-duty');
+    // przyciski długości powstają raz – zmiana wyboru przełącza tylko stan (fokus klawiatury zostaje na przycisku)
+    lenBox.innerHTML = DUTY_MINUTES.map((m) => `<button type="button" class="tb" data-minutes="${m}">${esc(t(`start.duty.${m}`))}</button>`).join('');
     const preview = () => {
-      lenBox.innerHTML = DUTY_MINUTES.map((m) => `<button type="button" class="tb${m === this.duty.minutes ? ' active' : ''}" data-minutes="${m}" aria-pressed="${m === this.duty.minutes}">${esc(t(`start.duty.${m}`))}</button>`).join('');
+      for (const b of lenBox.querySelectorAll('button[data-minutes]')) {
+        const on = Number(b.dataset.minutes) === this.duty.minutes;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      }
       const { stats } = buildDuty(st, { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() });
       const parts = [['agl', stats.agl], ['reg', stats.reg], ['dal', stats.dal], ['tow', stats.tow]].filter(([, n]) => n).map(([k, n]) => `${t(`start.duty.cls.${k}`)} ${n}`).join(' · ');
       desc.textContent = `${t(`start.bandDesc.${stats.band}`)} ${stats.trains ? t('start.duty.trains', { n: stats.trains, parts }) : t('start.duty.empty')}`;
@@ -584,6 +591,8 @@ export class StartScreen {
     this.#scenarioChoice(scs, same ? this.current.scenario : null, (sc) => {
       const duty = sc.id === DUTY_ID;
       block.classList.toggle('hidden', !duty);
+      // stanowisko wybiera się dla służby i dla scenariusza specjalnego bez własnego stanowiska w definicji
+      srkWrap.classList.toggle('hidden', !srkChoosable({ srks }, duty ? null : sc));
       go.disabled = false;
       if (duty) preview();
     });

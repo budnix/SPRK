@@ -5,6 +5,10 @@ import { checkScenario } from '../src/model/scenarioCheck.js';
 import { MISSIONS } from '../src/tutorial/missions.js';
 import { checkShift, deterministicWarnings } from '../scripts/check-scenario.mjs';
 import { ACCEPTED } from './scenario-accepted.js';
+import { shiftChoices, srkChoosable } from '../src/ui/catalog.js';
+import { getSrk } from '../src/srk/registry.js';
+/** Nazwa stanowiska jak w raporcie automatu. */
+const srkLabel = (id) => { const x = getSrk(id); return x.short || x.name || x.id; };
 
 /**
  * Przebieg każdego scenariusza każdej stacji (także samouczków) automatem sprawdzającym scenariusze
@@ -59,4 +63,30 @@ export function scenarioRuns(shard) {
       assert.deepEqual(fresh, [], `${key}: nowe uwagi powtarzalne – popraw scenariusz (npm run check -- ${key} --verbose) albo przyjmij je w tests/scenario-accepted.js:\n  '${key}': [${det.map((k) => `'${k}'`).join(', ')}],`);
     });
   });
+}
+
+/**
+ * Scenariusze specjalne na stanowisku wybranym przez gracza: posterunek z kilkoma stanowiskami daje wybór także dla
+ * scenariusza z usterką albo zamknięciem (`srkChoosable`) – każdy taki scenariusz gra się więc na każdym stanowisku
+ * innym niż domyślne (domyślne sprawdza `scenarioRuns`). Nowy posterunek i scenariusz dochodzą tu same.
+ */
+export function workstationRuns() {
+  for (const station of STATIONS) {
+    const choices = shiftChoices(station);
+    for (const scenario of choices.specials.filter((sc) => srkChoosable(choices, sc))) {
+      for (const srk of choices.srks.filter((x) => x !== station.srk)) {
+        const key = `${station.id}:${scenario.id}`, level = scenario.disruptions ?? 'none';
+        test(`przebieg ${key} na stanowisku ${srk} (${level}, ziarno 1): bez zatoru, naruszeń, spad i błędów werdyktu`, () => {
+          const r = checkShift({ station, scenario: { ...scenario, srk }, seed: 1, level, extra: 120 });
+          assert.deepEqual([r.error, r.srk], [undefined, srkLabel(srk)]);
+          assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], `${key}: zator`);
+          assert.equal(r.violations.count, 0, `${key}: ${r.violations.first.map((v) => `${v.time} ${v.msg}`).join('; ')}`);
+          assert.deepEqual(r.events.filter((e) => e.code === 'spad' || e.code === 'rozprucie').map((e) => e.msg), [], `${key}: spad / rozprucie`);
+          assert.deepEqual(r.forced, [], `${key}: kary za czynności wymuszone usterką`);
+          assert.deepEqual(r.leftovers, [], `${key}: stan urządzeń po zmianie`);
+          assert.deepEqual(errorsOf(r), [], `${key}: werdykt`);
+        });
+      }
+    }
+  }
 }

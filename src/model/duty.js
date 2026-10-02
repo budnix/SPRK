@@ -1,6 +1,6 @@
 import { Clock } from '../core/Clock.js';
 import { mixSeed } from '../core/Random.js';
-import { brandOf, categoryOf, relationOf } from './categories.js';
+import { brandOf, categoryOf, relationOf, speedFor } from './categories.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from './namedTrains.js';
 import { checkScenario } from './scenarioCheck.js';
 
@@ -29,10 +29,12 @@ export const DUTY_MINUTES = [30, 60, 120, 180];
 /** Początek identyfikatora scenariusza służby (`sluzba-120`) – wynik gracza zapisuje się osobno dla każdej długości. */
 export const DUTY_ID = 'sluzba';
 /**
- * Pierwszy pociąg nie wcześniej niż `start` s po starcie, ostatnie zdarzenie nie później niż `end` s przed końcem
- * (w najkrótszej służbie `endShort` – inaczej na pociągi zostawałoby kilkanaście minut).
+ * Brzegi okna służby [s]. Pociąg od sąsiada przyjeżdża najwcześniej tak, żeby sąsiad wyprawił go `neighbour` s po starcie
+ * (czas przejazdu szlaku i dojazdu do peronu – `leadOf`); pociąg bez wjazdu (stoi od początku, powstaje ze składu)
+ * – `start` s po starcie. Ostatnie zdarzenie nie później niż `end` s przed końcem (w najkrótszej służbie `endShort` –
+ * inaczej na pociągi zostawałoby kilkanaście minut).
  */
-export const DUTY_EDGE = { start: 3 * 60, end: 10 * 60, endShort: 6 * 60 };
+export const DUTY_EDGE = { start: 3 * 60, neighbour: 2 * 60, run: 90, end: 10 * 60, endShort: 6 * 60 };
 /** Pociąg towarowy spoza wzorca: od innego pociągu na tym samym szlaku co najmniej czas przejazdu szlaku + tyle [s]. */
 export const FREIGHT_GAP = 3 * 60;
 /** Udział pociągów (poza aglomeracyjnymi), które w danej służbie nie kursują – urozmaicenie (przyjęte). */
@@ -53,6 +55,11 @@ export const DAY_BANDS = [
   { id: 'pozny-wieczor', from: 22, to: 24, every: { agl: 4, reg: 4, dal: 2, tow: 1 }, freight: 0.4 },
 ];
 
+/**
+ * Uwagi kontroli definicji o konflikcie dwóch pociągów (ten sam tor, ten sam szlak): gdy obok jest pociąg towarowy spoza
+ * wzorca na tej samej drodze, wypada on; przy każdej innej uwadze wypada pociąg, którego uwaga dotyczy.
+ */
+const PAIR_CODE = /^(tt-track-overlap|line-)/;
 /** Pociąg towarowy w miejsce pasażerskiego, gdy stacja nie ma we wzorcu żadnego towarowego przelotu (przyjęte). */
 const GENERIC_FREIGHT = { kind: 'tow', cat: 'TM', length: 400, mass: 1200, vmax: 80 };
 /** Numery pociągów towarowych spoza wzorca: od tej liczby (przyjęte), parzystość jak pociągu, w którego miejsce wchodzą. */
@@ -152,7 +159,7 @@ function shiftedTask(task, shift, tag, map) {
 
 /**
  * Służba na stacji `station` od pełnej godziny `start` (0–23) przez `minutes` minut, dla ziarna `seed`.
- * `opts.srk` – stanowisko (stacje z więcej niż jednym), `opts.name` – przedrostek nazwy.
+ * `srk` – stanowisko służby (stacje z więcej niż jednym; bez niego stanowisko stacji).
  *
  * Zwraca `{ scenario, stats }`: scenariusz (obiekt dla `Simulation`: `id`, `name` z godzinami, `startTime`, `endTime`,
  * własne `timetable` i `tasks`) oraz `stats` – pora doby startu i liczba pociągów wg klasy.
@@ -161,10 +168,14 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   if (!Number.isInteger(start) || start < 0 || start > 23) throw new Error(`Służba: start – pełna godzina 0–23, jest ${start}`);
   if (!DUTY_MINUTES.includes(minutes)) throw new Error(`Służba: długość ${minutes} min – do wyboru ${DUTY_MINUTES.join(', ')}`);
   const t0 = start * 3600, t1 = t0 + minutes * 60;
-  const first = t0 + DUTY_EDGE.start, last = t1 - (minutes <= 30 ? DUTY_EDGE.endShort : DUTY_EDGE.end);
+  const last = t1 - (minutes <= 30 ? DUTY_EDGE.endShort : DUTY_EDGE.end);
   const period = patternPeriod(station);
   const groups = patternGroups(station);
   const exits = station.exits || {};
+  // czas przejazdu szlaku `exit` z prędkością `v` [km/h] i najwcześniejsza chwila pierwszego zdarzenia pociągu w służbie:
+  // pociąg od sąsiada musi zostać wyprawiony po starcie (inaczej przyjeżdża po planie – uwaga `tt-tight-start`)
+  const lineTime = (exit, v) => { const x = exits[exit]; return x ? (x.lineLength ?? 3000) / (Math.min(v, x.lineSpeed ?? v) / 3.6) : 0; };
+  const leadOf = (e, v = speedFor(e)) => (e.from ? lineTime(e.from, v) + DUTY_EDGE.run + DUTY_EDGE.neighbour : DUTY_EDGE.start);
 
   // kursy linii we wzorcu: grupy tej samej linii po kolei – numer kursu w dobie to powtórzenie · liczba + miejsce
   const lines = new Map();
@@ -186,7 +197,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
       const a = Math.min(...g.trains.map(firstOf)) + shift, b = Math.max(...g.trains.map(lastOf)) + shift;
       const standing = g.trains.some((e) => e.startOn);
       // pociąg stojący od początku zmiany (startOn) – tylko gdy odjeżdża w pierwszym okresie wzorca od startu
-      if (a < first || b > last || (standing && a > t0 + period)) continue;
+      if (g.trains.some((e) => firstOf(e) + shift < t0 + leadOf(e)) || b > last || (standing && a > t0 + period)) continue;
       const list = lines.get(g.key);
       candidates.push({ g, n, shift, at: a, course: n * list.length + list.indexOf(g) });
     }
@@ -201,8 +212,12 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   const renamed = (out, e, n) => {
     if (n === 0 || trainClass(e) !== 'dal') return out;
     const [a, b] = relationOf(e).split(' – ');
-    // pociąg, który tu kończy albo zaczyna bieg, zastępuje tylko pociąg kończący / zaczynający w tym samym mieście
-    const list = namedTrainsVia(a, b).filter((t) => (e.to || cityOf(t.stops.at(-1)) === cityOf(b)) && (e.from || cityOf(t.stops[0]) === cityOf(a)));
+    // pociąg, który tu kończy albo zaczyna bieg, zastępuje tylko pociąg kończący / zaczynający w tym samym mieście;
+    // EIP to osobny tabor (zespół trakcyjny) – zastępuje tylko EIP, a pociągi wagonowe (EIC, IC, TLK) – siebie nawzajem:
+    // mają wspólną pulę taboru, długość wpisu zostaje z wzorca, a prędkość idzie za nową kategorią (TLK 140, IC / EIC
+    // 160 km/h), o ile wpis nie ma własnego `vmax` – kontrola definicji sprawdza rozkład już z nową kategorią
+    const eip = categoryOf(e) === 'EIP';
+    const list = namedTrainsVia(a, b).filter((t) => (t.cat === 'EIP') === eip && (e.to || cityOf(t.stops.at(-1)) === cityOf(b)) && (e.from || cityOf(t.stops[0]) === cityOf(a)));
     if (!list.length) return out;
     const at = mixSeed(0, String(e.nr)) + n;
     for (let i = 0; i < list.length; i++) {
@@ -232,15 +247,11 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     if (!runs || skipped) { dropped.push({ ...c, band, skipped }); continue; }
     take(c);
   }
-  // służba bez żadnego pociągu (krótkie okno): wracają pociągi, które wypadły dla urozmaicenia
-  if (!picked.length) for (const d of dropped.filter((x) => x.skipped)) { dropped.splice(dropped.indexOf(d), 1); take(d); }
-
   // pociągi towarowe w miejsce pasażerskich, które o tej porze nie kursują (bez linii aglomeracyjnych)
   // parametry (rodzaj, długość, masa, prędkość) z pociągów towarowych wzorca – bez zdawczych i lokomotyw luzem
   const templates = (station.timetable || []).filter((e) => e.kind === 'tow' && e.from && e.to && e.unit == null && !e.startOn && !e.terminates && !['TK', 'LT', 'TH'].includes(categoryOf(e)));
   // odstęp na szlaku: pociąg towarowy jedzie wolniej niż pasażerski, w którego miejsce wchodzi – od innego pociągu na tym
   // samym szlaku (wjazd albo wyjazd) dzieli go co najmniej czas przejazdu szlaku i `FREIGHT_GAP`
-  const lineTime = (exit, v) => { const x = exits[exit]; return x ? (x.lineLength ?? 3000) / (Math.min(v, x.lineSpeed ?? v) / 3.6) : 0; };
   const clear = (train, at) => picked.every((p) => p.trains.every((o) => {
     const gap = (exit) => lineTime(exit, train.vmax) + FREIGHT_GAP;
     if (o.to && o.to === train.to && Math.abs(lastOf(o) - at) < gap(train.to)) return false;
@@ -249,23 +260,24 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   }));
   const addFreight = (force) => { for (const d of dropped) {
     const e = d.g.head;
-    if ((d.g.cls !== 'reg' && d.g.cls !== 'dal') || d.g.trains.length > 1 || !e.from || !e.to || e.terminates) continue;
+    if (d.freight || (d.g.cls !== 'reg' && d.g.cls !== 'dal') || d.g.trains.length > 1 || !e.from || !e.to || e.terminates) continue;
     if (!force && fraction(seed, `tow|${e.nr}|${d.n}`) >= d.band.freight) continue;
     const tpl = templates.length ? templates[Math.floor(fraction(seed, `wzor|${e.nr}|${d.n}`) * templates.length)] : GENERIC_FREIGHT;
-    if (!clear({ from: e.from, to: e.to, vmax: tpl.vmax ?? GENERIC_FREIGHT.vmax }, firstOf(e) + d.shift)) continue;
+    const vmax = tpl.vmax ?? GENERIC_FREIGHT.vmax, at = firstOf(e) + d.shift;
+    // wolniejszy pociąg sąsiad wyprawia wcześniej – też nie przed startem służby
+    if (at < t0 + leadOf(e, vmax) || !clear({ from: e.from, to: e.to, vmax }, at)) continue;
     const nr = free(FREIGHT_NR + Math.floor(fraction(seed, `nr|${e.nr}|${d.n}`) * 400) * 2 + (Number(e.nr) % 2));
     const train = { nr, kind: 'tow', cat: tpl.cat ?? 'TM', name: `Towarowy ${exits[e.from]?.name ?? e.from} – ${exits[e.to]?.name ?? e.to}`,
-      from: e.from, to: e.to, arr: stamp(firstOf(e) + d.shift), track: e.track, stop: false, length: tpl.length, vmax: tpl.vmax };
+      from: e.from, to: e.to, arr: stamp(at), track: e.track, stop: false, length: tpl.length, vmax };
     if (tpl.mass != null) train.mass = tpl.mass;
     if (tpl.traction) train.traction = tpl.traction;
+    d.freight = true; // miejsce zajęte – drugi raz towarowy tu nie wchodzi
     picked.push({ c: d, freight: true, trains: [train], tasks: [] });
   } };
-  addFreight(false);
-  // okno bez żadnego pociągu (godzina w środku nocy): towarowy w każde wolne miejsce, a gdy takich nie ma – pociąg wzorca
-  if (!picked.length) addFreight(true);
-  if (!picked.length && dropped.length) take(dropped[0]);
 
-  // kontrola definicji: pociąg z błędem albo uwagą, jakiej nie ma we wzorcu, wypada (najpierw towarowy spoza wzorca obok)
+  // kontrola definicji: pociąg z błędem albo uwagą, jakiej nie ma we wzorcu, wypada. Przy konflikcie dwóch pociągów
+  // (tor, szlak) wypada najpierw pociąg towarowy spoza wzorca na tej samej drodze obok w czasie; każda inna uwaga
+  // (pociąg sprzed startu, po końcu, zadanie) dotyczy samego pociągu – inne pociągi przez nią nie wypadają
   const pattern = { id: 'wzorzec', name: 'wzorzec', startTime: stamp(Math.max(0, lo - 30 * 60)), endTime: stamp(hi + 60 * 60), timetable: station.timetable, tasks: station.tasks || [] };
   const known = new Set(checkScenario(station, pattern).filter((f) => f.level !== 'info' && f.train != null).map((f) => `${f.code}:${f.train}`));
   const scenario = () => {
@@ -274,24 +286,39 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     if (srk) sc.srk = srk;
     return sc;
   };
-  for (let round = 0; round < 40; round++) {
-    const fresh = checkScenario(station, scenario()).filter((f) => f.level !== 'info' && !(f.train != null && known.has(`${f.code}:${baseOf.get(String(f.train)) ?? f.train}`)));
-    if (!fresh.length) break;
-    const out = new Set();
-    for (const f of fresh) {
-      if (f.train == null) {
-        // pusty rozkład (w oknie nie ma pociągu wzorca) – służba bez ruchu; wybór służby jej nie proponuje
-        if (f.level === 'error' && f.code !== 'tt-empty') throw new Error(`Służba ${station.id} ${hm(t0)} / ${minutes} min: ${f.code} – ${f.msg}`);
-        continue;
+  const sameWay = (p, q) => p.trains.some((a) => q.trains.some((b) => (a.from && a.from === b.from) || (a.to && a.to === b.to) || (a.track != null && a.track === b.track)));
+  const validate = () => {
+    for (let round = 0; round < 40 && picked.length; round++) {
+      const fresh = checkScenario(station, scenario()).filter((f) => f.level !== 'info' && !(f.train != null && known.has(`${f.code}:${baseOf.get(String(f.train)) ?? f.train}`)));
+      if (!fresh.length) break;
+      const out = new Set();
+      for (const f of fresh) {
+        if (f.train == null) {
+          if (f.level === 'error') throw new Error(`Służba ${station.id} ${hm(t0)} / ${minutes} min: ${f.code} – ${f.msg}`);
+          continue;
+        }
+        const own = picked.find((p) => p.trains.some((e) => String(e.nr) === String(f.train)));
+        if (!own) continue;
+        const near = !own.freight && PAIR_CODE.test(f.code)
+          ? picked.filter((p) => p.freight && Math.abs(p.c.at - own.c.at) <= 20 * 60 && sameWay(p, own)).sort((a, b) => Math.abs(a.c.at - own.c.at) - Math.abs(b.c.at - own.c.at))[0]
+          : null;
+        out.add(near ?? own);
       }
-      const own = picked.find((p) => p.trains.some((e) => String(e.nr) === String(f.train)));
-      if (!own) continue;
-      // konflikt z pociągiem towarowym spoza wzorca obok w czasie – wypada towarowy, nie pociąg wzorca
-      const near = own.freight ? own : picked.filter((p) => p.freight && Math.abs(p.c.at - own.c.at) <= 20 * 60).sort((a, b) => Math.abs(a.c.at - own.c.at) - Math.abs(b.c.at - own.c.at))[0];
-      out.add(near ?? own);
+      if (!out.size) break;
+      for (const p of out) { picked.splice(picked.indexOf(p), 1); for (const e of p.trains) used.delete(e.nr); }
     }
-    if (!out.size) break;
-    for (const p of out) { picked.splice(picked.indexOf(p), 1); for (const e of p.trains) used.delete(e.nr); }
+  };
+
+  addFreight(false);
+  validate();
+  // Służba bez żadnego pociągu (krótkie okno, środek nocy) – po kolei, każdy krok z kontrolą definicji: wracają pociągi,
+  // które wypadły dla urozmaicenia; towarowy wchodzi w każde wolne miejsce; na koniec pojedynczo pociągi wzorca, których
+  // klasa o tej porze kursuje (inny kurs linii). Pociąg klasy, która o tej porze nie kursuje, nie wraca.
+  if (!picked.length) { for (const d of dropped.filter((x) => x.skipped)) { dropped.splice(dropped.indexOf(d), 1); take(d); } validate(); }
+  if (!picked.length) { addFreight(true); validate(); }
+  for (const d of dropped.filter((x) => !x.freight && x.band.every[x.g.cls] > 0)) {
+    if (picked.length) break;
+    take(d); validate();
   }
 
   const sc = scenario();
@@ -299,17 +326,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   for (const e of sc.timetable) count[trainClass(e)]++;
   const band = bandOf(t0);
   const parts = [[count.agl, 'SKM'], [count.reg, 'regionalne'], [count.dal, 'dalekobieżne'], [count.tow, 'towarowe']].filter(([n]) => n).map(([n, w]) => `${n} ${w}`);
-  sc.description = `${BAND_TEXT[band.id]} Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}. Poziom zakłóceń do wyboru.`;
+  // opis pory doby pokazuje strona posterunku (teksty `start.bandDesc.*`) – tu tylko liczby
+  sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}. Poziom zakłóceń do wyboru.`;
   return { scenario: sc, stats: { band: band.id, trains: sc.timetable.length, ...count } };
 }
-
-/** Opis ruchu o danej porze (treść scenariusza – po polsku, jak opisy scenariuszy stacji). */
-const BAND_TEXT = {
-  noc: 'Noc: ruch pasażerski prawie stoi, jadą głównie pociągi towarowe.',
-  swit: 'Świt: pierwsze pociągi pasażerskie, jeszcze sporo towarowych.',
-  'szczyt-rano': 'Szczyt poranny: najgęstszy ruch pasażerski.',
-  dzien: 'Dzień: pociągi pasażerskie rzadziej niż w szczycie, pojedyncze towarowe.',
-  'szczyt-po': 'Szczyt popołudniowy: najgęstszy ruch pasażerski.',
-  wieczor: 'Wieczór: ruch pasażerski słabnie, przybywa pociągów towarowych.',
-  'pozny-wieczor': 'Późny wieczór: ostatnie pociągi pasażerskie, coraz więcej towarowych.',
-};

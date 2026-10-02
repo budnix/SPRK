@@ -892,8 +892,13 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   (SKM) pociągi towarowe nie wchodzą;
 * urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
   czwartych kursów linii jedzie, decyduje ziarno zmiany – to samo ziarno daje ten sam rozkład;
-* służba zaczyna się o pełnej godzinie i trwa 30 min, 1, 2 albo 3 h – także przez północ (23:00–02:00); pierwszy pociąg
-  co najmniej 3 min po starcie, ostatnie zdarzenie co najmniej 10 min (w służbie 30-minutowej 6 min) przed końcem;
+* służba zaczyna się o pełnej godzinie i trwa 30 min, 1, 2 albo 3 h – także przez północ (23:00–02:00); pociąg od
+  sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie (przyjazd nie wcześniej niż start
+  + czas przejazdu szlaku + 90 s dojazdu do peronu + 2 min), pociąg bez wjazdu – 3 min po starcie; ostatnie zdarzenie
+  co najmniej 10 min (w służbie 30-minutowej 6 min) przed końcem;
+* służba nie zostaje bez pociągów: gdy z doboru nie wyszedł żaden, wracają pociągi pominięte dla urozmaicenia, potem
+  pociąg towarowy wchodzi w każde wolne miejsce, na koniec pojedynczy pociąg wzorca klasy, która o tej porze kursuje
+  (inny kurs linii niż wynikałby z ziarna) – pociąg klasy niekursującej o tej porze nie wraca;
 * powtórzenie pociągu dalekobieżnego to inny pociąg tej samej drogi – z nazwą i relacją z listy „Pociągi z nazwami”
   (niżej); pociąg wzorca o swojej porze zostaje bez zmian;
 * ze źródeł pochodzi tylko ogólna obserwacja, że ruch pasażerski koncentruje się w szczytach dojazdów, a nocą linie są
@@ -914,7 +919,10 @@ wystarczy uruchomić go z nowym rokiem; pociąg z trasą skróconą (bez stacji 
 W grze: nazwa jest przypisana do trasy, więc pociąg z listy zastępuje powtórzenie pociągu dalekobieżnego wzorca tylko
 wtedy, gdy jedzie tą samą drogą – przez miasto początku relacji wzorca, a potem przez miasto jej końca (`namedTrainsVia`;
 miasto = nazwa stacji bez dopisku dworca, `cityOf`); pociąg, który na stacji kończy albo zaczyna bieg, zastępuje tylko
-pociąg kończący / zaczynający w tym samym mieście. Przyjęte: godzina – pociąg z listy jedzie w grze o porze powtórzenia
+pociąg kończący / zaczynający w tym samym mieście. Pociąg EIP z listy zastępuje tylko pociąg EIP wzorca, a pociągi
+wagonowe (EIC, IC, TLK) – siebie nawzajem: mają wspólną pulę taboru, wpis zachowuje długość wzorca, a prędkość
+idzie za kategorią pociągu z listy (TLK 140, IC / EIC 160 km/h, o ile wpis nie ma własnego `vmax`) – nazwa EIP nie trafia
+więc na skład wagonowy. Przyjęte: godzina – pociąg z listy jedzie w grze o porze powtórzenia
 wzorca, nie o swojej rzeczywistej; kolejność doboru nazw (z numeru wzorca i numeru powtórzenia – ta sama nazwa na
 każdej stacji na trasie); sezonowość i dni kursowania pominięte; numer w grze to numer powtórzenia wzorca, nie numer
 z rozkładu. Relacje stacji fikcyjnych nie mają pociągów na liście – zostają z wzorca.

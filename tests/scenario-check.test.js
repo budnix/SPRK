@@ -168,6 +168,23 @@ test('definicja: godziny w nazwie zmiany zgadzają się z oknem (startTime / end
   }
 });
 
+test('definicja: godziny po 24:00 tylko w zmianie przez północ (endTime po 24:00) – w zwykłej zmianie to błąd zapisu', () => {
+  const codes = (sc) => check(sc).filter((f) => f.level === 'error').map((f) => f.code);
+  // literówka „26:15” zamiast „06:15” w zwykłej zmianie – błąd formatu, nie „następna doba”
+  assert.ok(codes({ ...base, timetable: withTT({ 6101: { arr: '26:15' } }) }).includes('tt-time'));
+  assert.ok(codes({ ...base, faults: [{ type: 'signal-fail', target: 'A', at: '27:10', duration: 5 }] }).includes('fault-time'));
+  assert.ok(codes({ ...base, startTime: '25:00' }).includes('sc-time'));
+  assert.ok(codes({ ...base, tasks: [{ ...odstaw, deadline: '26:15' }] }).includes('task-time'));
+  // zmiana przez północ: endTime po 24:00, pociąg i termin zadania po północy
+  const night = { id: 'noc', name: 'Noc (23:00–01:00)', startTime: '23:00', endTime: '25:00', tasks: [],
+    timetable: [{ ...tt(6101), arr: '23:20', dep: '23:22' }, { ...tt(6102), arr: '24:20', dep: '24:22' }] };
+  assert.deepEqual(codes(night), []);
+  assert.deepEqual(check(night).filter((f) => f.code === 'sc-name-window'), [], 'godziny w nazwie jak na zegarze');
+  // koniec wcześniejszy niż start – błąd z podpowiedzią zapisu po 24:00
+  const wrong = check({ ...night, endTime: '01:00' }).find((f) => f.code === 'sc-window');
+  assert.match(wrong.msg, /zmiana przez północ ma godziny następnej doby po 24:00 \(01:00 → endTime: '25:00'\)/);
+});
+
 test('scenariusze „szczyt” (wymuszony poziom high): koniec zmiany co najmniej 44 min po ostatnim pociągu – opóźniony od sąsiada zdąży', () => {
   // przy opóźnieniu od sąsiada do 40 min krótszy zapas dawał karę „nieobsłużony” (−10) bez winy dyżurnego
   const forced = STATIONS.flatMap((st) => (st.scenarios || []).filter((sc) => sc.disruptions === 'high').map((sc) => [st, sc]));
@@ -531,9 +548,16 @@ test('wiersz poleceń: służba o wybranej porze (--start, --minutes) – rozkł
   assert.throws(() => parseArgs(['--start', '24', '--minutes', '60']), /--start: pełna godzina 0–23/);
   assert.throws(() => parseArgs(['--minutes', '60']), /--start: pełna godzina 0–23 \(wymagana razem z --minutes\)/);
   assert.throws(() => parseArgs(['--start', '6']), /--minutes: .*wymagane razem z --start/);
+  // rozkład służby zależy od ziarna: służba każdego ziarna to osobny scenariusz – definicja i przebieg tego samego rozkładu
   const one = listChecks({ targets: ['sopot'], seeds: [1, 2], levels: ['none'], duty: { start: 22, minutes: 120 } });
-  assert.deepEqual(one.scenarios.map((x) => [x.station.id, x.scenario.id, x.scenario.name]), [['sopot', 'sluzba-120', 'Służba 22:00–00:00']]);
-  assert.deepEqual(one.jobs.map((j) => [j.stationId, j.scenarioId, j.seed, j.level, j.duty]), [['sopot', 'sluzba-120', 1, 'none', { start: 22, minutes: 120 }], ['sopot', 'sluzba-120', 2, 'none', { start: 22, minutes: 120 }]]);
+  assert.deepEqual(one.scenarios.map((x) => [x.station.id, x.scenario.id, x.scenario.name]), [['sopot', 'sluzba-120#1', 'Służba 22:00–00:00'], ['sopot', 'sluzba-120#2', 'Służba 22:00–00:00']]);
+  assert.deepEqual(one.jobs.map((j) => [j.stationId, j.scenarioId, j.seed, j.level, j.duty]), [['sopot', 'sluzba-120#1', 1, 'none', { start: 22, minutes: 120 }], ['sopot', 'sluzba-120#2', 2, 'none', { start: 22, minutes: 120 }]]);
+  assert.notDeepEqual(one.scenarios[0].scenario.timetable.map((e) => e.nr), one.scenarios[1].scenario.timetable.map((e) => e.nr), 'inne ziarno – inny rozkład');
+  // stacja z kilkoma stanowiskami: każde stanowisko osobno
+  const two = listChecks({ targets: ['rumia'], seeds: [1], levels: ['none'], duty: { start: 6, minutes: 60 } });
+  assert.deepEqual(two.scenarios.map((x) => [x.scenario.id, x.scenario.srk ?? null]), [['sluzba-60#1', null], ['sluzba-60-komputerowe#1', 'komputerowe']]);
+  const played = checkShift(two.jobs[1]);
+  assert.deepEqual([played.scenario, played.srk, played.error], ['sluzba-60-komputerowe#1', 'komputerowe', undefined]);
   // bez celów – wszystkie posterunki do służby (bez stacji szkoleniowych)
   const all = listChecks({ seeds: [1], levels: ['none'], duty: { start: 6, minutes: 60 } }).scenarios.map((x) => x.station.id);
   assert.ok(all.includes('tczew') && all.includes('rumia') && !all.includes('szkolna') && all.length >= 9);

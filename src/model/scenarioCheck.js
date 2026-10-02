@@ -53,9 +53,11 @@ const FAULT_DEFAULT_MIN = 10;
 const STATION_RUN = 90;
 const SECTION_FAULTS = new Set(['false-occupancy', 'track-defect', 'axle-counter']);
 
-// godziny 24–47: następna doba w zmianie przez północ („25:10” = 01:10 następnego dnia; `Clock.stamp`)
-const TIME_RE = /^([0-3]?\d|4[0-7]):[0-5]\d(:[0-5]\d)?$/;
-const isTime = (v) => typeof v === 'string' && TIME_RE.test(v);
+const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+// godziny 24–47: następna doba w zmianie przez północ („25:10” = 01:10 następnego dnia; `Clock.stamp`) – dozwolone tylko
+// w scenariuszu, którego `endTime` jest po północy; w zwykłej zmianie „26:15” to literówka
+const LATE_RE = /^(2[4-9]|3\d|4[0-7]):[0-5]\d(:[0-5]\d)?$/;
+const isLate = (v) => typeof v === 'string' && LATE_RE.test(v);
 const hm = (s) => (Number.isFinite(s) ? Clock.format(s) : String(s));
 const mins = (s) => Math.ceil(s / 60);
 const same = (a, b) => String(a) === String(b);
@@ -131,12 +133,15 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   if (sc.disruptions != null && !Object.hasOwn(DISRUPTION_LEVELS, sc.disruptions)) error('sc-disruptions', `disruptions: „${sc.disruptions}” – nieznany poziom zakłóceń (none, low, high); gra przyjmie „none”`);
   if (sc.tutorial != null && opts.missions && !new Set(opts.missions).has(sc.tutorial)) error('sc-tutorial', `tutorial: „${sc.tutorial}” – nie ma takiej misji (${[...opts.missions].join(', ')}); zmiana nie skończy się sama po ostatnim pociągu`);
   if (sc.srk != null && !hasSrk(sc.srk)) error('sc-srk', `srk: „${sc.srk}” – nieznany system srk`);
+  // zmiana przez północ: `endTime` po 24:00 – wtedy godziny rozkładu, zadań, usterek i zamknięć też mogą być po 24:00
+  const overnight = isLate(sc.endTime);
+  const isTime = (v) => typeof v === 'string' && (TIME_RE.test(v) || (overnight && LATE_RE.test(v)));
   let badTime = false;
-  for (const k of ['startTime', 'endTime']) if (sc[k] != null && !isTime(sc[k])) { error('sc-time', `${k}: „${sc[k]}” – czas w formacie GG:MM (zegar zmiany stanąłby na NaN)`); badTime = true; }
+  for (const k of ['startTime', 'endTime']) if (sc[k] != null && !(isTime(sc[k]) || (k === 'endTime' && isLate(sc[k])))) { error('sc-time', `${k}: „${sc[k]}” – czas w formacie GG:MM (zegar zmiany stanąłby na NaN)`); badTime = true; }
   if (badTime) return out;
   const start = Clock.parse(sc.startTime ?? station.startTime ?? '06:00');
   const end = sc.endTime ? Clock.parse(sc.endTime) : null;
-  if (end != null && end <= start) error('sc-window', `endTime ${sc.endTime} nie później niż start ${hm(start)} – zmiana skończy się w pierwszym kroku (zmiana przez północ nie jest obsługiwana)`);
+  if (end != null && end <= start) error('sc-window', `endTime ${sc.endTime} nie później niż start ${hm(start)} – zmiana skończy się w pierwszym kroku; zmiana przez północ ma godziny następnej doby po 24:00 (01:00 → endTime: '25:00')`);
   // godziny w nazwie („Pełna zmiana (05:55–08:15)”) – gracz wybiera zmianę po nazwie, więc mają się zgadzać z oknem
   const named = typeof sc.name === 'string' ? /(\d{1,2}:\d{2})\s*[–—-]\s*(\d{1,2}:\d{2})/.exec(sc.name) : null;
   if (named && end != null) {
@@ -182,6 +187,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   }
   const ilk = sim.ilk, topo = ilk.topo;
   const tt = sim.traffic.timetable();
+  const ttDefs = sc.timetable ?? station.timetable ?? [];
   const exits = sim.station.exits || {};
   const exitName = (id) => `${exits[id]?.name ?? id} (${id})`;
   if (!tt.length) error('tt-empty', `Pusty rozkład zmiany – scenariusz bez ruchu niczego nie sprawdza${end == null ? '; bez endTime zmiana nie skończy się nigdy' : ''}`);
@@ -217,7 +223,9 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   let lastEvent = null;
   for (const e of tt) {
     const w = `Pociąg ${e.nr}`;
-    for (const k of ['arr', 'dep']) if (e[k] != null && !isTime(e[k])) error('tt-time', `${w}: ${k} „${e[k]}” – czas w formacie GG:MM`, e.nr);
+    // zapis z definicji (rozkład zmiany pokazuje godziny po północy już jak na zegarze – `Traffic.shown`)
+    const def = ttDefs[e.idx] ?? e;
+    for (const k of ['arr', 'dep']) if (def[k] != null && !isTime(def[k])) error('tt-time', `${w}: ${k} „${def[k]}” – czas w formacie GG:MM${isLate(def[k]) ? ' (godziny po 24:00 tylko w zmianie przez północ: endTime po 24:00)' : ''}`, e.nr);
     if (e.arrTime != null && e.depTime != null && e.depTime < e.arrTime) error('tt-dep-before-arr', `${w}: odjazd ${e.dep} przed przyjazdem ${e.arr} – punktualności nie da się ocenić`, e.nr);
     if (!e.from && !e.startOn && e.unit == null) error('tt-no-spawn', `${w}: bez from, startOn i unit – pociąg nigdy nie powstanie`, e.nr);
     if (e.from && e.startOn) warn('tt-startOn-ignored', `${w}: startOn przy from „${e.from}” – pociąg przyjedzie od sąsiada, startOn jest pomijane`, e.nr);
