@@ -136,6 +136,12 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   const start = Clock.parse(sc.startTime ?? station.startTime ?? '06:00');
   const end = sc.endTime ? Clock.parse(sc.endTime) : null;
   if (end != null && end <= start) error('sc-window', `endTime ${sc.endTime} nie później niż start ${hm(start)} – zmiana skończy się w pierwszym kroku (zmiana przez północ nie jest obsługiwana)`);
+  // godziny w nazwie („Pełna zmiana (05:55–08:15)”) – gracz wybiera zmianę po nazwie, więc mają się zgadzać z oknem
+  const named = typeof sc.name === 'string' ? /(\d{1,2}:\d{2})\s*[–—-]\s*(\d{1,2}:\d{2})/.exec(sc.name) : null;
+  if (named && end != null) {
+    const [from, to] = [named[1], named[2]].map((x) => Clock.parse(x));
+    if (from !== start || to !== end) warn('sc-name-window', `Nazwa „${sc.name}” podaje godziny ${named[1]}–${named[2]}, a zmiana trwa ${hm(start)}–${hm(end)} – popraw nazwę albo startTime / endTime`);
+  }
   if (sc.trains && sc.timetable) error('sc-trains-ignored', 'trains i timetable naraz – gra bierze timetable, a trains pomija');
   if (sc.trains && !sc.timetable) {
     const nrs = new Set((station.timetable || []).map((t) => t.nr));

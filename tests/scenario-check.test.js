@@ -154,6 +154,20 @@ test('definicja: koniec zmiany – ta sama granica co w przebiegu (odjazd co naj
   assert.ok(!errorCodes(check({ ...base, trains: [90201], tasks: [], endTime: '07:54' })).has('tt-after-end'));
 });
 
+test('definicja: godziny w nazwie zmiany zgadzają się z oknem (startTime / endTime) – inaczej uwaga; wszystkie stacje bez niej', () => {
+  const code = (sc) => check(sc).filter((f) => f.code === 'sc-name-window');
+  assert.deepEqual(code(base), [], 'Szkolna: „(07:00–08:50)” i koniec 08:50');
+  const bad = code({ ...base, endTime: '08:55' });
+  assert.deepEqual(bad.map((f) => f.level), ['warning']);
+  assert.match(bad[0].msg, /podaje godziny 07:00–08:50, a zmiana trwa 07:00–08:55/);
+  assert.equal(code({ ...base, startTime: '07:10' }).length, 1, 'inny start');
+  assert.deepEqual(code({ ...base, name: 'Zmiana bez godzin', endTime: '08:55' }), [], 'nazwa bez godzin – bez uwagi');
+  // Gdynia Gł.: nazwa podawała 08:15 przy końcu 08:20
+  for (const st of STATIONS) for (const sc of st.scenarios || []) {
+    assert.deepEqual(check(sc.id, st).filter((f) => f.code === 'sc-name-window').map((f) => f.msg), [], `${st.id}:${sc.id}`);
+  }
+});
+
 test('scenariusze „szczyt” (wymuszony poziom high): koniec zmiany co najmniej 44 min po ostatnim pociągu – opóźniony od sąsiada zdąży', () => {
   // przy opóźnieniu od sąsiada do 40 min krótszy zapas dawał karę „nieobsłużony” (−10) bez winy dyżurnego
   const forced = STATIONS.flatMap((st) => (st.scenarios || []).filter((sc) => sc.disruptions === 'high').map((sc) => [st, sc]));

@@ -150,8 +150,8 @@ export default {
   tasks: [],
 
   scenarios: [
-    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:15)', description: 'Regio i dalekobieżne linii 9 na peronach I/II, towarowe z Zajączkowa i Pszczółek do Portu Północnego, ze Starej Piły do Gdańska. Poziom zakłóceń do wyboru.', endTime: '08:15' },
-    { id: 'usterka-gp', name: 'Usterka blokady od Portu Północnego', description: 'Jednotorowa blokada 226 bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:15', faults: [{ type: 'block-fail', target: 'GP', at: '06:30', duration: 40 }] },
+    { id: 'zmiana', name: 'Pełna zmiana (05:55–08:25)', description: 'Regio i dalekobieżne linii 9 na peronach I/II, towarowe z Zajączkowa i Pszczółek do Portu Północnego, ze Starej Piły do Gdańska. Poziom zakłóceń do wyboru.', endTime: '08:25' },
+    { id: 'usterka-gp', name: 'Usterka blokady od Portu Północnego', description: 'Jednotorowa blokada 226 bez łączności przez 40 min – zapowiadanie telefoniczne.', endTime: '08:25', faults: [{ type: 'block-fail', target: 'GP', at: '06:30', duration: 40 }] },
     { id: 'szczyt', name: 'Szczyt z zakłóceniami', description: 'Pełny rozkład, duże zakłócenia.', endTime: '08:50', disruptions: 'high' },
   ],
 };

@@ -5,6 +5,8 @@ import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
 import { autoDispatch, allArrived } from './helpers.js';
+import { checkScenario } from '../src/model/scenarioCheck.js';
+import { checkShift } from '../scripts/check-scenario.mjs';
 
 test('Pruszcz Gdański: definicja poprawna, brak urwanych torów, przebiegi linii 9, 260, 229 i 226 zgodne z układem; tylko stanowisko komputerowe', () => {
   assert.deepEqual(validateStation(pruszcz).errors, []);
@@ -55,4 +57,18 @@ test('Pruszcz Gdański: pełna zmiana – Regio i IC linii 9, towarowe Zajączko
   }
   assert.ok(!sim.score.items.some((i) => i.code === 'held'), 'przetrzymania: ' + sim.score.items.filter((i) => i.code === 'held').map((i) => i.msg).join('; '));
   assert.ok(sim.ended, 'zmiana zakończona');
+});
+
+test('Pruszcz Gdański: zmiana i usterka-gp kończą się 21 min po ostatnim pociągu – przy małych zakłóceniach R 55309 zdąża', () => {
+  // koniec 08:15 (11 min po odjeździe 55309 o 08:04) był za wcześnie: 55309 czekał na szlak do Pszczółek i zostawał
+  // nieobsłużony już przy poziomie low (ziarna 1 i 5); zapas poziomu low to 19 min (opóźnienie 15 min + 4 min)
+  for (const id of ['zmiana', 'usterka-gp']) {
+    const sc = pruszcz.scenarios.find((s) => s.id === id);
+    assert.equal(sc.endTime, '08:25');
+    assert.deepEqual(checkScenario(pruszcz, id, { levels: ['low'] }).filter((f) => f.code === 'sc-slack'), [], `${id}: zapas przy low`);
+  }
+  for (const seed of [1, 5]) {
+    const r = checkShift({ stationId: 'pruszcz-gdanski', scenarioId: 'zmiana', seed, level: 'low', extra: 120 });
+    assert.deepEqual(r.unfinished.map((u) => u.nr), [], `ziarno ${seed}: pociągi nieobsłużone na koniec zmiany`);
+  }
 });

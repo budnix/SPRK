@@ -267,6 +267,8 @@ Nowy wariant istniejącej stacji to zwykle kopia scenariusza z innym oknem zmian
 
 Zasady (z tego, jak gra liczy zmianę):
 
+* Godziny podane w nazwie (`name`, np. „Krótka zmiana (07:30–08:35)”) mają się zgadzać ze `startTime` i `endTime` –
+  gracz wybiera zmianę po nazwie (uwaga `sc-name-window`).
 * `startTime` i `endTime` niczego nie wycinają z rozkładu – gra jedzie całym rozkładem stacji (albo `trains` /
   `timetable`). Inny start albo inna długość zmiany działa tylko razem z `trains`.
 * Do `trains` wchodzą pociągi, które sąsiad wyprawia po starcie zmiany: przyjazd co najmniej kilka minut po

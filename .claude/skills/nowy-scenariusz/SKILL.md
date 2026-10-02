@@ -29,6 +29,7 @@ scenariusze”). Ten skill to lista kroków.
    Kod wyjścia 1 = są błędy (`--strict`: także uwagi).
 3. **Popraw** wg komunikatów i sprawdzaj ponownie, aż nie będzie BŁĘDÓW:
    - `station-invalid` – błąd definicji stacji (treść w komunikacie); `sc-unknown-key` – literówka w polu (podpowiedź);
+   - `sc-name-window` – godziny w nazwie („… (05:55–08:15)”) inne niż `startTime` / `endTime`: popraw nazwę albo okno;
    - `tt-before-start` / `tt-tight-start` – pociąg sprzed startu: usuń go z `trains` albo przesuń start;
    - `tt-after-end`, `plan-tight` – odjazd mniej niż 4 min przed końcem: wydłuż `endTime` albo usuń pociąg;
      `sc-slack`, `late-inbound`, `margin` – zapas na opóźnienia od sąsiada;
