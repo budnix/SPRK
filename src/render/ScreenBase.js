@@ -5,7 +5,6 @@ import { deskControls } from '../tiles/controls.js';
 import { PanelView } from './PanelView.js';
 import { t } from '../i18n/index.js';
 import { platformSpans, platformEdgeLines } from './platforms.js';
-import { relationOf } from '../model/categories.js';
 import { blockSymbol, blockSymbolShapes, hasKoSymbol, koSymbol } from './blockSymbol.js';
 import { trainLabelX } from './trainLabel.js';
 
@@ -442,19 +441,7 @@ export class ScreenBase extends PanelView {
     this.controlEls.set(refKey({ kind: 'signal', id: tile.id, color: 'white' }), g);
   }
 
-  /** Pociągi toru szlakowego `exit` w kolejności: na szlaku (`on: true`), potem zgłoszone u sąsiada i czekające. */
-  lineTrains(exit) {
-    const b = this.sim.blocks.get(exit);
-    if (!b) return [];
-    const tt = this.sim.traffic.timetable();
-    const out = [];
-    if (b.lineTrain != null) {
-      const e = tt.find((x) => String(x.nr) === String(b.lineTrain));
-      out.push({ nr: String(b.lineTrain), on: true, title: `${e ? `${e.label} ${relationOf(e)}` : `pociąg nr ${b.lineTrain}`} – na szlaku, ${b.poBlocked ? `od nas do ${b.neighbour}` : `od ${b.neighbour} do nas`}` });
-    }
-    for (const e of tt.filter((x) => x.from === exit && x.requested && !x.dispatched)) out.push({ nr: String(e.nr), on: false, title: `${e.label} ${relationOf(e)} – zgłoszony przez ${b.neighbour}, czeka na wyprawienie` });
-    return out;
-  }
+
 
   /* ---------------- aktualizacja stanu ---------------- */
   /** Stan odcinka wg tab. 8 Ie-104. */

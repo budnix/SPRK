@@ -114,6 +114,13 @@ w które jest ustawiona, i przerwa w szczelinie drugiego. `elementFor` dla semaf
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 
+Co można zrobić ze wskazanym elementem, mówi `src/srk/monitor.js` (bez DOM, testy w Node – `tests/monitor-menu.test.js`):
+`monitorMenu(sim, ref)` zwraca menu jako dane – pozycja z poleceniem wprost (`cmd` → `Simulation.execute`), z poleceniem
+specjalnym (`special`, `target` – potwierdzenie WYKONAJ), z początkiem przebiegu (`route`, `signal` – koniec wskazuje
+gracz) albo separator i pociągi toru szlakowego (`lineTrains`); `MODE_KINDS` – których elementów dotyczy polecenie
+z paska. `ScreenRenderer` rysuje menu i wykonuje wybraną pozycję (`#act`) – tak jak MOR-3 (`mor.js`) i EBILock
+(`ebilock.js`) mają reguły obsługi w `src/srk/`, a widok tylko obraz.
+
 Nazwy poleceń zależą od stanowiska: opcja zależności `emergencyReleaseName` (dPz, ZDP, PZA, zwalniacz; null – brak
 doraźnego zwolnienia) w odmowach i dzienniku; `static PLAN_COUNTERS = false` widoku – bez liczników na planie (MOR-1).
 

@@ -25,6 +25,7 @@ src/
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
+               monitor (polecenia stanowiska komputerowego: menu elementu i blokady szlaku jako dane – bez DOM),
                views (fabryki widoków stanowisk, podpowiedzi, instrukcja – warstwa UI)
   render/      PanelView (wspólna baza i kontrakt widoków stanowisk),
                DeskRenderer (SVG pulpitu kostkowego typu E), IzhRenderer (pulpit ciemny IZH-111), LeverRenderer

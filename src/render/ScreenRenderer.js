@@ -1,5 +1,6 @@
 import { refKey } from './refKey.js';
 import { ScreenBase } from './ScreenBase.js';
+import { monitorMenu, MODE_KINDS } from '../srk/monitor.js';
 import { tip } from '../data/glossary.js';
 import { createConfirmBar } from './confirmBar.js';
 import { escapeHtml } from '../ui/dom.js';
@@ -108,87 +109,31 @@ export class ScreenRenderer extends ScreenBase {
   #runMode(ref) {
     const cmd = this.#commands(ref);
     // polecenie paska → rodzaje elementów, których dotyczy; pozycję menu elementu wskazuje jej `mode`
-    const kinds = { train: ['signal'], shunt: ['signal'], pz: ['signal'], dpz: ['signal'], zw: ['point', 'derailer'], zz: ['point', 'derailer'], sz: ['signal'], stop: ['signal'], sstop: ['signal'] }[this.mode];
+    const kinds = MODE_KINDS[this.mode];
     if (!kinds || !kinds.includes(ref.kind)) { this.sim.bus.emit('log', { time: this.ilk.time, level: 'warn', msg: 'Polecenie nie dotyczy wskazanego elementu' }); return; }
     const item = cmd?.items.find((it) => it.mode === this.mode);
     if (!item) return;
     const keep = this.mode === 'train' || this.mode === 'shunt';
-    if (item.special) this.#confirm(item); else item.run();
+    this.#act(item);
     if (!keep) this.#setMode(null);
     else if (!this.pending) this.#setMode(null);
   }
 
-  /** Lista poleceń dla elementu (menu). */
+  /** Menu elementu (`src/srk/monitor.js` – polecenia jako dane). */
   #commands(ref) {
-    const H = this.handlers;
-    // polecenia wydawane wprost (Simulation.execute) – monitor nie ma przycisków grupowych
-    const exec = (cmd) => () => H.onCommand(cmd);
-    if (ref.kind === 'signal') {
-      const s = this.ilk.signals.get(ref.id);
-      const sigRef = (color) => ({ kind: 'signal', id: ref.id, color });
-      const startRoute = (color) => () => {
-        const res = H.onPress(sigRef(color));
-        if (res?.ok) this.#beginPending(ref.id, color);
-        return res;
-      };
-      const items = [];
-      if (s.kind === 'semafor') items.push({ mode: 'train', label: `Nastawienie przebiegu pociągowego od ${ref.id} …`, run: startRoute('green') });
-      if (s.kind === 'tm' || s.shunting) items.push({ mode: 'shunt', label: `Nastawienie przebiegu manewrowego od ${ref.id} …`, run: startRoute('white') });
-      items.push({ mode: 'stop', label: 'Sygnał „Stój” – przebieg pozostaje utwierdzony (Stój)', run: exec({ type: 'stop', signal: ref.id }) });
-      items.push(s.stopped
-        ? { mode: 'sstop', label: 'Odwołanie zastopowania sygnalizatora (oStop)', run: exec({ type: 'signal-stop', signal: ref.id, on: false }) }
-        : { mode: 'sstop', label: 'Zastopowanie sygnalizatora (Stop)', run: exec({ type: 'signal-stop', signal: ref.id, on: true }) });
-      items.push({ mode: 'pz', label: 'Zwolnienie przebiegu (ZCZ)', run: exec({ type: 'release', signal: ref.id }) });
-      // ZDP – przebiegu pociągowego: polecenie specjalne; ZDM – manewrowego: zwykłe (Ie-104.1 §12)
-      if (this.ilk.routeInfo(s.route)?.route.kind === 'shunt') items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu manewrowego (ZDM)', run: exec({ type: 'release', signal: ref.id, emergency: true }) });
-      else items.push({ mode: 'dpz', label: 'Zwolnienie doraźne przebiegu pociągowego (ZDP)', special: true, target: ref, cmd: { type: 'release', signal: ref.id, emergency: true } });
-      if (s.kind === 'semafor') items.push({ mode: 'sz', label: 'Sygnał zastępczy (SZ)', special: true, target: ref, cmd: { type: 'substitute', signal: ref.id } });
-      return { title: `${s.kind === 'tm' ? 'Tarcza manewrowa' : 'Semafor'} ${ref.id}`, items };
-    }
-    if (ref.kind === 'point') {
-      const p = this.ilk.points.get(ref.id);
-      return { title: `Zwrotnica ${p?.label || ref.id}`, items: [
-        { mode: 'zw', label: p?.position === '+' ? 'Przestawienie zwrotnicy w położenie minus (Minus)' : 'Przestawienie zwrotnicy w położenie plus (Plus)', run: exec({ type: 'point', id: ref.id }) },
-        { mode: 'zz', label: p?.individualLock ? 'Odwołanie zamknięcia zwrotnicy (oZmk)' : 'Zamknięcie zwrotnicy (Zmk)', run: exec({ type: 'lock', id: ref.id }) },
-      ] };
-    }
-    if (ref.kind === 'derailer') {
-      const d = this.ilk.derailers.get(ref.id);
-      return { title: `Wykolejnica ${ref.id}`, items: [
-        { mode: 'zw', label: d?.position === 'on' ? 'Zdjęcie wykolejnicy (Minus)' : 'Nałożenie wykolejnicy (Plus)', run: exec({ type: 'derailer', id: ref.id }) },
-        { mode: 'zz', label: d?.individualLock ? 'Odwołanie zamknięcia wykolejnicy (oZmk)' : 'Zamknięcie wykolejnicy (Zmk)', run: exec({ type: 'lock', id: ref.id, derailer: true }) },
-      ] };
-    }
-    if (ref.kind === 'blockpanel') return this.#blockMenu(ref.exit);
-    if (ref.kind === 'end') {
-      const t = this.topo.endButtons.get(ref.id);
-      const ex = t ? this.exitAt(t) : null;
-      if (ex) return this.#blockMenu(ex[0]);
-      return { title: 'Koniec toru', items: [{ label: 'Wskaż najpierw sygnalizator początku przebiegu', run: () => ({ ok: false }) }] };
-    }
-    return null;
+    return monitorMenu(this.sim, ref);
   }
 
-  /** Polecenia blokady liniowej szlaku: Eap (Wbl, Poz, Ko), samoczynna (Zk), doraźne dPo / dKo. */
-  #blockMenu(exit) {
-    const b = this.sim.blocks.get(exit);
-    const press = (btn) => () => this.handlers.onCommand({ type: 'block', exit, btn });
-    const items = [];
-    if (b?.auto) items.push({ label: b.request === 'theirs' ? 'Zgoda na zmianę kierunku blokady – prośba sąsiada (Zk)' : `Prośba o zmianę kierunku blokady (Zk) – obecnie ${b.direction === 'out' ? 'odjazd' : 'przyjazd'}`, run: press('Zk') });
-    else {
-      if (!b?.fixed) items.push({ label: 'Żądanie pozwolenia na wyprawienie pociągu (Wbl)', run: press('Wbl') },
-        { label: 'Odwołanie żądania / zwrot pozwolenia (oWbl)', run: press('oWbl') },
-        { label: 'Danie pozwolenia na wyprawienie pociągu (Poz)', run: press('Poz') });
-      items.push({ label: 'Zwolnienie bloku końcowego – pociąg przybył w całości (Ko)', run: press('Ko') });
+  /** Wykonanie pozycji menu: początek przebiegu (koniec wskazuje gracz), polecenie specjalne albo polecenie wprost. */
+  #act(item) {
+    const H = this.handlers;
+    if (item.route) {
+      const res = H.onPress({ kind: 'signal', id: item.signal, color: item.route });
+      if (res?.ok) this.#beginPending(item.signal, item.route);
+      return res;
     }
-    // SBL nie ma bloków Po / Ko – bez poleceń doraźnych
-    const blk = { kind: 'blockpanel', exit };
-    if (!b?.auto && b?.fixed !== 'in') items.push({ label: 'Doraźne zablokowanie bloku początkowego – po wyjeździe na Sz (dPo)', special: true, target: blk, cmd: { type: 'block', exit, btn: 'dPo' } });
-    if (!b?.auto && b?.fixed !== 'out') items.push({ label: 'Doraźne przygotowanie bloku końcowego – przed wjazdem na Sz (dKo)', special: true, target: blk, cmd: { type: 'block', exit, btn: 'dKo' } });
-    // pod separatorem: numery pociągów na tym torze szlakowym jako czerwone kasetki (jak na planie) – najpierw
-    // pociąg na szlaku, potem w kolejce pociągi zgłoszone przez sąsiada i czekające na wyprawienie (kontur)
-    items.push({ sep: true }, { trains: this.lineTrains(exit) });
-    return { title: `Szlak ${b?.def?.label || b?.neighbour || exit} – blokada ${b?.auto ? 'samoczynna' : 'Eap'}`, items };
+    if (item.special) return this.#confirm(item);
+    return item.cmd ? H.onCommand(item.cmd) : { ok: false };
   }
 
   #openMenu(ref, ev) {
@@ -197,15 +142,15 @@ export class ScreenRenderer extends ScreenBase {
     this.menu.innerHTML = `<h5>${cmd.title}</h5>`;
     for (const it of cmd.items) {
       if (it.sep) { this.menu.appendChild(document.createElement('hr')); continue; }
-      if (it.trains) {
+      if (it.lineTrains) {
         const d = document.createElement('div'); d.className = 'menu-trains';
-        if (!it.trains.length) d.textContent = '–';
-        for (const t of it.trains) { const sp = document.createElement('span'); sp.className = `menu-train${t.on ? '' : ' queued'}`; sp.textContent = t.nr; sp.title = t.title; d.appendChild(sp); }
+        if (!it.lineTrains.length) d.textContent = '–';
+        for (const t of it.lineTrains) { const sp = document.createElement('span'); sp.className = `menu-train${t.on ? '' : ' queued'}`; sp.textContent = t.nr; sp.title = t.title; d.appendChild(sp); }
         this.menu.appendChild(d); continue;
       }
       const b = document.createElement('button');
       b.type = 'button'; b.textContent = it.label; if (it.special) b.classList.add('special');
-      b.addEventListener('click', () => { this.#closeMenu(); if (it.special) this.#confirm(it); else it.run(); });
+      b.addEventListener('click', () => { this.#closeMenu(); this.#act(it); });
       this.menu.appendChild(b);
     }
     this.menu.classList.remove('hidden');
