@@ -277,7 +277,13 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
   trzeba nastawić, mówią urządzenia – stopień, w którym pociąg już jest (także po minięciu semafora na Sz / rozkaz),
   schodzi z planu; stopień, który czeka na pociąg, zostaje w planie i po zgaszeniu z usterki jest nastawiany od nowa
   (także dla pociągu przed semaforem wjazdowym); gdy wszystkie stopnie czekają, automat zajmuje się wyjazdem (pociąg
-  bez postoju). Automat zadaje o przebieg trzy różne pytania i każde ma nazwę (`Operator.js`): przebieg jest przed
+  bez postoju). Takt automatu (`tick`) to zwolnienia przebiegów, blokady liniowe (`#lineBlocks`) i dla każdego pociągu
+  kroki w stałej kolejności (`#serve`): polecenia dla gracza, rozkaz pisemny, Sz przy wyjeździe, kolejne stopnie wjazdu,
+  wjazd, manewry, prośba o szlak, wyjazd. Krok zwraca wynik `{ step, stop, acted, reason, … }` albo null; `stop` kończy
+  czynności przy pociągu na ten takt, `acted` mówi, czy wydał polecenie – to osobne rzeczy (Sz i prośba o szlak
+  działają i nie kończą). Ostatni wynik przy pociągu podaje `AutoOperator.report(nr)` – dane dla narzędzi i testów
+  (`tests/operator-report.test.js`: decyzję automatu sprawdza się po takcie w przygotowanym stanie, nie tylko po
+  wyniku całej zmiany); gra od nich nie zależy. Automat zadaje o przebieg trzy różne pytania i każde ma nazwę (`Operator.js`): przebieg jest przed
   pociągiem (`Interlocking.routeAhead` – zajmuje tor i szlak), przebieg dla pociągu jest w drodze (`#onItsWay` – także
   z sygnałem na „Stój” i zwalniany czasowo: drugiego nie nastawiać) i stopień poprowadzi pociąg taki, jaki jest
   (`#carries`). Nie zastępuje się jednego drugim: próba ujednolicenia dała polecenia nastawiania co takt podczas

@@ -2,7 +2,8 @@
 /**
  * Stan zmiany w wybranej chwili: zmiana grana automatem dyżurnego (jak w `npm run check`) do godziny `--at`, potem
  * zrzut tego, czego raport automatu nie pokazuje – pociąg (stan, sygnał przed nim, przyczyna postoju), przebiegi od
- * tego sygnału z przeszkodami, przebiegi nastawione, blokady szlaków, usterki czynne. Do diagnozy zatoru.
+ * tego sygnału z przeszkodami, przebiegi nastawione, blokady szlaków, usterki czynne, plan automatu przy pociągu
+ * i to, co automat zrobił przy nim w ostatnim takcie (krok i powód). Do diagnozy zatoru.
  *
  *   node .claude/skills/diagnoza-zatoru/scripts/stan-zmiany.mjs <stacja>[:<scenariusz>] --at GG:MM [--train <nr>]
  *        [--seed 1] [--level none|low|high] [--start <godzina> --minutes <30|60|120|180>] [--from GG:MM]
@@ -51,11 +52,12 @@ let done = false, last = null, header = false;
 /** Stan pociągu w jednym wierszu – do śladu (wypisywany tylko, gdy się zmienił). */
 const line = (sim, e, op) => {
   const tr = e.train, signal = tr && !tr.finished ? tr.nextSignal?.() : null, sig = signal ? sim.ilk.signals.get(signal) : null;
-  const robot = op.plan(e.nr);
+  const report = op.report(e.nr);
+  const robot = `${report ? `${report.step}/${report.reason}${report.route ? `:${report.route}` : ''}${report.code ? `:${report.code}` : ''}` : '–'} plan ${JSON.stringify(op.plan(e.nr))}`;
   const faults = (sim.faults?.active?.() ?? []).map((f) => `${f.type} ${f.target ?? ''}`.trim());
   // bez listy zajętych odcinków – zmienia się co sekundę jazdy i zagłusza ślad (jest w zrzucie na końcu)
   return [e.status, tr ? `${tr.mode}/${tr.state}` : '–', `sygnał ${signal ?? '–'}${sig ? `=${sig.aspect}` : ''}`,
-    `postój ${sim.traffic.waitReason(e)?.code ?? '–'}`, `automat ${JSON.stringify(robot)}`, `przebiegi ${sim.ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id).join(',') || '–'}`,
+    `postój ${sim.traffic.waitReason(e)?.code ?? '–'}`, `automat ${robot}`, `przebiegi ${sim.ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id).join(',') || '–'}`,
     `usterki ${faults.join(',') || '–'}`].join(' | ');
 };
 playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim, { op }) => {
@@ -93,6 +95,8 @@ playShift({ station, scenario, seed, level: opt.level, extra: 0, onTick: (sim, {
     if (b) console.log(`  blokada szlaku ${e.to}: ${JSON.stringify(plain(b))}; zgoda na przebieg: ${JSON.stringify(b.gate?.('route'))}`);
     // plan automatu przy pociągu (dalsze stopnie wjazdu, semafor pośredni wyjazdu, polecenie) – tu widać, na co czeka
     console.log(`  plan automatu przy pociągu: ${JSON.stringify(op.plan(e.nr))}`);
+    // co automat zrobił przy pociągu w ostatnim takcie: krok, powód, czy wydał polecenie (`AutoOperator.report`)
+    console.log(`  ostatni takt automatu przy pociągu: ${JSON.stringify(op.report(e.nr))}`);
   }
   const set = ilk.routesSet();
   console.log(`\nPrzebiegi nastawione: ${set.filter((x) => x.state !== 'setting').map((x) => `${x.id} (${x.state})`).join(', ') || '–'}; w nastawianiu: ${set.filter((x) => x.state === 'setting').map((x) => x.id).join(', ') || '–'}`);

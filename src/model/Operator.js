@@ -8,6 +8,8 @@ import { entryPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from 
  * zwraca null i kolejka idzie dalej.
  */
 const done = (step, reason, acted = false, extra = {}) => ({ step, stop: true, acted, reason, ...extra });
+/** Wynik kroku, który wydał polecenie, ale nie kończy czynności przy pociągu (Sz przy wyjeździe, prośba o szlak). */
+const noted = (step, reason, extra = {}) => ({ step, stop: false, acted: true, reason, ...extra });
 
 /**
  * Plan automatu przy pociągu – jego własne notatki, nie pola wpisu rozkładu: `entry` – dalsze stopnie wjazdu
@@ -41,6 +43,19 @@ export class AutoOperator {
     this.lastAction = -Infinity;
     this.issued = new Set();       // polecenia wydane graczowi (klucze)
     this.stuckSince = new Map();   // przebieg, który nie rozwiązał się za pociągiem → od kiedy
+    this.reports = new Map();      // numer pociągu → wynik ostatniego taktu przy tym pociągu (`report`)
+  }
+
+  /**
+   * Co automat zrobił przy pociągu `nr` w ostatnim swoim takcie – do diagnozy i testów: `{ step, stop, acted, reason,
+   * … }` ostatniego kroku, który miał coś do powiedzenia, albo null (nic do zrobienia, pociągu jeszcze nie ma).
+   * Kroki (`step`): written-order, exit-substitute, entry-stage, entry, shunt, line-request, exit. Powody (`reason`):
+   * route-set, refused (z `route`), on-its-way, train-ahead, no-command, opposing-train, no-route, in-place, no-path,
+   * reverse, to-train-mode, too-early, staged, line-block (z `code`), no-block, order-issued, substitute-signal,
+   * line-asked. To dane dla narzędzi – działanie gry od nich nie zależy.
+   */
+  report(nr) {
+    return this.reports.get(String(nr)) ?? null;
   }
 
   /** Plan automatu przy pociągu `nr` – do diagnozy i testów: `{ entry, via, accept }` (kopia) albo null. */
@@ -249,7 +264,7 @@ export class AutoOperator {
     this.#recoverRoutes();
     const ctx = this.#context(t);
     this.#lineBlocks(ctx);
-    for (const e of sim.traffic.timetable()) this.#serve(e, ctx);
+    for (const e of sim.traffic.timetable()) this.reports.set(String(e.nr), this.#serve(e, ctx));
   }
 
   /** Dane i pomocnicze pytania jednego taktu – wspólne dla kroków (przebiegi stacji liczone raz na takt). */
@@ -321,17 +336,17 @@ export class AutoOperator {
     const tr = e.train;
     this.#playerOrders(e, tr, ctx);
     if (!tr || tr.finished) return null;
-    let out = this.#writtenOrder(e, tr, ctx);
+    let out = this.#writtenOrder(e, tr, ctx), note = null;
     if (out?.stop) return out;
     // pociąg ma wyjazd za sobą, gdy minął semafor wyjazdowy: zezwolenie na ten szlak albo – po Sz / rozkazie – brak
     // kolejnego semafora przed granicą stacji
     const leaving = tr.exitAuth != null && (tr.exitAuth !== '*' || !tr.nextSignal());
-    this.#exitSubstitute(e, tr, leaving, ctx);
+    note = this.#exitSubstitute(e, tr, leaving, ctx) ?? note;
     if ((out = this.#entryStages(e, tr, ctx))?.stop) return out;
     if ((out = this.#entry(e, tr, ctx))?.stop) return out;
     if ((out = this.#shunting(e, tr, ctx))?.stop) return out;
-    this.#lineRequest(e, tr, ctx);
-    return this.#exit(e, tr, leaving, ctx);
+    note = this.#lineRequest(e, tr, ctx) ?? note;
+    return this.#exit(e, tr, leaving, ctx) ?? note;
   }
 
   #playerOrders(e, tr, ctx) {
@@ -368,8 +383,12 @@ export class AutoOperator {
       const ahead = ilk.routesSet().find((x) => x.route.exit === e.to && x.route.kind === 'train' && Interlocking.routeAhead(x.state));
       const sig = ahead && ilk.signals.get(ahead.route.start);
       const noSignal = xb.fault || (xb.gate('route').ok && !xb.gate('signal', ahead?.id).ok);
-      if (sig && noSignal && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) ilk.substituteSignal(sig.id);
+      if (sig && noSignal && this.#inDistrict(sig.id) && tr.nextSignal() === sig.id && !Interlocking.isTrainProceed(sig.aspect)) {
+        ilk.substituteSignal(sig.id);
+        return noted('exit-substitute', 'substitute-signal', { signal: sig.id });
+      }
     }
+    return null;
   }
 
   #entryStages(e, tr, ctx) {
@@ -462,10 +481,11 @@ export class AutoOperator {
         && r.sections.some((sid) => o.train.occupiedSections().has(sid))
         && !(sim.traffic.tasks || []).some((x) => !x.done && !x.failed && String(x.unit) === String(o.nr))
         && !sim.traffic.timetable().some((x) => String(x.unit) === String(o.nr) && x.actualDep == null));
-      let closed = false;
+      let closed = false, outcome = done('entry', 'no-route');
       for (const pick of order) {
-        if (meetsOpposing(pick)) break;
+        if (meetsOpposing(pick)) { outcome = done('entry', 'opposing-train'); break; }
         const res = this.#setRoute(pick.id);
+        outcome = done('entry', res.ok ? 'route-set' : 'refused', !!res.ok, { route: pick.id });
         // inny tor tylko przy torze zamkniętym, przy krzyżowaniu albo gdy tor zajmuje skład, który już nie odjedzie;
         // chwilowo zajęty/utwierdzony tor planowy – czekać
         if (!res.ok) { if (res.codes?.includes('section-closed') || crossing(pick) || stays(pick)) closed = true; if (closed) continue; break; }
@@ -474,7 +494,7 @@ export class AutoOperator {
         if (planOf(e).accept) this.#complete(planOf(e).accept, `Droga przebiegu dla pociągu nr ${e.nr} na tor ${routeTrack(pick) ?? want} przygotowana, semafor ${pick.start} otwarty.`);
         break;
       }
-      return done('entry', 'attempted');
+      return outcome;
     }
     return null;
   }
@@ -506,9 +526,9 @@ export class AutoOperator {
       const r = this.#shuntPath({ occ, next: tr.nextSignal(), head, length: tr.length }, String(target), routes, routeTrack, true)?.[0];
       // pierwszy przebieg drogi w drugą stronę – najpierw zmiana kierunku jazdy; bez drogi (albo pierwszy przebieg
       // zajęty) – czekać, nie zmieniać kierunku w kółko
-      if (r && topo.signals.get(r.start).dir !== head) sim.traffic.reverseTrain(e.nr, this.#talk);
-      else if (r) this.#setRoute(r.id);
-      return done('shunt', 'attempted');
+      if (r && topo.signals.get(r.start).dir !== head) { sim.traffic.reverseTrain(e.nr, this.#talk); return done('shunt', 'reverse', true); }
+      if (r) { const res = this.#setRoute(r.id); return done('shunt', res.ok ? 'route-set' : 'refused', !!res.ok, { route: r.id }); }
+      return done('shunt', 'no-path');
     }
     // skład po manewrach (bez zadań) wraca w tryb jazdy pociągowej – dopiero wtedy przejmie go pociąg powrotny
     if (!task && !e.to && tr.mode === 'shunt' && tr.v === 0 && sim.traffic.timetable().some((x) => String(x.unit) === String(e.nr))) { sim.traffic.toTrainMode(e.nr, this.#talk); return done('shunt', 'to-train-mode', true); }
@@ -522,9 +542,10 @@ export class AutoOperator {
     // do nas albo stoi na stacji: kto pierwszy zażąda kierunku, ten go dostaje, a sąsiad z pociągiem w tę stronę poczeka
     if (e.to && tr && !tr.finished && e.actualDep == null && e.depTime != null && t >= e.depTime - 6 * 60 && this.#exitInDistrict(e.to) && this.role !== 'executive') {
       const b = sim.blocks.get(e.to);
-      if (b && b.fault) { if (!b.auto && !b.fixed && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: e.to, nr: e.nr }, { silent: true }); }
-      else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) this.#wbl(b, e.nr);
+      if (b && b.fault) { if (!b.auto && !b.fixed && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) { sim.comms.send('ask-free', { exit: e.to, nr: e.nr }, { silent: true }); return noted('line-request', 'line-asked', { exit: e.to }); } }
+      else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) { this.#wbl(b, e.nr); return noted('line-request', 'line-asked', { exit: e.to }); }
     }
+    return null;
   }
 
   #exit(e, tr, leaving, ctx) {
@@ -573,12 +594,13 @@ export class AutoOperator {
         return done('exit', 'staged');
       }
       if (waiting((r) => cands.includes(r))) return done('exit', 'on-its-way'); // przebieg wyjazdowy czeka na pociąg
-      if (b.gate().ok) {
-        for (const r of cands) if (this.#setRoute(r.id).ok) {
-          if (cmd) this.#complete(cmd, `Droga przebiegu dla pociągu nr ${e.nr} do ${b.neighbour} przygotowana, semafor ${r.start} otwarty.`);
-          break;
-        }
+      const gate = b.gate();
+      if (!gate.ok) return done('exit', 'line-block', false, { code: gate.code ?? null });
+      for (const r of cands) if (this.#setRoute(r.id).ok) {
+        if (cmd) this.#complete(cmd, `Droga przebiegu dla pociągu nr ${e.nr} do ${b.neighbour} przygotowana, semafor ${r.start} otwarty.`);
+        return done('exit', 'route-set', true, { route: r.id });
       }
+      return done('exit', 'refused', false, { route: cands[0].id });
     }
     return null;
   }

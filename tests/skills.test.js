@@ -57,6 +57,8 @@ test('skrypt diagnozy zatoru (stan zmiany w wybranej chwili): pociąg, sygnał p
   assert.match(out, /przebieg A-H \(train\): signal-busy:A-H/);
   assert.match(out, /blokada szlaku OR1: \{"id":"OR1"/);
   assert.match(out, /Przebiegi nastawione: .*A-H/);
+  assert.match(out, /plan automatu przy pociągu: \{"entry":/);
+  assert.match(out, /ostatni takt automatu przy pociągu: (null|\{"step":)/);
   assert.match(out, /Usterki czynne: block-fail GD2 od 06:40:00/);
   // służba o wybranej porze i jeden pociąg
   const duty = run('sopot', '--start', '19', '--minutes', '120', '--seed', '3', '--level', 'none', '--at', '19:30');

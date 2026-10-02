@@ -36,7 +36,9 @@ node .claude/skills/diagnoza-zatoru/scripts/stan-zmiany.mjs <stacja>[:<scenarius
 
 (służba: `--start <godzina> --minutes <n>` zamiast scenariusza). Wypisuje pociąg (tryb, stan, odcinki), sygnał przed nim,
 przyczynę postoju (`Traffic.waitReason`), każdy przebieg od tego sygnału z przeszkodami (`Interlocking.routeProblems`),
-blokadę szlaku, przebiegi nastawione, odcinki zajęte, usterki czynne i plan automatu przy pociągu (dalsze stopnie wjazdu, semafor pośredni wyjazdu, polecenie).
+blokadę szlaku, przebiegi nastawione, odcinki zajęte, usterki czynne, plan automatu przy pociągu (dalsze stopnie wjazdu, semafor pośredni wyjazdu, polecenie) i ostatni
+takt automatu przy tym pociągu – krok i powód, np. `entry/on-its-way` (przebieg już w drodze), `exit/line-block`
+(blokada nie daje szlaku), `entry/refused` (zależności odmówiły – z przebiegiem), `exit/too-early`.
 Uruchom go dla dwóch chwil – tuż po zatrzymaniu i kilka minut później: to, co się nie zmienia, jest przyczyną.
 
 Zrzut pokazuje skutek; chwilę, w której coś poszło nie tak, pokazuje **ślad**: dodaj `--from GG:MM` (kwadrans przed
@@ -51,7 +53,7 @@ automatu o przebiegu „do nastawienia”, który już jest nastawiony) – to z
 | Zator na poziomie `none` przy każdym ziarnie; „Definicja” ma `tt-track-overlap`, `line-*`, `closed-*`, `unfinished-plan`; dwa pociągi planowo na jednym torze, zamknięcie bez objazdu | scenariusz / rozkład stacji | `src/stations/<id>.js` – skill `nowy-scenariusz` |
 | Tylko w służbie (`--start`), wzorzec stacji gra się czysto; pociąg spoza wzorca (numer od 46000, powtórzenie) wchodzi komuś w drogę | generator służby | reguła w `src/model/duty.js` (ogólna, nie wyjątek dla stacji) |
 | Przebieg od sygnału ma przeszkodę, której być nie powinno (odcinek wolny, a „zajęty”; blokada nie zwalnia szlaku; przebieg nie rozwiązuje się po przejeździe); naruszenia zależności; „stan urządzeń po zmianie” niepusty | silnik: `src/model/Interlocking.js`, `Block.js`, `Train.js`, `Traffic.js` | tam, z testem w `tests/` – gracz też by utknął |
-| Przebieg jest „do nastawienia” (albo wystarczy czynność, którą gracz by wykonał), a automat jej nie wydaje; plan automatu przy pociągu stoi w miejscu | automat dyżurnego | `src/model/Operator.js`, test w `tests/operator.test.js` |
+| Przebieg jest „do nastawienia” (albo wystarczy czynność, którą gracz by wykonał), a automat jej nie wydaje; ostatni takt automatu pokazuje krok, na którym stoi (albo „–”: nie widzi nic do zrobienia), plan przy pociągu się nie zmienia | automat dyżurnego | `src/model/Operator.js`, test w `tests/operator.test.js` |
 | Tylko niektóre ziarna, tylko `low` / `high`; pociąg przyjechał od sąsiada spóźniony ponad koniec zmiany (`late-inbound`) albo stoi przy usterce losowej | zakłócenia – zwykle nie błąd | nic; ewentualnie zapas okna zmiany |
 
 Dlaczego rozróżnienie automat / silnik jest ważne: automat to narzędzie testowe i przeciwnik w okręgach, a silnik to gra.
