@@ -14,7 +14,8 @@
     "test:all": "npm test && npm run test:e2e",
     "survey": "node scripts/survey.mjs",
     "check": "node scripts/check-scenario.mjs",
-    "seed-scan": "node scripts/seed-scan.mjs"
+    "seed-scan": "node scripts/seed-scan.mjs",
+    "duty-variety": "node scripts/duty-variety.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

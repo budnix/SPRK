@@ -78,6 +78,8 @@
   zmiany grane dyżurnym automatycznym z werdyktem; służba o wybranej porze: `--start <godzina> --minutes <n>`.
 - `npm run survey` – przegląd silnika: pełne zmiany pod zakłóceniami; `--json` / `--compare` przed i po zmianie silnika.
 - `npm run seed-scan` – szukanie testów, które padają tylko przy niektórych losowych ziarnach (zmiana bez `seed`).
+- `npm run duty-variety` – różnorodność służb (ile mają wspólnego rozkłady dwóch ziaren); `--json` / `--compare` przed
+  i po zmianie budowy służby (`src/model/duty.js`).
 - Pociąg stoi, zator, test zmiany pada: skill `diagnoza-zatoru`. Reguła ruchu albo urządzeń z przepisu: skill
   `zasada-ze-zrodla`.
 

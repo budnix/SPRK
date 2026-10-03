@@ -93,6 +93,13 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   rdzeniach; pierwszy zestaw ustala, które pliki w ogóle losują ziarno. Wynik: testy, które nie przeszły, z zestawami
   i poleceniem do odtworzenia. Poprawka testu: ziarno wpisane w teście albo zapas wynikający z modelu (krok symulacji),
   nie luźniejsza asercja. Test narzędzia: `tests/seed-scan.test.js`.
+* `scripts/duty-variety.mjs` (`npm run duty-variety`) – różnorodność służb: dla każdego posterunku gracza, godziny startu
+  i długości – rozkłady kilku ziaren (`--seeds`, domyślnie 1–4) i ile mają wspólnego parami: miejsca w rozkładzie
+  (godzina, tor, wjazd, wyjazd – bez numerów) i spotkania (pary linii na stacji w odstępie do 3 min – kolejność
+  pociągów); do tego średnia liczba pociągów i służby z pierwszym pociągiem później niż 20 min po starcie. Przed zmianą
+  budowy służby `--json przed.json`, po niej `--compare przed.json`. Miary w `scripts/lib/duty-variety.mjs`; test
+  `tests/duty-variety.test.js` pilnuje na próbce (4 godziny, 2 h, 4 ziarna), żeby dwa ziarna nie dawały prawie tego
+  samego rozkładu.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie

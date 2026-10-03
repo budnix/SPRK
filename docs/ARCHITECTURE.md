@@ -58,7 +58,7 @@ src/
   i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
   stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze, Olszyny; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
-scripts/       narzędzia (npm run check / survey / seed-scan, dane mapy i pociągów z nazwami); lib/ – ich logika bez wyjścia
+scripts/       narzędzia (npm run check / survey / seed-scan / duty-variety, dane mapy i pociągów z nazwami); lib/ – ich logika bez wyjścia
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README
 ```
 

@@ -246,6 +246,7 @@ npm run test:e2e   # browser tests (Playwright, Chromium); baselines in tests/e2
 npm run survey     # engine survey: every station × scenario × seed run by the automatic dispatcher (jams, safety checks)
 npm run check -- tczew:zmiana   # scenario checker: definition errors + shifts played by the automatic dispatcher, verdict per shift
 npm run seed-scan -- --runs 30  # finds flaky tests: runs the Node tests under many repeatable "random" seeds, in parallel
+npm run duty-variety            # how different two seeds of the same duty are (shared timetable slots and train meetings)
 npm run build      # static build in dist/ (for GitHub Pages: VITE_BASE=/SPRK/)
 ```
 
@@ -306,6 +307,10 @@ Polish railway rules and terminology).
   different one on every run and may fail once in a hundred runs, usually in CI. The script runs every test file under many
   repeatable seed sets (`scripts/random-seed.mjs`, `SPRK_RAND=<n>`), one process per file and set on all cores, and prints
   the tests that failed with the command that reproduces each failure,
+* `scripts/duty-variety.mjs` – duty variety (`npm run duty-variety -- --help`): for every duty station, start hour and length
+  it builds the timetables of several seeds and prints how much each pair shares (timetable slots, and which lines meet at
+  the station within 3 minutes), the average number of trains and duties whose first train comes later than 20 minutes;
+  `--json` / `--compare` before and after a change to the duty builder,
 * `docs/ARCHITECTURE.md` – module map and design rules, with one file per area in `docs/architecture/`, `docs/SOURCES.md` – sources (Ie-1, Ir-1, Ie-104, station plans): an index with one file per area in `docs/sources/`.
 
 The simulator is a simplification: interlocking details (timings, overlaps, flank protection) follow published
