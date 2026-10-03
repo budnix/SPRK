@@ -345,19 +345,21 @@ export class Simulation {
     // żeby dojazd pociągu po końcu zmiany (symulacja biegnie dalej) nie doliczył jej drugi raz
     for (const d of this.#blockDuties()) {
       if (!d.code) continue;
-      this.bus.emit('score', { time: this.clock.time, code: d.code, points: -10, exit: d.exit, msg: `${d.text} – niewykonane do końca zmiany` });
+      this.bus.emit('score', { time: this.clock.time, code: d.code, points: d.points, exit: d.exit, msg: `${d.text} – niewykonane do końca zmiany` });
       d.close();
     }
   }
 
-  /** Czynności dyżurnego na blokadach, na które zmiana czeka: dPo, telefonogram o odjeździe, Ko przyjazdu. */
+  /**
+   * Czynności dyżurnego na blokadach, na które zmiana czeka (`LineBlock.duties`: dPo, telefonogram o odjeździe, Ko
+   * przyjazdu) – z opisem do dziennika i zamknięciem (`close`) po naliczeniu kary na koniec zmiany.
+   */
   #blockDuties() {
     const out = [];
     for (const [id, b] of this.blocks) {
       const to = this.station.exits[id]?.name ?? id;
-      if (b.needPo) out.push({ code: 'no-dpo', exit: id, text: `blok początkowy do ${to} – dPo`, close: () => { b.needPo = false; } });
-      if (b.phone?.departedReported === false) out.push({ code: 'no-depart-report', exit: id, text: `zawiadomienie ${to} o odjeździe pociągu ${b.phone.departedTrain}`, close: () => { b.phone.departedReported = true; } });
-      if (b.koPending) out.push({ code: null, exit: id, text: `przyjazd od ${to} – Ko` });
+      const text = { dPo: () => `blok początkowy do ${to} – dPo`, 'departure-report': (d) => `zawiadomienie ${to} o odjeździe pociągu ${d.nr}`, Ko: () => `przyjazd od ${to} – Ko` };
+      for (const d of b.duties()) out.push({ code: d.code, points: d.points, exit: id, text: text[d.duty](d), close: () => b.closeDuty(d.duty) });
     }
     return out;
   }

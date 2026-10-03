@@ -279,7 +279,7 @@ export class AutoOperator {
     // szlaku, zajmuje (albo ma już nastawiony wjazd) pociąg, który sam czeka na ten szlak – po Poz żaden by nie ruszył.
     // Wtedy automat wstrzymuje pociąg sąsiada („Stój pociąg nr …”) i najpierw wyprawia swój.
     const deadEnd = (b) => {
-      if (b.auto || b.fixed || this.role === 'executive') return false;
+      if (!b.singleTrack || this.role === 'executive') return false;
       const tracks = new Set(entryRoutes(ilk, b.id, routes).map(routeTrack).filter(Boolean));
       if (!tracks.size) return false;
       const claimed = new Set();
@@ -299,32 +299,42 @@ export class AutoOperator {
     return { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, deadEnd, ready };
   }
 
-  /** Blokady liniowe szlaków w okręgu automatu: prośby sąsiada, potwierdzenia przyjazdu, rozmowy przy usterce. */
+  /**
+   * Blokady liniowe szlaków w okręgu automatu: prośby sąsiada, czynności, na które blokada czeka (dPo, zawiadomienie
+   * o odjeździe, Ko), rozmowy przy usterce. Blokada sama mówi, o co prosi sąsiad i czego od dyżurnego czeka
+   * (`neighbourAsk`, `duties`); automat decyduje tylko, czy wstrzymać pociąg sąsiada (`deadEnd`) i czy wolno mu przyjąć
+   * (nastawnia wykonawcza – z polecenia).
+   */
   #lineBlocks(ctx) {
     const { sim, deadEnd } = ctx;
-    // ---- blokady w moim okręgu ----
     for (const b of sim.blocks.values()) {
       if (!this.#exitInDistrict(b.id)) continue;
+      const owed = (duty) => b.duties().find((d) => d.duty === duty);
       // pociąg wyprawiony bez sygnału zezwalającego (Sz, rozkaz, zapowiadanie) – doraźne zablokowanie bloku początkowego
-      if (b.needPo) b.press('dPo');
+      if (owed('dPo')) b.press('dPo');
+      const ask = b.neighbourAsk();
       if (b.fault) {
-        if (b.phone.askedByThem && this.#mayAccept(b)) sim.comms.send(deadEnd(b) ? 'hold' : 'free', { exit: b.id, nr: b.phone.askedByThem }, { silent: true });
+        if (ask && this.#mayAccept(b, ask)) sim.comms.send(deadEnd(b) ? 'hold' : 'free', { exit: b.id, nr: ask.nr }, { silent: true });
         // przyjazd pociągu sąsiada: telefonogram zastępuje Ko
-        if (b.koPending && String(b.phone.arrivalConfirmed) !== String(b.phone.arrivedTrain)) sim.comms.send('arrived', { exit: b.id, nr: b.phone.arrivedTrain }, { silent: true });
-        if (b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
+        const ko = owed('Ko');
+        if (ko?.how === 'phone') sim.comms.send('arrived', { exit: b.id, nr: ko.nr }, { silent: true });
+        const report = owed('departure-report');
+        if (report) sim.comms.send('departed', { exit: b.id, nr: report.nr }, { silent: true });
         continue;
       }
       // prośba sąsiada: Eap – pozwolenie (Poz), SBL – zgoda na zmianę kierunku (Zk)
-      if (b.request === 'theirs' && this.#mayAccept(b) && deadEnd(b)) {
-        sim.comms.send('hold', { exit: b.id, nr: b.talk.theirAsk ?? this.#pendingArrivalNr(b) }, { silent: true });
-      } else if (b.request === 'theirs' && this.#mayAccept(b) && !(b.auto && b.permission)) {
-        // (SBL: nasz przebieg wyjazdowy na ten tor nastawiony – zgoda na zmianę kierunku dopiero po wyjeździe)
+      if (ask && this.#mayAccept(b, ask) && deadEnd(b)) {
+        sim.comms.send('hold', { exit: b.id, nr: ask.nr ?? this.#pendingArrivalNr(b) }, { silent: true });
+      } else if (ask && this.#mayAccept(b, ask) && !ask.wait) {
         // tryb ręczny rozmów: automat też nadaje 4a przed Poz (kary za pominięcie nie mogą trafić do gracza)
-        if (!b.auto && b.phoneRoutine === 'manual' && b.talk.theirAsk != null) sim.comms.send('free', { exit: b.id, nr: b.talk.theirAsk }, { silent: true });
-        b.press(b.auto ? 'Zk' : 'Poz');
+        if (ask.talkFirst) sim.comms.send('free', { exit: b.id, nr: ask.nr }, { silent: true });
+        b.press(ask.answer);
       }
-      if (!b.fault && b.phoneRoutine === 'manual' && b.phone.departedTrain && !b.phone.departedReported) sim.comms.send('departed', { exit: b.id, nr: b.phone.departedTrain }, { silent: true });
-      if (b.koPending) { if (!b.zpg && !b.koPrepared) b.press('dKo'); b.press('Ko'); }
+      // zawiadomienie o odjeździe przy sprawnej blokadzie czeka tylko w trybie ręcznym rozmów
+      const report = owed('departure-report');
+      if (report) sim.comms.send('departed', { exit: b.id, nr: report.nr }, { silent: true });
+      const ko = owed('Ko');
+      if (ko) { if (ko.prepare) b.press('dKo'); b.press('Ko'); }
     }
   }
 
@@ -465,9 +475,8 @@ export class AutoOperator {
       // pociąg z przeciwka – ten czeka przed semaforem wjazdowym.
       const meetsOpposing = (r) => {
         const xb = e.to ? sim.blocks.get(e.to) : null;
-        if (!xb || xb.auto || xb.fixed || this.role === 'executive') return false;
-        const coming = xb.direction === 'in' || xb.phone.clearedFor != null || xb.awaitingEntry || (xb.occupied && !xb.lineOurs);
-        if (!coming) return false;
+        if (!xb || !xb.singleTrack || this.role === 'executive') return false;
+        if (!xb.neighbourTrainComing()) return false;
         const tk = routeTrack(r);
         const theirs = [...new Set(entryRoutes(ilk, e.to, routes).map(routeTrack).filter(Boolean))];
         if (!theirs.includes(tk)) return false; // na ten tor pociąg z przeciwka i tak nie wjeżdża
@@ -541,9 +550,10 @@ export class AutoOperator {
     // Pozwolenie na wyjazd (Wbl) na szlak dwukierunkowy zawczasu – 6 min przed planowym odjazdem, gdy pociąg już jedzie
     // do nas albo stoi na stacji: kto pierwszy zażąda kierunku, ten go dostaje, a sąsiad z pociągiem w tę stronę poczeka
     if (e.to && tr && !tr.finished && e.actualDep == null && e.depTime != null && t >= e.depTime - 6 * 60 && this.#exitInDistrict(e.to) && this.role !== 'executive') {
+      // zawczasu tylko szlak jednotorowy z Eap (wyjazd na szlak o stałym kierunku albo z blokadą samoczynną – przy wyjeździe)
       const b = sim.blocks.get(e.to);
-      if (b && b.fault) { if (!b.auto && !b.fixed && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) { sim.comms.send('ask-free', { exit: e.to, nr: e.nr }, { silent: true }); return noted('line-request', 'line-asked', { exit: e.to }); } }
-      else if (b && !b.auto && !b.fixed && !b.direction && !b.request && !b.occupied && !b.koPending) { this.#wbl(b, e.nr); return noted('line-request', 'line-asked', { exit: e.to }); }
+      const step = b?.singleTrack ? b.lineStep(e.nr) : null;
+      if (step) { this.#takeLine(b, step, e.nr); return noted('line-request', 'line-asked', { exit: e.to }); }
     }
     return null;
   }
@@ -586,9 +596,8 @@ export class AutoOperator {
         cands = facing;
       }
       if (e.depTime != null && t < e.depTime - 120) return done('exit', 'too-early'); // skład gotowy (czoło w stronę wyjazdu) – przebieg później
-      if (b.fault) { if (b.fixed !== 'out' && !b.phone.permissionFor && !b.neighbourReply && !b.occupied) sim.comms.send('ask-free', { exit: exitId, nr: e.nr }, { silent: true }); }
-      else if (b.auto) { if (b.direction !== 'out' && b.request !== 'theirs' && !b.occupied && !b.poBlocked && !b.koPending) b.press('Zk'); }
-      else if (!b.fixed && !b.direction && !b.request && !b.occupied) this.#wbl(b, e.nr);
+      const step = b.lineStep(e.nr);
+      if (step) this.#takeLine(b, step, e.nr);
       if (staged) {
         for (const r of cands) if (waiting((x) => x === r) || this.#setRoute(r.id).ok) { plan.via = r.end.id; break; }
         return done('exit', 'staged');
@@ -605,16 +614,20 @@ export class AutoOperator {
     return null;
   }
 
-  /** Wbl; w trybie ręcznym rozmów najpierw zapytanie 1a (automat nie może zostawić kary graczowi). */
-  #wbl(b, nr) {
-    if (b.phoneRoutine === 'manual' && String(b.talk.askedFor) !== String(nr)) this.sim.comms.send('ask-free', { exit: b.id, nr }, { silent: true });
-    b.press('Wbl');
+  /**
+   * Krok blokady po szlak dla pociągu `nr` (`LineBlock.lineStep`): zapytanie telefoniczne, Zk albo Wbl – w trybie ręcznym
+   * rozmów najpierw zapytanie 1a (automat nie może zostawić kary graczowi).
+   */
+  #takeLine(b, step, nr) {
+    if (step.action === 'Zk') { b.press('Zk'); return; }
+    if (step.action === 'ask-free' || step.talkFirst) this.sim.comms.send('ask-free', { exit: b.id, nr }, { silent: true });
+    if (step.action === 'Wbl') b.press('Wbl');
   }
 
-  /** Czy nastawnia wykonawcza może dać pozwolenie sąsiadowi: tylko gdy dyżurny polecił przyjąć ten pociąg. */
-  #mayAccept(b) {
+  /** Czy nastawnia wykonawcza może odpowiedzieć na prośbę sąsiada `ask`: tylko gdy dyżurny polecił przyjąć ten pociąg. */
+  #mayAccept(b, ask) {
     if (this.role !== 'executive') return true;
-    const nr = b.request === 'theirs' ? this.#pendingArrivalNr(b) : b.phone.askedByThem;
+    const nr = ask.by === 'block' ? this.#pendingArrivalNr(b) : ask.nr;
     if (!nr) return false;
     return (this.sim.commands || []).some((c) => String(c.nr) === String(nr) && c.kind === 'accept' && c.status === 'pending');
   }

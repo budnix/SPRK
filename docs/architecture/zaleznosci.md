@@ -169,6 +169,15 @@ któregokolwiek ogniwa nic nie jest nastawiane, a odmowa nazywa ogniwo. Pulpit k
 
 ## Blokada liniowa (`src/model/Block.js`)
 
+O protokół blokady pyta się blokady: automat dyżurnego, koniec zmiany (`Simulation`), wynik zmiany (`check/outcome.js`)
+i łączność dostają odpowiedzi jako dane, bez czytania pól blokady – `singleTrack` (szlak jednotorowy z Eap),
+`lineStep(nr)` (następny krok po szlak dla naszego pociągu: zapytanie telefoniczne, Wbl z ewentualnym 1a, Zk SBL),
+`neighbourAsk()` (prośba sąsiada i sposób odpowiedzi: Poz / Zk / telefonogram, 4a w trybie ręcznym, SBL czeka na nasz
+wyjazd), `duties()` / `closeDuty()` (czynności, na które blokada czeka: dPo, zawiadomienie o odjeździe, Ko – z kodem
+i karą `MISSED_DUTY_POINTS`), `neighbourTrainComing()`, `notAtRest()` (stan poza zasadniczym do raportu) i
+`phoneAskArrival(nr)`. Automat decyduje tylko, kiedy pytać (zawczasu – tylko szlak jednotorowy) i czy wstrzymać pociąg
+sąsiada; testy na samej blokadzie: `tests/block-protocol.test.js`, strażnik: `tests/layers.test.js`.
+
 `LineBlock` obsługuje trzy warianty jednym modelem: Eap dwukierunkowa (szlak jednotorowy: Wbl/Poz/Ko), Eap
 jednokierunkowa (`direction`, tylko Po/Ko) i samoczynna SBL (`block: 'sbl'`: bez pozwoleń, bez Ko, zmiana kierunku
 `Zk`; nastawiony przebieg wyjazdowy „zajmuje” kierunek przez `commitOut()` wołane z `Simulation` na zdarzeniu

@@ -1,5 +1,8 @@
 import { Clock } from '../core/Clock.js';
 
+/** Kara za czynność dyżurnego na blokadzie, której zabrakło (dPo, zawiadomienie o odjeździe) – przy dojeździe pociągu
+ *  do sąsiada albo na koniec zmiany. */
+export const MISSED_DUTY_POINTS = -10;
 /** Po tylu sekundach sąsiad ponawia zgłoszenie pociągu wstrzymanego telefonogramem „Stój pociąg” (przyjęte). */
 export const HOLD_TIME = 180;
 /**
@@ -204,8 +207,79 @@ export class LineBlock {
     }
   }
 
-  /** Szlak jednotorowy z Eap – rozmowa 1a / 4a przy każdym pociągu (Ir-1 §28 ust. 3, §24 ust. 5, 9). */
-  #single() { return !this.auto && !this.fixed; }
+  /** Szlak jednotorowy z Eap – pozwolenia Wbl / Poz, rozmowa 1a / 4a przy każdym pociągu (Ir-1 §28 ust. 3, §24 ust. 5, 9). */
+  get singleTrack() { return !this.auto && !this.fixed; }
+
+  /* ---- pytania dyżurnego (automat, koniec zmiany, wynik zmiany) – odpowiedzi jako dane, bez czytania pól blokady ---- */
+
+  /**
+   * Następny krok dyżurnego, żeby dostać szlak dla naszego pociągu `nr`: `{ action: 'ask-free' }` – zapytanie
+   * telefoniczne o drogę (blokada bez łączności), `{ action: 'Wbl', talkFirst }` – żądanie pozwolenia na szlaku
+   * jednotorowym (`talkFirst` – tryb ręczny rozmów: najpierw zapytanie 1a), `{ action: 'Zk' }` – zmiana kierunku blokady
+   * samoczynnej. null – nic do zrobienia: szlak już nasz, zajęty, sąsiad żąda pozwolenia, czeka Ko albo kierunek jest stały.
+   */
+  lineStep(nr) {
+    if (this.fault) return this.fixed !== 'out' && !this.phone.permissionFor && !this.neighbourReply && !this.occupied ? { action: 'ask-free' } : null;
+    if (this.auto) return this.direction !== 'out' && this.request !== 'theirs' && !this.occupied && !this.poBlocked && !this.koPending ? { action: 'Zk' } : null;
+    if (this.fixed || this.direction || this.request || this.occupied || this.koPending) return null;
+    return { action: 'Wbl', talkFirst: this.phoneRoutine === 'manual' && String(this.talk.askedFor) !== String(nr) };
+  }
+
+  /**
+   * Prośba sąsiada, na którą czeka dyżurny. `{ by: 'phone', nr }` – zapytanie o drogę przy zapowiadaniu telefonicznym
+   * (odpowiedź: „droga wolna” albo „Stój pociąg”); `{ by: 'block', nr, answer, talkFirst, wait }` – żądanie pozwolenia
+   * Eap (`answer: 'Poz'`) albo zmiany kierunku SBL (`'Zk'`): `nr` – pociąg z zapytania 1a (bywa null), `talkFirst` – tryb
+   * ręczny rozmów: najpierw telefonogram 4a, `wait` – SBL z naszym wyjazdem w toku: zgoda dopiero po wyjeździe.
+   * null – sąsiad o nic nie prosi.
+   */
+  neighbourAsk() {
+    if (this.fault) return this.phone.askedByThem ? { by: 'phone', nr: this.phone.askedByThem } : null;
+    if (this.request !== 'theirs') return null;
+    const nr = this.talk.theirAsk ?? null;
+    return { by: 'block', nr, answer: this.auto ? 'Zk' : 'Poz', talkFirst: !this.auto && this.phoneRoutine === 'manual' && nr != null, wait: this.auto && this.permission };
+  }
+
+  /**
+   * Czynności, na które blokada czeka od dyżurnego, po kolei: `{ duty, code, points, nr, how }`.
+   *  - 'dPo' – nasz pociąg wyjechał bez sygnału zezwalającego: doraźne zablokowanie bloku początkowego (kod 'no-dpo'),
+   *  - 'departure-report' – telefonogram o odjeździe pociągu `nr` (kod 'no-depart-report'),
+   *  - 'Ko' – przyjazd pociągu sąsiada `nr` (bez kary – zmiana na niego czeka): `how` 'Ko' (`prepare` – najpierw dKo, bo
+   *    nie było stwierdzenia przejazdu), 'phone' – przy zapowiadaniu telefonogram o przyjeździe, null – już zawiadomiony.
+   * `points` – kara, gdy czynności zabraknie (przy dojeździe pociągu do sąsiada albo na koniec zmiany).
+   */
+  duties() {
+    const out = [];
+    if (this.needPo) out.push({ duty: 'dPo', code: 'no-dpo', points: MISSED_DUTY_POINTS, nr: this.lineTrain });
+    if (this.phone.departedReported === false) out.push({ duty: 'departure-report', code: 'no-depart-report', points: MISSED_DUTY_POINTS, nr: this.phone.departedTrain });
+    if (this.koPending) {
+      const nr = this.phone.arrivedTrain;
+      const how = !this.fault ? 'Ko' : String(this.phone.arrivalConfirmed) !== String(nr) ? 'phone' : null;
+      out.push({ duty: 'Ko', code: null, points: 0, nr, how, prepare: !this.fault && !this.zpg && !this.koPrepared });
+    }
+    return out;
+  }
+
+  /** Czynność `duty` ('dPo', 'departure-report') zamknięta bez wykonania – kara już naliczona (koniec zmiany). */
+  closeDuty(duty) {
+    if (duty === 'dPo') this.needPo = false;
+    else if (duty === 'departure-report') this.phone.departedReported = true;
+  }
+
+  /** Pociąg sąsiada jedzie do nas albo może wyjechać: pozwolenie dane, droga zapowiedziana telefonicznie, pociąg na szlaku albo przed semaforem wjazdowym. */
+  neighbourTrainComing() {
+    return this.direction === 'in' || this.phone.clearedFor != null || this.awaitingEntry || (this.occupied && !this.lineOurs);
+  }
+
+  /**
+   * Co trzyma blokadę poza stanem zasadniczym (wynik zmiany): null – stan zasadniczy; inaczej stan do raportu. Blok
+   * początkowy zablokowany bez pociągu na szlaku albo niewykorzystane pozwolenie / kierunek Eap też się liczą – szlak dla
+   * sąsiada zostałby zamknięty (kierunek SBL i blokady jednokierunkowej zostaje, dopóki ktoś go nie zmieni).
+   */
+  notAtRest() {
+    const stale = !this.occupied && (this.poBlocked || (this.singleTrack && (this.permission || this.direction != null)));
+    if (!(this.occupied || this.fault || this.koPending || this.needPo || this.request || this.awaitingEntry || stale)) return null;
+    return { occupied: this.occupied, fault: this.fault, ko: this.koPending, needPo: this.needPo, request: this.request, awaitingEntry: this.awaitingEntry, poBlocked: this.poBlocked, permission: this.permission, direction: this.direction };
+  }
 
   /**
    * Pociąg sąsiada zjechał w całości ze szlaku na odcinek przed semaforem wjazdowym, ale semafora jeszcze nie minął.
@@ -433,7 +507,7 @@ export class LineBlock {
   phoneAnswerFree(nr) {
     if (!this.fault) {
       // sprawna blokada, szlak jednotorowy: telefonogram 4a przed Poz (pozwolenie przenosi blokada)
-      if (!this.#single() || String(this.talk.theirAsk) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
+      if (!this.singleTrack || String(this.talk.theirAsk) !== String(nr)) return { ok: false, reason: `${this.neighbour} nie pytał o pociąg nr ${nr}` };
       this.talk.answered = nr;
       return { ok: true };
     }
@@ -450,7 +524,7 @@ export class LineBlock {
   phoneAskNeighbour(nr) {
     if (!this.fault) {
       // sprawna blokada: na szlaku jednotorowym zapytanie 1a przed Wbl; na dwutorowym zapytania się nie stosuje
-      if (!this.#single()) return { ok: false, reason: `tor szlakowy linii dwutorowej – zapytanie o drogę zbędne` };
+      if (!this.singleTrack) return { ok: false, reason: `tor szlakowy linii dwutorowej – zapytanie o drogę zbędne` };
       this.talk.askedFor = nr;
       const free = !this.occupied && this.direction !== 'in' && this.request !== 'theirs';
       this.#phoneIn(free ? `Dla pociągu nr ${nr} droga jest wolna.` : `Stój pociąg nr ${nr} – tor szlakowy zajęty.`, 6 + this.random() * 8);
@@ -461,6 +535,12 @@ export class LineBlock {
     if (this.occupied) return { ok: false, reason: `tor szlakowy zajęty` };
     this.neighbourReply = { at: this.time + 8 + this.random() * 15, phoneFor: nr };
     return { ok: true };
+  }
+
+  /** Nasze pytanie, czy nasz pociąg `nr` dojechał do sąsiada: `{ ok, arrived }`. */
+  phoneAskArrival(nr) {
+    if (this.phone.departedTrain !== nr) return { ok: false, reason: `pociąg nr ${nr} nie został wyprawiony do ${this.neighbour}` };
+    return { ok: true, arrived: this.phone.arrivalConfirmed === nr };
   }
 
   /** Nasze zawiadomienie o przyjeździe pociągu sąsiada. */
@@ -521,7 +601,7 @@ export class LineBlock {
     }
     if (this.needPo) {
       this.needPo = false;
-      this.bus.emit('score', { time: this.time, code: 'no-dpo', points: -10, nr: train.nr, exit: this.id, msg: `Blok początkowy do ${this.neighbour} nie zablokowany (dPo) po wyjeździe pociągu ${train.nr} bez sygnału` });
+      this.bus.emit('score', { time: this.time, code: 'no-dpo', points: MISSED_DUTY_POINTS, nr: train.nr, exit: this.id, msg: `Blok początkowy do ${this.neighbour} nie zablokowany (dPo) po wyjeździe pociągu ${train.nr} bez sygnału` });
     }
     if (this.auto && !this.fault) {
       // SBL: odstęp zwalnia się sam, gdy pociąg go opuści – bez potwierdzenia sąsiada
@@ -536,7 +616,7 @@ export class LineBlock {
       this.occupied = false; this.lineTrain = null;
       this.phone.arrivalConfirmed = train.nr;
       this.#phoneIn(`Pociąg nr ${train.nr} przyjechał o ${Clock.format(this.time)}.`, 5);
-      if (!this.phone.departedReported) this.bus.emit('score', { time: this.time, code: 'no-depart-report', points: -10, nr: train.nr, exit: this.id, msg: `Brak telefonicznego zawiadomienia ${this.neighbour} o odjeździe pociągu ${train.nr}` });
+      if (!this.phone.departedReported) this.bus.emit('score', { time: this.time, code: 'no-depart-report', points: MISSED_DUTY_POINTS, nr: train.nr, exit: this.id, msg: `Brak telefonicznego zawiadomienia ${this.neighbour} o odjeździe pociągu ${train.nr}` });
       this.phone.departedReported = true;
       return;
     }

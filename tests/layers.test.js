@@ -115,6 +115,20 @@ test('zapisu przebiegu w zależnościach nie czyta nikt poza zależnościami –
   assert.ok(files.length > 80 && files.some((f) => f.endsWith('check-scenario.mjs')) && files.some((f) => f.endsWith('stan-zmiany.mjs')), 'test przegląda źródła, skrypty i skrypty skilli');
 });
 
+test('stanu protokołu blokady liniowej nie czyta model poza blokadą – automat, koniec zmiany i wynik zmiany pytają blokadę', () => {
+  // reguły Eap / jednokierunkowej / SBL × zapowiadanie są w LineBlock (src/model/Block.js): lineStep, neighbourAsk, duties,
+  // closeDuty, neighbourTrainComing, notAtRest, phoneAskArrival; widoki i narzędzia mogą czytać pola blokady do pokazania
+  const files = walk(join(SRC, 'model')).filter((f) => posix(relative(ROOT, f)) !== 'src/model/Block.js');
+  const PROTOCOL = /\.(?:phone|talk)\??\.|\.(?:neighbourReply|needPo|koPrepared|zpg|koPending|lineOurs|pendingArrivalAck|heldUntil|faultDir|beforeEntry)\b/;
+  const bad = [];
+  for (const file of files) {
+    const lines = stripped(readFileSync(file, 'utf8')).split('\n');
+    lines.forEach((line, i) => { if (PROTOCOL.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`); });
+  }
+  assert.deepEqual(bad, [], `Stan protokołu blokady czytany poza blokadą – zapytaj blokadę (LineBlock.duties, lineStep …):\n${bad.join('\n')}`);
+  assert.ok(files.some((f) => f.endsWith('Operator.js')) && files.some((f) => f.endsWith('outcome.js')), 'test przegląda moduły modelu');
+});
+
 test('o etap pociągu pyta się kodu etapu – kod gry i narzędzi nie porównuje napisu dla człowieka (status)', () => {
   // napis etapu (`e.status`, po polsku) powstaje w src/model/timetable/phase.js i służy tylko do pokazania (CLAUDE.md:
   // działanie nie może zależeć od treści komunikatu); decyzje – na `e.phase`, `isHandled`, `isFinished`

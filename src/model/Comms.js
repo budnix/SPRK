@@ -119,9 +119,9 @@ export class Comms {
       case 'arrived': return b ? b.phoneReportArrival(nr) : { ok: false, reason: 'brak posterunku' };
       case 'ask-arrived': {
         if (!b) return { ok: false, reason: 'brak posterunku' };
-        if (b.phone.departedTrain !== nr) return { ok: false, reason: `pociąg nr ${nr} nie został wyprawiony do ${b.neighbour}` };
-        const arrived = b.phone.arrivalConfirmed === nr;
-        this.#incoming({ time: this.time + 6, from: b.neighbour, kind: 'info', text: arrived ? `Pociąg nr ${nr} przyjechał.` : `Pociąg nr ${nr} jeszcze nie przyjechał.` });
+        const r = b.phoneAskArrival(nr);
+        if (!r.ok) return r;
+        this.#incoming({ time: this.time + 6, from: b.neighbour, kind: 'info', text: r.arrived ? `Pociąg nr ${nr} przyjechał.` : `Pociąg nr ${nr} jeszcze nie przyjechał.` });
         return { ok: true };
       }
       case 'driver-wait': {
