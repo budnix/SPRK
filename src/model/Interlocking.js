@@ -1285,7 +1285,15 @@ export class Interlocking {
   tick(time) {
     this.time = time;
     this.input?.tick(time); // uzbrojenie przycisku wygasa w protokole obsługi
+    this.#finishMoves(time);
+    this.#settlePending(time);
+    this.#substituteTimeouts(time);
+    // aktywne przebiegi: przejazd pociągu, zwalnianie odcinkowe, zwalnianie czasowe
+    for (const act of [...this.active.values()]) this.#trackRoute(act, time);
+  }
 
+  /** Zwrotnice i wykolejnice kończą przestawianie; zabezpieczenie zwrotnicy na miejscu gotowe. */
+  #finishMoves(time) {
     // Zwrotnice i wykolejnice kończą przestawianie; zabezpieczenie na miejscu gotowe
     for (const p of this.points.values()) {
       if (p.securing && p.securing <= time) {
@@ -1304,7 +1312,10 @@ export class Interlocking {
     for (const d of this.derailers.values()) {
       if (d.moving && d.movingUntil <= time) { d.moving = false; d.position = d.target; this.bus.emit('derailer', d); }
     }
+  }
 
+  /** Przebiegi w nastawianiu: zwrotnice na miejscu – przebieg utwierdzony (albo odmowa); po 20 s – nastawianie przerwane. */
+  #settlePending(time) {
     // Przebiegi w trakcie nastawiania
     for (const pr of [...this.pending]) {
       const r = pr.route;
@@ -1320,123 +1331,156 @@ export class Interlocking {
         this.#log('warn', `Przebieg ${r.id}: zwrotnice nie osiągnęły położenia – nastawianie przerwane`);
       }
     }
+  }
 
+  /** Sygnał zastępczy gaśnie po czasie świecenia. */
+  #substituteTimeouts(time) {
     // Sygnał zastępczy – czas
     for (const sig of this.signals.values()) {
       if (sig.substitute && sig.substituteUntil <= time) { sig.substitute = false; this.#releaseUnusedHolds(sig.id); this.#refreshSignals(); }
     }
+  }
 
-    // Aktywne przebiegi: przejazd pociągu, zwalnianie odcinkowe, zwalnianie czasowe
-    for (const act of [...this.active.values()]) {
-      const secs = act.lockedSections;
-      const sig = this.signals.get(act.route.start);
-      // czoło pociągu w przebiegu: najdalszy odcinek zajęty od chwili nastawienia (wasOccupied zeruje się przy
-      // utwierdzeniu, więc tabor stojący wcześniej na torze docelowym się nie liczy); bardzo krótki odcinek (np. sama
-      // zwrotnica) może być przeskoczony między krokami symulacji – dlatego nie wymagamy zajęcia pierwszego
-      let front = secs.reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
-      if (act.sharedEnd) {
-        // tor docelowy wspólny z drugim przebiegiem manewrowym: jego zajętość może pochodzić od drugiego składu, więc
-        // czoło poznaje się po odcinkach głowicy; skład jest na torze docelowym, gdy zjechał z ostatniego z nich
-        const n = secs.length;
-        front = secs.slice(0, n - 1).reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
-        if ((act.front ?? -1) >= n - 2 && !this.sections.get(secs[n - 2]).occupied) front = n - 1;
-        front = Math.max(front, act.front ?? -1);
-      }
-      act.front = Math.max(act.front ?? -1, front);
-      if (!act.trainEntered && front >= 0) {
-        act.trainEntered = true;
-        act.timedRelease = null;
-        const prevAspect = sig.aspect;
-        // sygnał manewrowy gaśnie dopiero, gdy cały skład minie sygnalizator (Ie-4 §40) – ogon na odcinku przed nim;
-        // nastawnia mechaniczna: tarczę przestawia dźwignia, bez zmian
-        const approach = this.sections.get(act.route.approach);
-        if (!act.signalOff && act.route.kind === 'shunt' && !this.manualSignal && approach?.physical) act.shuntHold = true;
-        // semafor kształtowy (sprzęgło elektryczne): ramię opada dopiero, gdy semafor minie ostatnia oś pociągu
-        else if (!act.signalOff && act.route.kind === 'train' && this.shapedSignals && approach?.physical) act.armHold = true;
-        else if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
-        if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
-      }
-      // stała kontrola warunków sygnału przed wjazdem pociągu: zajętość odcinka przebiegu lub drogi ochronnej, utrata
-      // kontroli zwrotnicy – semafor na „Stój”, przebieg zostaje utwierdzony; sygnał nie wraca sam (nastawnia
-      // mechaniczna: sygnał trzyma dźwignia – bez zmian)
-      if (!act.trainEntered && !act.signalOff && !this.manualSignal && act.route.kind === 'train') {
-        const why = this.#signalCondition(act);
-        if (why) {
-          // przyczyna po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli), a nie tabor na drodze przebiegu
-          act.faultDrop = ![...act.lockedSections, ...act.overlap].some((sid) => this.sections.get(sid)?.physical);
-          act.signalOff = true; this.#refreshSignals();
-          this.#log('warn', `Semafor ${sig.id} samoczynnie na „Stój”: ${why} – przebieg ${act.id} utwierdzony`);
-        }
-      }
-      if (act.shuntHold && !this.sections.get(act.route.approach)?.physical) {
-        act.shuntHold = false; act.signalOff = true; this.#refreshSignals();
-        this.#log('info', `Skład minął ${sig.kind === 'tm' ? 'tarczę' : 'semafor'} ${sig.id} – sygnał manewrowy zgasł`);
-      }
-      if (act.armHold && !this.sections.get(act.route.approach)?.physical) {
-        act.armHold = false;
-        if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} w całości – semafor samoczynnie na „Stój”`); }
-      }
-      if (act.timedRelease && act.timedRelease <= time) {
-        this.#log('info', `Przebieg ${act.id} zwolniony (zwalnianie czasowe)`);
-        this.#dissolve(act);
-        continue;
-      }
-      if (act.trainEntered) {
-        if (secs.length && this.sections.get(secs[secs.length - 1]).occupied) this.#releaseOverlap(act);
-        for (let i = 0; i < secs.length; i++) {
-          const sid = secs[i];
-          if (act.released.has(sid)) continue;
-          const s = this.sections.get(sid);
-          // zwalnianie odcinkowe: odcinek za czołem pociągu i wolny (także przeskoczony bez zajęcia); ostatni odcinek
-          // zwalnia się, gdy pociąg go opuścił (wyjazd na szlak) albo wjechał na tor docelowy (gałąź niżej)
-          const last = i === secs.length - 1;
-          // (tor docelowy wspólny z drugim przebiegiem manewrowym: dopiero gdy skład tego przebiegu na niego wjechał)
-          if (!s.occupied && (i < front || (last && s.wasOccupied && (!act.sharedEnd || front >= i)))) {
-            act.released.add(sid);
-            this.#unlockSection(sid, act);
-            this.bus.emit('section', s);
-          } else if (last && s.occupied && act.released.size === secs.length - 1 && act.route.end.type !== 'exit') {
-            // Pociąg wjechał na tor docelowy – przebieg zakończony
-            act.released.add(sid);
-            this.#unlockSection(sid, act);
-            this.bus.emit('section', s);
-          }
-        }
-        // Tor docelowy złożony z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): pociąg staje
-        // przy peronie i do ostatniego odcinka nie dojeżdża. Wjechał na tor docelowy, gdy zwolniły się wszystkie odcinki
-        // przed tym torem – wtedy zwalniają się też pozostałe odcinki toru i przebieg jest zakończony.
-        if (act.route.kind === 'train' && act.route.end.type !== 'exit' && secs.length > 1 && act.released.size < secs.length) {
-          const track = this.sections.get(secs[secs.length - 1])?.track;
-          let g0 = secs.length - 1;
-          if (track != null) while (g0 > 0 && this.sections.get(secs[g0 - 1])?.track === track) g0--;
-          const group = secs.slice(g0);
-          if (g0 < secs.length - 1 && secs.slice(0, g0).every((sid) => act.released.has(sid)) && group.some((sid) => this.sections.get(sid).physical)) {
-            for (const sid of group) {
-              if (act.released.has(sid)) continue;
-              act.released.add(sid);
-              this.#unlockSection(sid, act);
-              this.bus.emit('section', this.sections.get(sid));
-            }
-          }
-        }
-        // Zwrotnice zwalniają się z odcinkami (holdRoute: trzyma je drążek przebiegowy do zwolnienia przebiegu)
-        if (!this.holdRoute) {
-          for (const pid of [...act.lockedPoints]) {
-            const p = this.points.get(pid);
-            const inRoute = act.route.points.some((q) => q.id === pid);
-            if (inRoute && act.released.has(p.section)) act.lockedPoints.delete(pid);
-          }
-        }
-        if (act.released.size === secs.length) this.#finish(act, `Przebieg ${act.id} rozwiązany (pociąg przejechał)`);
-      } else if (act.route.kind === 'shunt' && !secs.length) {
-        // przebieg manewrowy w obrębie jednego odcinka: rozwiązuje się, gdy tabor opuści odcinek
-        const app = this.sections.get(act.route.approach);
-        if (app?.occupied) act.sawTrain = true;
-        else if (act.sawTrain) this.#finish(act, `Przebieg manewrowy ${act.id} rozwiązany (tabor opuścił odcinek)`);
-      } else if (act.route.kind === 'shunt' && act.signalOff) {
-        this.#tryReleaseShunt(act);
+  /**
+   * Jeden nastawiony przebieg w takcie: czoło pociągu, wjazd pociągu (sygnał na „Stój”), stała kontrola warunków
+   * sygnału, koniec przytrzymania sygnału manewrowego / ramienia, zwalnianie czasowe, zwalnianie odcinkowe.
+   */
+  #trackRoute(act, time) {
+    const secs = act.lockedSections;
+    const sig = this.signals.get(act.route.start);
+    const front = this.#trainFront(act);
+    this.#trainEnters(act, sig, front);
+    this.#signalCheck(act, sig);
+    this.#holdsEnd(act, sig);
+    if (act.timedRelease && act.timedRelease <= time) {
+      this.#log('info', `Przebieg ${act.id} zwolniony (zwalnianie czasowe)`);
+      this.#dissolve(act);
+      return;
+    }
+    if (act.trainEntered) this.#releaseSections(act, front);
+    else if (act.route.kind === 'shunt' && !secs.length) {
+      // przebieg manewrowy w obrębie jednego odcinka: rozwiązuje się, gdy tabor opuści odcinek
+      const app = this.sections.get(act.route.approach);
+      if (app?.occupied) act.sawTrain = true;
+      else if (act.sawTrain) this.#finish(act, `Przebieg manewrowy ${act.id} rozwiązany (tabor opuścił odcinek)`);
+    } else if (act.route.kind === 'shunt' && act.signalOff) {
+      this.#tryReleaseShunt(act);
+    }
+  }
+
+  /** Czoło pociągu w przebiegu (indeks odcinka) – zapisane w przebiegu (`act.front`, tylko do przodu); zwraca bieżące. */
+  #trainFront(act) {
+    const secs = act.lockedSections;
+    // czoło pociągu w przebiegu: najdalszy odcinek zajęty od chwili nastawienia (wasOccupied zeruje się przy
+    // utwierdzeniu, więc tabor stojący wcześniej na torze docelowym się nie liczy); bardzo krótki odcinek (np. sama
+    // zwrotnica) może być przeskoczony między krokami symulacji – dlatego nie wymagamy zajęcia pierwszego
+    let front = secs.reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+    if (act.sharedEnd) {
+      // tor docelowy wspólny z drugim przebiegiem manewrowym: jego zajętość może pochodzić od drugiego składu, więc
+      // czoło poznaje się po odcinkach głowicy; skład jest na torze docelowym, gdy zjechał z ostatniego z nich
+      const n = secs.length;
+      front = secs.slice(0, n - 1).reduce((m, id, i) => { const x = this.sections.get(id); return x.occupied && x.wasOccupied ? i : m; }, -1);
+      if ((act.front ?? -1) >= n - 2 && !this.sections.get(secs[n - 2]).occupied) front = n - 1;
+      front = Math.max(front, act.front ?? -1);
+    }
+    act.front = Math.max(act.front ?? -1, front);
+    return front;
+  }
+
+  /** Pociąg wjechał w przebieg: semafor na „Stój” (sygnał manewrowy / ramię kształtowe – po minięciu całym składem). */
+  #trainEnters(act, sig, front) {
+    if (!act.trainEntered && front >= 0) {
+      act.trainEntered = true;
+      act.timedRelease = null;
+      const prevAspect = sig.aspect;
+      // sygnał manewrowy gaśnie dopiero, gdy cały skład minie sygnalizator (Ie-4 §40) – ogon na odcinku przed nim;
+      // nastawnia mechaniczna: tarczę przestawia dźwignia, bez zmian
+      const approach = this.sections.get(act.route.approach);
+      if (!act.signalOff && act.route.kind === 'shunt' && !this.manualSignal && approach?.physical) act.shuntHold = true;
+      // semafor kształtowy (sprzęgło elektryczne): ramię opada dopiero, gdy semafor minie ostatnia oś pociągu
+      else if (!act.signalOff && act.route.kind === 'train' && this.shapedSignals && approach?.physical) act.armHold = true;
+      else if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} na sygnale ${prevAspect} – semafor samoczynnie na „Stój”`); }
+      if (act.route.exit && this.opts.onDeparture) this.opts.onDeparture(act.route.exit, act.route);
+    }
+  }
+
+  /** Stała kontrola warunków sygnału przed wjazdem pociągu (zajętość, kontrola zwrotnic). */
+  #signalCheck(act, sig) {
+    // stała kontrola warunków sygnału przed wjazdem pociągu: zajętość odcinka przebiegu lub drogi ochronnej, utrata
+    // kontroli zwrotnicy – semafor na „Stój”, przebieg zostaje utwierdzony; sygnał nie wraca sam (nastawnia
+    // mechaniczna: sygnał trzyma dźwignia – bez zmian)
+    if (!act.trainEntered && !act.signalOff && !this.manualSignal && act.route.kind === 'train') {
+      const why = this.#signalCondition(act);
+      if (why) {
+        // przyczyna po stronie urządzeń (zajętość bez taboru, zwrotnica bez kontroli), a nie tabor na drodze przebiegu
+        act.faultDrop = ![...act.lockedSections, ...act.overlap].some((sid) => this.sections.get(sid)?.physical);
+        act.signalOff = true; this.#refreshSignals();
+        this.#log('warn', `Semafor ${sig.id} samoczynnie na „Stój”: ${why} – przebieg ${act.id} utwierdzony`);
       }
     }
+  }
+
+  /** Koniec przytrzymania sygnału manewrowego i ramienia semafora kształtowego – skład minął sygnalizator w całości. */
+  #holdsEnd(act, sig) {
+    if (act.shuntHold && !this.sections.get(act.route.approach)?.physical) {
+      act.shuntHold = false; act.signalOff = true; this.#refreshSignals();
+      this.#log('info', `Skład minął ${sig.kind === 'tm' ? 'tarczę' : 'semafor'} ${sig.id} – sygnał manewrowy zgasł`);
+    }
+    if (act.armHold && !this.sections.get(act.route.approach)?.physical) {
+      act.armHold = false;
+      if (!act.signalOff) { act.signalOff = true; this.#refreshSignals(); this.#log('info', `Pociąg minął semafor ${sig.id} w całości – semafor samoczynnie na „Stój”`); }
+    }
+  }
+
+  /** Zwalnianie odcinkowe za pociągiem w przebiegu; przebieg rozwiązany, gdy zwolnione są wszystkie odcinki. */
+  #releaseSections(act, front) {
+    const secs = act.lockedSections;
+    if (secs.length && this.sections.get(secs[secs.length - 1]).occupied) this.#releaseOverlap(act);
+    for (let i = 0; i < secs.length; i++) {
+      const sid = secs[i];
+      if (act.released.has(sid)) continue;
+      const s = this.sections.get(sid);
+      // zwalnianie odcinkowe: odcinek za czołem pociągu i wolny (także przeskoczony bez zajęcia); ostatni odcinek
+      // zwalnia się, gdy pociąg go opuścił (wyjazd na szlak) albo wjechał na tor docelowy (gałąź niżej)
+      const last = i === secs.length - 1;
+      // (tor docelowy wspólny z drugim przebiegiem manewrowym: dopiero gdy skład tego przebiegu na niego wjechał)
+      if (!s.occupied && (i < front || (last && s.wasOccupied && (!act.sharedEnd || front >= i)))) {
+        act.released.add(sid);
+        this.#unlockSection(sid, act);
+        this.bus.emit('section', s);
+      } else if (last && s.occupied && act.released.size === secs.length - 1 && act.route.end.type !== 'exit') {
+        // Pociąg wjechał na tor docelowy – przebieg zakończony
+        act.released.add(sid);
+        this.#unlockSection(sid, act);
+        this.bus.emit('section', s);
+      }
+    }
+    // Tor docelowy złożony z kilku odcinków (np. krótki odcinek za peronem, przy semaforze końcowym): pociąg staje
+    // przy peronie i do ostatniego odcinka nie dojeżdża. Wjechał na tor docelowy, gdy zwolniły się wszystkie odcinki
+    // przed tym torem – wtedy zwalniają się też pozostałe odcinki toru i przebieg jest zakończony.
+    if (act.route.kind === 'train' && act.route.end.type !== 'exit' && secs.length > 1 && act.released.size < secs.length) {
+      const track = this.sections.get(secs[secs.length - 1])?.track;
+      let g0 = secs.length - 1;
+      if (track != null) while (g0 > 0 && this.sections.get(secs[g0 - 1])?.track === track) g0--;
+      const group = secs.slice(g0);
+      if (g0 < secs.length - 1 && secs.slice(0, g0).every((sid) => act.released.has(sid)) && group.some((sid) => this.sections.get(sid).physical)) {
+        for (const sid of group) {
+          if (act.released.has(sid)) continue;
+          act.released.add(sid);
+          this.#unlockSection(sid, act);
+          this.bus.emit('section', this.sections.get(sid));
+        }
+      }
+    }
+    // Zwrotnice zwalniają się z odcinkami (holdRoute: trzyma je drążek przebiegowy do zwolnienia przebiegu)
+    if (!this.holdRoute) {
+      for (const pid of [...act.lockedPoints]) {
+        const p = this.points.get(pid);
+        const inRoute = act.route.points.some((q) => q.id === pid);
+        if (inRoute && act.released.has(p.section)) act.lockedPoints.delete(pid);
+      }
+    }
+    if (act.released.size === secs.length) this.#finish(act, `Przebieg ${act.id} rozwiązany (pociąg przejechał)`);
   }
 
   /** Zrzut stanu do serializacji (przyszły zapis gry / tryb sieciowy). */

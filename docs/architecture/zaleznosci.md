@@ -158,6 +158,12 @@ odmowa (`Traffic.issueOrder`).
 
 ## Zwalnianie odcinkowe (`Interlocking.tick`)
 
+Takt zależności to nazwane kroki: `#finishMoves` (zwrotnice i wykolejnice kończą przestawianie, zabezpieczenie na
+miejscu), `#settlePending` (przebiegi w nastawianiu), `#substituteTimeouts` (Sz gaśnie po czasie), a dla każdego
+nastawionego przebiegu `#trackRoute`: `#trainFront` (czoło pociągu), `#trainEnters` (wjazd – semafor na „Stój”),
+`#signalCheck` (stała kontrola warunków sygnału), `#holdsEnd` (sygnał manewrowy / ramię po minięciu całym składem),
+zwalnianie czasowe i `#releaseSections` (zwalnianie odcinkowe, koniec przebiegu).
+
 Czoło pociągu w przebiegu to najdalszy odcinek zajęty od chwili utwierdzenia (`wasOccupied` zeruje się przy
 utwierdzeniu, więc tabor stojący wcześniej na torze docelowym – jazda manewrowa na Ms2 – nie liczy się). Odcinki za
 czołem zwalniają się, gdy są wolne, także gdy bardzo krótki odcinek (sama zwrotnica po podziale grupy, ~10 m toru)
