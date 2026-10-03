@@ -168,6 +168,7 @@ export default {
   'start.monthNoEffect': 'Na tym posterunku miesiąc nie zmienia rozkładu.',
   'start.works': 'Sezon robót torowych: bywa zamknięty tor pomocniczy – pociągi jadą wtedy innym torem.',
   'start.winter': 'Zima: przy zakłóceniach częściej marzną zwrotnice.',
+  'start.freightSeason': 'Sezon przewozów: więcej pociągów towarowych.',
   'start.month.1': 'Styczeń',
   'start.month.2': 'Luty',
   'start.month.3': 'Marzec',

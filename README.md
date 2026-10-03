@@ -181,7 +181,8 @@ Saturday, Sunday or holiday; both random by default, and the duty's name shows w
 rush hour, and in the seaside season (June and September at weekends, July and August every day – as in the 2026
 POLREGIO timetable for the Hel line) trains to the coast run on every service. From spring to autumn there may be track works: a secondary station track is
 closed for the whole duty and its trains use another track without penalty (Gdynia Orłowo, Gdynia Główna, Rumia,
-Gdańsk Główny). In winter (December to February), with disruptions on, points freeze more often. At a station where the month changes nothing the page says so. The timetable is built for
+Gdańsk Główny). In winter (December to February), with disruptions on, points freeze more often, and from September to February
+extra freight trains run in free gaps (harvest and coal season – an assumption of the game). At a station where the month changes nothing the page says so. The timetable is built for
 that time of day from the station's own pattern: the morning and afternoon peaks carry the densest passenger traffic,
 daytime and evening run fewer suburban and regional trains, and at night almost only freight trains run – they take the
 paths of the passenger trains that do not run then. Long-distance trains carry the names and routes of real PKP

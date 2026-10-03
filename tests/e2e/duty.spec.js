@@ -192,6 +192,10 @@ test('termin służby: miesiąc i typ dnia (domyślnie „losowo”), opis tego,
   await page.goto('/#/stacja/tczew', { waitUntil: 'load' });
   await page.selectOption('#st-duty-month', '8');
   await expect(page.locator('#st-scenario-desc')).toContainText('miesiąc nie zmienia rozkładu');
+  // październik: sezon przewozów – więcej pociągów towarowych (na każdym posterunku)
+  await page.selectOption('#st-duty-month', '10');
+  await expect(page.locator('#st-scenario-desc')).toContainText('Sezon przewozów');
+  await expect(page.locator('#st-scenario-desc')).not.toContainText('nie zmienia rozkładu');
   // „losowo”: adres bez terminu – termin losuje ziarno (nazwa służby go pokazuje)
   await page.selectOption('#st-duty-month', '');
   await page.selectOption('#st-level', 'none');

@@ -164,6 +164,7 @@ export default {
   'start.monthNoEffect': 'At this station the month does not change the timetable.',
   'start.works': 'Track works season: a secondary track may be closed – trains then use another track.',
   'start.winter': 'Winter: with disruptions on, points freeze more often.',
+  'start.freightSeason': 'Freight season: more freight trains.',
   'start.month.1': 'January',
   'start.month.2': 'February',
   'start.month.3': 'March',

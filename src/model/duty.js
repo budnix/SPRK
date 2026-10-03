@@ -3,7 +3,7 @@ import { mixSeed, seedFraction } from '../core/Random.js';
 import { brandOf, categoryOf, relationOf, speedFor } from './categories.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from './namedTrains.js';
 import { checkScenario } from './scenarioCheck.js';
-import { DAY_RULES, FROZEN_POINTS, WINTER, WORKS, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
+import { DAY_RULES, FREIGHT_SEASON, FROZEN_POINTS, WINTER, WORKS, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
 
 /**
  * Służba o wybranej porze i długości: scenariusz budowany z rozkładu stacji, bez danych per stacja.
@@ -494,6 +494,19 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
       from: e.from, to: e.to, arr: stamp(when), track: e.track, stop: false, length: run.length ?? e.length, vmax: run.vmax };
     if (run.mass != null) train.mass = run.mass;
     picked.push({ c: { g, n: 0, shift: 0, at: when }, freight: true, trains: [train], tasks: [] });
+    validate();
+  }
+
+  // Sezon przewozów (`FREIGHT_SEASON`): w każdej godzinie służby z prawdopodobieństwem miesiąca dodatkowy pociąg towarowy
+  // w wolnej luce tej godziny (`freightFor`) – drogą pociągu towarowego wzorca, a gdy stacja go nie ma, drogą pociągu
+  // regionalnego albo dalekobieżnego (nie po linii SKM); jak każdy pociąg towarowy spoza wzorca ustępuje pociągom wzorca
+  const roads = ways.some((g) => g.cls === 'tow') ? ways.filter((g) => g.cls === 'tow') : ways.filter((g) => g.cls !== 'agl');
+  for (let h = t0; h < t1 && roads.length; h += 3600) {
+    if (fraction(seed, `sezon|${h}`) >= (FREIGHT_SEASON[cal.month] ?? 0)) continue;
+    const g = roads[Math.floor(fraction(seed, `sezon-droga|${h}`) * roads.length)];
+    const train = freightFor(g.head, h + 1800, `sezon|${h}`, h + 3600 - 60);
+    if (!train) continue;
+    picked.push({ c: { g, n: 0, shift: 0, at: firstOf(train) }, freight: true, trains: [train], tasks: [] });
     validate();
   }
 

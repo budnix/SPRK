@@ -13,7 +13,8 @@ import { relationOf } from '../categories.js';
  *    Kalendarz z rozkładu POLREGIO Gdynia/Reda – Hel 2026 (docs/sources/posterunki.md); nowych dróg nie przybywa –
  *    jednotorowa linia 213 latem jest pełna, więc zmienia się tylko to, które kursy wzorca jadą;
  *  - miesiąc – roboty torowe (`WORKS`, przyjęte): od wiosny do jesieni bywa zamknięty jeden tor stacji;
- *  - miesiąc – zima (`WINTER`, przyjęte): przy zakłóceniach częściej usterka napędu zwrotnicy (`FROZEN_POINTS`).
+ *  - miesiąc – zima (`WINTER`, przyjęte): przy zakłóceniach częściej usterka napędu zwrotnicy (`FROZEN_POINTS`);
+ *  - miesiąc – sezon przewozów (`FREIGHT_SEASON`, przyjęte): jesienią i zimą więcej pociągów towarowych.
  * Moduł logiki: bez DOM.
  */
 
@@ -48,6 +49,12 @@ export const WORKS = { 3: 0.15, 4: 0.35, 5: 0.35, 6: 0.35, 7: 0.35, 8: 0.35, 9: 
  */
 export const WINTER = [12, 1, 2];
 export const FROZEN_POINTS = { 'point-control': 4 };
+/**
+ * Sezon przewozów towarowych (przyjęte – przegląd źródeł nie znalazł stałego rocznego rytmu przewozów do portów
+ * Gdyni i Gdańska): miesiąc → prawdopodobieństwo, że w danej godzinie służby jedzie dodatkowy pociąg towarowy – jesienią
+ * (zboże po żniwach) i zimą (węgiel) więcej, wiosną i latem bez dodatkowych.
+ */
+export const FREIGHT_SEASON = { 9: 0.4, 10: 0.4, 11: 0.4, 12: 0.3, 1: 0.3, 2: 0.3 };
 /** Miejscowości nad morzem – relacja pociągu do albo od nich czyni go pociągiem nad morze. */
 export const SEASIDE_TOWNS = ['Hel', 'Jastarnia', 'Jurata', 'Władysławowo', 'Łeba', 'Ustka', 'Darłowo', 'Kołobrzeg', 'Międzyzdroje', 'Świnoujście', 'Krynica Morska'];
 

@@ -20,6 +20,7 @@ import wola from './fixtures/wola-pustkowska.js';
 import { DAY_TYPES, WORKS, calendarLabel, normalizeCalendar, resolveCalendar, seasideTrain } from '../src/model/timetable/calendar.js';
 import { seedFraction } from '../src/core/Random.js';
 import reda from '../src/stations/reda.js';
+import tczew from '../src/stations/tczew.js';
 
 /*
  * Służba o wybranej porze i długości (`src/model/duty.js`): rozkład budowany z wzorca stacji – bez danych per stacja,
@@ -354,6 +355,23 @@ test('zima: w grudniu, styczniu i lutym przy zakłóceniach częściej marzną z
     return pts / all;
   };
   assert.ok(share(1) > share(7) * 2, `napęd zwrotnicy: styczeń ${share(1).toFixed(2)}, lipiec ${share(7).toFixed(2)}`);
+});
+
+test('sezon przewozów: jesienią i zimą więcej pociągów towarowych niż wiosną – na każdym posterunku, w wolnych lukach', () => {
+  let may = 0, october = 0;
+  for (const st of duty) {
+    const tow = (month) => {
+      let n = 0;
+      for (const seed of [1, 2, 3, 4]) for (const start of [6, 19]) n += buildDuty(st, { start, minutes: 180, seed, month, day: 'roboczy' }).stats.tow;
+      return n;
+    };
+    const a = tow(5), b = tow(10);
+    assert.ok(b > a, `${st.id}: maj ${a}, październik ${b}`);
+    may += a; october += b;
+  }
+  assert.ok(october >= may * 1.1, `razem: maj ${may}, październik ${october}`);
+  // wiosną i latem bez dodatkowych
+  assert.deepEqual([3, 4, 5, 6, 7, 8].map((m) => buildDuty(tczew, { start: 10, minutes: 120, seed: 2, month: m, day: 'roboczy' }).stats.tow), Array(6).fill(buildDuty(tczew, { start: 10, minutes: 120, seed: 2, month: 5, day: 'roboczy' }).stats.tow));
 });
 
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {

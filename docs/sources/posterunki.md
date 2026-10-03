@@ -258,7 +258,12 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   – ale bez liczb dla Trójmiasta; udziały i to, że w grze to zamknięcie toru stacji, są wartościami gry;
 * termin służby – zima (`WINTER`, `FROZEN_POINTS`, przyjęte, bez źródła): w grudniu, styczniu i lutym przy losowaniu
   usterek (poziom „małe” i „duże”) brak kontroli zwrotnicy po przestawieniu ma wagę 4, inne rodzaje 1 – marznące
-  zwrotnice; liczba usterek bez zmian.
+  zwrotnice; liczba usterek bez zmian;
+* termin służby – sezon przewozów (`FREIGHT_SEASON`, przyjęte): od września do listopada w 40 %, od grudnia do lutego
+  w 30 % godzin służby dodatkowy pociąg towarowy w wolnej luce. Przegląd źródeł nie znalazł stałego rocznego rytmu
+  przewozów do portów Gdyni i Gdańska – jedyny ślad to priorytet dla węgla zimą 2022/23 i zapowiedź priorytetu dla zboża
+  wiosną 2023 (gazetaprawna.pl, https://www.gazetaprawna.pl/biznes/artykuly/11014802,kowalczyk-zboze-pkp-porty.html),
+  czyli sytuacja kryzysowa, nie reguła; jesień (zboże) i zima (węgiel) jako sezon – wartości gry.
 
 ## Pociągi z nazwami (`src/model/data/namedTrains.js`, `scripts/named-trains.mjs`, `src/model/namedTrains.js`)
 
