@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, grant } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import sopot from '../src/stations/sopot.js';
 import { monitorMenu, lineTrains, MODE_KINDS } from '../src/srk/monitor.js';
@@ -69,7 +69,7 @@ test('blokada samoczynna (Sopot): prośba o zmianę kierunku (Zk), bez bloków P
   assert.deepEqual(m.items.filter((i) => i.cmd).map((i) => i.cmd.btn), ['Zk']);
   // pociąg zgłoszony przez sąsiada i czekający – kasetka w konturze; na szlaku – pełna
   const eap = makeSim({ disruptions: 'none' });
-  run(eap, 8 * 60, (x) => { const b = x.blocks.get('E'); if (b.request === 'theirs') b.press('Poz'); });
+  run(eap, 8 * 60, grant('E'));
   const trains = [...lineTrains(eap, 'E'), ...lineTrains(eap, 'W')];
   assert.ok(trains.length > 0, 'żaden pociąg na szlaku ani zgłoszony');
   assert.ok(trains.every((t) => typeof t.nr === 'string' && typeof t.on === 'boolean' && /na szlaku|zgłoszony/.test(t.title)), JSON.stringify(trains));

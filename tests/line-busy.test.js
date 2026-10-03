@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import rumia from '../src/stations/rumia.js';
-import { run, Clock } from './helpers.js';
+import { run, Clock, grant } from './helpers.js';
 
 /*
  * Tor szlakowy nie jest wolny, dopóki pociąg sąsiada stoi przed naszym semaforem wjazdowym – choć zjechał już w całości
@@ -17,7 +17,7 @@ test('zapowiadanie telefoniczne: dopóki pociąg stoi przed semaforem wjazdowym,
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   const b = sim.blocks.get('W');
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
-  for (let i = 0; i < 6000 && !waitingBefore(e.train, 'A'); i++) { sim.step(0.5); if (b.request === 'theirs') b.press('Poz'); }
+  for (let i = 0; i < 6000 && !waitingBefore(e.train, 'A'); i++) { sim.step(0.5); grant('W')(sim); }
   assert.ok(waitingBefore(e.train, 'A'), 'pociąg 6101 stoi przed A');
   assert.equal(b.occupied, false, 'pociąg zjechał z toru szlakowego na odcinek przed semaforem');
   assert.equal(b.awaitingEntry, true);
@@ -99,7 +99,7 @@ test('pociąg kończący bieg, który stanął za taborem na odcinku przed semaf
   ] } });
   const b = sim.blocks.get('W');
   const e = sim.traffic.timetable().find((x) => x.nr === 90201);
-  for (let i = 0; i < 6000 && !(e.train?.entered && e.train.v === 0); i++) { sim.step(0.5); if (b.request === 'theirs') b.press('Poz'); }
+  for (let i = 0; i < 6000 && !(e.train?.entered && e.train.v === 0); i++) { sim.step(0.5); grant('W')(sim); }
   assert.ok(e.train?.entered && e.train.v === 0, 'pociąg stanął');
   assert.equal(e.train.stoppedAt?.reason, 'tabor na torze');
   assert.ok(e.train.occupiedSections().has('ZbA'));

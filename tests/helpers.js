@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import station from './fixtures/stare-pustkowie.js'; // stacja testowa typu E (dawne Stare Pustkowie)
 import { Clock } from '../src/core/Clock.js';
@@ -12,6 +13,36 @@ export function run(sim, seconds, each) {
   const steps = Math.ceil(seconds / 0.5);
   for (let i = 0; i < steps; i++) { sim.step(0.5); if (each) each(sim); }
 }
+
+/**
+ * Dyżurny „tylko pozwolenia” – po każdym kroku odpowiada na żądania pozwolenia sąsiada (Eap: Poz) na szlakach `exits`
+ * (id albo lista; null – wszystkie) przez polecenie stanowiska (`sim.execute`), nie przyciskiem blokady; `ko` – także Ko
+ * po przyjeździe pociągu sąsiada. Prośby SBL o zmianę kierunku zostają bez odpowiedzi – o tym decyduje test.
+ * Przykład: `run(sim, 960, grant('W'))`, w pętli: `const answer = grant('W'); … answer(sim);`.
+ */
+export const grant = (exits = null, { ko = false } = {}) => {
+  const only = exits == null ? null : new Set([].concat(exits));
+  return (sim) => {
+    for (const b of sim.blocks.values()) {
+      if (only && !only.has(b.id)) continue;
+      if (b.neighbourAsk()?.answer === 'Poz') sim.execute({ type: 'block', exit: b.id, btn: 'Poz' });
+      if (ko && b.duties().some((d) => d.duty === 'Ko')) sim.execute({ type: 'block', exit: b.id, btn: 'Ko' });
+    }
+  };
+};
+
+/**
+ * Pociąg `nr` od sąsiada `from` dojeżdża do semafora `signal` i staje przed nim: `minutes` gry z pozwoleniami dla
+ * sąsiada (`grant(from)`), bez przebiegu wjazdowego. Zwraca wpis rozkładu pociągu.
+ */
+export function heldAt(sim, nr, signal, { from, minutes }) {
+  run(sim, minutes * 60, grant(from));
+  const e = sim.traffic.timetable().find((x) => x.nr === nr);
+  assert.equal(e.train.stoppedAt?.signal, signal);
+  return e;
+}
+/** Stare Pustkowie: pociąg 5310 od W stoi przed semaforem wjazdowym A (16 min gry). */
+export const trainAtA = (sim) => heldAt(sim, 5310, 'A', { from: 'W', minutes: 16 });
 
 /** Wszystkie pociągi rozkładu dotarły do sąsiada / zakończyły bieg (zmiana kończy się wcześniej – po wyprawieniu ostatniego). */
 export function allArrived(sim) {

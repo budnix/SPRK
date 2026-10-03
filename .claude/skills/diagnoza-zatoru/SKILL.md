@@ -69,7 +69,8 @@ a powinien móc – silnik; jeśli nie i słusznie – rozkład.
 Cel: jeden pociąg, jedna usterka, stałe ziarno, kilka minut zmiany. Pomocnicze funkcje są w `tests/fault-harness.js`
 (`faultSim` – stacja z własnym krótkim rozkładem, `runWithFault`, `stuck`), w `src/model/check/` (`playShift`,
 niezmienniki `violations`, kary wymuszone `unjustified`, stan urządzeń po zmianie `leftovers`) i w
-`tests/helpers.js` (`makeSim`, `run`, `autoDispatch`, gra z automatem `play(sim).until('07:30')`). Usterkę losową z poziomu `high` zamień na usterkę ze scenariusza
+`tests/helpers.js` (`makeSim`, `run`, `autoDispatch`, gra z automatem `play(sim).until('07:30')`, pozwolenia dla
+sąsiada bez automatu `grant('W')`, pociąg przed semaforem `heldAt`). Usterkę losową z poziomu `high` zamień na usterkę ze scenariusza
 (`faults: [{ type, target, at, duration }]`) – typ, cel i godzinę pokazuje skrypt („Usterki czynne”) i `--verbose`.
 Jeśli po zmniejszeniu błąd znika, brakuje drugiego pociągu albo kolejności zdarzeń – dokładaj po jednym.
 

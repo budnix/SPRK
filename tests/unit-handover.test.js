@@ -5,7 +5,7 @@ import szkolna from '../src/stations/szkolna.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import sopot from '../src/stations/sopot.js';
 import pustkowie from './fixtures/stare-pustkowie.js';
-import { autoDispatch, allArrived, run, Clock, play } from './helpers.js';
+import { autoDispatch, allArrived, run, Clock, play, grant } from './helpers.js';
 
 /*
  * Szkolna: osobowy 90201 kończy bieg na torze 2, skład ma być odstawiony na tor 3 (zadanie 1) i podstawiony z powrotem
@@ -59,7 +59,7 @@ test('pociąg utworzony ze składu nie jedzie na dawnym zezwoleniu: 90202 stoi p
   const w = sim.blocks.get('W');
   const u = sim.traffic.timetable().find((e) => e.nr === 90201), e = sim.traffic.timetable().find((x) => x.nr === 90202);
   // wjazd 90201 na tor 2 (A → D2) – bez manewrów; skład staje się pociągiem 90202 (odjazd 08:12 już minął)
-  for (let i = 0; i < 12000 && !u.train; i++) { sim.step(0.5); if (w.request === 'theirs') w.press('Poz'); }
+  for (let i = 0; i < 12000 && !u.train; i++) { sim.step(0.5); grant('W')(sim); }
   assert.ok(sim.ilk.setRoute('A-D2').ok);
   for (let i = 0; i < 4000 && !e.train; i++) { sim.step(0.5); if (w.koPending) w.press('Ko'); }
   assert.ok(e.train, 'skład przekazany jako 90202');

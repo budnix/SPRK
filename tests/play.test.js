@@ -63,3 +63,22 @@ test('dyżurny: funkcja, obiekt z `tick()` albo `null` (same kroki); koniec: \'H
   play(sim, null).until(() => end, { each: (s) => { if (s.clock.time === end - 25) end -= 20; } });
   assert.equal(sim.clock.time, end);
 });
+
+test('grant: odpowiada na żądanie pozwolenia sąsiada przez polecenie stanowiska – tylko na wskazanym szlaku', async () => {
+  const { grant, trainAtA, run } = await import('./helpers.js');
+  const asked = makeSim({ disruptions: 'none', seed: 1 });
+  run(asked, 60 * 12); // 5310 zgłoszony przez sąsiada W
+  assert.equal(asked.blocks.get('W').neighbourAsk()?.answer, 'Poz');
+  const presses = [];
+  asked.bus.on('button', (b) => presses.push(b.ref.id));
+  grant('E')(asked);
+  assert.deepEqual([presses.filter((id) => id.startsWith('W:')), asked.blocks.get('W').direction], [[], null], 'odpowiedź tylko na wskazanym szlaku');
+  presses.length = 0;
+  grant('W')(asked);
+  assert.deepEqual([presses, asked.blocks.get('W').direction], [['W:Poz'], 'in'], 'pozwolenie dane');
+  grant('W')(asked);
+  assert.equal(presses.length, 1, 'bez prośby – nic');
+  // pociąg dojeżdża do semafora wjazdowego i staje przed nim (bez przebiegu wjazdowego)
+  const e = trainAtA(makeSim({ disruptions: 'none', seed: 1 }));
+  assert.deepEqual([e.nr, e.phase, e.heldAt], [5310, 'held', 'A']);
+});

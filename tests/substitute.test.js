@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, trainAtA } from './helpers.js';
 import szkolna from '../src/stations/szkolna.js';
 import sopot from '../src/stations/sopot.js';
 import orlowo from '../src/stations/gdynia-orlowo.js';
@@ -71,14 +71,6 @@ test('W17: Sz bez utwierdzonych zwrotnic na drodze – dodatkowa kara (Sz nie je
   assert.equal(scoreOf(t, 'Sz-points').length, 0, 'zwrotnica zamknięta Zz');
 });
 
-/** Doprowadza pociąg 5310 do zatrzymania przed semaforem A (bez przebiegu) – jak w tests/orders.test.js. */
-function trainAtA(s) {
-  const w = s.blocks.get('W');
-  run(s, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = s.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
-  return e;
-}
 
 test('W16: rozkaz „S” przy fałszywej zajętości na jego drodze – wydany i uzasadniony usterką', () => {
   const s = makeSim();

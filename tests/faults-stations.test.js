@@ -269,8 +269,6 @@ const inStage = (nr, routeId, sig) => (sim) => {
   const tr = entryOf(sim, nr)?.train, act = routeView(sim.ilk, routeId);
   return !!tr && !!act?.entered && tr.nextSignal() === sig && canStop(tr, sig);
 };
-/** Pociąg `nr` stoi przy peronie (po przyjeździe, przed odjazdem). */
-const standing = (nr) => (sim) => { const e = entryOf(sim, nr); return !!e?.train && e.actualArr != null && e.actualDep == null && e.train.v === 0; };
 
 test('Sopot, semafor pośredni H z usterką, gdy pociąg jest w pierwszym stopniu przebiegu (A-H): krótka – czeka i jedzie na sygnale, długa – Sz / rozkaz „S” (0 pkt); następny pociąg na sygnale', () => {
   const n = runAll(VARIANTS.map((v) => () => {
@@ -310,7 +308,7 @@ test('Sopot, zajętość bez pociągu w drugim stopniu (H-O), gdy pociąg jest w
 
 test('Sopot, semafor wyjazdowy O z usterką, pociąg stoi przy peronie toru 2 (po przebiegu wieloetapowym): krótka – odjazd na sygnale po naprawie, długa – Sz / rozkaz „S” (0 pkt, SBL bez dPo)', () => {
   const n = runAll(VARIANTS.map((v) => () => {
-    const r = run({ ...SOPOT, when: standing(55104), ...variant(v, 55104, 'signal-fail', 'O') });
+    const r = run({ ...SOPOT, when: at.standing(55104), ...variant(v, 55104, 'signal-fail', 'O') });
     const msg = label(sopot, 'komputerowe', 55104, `pociąg przy peronie, usterka ${v.name}`, r);
     check(r, msg);
     assert.ok(r.obs.waited.has('55104 O'), `${msg}: 55104 czekał przed O z usterką`);
@@ -337,7 +335,7 @@ test('Wyjazd dwustopniowy (Chylonia G502 → A502 → Cisowa, Sopot L → C → 
     { st: chylonia, base: CHYLONIA, nr: 93109, next: 93111, first: 'G502', sig: 'A502', stage: 'G502-A502', exit: 'RS1', track: '502' },
     { st: sopot, base: SOPOT_WEST, nr: 55201, next: 55203, first: 'L', sig: 'C', stage: 'L-C', exit: 'GD2', track: '1' },
   ];
-  for (const p of plans) for (const [moment, when] of [[`pociąg przy peronie toru ${p.track}`, standing(p.nr)], [`pociąg w przebiegu ${p.stage}`, inStage(p.nr, p.stage, p.sig)]]) for (const v of VARIANTS) {
+  for (const p of plans) for (const [moment, when] of [[`pociąg przy peronie toru ${p.track}`, at.standing(p.nr)], [`pociąg w przebiegu ${p.stage}`, inStage(p.nr, p.stage, p.sig)]]) for (const v of VARIANTS) {
     list.push(() => {
       const r = run({ ...p.base, when, ...variant(v, p.nr, 'signal-fail', p.sig) });
       const msg = label(p.st, 'komputerowe', p.nr, `${moment}, usterka ${v.name}`, r);
@@ -415,12 +413,12 @@ function lineCases({ st, srk, def, start, points, pre, preStart }) {
     assert.equal(String(entryOf(r.sim, nr).actualTrack), String(def.track), `${msg}: tor przyjazdu`);
   });
   list.push(...signalCase('przebieg wjazdowy nastawiony', at.entrySet(nr), 'signal-fail', (sim) => entryActive(sim, nr)?.route.start, 'wjazd'));
-  list.push(...signalCase('pociąg przy peronie', standing(nr), 'signal-fail', (sim) => entryOf(sim, nr).train.nextSignal(), 'wyjazd'));
+  list.push(...signalCase('pociąg przy peronie', at.standing(nr), 'signal-fail', (sim) => entryOf(sim, nr).train.nextSignal(), 'wyjazd'));
   list.push(...signalCase('przebieg wjazdowy nastawiony, tor docelowy', at.entrySet(nr), 'false-occupancy', (sim) => entryActive(sim, nr)?.route.sections.at(-1), 'wjazd'));
   for (const side of points) list.push(() => {
     const entry = side === 'wjazd';
     const routes = (sim) => (entry ? [plannedEntry(sim, nr)] : plannedExit(sim, nr));
-    const when = entry ? (sim) => { const e = entryOf(sim, nr); return e.requested && !entryActive(sim, nr) && !e.train?.entered && !!toMove(sim, routes(sim)); } : standing(nr);
+    const when = entry ? (sim) => { const e = entryOf(sim, nr); return e.requested && !entryActive(sim, nr) && !e.train?.entered && !!toMove(sim, routes(sim)); } : at.standing(nr);
     const r = run({ ...base, timetable: pre ? [pre, def] : [def], start: pre ? preStart : start, when, held: entry ? (sim) => !entryOf(sim, nr).train?.entered : when, fault: { type: 'point-control', target: (sim) => toMove(sim, routes(sim), true), duration: 30 }, repair: nr, setup: routeSets });
     const msg = label(st, srk, nr, `${where}${pre ? ` (po ${pre.nr} na torze ${pre.track})` : ''}, zwrotnica przebiegu ${entry ? 'wjazdowego (pociąg zgłoszony)' : 'wyjazdowego (pociąg przy peronie)'}`, r);
     check(r, msg);
@@ -534,7 +532,7 @@ const LEFT_CASES = [
 ];
 function leftCase(c, ask) {
   const d = leftTrack(9001, (sim) => sim.faults.list.some((f) => f.active && f.target === c.fault.target), ask);
-  const r = run({ st: sopot, srk: 'komputerowe', timetable: c.timetable ?? LEFT_TT, start: '06:53', until: '08:00', faults: c.faults, when: standing(9001), fault: c.fault, dispatch: d, setup: lineSides, watch: watchLines });
+  const r = run({ st: sopot, srk: 'komputerowe', timetable: c.timetable ?? LEFT_TT, start: '06:53', until: '08:00', faults: c.faults, when: at.standing(9001), fault: c.fault, dispatch: d, setup: lineSides, watch: watchLines });
   const msg = `Sopot komputerowe, 9001 OR2 → GD2 z toru 1 torem lewym GD1, pociąg przy peronie, ${c.name}`;
   return { r, d, msg };
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
 import szkolna from '../src/stations/szkolna.js';
-import { run } from './helpers.js';
+import { run, grant } from './helpers.js';
 
 /*
  * Odjazd z peronu (audyt realizmu, grupa 2, W8). Pociąg rusza z peronu dopiero na sygnał zezwalający (albo Sz / rozkaz)
@@ -17,7 +17,7 @@ function atPlatform() {
   const w = s.blocks.get('W');
   let entry = false;
   run(s, 60 * 12, () => {
-    if (w.request === 'theirs') w.press('Poz');
+    grant('W')(s);
     const e = s.traffic.timetable()[0];
     if (!entry && e.train) entry = s.ilk.setRoute('A-D1').ok;
   });

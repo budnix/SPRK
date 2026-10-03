@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
-import { Clock } from './helpers.js';
+import { Clock, grant } from './helpers.js';
 
 /*
  * Pociąg, który minął semafor na „Stój”, bo sygnał zgasł tuż przed nim. Dwie sprawy:
@@ -22,8 +22,7 @@ function overrun(drop, route = 'A-D1', d = route === 'A-D1' ? 60 : 8) {
   let set = false, dropped = false;
   for (let i = 0; i < 6000 && !(dropped && e.train?.v === 0); i++) {
     sim.step(0.5);
-    const b = sim.blocks.get('W');
-    if (b.request === 'theirs') b.press('Poz');
+    grant('W')(sim);
     if (!set && e.train) { set = sim.ilk.setRoute(route).ok; }
     if (set && !dropped && e.train) {
       // sygnał gaśnie o krok symulacji (0,5 s) wcześniej: zmiana obrazu działa w następnym kroku, gdy do A zostaje

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { Clock } from '../src/core/Clock.js';
-import { setRoutes, routesBeingSet } from './helpers.js';
+import { setRoutes, routesBeingSet, grant } from './helpers.js';
 
 /*
  * Przyczyna postoju pociągu (zakładka Pociągi, Traffic.waitReason). Szkolna: 6106 z Dębna (08:33, tor 1) jedzie dalej
@@ -16,7 +16,7 @@ function run6106(faults) {
   const until = (hhmm) => {
     while (sim.clock.time < Clock.parse(hhmm)) {
       sim.step(0.5);
-      if (E.request === 'theirs') E.press('Poz');
+      grant('E')(sim);
       if (!e.train?.entered && !setRoutes(sim.ilk).length && !routesBeingSet(sim.ilk).length) sim.execute({ type: 'route', start: 'B', end: 'C1', kind: 'train' });
       if (E.koPending) E.press('Ko');
     }

@@ -18,6 +18,12 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   game.until('06:30');` – dyżurny zachowuje rytm; `each(sim, { opTick, steps })` – sprawdzenia po każdym kroku; koniec,
   który się przesuwa: `until(() => sekundy)`. Własną pętlę `n++ % 4` mają tylko testy, które coś robią zaraz po kroku,
   a przed dyżurnym (z komentarzem przy pętli). Test rytmu: `tests/play.test.js`.
+* Odpowiedzi sąsiadowi bez automatu: `grant('W')` z `tests/helpers.js` – po każdym kroku daje pozwolenie (Poz) na
+  żądanie sąsiada na wskazanych szlakach przez polecenie stanowiska (`sim.execute`), `{ ko: true }` – także Ko
+  (`run(sim, 960, grant('W'))`); test nie naciska przycisków blokady sam. Pociąg stojący przed semaforem:
+  `heldAt(sim, nr, sygnał, { from, minutes })`, na Starym Pustkowiu `trainAtA(sim)` (5310 przed A). Chwile jazdy
+  pociągu dla testów usterek (zgłoszony, przebieg nastawiony, w przebiegu, przy peronie, wyjeżdża) – `at` w
+  `tests/fault-harness.js`; nie pisz ich w pliku testu drugi raz.
 * `tests/route-state.test.js` – stan przebiegu (`routeState` i pytania pokrewne) na typie E, IZH-111 i nastawni
   mechanicznej: każdy stan osiągany poleceniami i zajętością, bez ustawiania pól zapisu przebiegu.
 * `tests/docs.test.js` – dokumentacja dzielona na obszary (architektura: `docs/ARCHITECTURE.md` + `docs/architecture/`,

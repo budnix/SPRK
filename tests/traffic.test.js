@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock, autoDispatch, play, setRoutes } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch, play, setRoutes, grant, trainAtA } from './helpers.js';
 
 test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpruć', () => {
   const sim = makeSim();
@@ -24,7 +24,7 @@ test('pociąg zatrzymuje się przed semaforem Stój i rusza po nastawieniu przeb
   const sim = makeSim();
   const b = sim.blocks.get('W');
   // Wymuś wjazd pierwszego pociągu od W bez przebiegu
-  run(sim, 60 * 12, (s) => { if (b.request === 'theirs') b.press('Poz'); });
+  run(sim, 60 * 12, grant('W'));
   const e = sim.traffic.timetable().find((x) => x.nr === 5310);
   assert.ok(e.train, 'pociąg 5310 wyprawiony');
   run(sim, 60 * 4);
@@ -38,10 +38,7 @@ test('pociąg zatrzymuje się przed semaforem Stój i rusza po nastawieniu przeb
 
 test('sygnał zastępczy prowadzi pociąg po ustawionych zwrotnicach z prędkością do 40 km/h', () => {
   const sim = makeSim();
-  const b = sim.blocks.get('W');
-  run(sim, 60 * 16, (s) => { if (b.request === 'theirs') b.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
+  const e = trainAtA(sim);
   sim.press({ kind: 'group', id: 'Sz', role: 'substitute' });
   sim.press({ kind: 'signal', id: 'A', color: 'green' });
   let vmax = 0;

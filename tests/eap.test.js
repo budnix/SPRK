@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, trainAtA } from './helpers.js';
 
 /*
  * Blokada Eap w całej symulacji (audyt realizmu, grupa 4). Źródło: LIRK, P. Okrzesik, „Obsługa i sygnalizacja stanu
@@ -14,14 +14,6 @@ import { makeSim, run } from './helpers.js';
 const score = (sim, code) => sim.score.items.filter((i) => i.code === code);
 const G = (id) => ({ kind: 'signal', id, color: 'green' });
 
-/** Pociąg 5310 (Lipowa → Dąbrowa Leśna) stoi przed A; Poz dane. */
-function trainAtA(sim) {
-  const w = sim.blocks.get('W');
-  run(sim, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
-  return e;
-}
 
 /** Wjazd 5310 na Sz przy usterce semafora A (przebieg A-D1 utwierdzony, A na „Stój”). */
 function entryOnSz(sim, { dko }) {

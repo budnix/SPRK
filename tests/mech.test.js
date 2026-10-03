@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { getSrk } from '../src/srk/registry.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import szkolna from '../src/stations/szkolna.js';
-import { run, autoDispatch, allArrived, play, setRoutes, routesBeingSet, routeView } from './helpers.js';
+import { run, autoDispatch, allArrived, play, setRoutes, routesBeingSet, routeView, grant } from './helpers.js';
 import { isHandled } from '../src/model/timetable/phase.js';
 
 /* Urządzenia mechaniczne scentralizowane: dźwignie zwrotnic, drążek przebiegowy, blok przebiegowy utwierdzający,
@@ -149,7 +149,7 @@ test('mechaniczna: z położenia pośredniego drążek idzie dalej do końca (pe
 test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały pociąg, świetlny – już pod czołem', () => {
   const pass = (sim, set) => {
     const e = sim.traffic.timetable().find((x) => x.nr === 6101);
-    run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+    run(sim, 3600, grant('W'));
     set(sim);
     const route = sim.ilk.routes.get('A-D1'), approach = sim.ilk.sections.get(route.approach);
     const stop = sim.ilk.signals.get('A').kind && (sim.ilk.shapedSignals ? 'Sr1' : 'S1');
@@ -174,7 +174,7 @@ test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały poci�
 test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięcia dźwigni i drążka; sygnał tylko raz', () => {
   const sim = mech();
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
-  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  run(sim, 3600, grant('W'));
   assert.ok(e.requested);
   throwLevers(sim, 'A-D1'); run(sim, 3);
   sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
@@ -202,7 +202,7 @@ test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięc
 
 test('mechaniczna: dźwignia sygnałowa przełożona po przejeździe blokuje cofnięcie drążka', () => {
   const sim = mech();
-  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  run(sim, 3600, grant('W'));
   throwLevers(sim, 'A-D1'); run(sim, 3);
   sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
   sim.execute({ type: 'route-block', signal: 'A' });
@@ -230,7 +230,7 @@ test('mechaniczna: pełna zmiana na Szkolnej z automatem – dźwignie, drążki
 
 test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe; drążek tylko zwalniaczem, bez kary', () => {
   const sim = new Simulation(szkolna, { disruptions: 'none', srk: 'mech', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'route-block', target: 'A', at: '07:00', duration: 120 }] } });
-  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  run(sim, 3600, grant('W'));
   throwLevers(sim, 'A-D1'); run(sim, 3);
   sim.execute({ type: 'route', id: 'A-D1' });
   sim.execute({ type: 'route-block', signal: 'A' });
@@ -345,7 +345,7 @@ test('tarcza manewrowa kształtowa: M1 → M2 po przebiegu manewrowym; semafor z
 test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; przed Sr1 rozkaz pisemny nie jest „zbędny”', () => {
   const sim = mech();
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
-  run(sim, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  run(sim, 3600, grant('W'));
   setAndClear(sim, 'A-D2');
   // szybkość w chwili wjazdu czoła za semafor A (na pierwszy odcinek przebiegu)
   const first = sim.ilk.routes.get('A-D2').sections[0];
@@ -358,7 +358,7 @@ test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; pr
   assert.ok(v <= 40.5, `przy semaforze ${v.toFixed(1)} km/h`);
   // następny pociąg z Wierzbna staje przed A na „Stój” (Sr1) – rozkaz pisemny nie jest „zbędny”
   const sim2 = mech();
-  run(sim2, 3600, (s) => { const b = s.blocks.get('W'); if (b.request === 'theirs') b.press('Poz'); });
+  run(sim2, 3600, grant('W'));
   for (let i = 0; i < 4000 && !(e2(sim2)?.train?.entered && e2(sim2).train.v === 0 && e2(sim2).train.nextSignal() === 'A'); i++) sim2.step(0.5);
   assert.equal(sim2.ilk.signals.get('A').aspect, 'Sr1');
   const res = sim2.traffic.issueOrder({ nr: 6101, signal: 'A', text: 'S', reason: 'test' });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, trainAtA } from './helpers.js';
 import { POINT_SECURE_TIME } from '../src/model/Interlocking.js';
 
 /*
@@ -13,10 +13,7 @@ import { POINT_SECURE_TIME } from '../src/model/Interlocking.js';
 /** Pociąg 5310 stoi przed A; zwrotnica 1 za A przestawiona z usterką napędu – bez kontroli. */
 function faultyPointBeforeTrain() {
   const sim = makeSim();
-  const w = sim.blocks.get('W');
-  run(sim, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
+  const e = trainAtA(sim);
   const p = sim.ilk.points.get('Zw1');
   p.faultUntil = sim.clock.time + 3 * 3600;
   assert.ok(sim.execute({ type: 'point', id: 'Zw1' }).ok);

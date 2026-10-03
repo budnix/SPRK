@@ -1,15 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, trainAtA } from './helpers.js';
 
-/** Doprowadza pociąg 5310 do zatrzymania przed semaforem A (bez przebiegu). */
-function trainAtA(sim) {
-  const w = sim.blocks.get('W');
-  run(sim, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
-  return e;
-}
 
 test('rozkaz „S”: odmowa, gdy zwrotnice nie są zamknięte; po Zz rozkaz wydany, pociąg jedzie ≤40 km/h do następnego semafora', () => {
   const sim = makeSim();

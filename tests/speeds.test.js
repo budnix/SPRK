@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import station from './fixtures/stare-pustkowie.js';
 import gdansk from '../src/stations/gdansk-glowny.js';
-import { run, play } from './helpers.js';
+import { run, play, trainAtA } from './helpers.js';
 
 /*
  * Prędkości (audyt realizmu, grupa 3).
@@ -17,14 +17,6 @@ import { run, play } from './helpers.js';
 const mk = (st = station) => new Simulation(st, { speed: 1 });
 const kmh = (v) => v * 3.6;
 
-/** Pociąg 5310 stoi przed A (bez przebiegu). */
-function trainAtA(sim) {
-  const w = sim.blocks.get('W');
-  run(sim, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
-  return e;
-}
 
 test('W21: na sygnał zastępczy pociąg jedzie do 40 km/h (nie 20) do następnego semafora', () => {
   const sim = mk();

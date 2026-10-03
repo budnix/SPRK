@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock, autoDispatch, play } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch, play, grant } from './helpers.js';
 import { safety } from './invariants.js';
 
 /** Dyżurny automatyczny z wyborem toru dla danego pociągu. */
 function dispatcher(sim, trackFor) {
   const ilk = sim.ilk;
-  for (const b of sim.blocks.values()) { if (b.request === 'theirs') b.press('Poz'); if (b.koPending) b.press('Ko'); }
+  grant(null, { ko: true })(sim);
   for (const e of sim.traffic.timetable()) {
     const track = trackFor(e);
     if (e.train && !e.train.finished && e.from && !e.entryRouteSet) {

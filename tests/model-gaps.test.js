@@ -6,18 +6,10 @@ import { EventBus } from '../src/core/EventBus.js';
 import { listTileDefs, getTileDef, registerTile, hasTileDef } from '../src/tiles/registry.js';
 import { DISRUPTION_LEVELS } from '../src/core/Random.js';
 import { CAB_CHANGE_MAX } from '../src/model/Train.js';
-import { makeSim, run, station } from './helpers.js';
+import { makeSim, run, station, trainAtA, grant } from './helpers.js';
 import gdynia from './fixtures/gdynia-glowna-okregi.js'; // mechanizm okręgów – tylko w stacji testowej
 import sopot from '../src/stations/sopot.js';
 
-/** Doprowadza pociąg 5310 przed semafor A (bez przebiegu). */
-function trainAtA(sim) {
-  const w = sim.blocks.get('W');
-  run(sim, 60 * 16, () => { if (w.request === 'theirs') w.press('Poz'); });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
-  assert.equal(e.train.stoppedAt?.signal, 'A');
-  return e;
-}
 
 /* ---------------- łączność ---------------- */
 
@@ -158,7 +150,7 @@ test('pociąg: kierunek, zajęte kostki, obecność na szlaku, ograniczenia prze
   const gs1 = sim.blocks.get('GS1');
   let b = null, seenOnLine = false;
   run(sim, 60 * 8, () => {
-    if (gs1.request === 'theirs') gs1.press('Poz');
+    grant('GS1')(sim);
     b = b || sim.traffic.trains.find((t) => t.nr === 2);
     if (b && !b.entered) { seenOnLine = seenOnLine || b.onLine('GS1'); assert.equal(b.direction, 'E'); }
   });
