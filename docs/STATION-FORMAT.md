@@ -154,6 +154,7 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   timetable: [ … ],                     // albo własny rozkład scenariusza
   startTime: '07:10', endTime: '08:30',  // koniec zmiany – raport
   faults: [{ type: 'point-control', target: 'Zw3', at: '07:36', duration: 12 }],
+  faultWeights: { 'point-control': 4 },   // wagi losowania usterek (domyślnie każdy rodzaj 1)
   closedSections: [{ section: 'T1', from: '05:52', to: '06:50' }],
   disruptions: 'none',                  // wymuszony poziom zakłóceń (inaczej wybór gracza)
   tasks: [ … ], tutorial: 'monitor', srk: 'komputerowe' }
@@ -167,6 +168,9 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   `axle-counter` (od `at` licznik osi odcinka `target` myli się przy najbliższym przejeździe – po zjeździe pociągu
   wskazuje zajętość; zerowanie i przejazd kontrolny; czas trwania liczony od wystąpienia; tylko w scenariuszu);
   `closedSections` – zamknięcia torów,
+* `faultWeights` – wagi rodzajów przy losowaniu usterek na poziomie zakłóceń „małe” i „duże” (`{ rodzaj: liczba ≥ 0 }`,
+  rodzaj spoza listy – 1); bez pola każdy losowany rodzaj tak samo. Służba zimą: `{ 'point-control': 4 }` (marzną
+  zwrotnice),
 * `disruptions` – wymuszony poziom zakłóceń (`none` / `low` / `high`), inaczej wybiera gracz; poziomy dodają losowe
   opóźnienia, usterki i pociągi nadzwyczajne, a ziarno losowe (`seed`) daje powtarzalną zmianę,
 * `tasks` – zadania manewrowe (niżej),

@@ -335,6 +335,27 @@ test('roboty torowe: od wiosny do jesieni bywa zamknięty tor pomocniczy (cała 
   assert.ok(drawn > 0 && works >= drawn * 0.6, `roboty w ${works} z ${drawn} służb, które je losują`);
 });
 
+test('zima: w grudniu, styczniu i lutym przy zakłóceniach częściej marzną zwrotnice (wagi losowania usterek); poza zimą bez wag', () => {
+  for (const month of [12, 1, 2]) {
+    const { scenario } = buildDuty(sopot, { start: 6, minutes: 120, seed: 3, month, day: 'roboczy' });
+    assert.deepEqual(scenario.faultWeights, { 'point-control': 4 }, `miesiąc ${month}`);
+    assert.match(scenario.description, /Zima: przy zakłóceniach częściej marzną zwrotnice/);
+    assert.deepEqual(checkScenario(sopot, scenario).filter((f) => f.code === 'sc-fault-weights'), []);
+  }
+  for (const month of [3, 7, 11]) assert.equal(buildDuty(sopot, { start: 6, minutes: 120, seed: 3, month, day: 'roboczy' }).scenario.faultWeights, undefined, `miesiąc ${month}`);
+  // gra: zima i zakłócenia – usterki napędu zwrotnicy częściej niż latem
+  const share = (month) => {
+    let pts = 0, all = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const { scenario } = buildDuty(sopot, { start: 6, minutes: 180, seed, month, day: 'roboczy' });
+      const sim = new Simulation(sopot, { scenario, disruptions: 'high', seed });
+      for (const f of sim.faults.list) { all++; if (f.type === 'point-control') pts++; }
+    }
+    return pts / all;
+  };
+  assert.ok(share(1) > share(7) * 2, `napęd zwrotnicy: styczeń ${share(1).toFixed(2)}, lipiec ${share(7).toFixed(2)}`);
+});
+
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {
   const all = { peak: 0, evening: 0 };
   for (const st of duty) {

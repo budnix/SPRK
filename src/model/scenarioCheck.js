@@ -33,7 +33,7 @@ import { hasSrk } from '../srk/registry.js';
  */
 
 /** Pola scenariusza z docs/STATION-FORMAT.md – inne to zwykle literówka (pole po cichu pomijane). */
-export const SCENARIO_KEYS = ['id', 'name', 'description', 'trains', 'timetable', 'startTime', 'endTime', 'faults', 'closedSections', 'disruptions', 'tasks', 'tutorial', 'srk'];
+export const SCENARIO_KEYS = ['id', 'name', 'description', 'trains', 'timetable', 'startTime', 'endTime', 'faults', 'faultWeights', 'closedSections', 'disruptions', 'tasks', 'tutorial', 'srk'];
 
 /** Granica „pociąg mieści się w zmianie” – jedna dla oceny, kontroli definicji i werdyktu przebiegu (`Traffic.js`). */
 export { LATE_SLACK };
@@ -133,6 +133,14 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   if (sc.disruptions != null && !Object.hasOwn(DISRUPTION_LEVELS, sc.disruptions)) error('sc-disruptions', `disruptions: „${sc.disruptions}” – nieznany poziom zakłóceń (none, low, high); gra przyjmie „none”`);
   if (sc.tutorial != null && opts.missions && !new Set(opts.missions).has(sc.tutorial)) error('sc-tutorial', `tutorial: „${sc.tutorial}” – nie ma takiej misji (${[...opts.missions].join(', ')}); zmiana nie skończy się sama po ostatnim pociągu`);
   if (sc.srk != null && !hasSrk(sc.srk)) error('sc-srk', `srk: „${sc.srk}” – nieznany system srk`);
+  // wagi losowania usterek: rodzaj, który się losuje → liczba ≥ 0
+  if (sc.faultWeights != null) {
+    if (typeof sc.faultWeights !== 'object' || Array.isArray(sc.faultWeights)) error('sc-fault-weights', `faultWeights: ${JSON.stringify(sc.faultWeights)} – obiekt { rodzaj: waga }`);
+    else for (const [k, v] of Object.entries(sc.faultWeights)) {
+      if (!FAULT_TYPES.includes(k)) error('sc-fault-weights', `faultWeights: nieznany rodzaj usterki „${k}” (${FAULT_TYPES.join(', ')})`);
+      if (!(typeof v === 'number' && v >= 0)) error('sc-fault-weights', `faultWeights.${k}: „${v}” – waga to liczba ≥ 0`);
+    }
+  }
   // zmiana przez północ: `endTime` po 24:00 – wtedy godziny rozkładu, zadań, usterek i zamknięć też mogą być po 24:00
   const overnight = isLate(sc.endTime);
   const isTime = (v) => typeof v === 'string' && (TIME_RE.test(v) || (overnight && LATE_RE.test(v)));

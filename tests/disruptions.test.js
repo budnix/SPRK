@@ -264,3 +264,22 @@ test('koniec zmiany: zdarzenie shift-end z raportem po przejechaniu wszystkich p
   assert.ok(report.items.some((i) => i.code === 'unfinished'));
   assert.equal(Clock.format(sim.clock.time) >= '06:00', true);
 });
+
+test('wagi losowania usterek (faultWeights scenariusza): zimą częściej napęd zwrotnicy; bez wag – te same usterki co dotąd', () => {
+  const types = (faultWeights) => {
+    const out = [];
+    for (let seed = 1; seed <= 60; seed++) {
+      const sim = new Simulation(station, { scenario: faultWeights ? { ...station.scenarios.find((s) => s.id === 'zmiana'), faultWeights } : 'zmiana', disruptions: 'high', seed });
+      out.push(...sim.faults.list.filter((f) => !f.scripted).map((f) => f.type));
+    }
+    return out;
+  };
+  const share = (list) => list.filter((t) => t === 'point-control').length / list.length;
+  const plain = types(null), winter = types({ 'point-control': 4 });
+  assert.ok(share(winter) > share(plain) * 2, `napęd zwrotnicy: zimą ${share(winter).toFixed(2)}, bez wag ${share(plain).toFixed(2)}`);
+  // bez pola losowanie bez zmian (`pick`) – to samo ziarno, te same usterki
+  const again = new Simulation(station, { scenario: 'zmiana', disruptions: 'high', seed: 7 }).faults.list.map((f) => `${f.type}:${f.target}:${f.at}`);
+  assert.deepEqual(new Simulation(station, { scenario: 'zmiana', disruptions: 'high', seed: 7 }).faults.list.map((f) => `${f.type}:${f.target}:${f.at}`), again);
+  // bez zakłóceń zima niczego nie psuje
+  assert.equal(new Simulation(station, { scenario: { ...station.scenarios.find((s) => s.id === 'zmiana'), faultWeights: { 'point-control': 4 } }, disruptions: 'none', seed: 1 }).faults.list.length, 0);
+});

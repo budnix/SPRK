@@ -3,7 +3,7 @@ import { mixSeed, seedFraction } from '../core/Random.js';
 import { brandOf, categoryOf, relationOf, speedFor } from './categories.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from './namedTrains.js';
 import { checkScenario } from './scenarioCheck.js';
-import { DAY_RULES, WORKS, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
+import { DAY_RULES, FROZEN_POINTS, WINTER, WORKS, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
 
 /**
  * Służba o wybranej porze i długości: scenariusz budowany z rozkładu stacji, bez danych per stacja.
@@ -393,6 +393,8 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
       timetable: picked.flatMap((p) => p.trains).sort((a, b) => firstOf(a) - firstOf(b)), tasks: picked.flatMap((p) => p.tasks) };
     if (srk) sc.srk = srk;
     if (works) sc.closedSections = works.sections.map((section) => ({ section }));
+    // zima: przy zakłóceniach częściej marzną zwrotnice (`FROZEN_POINTS`)
+    if (WINTER.includes(cal.month)) sc.faultWeights = { ...FROZEN_POINTS };
     return sc;
   };
   const sameWay = (p, q) => p.trains.some((a) => q.trains.some((b) => (a.from && a.from === b.from) || (a.to && a.to === b.to) || (a.track != null && a.track === b.track)));
@@ -520,6 +522,6 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
   const band = bandOf(t0);
   const parts = [[count.agl, 'SKM'], [count.reg, 'regionalne'], [count.dal, 'dalekobieżne'], [count.tow, 'towarowe']].filter(([n]) => n).map(([n, w]) => `${n} ${w}`);
   // opis pory doby pokazuje strona posterunku (teksty `start.bandDesc.*`) – tu tylko liczby
-  sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}.${works ? ` Roboty torowe: tor ${works.track} zamknięty na całą służbę – pociągi planowane na niego jadą innym torem bez kary.` : ''} Poziom zakłóceń do wyboru.`;
+  sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}.${works ? ` Roboty torowe: tor ${works.track} zamknięty na całą służbę – pociągi planowane na niego jadą innym torem bez kary.` : ''}${sc.faultWeights ? ' Zima: przy zakłóceniach częściej marzną zwrotnice.' : ''} Poziom zakłóceń do wyboru.`;
   return { scenario: sc, stats: { band: band.id, month: cal.month, day: cal.day, works: works?.track ?? null, trains: sc.timetable.length, ...count } };
 }

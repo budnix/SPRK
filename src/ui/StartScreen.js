@@ -18,7 +18,7 @@ import { shiftChoices, srkChoosable } from '../model/shift/offers.js';
 import { choiceFromParams, choiceToParams, dutyWindow } from '../model/shift/choice.js';
 import { loadProgress, loadLastShift } from './progress.js';
 import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, closableTracks, normalizeDuty } from '../model/duty.js';
-import { DAY_RULES, DAY_TYPES, MONTHS, SEASIDE_SEASON, WORKS, normalizeCalendar, seasideTrain } from '../model/timetable/calendar.js';
+import { DAY_RULES, DAY_TYPES, MONTHS, SEASIDE_SEASON, WINTER, WORKS, normalizeCalendar, seasideTrain } from '../model/timetable/calendar.js';
 import { regionBox } from './map/mapSvg.js';
 import { MapView } from './map/MapView.js';
 
@@ -610,13 +610,16 @@ export class StartScreen {
       const notes = [t(`start.bandDesc.${band}`)];
       const rule = day && DAY_RULES[day][band];
       if (rule) notes.push(t(rule === 'dzien' ? 'start.dayDesc.peak' : 'start.dayDesc.dawn'));
-      if (month != null && !seaside && !closable) notes.push(t('start.monthNoEffect'));
-      if (month != null && seaside && SEASIDE_SEASON[month]) {
-        const days = SEASIDE_SEASON[month];
-        if (day == null) notes.push(t(days.length === DAY_TYPES.length ? 'start.seaside' : 'start.seasideWeekends'));
-        else if (days.includes(day)) notes.push(t('start.seaside'));
+      // miesiąc: każdy skutek terminu na tym posterunku – swoja uwaga; bez żadnego – „miesiąc nie zmienia rozkładu”
+      if (month != null) {
+        const effects = [];
+        const days = seaside ? SEASIDE_SEASON[month] : null;
+        if (days && day == null) effects.push(days.length === DAY_TYPES.length ? 'start.seaside' : 'start.seasideWeekends');
+        else if (days?.includes(day)) effects.push('start.seaside');
+        if (closable && WORKS[month]) effects.push('start.works');
+        if (WINTER.includes(month)) effects.push('start.winter');
+        notes.push(...(effects.length ? effects : ['start.monthNoEffect']).map((k) => t(k)));
       }
-      if (month != null && closable && WORKS[month]) notes.push(t('start.works'));
       desc.textContent = notes.join(' ');
       go.disabled = false;
     };

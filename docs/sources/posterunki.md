@@ -255,7 +255,10 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   (powód: `docs/architecture/ruch.md`). Że roboty idą w roku wg okresów budowlanych i zmieniają rozkład (objazdy, dłuższe
   czasy jazdy, autobusy zastępcze), mówi komunikat PKP PLK o rozkładzie 2025/2026,
   https://www.plk-sa.pl/o-spolce/biuro-prasowe/informacje-prasowe/szczegoly/nowosci-w-nowym-rocznym-rozkladzie-jazdy-pociagow-2025-2026-11384
-  – ale bez liczb dla Trójmiasta; udziały i to, że w grze to zamknięcie toru stacji, są wartościami gry.
+  – ale bez liczb dla Trójmiasta; udziały i to, że w grze to zamknięcie toru stacji, są wartościami gry;
+* termin służby – zima (`WINTER`, `FROZEN_POINTS`, przyjęte, bez źródła): w grudniu, styczniu i lutym przy losowaniu
+  usterek (poziom „małe” i „duże”) brak kontroli zwrotnicy po przestawieniu ma wagę 4, inne rodzaje 1 – marznące
+  zwrotnice; liczba usterek bez zmian.
 
 ## Pociągi z nazwami (`src/model/data/namedTrains.js`, `scripts/named-trains.mjs`, `src/model/namedTrains.js`)
 

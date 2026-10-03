@@ -187,6 +187,7 @@ test('termin służby: miesiąc i typ dnia (domyślnie „losowo”), opis tego,
   await expect(page.locator('#st-scenario-desc')).toContainText('Sezon robót torowych');
   await page.selectOption('#st-duty-month', '1');
   await expect(page.locator('#st-scenario-desc')).not.toContainText('Sezon robót');
+  await expect(page.locator('#st-scenario-desc')).toContainText('Zima: przy zakłóceniach częściej marzną zwrotnice');
   // posterunek bez pociągów nad morze i bez toru do zamknięcia: miesiąc nic nie zmienia – opis to mówi
   await page.goto('/#/stacja/tczew', { waitUntil: 'load' });
   await page.selectOption('#st-duty-month', '8');

@@ -12,7 +12,8 @@ import { relationOf } from '../categories.js';
  *    miejscowości z `SEASIDE_TOWNS`) kursują wtedy każdym kursem linii, o ile ich klasa o tej porze w ogóle kursuje.
  *    Kalendarz z rozkładu POLREGIO Gdynia/Reda – Hel 2026 (docs/sources/posterunki.md); nowych dróg nie przybywa –
  *    jednotorowa linia 213 latem jest pełna, więc zmienia się tylko to, które kursy wzorca jadą;
- *  - miesiąc – roboty torowe (`WORKS`, przyjęte): od wiosny do jesieni bywa zamknięty jeden tor stacji.
+ *  - miesiąc – roboty torowe (`WORKS`, przyjęte): od wiosny do jesieni bywa zamknięty jeden tor stacji;
+ *  - miesiąc – zima (`WINTER`, przyjęte): przy zakłóceniach częściej usterka napędu zwrotnicy (`FROZEN_POINTS`).
  * Moduł logiki: bez DOM.
  */
 
@@ -40,6 +41,13 @@ export const SEASIDE_SEASON = { 6: ['sobota', 'niedziela'], 7: DAY_TYPES, 8: DAY
  * całą służbę – sezon robót od kwietnia do października, w marcu i listopadzie rzadziej, zimą (mróz) bez robót.
  */
 export const WORKS = { 3: 0.15, 4: 0.35, 5: 0.35, 6: 0.35, 7: 0.35, 8: 0.35, 9: 0.35, 10: 0.35, 11: 0.15 };
+/**
+ * Zima (przyjęte, bez źródła): w grudniu, styczniu i lutym marzną zwrotnice – przy losowaniu usterek (poziom zakłóceń
+ * „małe” albo „duże”) brak kontroli zwrotnicy po przestawieniu (`point-control`) ma wagę `FROZEN_POINTS`, inne rodzaje 1.
+ * Bez zakłóceń zima niczego nie psuje.
+ */
+export const WINTER = [12, 1, 2];
+export const FROZEN_POINTS = { 'point-control': 4 };
 /** Miejscowości nad morzem – relacja pociągu do albo od nich czyni go pociągiem nad morze. */
 export const SEASIDE_TOWNS = ['Hel', 'Jastarnia', 'Jurata', 'Władysławowo', 'Łeba', 'Ustka', 'Darłowo', 'Kołobrzeg', 'Międzyzdroje', 'Świnoujście', 'Krynica Morska'];
 

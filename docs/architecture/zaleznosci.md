@@ -126,7 +126,9 @@ odmowa (`Traffic.issueOrder`).
   (`src/model/Faults.js`), kontrola definicji, ruch i automat sprawdzający czytają ten opis – nowy rodzaj usterki to wpis
   tam, opis w panelu (`src/ui/faultText.js`) i test (`tests/fault-types.test.js`). Kolejność rodzajów jest stała: od
   niej zależy losowanie (to samo ziarno – te same usterki).
-* Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy). Dwie usterki
+* Losowe usterki (`Faults.#generate`) losują czas z okna zmiany liczonego z `sim.endTime` (sekundy), a rodzaj – równo
+  spośród rodzajów, które się losują, albo z wagami pola scenariusza `faultWeights` (`Random.pickWeighted`; służba zimą:
+  napęd zwrotnicy ×4); bez wag losowanie jak dawniej (`pick` – to samo ziarno, te same usterki). Dwie usterki
   tego samego rodzaju na jednym elemencie mogą się nałożyć (losowanie, scenariusz): druga nie ustawia elementu od nowa,
   naprawa przychodzi po ostatniej (`Faults.#twin`; napęd zwrotnicy – do późniejszego końca).
 * Stała kontrola (`Interlocking.tick`, `#signalCondition`): przed wjazdem pociągu zajętość odcinka przebiegu lub drogi

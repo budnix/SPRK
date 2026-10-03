@@ -27,7 +27,8 @@ toru głównego, toru zwrotu pociągów albo toru SKM dawało w grze automatem z
 Reda – tor 11; Rumia – tory 5 i 6); dziś tor do zamknięcia mają Gdynia Orłowo, Gdynia Główna, Rumia i Gdańsk Główny.
 Tor przyjmuje się, gdy kontrola definicji nie zgłasza przy nim nic poza `closed-planned-track` (pociąg pójdzie innym
 torem bez kary); ta uwaga nie usuwa pociągów z rozkładu służby. Siatka `tests/duty-grid.js` gra na każdej stacji
-z torem do zamknięcia służbę z robotami.
+z torem do zamknięcia służbę z robotami. Zima (`WINTER`: grudzień–luty): scenariusz służby ma `faultWeights`
+(`FROZEN_POINTS` – brak kontroli zwrotnicy ×4) – przy zakłóceniach częściej marzną zwrotnice; bez zakłóceń bez skutku.
 Strona posterunku pokazuje pod porą doby, co zmienia wybrany termin (bez szczytu, sezon nad morzem, „miesiąc nie
 zmienia rozkładu” na posterunku bez pociągów nad morze); testy: `tests/duty.test.js` („termin służby”, „typ dnia”,
 „sezon nad morzem”), `tests/e2e/duty.spec.js`.

@@ -5,12 +5,14 @@ import { FAULTS, FAULT_TYPES } from './faults/types.js';
  * Harmonogram usterek urządzeń srk i zakłóceń – generowanych losowo (poziom trudności) lub zadanych w scenariuszu.
  * Każda usterka ma czas wystąpienia (`at`) i trwania (`duration`); co się dzieje przy jej początku i końcu, czego
  * dotyczy i czy się losuje – mówi jej rodzaj w `src/model/faults/types.js` (jedno miejsce na rodzaj). Tu: kiedy
- * usterka zaczyna się i kończy, nakładanie się dwóch usterek jednego elementu, losowanie.
+ * usterka zaczyna się i kończy, nakładanie się dwóch usterek jednego elementu, losowanie. `weights` – wagi rodzajów przy
+ * losowaniu (pole scenariusza `faultWeights`, np. zimą częściej napęd zwrotnicy); bez nich każdy rodzaj tak samo.
  */
 export class Faults {
-  constructor(sim, rng, level, scripted = []) {
+  constructor(sim, rng, level, scripted = [], weights = null) {
     this.sim = sim;
     this.rng = rng;
+    this.weights = weights;
     this.list = [];
     this.time = sim.clock.time;
     for (const f of scripted) this.list.push(this.#normalize(f));
@@ -38,7 +40,8 @@ export class Faults {
     // rodzaje, które się losują na tej stacji (np. blok przebiegowy – tylko nastawnia mechaniczna), w kolejności rodzajów
     const random = FAULT_TYPES.filter((t) => FAULTS[t].pool(sim) != null);
     for (let i = 0; i < n; i++) {
-      const type = this.rng.pick(random);
+      // bez wag – jak dotąd (to samo ziarno, te same usterki)
+      const type = this.weights ? this.rng.pickWeighted(random, (t) => this.weights[t] ?? 1) : this.rng.pick(random);
       const pool = FAULTS[type].pool(sim);
       if (!pool.length) continue;
       this.list.push({

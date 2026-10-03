@@ -49,6 +49,7 @@ const ERRORS = {
   'sc-disruptions': { ...base, disruptions: 'hihg' },
   'sc-tutorial': { ...base, tutorial: 'nie-ma-takiej-misji' },
   'sc-srk': { ...base, srk: 'XYZ' },
+  'sc-fault-weights': { ...base, faultWeights: { 'point-contol': 4, 'signal-fail': -1 } },
   'sc-time': { ...base, startTime: '7.00' },
   'sc-window': { ...base, startTime: '07:00', endTime: '06:30' },
   'sc-trains-ignored': { ...base, trains: [6101], timetable: [tt(6101)] },
@@ -138,6 +139,9 @@ test('definicja: komunikaty wskazują pociąg, tor, godzinę i treść błędu',
   assert.doesNotMatch(check(ERRORS['sim-throws']).find((f) => f.code === 'sim-throws').msg, /\n|:$/);
   // literówka w polu: podpowiedź najbliższego pola
   assert.match(check(ERRORS['sc-unknown-key']).find((f) => f.code === 'sc-unknown-key').msg, /„fautls” – literówka\? chodzi o „faults”/);
+  // wagi losowania usterek: nieznany rodzaj i waga ujemna – dwa błędy; poprawne wagi – żadnego
+  assert.equal(check(ERRORS['sc-fault-weights']).filter((f) => f.code === 'sc-fault-weights').length, 2);
+  assert.deepEqual(check({ ...base, faultWeights: { 'point-control': 4 } }).filter((f) => f.code === 'sc-fault-weights'), []);
   assert.deepEqual(['fautls', 'endtime', 'closedSection', 'Tasks', 'zupelnieinne'].map(nearestKey), ['faults', 'endTime', 'closedSections', 'tasks', null]);
   // kierunek jazdy, pociąg sprzed startu (opóźnienie bez kary za przetrzymanie), liczba w at usterki
   assert.match(check(ERRORS['tt-turnback']).find((f) => f.code === 'tt-turnback').msg, /Lipno \(W\).*po tej samej stronie.*nie zmienia czoła/);

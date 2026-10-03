@@ -23,6 +23,14 @@ export class Random {
   pick(arr) {
     return arr[Math.floor(this.next() * arr.length)];
   }
+
+  /** Element `arr` z wagą `weight(x)` (ujemna – 0); jedno losowanie jak `pick`. */
+  pickWeighted(arr, weight) {
+    const w = arr.map((x) => Math.max(0, Number(weight(x)) || 0));
+    let r = this.next() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < arr.length; i++) if ((r -= w[i]) < 0) return arr[i];
+    return arr[arr.length - 1];
+  }
 }
 
 /**
