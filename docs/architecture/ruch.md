@@ -26,7 +26,11 @@ tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesu
 Brzegi okna (`DUTY_EDGE`): pociąg od sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie –
 pierwsze zdarzenie nie wcześniej niż start + czas przejazdu szlaku z prędkością pociągu + 90 s dojazdu do peronu + 2 min
 (`leadOf`; wolniejszy pociąg towarowy – odpowiednio później); pociąg bez wjazdu (stoi od początku, powstaje ze składu)
-– 3 min po starcie. Ostatnie zdarzenie najpóźniej 10 min (służba 30-minutowa: 6 min) przed końcem.
+– 3 min po starcie. Ostatnie zdarzenie najpóźniej 10 min (służba 30-minutowa: 6 min) przed końcem. Otwarcie służby
+(`DUTY_OPENING`): gdy pierwszy pociąg przyjeżdża później niż 5 min po najwcześniejszej możliwej chwili, po kolei – każdy
+krok z kontrolą definicji – wraca pociąg wzorca z okna otwarcia, który wypadł (klasa kursująca o tej porze), pociąg
+towarowy wchodzi w wolne miejsce wzorca w oknie, a na końcu pociąg towarowy na najwcześniejszą chwilę na szlaku
+przelotowym (kolejność szlaków z ziarna); test: `tests/duty.test.js` („otwarcie służby”).
 
 Służba bez pociągów: gdy po kontroli rozkład jest pusty (krótkie okno, środek nocy), po kolei – każdy krok z kontrolą
 definicji – wracają pociągi, które wypadły dla urozmaicenia (`DUTY_SKIP`), potem pociąg towarowy wchodzi w każde wolne

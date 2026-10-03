@@ -198,6 +198,10 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   (SKM) pociągi towarowe nie wchodzą;
 * urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
   czwartych kursów linii jedzie, decyduje ziarno zmiany – to samo ziarno daje ten sam rozkład;
+* otwarcie służby (`DUTY_OPENING`): pierwszy pociąg najpóźniej 5 min po najwcześniejszej chwili, w której może przyjechać
+  pociąg od sąsiada wyprawiony po starcie; gdy pora doby przerzedziła wzorzec, wraca pociąg wzorca z tego okna, który
+  wypadł (o ile jego klasa o tej porze kursuje), albo wchodzi pociąg towarowy – w wolne miejsce wzorca albo na
+  najwcześniejszą chwilę na szlaku przelotowym (Reda 18:00: pierwszy pociąg bywał po 35–43 min);
 * służba zaczyna się o pełnej godzinie i trwa 30 min, 1, 2 albo 3 h – także przez północ (23:00–02:00); pociąg od
   sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie (przyjazd nie wcześniej niż start
   + czas przejazdu szlaku + 90 s dojazdu do peronu + 2 min), pociąg bez wjazdu – 3 min po starcie; ostatnie zdarzenie

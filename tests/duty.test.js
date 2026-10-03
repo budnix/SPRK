@@ -195,15 +195,34 @@ test('okres wzorca: rozpiętość rozkładu w pełnych godzinach albo pole duty.
   assert.ok(sc.timetable.some((e) => e.arr === '14:17' && trainClass(e) === 'agl'), sc.timetable.map((e) => e.arr).join(' '));
 });
 
-test('służba w oknie bez pociągu wzorca: pusta, bez wyjątku (wybór służby jej nie startuje)', () => {
-  // stacja z jednym pociągiem co godzinę o pełnej godzinie: w oknie 10:00–10:30 nie ma żadnego (ten z 10:00 musiałby
-  // wyjechać od sąsiada przed startem)
+test('służba w oknie bez pociągu wzorca: otwarcie służby – pociąg towarowy na najwcześniejszą chwilę, nie pusta', () => {
+  // stacja z jednym pociągiem co godzinę o pełnej godzinie: w oknie 10:00–11:00 nie ma żadnego pociągu wzorca (ten
+  // z 10:00 musiałby wyjechać od sąsiada przed startem, ten z 11:00 jest po końcu). Dawniej służba była pusta; teraz
+  // otwarcie służby (DUTY_OPENING) daje pociąg towarowy na tym szlaku, wyprawiony przez sąsiada po starcie
   const sparse = { ...pruszcz, tasks: [], timetable: [pruszcz.timetable.find((e) => e.from && e.to && trainClass(e) === 'reg')].map((e) => ({ ...e, arr: '07:00', dep: '07:01' })) };
   assert.equal(patternPeriod(sparse), 3600);
-  const { scenario, stats } = buildDuty(sparse, { start: 10, minutes: 30, seed: 2 });
-  assert.equal(stats.trains, 0);
-  assert.deepEqual(scenario.timetable, []);
-  assert.ok(buildDuty(sparse, { start: 10, minutes: 120, seed: 2 }).stats.trains > 0);
+  const { scenario, stats } = buildDuty(sparse, { start: 10, minutes: 60, seed: 2 });
+  assert.equal(stats.trains, 1);
+  const [e] = scenario.timetable;
+  assert.equal(e.kind, 'tow');
+  assert.ok(Clock.parse(e.arr) - 10 * 3600 <= 20 * 60, `pierwszy pociąg o ${e.arr}`);
+});
+
+test('otwarcie służby: na każdym posterunku w grze pierwszy pociąg najpóźniej 20 min po starcie (o każdej porze)', () => {
+  // Reda 18:00 / 2 h: wieczorem co drugi pociąg regionalny i dalekobieżny – pierwszy przyjeżdżał po 35–43 min
+  const late = [];
+  for (const st of STATIONS.filter((x) => hasDuty(x) && !isTraining(x))) for (let h = 0; h < 24; h += 3) for (const seed of [1, 5]) {
+    const { scenario } = buildDuty(st, { start: h, minutes: 60, seed });
+    const first = Math.min(...scenario.timetable.map((x) => Clock.parse(x.arr || x.dep))) - h * 3600;
+    if (!(first <= 20 * 60)) late.push(`${st.id} ${h}:00 ziarno ${seed}: ${Math.round(first / 60)} min`);
+  }
+  const reda = STATIONS.find((x) => x.id === 'reda');
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const { scenario } = buildDuty(reda, { start: 18, minutes: 120, seed });
+    const first = Math.min(...scenario.timetable.map((x) => Clock.parse(x.arr || x.dep))) - 18 * 3600;
+    if (!(first <= 20 * 60)) late.push(`reda 18:00 / 2 h ziarno ${seed}: ${Math.round(first / 60)} min`);
+  }
+  assert.deepEqual(late, []);
 });
 
 test('każda służba posterunków w grze ma pociągi – także 30 min i środek nocy; pociąg klasy, która o tej porze nie kursuje, nie wraca', () => {
