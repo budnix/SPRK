@@ -99,6 +99,7 @@ export class Traffic {
     if (tr.cabChange) return { code: 'cab-change', left: Math.max(0, Math.ceil(tr.cabChange.until - time)) };
     if (e.terminates && tr.hasStopped && tr.mode === 'train') return null;
     if (tr.state === 'dwell' && e.depTime != null && time < e.depTime) return null; // planowy postój do godziny odjazdu
+    if (tr.atHalt) return null; // postój na przystanku (`halts`) – krótki, sam się kończy
     const signal = tr.stoppedAt?.kind === 'spad' ? null : tr.nextSignal();
     const sig = signal ? this.ilk.signals.get(signal) : null;
     if (!sig) return null;
@@ -471,6 +472,9 @@ export class Traffic {
       case 'fullyIn':
         if (e.from) this.blocks.get(e.from)?.neighbourTrainArrived(tr);
         break;
+      case 'halt':
+        this.bus.emit('log', { time: t, level: 'info', nr: e.nr, msg: `Pociąg ${e.nr} – postój na przystanku ${arg}` });
+        break;
       case 'arrive': {
         e.actualArr = t; setPhase(e, e.terminates ? 'ended' : 'at-station');
         const track = this.#trackOf(tr);
@@ -693,10 +697,10 @@ export class Traffic {
         const st = e.train.state;
         const ended = e.terminates && e.actualArr != null; // pociąg zakończył bieg – dalej tylko manewry
         if (ended) setPhase(e, st === 'moving' ? 'shunting' : 'ended');
-        else if (st === 'dwell') setPhase(e, 'dwell');
+        else if (st === 'dwell') setPhase(e, e.train.atHalt ? 'at-halt' : 'dwell', { halt: e.train.atHalt });
         else if (st === 'stopped' && e.train.stoppedAt?.kind === 'signal') setPhase(e, 'held', { signal: e.train.stoppedAt.signal });
         else if (st === 'moving' && e.train.entered) setPhase(e, e.train.mode === 'shunt' ? 'shunting' : 'running');
-        if (e.train.state === 'dwell' && e.depTime != null && time > e.depTime + 60) {
+        if (e.train.state === 'dwell' && !e.train.atHalt && e.depTime != null && time > e.depTime + 60) {
           e.delay = Math.round((time - e.depTime) / 60);
         }
         const waitingForDep = e.depTime != null && time < e.depTime + 240; // skład czeka na planowy odjazd – to nie przetrzymanie

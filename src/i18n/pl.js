@@ -399,6 +399,7 @@ export default {
   'sp.trains.atPlatform': 'stoi przy peronie',
   'sp.trains.atEnd': 'stoi na końcu toru',
   'sp.trains.dwell': 'postój, odjazd {time}',
+  'sp.trains.halt': 'postój na przystanku {halt}',
   'sp.trains.ended': 'zakończył bieg – do przełączenia na jazdę manewrową',
   'sp.trains.stopped': 'stoi',
   'sp.trains.afterSpad': 'stoi za semaforem {signal} (przejechał „Stój”)',

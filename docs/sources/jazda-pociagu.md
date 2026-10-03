@@ -39,6 +39,9 @@ nim, aby ruch podróżnych był najdogodniejszy; wskaźnik stoi przy końcu pero
 pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 poz. 360 §12 ust. 4 i zał. 1). Przyjęte
 (uproszczenia gry):
 
+* Postój na przystanku w obrębie stacji albo na odcinku zbliżania (`halts`, odcinek z `halt`; Olsztyn Śródmieście,
+  Olsztyn Zachodni): 30 s (`HALT_DWELL`), miejsce zatrzymania jak przy peronie; sąsiad wyprawia pociąg 60 s
+  (`HALT_TIME` – hamowanie, postój, rozruch) wcześniej za każdy przystanek przed torem stacji. Obie liczby przyjęte;
 * Miejsce zatrzymania przy peronie (`Train.#platformPlan`, `PLATFORM_STOP`): gra nie rysuje W 4 i przyjmuje go przy
   końcu peronu jako granicę; „ruch podróżnych najdogodniejszy” gra rozumie tak, że pociąg stoi wzdłuż peronu, a nie przy
   samym jego końcu (podróżni nie idą na koniec peronu) – czoło na 3/4 długości peronu od wejścia na peron, a pociąg

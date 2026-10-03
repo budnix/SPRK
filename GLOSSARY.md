@@ -83,6 +83,12 @@ _English_: train phase – where the train of an entry is and what it is doing (
 _W kodzie_: `phase`, `PHASES`, `setPhase`
 _Unikaj_: status (to tylko napis etapu), stan pociągu (stan jazdy składu to co innego)
 
+**Przystanek w obrębie stacji**:
+Peron przystanku osobowego między semaforem wjazdowym a głowicą stacji albo na odcinku zbliżania przed nim; pociąg, który go ma w rozkładzie, staje tam na krótko przed postojem na stacji albo po odjeździe z niej.
+_English_: halt – a passenger stop platform inside the station limits or on the approach; trains that list it stop there briefly before or after their station stop, which is not their arrival or departure.
+_W kodzie_: `halt`, `halts`, `HALT_DWELL`
+_Unikaj_: peron (tak nazywa się postój na torze stacyjnym)
+
 **Pociąg obsłużony**:
 Pociąg, za który stacja już odpowiedziała: wyprawiony na szlak (także jeszcze w drodze do sąsiada), zakończył bieg albo jego skład przejął inny pociąg.
 _English_: handled train – the station is done with it: dispatched onto the line (even if still travelling), terminated, or its unit became another train.

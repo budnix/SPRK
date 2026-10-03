@@ -25,12 +25,14 @@ export function taskCards(sim) {
 
 /**
  * Gdzie jest i co robi pociąg stojący albo jadący przez posterunek: `{ code, v, signal, time }` – kod: 'moving' (`v`
- * km/h), 'ended', 'dwell' (`time` – odjazd), 'at-signal' / 'after-spad' (`signal`), 'at-platform', 'at-end', 'stopped'.
+ * km/h), 'ended', 'halt' (`halt` – przystanek), 'dwell' (`time` – odjazd), 'at-signal' / 'after-spad' (`signal`),
+ * 'at-platform', 'at-end', 'stopped'.
  */
 function whereOf(e) {
   const tr = e.train;
   if (tr.v > 0) return { code: 'moving', v: Math.round(tr.v * 3.6) };
   if (e.terminates && tr.hasStopped && tr.mode === 'train') return { code: 'ended' };
+  if (tr.atHalt) return { code: 'halt', halt: tr.atHalt };
   if (tr.state === 'dwell') return { code: 'dwell', time: e.dep ?? '–' };
   const at = tr.stoppedAt?.kind;
   if (at === 'signal') return { code: 'at-signal', signal: tr.stoppedAt.signal };

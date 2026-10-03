@@ -94,6 +94,10 @@ T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
 * `mainKind: 'dodatkowy'` – tor główny dodatkowy (tor stacyjny do przyjmowania i wyprawiania pociągów poza torem
   głównym zasadniczym): ograniczenie prędkości z obrazu semafora (S10–S13, Sr3) obowiązuje na całej drodze przebiegu na
   ten tor, nie tylko w okręgu zwrotnicowym (Dz.U. 2015 poz. 360 §66 ust. 3). Oznaczone na stacjach szkoleniowych.
+* `halt` – przystanek osobowy w obrębie stacji albo na odcinku zbliżania szlaku (np. Olsztyn Śródmieście między semaforem
+  wjazdowym a głowicą, Olsztyn Zachodni przed semaforami wjazdowymi): nazwa przystanku; odcinek ma też `platform` (rysunek
+  peronu, miejsce zatrzymania) i nie ma numeru toru `track` (walidacja). Pociąg staje na nim tylko z nazwą przystanku
+  w `halts` (niżej „Rozkład jazdy”) – to nie jego postój na stacji,
 * `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
   (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą, pulpit kostkowy jako obrys; krawędź peronowa od strony
   toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna).
@@ -189,6 +193,10 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
 
 * `from`/`to` – szlaki (`null` = pociąg zaczyna/kończy bieg na stacji),
 * `arr`/`dep` – czasy planowe, `stop` – zatrzymanie (przelot: `false`), `terminates` – kończy bieg,
+* `halts: ['Olsztyn Śródmieście', …]` – przystanki (odcinki z `halt`), na których pociąg staje na krótko (`HALT_DWELL`,
+  30 s) przed postojem na stacji albo po odjeździe z niej; postój na przystanku nie jest przyjazdem ani odjazdem, nie
+  czeka na godzinę i nie zmienia opóźnienia. Za każdy przystanek po stronie wjazdu (między szlakiem `from` a torem
+  `track`) sąsiad wyprawia pociąg o `HALT_TIME` (60 s) wcześniej. Nieznana nazwa – błąd walidacji,
 * `startOn: { section, dir }` – pociąg stojący na stacji od początku zmiany,
 * `kind`: `os` (osobowy), `tow` (towarowy),
 * `cat` – kategoria: pasażerskie `EIP`, `EIC`, `IC`, `TLK`, `R`, `SKM`, `EZT` (próżny skład EZT); towarowe i pojazdy

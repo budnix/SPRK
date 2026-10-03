@@ -13,7 +13,7 @@ import { setPhase, initialPhase } from './phase.js';
  *    przeszedł w jazdę manewrową (`stopCancelled`) – postój przy peronie już go nie dotyczy.
  * 2. **Plan** – chwile w sekundach od północy (`arrTime`, `depTime`; po północy dalej rosną), chwila wyprawienia przez
  *    sąsiada (`neighbourDep`) i zgłoszenia (`requestAt`), tabor (`rollingStock`), pociąg nadzwyczajny (`extra`).
- * 3. **Przebieg zmiany** – co się z pociągiem dzieje: etap (`phase`, `heldAt`, `handedTo`, napis `status` –
+ * 3. **Przebieg zmiany** – co się z pociągiem dzieje: etap (`phase`, `heldAt`, `handedTo`, `haltAt`, napis `status` –
  *    `phase.js`), skład na pulpicie (`train`), rzeczywiste godziny i tor, opóźnienia, flagi rozmów z sąsiadem.
  *    Zmienia je tylko ruch (`Traffic`) – pilnuje tego `tests/layers.test.js`.
  *
@@ -31,12 +31,30 @@ export function shownTime(hhmm) {
 
 /** Czas od granicy pulpitu do peronu (s, ok.) – sąsiad wyprawia pociąg tyle wcześniej niż przejazd szlaku. */
 const STATION_RUN = 90;
+/** Postój na przystanku po drodze na tor (`halts`) wydłuża jazdę o tyle [s]: hamowanie, postój `HALT_DWELL`, rozruch (przyjęte). */
+export const HALT_TIME = 60;
+
+/**
+ * Ile przystanków z `halts` pociąg od sąsiada mija przed swoim torem: przystanki (odcinki z `halt`) po stronie stacji,
+ * od której przyjeżdża – na zachód od toru planowego przy wjeździe od zachodu, na wschód przy wjeździe od wschodu.
+ */
+function haltsBefore(def, station) {
+  const ex = def.from ? station.exits?.[def.from] : null;
+  if (!ex || !def.halts?.length) return 0;
+  const xs = (pred) => (station.tiles || []).filter((t) => t.section && pred(station.sections?.[t.section] ?? {})).map((t) => t.x);
+  const track = xs((s) => s.track != null && String(s.track) === String(def.track));
+  if (!track.length) return 0;
+  return def.halts.filter((name) => {
+    const h = xs((s) => s.halt === name);
+    return h.length > 0 && (ex.dir === 'W' ? Math.max(...h) < Math.min(...track) : Math.min(...h) > Math.max(...track));
+  }).length;
+}
 /** Sąsiad zgłasza pociąg (prosi o pozwolenie) tyle sekund przed wyprawieniem. */
 const REQUEST_LEAD = 240;
 
 /** Pola planu i przebiegu zmiany – pole definicji o tej nazwie nie przesłania ich (jak dotąd: plan i przebieg wygrywają). */
 const OWN = new Set(['idx', 'source', 'cat', 'label', 'arrTime', 'depTime', 'neighbourDep', 'requestAt', 'rollingStock', 'extra',
-  'phase', 'heldAt', 'handedTo', 'status', 'train', 'requested', 'dispatched', 'announced', 'delayIn', 'delay', 'actualArr',
+  'phase', 'heldAt', 'handedTo', 'haltAt', 'status', 'train', 'requested', 'dispatched', 'announced', 'delayIn', 'delay', 'actualArr',
   'actualDep', 'actualTrack', 'actualExit', 'attached', 'waitLogged', 'holdScored', 'stopCancelled']);
 
 /**
@@ -51,7 +69,8 @@ export function createEntry(def, { idx, station, rollingStock = null, extra = fa
   // ułożony dla tego pojazdu)
   const vline = Math.min(trainSpeed(def, rollingStock), exitFrom?.lineSpeed ?? 100) / 3.6;
   const lineTravel = (exitFrom?.lineLength ?? 3000) / vline;
-  const neighbourDep = def.from ? (arrTime ?? depTime) - lineTravel - STATION_RUN : null;
+  // postój na przystanku po drodze na tor (`halts`) – sąsiad wyprawia pociąg o tyle wcześniej
+  const neighbourDep = def.from ? (arrTime ?? depTime) - lineTravel - STATION_RUN - HALT_TIME * haltsBefore(def, station) : null;
 
   const e = { idx };
   // 1. definicja – tylko do odczytu
@@ -70,7 +89,7 @@ export function createEntry(def, { idx, station, rollingStock = null, extra = fa
   Object.assign(e, { arrTime, depTime, neighbourDep, requestAt: def.from ? neighbourDep - REQUEST_LEAD : null, rollingStock, extra });
   // 3. przebieg zmiany
   Object.assign(e, {
-    phase: null, heldAt: null, handedTo: null, status: null, train: null,
+    phase: null, heldAt: null, handedTo: null, haltAt: null, status: null, train: null,
     requested: false, dispatched: false, announced: false, delayIn: 0, delay: 0,
     actualArr: null, actualDep: null, actualTrack: null, actualExit: null,
     attached: false, waitLogged: false, holdScored: false, stopCancelled: false,

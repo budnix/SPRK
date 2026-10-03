@@ -18,6 +18,11 @@ export const STOCK_CREEP = 50;
  * długości peronu od wejścia na peron; pociąg dłuższy niż połowa peronu staje na jego środku.
  */
 export const PLATFORM_STOP = 0.75;
+/**
+ * Postój na przystanku w obrębie stacji albo na odcinku zbliżania (odcinek z `halt`, pociąg z nazwą przystanku w `halts`)
+ * [s] – krótki postój handlowy, który nie jest przyjazdem ani odjazdem pociągu ze stacji (przyjęte).
+ */
+export const HALT_DWELL = 30;
 
 /**
  * Maszynista (przyjęte, docs/sources/jazda-pociagu.md „Hamowanie jak maszynista”): hamuje z opóźnieniem planowanym – częścią
@@ -85,6 +90,8 @@ export class Train {
     this.arrivedAt = null;
     this.departedAt = null;
     this.hasStopped = false;
+    this.halted = new Set(); // przystanki (`halts`), na których pociąg już stał
+    this.atHalt = null;      // przystanek, na którym pociąg właśnie stoi
     this.delay = 0;
     this.finished = false;
     this.onExit = opts.onExit || (() => {});
@@ -312,6 +319,14 @@ export class Train {
         // peronu, przy torze czołowym przy końcu peronu (#platformPlan) – z rozrzutem kilku metrów; gdy pociąg nie
         // zmieściłby się przy peronie na odcinku toru (tył na rozjazdach) – jak dotąd 12 m przed semaforem końcowym toru
         // peronowego (lub 15 m przed końcem odcinka bez semafora)
+        // przystanek z `halts` pociągu (odcinek z `halt`): postój jak przy peronie, ale nie jako postój na stacji
+        const halt = this.#haltAt(tile);
+        if (halt) {
+          const at = this.#platformStop(tile, outPort);
+          const nbH = this.topo.neighbour(tile, outPort);
+          if (at != null) constraints.push({ dist: dist + at, speed: 0, reason: 'przystanek', kind: 'halt', halt, tile });
+          else if (!nbH || nbH.tile.section !== tile.section) constraints.push({ dist: dist - 15, speed: 0, reason: 'przystanek', kind: 'halt', halt, tile });
+        }
         if (this.#shouldStopAt(tile)) {
           const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
           const nbT = this.topo.neighbour(tile, outPort);
@@ -451,12 +466,20 @@ export class Train {
   #shouldStopAt(tile) {
     if (this.mode !== 'train' || !this.def.stop || this.hasStopped) return false;
     const sec = this.ilk.sections.get(tile.section);
+    if (sec?.halt) return false; // peron przystanku – postój tylko z `halts` (#haltAt), nie postój na stacji
     // pociąg kończący bieg zatrzymuje się na torze stacyjnym także bez peronu (np. odstawczy)
     if (!sec?.platform && !(this.def.terminates && sec?.kind === 'station')) return false;
     if (this.plannedTrack && String(sec.track) !== String(this.plannedTrack)) {
       // Zatrzymanie na innym torze niż planowany, jeżeli ma peron – dopuszczalne
     }
     return true;
+  }
+
+  /** Przystanek na kostce `tile`, na którym pociąg ma postój (`halts`) i jeszcze nie stał – nazwa albo null. */
+  #haltAt(tile) {
+    if (this.mode !== 'train' || !this.def.halts?.length) return null;
+    const halt = this.ilk.sections.get(tile.section)?.halt;
+    return halt && this.def.halts.includes(halt) && !this.halted.has(halt) ? halt : null;
   }
 
   /** Krok symulacji. */
@@ -474,8 +497,15 @@ export class Train {
     if (this.def.terminates && this.hasStopped && this.mode === 'train') return; // zakończył bieg – czeka na manewry
     if (this.holdUntil && this.mode === 'train' && this.v === 0 && time < this.holdUntil) return; // pociąg gotowy, czeka na czas odjazdu
     if (this.state === 'dwell') {
+      // przystanek: po postoju dalej bez względu na godzinę odjazdu – pociąg jedzie do semafora przed sobą (zezwolenie
+      // przebiegu, który już ma, albo – przed semaforem wjazdowym – sygnał zezwalający, #mayStart niżej)
+      if (this.atHalt) {
+        if (time < this.dwellUntil) return;
+        const halt = this.atHalt;
+        this.atHalt = null; this.state = 'moving';
+        this.onEvent('halt-depart', this, halt);
       // odjazd z peronu dopiero na sygnał zezwalający (Sz, rozkaz) – nie podjazd pod semafor na „Stój”
-      if (time >= this.dwellUntil && this.#canDepart(time) && this.#clearToLeave()) {
+      } else if (time >= this.dwellUntil && this.#canDepart(time) && this.#clearToLeave()) {
         this.state = 'moving'; this.departedAt = time;
         this.onEvent('depart', this);
       } else return;
@@ -525,7 +555,12 @@ export class Train {
       if (this.state === 'moving' && stopC) {
         this.state = 'stopped';
         this.stoppedAt = stopC;
-        if (stopC.kind === 'platform') {
+        if (stopC.kind === 'halt') {
+          this.halted.add(stopC.halt); this.atHalt = stopC.halt;
+          this.dwellUntil = time + HALT_DWELL;
+          this.state = 'dwell';
+          this.onEvent('halt', this, stopC.halt);
+        } else if (stopC.kind === 'platform') {
           this.hasStopped = true;
           this.arrivedAt = time;
           if (this.def.terminates) {

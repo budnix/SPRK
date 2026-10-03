@@ -447,6 +447,7 @@ export class SidePanel {
     const host = this.root.querySelector('#trains');
     const WHERE = {
       moving: (w) => t('sp.trains.moving', { v: w.v }), ended: () => t('sp.trains.ended'), dwell: (w) => t('sp.trains.dwell', { time: w.time }),
+      halt: (w) => t('sp.trains.halt', { halt: w.halt }),
       'at-signal': (w) => t('sp.trains.atSignal', { signal: w.signal }), 'at-platform': () => t('sp.trains.atPlatform'),
       'at-end': () => t('sp.trains.atEnd'), 'after-spad': (w) => t('sp.trains.afterSpad', { signal: w.signal }), stopped: () => t('sp.trains.stopped'),
     };

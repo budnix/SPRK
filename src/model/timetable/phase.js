@@ -20,6 +20,7 @@ export const PHASES = Object.freeze({
   running: () => 'jedzie',                           // jedzie przez stację
   held: ({ signal }) => `stoi przed ${signal}`,      // stoi przed sygnalizatorem wskazującym „Stój”
   dwell: () => 'postój',                             // postój przy peronie
+  'at-halt': ({ halt }) => `postój na przystanku ${halt}`, // postój na przystanku w obrębie stacji (`halts`)
   'at-station': () => 'na stacji',                   // stoi na stacji (przed odjazdem, po przekazaniu składu)
   shunting: () => 'manewruje',                       // jazda manewrowa
   departing: () => 'odjeżdża',                       // ruszył w stronę szlaku
@@ -29,13 +30,17 @@ export const PHASES = Object.freeze({
   'handed-over': ({ nr }) => `przekazany jako ${nr}`, // skład przejął inny pociąg (numer w `handedTo`)
 });
 
-/** Ustawia etap pociągu `e` (wpis rozkładu): kod, szczegół i napis. `data`: `{ signal }` dla `held`, `{ nr }` dla `handed-over`. */
+/**
+ * Ustawia etap pociągu `e` (wpis rozkładu): kod, szczegół i napis. `data`: `{ signal }` dla `held`, `{ nr }` dla
+ * `handed-over`, `{ halt }` dla `at-halt`.
+ */
 export function setPhase(e, phase, data = {}) {
   const text = PHASES[phase];
   if (!text) throw new Error(`Nieznany etap pociągu: ${phase}`);
   e.phase = phase;
   e.heldAt = phase === 'held' ? data.signal : null;
   e.handedTo = phase === 'handed-over' ? data.nr : null;
+  e.haltAt = phase === 'at-halt' ? data.halt : null;
   e.status = text(data);
 }
 

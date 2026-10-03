@@ -71,6 +71,13 @@ export function validateStation(st) {
   }
   for (const [id, s] of Object.entries(st.sections || {})) {
     if (s.mainKind != null && s.mainKind !== 'dodatkowy') errors.push(`Odcinek ${id}: nieznany rodzaj toru głównego '${s.mainKind}' (dodatkowy)`);
+    // przystanek w obrębie stacji / na odcinku zbliżania: nazwa i peron (rysunek, miejsce zatrzymania); bez numeru toru –
+    // postój na przystanku to nie postój na torze stacyjnym
+    if (s.halt != null) {
+      if (typeof s.halt !== 'string' || !s.halt.trim()) errors.push(`Odcinek ${id}: halt – nazwa przystanku (napis)`);
+      if (!s.platform) errors.push(`Odcinek ${id}: przystanek '${s.halt}' bez peronu (platform)`);
+      if (s.track != null) errors.push(`Odcinek ${id}: przystanek '${s.halt}' na torze stacyjnym ${s.track} – przystanek leży poza torami stacyjnymi`);
+    }
   }
   for (const [id, e] of Object.entries(st.exits || {})) {
     if (e.block && !['eap', 'sbl'].includes(e.block)) errors.push(`Wyjazd ${id}: nieznany rodzaj blokady '${e.block}' (eap | sbl)`);
@@ -110,6 +117,11 @@ export function validateTimetable(st, timetable = st.timetable, only = null) {
     if (exT && exT.direction === 'in') errors.push(`Rozkład ${tr.nr}: wyjazd do ${exT.name} torem wjazdowym '${tr.to}' (direction: 'in')`);
     if (!tr.arr && !tr.dep) errors.push(`Rozkład ${tr.nr}: brak czasu przyjazdu/odjazdu`);
     validateConsist(tr, tracks, errors, warnings);
+    if (tr.halts != null) {
+      const halts = new Set(Object.values(st.sections || {}).map((s) => s.halt).filter(Boolean));
+      if (!Array.isArray(tr.halts)) errors.push(`Rozkład ${tr.nr}: halts – lista nazw przystanków`);
+      else for (const h of tr.halts) if (!halts.has(h)) errors.push(`Rozkład ${tr.nr}: nieznany przystanek '${h}' (halts; przystanki stacji: ${[...halts].join(', ') || 'brak'})`);
+    }
     if (tr.unit != null && unitLoop(tr, timetable)) errors.push(`Rozkład ${tr.nr}: łańcuch składu (unit) zapętlony – pociąg powstaje ze składu, który powstaje z niego`);
     validateStock(tr, timetable, errors);
   });

@@ -392,6 +392,7 @@ export default {
   'sp.trains.atPlatform': 'steht am Bahnsteig',
   'sp.trains.atEnd': 'steht am Gleisende',
   'sp.trains.dwell': 'Halt, Abfahrt {time}',
+  'sp.trains.halt': 'Halt in {halt}',
   'sp.trains.ended': 'Lauf beendet – auf Rangierfahrt umzustellen',
   'sp.trains.stopped': 'steht',
   'sp.trains.afterSpad': 'steht hinter Signal {signal} (Halt überfahren)',

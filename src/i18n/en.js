@@ -392,6 +392,7 @@ export default {
   'sp.trains.atPlatform': 'standing at the platform',
   'sp.trains.atEnd': 'standing at the track end',
   'sp.trains.dwell': 'stop, departure {time}',
+  'sp.trains.halt': 'stop at {halt}',
   'sp.trains.ended': 'ended its run – to be switched to shunting movement',
   'sp.trains.stopped': 'standing',
   'sp.trains.afterSpad': 'standing beyond signal {signal} (passed at danger)',
