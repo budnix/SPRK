@@ -16,7 +16,7 @@ import { run } from './helpers.js';
  * ostatnim pociągu dawała −10 bez winy dyżurnego.
  */
 const at = (hm) => Clock.parse(hm);
-const entry = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
+const entry = (sim, nr) => sim.traffic.entry(nr);
 const make = (trains, delays = {}) => {
   const sim = new Simulation(szkolna, { disruptions: 'none', seed: 1, scenario: { id: 't', name: 't', srk: 'komputerowe', endTime: '08:50', trains, tasks: [] } });
   for (const [nr, min] of Object.entries(delays)) sim.traffic.setInboundDelay(entry(sim, Number(nr)), min);

@@ -5,7 +5,7 @@ import kalinowo from '../src/stations/kalinowo.js';
 import olszyny from '../src/stations/olszyny.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { Simulation } from '../src/model/Simulation.js';
-import { autoDispatch, run, routeView, routeViews } from './helpers.js';
+import { autoDispatch, run, routeView, routeViews, entryOf, trainRow } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -24,10 +24,7 @@ import { unjustified, leftovers } from '../src/model/check/outcome.js';
  *    zamyka przebiegu przez zwrotnicę bez kontroli.
  */
 
-const LENGTH = { szkolna: 130, kalinowo: 110, olszyny: 120 };
-const os = (st, nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: LENGTH[st.id], vmax: 100, dwell: 60 });
 const DIRS = [['W', 'E'], ['E', 'W']];
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const faultOf = (sim, type) => sim.faults.list.find((f) => f.type === type);
 const scores = (sim, code) => sim.score.items.filter((i) => i.code === code).map((i) => i.points);
 const now = (sim) => Clock.format(sim.clock.time, true);
@@ -178,7 +175,7 @@ const label = (st, srk, nr, from, to, track, what, r) => `${st.name} ${srk}, poc
 
 // Pociąg 2: sąsiad zgłasza go o 07:00, przebieg wjazdowy nastawiony ok. 07:02 – wtedy semafor A gaśnie na 20 min; pociąg
 // staje przed nim ok. 07:05. Pociąg 3 (07:26) dojeżdża po naprawie.
-const p8Timetable = (st) => [os(st, 2, 'W', 'E', '07:06', '07:08', '1'), os(st, 3, 'W', 'E', '07:26', '07:28', '1')];
+const p8Timetable = (st) => [trainRow({ st, nr: 2, from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1' }), trainRow({ st, nr: 3, from: 'W', to: 'E', arr: '07:26', dep: '07:28', track: '1' })];
 /** Stan semafora i usterki w chwili polecenia. */
 const sigState = (sig) => (sim) => {
   const f = faultOf(sim, 'signal-fail'), s = sim.ilk.signals.get(sig), act = s.route && routeView(sim.ilk, s.route);
@@ -351,7 +348,7 @@ function halfDesk(nr) {
 
 test('nastawnia mechaniczna: zajętość toru docelowego z usterki – drążek w położeniu pośrednim zamyka zwrotnice, dKo i Sz bez kary (także bez kary za zwrotnice); drążek nie wraca, dopóki świeci Sz', () => {
   for (const [from, to] of DIRS) for (const track of ['1', '2']) {
-    const sim = faultSim(szkolna, { srk: 'mech', timetable: [os(szkolna, 2, from, to, '07:06', '07:08', track)] });
+    const sim = faultSim(szkolna, { srk: 'mech', timetable: [trainRow({ st: szkolna, nr: 2, from, to, arr: '07:06', dep: '07:08', track })] });
     const w = passWatch(sim);
     const d = halfDesk(2);
     const r = runWithFault(sim, { when: permitted(2), fault: { type: 'false-occupancy', target: (s) => plannedEntry(s, 2)[0]?.sections.at(-1), duration: 20 }, dispatch: d, each: w.each, until: '09:00' });
@@ -415,7 +412,7 @@ function blockDesk(nr) {
 
 test('nastawnia mechaniczna: usterka semafora i bloku przebiegowego tego samego semafora – Sz i zwalniacz, oba 0 pkt; przy samej usterce semafora blok zwalnia pociąg', () => {
   for (const [from, to] of DIRS) for (const track of ['1', '2']) for (const withBlock of [true, false]) {
-    const sim = faultSim(szkolna, { srk: 'mech', timetable: [os(szkolna, 2, from, to, '07:06', '07:08', track), os(szkolna, 3, from, to, '07:36', '07:38', track)] });
+    const sim = faultSim(szkolna, { srk: 'mech', timetable: [trainRow({ st: szkolna, nr: 2, from, to, arr: '07:06', dep: '07:08', track }), trainRow({ st: szkolna, nr: 3, from, to, arr: '07:36', dep: '07:38', track })] });
     const w = passWatch(sim);
     const d = blockDesk(2);
     // usterka bloku przebiegowego tego samego semafora – dopisana w takcie, w którym zaczyna się usterka semafora
@@ -478,7 +475,7 @@ function pointWatch(nr, entry) {
 test('Olszyny (nastawnia mechaniczna): usterka napędu zwrotnicy przebiegu wjazdowego i wyjazdowego – drążek nie zamyka przebiegu przez zwrotnicę bez kontroli, sygnał zezwalający dopiero po naprawie', () => {
   for (const [from, to] of DIRS) for (const kind of ['wjazd', 'wyjazd']) {
     const entry = kind === 'wjazd';
-    const sim = faultSim(olszyny, { srk: 'mech', timetable: [os(olszyny, 2, from, to, '07:06', entry ? '07:08' : '07:10', '2')] });
+    const sim = faultSim(olszyny, { srk: 'mech', timetable: [trainRow({ st: olszyny, nr: 2, from, to, arr: '07:06', dep: entry ? '07:08' : '07:10', track: '2' })] });
     const w = passWatch(sim);
     const o = pointWatch(2, entry);
     const toMove = (s) => (entry ? plannedEntry(s, 2) : plannedExit(s, 2)).flatMap((x) => x.points).find((q) => s.ilk.points.get(q.id).position !== q.position)?.id;

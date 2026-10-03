@@ -359,7 +359,7 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
       assert.ok(e.delay <= 2, `${e.nr}: opóźnienie ${e.delay} min`);
     }
     // pociąg prowadzony przy usterce: tor wg lekcji, sygnał zastępczy tylko tam, gdzie lekcja go wymaga
-    const hit = sim.traffic.timetable().find((e) => e.nr === fault.nr);
+    const hit = sim.traffic.entry(fault.nr);
     assert.equal(String(hit.track), fault.planned); assert.equal(String(hit.actualTrack), fault.track);
     assert.equal(sim.ilk.counters.Sz, fault.sz);
     assert.equal(sim.faults.list.filter((f) => f.scripted).length, 1, 'misja ma jedną usterkę ze scenariusza');

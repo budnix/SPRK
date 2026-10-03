@@ -17,7 +17,7 @@ function phases(sim, nr, seconds) {
     for (const e of s.traffic.timetable()) {
       assert.equal(e.status, PHASES[e.phase]({ signal: e.heldAt, nr: e.handedTo }), `${e.nr}: napis „${e.status}” do etapu ${e.phase}`);
     }
-    const e = s.traffic.timetable().find((x) => x.nr === nr);
+    const e = s.traffic.entry(nr);
     const k = e.phase === 'held' ? `held:${e.heldAt}` : e.phase === 'handed-over' ? `handed-over:${e.handedTo}` : e.phase;
     if (seen.at(-1) !== k) seen.push(k);
   } });
@@ -37,7 +37,7 @@ test('etap składu kończącego bieg, który przechodzi w inny pociąg (Szkolna 
   const seen = phases(sim, 90201, 75 * 60);
   assert.ok(seen.includes('ended') && seen.includes('shunting'), seen.join(' → '));
   assert.equal(seen.at(-1), 'handed-over:90202');
-  const unit = sim.traffic.timetable().find((x) => x.nr === 90201);
+  const unit = sim.traffic.entry(90201);
   assert.deepEqual([unit.status, unit.handedTo, unit.heldAt], ['przekazany jako 90202', 90202, null]);
   assert.equal(initialPhase(szkolna.timetable.find((x) => x.nr === 90202)), 'awaiting-unit');
 });

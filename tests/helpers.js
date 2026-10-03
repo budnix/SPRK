@@ -37,7 +37,7 @@ export const grant = (exits = null, { ko = false } = {}) => {
  */
 export function heldAt(sim, nr, signal, { from, minutes }) {
   run(sim, minutes * 60, grant(from));
-  const e = sim.traffic.timetable().find((x) => x.nr === nr);
+  const e = sim.traffic.entry(nr);
   assert.equal(e.train.stoppedAt?.signal, signal);
   return e;
 }
@@ -50,6 +50,21 @@ export function allArrived(sim) {
 }
 
 export { Clock, station };
+
+/** Wpis rozkładu pociągu `nr` (`Traffic.entry`) albo null. */
+export const entryOf = (sim, nr) => sim.traffic.entry(nr);
+
+/** Długość składu osobowego w testach na stacjach szkoleniowych [m] – mieści się przy peronie. */
+export const TRAIN_LENGTH = Object.freeze({ szkolna: 130, kalinowo: 110, olszyny: 120 });
+
+/**
+ * Wiersz rozkładu do scenariusza testu (docs/STATION-FORMAT.md, „Rozkład”) – pola nazwane: `{ nr, from, to, arr, dep,
+ * track }`, domyślnie pociąg osobowy z postojem 60 s, 100 km/h; `st` – stacja albo jej id (długość składu z
+ * `TRAIN_LENGTH`); inne pola wpisu nadpisują domyślne (`length`, `vmax`, `stop` …).
+ */
+export function trainRow({ st = null, nr, from, to, arr, dep, track, ...rest }) {
+  return { nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: TRAIN_LENGTH[st?.id ?? st], vmax: 100, dwell: 60, ...rest };
+}
 
 /** Id przebiegów nastawionych (utwierdzonych, bez nastawianych) w kolejności nastawienia – `ilk.routesSet()`. */
 export const setRoutes = (ilk) => ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id);

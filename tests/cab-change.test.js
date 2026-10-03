@@ -19,7 +19,7 @@ function unitOnT3(seed = 1) {
     { nr: 1, kind: 'os', name: 'skład', from: null, to: null, dep: '09:00', track: '3', stop: true, terminates: true, length: 60, vmax: 60, startOn: { section: 'T3', dir: 'E' } },
   ] } });
   sim.step(0.5);
-  const e = sim.traffic.timetable().find((x) => x.nr === 1);
+  const e = sim.traffic.entry(1);
   const log = [];
   sim.bus.on('comms-log', (m) => log.push(m));
   return { sim, e, tr: e.train, log };
@@ -126,7 +126,7 @@ test('automat: pociąg ze składu innego pociągu zmienia czoło zawczasu i odje
     const late = [];
     const { sim } = playShift({ station: sopot, scenario, seed, level: 'none', settle: true,
       onCreate: (s) => s.bus.on('score', (x) => { if (x.code === 'late-depart') late.push(x.nr); }) });
-    const e = sim.traffic.timetable().find((x) => x.nr === 55153);
+    const e = sim.traffic.entry(55153);
     assert.ok(e.actualDep != null, `ziarno ${seed}: 55153 odjechał`);
     assert.ok(e.actualDep - e.depTime < 60, `ziarno ${seed}: 55153 odjazd ${Math.round(e.actualDep - e.depTime)} s po planie`);
     assert.deepEqual(late, [], `ziarno ${seed}: kary za przetrzymanie`);

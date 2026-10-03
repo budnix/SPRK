@@ -74,7 +74,7 @@ _Więcej_: `docs/sources/sygnaly-i-blokada.md` „Stała kontrola sygnału i dro
 **Wpis rozkładu**:
 Jeden pociąg w rozkładzie zmiany: jego definicja z rozkładu stacji albo scenariusza, plan (godziny w sekundach, chwila wyprawienia przez sąsiada) i to, co się z nim dzieje w trakcie zmiany.
 _English_: timetable entry – one train of the shift's timetable: its definition, its plan and what happens to it during the shift.
-_W kodzie_: `createEntry`, `source`
+_W kodzie_: `createEntry`, `source`, `entry`
 _Unikaj_: wiersz, rekord, pozycja rozkładu
 
 **Etap pociągu**:

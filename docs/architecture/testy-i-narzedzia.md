@@ -18,6 +18,10 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   game.until('06:30');` – dyżurny zachowuje rytm; `each(sim, { opTick, steps })` – sprawdzenia po każdym kroku; koniec,
   który się przesuwa: `until(() => sekundy)`. Własną pętlę `n++ % 4` mają tylko testy, które coś robią zaraz po kroku,
   a przed dyżurnym (z komentarzem przy pętli). Test rytmu: `tests/play.test.js`.
+* Własne pociągi testu: `trainRow({ st, nr, from, to, arr, dep, track })` z `tests/helpers.js` – wiersz rozkładu
+  z polami nazwanymi (domyślnie osobowy z postojem, 100 km/h; długość składu ze stacji – `TRAIN_LENGTH`; inne pola
+  nadpisują domyślne) zamiast pomocników z argumentami po kolei; wpis pociągu po numerze – `sim.traffic.entry(nr)`
+  (w testach też `entryOf(sim, nr)`).
 * Odpowiedzi sąsiadowi bez automatu: `grant('W')` z `tests/helpers.js` – po każdym kroku daje pozwolenie (Poz) na
   żądanie sąsiada na wskazanych szlakach przez polecenie stanowiska (`sim.execute`), `{ ko: true }` – także Ko
   (`run(sim, 960, grant('W'))`); test nie naciska przycisków blokady sam. Pociąg stojący przed semaforem:

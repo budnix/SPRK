@@ -18,7 +18,7 @@ const until = (sim, cond, max = 8000) => { for (let i = 0; i < max && !cond(); i
 test('usterka blokady po żądaniu pozwolenia, a przed Poz: sąsiad pyta o drogę telefonicznie i po „droga wolna” wyprawia pociąg', () => {
   const sim = sim0();
   const b = sim.blocks.get('W');
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   assert.ok(until(sim, () => b.request === 'theirs'), 'sąsiad żąda pozwolenia');
   assert.equal(e.requested, true);
   b.setFault(true); // żądanie przez blokadę przepada – zostaje telefon
@@ -30,7 +30,7 @@ test('usterka blokady po żądaniu pozwolenia, a przed Poz: sąsiad pyta o drog�
 test('naprawa blokady po „droga wolna”, a przed wyprawieniem: sąsiad żąda pozwolenia przez blokadę i po Poz wyprawia pociąg', () => {
   const sim = sim0();
   const b = sim.blocks.get('W');
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   b.setFault(true);
   assert.ok(until(sim, () => String(b.phone.askedByThem) === '6101'), 'zapytanie telefoniczne');
   assert.ok(sim.comms.send('free', { exit: 'W', nr: 6101 }, { silent: true }).ok);
@@ -55,7 +55,7 @@ test('Zacisze: usterka blokady kończy się między „droga wolna” a wyprawie
 test('przebieg wyjazdowy nastawiony przy usterce blokady: po naprawie i pozwoleniu sąsiada semafor sam podaje sygnał zezwalający', () => {
   const sim = sim0();
   const w = sim.blocks.get('W'), b = sim.blocks.get('E');
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   // 6101 wjeżdża na tor 1 i czeka na odjazd do Dębna
   assert.ok(until(sim, () => w.request === 'theirs')); w.press('Poz');
   assert.ok(until(sim, () => !!e.train?.entered));
@@ -89,7 +89,7 @@ for (const mode of ['blokada sprawna', 'zapowiadanie telefoniczne']) {
   test(`zgłoszenie pociągu wycofane (${mode}): zdarzenie „timetable” niesie stan „oczekiwany” w tym samym takcie`, () => {
     const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
     const b = sim.blocks.get('W');
-    const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    const e = sim.traffic.entry(6101);
     if (mode === 'zapowiadanie telefoniczne') {
       b.setFault(true);
       assert.ok(untilCond(sim, () => String(b.phone.askedByThem) === '6101'), 'sąsiad pyta telefonicznie');

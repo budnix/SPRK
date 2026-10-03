@@ -4,7 +4,7 @@ import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
-import { autoDispatch, allArrived, play, routeView, routeViews } from './helpers.js';
+import { autoDispatch, allArrived, play, routeView, routeViews, entryOf, trainRow } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -32,8 +32,6 @@ import { unjustified, leftovers } from '../src/model/check/outcome.js';
 const SZKOLNA = ['E', 'komputerowe', 'izh111', 'mech', 'ebilock'];
 const PANELS = [...SZKOLNA.map((srk) => ({ st: szkolna, srk })), { st: kalinowo, srk: 'mor3' }];
 const DIRS = [['W', 'E'], ['E', 'W']];
-const LENGTH = { szkolna: 130, kalinowo: 110 };
-const os = (st, nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: LENGTH[st.id], vmax: 100, dwell: 60 });
 const tow = (nr, from, to, arr, track) => ({ nr, kind: 'tow', name: 'Towarowy', from, to, arr, track, stop: false, length: 380, vmax: 70 });
 /**
  * Usterka krótka – naprawa, zanim pociąg potrzebuje semafora; średnia – pociąg czeka przed semaforem z usterką (przebieg
@@ -43,7 +41,6 @@ const tow = (nr, from, to, arr, track) => ({ nr, kind: 'tow', name: 'Towarowy', 
 const VARIANTS = [{ name: 'krótka', dur: 'short' }, { name: 'średnia, naprawa w czasie postoju', dur: 'mid' }, { name: 'długa, Sz', dur: 'long', how: 'Sz' }, { name: 'długa, rozkaz „S”', dur: 'long', how: 'S' }];
 const durationOf = (m, v) => (v.dur === 'long' ? 10 : m[v.dur]);
 
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const trackOf = (sim, sid) => String(sim.ilk.sections.get(sid)?.track);
 /** Odległość czoła pociągu od semafora `sig` (m) albo undefined. */
 const distTo = (tr, sig) => tr.constraintsAhead(1500, true).find((c) => c.signal === sig && (c.kind === 'signal' || c.kind === 'passed-signal'))?.dist;
@@ -245,8 +242,8 @@ test('usterka semafora wjazdowego: pociąg mija go na sygnale zezwalającym dopi
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) for (const m of ENTRY_MOMENTS) for (const v of VARIANTS) {
     // „stoi przed semaforem”: pociąg 1 zajmuje tor 1 do 07:16, pociąg 2 czeka przed semaforem wjazdowym
     const waiting = m.when === moment.beforeEntry;
-    const timetable = [...(waiting ? [os(st, 1, from, to, '07:04', '07:16', '1')] : []),
-      os(st, 2, from, to, waiting ? '07:10' : '07:06', waiting ? '07:20' : '07:08', '1'), os(st, 3, from, to, waiting ? '07:36' : '07:26', waiting ? '07:38' : '07:28', '1')];
+    const timetable = [...(waiting ? [trainRow({ st, nr: 1, from, to, arr: '07:04', dep: '07:16', track: '1' })] : []),
+      trainRow({ st, nr: 2, from, to, arr: waiting ? '07:10' : '07:06', dep: waiting ? '07:20' : '07:08', track: '1' }), trainRow({ st, nr: 3, from, to, arr: waiting ? '07:36' : '07:26', dep: waiting ? '07:38' : '07:28', track: '1' })];
     const r = shift({ st, srk, timetable, when: m.when(2), fault: { type: 'signal-fail', target: on.entrySignal(2), duration: durationOf(m, v) }, how: v.how });
     const msg = label(st, srk, 2, from, to, '1', `${m.name}, usterka ${v.name}`, r);
     check(r, msg);
@@ -271,7 +268,7 @@ const EXIT_MOMENTS = [
 
 test('usterka semafora wyjazdowego (tor 1 i 2): pociąg odjeżdża na sygnale zezwalającym dopiero po naprawie, wcześniej tylko na Sz albo na rozkaz „S” (0 pkt, dPo 0 pkt); po naprawie następny na sygnale zezwalającym', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) for (const track of ['1', '2']) for (const m of EXIT_MOMENTS) for (const v of VARIANTS) {
-    const timetable = [os(st, 2, from, to, '07:06', '07:10', track), os(st, 3, from, to, '07:26', '07:28', track)];
+    const timetable = [trainRow({ st, nr: 2, from, to, arr: '07:06', dep: '07:10', track }), trainRow({ st, nr: 3, from, to, arr: '07:26', dep: '07:28', track })];
     const r = shift({ st, srk, timetable, when: m.when(2), fault: { type: 'signal-fail', target: m.target(2), duration: durationOf(m, v) }, how: v.how });
     const msg = label(st, srk, 2, from, to, track, `${m.name}, usterka ${v.name}`, r);
     check(r, msg);
@@ -288,7 +285,7 @@ test('usterka semafora wyjazdowego (tor 1 i 2): pociąg odjeżdża na sygnale ze
 
 test('semafor wyjazdowy gaśnie tuż przed pociągiem przelotowym: przejazd „Stój” bez kary, dalej na rozkaz „S” (0 pkt), dPo 0 pkt', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) {
-    const timetable = [tow(2, from, to, '07:08', '1'), os(st, 3, from, to, '07:26', '07:28', '1')];
+    const timetable = [tow(2, from, to, '07:08', '1'), trainRow({ st, nr: 3, from, to, arr: '07:26', dep: '07:28', track: '1' })];
     const r = shift({ st, srk, timetable, when: moment.exitTooClose(2), fault: { type: 'signal-fail', target: on.exitSignal(2), duration: 10 }, dispatch: dispatcher(null, earlyWbl(2)) });
     const msg = label(st, srk, 2, from, to, '1', 'semafor gaśnie tuż przed pociągiem', r);
     check(r, msg);
@@ -306,7 +303,7 @@ test('semafor wyjazdowy gaśnie tuż przed pociągiem przelotowym: przejazd „S
 // (docs/sources/sygnaly-i-blokada.md opisuje dKo dla wjazdu na Sz / rozkaz), więc tu się tego nie sprawdza.
 test('semafor wjazdowy gaśnie tuż przed pociągiem: przejazd „Stój” bez kary, dKo przed wjazdem i rozkaz „S” zza semafora bez kary', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) {
-    const timetable = [os(st, 2, from, to, '07:06', '07:08', '1'), os(st, 3, from, to, '07:26', '07:28', '1')];
+    const timetable = [trainRow({ st, nr: 2, from, to, arr: '07:06', dep: '07:08', track: '1' }), trainRow({ st, nr: 3, from, to, arr: '07:26', dep: '07:28', track: '1' })];
     const r = shift({ st, srk, timetable, when: moment.entryTooClose(2), fault: { type: 'signal-fail', target: on.entrySignal(2), duration: 10 }, dispatch: dispatcher(null, earlyDko) });
     const msg = label(st, srk, 2, from, to, '1', 'semafor gaśnie tuż przed pociągiem, dKo po alarmie', r);
     check(r, msg);
@@ -323,7 +320,7 @@ test('semafor wjazdowy gaśnie tuż przed pociągiem: przejazd „Stój” bez k
 // rozkaz, nie zostawia śladu – rozkaz wymuszony przez przejazd „Stój” z usterki kosztuje −10.
 test('semafor gaśnie tuż przed pociągiem i zostaje naprawiony przed rozkazem: rozkaz „S” zza semafora bez kary', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) {
-    const timetable = [tow(2, from, to, '07:08', '1'), os(st, 3, from, to, '07:26', '07:28', '1')];
+    const timetable = [tow(2, from, to, '07:08', '1'), trainRow({ st, nr: 3, from, to, arr: '07:26', dep: '07:28', track: '1' })];
     // dyżurny wypisuje rozkaz (automat) dopiero po naprawie semafora
     const writing = (sim) => sim.traffic.trains.some((tr) => tr.stoppedAt?.kind === 'spad' && sim.ilk.signals.get(tr.stoppedAt.signal)?.failed);
     const dispatch = (sim) => { earlyWbl(2)(sim); if (!writing(sim)) autoDispatch(sim); };
@@ -342,7 +339,7 @@ const POINT_PANELS = PANELS.filter((p) => p.srk !== 'mech');
 
 function pointCase(st, srk, from, to, kind, duration) {
   const entry = kind === 'wjazd';
-  const timetable = [os(st, 2, from, to, '07:06', entry ? '07:08' : '07:10', '2')];
+  const timetable = [trainRow({ st, nr: 2, from, to, arr: '07:06', dep: entry ? '07:08' : '07:10', track: '2' })];
   const r = shift({ st, srk, timetable, nr: 2, when: entry ? moment.announced(2) : moment.standing(2), fault: { type: 'point-control', target: entry ? on.entryPointToMove(2) : on.exitPointToMove(2), duration } });
   const msg = label(st, srk, 2, from, to, '2', `zwrotnica przebiegu ${entry ? 'wjazdowego (pociąg zgłoszony)' : 'wyjazdowego (pociąg przy peronie)'}`, r);
   // napęd wraca po czasie usterki liczonym od `since` (Faults: `faultUntil`; osobny test niżej)
@@ -406,7 +403,7 @@ test('usterka napędu zwrotnicy poza drogą pociągu albo w drodze bez przestawi
     ...PANELS.map(({ st, srk }) => ({ st, srk, where: 'w drodze, bez przestawiania', target: on.entryPointInPlace(2) })),
   ];
   for (const { st, srk, where, target: tgt } of cases) for (const [from, to] of DIRS) {
-    const timetable = [os(st, 2, from, to, '07:06', '07:08', '1')];
+    const timetable = [trainRow({ st, nr: 2, from, to, arr: '07:06', dep: '07:08', track: '1' })];
     const r = shift({ st, srk, timetable, when: moment.announced(2), fault: { type: 'point-control', target: tgt, duration: 30 } });
     const msg = label(st, srk, 2, from, to, '1', `zwrotnica ${where}`, r);
     check(r, msg);

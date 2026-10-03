@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch, routeView } from './helpers.js';
+import { autoDispatch, routeView, entryOf, trainRow } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -41,10 +41,7 @@ const DIRS = [['W', 'E'], ['E', 'W']];
 const WAYS = DIRS.flatMap(([from, to]) => ['1', '2'].map((track) => [from, to, track]));
 const HOW = ['Sz', 'S'];
 const NR = 2;
-const LENGTH = { szkolna: 130, kalinowo: 110 };
-const os = (st, from, to, track, arr, dep) => ({ nr: NR, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: LENGTH[st.id], vmax: 100, dwell: 60 });
 
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const trackOf = (sim, sid) => String(sim.ilk.sections.get(sid)?.track);
 const scores = (sim, code) => sim.score.items.filter((i) => i.code === code).map((i) => i.points);
 const now = (sim) => Clock.format(sim.clock.time, true);
@@ -217,7 +214,7 @@ const EXIT_MOMENTS = [
 test('(a) usterka semafora wyjazdowego i blokady tego wyjazdu: Sz albo rozkaz „S” dopiero po „droga wolna”, dPo 0 pkt, zawiadomienie o odjeździe', () => {
   let n = 0;
   for (const { st, srk } of PANELS) for (const [from, to, track] of WAYS) for (const m of EXIT_MOMENTS) for (const how of HOW) {
-    const timetable = [os(st, from, to, track, '07:06', '07:10')];
+    const timetable = [trainRow({ st, from, to, track, arr: '07:06', dep: '07:10', nr: NR })];
     // próba Sz i rozkazu „S”, gdy pociąg stoi przed semaforem wyjazdowym bez sygnału, a „droga wolna” jeszcze nie ma
     const probe = { at: null, sz: null, order: null }, auth = [];
     let confirmed = false;
@@ -303,7 +300,7 @@ const ENTRY_MOMENTS = [
 test('(b) usterka semafora wjazdowego i blokady szlaku wjazdu: wjazd na Sz albo rozkaz „S”, dKo odrzucone, przyjazd potwierdzony telefonogramem', () => {
   let n = 0;
   for (const { st, srk } of PANELS) for (const [from, to, track] of WAYS) for (const m of ENTRY_MOMENTS) for (const how of HOW) {
-    const timetable = [os(st, from, to, track, '07:16', '07:20')];
+    const timetable = [trainRow({ st, from, to, track, arr: '07:16', dep: '07:20', nr: NR })];
     // próby dKo przed wjazdem i Ko po przybyciu pociągu przy usterce blokady (obie mają być odrzucone); przyciski blokady
     // naciśnięte poza próbami
     const probe = { dKo: null, Ko: null, active: false }, pressed = [];
@@ -425,7 +422,7 @@ test('(c) usterka napędu zwrotnicy i fałszywa zajętość toru docelowego: Sz 
   let n = 0;
   for (const { st, srk } of LIVE) for (const [from, to] of DIRS) for (const m of POINT_MOMENTS) for (const how of HOW) {
     const track = '2';
-    const timetable = [os(st, from, to, track, '07:06', '07:10')];
+    const timetable = [trainRow({ st, from, to, track, arr: '07:06', dep: '07:10', nr: NR })];
     const d = wayDispatcher(how, (s) => activeFaults(s).length === 2);
     // zwrotnica z usterką w chwili, gdy pociąg na nią wjeżdża
     let atPoint = null;
@@ -469,7 +466,7 @@ const WAY_MOMENTS = [
 test('(d) usterka semafora wjazdowego i fałszywa zajętość toru docelowego: wjazd na Sz albo rozkaz „S” przez zwrotnice zamknięte, dKo przed wjazdem', () => {
   let n = 0;
   for (const { st, srk } of LIVE) for (const [from, to, track] of WAYS) for (const m of WAY_MOMENTS) for (const how of HOW) {
-    const timetable = [os(st, from, to, track, '07:06', '07:10')];
+    const timetable = [trainRow({ st, from, to, track, arr: '07:06', dep: '07:10', nr: NR })];
     const d = wayDispatcher(how, (s) => activeFaults(s).length === 2);
     const r = shift({
       st, srk, timetable, dispatch: d,
@@ -502,7 +499,7 @@ test('(e) koniec zmiany z otwartym obowiązkiem telefonicznym: bez zawiadomienia
   let n = 0;
   for (const { st, srk } of PANELS) for (const v of END_VARIANTS) for (const how of HOW) {
     const [from, to, track] = WAYS[0];
-    const timetable = [os(st, from, to, track, '07:06', '07:10')];
+    const timetable = [trainRow({ st, from, to, track, arr: '07:06', dep: '07:10', nr: NR })];
     let end = null, dep = null;
     const setup = (s) => s.bus.on('shift-end', (rep) => {
       const e = entryOf(s, NR);
@@ -545,7 +542,7 @@ for (const duty of ['no-depart-report', 'no-dpo']) {
     const [from, to, track] = WAYS[0];
     let atEnd = null;
     const r = shift({
-      st: szkolna, srk: 'E', timetable: [os(szkolna, from, to, track, '07:06', '07:10')], endTime: '07:12', drop: duty === 'no-dpo' ? [] : ['departed'],
+      st: szkolna, srk: 'E', timetable: [trainRow({ st: szkolna, from, to, track, arr: '07:06', dep: '07:10', nr: NR })], endTime: '07:12', drop: duty === 'no-dpo' ? [] : ['departed'],
       setup: (s) => { if (duty === 'no-dpo') noDpo(to)(s); s.bus.on('shift-end', (rep) => { atEnd = { reason: rep.endReason, status: entryOf(s, NR).status, penalty: rep.items.filter((i) => i.code === duty).map((i) => i.points) }; }); },
       when: moment.start(), fault: { type: 'block-fail', target: to, duration: 40 },
     });

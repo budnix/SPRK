@@ -102,7 +102,7 @@ test('widok nie zmienia stanu zależności ani blokad wprost (tylko przez polece
 test('widok nie woła metod ruchu i łączności zmieniających stan ani nie przestawia zegara – czynności przez sim.execute', () => {
   // telefonogram, rozkaz „S”, tryb jazdy pociągu, pauza i tempo to polecenia (`Simulation.execute`: comms, order,
   // to-shunting, to-train, reverse, pause, speed); z ruchu i łączności widok tylko czyta
-  const READS = new Set(['timetable', 'standingTrains', 'waitReason', 'orderTemplate', 'available']);
+  const READS = new Set(['timetable', 'entry', 'standingTrains', 'waitReason', 'orderTemplate', 'available']);
   const viewFiles = [...FOLDER_ROLES.view.flatMap((d) => walk(join(SRC, d))), join(SRC, 'main.js')];
   const bad = [];
   for (const file of viewFiles) {

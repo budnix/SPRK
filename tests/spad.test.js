@@ -18,7 +18,7 @@ import { Clock, grant } from './helpers.js';
  */
 function overrun(drop, route = 'A-D1', d = route === 'A-D1' ? 60 : 8) {
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   let set = false, dropped = false;
   for (let i = 0; i < 6000 && !(dropped && e.train?.v === 0); i++) {
     sim.step(0.5);

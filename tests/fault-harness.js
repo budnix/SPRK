@@ -2,7 +2,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
-import { autoDispatch, allArrived, play, routeViews } from './helpers.js';
+import { autoDispatch, allArrived, play, routeViews, entryOf } from './helpers.js';
 import { violations, watchEvents } from '../src/model/check/invariants.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { isFinished } from '../src/model/timetable/phase.js';
@@ -24,7 +24,6 @@ export function faultSim(station, { srk, timetable, endTime = '10:00', seed = 1,
   return new Simulation(station, { disruptions: 'none', seed, scenario: { id: 't', name: 't', endTime, srk, tasks: [], timetable, ...rest } });
 }
 
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 /** Odcinek przed granicą stacji od strony wjazdu `exitId` (odcinek zbliżania przebiegów wjazdowych). */
 export function approachOf(sim, exitId) {
   return exitApproach(sim.ilk, exitId);

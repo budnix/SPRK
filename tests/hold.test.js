@@ -23,7 +23,7 @@ test('telefonogram „Stój pociąg nr …” (wzór 5a) jest na liście formuł
 test('wstrzymanie przy sprawnej blokadzie: żądanie pozwolenia znika, sąsiad ponawia je po kilku minutach; w tym czasie działa nasze Wbl', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   const b = sim.blocks.get('W');
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   assert.ok(until(sim, () => b.request === 'theirs'), 'sąsiad żąda pozwolenia');
   assert.equal(b.press('Wbl').ok, false, 'przy żądaniu sąsiada nasze Wbl nie działa');
   // zły numer pociągu – odmowa i kara za niewłaściwy telefonogram
@@ -89,7 +89,7 @@ test('Jodłowa: pociąg do Borków stoi na torze 3, a Borki żądają pozwolenia
   sim.bus.on('log', (m) => log.push(m.msg));
   const end = Clock.parse('09:30');
   play(sim).until(end, { stop: allArrived });
-  const [p, q] = [2001, 2002].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr));
+  const [p, q] = [2001, 2002].map((nr) => sim.traffic.entry(nr));
   assert.equal(p.phase, 'at-neighbour', `2001: ${p.status}`);
   assert.equal(q.phase, 'at-neighbour', `2002: ${q.status}`);
   assert.ok(log.some((m) => /Pociąg nr 2002 wstrzymany u sąsiada/.test(m)), 'telefonogram „Stój pociąg nr 2002”');

@@ -293,7 +293,7 @@ test('drogi pociągu (trainPaths, wspólne z automatem i ruchem): wjazd wieloeta
   assert.equal(routeEndTrack(ilk, p.at(-1)), '2');
   assert.equal(entryPath(ilk, routes, train.filter((r) => r.approach === app('GD1')), '2', 1), null, 'głębokość 1 – bez drogi');
   // wyjazd: łańcuchy z toru 2 kończące się na szlaku pociągu 55100
-  const e = sim.traffic.timetable().find((x) => x.nr === 55100);
+  const e = sim.traffic.entry(55100);
   const outs = trainRouteChains(train, train.filter((r) => String(ilk.sections.get(r.approach)?.track) === '2'), (r) => r.exit === e.to);
   assert.ok(outs.length && outs.every((c) => c.at(-1).exit === e.to && c.length <= 3));
 });

@@ -148,7 +148,7 @@ test('mechaniczna: z położenia pośredniego drążek idzie dalej do końca (pe
 
 test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały pociąg, świetlny – już pod czołem', () => {
   const pass = (sim, set) => {
-    const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+    const e = sim.traffic.entry(6101);
     run(sim, 3600, grant('W'));
     set(sim);
     const route = sim.ilk.routes.get('A-D1'), approach = sim.ilk.sections.get(route.approach);
@@ -173,7 +173,7 @@ test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały poci�
 
 test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięcia dźwigni i drążka; sygnał tylko raz', () => {
   const sim = mech();
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   run(sim, 3600, grant('W'));
   assert.ok(e.requested);
   throwLevers(sim, 'A-D1'); run(sim, 3);
@@ -207,7 +207,7 @@ test('mechaniczna: dźwignia sygnałowa przełożona po przejeździe blokuje cof
   sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
   sim.execute({ type: 'route-block', signal: 'A' });
   sim.execute({ type: 'clear', signal: 'A' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   for (let i = 0; i < 4000 && e.actualArr == null; i++) sim.step(0.5);
   run(sim, 60);
   const r = sim.execute({ type: 'release', signal: 'A' });
@@ -235,7 +235,7 @@ test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe
   sim.execute({ type: 'route', id: 'A-D1' });
   sim.execute({ type: 'route-block', signal: 'A' });
   sim.execute({ type: 'clear', signal: 'A' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   for (let i = 0; i < 4000 && e.actualArr == null; i++) sim.step(0.5);
   run(sim, 60);
   const act = sim.ilk.routeFrame('A-D1');
@@ -344,7 +344,7 @@ test('tarcza manewrowa kształtowa: M1 → M2 po przebiegu manewrowym; semafor z
 
 test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; przed Sr1 rozkaz pisemny nie jest „zbędny”', () => {
   const sim = mech();
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   run(sim, 3600, grant('W'));
   setAndClear(sim, 'A-D2');
   // szybkość w chwili wjazdu czoła za semafor A (na pierwszy odcinek przebiegu)
@@ -365,7 +365,7 @@ test('semafor kształtowy: pociąg mija Sr3 z szybkością najwyżej 40 km/h; pr
   assert.doesNotMatch(res.reason || '', /zbędny/); // dalej sprawdza drogę jazdy (tu: zwrotnica niezamknięta)
   assert.match(res.reason, /Zw1/);
 });
-const e2 = (sim) => sim.traffic.timetable().find((x) => x.nr === 6101);
+const e2 = (sim) => sim.traffic.entry(6101);
 
 test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy peronie, a przebieg jest „przejechany” – drążek da się cofnąć, zwrotnice wolne', async () => {
   const { default: olszyny } = await import('../src/stations/olszyny.js');

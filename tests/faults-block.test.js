@@ -9,7 +9,7 @@ import { LineBlock } from '../src/model/Block.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { faultSim, runWithFault, at, target, stuck, exitActive, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch, routeViews } from './helpers.js';
+import { autoDispatch, routeViews, trainRow } from './helpers.js';
 
 /*
  * Usterka blokady liniowej (block-fail: brak łączności elektrycznej – zapowiadanie telefoniczne) w stałych chwilach jazdy
@@ -31,7 +31,7 @@ import { autoDispatch, routeViews } from './helpers.js';
 const ALL = ['eap2', 'eap1', 'sbl'];
 const EAP = ['eap2', 'eap1'];
 const LONG = 20; // min – usterka trwa do końca jazdy pociągu
-const entry = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
+const entry = (sim, nr) => sim.traffic.entry(nr);
 const lineIn = (sim, nr) => sim.blocks.get(entry(sim, nr).from);
 const lineOut = (sim, nr) => sim.blocks.get(entry(sim, nr).to);
 /** rodzaj blokady wyjazdu `exitId`: Eap dwukierunkowa, Eap jednokierunkowa, SBL */
@@ -240,29 +240,26 @@ function runAll(list, opts = () => ({})) {
   return list.length;
 }
 
-const osS = (nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: 130, vmax: 100, dwell: 60 });
-const osK = (nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: 110, vmax: 100, dwell: 60 });
-const osB = (nr, from, to, arr, dep, track) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length: 120, vmax: 120, dwell: 60 });
 
 test('block-fail na Eap dwukierunkowej (Szkolna, pięć stanowisk): każda chwila wjazdu i wyjazdu, usterka do końca jazdy albo naprawa w trakcie', () => {
-  const all = [osS(6101, 'W', 'E', '07:16', '07:18', '1'), osS(6102, 'E', 'W', '07:16', '07:18', '2'), osS(6103, 'W', 'E', '07:16', '07:18', '2'), osS(6104, 'E', 'W', '07:16', '07:18', '1')];
+  const all = [trainRow({ nr: 6101, from: 'W', to: 'E', arr: '07:16', dep: '07:18', track: '1', st: 'szkolna' }), trainRow({ nr: 6102, from: 'E', to: 'W', arr: '07:16', dep: '07:18', track: '2', st: 'szkolna' }), trainRow({ nr: 6103, from: 'W', to: 'E', arr: '07:16', dep: '07:18', track: '2', st: 'szkolna' }), trainRow({ nr: 6104, from: 'E', to: 'W', arr: '07:16', dep: '07:18', track: '1', st: 'szkolna' })];
   const n = runAll(cases('Szkolna', szkolna, ['E', 'komputerowe'], all)) + runAll(cases('Szkolna', szkolna, ['izh111', 'mech', 'ebilock'], all.slice(0, 2)));
   assert.equal(n, 448);
 });
 
 test('block-fail na Eap dwukierunkowej w węźle trzech szlaków (Kalinowo, MOR-3)', () => {
-  const n = runAll(cases('Kalinowo', kalinowo, ['mor3'], [osK(7201, 'W', 'E', '07:16', '07:18', '1'), osK(7202, 'E', 'W', '07:16', '07:18', '2'), osK(7203, 'W', 'L', '07:16', '07:18', '2'), osK(7205, 'L', 'W', '07:16', '07:18', '1')]));
+  const n = runAll(cases('Kalinowo', kalinowo, ['mor3'], [trainRow({ nr: 7201, from: 'W', to: 'E', arr: '07:16', dep: '07:18', track: '1', st: 'kalinowo' }), trainRow({ nr: 7202, from: 'E', to: 'W', arr: '07:16', dep: '07:18', track: '2', st: 'kalinowo' }), trainRow({ nr: 7203, from: 'W', to: 'L', arr: '07:16', dep: '07:18', track: '2', st: 'kalinowo' }), trainRow({ nr: 7205, from: 'L', to: 'W', arr: '07:16', dep: '07:18', track: '1', st: 'kalinowo' })]));
   assert.equal(n, 128);
 });
 
 test('block-fail na Eap jednokierunkowej linii dwutorowej (Jodłowa): tor wjazdowy i wyjazdowy', () => {
-  const n = runAll(cases('Jodłowa', jodlowa, ['E', 'komputerowe'], [osS(3301, 'K2', 'Z2', '07:16', '07:18', '2'), osS(3302, 'Z1', 'K1', '07:16', '07:18', '1')]));
+  const n = runAll(cases('Jodłowa', jodlowa, ['E', 'komputerowe'], [trainRow({ nr: 3301, from: 'K2', to: 'Z2', arr: '07:16', dep: '07:18', track: '2', st: 'szkolna' }), trainRow({ nr: 3302, from: 'Z1', to: 'K1', arr: '07:16', dep: '07:18', track: '1', st: 'szkolna' })]));
   assert.equal(n, 92);
 });
 
 // SBL: przyjazd krótkiego pociągu sąsiada przy usterce – zawiadomienie sprawdza osobny test niżej;
 // pozostałe asercje tych przypadków (bezpieczeństwo, kary, stan po naprawie) sprawdza test główny
-const SBL = cases('Brzezina', brzezina, ['ebilock'], [osB(9101, 'T2', 'K2', '07:16', '07:18', '2'), osB(9102, 'K1', 'T1', '07:16', '07:18', '1'), osB(9103, 'T2', 'K2', '07:16', '07:18', '4'), osB(9104, 'K1', 'T1', '07:16', '07:18', '3')]);
+const SBL = cases('Brzezina', brzezina, ['ebilock'], [trainRow({ nr: 9101, from: 'T2', to: 'K2', arr: '07:16', dep: '07:18', track: '2', st: 'olszyny', vmax: 120 }), trainRow({ nr: 9102, from: 'K1', to: 'T1', arr: '07:16', dep: '07:18', track: '1', st: 'olszyny', vmax: 120 }), trainRow({ nr: 9103, from: 'T2', to: 'K2', arr: '07:16', dep: '07:18', track: '4', st: 'olszyny', vmax: 120 }), trainRow({ nr: 9104, from: 'K1', to: 'T1', arr: '07:16', dep: '07:18', track: '3', st: 'olszyny', vmax: 120 })]);
 const sblArrivalLost = (c) => c.side === 'in' && c.variant === 'long';
 
 test('block-fail na samoczynnej blokadzie liniowej SBL (Brzezina, EBILock 950)', () => {
@@ -281,9 +278,9 @@ test('SBL przy usterce: przyjazd pociągu sąsiada zawiadomiony telefonicznie (u
  */
 test('krzyżowanie na szlaku jednotorowym z Eap: usterka w każdej chwili obu pociągów (Szkolna – E, komputerowe; Kalinowo – MOR-3)', () => {
   const list = [];
-  for (const [label, station, srk, mk, a, b] of [['Szkolna', szkolna, 'E', osS, 6101, 6102], ['Szkolna', szkolna, 'komputerowe', osS, 6101, 6102], ['Kalinowo', kalinowo, 'mor3', osK, 7201, 7202]]) {
+  for (const [label, station, srk, a, b] of [['Szkolna', szkolna, 'E', 6101, 6102], ['Szkolna', szkolna, 'komputerowe', 6101, 6102], ['Kalinowo', kalinowo, 'mor3', 7201, 7202]]) {
     for (const [ta, tb, arrA, depA, arrB, depB] of [['1', '2', '07:16', '07:18', '07:17', '07:19'], ['2', '1', '07:17', '07:19', '07:16', '07:18']]) {
-      const timetable = [mk(a, 'W', 'E', arrA, depA, ta), mk(b, 'E', 'W', arrB, depB, tb)];
+      const timetable = [trainRow({ st: station, nr: a, from: 'W', to: 'E', arr: arrA, dep: depA, track: ta }), trainRow({ st: station, nr: b, from: 'E', to: 'W', arr: arrB, dep: depB, track: tb })];
       const moments = [...IN.map((m) => [b, 'wjazd', m]), ...OUT.map((m) => [a, 'wyjazd', m])].filter(([, , m]) => !(m.name === 'przed Wbl' && arrB > arrA));
       for (const [nr, side, m] of moments) for (const short of [false, true]) {
         const where = `${label} (${srk}), krzyżowanie ${a} W→E tor ${ta} (odjazd ${depA}) i ${b} E→W tor ${tb} (przyjazd ${arrB}), ${side} ${nr}: ${m.name}; block-fail E ${short ? `naprawa: ${m.fix[0]}` : `${LONG} min`}`;
@@ -307,8 +304,8 @@ test('krzyżowanie na szlaku jednotorowym z Eap: usterka w każdej chwili obu po
 const IN_EXIT = ['pociąg minął semafor wyjazdowy', inExitRoute];
 const EXIT_STANDING = 'przebieg wyjazdowy, pociąg stoi';
 const A_FIRST = ['pozwolenie, przed przebiegiem', 'pociąg w przebiegu wyjazdowym', 'pociąg na szlaku', 'u sąsiada, przed jego Ko'];
-function aFirst([label, station, srk, mk, a, b, arrB0], moments, { arrB = arrB0, fixes = null } = {}) {
-  const timetable = [mk(a, 'W', 'E', '07:16', '07:19', '1'), mk(b, 'E', 'W', arrB, '07:34', '2')];
+function aFirst([label, station, srk, a, b, arrB0], moments, { arrB = arrB0, fixes = null } = {}) {
+  const timetable = [trainRow({ st: station, nr: a, from: 'W', to: 'E', arr: '07:16', dep: '07:19', track: '1' }), trainRow({ st: station, nr: b, from: 'E', to: 'W', arr: arrB, dep: '07:34', track: '2' })];
   return OUT.filter((m) => moments.includes(m.name)).flatMap((m) => (fixes ?? [null, m.fix]).map((fix) => {
     const where = `${label} (${srk}), krzyżowanie ${a} W→E (odjazd 07:19) i ${b} E→W (przyjazd ${arrB}), wyjazd ${a}: ${m.name}; block-fail E ${fix ? `naprawa: ${fix[0]}` : '30 min'}`;
     return { run: () => {
@@ -318,7 +315,7 @@ function aFirst([label, station, srk, mk, a, b, arrB0], moments, { arrB = arrB0,
     } };
   }));
 }
-const CROSS_A = [['Szkolna', szkolna, 'E', osS, 6101, 6102, '07:24:00'], ['Szkolna', szkolna, 'komputerowe', osS, 6101, 6102, '07:24:00'], ['Kalinowo', kalinowo, 'mor3', osK, 7201, 7202, '07:23:45']];
+const CROSS_A = [['Szkolna', szkolna, 'E', 6101, 6102, '07:24:00'], ['Szkolna', szkolna, 'komputerowe', 6101, 6102, '07:24:00'], ['Kalinowo', kalinowo, 'mor3', 7201, 7202, '07:23:45']];
 
 test('krzyżowanie przy usterce, nasz pociąg wyjeżdża pierwszy (pozwolenie u nas): sąsiad nie dostaje drogi przed przyjazdem naszego', () => {
   assert.equal(runAll(CROSS_A.flatMap((c) => [...aFirst(c, A_FIRST), ...aFirst(c, [EXIT_STANDING], { fixes: [null] })])), 27);
@@ -332,7 +329,7 @@ test('krzyżowanie przy usterce, nasz pociąg wyjeżdża pierwszy (pozwolenie u 
 function followers(side) {
   const out = [];
   for (const srk of ['E', 'komputerowe']) for (const [from, to] of [['W', 'E'], ['E', 'W']]) for (const [t2, arr2] of [['1', '07:26'], ['2', '07:22']]) {
-    const timetable = [osS(6101, from, to, '07:16', '07:18', '1'), osS(6103, from, to, arr2, arr2.replace(/\d$/, (d) => String(+d + 2)), t2)];
+    const timetable = [trainRow({ nr: 6101, from, to, arr: '07:16', dep: '07:18', track: '1', st: 'szkolna' }), trainRow({ nr: 6103, from, to, arr: arr2, dep: arr2.replace(/\d$/, (d) => String(+d + 2)), track: t2, st: 'szkolna' })];
     const plan = side === 'wjazd' ? [
       [IN.find((m) => m.name === 'pociąg na szlaku'), from, ['drugi na szlaku', at.onLineIn(6103)]],
       [IN.find((m) => m.name === 'Ko do obsłużenia'), from, ['drugi zgłoszony', (sim) => entry(sim, 6103).requested]],
@@ -474,7 +471,7 @@ for (const [c, arrSz] of [[CROSS_A[0], '07:26'], [CROSS_A[1], '07:26'], [CROSS_A
  * semafor wjazdowy, a przyjazd pierwszego nie jest zawiadamiany wcale.
  */
 test('SBL przy usterce: sąsiad wyprawia następny pociąg dopiero po telefonicznym potwierdzeniu przyjazdu poprzedniego', () => {
-  const timetable = [osB(9101, 'T2', 'K2', '07:16', '07:18', '2'), osB(9105, 'T2', 'K2', '07:18', '07:20', '4')];
+  const timetable = [trainRow({ nr: 9101, from: 'T2', to: 'K2', arr: '07:16', dep: '07:18', track: '2', st: 'olszyny', vmax: 120 }), trainRow({ nr: 9105, from: 'T2', to: 'K2', arr: '07:18', dep: '07:20', track: '4', st: 'olszyny', vmax: 120 })];
   const m = IN.find((x) => x.name === 'pociąg na szlaku');
   const early = [];
   const watch = (sim, sent) => { if (!early.length && entry(sim, 9105).dispatched && !sent.includes('arrived 9101')) early.push(Clock.format(sim.clock.time, true)); };

@@ -79,7 +79,7 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3; skła
     // zwrotnica ochronna 37 blokuje powrót na tor 3) – automat przyjmuje go na tor 3, a 55106 ma wolny tor 2
     const done = (x) => x.phase === 'at-neighbour' || x.phase === 'ended' || x.phase === 'handed-over';
     assert.ok(allArrived(sim), `ziarno ${seed}: ` + sim.traffic.timetable().filter((x) => !done(x)).map((x) => `${x.nr} ${x.status}`).join('; '));
-    const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
+    const e = (nr) => sim.traffic.entry(nr);
     assert.equal(String(e(55152).actualTrack), '3', `ziarno ${seed}`);
     assert.deepEqual([...e(55152).train.occupiedSections()], ['T964']);
     assert.equal(sim.traffic.tasks.find((t) => t.id === 'postojowa-55152').done, true);

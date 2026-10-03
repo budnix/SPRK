@@ -21,7 +21,7 @@ export const infoStep = (id, title, text, anchor = null) => ({ id, title, text, 
 /** Krok z zadaniem: zaliczony, gdy `done(sim, ctx)` zwróci prawdę. */
 export const actStep = (id, title, text, anchor, done, extra = {}) => ({ id, title, text, anchor, done, ...extra });
 
-export function entry(sim, nr) { return sim.traffic.timetable().find((e) => String(e.nr) === String(nr)); }
+export function entry(sim, nr) { return sim.traffic.entry(nr); }
 export function atNeighbour(sim, nr) { return entry(sim, nr)?.phase === 'at-neighbour'; }
 export function arrived(sim, nr) { const e = entry(sim, nr); return !!e && e.actualArr != null; }
 export function blockFree(b) { return !b.koPending && !b.occupied && b.direction == null && !b.poBlocked; }

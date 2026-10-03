@@ -17,7 +17,7 @@ import { autoDispatch } from './helpers.js';
  */
 function ride(scenario, seed) {
   const sim = new Simulation(olszyny, { scenario, disruptions: 'none', seed });
-  const e = sim.traffic.timetable().find((x) => x.nr === 8403);
+  const e = sim.traffic.entry(8403);
   const max = { inZone: 0, outZone: 0, afterZone: 0, step: 0 };
   let leftZone = false;
   for (let i = 0; i < 20000 && !e.train?.finished; i++) {

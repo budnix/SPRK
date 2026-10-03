@@ -163,7 +163,7 @@ test('usterka blokady: zapowiadanie telefoniczne w obie strony, przyjazd potwier
   // właściwa odpowiedź
   assert.equal(sim.comms.send('free', { exit: 'W', nr: 5310 }).ok, true);
   run(sim, 60 * 6);
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
+  const e = sim.traffic.entry(5310);
   assert.ok(e.train, 'pociąg nie został wyprawiony po zapowiedzi telefonicznej');
   sim.press(G('A')); sim.press(G('D1'));
   run(sim, 60 * 5);
@@ -177,7 +177,7 @@ test('usterka blokady: zapowiadanie telefoniczne w obie strony, przyjazd potwier
   assert.equal(w.fault, false);
   assert.equal(w.direction, null, 'po naprawie blokada w stanie zasadniczym');
   // wyjazd 5310 do E działa normalnie (blokada E sprawna) – tu tylko sprawdzamy wyjazd przez W dla innego pociągu: pytanie o drogę
-  const eE = sim.traffic.timetable().find((x) => x.nr === 5311);
+  const eE = sim.traffic.entry(5311);
   void eE;
 });
 

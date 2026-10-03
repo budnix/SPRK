@@ -16,7 +16,7 @@ const waitingBefore = (tr, sig) => !!tr && tr.entered && tr.v === 0 && tr.nextSi
 test('zapowiadanie telefoniczne: dopóki pociąg stoi przed semaforem wjazdowym, sąsiad nie dostaje „droga wolna” dla następnego', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
   const b = sim.blocks.get('W');
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   for (let i = 0; i < 6000 && !waitingBefore(e.train, 'A'); i++) { sim.step(0.5); grant('W')(sim); }
   assert.ok(waitingBefore(e.train, 'A'), 'pociąg 6101 stoi przed A');
   assert.equal(b.occupied, false, 'pociąg zjechał z toru szlakowego na odcinek przed semaforem');
@@ -98,7 +98,7 @@ test('pociąg kończący bieg, który stanął za taborem na odcinku przed semaf
     { nr: 90201, kind: 'os', name: 'Osobowy', from: 'W', to: null, arr: '07:12', track: '2', stop: true, terminates: true, length: 180, vmax: 100, dwell: 30 },
   ] } });
   const b = sim.blocks.get('W');
-  const e = sim.traffic.timetable().find((x) => x.nr === 90201);
+  const e = sim.traffic.entry(90201);
   for (let i = 0; i < 6000 && !(e.train?.entered && e.train.v === 0); i++) { sim.step(0.5); grant('W')(sim); }
   assert.ok(e.train?.entered && e.train.v === 0, 'pociąg stanął');
   assert.equal(e.train.stoppedAt?.reason, 'tabor na torze');

@@ -12,7 +12,7 @@ import { setRoutes, routesBeingSet, grant } from './helpers.js';
  */
 function run6106(faults) {
   const sim = new Simulation(szkolna, { scenario: { id: 't', name: 't', endTime: '10:00', srk: 'komputerowe', trains: [6106], faults }, disruptions: 'none' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6106), E = sim.blocks.get('E');
+  const e = sim.traffic.entry(6106), E = sim.blocks.get('E');
   const until = (hhmm) => {
     while (sim.clock.time < Clock.parse(hhmm)) {
       sim.step(0.5);

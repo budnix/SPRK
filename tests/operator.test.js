@@ -40,7 +40,7 @@ test('krzyżowanie, gdy tor planowy ma dwa odcinki (Reda: peron I na T23, dalej 
   ] } });
   let met = false;
   play(sim).until('09:00', { stop: allArrived, each: () => {
-    const [a, b] = [56710, 55711].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr).train);
+    const [a, b] = [56710, 55711].map((nr) => sim.traffic.entry(nr).train);
     // krzyżowanie naprawdę zachodzi: 56710 stoi na T23, a 55711 jest już na szlaku od Helu
     if (a?.entered && a.v === 0 && a.occupiedSections().has('T23') && b && !b.entered) met = true;
   } });
@@ -54,7 +54,7 @@ test('krzyżowanie, gdy tor planowy ma dwa odcinki (Reda: peron I na T23, dalej 
 
 test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nastawić od nowa: automat wyprawia pociąg na sygnał zastępczy', () => {
   const sim = new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   const end = Clock.parse('10:30');
   let cancelled = false;
   play(sim).until(end, { stop: allArrived, each: () => {
@@ -109,7 +109,7 @@ test('wjazd wieloetapowy przy usterce na drodze: po przyjeździe pociągu automa
 const sopotTrain = (nr, arr, dep, extra = {}) => ({ nr, kind: 'os', name: 'Regio', from: 'GD1', to: 'OR1', arr, dep, track: '2', stop: true, length: 160, vmax: 120, dwell: 40, ...extra });
 /** Oba stopnie wjazdu pociągu `nr` nastawione, pociąg jeszcze przed semaforem wjazdowym A. */
 const bothStagesBeforeA = (nr) => (sim) => {
-  const tr = sim.traffic.timetable().find((e) => e.nr === nr)?.train;
+  const tr = sim.traffic.entry(nr)?.train;
   return !!tr && Interlocking.routeAhead(sim.ilk.routeState('A-H')) && Interlocking.routeLocked(sim.ilk.routeState('H-O'));
 };
 /** Zmiana z usterką w chwili `when`; liczy nastawienia przebiegów i odmowy (polecenie wydane, urządzenia odmówiły). */

@@ -224,7 +224,7 @@ export class Traffic {
    * zezwolenie daje się sygnałem – odmowa.
    */
   shuntPermit(nr) {
-    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const e = this.entry(nr);
     const tr = e?.train;
     if (!tr || tr.finished || !tr.entered) return { ok: false, reason: `skład nr ${nr} nie stoi na stacji` };
     if (tr.mode !== 'shunt') return { ok: false, reason: `pociąg nr ${nr} nie jest w jeździe manewrowej` };
@@ -242,7 +242,7 @@ export class Traffic {
   }
 
   issueOrder({ nr, signal, text, reason }) {
-    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const e = this.entry(nr);
     if (!e?.train || e.train.finished || !e.train.entered) return { ok: false, reason: `Pociąg ${nr} nie stoi na stacji` };
     const tr = e.train;
     // rozkaz „S” dotyczy pociągu; skład manewrowy mija uszkodzony sygnalizator na zezwolenie dyżurnego (Ir-9 § 10 ust. 15)
@@ -408,6 +408,11 @@ export class Traffic {
   /** Aktualny rozkład z stanami (dla panelu bocznego). */
   timetable() {
     return this.entries;
+  }
+
+  /** Wpis rozkładu pociągu `nr` (numer jako liczba albo napis) albo null. */
+  entry(nr) {
+    return this.entries.find((x) => String(x.nr) === String(nr)) ?? null;
   }
 
   start(time) {
@@ -708,7 +713,7 @@ export class Traffic {
    * (maszynisty nie ma w kabinie).
    */
   toShunting(nr, { quiet = false } = {}) {
-    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const e = this.entry(nr);
     if (!e?.train || e.train.cabChange) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     if (e.train.mode !== 'shunt' && !quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'shunt' });
@@ -722,7 +727,7 @@ export class Traffic {
 
   /** Skład manewrowy z powrotem w tryb jazdy pociągowej (po podstawieniu na tor); radio i `quiet` – jak `toShunting`. */
   toTrainMode(nr, { quiet = false } = {}) {
-    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const e = this.entry(nr);
     if (!e?.train || e.train.cabChange) return false;
     if (e.train.v > 0) { this.bus.emit('log', { time: this.time, level: 'warn', msg: `Skład ${nr} jeszcze jedzie – tryb zmienia się po zatrzymaniu` }); return false; }
     if (e.train.mode !== 'train' && !quiet) this.bus.emit('driver', { time: this.time, nr: e.nr, order: 'train' });
@@ -739,7 +744,7 @@ export class Traffic {
    * okręgu). False, gdy skład jedzie albo zmiana już trwa – bez nowego polecenia (automat pyta w każdym kroku).
    */
   reverseTrain(nr, { quiet = false } = {}) {
-    const e = this.entries.find((x) => String(x.nr) === String(nr));
+    const e = this.entry(nr);
     if (!e?.train) return false;
     const duration = cabChangeTime(this.seed, e.nr);
     if (!e.train.startCabChange(this.time, duration, quiet)) return false;

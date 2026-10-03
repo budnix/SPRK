@@ -61,7 +61,7 @@ export class AutoOperator {
 
   /** Plan automatu przy pociągu `nr` – do diagnozy i testów: `{ entry, via, accept }` (kopia) albo null. */
   plan(nr) {
-    const e = this.sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
+    const e = this.sim.traffic.entry(nr);
     if (!e) return null;
     const plan = planOf(e);
     return { entry: plan.entry ? [...plan.entry] : null, via: plan.via, accept: plan.accept ? { kind: plan.accept.kind, track: plan.accept.track ?? null } : null };

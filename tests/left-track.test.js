@@ -21,7 +21,7 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
     { nr: 55104, kind: 'os', name: 'Osobowy', from: 'GD1', to: 'OR1', arr: '07:12', dep: '07:13', track: '2', stop: true, length: 130, vmax: 100, dwell: 60 },
   ] } });
   const op = new AutoOperator(sim, { district: null, role: 'full' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 9001);
+  const e = sim.traffic.entry(9001);
   const gd1 = sim.blocks.get('GD1'), gd2 = sim.blocks.get('GD2');
   // automat przyjmuje 9001 na tor 1; potem dyżurny: Zk na GD1 i przebieg złożony na tor lewy
   let n = 0;
@@ -52,7 +52,7 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
   assert.equal(e.actualExit, 'GD1');
   assert.equal(e.phase, 'at-neighbour');
   assert.deepEqual([gd1.occupied, gd2.occupied, gd2.poBlocked], [false, false, false], 'oba tory wolne po przyjeździe');
-  assert.equal(sim.traffic.timetable().find((x) => x.nr === 55104).phase, 'at-neighbour', '55104 przyjechał po zwolnieniu toru 1');
+  assert.equal(sim.traffic.entry(55104).phase, 'at-neighbour', '55104 przyjechał po zwolnieniu toru 1');
   assert.ok(refused > 0, 'zgoda na zmianę kierunku odmówiona, dopóki tor 1 był nasz');
 });
 

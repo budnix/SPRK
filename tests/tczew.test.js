@@ -69,11 +69,11 @@ test('Tczew: pełna zmiana – IC/Regio linii 9, Bydgoszcz, nawroty do Chojnic, 
  */
 test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat przyjmuje przejazdowy na inny tor z wyjazdem na jego szlak', () => {
   const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611, 44631] }, disruptions: 'none' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 44611);
+  const e = sim.traffic.entry(44611);
   // 16 min: 44631 dostaje Z → tor 15 (07:49), zanim 44611 dojedzie do E1
   sim.traffic.setInboundDelay(e, 16);
   play(sim).until('09:00', { stop: allArrived });
-  const end = sim.traffic.timetable().find((x) => x.nr === 44631);
+  const end = sim.traffic.entry(44631);
   assert.equal(e.phase, 'at-neighbour', `44611: ${e.status}`);
   assert.equal(String(end.actualTrack), '15', '44631 kończy bieg na torze 15');
   assert.ok(end.actualArr < e.actualArr, '44631 przyjechał pierwszy');
@@ -88,7 +88,7 @@ test('Tczew: przejazdowy na inny tor tylko z wyjazdem na jego szlak – przy tor
   const closedSections = ['T15', 'T7', 'T5'].map((section) => ({ section }));
   const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611], closedSections }, disruptions: 'none' });
   play(sim).until('09:00', { stop: allArrived });
-  const e = sim.traffic.timetable().find((x) => x.nr === 44611);
+  const e = sim.traffic.entry(44611);
   assert.equal(e.phase, 'at-neighbour', `44611: ${e.status}`);
   assert.ok(['9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack}`);
 });

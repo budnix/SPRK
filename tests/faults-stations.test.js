@@ -8,7 +8,7 @@ import brzezina from '../src/stations/brzezina.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { faultSim, runWithFault, at, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch, routeView, routeViews, routesBeingSet } from './helpers.js';
+import { autoDispatch, routeView, routeViews, routesBeingSet, entryOf } from './helpers.js';
 
 /*
  * Usterki w wybranej chwili jazdy na stacjach spoza pozostałych `tests/faults-*.test.js` (tam: Szkolna, Kalinowo):
@@ -29,7 +29,6 @@ import { autoDispatch, routeView, routeViews, routesBeingSet } from './helpers.j
  * „dyżurny” testu przez `sim.execute`, `sim.traffic.issueOrder` i blokadę liniową.
  */
 
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const now = (sim) => Clock.format(sim.clock.time, true);
 const scores = (sim, code) => sim.score.items.filter((i) => i.code === code).map((i) => i.points);
 /** Odległość czoła pociągu od semafora `sig` (m) albo undefined. */

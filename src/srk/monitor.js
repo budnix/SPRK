@@ -94,7 +94,7 @@ export function lineTrains(sim, exit) {
   const tt = sim.traffic.timetable();
   const out = [];
   if (b.lineTrain != null) {
-    const e = tt.find((x) => String(x.nr) === String(b.lineTrain));
+    const e = sim.traffic.entry(b.lineTrain);
     out.push({ nr: String(b.lineTrain), on: true, title: `${e ? `${e.label} ${relationOf(e)}` : `pociąg nr ${b.lineTrain}`} – na szlaku, ${b.poBlocked ? `od nas do ${b.neighbour}` : `od ${b.neighbour} do nas`}` });
   }
   for (const e of tt.filter((x) => x.from === exit && x.requested && !x.dispatched)) out.push({ nr: String(e.nr), on: false, title: `${e.label} ${relationOf(e)} – zgłoszony przez ${b.neighbour}, czeka na wyprawienie` });

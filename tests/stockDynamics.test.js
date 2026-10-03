@@ -210,7 +210,7 @@ test('sąsiad wyprawia pociąg wg prędkości z taborem: TLK z 754 (100 km/h) wc
   // Gdynia Chylonia: szlak od Rumii 5,2 km, 120 km/h; TLK 5301 Hel – Warszawa (140 km/h) jedzie z lokomotywą 754 (100 km/h)
   const st = station('gdynia-chylonia');
   const sim = new Simulation(st, { scenario: 'zmiana', disruptions: 'none', seed: 1 });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5301);
+  const e = sim.traffic.entry(5301);
   assert.equal(e.rollingStock.id, '754');
   const line = st.exits[e.from];
   assert.equal(line.lineSpeed, 120);

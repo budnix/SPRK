@@ -9,7 +9,7 @@ import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
 import { faultSim, runWithFault, at, target, stuck, entryActive, exitActive, entryRoutes, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch, routeView } from './helpers.js';
+import { autoDispatch, routeView, entryOf, trainRow } from './helpers.js';
 
 /*
  * Usterki toru w wybranej chwili jazdy pociągu (podstawa: `tests/fault-harness.js`):
@@ -32,16 +32,15 @@ const DESKS = [...PANELS.map((srk) => ['szkolna', srk]), ['kalinowo', 'mor3']];
 /** Stanowiska z ciągłą kontrolą sygnału (semafor gaśnie przy zajętości; w nastawni mechanicznej sygnał trzyma dźwignia). */
 const LIVE = DESKS.filter(([, srk]) => srk !== 'mech');
 const TRACKS = ['1', '2'];
-const os = (nr, from, to, track, arr, dep, length) => ({ nr, kind: 'os', name: 'Osobowy', from, to, arr, dep, track, stop: true, length, vmax: 100, dwell: 60 });
 /** Pociągi wzorcowe stacji: [numer, skąd, dokąd] i wpis rozkładu na tor `track`; `tracks` – tory na kierunek, gdy nie 1 i 2. */
 const LINES = {
-  szkolna: { dirs: [[6101, 'W', 'E'], [6102, 'E', 'W']], train: (nr, from, to, track) => os(nr, from, to, track, '07:06', '07:08', 130) },
-  olszyny: { dirs: [[8401, 'W', 'E'], [8402, 'E', 'W']], train: (nr, from, to, track) => os(nr, from, to, track, '07:05', '07:06', 120) },
-  kalinowo: { dirs: [[7201, 'W', 'E'], [7202, 'E', 'W'], [7203, 'W', 'L'], [7205, 'L', 'W']], train: (nr, from, to, track) => os(nr, from, to, track, '07:06', '07:07', 110) },
+  szkolna: { dirs: [[6101, 'W', 'E'], [6102, 'E', 'W']], train: (nr, from, to, track) => trainRow({ nr, from, to, track, arr: '07:06', dep: '07:08', length: 130 }) },
+  olszyny: { dirs: [[8401, 'W', 'E'], [8402, 'E', 'W']], train: (nr, from, to, track) => trainRow({ nr, from, to, track, arr: '07:05', dep: '07:06', length: 120 }) },
+  kalinowo: { dirs: [[7201, 'W', 'E'], [7202, 'E', 'W'], [7203, 'W', 'L'], [7205, 'L', 'W']], train: (nr, from, to, track) => trainRow({ nr, from, to, track, arr: '07:06', dep: '07:07', length: 110 }) },
   // linia dwutorowa z blokadą samoczynną: tor 2 / 4 na Klonów, tor 1 / 3 na Topolno
-  brzezina: { dirs: [[9101, 'T2', 'K2'], [9102, 'K1', 'T1']], tracks: { 9101: ['2', '4'], 9102: ['1', '3'] }, train: (nr, from, to, track) => ({ ...os(nr, from, to, track, '07:06', '07:07', 120), vmax: 120 }) },
+  brzezina: { dirs: [[9101, 'T2', 'K2'], [9102, 'K1', 'T1']], tracks: { 9101: ['2', '4'], 9102: ['1', '3'] }, train: (nr, from, to, track) => trainRow({ nr, from, to, track, arr: '07:06', dep: '07:07', length: 120, vmax: 120 }) },
   // linia dwutorowa z Eap jednokierunkową: tor 2 na Zalesie, tor 1 na Krasne
-  jodlowa: { dirs: [[3301, 'K2', 'Z2'], [3302, 'Z1', 'K1']], tracks: { 3301: ['2'], 3302: ['1'] }, train: (nr, from, to, track) => ({ ...os(nr, from, to, track, '07:05', '07:06', 130), dwell: 45 }) },
+  jodlowa: { dirs: [[3301, 'K2', 'Z2'], [3302, 'Z1', 'K1']], tracks: { 3301: ['2'], 3302: ['1'] }, train: (nr, from, to, track) => trainRow({ nr, from, to, track, arr: '07:05', dep: '07:06', length: 130, dwell: 45 }) },
 };
 const STATIONS = { szkolna, olszyny, kalinowo, brzezina, jodlowa };
 const tracksOf = (stationId, nr) => LINES[stationId].tracks?.[nr] ?? TRACKS;
@@ -84,7 +83,6 @@ const on = {
   /** pierwszy odcinek przebiegu wjazdowego na tor planowy (zwrotnice głowicy) */
   plannedFirst: (nr) => (sim) => plannedRoute(sim, nr)?.sections[0],
 };
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const plannedRoute = (sim, nr) => entryRoutes(sim, nr).find((r) => String(sim.ilk.sections.get(r.sections.at(-1)).track) === String(entryOf(sim, nr).track));
 const faultOf = (sim, type) => sim.faults.list.find((f) => f.type === type);
 const scores = (sim, code) => sim.score.items.filter((i) => i.code === code);

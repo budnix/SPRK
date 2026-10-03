@@ -75,7 +75,7 @@ test('szybki pociąg (IC 160 km/h) zatrzymuje się przy peronie: horyzont hamowa
   const ic = ({ vmax, ...t }) => ({ ...t, name: 'IC Warszawa – Gdańsk', cat: 'IC' });
   const timetable = makeSim().station.timetable.map((t) => (t.nr === 5310 ? ic(t) : t));
   const sim = makeSim({ scenario: { id: 't', name: 't', timetable } });
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
+  const e = sim.traffic.entry(5310);
   // IC bez taboru jedzie wg kategorii (tabor to część planu wpisu)
   e.rollingStock = null;
   play(sim).until('06:20');

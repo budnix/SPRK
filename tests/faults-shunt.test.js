@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch, allArrived, routeView } from './helpers.js';
+import { autoDispatch, allArrived, routeView, entryOf } from './helpers.js';
 import { violations, watchEvents } from '../src/model/check/invariants.js';
 import { faultSim, runWithFault, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
@@ -35,7 +35,6 @@ import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
 const SRK = ['E', 'komputerowe'];
 const SHORT = 4, LONG = 25;
-const entryOf = (sim, nr) => sim.traffic.timetable().find((e) => e.nr === nr);
 const taskOf = (sim, id) => sim.traffic.tasks.find((t) => t.id === id);
 const unit = (sim) => entryOf(sim, 90201)?.train;
 const now = (sim) => Clock.format(sim.clock.time, true);
@@ -383,7 +382,7 @@ for (const srk of SRK) for (const how of ['Sz', 'S']) {
 
 test('zezwolenie na jazdę manewrową (Ir-9 § 10 ust. 15): tylko dla składu manewrowego, przy nastawionym przebiegu i uszkodzonym sygnalizatorze; inaczej odmowa i kara za zły telefonogram', () => {
   const sim = shuntSim('E');
-  const u = sim.traffic.timetable().find((e) => e.nr === 90201);
+  const u = sim.traffic.entry(90201);
   let n = 0;
   // zatrzymanie sprawdzane zaraz po kroku – zanim automat przełączy skład w manewry (zadanie odstawienia)
   while (sim.clock.time < Clock.parse('08:30')) { sim.step(0.5); if (u.actualArr != null && u.train?.v === 0) break; if (n++ % 4 === 0) autoDispatch(sim); }

@@ -25,7 +25,7 @@ test('pociąg zatrzymuje się przed semaforem Stój i rusza po nastawieniu przeb
   const b = sim.blocks.get('W');
   // Wymuś wjazd pierwszego pociągu od W bez przebiegu
   run(sim, 60 * 12, grant('W'));
-  const e = sim.traffic.timetable().find((x) => x.nr === 5310);
+  const e = sim.traffic.entry(5310);
   assert.ok(e.train, 'pociąg 5310 wyprawiony');
   run(sim, 60 * 4);
   assert.equal(e.train.v, 0);
@@ -66,7 +66,7 @@ test('status „odjechał” zostaje, gdy pociąg jedzie torem szlakowym do sąs
   const { autoDispatch } = await import('./helpers.js');
   const szkolna = (await import('../src/stations/szkolna.js')).default;
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
-  const e = sim.traffic.timetable().find((x) => x.nr === 6101);
+  const e = sim.traffic.entry(6101);
   const after = new Set(); // statusy od chwili, gdy pociąg opuścił stację
   let left = false;
   play(sim).until('07:20', { stop: () => e.phase === 'at-neighbour', each: () => {

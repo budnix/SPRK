@@ -174,7 +174,7 @@ export class Simulation {
   #checkCommands(t) {
     for (const c of this.commands) {
       if (c.status !== 'pending' || c.to !== this.playerDistrict) continue;
-      const e = this.traffic.timetable().find((x) => String(x.nr) === String(c.nr));
+      const e = this.traffic.entry(c.nr);
       if (!e) continue;
       let done = false;
       for (const set of this.ilk.routesSet()) {

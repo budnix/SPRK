@@ -42,7 +42,7 @@ test('plan i przebieg zmiany są zapisywalne; pole definicji o nazwie pola przeb
 
 test('skład w manewrach: postój przy peronie już go nie dotyczy (e.stop), a definicja się nie zmienia (Szkolna 90201)', () => {
   const sim = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana', seed: 1 });
-  const e = sim.traffic.timetable().find((x) => x.nr === 90201);
+  const e = sim.traffic.entry(90201);
   let shunted = false;
   play(sim).until(sim.clock.time + 75 * 60, { each: () => { if (e.phase === 'shunting') shunted = true; } });
   assert.ok(shunted, 'skład nie manewrował');
@@ -58,4 +58,15 @@ test('każdy wpis rozkładu zmiany (pociągi rozkładu i nadzwyczajne) powstaje 
     assert.ok(e.source && e.source.nr === e.nr, `${e.nr}: brak source`);
     assert.throws(() => { e.nr = 0; }, TypeError, `${e.nr}: numer da się nadpisać`);
   }
+});
+
+test('wpis pociągu po numerze: traffic.entry(nr) – liczba albo napis, null dla nieznanego; wiersz testu z trainRow', async () => {
+  const { trainRow, TRAIN_LENGTH } = await import('./helpers.js');
+  const row = trainRow({ st: szkolna, nr: 6101, from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1' });
+  assert.deepEqual(row, { nr: 6101, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', stop: true, length: TRAIN_LENGTH.szkolna, vmax: 100, dwell: 60 });
+  assert.deepEqual(trainRow({ st: 'kalinowo', nr: 1, from: 'W', to: 'E', arr: '07:06', dep: '07:08', track: '1', vmax: 120 }).vmax, 120, 'pole nadpisuje domyślne');
+  const sim = new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', timetable: [row] } });
+  assert.equal(sim.traffic.entry(6101), sim.traffic.timetable()[0]);
+  assert.equal(sim.traffic.entry('6101'), sim.traffic.timetable()[0], 'numer jako napis (pole formularza, polecenie)');
+  assert.equal(sim.traffic.entry(9999), null);
 });

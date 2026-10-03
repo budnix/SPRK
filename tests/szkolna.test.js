@@ -200,7 +200,7 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
   if (W.request === 'theirs') sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
   sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });
   until('07:55', false); // skład stoi na torze 2; jeszcze przed 07:57, gdy pojawi się w rozkładzie jako 90202 (odjazd 08:12 − 15 min)
-  const e = sim.traffic.timetable().find((x) => x.nr === 90201);
+  const e = sim.traffic.entry(90201);
   assert.equal(e.phase, 'ended', `pociąg 90201 stoi na torze 2 po przyjeździe (${e.status})`);
   assert.equal(e.train.v, 0);
   const t1 = sim.traffic.tasks.find((t) => t.id === 'odstaw-90201'), t2 = sim.traffic.tasks.find((t) => t.id === 'podstaw-90202');
@@ -218,7 +218,7 @@ test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowy
   const game = play(sim), idle = play(sim, null); // bez automatu kroki nie liczą się do jego rytmu
   const until = (hhmm, auto) => (auto ? game : idle).until(hhmm);
   const run = (sec) => { for (let i = 0; i < sec * 2; i++) sim.step(0.5); };
-  const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
+  const e = (nr) => sim.traffic.entry(nr);
   const G = (id) => ({ kind: 'signal', id, color: 'green' }), Wt = (id) => ({ kind: 'signal', id, color: 'white' });
   until('07:47', true);
   const W = sim.blocks.get('W');
