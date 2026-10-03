@@ -399,9 +399,25 @@ export class Simulation {
    *  { type: 'substitute-off' }               – wygaszenie sygnałów zastępczych (SZO)
    *  { type: 'cancel-timed', signal }         – odwołanie zwalniania czasowego (KZW)
    *  { type: 'axle-reset', section }         – zerowanie licznika osi (ZeroLO) przy usterce licznika
+   * Czynności dyżurnego poza urządzeniami srk i czas gry – polecenie specjalne ich nie blokuje:
+   *  { type: 'comms', form, exit, nr }        – telefonogram / rozmowa (wzory Ir-1, `Comms.send`)
+   *  { type: 'order', nr, signal, text, reason } – rozkaz pisemny „S” (`Traffic.issueOrder`)
+   *  { type: 'to-shunting', nr } | { type: 'to-train', nr } | { type: 'reverse', nr } – tryb jazdy pociągu: manewry,
+   *                                             jazda pociągowa, zmiana kierunku (polecenie dla maszynisty)
+   *  { type: 'pause', on } | { type: 'speed', value } – pauza i tempo gry
+   * Widoki i samouczek zmieniają stan tylko tędy (oraz `press` / `pull` / `cancelSelection`) – `tests/layers.test.js`.
    */
   execute(cmd, { confirmed = false } = {}) {
     const refuse = (reason) => ({ ok: false, reason });
+    switch (cmd?.type) {
+      case 'comms': return this.comms.send(cmd.form, { exit: cmd.exit, nr: cmd.nr });
+      case 'order': return this.traffic.issueOrder({ nr: cmd.nr, signal: cmd.signal, text: cmd.text, reason: cmd.reason });
+      case 'to-shunting': return { ok: !!this.traffic.toShunting(cmd.nr) };
+      case 'to-train': return { ok: !!this.traffic.toTrainMode(cmd.nr) };
+      case 'reverse': return { ok: !!this.traffic.reverseTrain(cmd.nr) };
+      case 'pause': this.clock.paused = !!cmd.on; return { ok: true };
+      case 'speed': this.clock.speed = cmd.value; return { ok: true };
+    }
     // w trakcie polecenia specjalnego inne polecenia są zablokowane (Ie-104.1 §11 ust. 16)
     if (this.special.pending && !confirmed) return refuse(`Trwa polecenie specjalne „${this.special.pending.label}” – potwierdź albo odwołaj (OPS)`);
     const ilk = this.ilk;

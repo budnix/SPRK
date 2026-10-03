@@ -49,8 +49,9 @@
   katalogu logiki (np. `src/model/timetable/`); nowy katalog w `src/` wymaga roli w `FOLDER_ROLES` tego testu.
 - Zależności (`Interlocking`) nie znają przycisków ani kolorów. Przyciski pulpitu typu E tłumaczy na polecenia
   `src/srk/buttons.js`; stanowiska bez przycisków wydają polecenia wprost: `Simulation.execute({ type, … })`.
-- Widok nie zmienia stanu modelu wprost (żadnych przypisań do `sim.ilk.*`, `sim.blocks.*`) – tylko przez
-  `sim.press` / `sim.pull` / `sim.execute` / `sim.cancelSelection`.
+- Widok nie zmienia stanu modelu wprost (żadnych przypisań do `sim.ilk.*`, `sim.blocks.*`, `sim.clock.*`, żadnych
+  wywołań metod ruchu i łączności zmieniających stan) – tylko przez `sim.press` / `sim.pull` / `sim.execute` /
+  `sim.cancelSelection`; telefonogram, rozkaz „S”, tryb jazdy pociągu, pauza i tempo to też polecenia `execute`.
 - Widoki stanowisk (`src/render/*Renderer.js`) nie importują się nawzajem; wspólny kod idzie do osobnego modułu.
 - Działanie nie może zależeć od treści komunikatu dla człowieka (etykiety menu, tekstu dziennika) – używaj pól danych.
 

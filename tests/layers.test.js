@@ -99,6 +99,22 @@ test('widok nie zmienia stanu zależności ani blokad wprost (tylko przez polece
   assert.deepEqual(bad, [], `Widok zmienia stan modelu wprost:\n${bad.join('\n')}`);
 });
 
+test('widok nie woła metod ruchu i łączności zmieniających stan ani nie przestawia zegara – czynności przez sim.execute', () => {
+  // telefonogram, rozkaz „S”, tryb jazdy pociągu, pauza i tempo to polecenia (`Simulation.execute`: comms, order,
+  // to-shunting, to-train, reverse, pause, speed); z ruchu i łączności widok tylko czyta
+  const READS = new Set(['timetable', 'standingTrains', 'waitReason', 'orderTemplate', 'available']);
+  const viewFiles = [...FOLDER_ROLES.view.flatMap((d) => walk(join(SRC, d))), join(SRC, 'main.js')];
+  const bad = [];
+  for (const file of viewFiles) {
+    const lines = stripped(readFileSync(file, 'utf8')).split('\n');
+    lines.forEach((line, i) => {
+      const calls = [...line.matchAll(/\b(?:traffic|comms)\.(\w+)\(/g)].map((m) => m[1]).filter((m) => !READS.has(m));
+      if (calls.length || /\bclock\.(?:paused|speed)\s*(?:=(?!=)|\+=|-=)/.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`);
+    });
+  }
+  assert.deepEqual(bad, [], `Widok zmienia stan poza poleceniami – użyj sim.execute (albo dopisz metodę do odczytów READS, jeśli tylko czyta):\n${bad.join('\n')}`);
+});
+
 test('zapisu przebiegu w zależnościach nie czyta nikt poza zależnościami – inne moduły i narzędzia pytają o stan przebiegu', () => {
   // `Interlocking.active` / `pending` i pola zapisu przebiegu to implementacja zależności (docs/ARCHITECTURE.md,
   // „O stan przebiegu pyta się zależności”): routeState, routesSet, routeFrom, routeInfo, routeFaultDrop, routeFrame

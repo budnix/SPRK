@@ -259,7 +259,7 @@ export class SidePanel {
     toSel.addEventListener('change', fillFormulas); fillFormulas();
     this.root.querySelector('#comms-form').addEventListener('submit', (ev) => {
       ev.preventDefault();
-      const r = this.sim.comms.send(fSel.value, { exit: toSel.value, nr: nrEl.value.trim() });
+      const r = this.sim.execute({ type: 'comms', form: fSel.value, exit: toSel.value, nr: nrEl.value.trim() });
       msg.textContent = r.ok ? t('sp.comms.sent') : (r.reason || t('sp.comms.error'));
       msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
     });
@@ -300,7 +300,7 @@ export class SidePanel {
     reasonEl.addEventListener('input', fill);
     form.addEventListener('submit', (ev) => {
       ev.preventDefault();
-      const r = this.sim.traffic.issueOrder({ nr: sel.value, signal: sigEl.value, text: textEl.value, reason: reasonEl.value });
+      const r = this.sim.execute({ type: 'order', nr: sel.value, signal: sigEl.value, text: textEl.value, reason: reasonEl.value });
       msg.textContent = r.ok ? t('sp.order.ok', { id: r.order.id }) : r.reason;
       msg.className = `order-msg ${r.ok ? 'ok' : 'err'}`;
       this.renderOrders();
@@ -482,9 +482,8 @@ export class SidePanel {
     if (!setHtmlIfChanged(host, html)) return; // bez zmian – nie przebudowuj DOM (stabilne przyciski)
     for (const b of host.querySelectorAll('button')) {
       b.addEventListener('click', () => {
-        if (b.dataset.act === 'shunt') sim.traffic.toShunting(b.dataset.nr);
-        else if (b.dataset.act === 'train') sim.traffic.toTrainMode(b.dataset.nr);
-        else sim.traffic.reverseTrain(b.dataset.nr);
+        const type = { shunt: 'to-shunting', train: 'to-train' }[b.dataset.act] ?? 'reverse';
+        sim.execute({ type, nr: b.dataset.nr });
         this.renderTrains();
       });
     }

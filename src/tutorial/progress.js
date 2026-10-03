@@ -30,7 +30,7 @@ export class MissionProgress {
   next() {
     if (this.finished) return;
     const s = this.step;
-    if (s?.info && this.pausedByUs) { this.sim.clock.paused = false; this.pausedByUs = false; }
+    if (s?.info && this.pausedByUs) { this.sim.execute({ type: 'pause', on: false }); this.pausedByUs = false; }
     this.#enter(this.index + 1);
   }
 
@@ -54,7 +54,7 @@ export class MissionProgress {
     const s = this.steps[i];
     for (const k of [...this.ctx.seen]) if (k.startsWith('cancel:')) this.ctx.seen.delete(k); // odwołania liczą się tylko w bieżącym kroku
     // krok informacyjny: zatrzymaj zegar, żeby początkujący mógł spokojnie przeczytać
-    if (s.info && !this.sim.clock.paused) { this.sim.clock.paused = true; this.pausedByUs = true; }
+    if (s.info && !this.sim.clock.paused) { this.sim.execute({ type: 'pause', on: true }); this.pausedByUs = true; }
     else this.pausedByUs = false;
     this.opts.onStep?.(s, i);
     // warunek mógł być spełniony już wcześniej (np. gracz wyprzedził samouczek)

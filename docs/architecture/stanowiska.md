@@ -49,7 +49,11 @@ Stacja deklaruje `srk: 'E' | 'komputerowe' | 'ebilock' | 'mor3' | 'izh111' | 'me
     `lock`, `block` – bez przycisków i bez uzbrojenia;
     polecenia stanowisk komputerowych: `close-section` (zamknięcie ruchowe toru ITS / ITO), `signal-stop`
     (stopowanie sygnalizatora SES / SEO), `all-stop` (SSS / SSO), `substitute-off` (SZO), `cancel-timed` (KZW),
-    `axle-reset` (zerowanie licznika osi ZeroLO), `release` z `timed` (zwolnienie czasowe na żądanie – ZCZ).
+    `axle-reset` (zerowanie licznika osi ZeroLO), `release` z `timed` (zwolnienie czasowe na żądanie – ZCZ);
+    czynności dyżurnego poza urządzeniami i czas gry (polecenie specjalne ich nie blokuje): `comms` (telefonogram,
+    rozmowa – `form`, `exit`, `nr`), `order` (rozkaz „S”), `to-shunting` / `to-train` / `reverse` (tryb jazdy pociągu –
+    polecenie dla maszynisty), `pause` (`on`), `speed` (`value`). Panel boczny, pasek tempa i samouczek wydają je tylko
+    tak – z ruchu i łączności widok tylko czyta (`tests/layers.test.js`); automat dyżurnego (model) woła ruch wprost.
     Zajętość odcinka (`occupied`) obejmuje usterki (`forced`, `axleFault` – `Interlocking.faultOccupied`), ale wjazd
     pociągu do przebiegu (`wasOccupied`) liczy się tylko z taboru (`physical`).
     Oba wejścia pilnują okręgu nastawczego gracza.

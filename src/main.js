@@ -58,7 +58,7 @@ const sim = new Simulation(station, {
   ...simulationOptions(station, choiceFromParams(params)),
   phoneRoutine: settings.values.phoneRoutine, // rozmowy telefoniczne przy sprawnej blokadzie: same albo ręcznie
 });
-if (!params.get('scenariusz')) sim.clock.paused = true;
+if (!params.get('scenariusz')) sim.execute({ type: 'pause', on: true });
 document.getElementById('station-name').textContent = `${station.name} · ${sim.scenario.name}${sim.districts ? ` · ${sim.playerDistrict === 'both' ? t('top.bothDistricts') : sim.playerDistrict}` : ''}`;
 document.title = `SPRK – ${station.name}`;
 const report = new Report(document.getElementById('report'), sim, { onNew: newShift });
@@ -223,11 +223,11 @@ for (const [i, s] of SPEEDS.entries()) {
   const b = document.createElement('button');
   b.className = 'tb speed-btn'; b.textContent = `${s}×`; b.dataset.speed = s;
   b.title = t('top.speed', { s, key: i + 1 });
-  b.addEventListener('click', () => { sim.clock.speed = s; sim.clock.paused = false; updateSpeed(); });
+  b.addEventListener('click', () => { sim.execute({ type: 'speed', value: s }); sim.execute({ type: 'pause', on: false }); updateSpeed(); });
   speedEl.appendChild(b);
 }
 const pauseBtn = document.getElementById('btn-pause');
-pauseBtn.addEventListener('click', () => { sim.clock.paused = !sim.clock.paused; updateSpeed(); });
+pauseBtn.addEventListener('click', () => { sim.execute({ type: 'pause', on: !sim.clock.paused }); updateSpeed(); });
 function updateSpeed() {
   for (const b of speedEl.querySelectorAll('.speed-btn')) b.classList.toggle('active', +b.dataset.speed === sim.clock.speed && !sim.clock.paused);
   pauseBtn.classList.toggle('active', sim.clock.paused);

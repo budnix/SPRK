@@ -65,7 +65,7 @@ export class Tutorial {
     this.#unhighlight();
     this.box.classList.add('hidden');
     this.glossary.classList.add('hidden');
-    if (this.progress.pausedByUs) { this.sim.clock.paused = false; this.progress.pausedByUs = false; }
+    if (this.progress.pausedByUs) { this.sim.execute({ type: 'pause', on: false }); this.progress.pausedByUs = false; }
     this.progress.finished = true;
     this.sim.autoEnd = true; // samouczek przerwany – zmiana kończy się sama po ostatnim pociągu
     this.opts.onFinish?.();

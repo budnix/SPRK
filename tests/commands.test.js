@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, trainAtA } from './helpers.js';
 import { Simulation } from '../src/model/Simulation.js';
 import { ButtonProtocol, ARM_TIMEOUT } from '../src/srk/buttons.js';
 import { validateStation } from '../src/model/validate.js';
@@ -195,4 +195,26 @@ test('odmowa nastawienia przebiegu podaje kody przeszkód – logika nie czyta k
     const src = readFileSync(new URL(`../src/model/${f}`, import.meta.url), 'utf8');
     assert.doesNotMatch(src, /\.test\(res\.reason|\.includes\('w trakcie/, f);
   }
+});
+
+test('czynności dyżurnego poza urządzeniami i czas gry przez sim.execute – polecenie specjalne ich nie blokuje', () => {
+  const sim = makeSim({ disruptions: 'none', seed: 1 });
+  const e = trainAtA(sim); // 5310 stoi przed A
+  assert.equal(sim.initiateSpecial({ type: 'substitute', signal: 'A' }, { label: 'Sz A' }).ok, true);
+  assert.equal(sim.execute({ type: 'point', id: 'Zw1' }).ok, false, 'polecenie urządzeń w trakcie specjalnego – zablokowane');
+  assert.deepEqual([sim.execute({ type: 'pause', on: true }), sim.clock.paused], [{ ok: true }, true]);
+  assert.deepEqual([sim.execute({ type: 'speed', value: 4 }), sim.clock.speed], [{ ok: true }, 4]);
+  sim.execute({ type: 'pause', on: false });
+  assert.equal(sim.clock.paused, false);
+  // tryb jazdy: polecenie dla maszynisty, wynik jak każde polecenie
+  assert.deepEqual([sim.execute({ type: 'to-shunting', nr: 5310 }), e.train.mode], [{ ok: true }, 'shunt']);
+  assert.deepEqual([sim.execute({ type: 'to-train', nr: 5310 }), e.train.mode], [{ ok: true }, 'train']);
+  assert.deepEqual(sim.execute({ type: 'reverse', nr: 999 }), { ok: false }, 'nie ma takiego pociągu');
+  // telefonogram i rozkaz: odpowiada łączność / ruch, nie blokada polecenia specjalnego
+  for (const cmd of [{ type: 'comms', form: 'ask-free', exit: 'W', nr: '999' }, { type: 'order', nr: '999', signal: 'A', text: '', reason: '' }]) {
+    const r = sim.execute(cmd);
+    assert.equal(r.ok, false, cmd.type);
+    assert.doesNotMatch(r.reason, /polecenie specjalne/, cmd.type);
+  }
+  assert.equal(sim.execute({ type: 'comms', form: 'driver-wait', nr: '5310' }).ok, true, 'rozmowa z maszynistą');
 });
