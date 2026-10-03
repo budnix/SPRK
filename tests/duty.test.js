@@ -332,6 +332,8 @@ test('roboty torowe: od wiosny do jesieni bywa zamknięty tor pomocniczy (cała 
     // każdy pociąg ma drogę z ominięciem zamknięcia; planowany na zamknięty tor jedzie innym bez kary
     assert.deepEqual(checkScenario(st, scenario).filter((f) => f.code.startsWith('closed-') && f.code !== 'closed-planned-track').map((f) => f.msg), [], key);
     assert.match(scenario.description, new RegExp(`Roboty torowe: tor ${stats.works} zamknięty na całą służbę`));
+    // ten sam numer rozkładu – te same roboty („Zagraj ponownie”, numer wpisany później)
+    assert.deepEqual(buildDuty(st, { start: 10, minutes: 120, seed, month: 7, day: 'roboczy' }).scenario, scenario, `${key}: powtórka`);
   }
   assert.ok(drawn > 0 && works >= drawn * 0.6, `roboty w ${works} z ${drawn} służb, które je losują`);
 });

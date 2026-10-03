@@ -31,8 +31,7 @@ export function dutyGrid(shard) {
     test(`służba ${station.id}: każda pora i długość – definicja bez błędów i bez uwag spoza wzorca stacji`, () => {
       const tt = station.timetable, times = tt.map((e) => e.arr || e.dep).sort();
       const pattern = { id: 'wzorzec', name: 'wzorzec', startTime: station.startTime, endTime: '10:00', timetable: tt, tasks: station.tasks || [] };
-      // uwagi wzorca stacji i „pociąg pójdzie innym torem” przy robotach torowych (zamierzone – bez kary)
-      const known = new Set([...checkScenario(station, pattern).filter((f) => f.level === 'warning').map((f) => f.code), 'closed-planned-track']);
+      const known = new Set(checkScenario(station, pattern).filter((f) => f.level === 'warning').map((f) => f.code));
       assert.ok(times.length > 0);
       let built = 0, trains = 0;
       for (const start of STARTS) for (const minutes of DUTY_MINUTES) for (const seed of start % 6 === 0 ? [1, 2] : [1]) {
@@ -41,7 +40,9 @@ export function dutyGrid(shard) {
         const findings = checkScenario(station, scenario);
         const errors = findings.filter((f) => f.level === 'error');
         assert.deepEqual(errors.map((f) => `${f.code}: ${f.msg}`), [], key);
-        assert.deepEqual(findings.filter((f) => f.level === 'warning' && !known.has(f.code)).map((f) => `${f.code}: ${f.msg}`), [], key);
+        // „pociąg pójdzie innym torem” – zamierzone (bez kary) tylko przy robotach torowych (zamknięty tor w scenariuszu)
+        const works = (f) => f.code === 'closed-planned-track' && scenario.closedSections?.length > 0;
+        assert.deepEqual(findings.filter((f) => f.level === 'warning' && !known.has(f.code) && !works(f)).map((f) => `${f.code}: ${f.msg}`), [], key);
         assert.ok(stats.trains > 0, `${key}: bez pociągów`);
         built++; trains += stats.trains;
       }
