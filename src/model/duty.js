@@ -326,16 +326,18 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
   // zapas [s] pociągu towarowego `way` (wjazd `from`, wyjazd `to`, tor `track`, prędkość `vmax`) w chwili `at` wobec
   // pociągów służby – ujemny: konflikt. Jedzie wolniej niż pasażerski, w którego miejsce wchodzi: od innego pociągu na
   // szlaku wjazdu i wyjazdu (w obu kierunkach – linia jednotorowa) dzieli go czas przejazdu szlaku i `FREIGHT_GAP`, od
-  // postoju innego pociągu na tym samym torze stacji – `FREIGHT_GAP`
+  // postoju innego pociągu na tym samym torze stacji – `FREIGHT_GAP`; skład grupy stoi na torze od pierwszego przyjazdu do
+  // ostatniego odjazdu na nim (pociąg kończący bieg i następca z jego składu – zmiana czoła)
   const slack = (way, at) => {
     let s = Infinity;
-    for (const p of picked) for (const o of p.trains) {
-      for (const exit of [way.from, way.to]) {
+    for (const p of picked) {
+      for (const o of p.trains) for (const exit of [way.from, way.to]) {
         const need = lineTime(exit, way.vmax) + FREIGHT_GAP;
         if (o.from === exit) s = Math.min(s, Math.abs(firstOf(o) - at) - need);
         if (o.to === exit) s = Math.min(s, Math.abs(lastOf(o) - at) - need);
       }
-      if (way.track != null && o.track === way.track) s = Math.min(s, Math.max(firstOf(o) - at, at - lastOf(o)) - FREIGHT_GAP);
+      const on = way.track == null ? [] : p.trains.filter((o) => o.track === way.track);
+      if (on.length) s = Math.min(s, Math.max(Math.min(...on.map(firstOf)) - at, at - Math.max(...on.map(lastOf))) - FREIGHT_GAP);
     }
     return s;
   };

@@ -164,7 +164,7 @@ test('wygląd listy posterunków: wyszukiwarka, filtry, karty z trudnością i p
 
 test('wygląd mapy Polski: tablica z siatką, sieć kolejowa, województwo z posterunkami i liczbą, lampki stacji, przyciski przybliżania', async ({ page }) => {
   await startWithProgress(page, '#/sluzba');
-  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(1);
+  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(2);
   expect(await shot(page, '#st-map', 900, 700)).toMatchSnapshot('start-map.png');
 });
 

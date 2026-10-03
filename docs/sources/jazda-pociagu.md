@@ -79,7 +79,9 @@ pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 p
   jednokierunkowa), a przy zapowiadaniu telefonicznym „droga wolna” się nie należy (przyjęte: pociąg „przybył
   w całości”, gdy cały minął semafor wjazdowy – dopiero wtedy potwierdza się przyjazd);
 * pociąg kończący bieg „przyjeżdża” dopiero na torze stacyjnym – postój za innym taborem przed semaforem wjazdowym
-  nie kończy biegu;
+  nie kończy biegu; tor stacyjny bez peronu inny niż planowy (wjazd dwustopniowy – Olsztyn: Y → K2 przez tor 2c → F6)
+  przejeżdża, gdy semafor na jego końcu zezwala, i kończy bieg na swoim torze (przyjęte; dawniej stawał przed
+  zezwalającym K2 i „kończył bieg” na 2c);
 * przebieg wjazdowy jest zakończony, gdy pociąg w całości wjechał na tor docelowy (wszystkie odcinki przed tym torem
   zwolnione) – także gdy tor ma za peronem jeszcze krótki odcinek przy semaforze, do którego pociąg nie dojeżdża
   (przyjęte; wcześniej taki przebieg nie kończył się do odjazdu pociągu, a w nastawni mechanicznej drążka nie dało

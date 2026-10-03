@@ -253,6 +253,12 @@ test('definicja: uwagi – okno startu, odziedziczone zadania, gęsty szlak (wja
   // 6102 z przeciwka na tor 1 w tej samej chwili co 6101
   const overlap = check({ ...base, tasks: [], timetable: [tt(6101), { ...tt(6102), arr: '07:06', dep: '07:08' }] }).find((f) => f.code === 'tt-track-overlap');
   assert.deepEqual([overlap?.pair, overlap?.train, overlap?.with], [true, 6102, 6101]);
+  // przelot po torze, na którym stoi skład na zmianę czoła (90201 07:52 → 90202 08:12 na torze 2, bez manewrów) – dawniej
+  // przelot nie wchodził do konfliktów toru wcale
+  const turn = check({ ...base, tasks: [], timetable: [tt(90201), tt(90202), { ...tt(42101), arr: '08:00', track: '2' }] }).find((f) => f.code === 'tt-track-overlap');
+  assert.deepEqual([turn?.pair, turn?.train, turn?.with], [true, 42101, 90201]);
+  assert.match(turn.msg, /Tor 2: przelot 42101 \(08:00\) w czasie postoju 90201 \(07:52–08:12\)/);
+  assert.ok(!check({ ...base, tasks: [], timetable: [tt(90201), tt(90202), { ...tt(42101), arr: '08:20', track: '2' }] }).some((f) => f.code === 'tt-track-overlap'), 'przelot po odjeździe następcy');
   assert.ok(check('zmiana').filter((f) => f.pair).every((f) => ['tt-track-overlap', 'line-headway', 'line-headway-out', 'line-opposing'].includes(f.code) && f.with != null));
   assert.ok(!dense.some((f) => f.code === 'sc-slack' && f.pair), 'inne uwagi nie są konfliktem dwóch pociągów');
   assert.ok(!check('zmiana').some((f) => f.code === 'line-headway-out'));

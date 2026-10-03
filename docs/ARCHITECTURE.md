@@ -56,7 +56,7 @@ src/
                StartScreen (misje i posterunki, odprawa), Report, EdgePanels (stałe pola skrajne), brand (logo, skala
                trudności), icons, dom (helpery), drag (przeciąganie okienek), noBounce (blokada przesuwania strony)
   i18n/        index (t, setLang, applyDom), pl / en / de (słowniki interfejsu)
-  stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze, Olszyny; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny)
+  stations/    definicje stacji + rejestr (stacje treningowe misji: Szkolna, Jodłowa, Zacisze, Olszyny; Sopot, Gdynia Orłowo, Chylonia, Główna, Rumia, Reda, Tczew, Pruszcz Gdański, Gdańsk Główny, Olsztyn Główny)
 tests/         node --test (logika bez przeglądarki) + tests/e2e (Playwright, wzorce zrzutów)
 scripts/       narzędzia (npm run check / survey / seed-scan / duty-variety, dane mapy i pociągów z nazwami); lib/ – ich logika bez wyjścia
 docs/          format stacji, architektura, źródła, zrzuty ekranu do README

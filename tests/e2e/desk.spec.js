@@ -430,6 +430,17 @@ test('Gdańsk Główny: karta „komputerowe”; monitor z blokadami SBL (9, Śr
   for (const id of ['B', 'A501', 'G', 'N', 'H', 'M', 'F7', 'E502']) await expect(hit(page, id)).toBeAttached();
 });
 
+test('Olsztyn Główny: karta „komputerowe”; monitor z blokadami SBL (353) i Eap (220, 216, 219), semafory wjazdowe A–D, X, Y, T i grupowe P', async ({ page }) => {
+  await page.goto('/#/sluzba/lista', { waitUntil: 'load' });
+  await expect(page.locator('.st-card[data-id=olsztyn-glowny] .st-name')).toHaveText('Olsztyn Główny');
+  await expect(page.locator('.st-card[data-id=olsztyn-glowny] .st-srk').first()).toHaveText('komputerowe · monitor');
+  await expect(page.locator('.st-card[data-id=olsztyn-glowny] .st-srk-both')).toHaveCount(0);
+  await openShift(page, 'olsztyn-glowny', { settings: { sideCollapsed: true } });
+  expect(await page.evaluate(() => ({ srk: window.sim.srk.view, blocks: [...window.sim.blocks.values()].map((b) => `${b.id}:${b.auto ? 'sbl' : b.fixed || 'both'}`) })))
+    .toEqual({ srk: 'screen', blocks: ['GU:both', 'KO2:sbl', 'KO1:sbl', 'KD:both', 'LE2:sbl', 'LE1:sbl', 'MA:both'] });
+  for (const id of ['A', 'B', 'C', 'D', 'X', 'Y', 'T', 'P212', 'H1', 'K5']) await expect(hit(page, id)).toBeAttached();
+});
+
 test('nazwy szlaków na pulpitach nie są zakryte przez sąsiednią kostkę (dłuższe nazwy wychodzą poza swoją kostkę)', async ({ page }) => {
   const covered = [];
   for (const [station, scenario] of [['szkolna', 'zmiana-e'], ['jodlowa', 'zmiana'], ['zacisze', 'zmiana'], ['zacisze', 'zmiana-e'], ['reda', 'zmiana'], ['rumia', 'zmiana'], ['olszyny', 'zmiana-e'], ['olszyny', 'zmiana']]) {

@@ -96,7 +96,12 @@ odmowa (`Traffic.issueOrder`).
   przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3), a także gdy planowy zajmuje skład, który
   z niego już nie odjedzie (zakończył bieg, bez zadań manewrowych i bez pociągu ze składu – Tczew: 44631 na torze 15
   opóźnionego 44611). Pociąg jadący dalej dostaje inny tor tylko taki, z którego jest przebieg wyjazdowy na jego szlak.
-  Testy: `tests/rumia.test.js`, `tests/operator.test.js`, `tests/tczew.test.js`.
+  Testy: `tests/rumia.test.js`, `tests/operator.test.js`, `tests/tczew.test.js`. Drugi stopień wyjazdu dwustopniowego,
+  nastawiony już od semafora pośredniego, gdy pierwszy przepadł (zwrotnica bez kontroli – pociąg do semafora
+  pośredniego nie dojedzie), automat zwalnia i zaczyna wyjazd od nowa – inaczej trzymałby szlak do końca zmiany
+  (Olsztyn: M1 → LE1 po usterce 49a). Skład pociągu kończącego bieg przechodzi w manewry na tor pociągu ze swojego
+  składu tylko po postoju na stacji – na przystanku w przebiegu (`halts`, Olsztyn Śródmieście) jeszcze jedzie na swój
+  tor (`tests/halts.test.js`).
 * Manewry automatu (`Operator.#shuntPath`): drogę do toru docelowego zadania szuka BFS po przebiegach manewrowych,
   także z kilkoma zmianami kierunku (Chylonia: z toru 2 przez tor 503 na tor 1 i do Postojowej). Pierwszy przebieg
   zaczyna się od sygnalizatora, przed którym skład stoi; kolejny nie może potrzebować w innym położeniu zwrotnic, które

@@ -168,6 +168,7 @@ full shift on the same workstation (MOR-3 only at Kalinowo, mission 6).
 | **Tczew** | computer | 5/5 | Junction of lines 9, 131, 203 and 726/728: four platforms, 13 tracks, reversing regional trains to Chojnice, freight to Zajączkowo Tczewskie. |
 | **Pruszcz Gdański** | computer | 4/5 | Line 9 before Gdańsk with branches 260 (Zajączkowo), 229 (Stara Piła) and 226 (Gdańsk Port Północny): single-track Eap blocks feeding freight across the main line. |
 | **Gdańsk Główny** | computer | 5/5 | Terminus of line 9 with SKM platform III (Śródmieście ↔ Wrzeszcz), platforms I/II for line 9 / 202, stub platforms IV/V for trains terminating from Wrzeszcz, lines 227 and 249. |
+| **Olsztyn Główny** | computer | 5/5 | Junction of lines 353, 216, 220 and 219 (diesel to Ełk): four platforms, two-stage entries and departures in the east, Regio stopping at Olsztyn Zachodni and Śródmieście inside the station limits, a freight yard that only leaves towards Korsze. |
 | **Gdynia Główna** | computer | 5/5 | 10 platform tracks, SKM 501 / 502, lines 202, 250 and 201; the whole station from one workstation, split into screens. |
 
 Real stations follow the current station plans (point and signal numbering, platform names, real interlocking:

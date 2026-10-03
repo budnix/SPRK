@@ -13,9 +13,10 @@ import reda from './reda.js';
 import tczew from './tczew.js';
 import pruszczGdanski from './pruszcz-gdanski.js';
 import gdanskGlowny from './gdansk-glowny.js';
+import olsztynGlowny from './olsztyn-glowny.js';
 
 /** Rejestr stacji dostępnych w grze. Przyszły edytor doda tu stacje użytkowników. */
-export const STATIONS = [szkolna, jodlowa, zacisze, olszyny, brzezina, kalinowo, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna, rumia, reda, tczew, pruszczGdanski, gdanskGlowny];
+export const STATIONS = [szkolna, jodlowa, zacisze, olszyny, brzezina, kalinowo, sopot, gdyniaOrlowo, gdyniaChylonia, gdyniaGlowna, rumia, reda, tczew, pruszczGdanski, gdanskGlowny, olsztynGlowny];
 
 export function getStation(id) {
   return STATIONS.find((s) => s.id === id) || STATIONS[0];

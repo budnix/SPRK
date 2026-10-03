@@ -35,6 +35,10 @@ Ustalenia (wyszukiwarka; serwisy źródłowe częściowo niedostępne z tego śr
   z LCS Gdańsk urządzeniami komputerowymi. W grze: `komputerowe` (tylko stanowisko komputerowe).
 * **Gdańsk Główny** – od modernizacji E65 (LCS Gdańsk, nastawnia „G”) urządzenia komputerowe; tory SKM prowadzi
   nastawnia „G-SKM” (PKP SKM). W grze: `komputerowe`, jedno stanowisko na całą część pasażerską.
+* **Olsztyn Główny** – po modernizacji stacji (2022–2024) komputerowa nastawnia „Ol” z LCS, która wg opisu autora
+  projektu (rozmowa, 3.10.2026) steruje też posterunkami Naterki, Olsztyn Kortowo, Olsztynek, Gągławki, Waplewo,
+  Olsztyn Gutkowo, Likusy i Dobre Miasto; dawne nastawnie przekaźnikowe (m.in. OlC, OlA, Ol1) zlikwidowane. W grze:
+  `komputerowe` (tylko stanowisko komputerowe), jedno stanowisko na całą stację, bez posterunków sterowanych z LCS.
 * **Szkolna**, **Jodłowa**, **Zacisze**, **Olszyny** – stacje fikcyjne, treningowe (misje 1–4); każda ma zmiany na
   wszystkich czterech stanowiskach. Układ torów Jodłowej jest taki jak stacji testowej Wola Pustkowska.
   Szkolna (przyjęte): tarcza Tm2 stoi na złączu T2e | T2, tam gdzie semafor D2 w drugą stronę – przebieg Tm1 → Tm2
@@ -154,6 +158,35 @@ torze 13 ma id `Zw41s`; pominięto sygnalizatory blokady samoczynnej (82–83, 1
 ostrzegawcze; p.o. Sopot Wyścigi jest tylko opisem na odcinku zbliżania linii 250. Blokady dwukierunkowe (Eap),
 rozkład jazdy fikcyjny.
 
+## Olsztyn Główny
+
+Układ torowy stacji Olsztyn Główny (`src/stations/olsztyn-glowny.js`) pochodzi z planu schematycznego stacji z serwisu
+Semaforek (https://semaforek.kolej.org.pl/wiki/images/9/99/Olsztyn_Glowny2026.png, stan 2026 po modernizacji
+2022–2024, 22172 × 7094 px – czytelny tylko w pełnej rozdzielczości), wskazanego przez autora projektu: tory peronowe
+8/6 (peron IV), 4/2 (peron III), 1/3 (peron II), 5/7 (peron I; tor 7 czołowy od wschodu, 167 m), tory główne dodatkowe
+10, 12, 14, tory „c” za peronami (8c, 6c, 2c, 1c, 5c); semafory wjazdowe A (220 od Olsztyna Gutkowa), B/C (353 od
+Olsztyna Kortowa; B – jazda po torze lewym), D (216 od Olsztyna Kortowa), Y/X (353 od Łęgajn; X – po torze lewym),
+T (219 od Marcinkowa); wyjazdowe F1–F14 (na zachód), H1–H8, H14 (na wschód), K1, K2, K5, K6, K8 (wjazd dwustopniowy
+ze wschodu), M1, M2, M5, M6, M8, M10, M12 (wyjazd dwustopniowy na wschód), grupowe P210–P216; tarcze Tm9, Tm11, Tm84;
+szybkości na tor zwrotny z napisów na planie (50, 60, 80, 100 km/h; bez napisu – 40). Przystanki w obrębie stacji
+(decyzja autora projektu): Olsztyn Zachodni na odcinkach zbliżania czterech torów od zachodu i Olsztyn Śródmieście
+na torach linii 220 i 216 – pociągi Regio stają tam na krótko (pole `halt`). Odwzorowanie schematyczne: głowice
+z rozjazdów planu (zachód 1–28, 101/102; wschód 41–55, 64, 65, 73, 81, 85, 89/91, 92), rozjazdy krzyżowe drabiny 44,
+47, 49, 52, 53 jako pary zwrotnic, skrzyżowania 120/124 bez zwrotnic (plan: 67, 71); grupa towarowa 210–217 (8 torów)
+jako 4 tory 210, 212, 214, 216 z wjazdem od zachodu z toru 14 i wyjazdem tylko na wschód (w stronę Korsz) przez
+semafory grupowe; z torów postojowych PKP Intercity tylko tor 701. Pominięto: tor 16 i tory zaplecza 500–506, tory
+100–105, 14c, 80 (wagonownia), 7b/7c, 9, pozostałe tory postojowe PKP Intercity, bocznice (Michelin, zespół
+bocznic), tor 602, tory 218–220, dwa tory bez krawędzi peronowej w stronę Szczytna (linia 219 jako jeden tor), tarcze
+manewrowe głowic (poza żeberkami), semafory powtarzające, rozjazd 94/95. Linie i sąsiednie posterunki – polska
+Wikipedia (artykuły „Linia kolejowa nr 353 / 216 / 219 / 220”, kilometraż): Olsztyn Kortowo (posterunek
+odgałęźny, 216 km 77,284; 353), Łęgajny (353 km 307,772), Olsztyn Gutkowo (220 km 8,049), Marcinkowo (219 km 16,691;
+od km 1,460 linia niezelektryfikowana – pociągi do Ełku spalinowe). Przyjęte (źródła nie podają): blokada samoczynna
+na 353, Eap na 216, 220 i 219, długości szlaków w przybliżeniu z kilometrażu. Rozkład jazdy fikcyjny.
+
+Przyjazd do grupy towarowej trwa w grze ok. 4 min dłużej niż w planie (sąsiad wyprawia pociąg z zapasem 90 s na jazdę
+od granicy pulpitu do toru – stałym dla każdej stacji, a droga do toru 214 to ok. 3,5 km na obrazie „40”); kary za to
+nie ma.
+
 ## Mapa wyboru posterunku (`src/ui/map/poland.js`, pola `region`, `geo`, `lines`)
 
 * Kształty województw: Natural Earth, „Admin 1 – States, Provinces”, 1:10m (domena publiczna,
@@ -166,7 +199,8 @@ rozkład jazdy fikcyjny.
   54,5211 / 18,5294; Rumia https://pl.wikipedia.org/wiki/Rumia_(stacja_kolejowa) 54,5689 / 18,3867; Reda
   https://pl.wikipedia.org/wiki/Reda_(stacja_kolejowa) 54,5944 / 18,3533; Tczew https://pl.wikipedia.org/wiki/Tczew_(stacja_kolejowa)
   54,0978 / 18,7883; Pruszcz Gdański https://pl.wikipedia.org/wiki/Pruszcz_Gda%C5%84ski_(stacja_kolejowa) 54,2581 / 18,6469;
-  Gdańsk Główny https://pl.wikipedia.org/wiki/Gda%C5%84sk_G%C5%82%C3%B3wny 54,3572 / 18,6444. Województwo (`region`) i linie
+  Gdańsk Główny https://pl.wikipedia.org/wiki/Gda%C5%84sk_G%C5%82%C3%B3wny 54,3572 / 18,6444; Olsztyn Główny (3.10.2026)
+  https://pl.wikipedia.org/wiki/Olsztyn_G%C5%82%C3%B3wny 53,7857 / 20,4973. Województwo (`region`) i linie
   (`lines`) – z opisu położenia stacji (`location`), tych samych źródeł co plan stacji.
 * Sieć kolejowa Polski w małym przybliżeniu (`src/ui/map/railOverview.js`): Natural Earth, „Railroads” 1:10m (domena
   publiczna), skrypt `scripts/rail-overview.mjs` (suma SHA-256 pliku źródłowego w nagłówku wyniku).
@@ -196,7 +230,8 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   wzorca stacji (bez zdawczych i lokomotyw luzem), a gdy stacja ich nie ma – TM, 400 m, 1200 t, 80 km/h; numery od 46000.
   Wchodzi w wolną lukę w oknie ±30 min wokół miejsca zastępowanego pociągu (chwila z ziarna, w pełnych minutach): od
   innego pociągu na szlaku wjazdu i wyjazdu (na linii jednotorowej – w obu kierunkach) dzieli go co najmniej czas
-  przejazdu szlaku i 3 min, od postoju innego pociągu na tym samym torze stacji – 3 min; najchętniej z zapasem 2 min
+  przejazdu szlaku i 3 min, od postoju innego pociągu na tym samym torze stacji – 3 min (skład na zmianę czoła stoi od
+  przyjazdu do odjazdu następcy z jego składu); najchętniej z zapasem 2 min
   ponad ten odstęp. Pociągi wzorca zostają na miejscu. Tak wstawia się dodatkowy pociąg do gotowego rozkładu w badaniach
   (pociąg towarowy w luce o największym najmniejszym odstępie – Ljunggren i in. 2021,
   https://ideas.repec.org/a/spr/pubtra/v13y2021i3d10.1007_s12469-020-00253-x.html; wolne przedziały na szlakach i torach,

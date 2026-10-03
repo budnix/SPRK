@@ -303,7 +303,7 @@ definicji stacji:
   z listy `src/model/data/namedTrains.js` (cała Polska; `docs/sources/posterunki.md` „Pociągi z nazwami”);
 * służba może przejść przez północ: godziny następnej doby gra zapisuje w danych zmiany jako 24, 25… („25:10” = 01:10),
   a pokazuje jak na zegarze – tak samo można pisać `endTime` i rozkład własnego scenariusza przez północ;
-* sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 30 / 60 / 120 / 180;
+* sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 60 / 120 / 180 / 300;
   każde ziarno z `--seeds` i każde stanowisko stacji to osobny rozkład – scenariusz `sluzba-<minuty>[-<srk>]#<ziarno>`),
   a `npm test` przechodzi po siatce godzin i długości każdego posterunku (`tests/duty-grid.js`) – nowy posterunek
   dochodzi tam sam.

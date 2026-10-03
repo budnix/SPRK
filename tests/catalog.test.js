@@ -62,7 +62,9 @@ test('wyszukiwanie bez polskich znaków: nazwa, linia, stanowisko, województwo'
   assert.equal(searchStations(duty, 'glow')[0].name.split(' ').at(-1).startsWith('Głów'), true);
   assert.ok(ids('213').includes('reda') && !ids('213').includes('sopot'), 'numer linii');
   assert.ok(ids('przekaznikowe').includes('rumia'), 'rodzaj urządzeń');
-  assert.equal(ids('pomorskie').length, duty.length, 'województwo');
+  // województwo: Olsztyn Główny w warmińsko-mazurskim, reszta w pomorskim
+  assert.equal(ids('pomorskie').length, duty.length - 1, 'województwo');
+  assert.deepEqual(ids('mazurskie'), ['olsztyn-glowny']);
   assert.deepEqual(ids('xyzzy'), []);
   assert.equal(ids('').length, duty.length, 'puste zapytanie – wszystko');
 });
@@ -74,11 +76,12 @@ test('filtry: stanowisko, trudność, era, województwo, niegrane', () => {
   assert.ok(filterStations(duty, { difficulty: [5] }).every((st) => st.difficulty === 5));
   assert.equal(f({ era: 'now' }).length, duty.length, 'obecne posterunki – stan dzisiejszy');
   assert.deepEqual(f({ era: 2014 }), []);
-  assert.equal(f({ region: 'pomorskie' }).length, duty.length);
+  assert.equal(f({ region: 'pomorskie' }).length, duty.length - 1);
+  assert.deepEqual(f({ region: 'warminsko-mazurskie' }), ['olsztyn-glowny']);
   assert.deepEqual(f({ region: 'slaskie' }), []);
   const progress = recordResult({}, { station: 'sopot', scenario: 'zmiana', grade: 'dobrze', total: 20 });
   assert.ok(!f({ notPlayed: true, progress }).includes('sopot') && f({ notPlayed: true, progress }).includes('reda'));
-  assert.deepEqual(regionCounts(duty), { pomorskie: duty.length });
+  assert.deepEqual(regionCounts(duty), { pomorskie: duty.length - 1, 'warminsko-mazurskie': 1 });
 });
 
 test('miejsca i edycje: jedno miejsce z kilkoma latami – najnowsza edycja pierwsza, stan dzisiejszy przed latami', () => {

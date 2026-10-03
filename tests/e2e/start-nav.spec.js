@@ -163,9 +163,10 @@ test('mapa: województwa z liczbą posterunków, sieć kolejowa, klik w wojewód
   const svg = page.locator('#st-map .mv-svg');
   await expect(svg).toHaveAttribute('data-level', 'country');
   await expect(page.locator('#st-map path.mp-shape')).toHaveCount(16);
-  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(1);
+  await expect(page.locator('#st-map path.mp-shape.has')).toHaveCount(2);
   await expect(page.locator('#st-map .mv-rlabel[data-region=pomorskie] .mp-count text')).toHaveText('9');
-  await expect(page.locator('#st-map .mv-stop')).toHaveCount(9);
+  await expect(page.locator('#st-map .mv-rlabel[data-region=warminsko-mazurskie] .mp-count text')).toHaveText('1');
+  await expect(page.locator('#st-map .mv-stop')).toHaveCount(10);
   await expect(page.locator('#st-map .mv-overview')).toHaveCount(1);
   // obok mapy: województwa; wyszukiwanie – pasujące posterunki (i tylko one na mapie)
   await expect(page.locator('#st-mapside a[data-region=pomorskie]')).toBeVisible();
@@ -190,7 +191,7 @@ test('mapa: województwa z liczbą posterunków, sieć kolejowa, klik w wojewód
   // przełącznik widoku: lista i z powrotem mapa
   await page.goto('/#/sluzba', { waitUntil: 'load' });
   await page.click('.st-mode a[data-mode=list]');
-  await expect(page.locator('#st-list .st-card')).toHaveCount(9);
+  await expect(page.locator('#st-list .st-card')).toHaveCount(10);
   await page.click('.st-mode a[data-mode=map]');
   await expect(page.locator('#st-map .mv-svg')).toBeVisible();
 });

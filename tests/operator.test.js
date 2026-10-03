@@ -6,6 +6,7 @@ import { Interlocking } from '../src/model/Interlocking.js';
 import { allArrived, Clock, play } from './helpers.js';
 import sopot from '../src/stations/sopot.js';
 import rumia from '../src/stations/rumia.js';
+import olsztyn from '../src/stations/olsztyn-glowny.js';
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { faultSim, runWithFault, stuck } from './fault-harness.js';
 import { leftovers } from '../src/model/check/outcome.js';
@@ -165,6 +166,16 @@ test('tor planowy zamknięty, wyjazd przez semafor pośredni (Rumia): automat pr
   assert.ok(e.train?.finished, `93202: ${e.status}`);
   // cała zmiana bez zatoru
   const r = checkShift({ station: rumia, scenario, seed: 1, level: 'none', extra: 120 });
+  assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
+  assert.equal(r.violations.count, 0);
+});
+
+test('wyjazd dwustopniowy zaczęty od nowa: drugi stopień nastawiony od dawnego semafora pośredniego automat zwalnia – nie trzyma szlaku', () => {
+  // Olsztyn Główny, TLK 5400 z toru 2: pierwszy stopień H2 → M1 utknął na zwrotnicy 49a bez kontroli (usterka), a automat
+  // zdążył nastawić drugi M1 → LE1. Wyjazd zaczął od nowa przez M2, a przebieg M1 → LE1 został bez pociągu do końca
+  // zmiany – żaden pociąg nie wyjechał już do Łęgajn (8 w zatorze)
+  const scenario = { ...olsztyn.scenarios.find((s) => s.id === 'zmiana'), id: 'usterka-49a', faults: [{ type: 'point-control', target: 'Zw49a', at: '06:30', duration: 12 }] };
+  const r = checkShift({ station: olsztyn, scenario, seed: 1, level: 'none', extra: 120 });
   assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
   assert.equal(r.violations.count, 0);
 });

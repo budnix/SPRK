@@ -523,7 +523,9 @@ export class AutoOperator {
     // swoją porę albo na poprzednie, też jest zadaniem – wtedy skład stoi; zadanie po poprzednim, które przepadło,
     // już się nie wykona.
     const open = (sim.traffic.tasks || []).some((x) => taskAlive(sim.traffic.tasks, x) && String(x.unit) === String(e.nr));
-    const heir = !task && !open && !this.district && !e.to && tr.entered ? sim.traffic.timetable().find((x) => String(x.unit) === String(e.nr) && !x.attached) : null;
+    // tylko skład, który zakończył bieg (postój na stacji za nim) – pociąg na przystanku w przebiegu (`halts`, np.
+    // Olsztyn Śródmieście) albo przed semaforem jeszcze jedzie na swój tor
+    const heir = !task && !open && !this.district && !e.to && tr.entered && tr.hasStopped && !tr.atHalt ? sim.traffic.timetable().find((x) => String(x.unit) === String(e.nr) && !x.attached) : null;
     const stranded = heir && !routes.some((r) => r.kind === 'train' && tr.occupiedSections().has(r.approach));
     const target = task ? task.toTrack : stranded ? heir.track : null;
     if (target != null && tr.entered && tr.v === 0) {
@@ -589,7 +591,14 @@ export class AutoOperator {
       const waiting = (pred) => ilk.routesSet().some((x) => this.#onItsWay(x.state) && pred(x.route));
       // pierwszy stopień wyjazdu przepadł, zanim pociąg ruszył – wyjazd zaczyna się od nowa
       const plan = planOf(e);
-      if (plan.via && tr.nextSignal() !== plan.via && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === plan.via)) plan.via = null;
+      if (plan.via && tr.nextSignal() !== plan.via && !waiting((r) => r.kind === 'train' && r.end.type === 'signal' && r.end.id === plan.via)) {
+        // drugi stopień, nastawiony już od tego semafora pośredniego (pierwszy utknął – np. zwrotnica bez kontroli), zostałby
+        // bez pociągu i trzymał szlak do końca zmiany (Olsztyn: M1 → LE1 po usterce 49a) – zwolnić go
+        for (const x of ilk.routesSet()) {
+          if (x.route.kind === 'train' && x.route.start === plan.via && x.state === 'waiting') { ilk.cancelSignal(x.route.start); ilk.releaseRoute(x.route.start); }
+        }
+        plan.via = null;
+      }
       if (plan.via) cands = routes.filter((r) => r.kind === 'train' && r.exit === exitId && r.start === plan.via);
       else if (!cands.length) {
         const toExit = new Set(routes.filter((r) => r.kind === 'train' && r.exit === exitId).map((r) => r.start));

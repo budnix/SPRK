@@ -185,7 +185,8 @@ liczba w uwadze `sc-slack` definicji i w `late-inbound` przebiegu.
    `at` nie jako napis GG:MM – liczbę gra wzięłaby za sekundy od północy, `duration`, po końcu zmiany, blok
    przebiegowy poza nastawnią mechaniczną), zamknięcia toru (nieznany odcinek, czas, `from` ≥ `to`, pociąg bez
    objazdu do końca zmiany). Uwagi: sąsiad musiałby wyprawić pociąg przed startem (≥ 2 min), dwa pociągi na jednym
-   torze w planie, wjazdy jednym szlakiem gęściej niż jazda po nim (`line-headway`) i wyjazdy na szlak, zanim
+   torze w planie (także przelot w czasie postoju innego pociągu na jego torze – skład na zmianę czoła stoi od przyjazdu
+   do odjazdu następcy), wjazdy jednym szlakiem gęściej niż jazda po nim (`line-headway`) i wyjazdy na szlak, zanim
    poprzedni pociąg go zwolni (`line-headway-out`; szlak to jeden odstęp – także SBL), wyjazd i wjazd naprzeciw na
    Eap, zapas `sc-slack` przy wymuszonym poziomie, godziny w nazwie zmiany inne niż okno (`sc-name-window`), uwaga walidacji wpisu własnego rozkładu (pociąg dłuższy niż tor),
    zadanie po terminie / bez `afterTask` / odziedziczone i pominięte / na tor przyjazdu (bez manewrów) / z terminem po

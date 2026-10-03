@@ -327,7 +327,7 @@ export class Train {
           if (at != null) constraints.push({ dist: dist + at, speed: 0, reason: 'przystanek', kind: 'halt', halt, tile });
           else if (!nbH || nbH.tile.section !== tile.section) constraints.push({ dist: dist - 15, speed: 0, reason: 'przystanek', kind: 'halt', halt, tile });
         }
-        if (this.#shouldStopAt(tile)) {
+        if (this.#shouldStopAt(tile) && !this.#passesThrough(tile, outPort)) {
           const sigHere = this.topo.signalsAt(tile, outPort).some((sg) => this.mode !== 'train' || sg.kind === 'semafor');
           const nbT = this.topo.neighbour(tile, outPort);
           const sectionEnds = !nbT || nbT.tile.section !== tile.section;
@@ -473,6 +473,17 @@ export class Train {
       // Zatrzymanie na innym torze niż planowany, jeżeli ma peron – dopuszczalne
     }
     return true;
+  }
+
+  /**
+   * Pociąg kończący bieg na torze stacyjnym bez peronu, który nie jest jego torem planowym, jedzie dalej, gdy semafor na
+   * końcu tego toru zezwala na jazdę – tor jest stopniem przebiegu wieloetapowego (Olsztyn: Y → K2 na torze 2c → F6),
+   * a nie miejscem zakończenia biegu. Semafor „Stój” (dalej przebiegu nie ma) – staje i kończy bieg jak dotąd.
+   */
+  #passesThrough(tile, outPort) {
+    const sec = this.ilk.sections.get(tile.section);
+    if (!this.def.terminates || sec?.platform || !this.plannedTrack || String(sec?.track) === String(this.plannedTrack)) return false;
+    return this.topo.signalsAt(tile, outPort).some((sg) => sg.kind === 'semafor' && Interlocking.isTrainProceed(this.ilk.signals.get(sg.id)?.aspect));
   }
 
   /** Przystanek na kostce `tile`, na którym pociąg ma postój (`halts`) i jeszcze nie stał – nazwa albo null. */

@@ -308,7 +308,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
   // ---- konflikty planu: ten sam tor, ten sam szlak ----
   const taskDefs = sc.tasks || station.tasks || [];
   const tasksOf = (nr) => taskDefs.filter((k) => same(k.unit, nr));
-  const occ = [];
+  const occ = [], passes = [];
   for (const e of tt) {
     if (e.track == null) continue;
     let a = e.arrTime ?? (e.startOn ? start : null);
@@ -321,9 +321,16 @@ export function checkScenario(station, scenarioRef, opts = {}) {
       if (k && String(k.toTrack) !== String(e.track) && a != null) b = Math.max(a + 5 * 60, k.after ? Clock.parse(k.after) : 0);
     }
     if (e.unit != null) { const ks = tasksOf(e.unit); a = ks.length ? Clock.parse(ks.at(-1).deadline) : (find(e.unit)?.arrTime ?? a); }
-    if (!e.stop && !e.startOn && e.unit == null) continue; // przelot zajmuje tor chwilę
+    // przelot zajmuje tor chwilę – sprawdzany niżej tylko wobec postojów
+    if (!e.stop && !e.startOn && e.unit == null) { if (Number.isFinite(e.arrTime)) passes.push({ e, T: String(e.track), t: e.arrTime }); continue; }
     if (!Number.isFinite(a) || !Number.isFinite(b)) continue;
     occ.push({ e, T: String(e.track), a, b });
+  }
+  // przelot w czasie postoju innego pociągu na tym torze (np. skład na zmianę czoła stoi od przyjazdu do odjazdu następcy)
+  // nie przejedzie – pójdzie innym torem albo poczeka
+  for (const p of passes) {
+    const x = occ.find((o) => o.T === p.T && o.a < p.t && p.t < o.b);
+    if (x) warn('tt-track-overlap', `Tor ${p.T}: przelot ${p.e.nr} (${hm(p.t)}) w czasie postoju ${x.e.nr} (${hm(x.a)}–${hm(x.b)}) – pojedzie innym torem (kara) albo poczeka`, p.e.nr, { pair: true, with: x.e.nr });
   }
   for (let i = 0; i < occ.length; i++) for (let j = i + 1; j < occ.length; j++) {
     const x = occ[i], y = occ[j];

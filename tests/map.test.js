@@ -49,7 +49,6 @@ test('każdy posterunek do służby ma współrzędne w swoim województwie (zam
 });
 
 test('tablica: 16 województw (z posterunkami – wyróżnione, z liczbą), sieć z Natural Earth, tory linii posterunków (OSM), przystanki', () => {
-  const pom = duty.filter((s) => s.region === 'pomorskie');
   const svg = boardSvg({ stations: duty, counts: { pomorskie: 9, slaskie: 2 }, mark: (st) => (st.id === 'sopot' ? 'played' : ''), label: (name, n) => `${name} (${n})` });
   const shapes = [...svg.matchAll(/<path class="mp-shape( has)?" d="[^"]+" data-region="([^"]+)"[^>]*><title>([^<]+)<\/title>/g)];
   assert.equal(shapes.length, 16);
@@ -70,7 +69,7 @@ test('tablica: 16 województw (z posterunkami – wyróżnione, z liczbą), sie�
   assert.match(svg, /<g class="rm-plate"[^>]*><rect[^>]*\/><rect class="rm-plate-edge"[^>]*\/><text[^>]*>Gdańsk Główny<\/text><\/g>/);
   // tory: rzeczywisty przebieg każdej linii posterunków (wszystkie mają dane OSM), główny ciąg jaśniejszy
   const drawn = new Set([...svg.matchAll(/class="rm-rail(?: hot)?" data-line="(\d+)"/g)].map((m) => Number(m[1])));
-  assert.deepEqual([...drawn].sort((a, b) => a - b), [...new Set(pom.flatMap((st) => st.lines))].sort((a, b) => a - b));
+  assert.deepEqual([...drawn].sort((a, b) => a - b), [...new Set(duty.flatMap((st) => st.lines))].sort((a, b) => a - b));
   assert.doesNotMatch(svg, /data-lines=/);
   assert.match(svg, /class="rm-rail hot" data-line="202"/);
   assert.match(svg, /class="rm-rail" data-line="201"/);
@@ -137,11 +136,15 @@ test('przebieg linii (OpenStreetMap): każdy posterunek leży przy torze każdej
       assert.ok(best < 1000, `${st.id}: linia ${l} najbliżej ${Math.round(best)} m`);
     }
   }
-  // dane przycięte do wycinka schematu (z zapasem) – plik nie rośnie o całą długość linii
-  const b = regionBox('pomorskie', duty.filter((st) => st.region === 'pomorskie'));
-  const [north, west] = unproject([b.x - b.w * 0.2, b.y - b.h * 0.2]), [south, east] = unproject([b.x + b.w * 1.2, b.y + b.h * 1.2]);
+  // dane przycięte do wycinków schematów województw z posterunkami (z zapasem) – plik nie rośnie o całą długość linii
+  const boxes = [...new Set(duty.map((st) => st.region))].map((region) => {
+    const b = regionBox(region, duty.filter((st) => st.region === region));
+    const [north, west] = unproject([b.x - b.w * 0.2, b.y - b.h * 0.2]), [south, east] = unproject([b.x + b.w * 1.2, b.y + b.h * 1.2]);
+    return { north, west, south, east };
+  });
+  const inside = (lat, lon) => boxes.some((x) => lat >= x.south && lat <= x.north && lon >= x.west && lon <= x.east);
   for (const [l, parts] of Object.entries(RAIL_LINES)) for (const flat of parts) for (let i = 0; i < flat.length; i += 2) {
-    assert.ok(flat[i] >= south && flat[i] <= north && flat[i + 1] >= west && flat[i + 1] <= east, `linia ${l}: punkt ${flat[i]}, ${flat[i + 1]} poza wycinkiem`);
+    assert.ok(inside(flat[i], flat[i + 1]), `linia ${l}: punkt ${flat[i]}, ${flat[i + 1]} poza wycinkiem`);
   }
   const [lat, lon] = unproject(project([54.35, 18.65]));
   assert.ok(Math.abs(lat - 54.35) < 1e-9 && Math.abs(lon - 18.65) < 1e-9, 'unproject odwraca project');

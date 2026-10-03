@@ -7,6 +7,7 @@ import { HALT_TIME } from '../src/model/timetable/entry.js';
 import { trainCards } from '../src/ui/panelState.js';
 import { play } from './helpers.js';
 import fixture from './fixtures/stare-pustkowie.js';
+import olsztyn from '../src/stations/olsztyn-glowny.js';
 
 /*
  * Przystanek w obrębie stacji albo na odcinku zbliżania (odcinek z `halt`, np. Olsztyn Śródmieście, Olsztyn Zachodni):
@@ -70,4 +71,26 @@ test('pociąg odjeżdżający staje na przystanku za stacją – odjazd i opóź
   assert.ok(e.actualDep != null && halt.since > e.actualDep, 'przystanek po odjeździe ze stacji');
   assert.equal(e.delay, 0);
   assert.ok(['departed', 'at-neighbour'].includes(e.phase), e.phase);
+});
+
+test('pociąg kończący bieg ze składem na inny pociąg (`unit`) staje na przystanku w przebiegu i jedzie dalej na swój tor – automat go nie przestawia', () => {
+  // Olsztyn Główny: 77100 z Działdowa kończy bieg na torze 3, jego skład jedzie dalej jako 77101; po drodze przystanki
+  // Olsztyn Zachodni (odcinek zbliżania) i Olsztyn Śródmieście (SRd – w przebiegu wjazdowym, żaden przebieg pociągowy się
+  // na nim nie zaczyna). Dawniej automat brał stojący na SRd skład za „bez drogi” i przełączał go w manewry na tor
+  // pociągu ze składu – pociąg zostawał na przystanku, a za nim stała cała stacja
+  const sim = new Simulation(olsztyn, { scenario: 'zmiana', disruptions: 'none', seed: 1 });
+  const e = sim.traffic.entry(77100), halts = new Set();
+  play(sim).until('06:20', { each: () => { if (e.train?.atHalt) halts.add(e.train.atHalt); } });
+  assert.deepEqual([...halts], ['Olsztyn Zachodni', 'Olsztyn Śródmieście']);
+  assert.deepEqual([e.actualTrack, e.train.mode, e.phase], ['3', 'train', 'ended']);
+});
+
+test('pociąg kończący bieg jedzie przez tor stacyjny bez peronu, gdy semafor na jego końcu zezwala – kończy bieg na swoim torze', () => {
+  // Olsztyn Główny: 77300 z Łęgajn kończy bieg na torze 6 – wjazd dwustopniowy Y → K2 (tor 2c, bez peronu) → F6. Dawniej
+  // stawał na 2c przed K2 (zezwalającym) i tam „kończył bieg”: tor stacyjny bez peronu był dla pociągu kończącego bieg
+  // zawsze miejscem zatrzymania
+  const sim = new Simulation(olsztyn, { scenario: 'zmiana', disruptions: 'none', seed: 1 });
+  const e = sim.traffic.entry(77300);
+  play(sim).until('06:30');
+  assert.deepEqual([e.actualTrack, e.phase], ['6', 'ended']);
 });

@@ -49,7 +49,8 @@ pociągów różnych linii się zmienia), a grupa, której któryś pociąg wypa
 jedzie; (3) w miejsce niekursujących pociągów regionalnych
 i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory) – w wolną lukę w oknie ±`FREIGHT_SPAN` wokół miejsca
 zastępowanego pociągu: `slack` liczy zapas chwili wobec pociągów służby (szlak wjazdu i wyjazdu w obu kierunkach – czas
-przejazdu i `FREIGHT_GAP`; tor stacji – `FREIGHT_GAP`), `freightFor` wybiera z ziarna chwilę z zapasem `FREIGHT_BUFFER`,
+przejazdu i `FREIGHT_GAP`; tor stacji – `FREIGHT_GAP` od postoju, a skład grupy – pociąg kończący bieg i następca z jego
+składu – stoi od pierwszego przyjazdu do ostatniego odjazdu na torze), `freightFor` wybiera z ziarna chwilę z zapasem `FREIGHT_BUFFER`,
 a gdy takiej nie ma – z samym odstępem; pociągi wzorca zostają na miejscu; (4) **kontrola
 definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo z uwagą, jakiej nie ma wzorzec stacji
 (styk powtórzeń, konflikt toru albo szlaku), wypada. Kto wypada: przy uwadze o konflikcie dwóch pociągów (oznaczonej przez kontrolę

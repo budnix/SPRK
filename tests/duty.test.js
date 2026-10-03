@@ -21,6 +21,7 @@ import { DAY_TYPES, WORKS, calendarLabel, normalizeCalendar, resolveCalendar, se
 import { seedFraction } from '../src/core/Random.js';
 import reda from '../src/stations/reda.js';
 import tczew from '../src/stations/tczew.js';
+import olsztyn from '../src/stations/olsztyn-glowny.js';
 
 /*
  * Służba o wybranej porze i długości (`src/model/duty.js`): rozkład budowany z wzorca stacji – bez danych per stacja,
@@ -219,6 +220,26 @@ test('pociąg towarowy w wolnej luce: nie tylko w minucie pociągu, który zast�
   const away = minutes.filter((m) => m < 3 || m > 3 + DUTY_SHIFT);
   assert.ok(away.length >= minutes.length / 2, `poza minutą zastępowanego: ${away.length} z ${minutes.length} (${minutes.join(' ')})`);
   assert.ok(new Set(minutes).size >= 8, `różne minuty: ${[...new Set(minutes)].sort((a, b) => a - b).join(' ')}`);
+});
+
+test('pociąg towarowy nie przejeżdża przez tor, na którym stoi skład na zmianę czoła (od przyjazdu do odjazdu następcy)', () => {
+  // Olsztyn Główny: Regio z Iławy kończy bieg na torze 1 (:12), jego skład odjeżdża z niego (:48); tor 1 to też droga
+  // towarowego przelotu Kortowo – Łęgajny. Dawniej luka liczona od każdego pociągu osobno (:12 i :48) – towarowy w środku
+  // postoju (np. 06:00 ziarno 1: o 07:23) stał przed C, aż skład odjechał
+  let passes = 0;
+  for (const start of [6, 10, 14, 19]) for (const seed of [1, 2, 3, 4]) {
+    const tt = buildDuty(olsztyn, { start, minutes: 180, seed }).scenario.timetable;
+    const stands = tt.filter((e) => e.terminates).flatMap((e) => {
+      const next = tt.find((x) => x.unit === e.nr && String(x.track) === String(e.track));
+      return next ? [{ T: String(e.track), a: at(e.arr), b: at(next.dep), nr: e.nr }] : [];
+    });
+    for (const e of tt.filter((x) => !x.stop && x.from && x.to && x.unit == null)) {
+      passes++;
+      const s = stands.find((x) => x.T === String(e.track) && x.a < at(e.arr) && at(e.arr) < x.b);
+      assert.ok(!s, `${start}:00 ziarno ${seed}: przelot ${e.nr} ${e.arr} po torze ${e.track} w czasie postoju ${s?.nr}`);
+    }
+  }
+  assert.ok(passes >= 16, `${passes} przelotów`);
 });
 
 test('przejazdy służbowe: co któraś służba ma lokomotywę luzem, próżny skład EZT albo próżne wagony – drogą przelotu wzorca, w wolnej luce', () => {
