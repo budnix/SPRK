@@ -81,10 +81,24 @@ Przyjęte (uproszczenia gry):
   w chwili wyboru: dyżurny decyduje w czasie usterki, potwierdzenie to krok bezpieczeństwa urządzenia. Bez kary, gdy
   usterka na drodze była przy wyborze albo jest przy potwierdzeniu (przyjęte; dawniej liczyła się tylko chwila
   wykonania – usterka naprawiona w czasie odliczania dawała −5);
-* tak samo przyjęcie pociągu na tor inny niż planowy: bez kary tylko przy usterce na drodze toru planowego – jego
-  odcinki, przebieg na niego od strony wjazdu, przebieg z niego w stronę wyjazdu (zajętość z usterki, licznik osi,
-  pęknięta szyna, zwrotnica bez kontroli, semafor tych przebiegów bez sygnału) – czynnej między zgłoszeniem pociągu
-  a jego przyjazdem; usterka gdzie indziej na stacji – −5 (przyjęte; wcześniej uzasadniała każda usterka na stacji);
+* Sz przy zwrotnicy na drodze ani utwierdzonej w przebiegu, ani zamkniętej Zz – dodatkowo −10 (urządzenie Sz nie
+  blokuje – odpowiada dyżurny); rozkaz w takiej sytuacji jest odrzucany jak dotąd;
+* po Sz i po rozkazie „S” zwrotnic i wykolejnic na drodze pociągu nie da się otworzyć (Zz), przestawić, odbezpieczyć ani
+  użyć w przebiegu w innym położeniu, dopóki pociąg ich nie minie (albo Sz nie zgaśnie, zanim pociąg wjedzie na jego
+  drogę) – w rzeczywistości pilnuje tego dyżurny, gra to wymusza (przyjęte; wcześniej zwrotnica przestawiała się przed
+  pociągiem, a zdjęcie Zz tuż po Sz omijało karę za zwrotnice nieutwierdzone);
+* rozkaz nie jest odrzucany z powodu zajętości z usterki (fałszywa zajętość, licznik osi) – tylko taboru;
+* każdy nowy wjazd pociągu na tor z pękniętą szyną kosztuje −50, na tor zamknięty dla ruchu (ITS, np. na Sz) −80.
+
+## Kara tylko z winy dyżurnego
+
+Przyjęte (zasady oceny – źródła ich nie podają): kara dotyczy tylko tego, czego dyżurny mógł uniknąć; gdy przyczyną
+jest usterka albo opóźnienie od sąsiada, ocena to uwzględnia.
+
+* przyjęcie pociągu na tor inny niż planowy – jak Sz i rozkaz (sekcja wyżej): bez kary tylko przy usterce na drodze
+  toru planowego – jego odcinki, przebieg na niego od strony wjazdu, przebieg z niego w stronę wyjazdu (zajętość
+  z usterki, licznik osi, pęknięta szyna, zwrotnica bez kontroli, semafor tych przebiegów bez sygnału) – czynnej między
+  zgłoszeniem pociągu a jego przyjazdem; usterka gdzie indziej na stacji – −5 (przyjęte; wcześniej uzasadniała każda usterka na stacji);
 * kara „nieobsłużony” (−10 na koniec zmiany) tylko za pociąg, który dało się obsłużyć (przyjęte): pociąg, który przez
   opóźnienie od sąsiada – albo składu, z którego powstaje – nie zdążyłby odjechać co najmniej 4 min przed końcem
   zmiany, zostaje w raporcie jako nieobsłużony bez kary. Wcześniej przy poziomie „duże” (opóźnienia do 40 min) zwykła
@@ -99,15 +113,7 @@ Przyjęte (uproszczenia gry):
   nie w położeniu, zajętość z usterki, licznik osi, pęknięta szyna); zadanie czekające na to zadanie przesuwa się
   o tyle samo. Skład stojący z tego powodu nie jest „przetrzymany”, a pociąg utworzony z tego składu nie traci punktów
   za późny odjazd o te minuty. Sygnalizator manewrowy bez sygnału terminu nie przesuwa – dyżurny daje zezwolenie
-  (Ir-9 § 10 ust. 15); pociągi też mają obejście usterki (Sz, rozkaz, inny tor), więc ich postój niczego nie przesuwa;
-* Sz przy zwrotnicy na drodze ani utwierdzonej w przebiegu, ani zamkniętej Zz – dodatkowo −10 (urządzenie Sz nie
-  blokuje – odpowiada dyżurny); rozkaz w takiej sytuacji jest odrzucany jak dotąd;
-* po Sz i po rozkazie „S” zwrotnic i wykolejnic na drodze pociągu nie da się otworzyć (Zz), przestawić, odbezpieczyć ani
-  użyć w przebiegu w innym położeniu, dopóki pociąg ich nie minie (albo Sz nie zgaśnie, zanim pociąg wjedzie na jego
-  drogę) – w rzeczywistości pilnuje tego dyżurny, gra to wymusza (przyjęte; wcześniej zwrotnica przestawiała się przed
-  pociągiem, a zdjęcie Zz tuż po Sz omijało karę za zwrotnice nieutwierdzone);
-* rozkaz nie jest odrzucany z powodu zajętości z usterki (fałszywa zajętość, licznik osi) – tylko taboru;
-* każdy nowy wjazd pociągu na tor z pękniętą szyną kosztuje −50, na tor zamknięty dla ruchu (ITS, np. na Sz) −80.
+  (Ir-9 § 10 ust. 15); pociągi też mają obejście usterki (Sz, rozkaz, inny tor), więc ich postój niczego nie przesuwa.
 
 ## Blokada liniowa Eap
 

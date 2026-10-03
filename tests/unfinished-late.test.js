@@ -9,7 +9,8 @@ import { playShift } from '../src/model/check/play.js';
 import { run } from './helpers.js';
 
 /*
- * Kara „nieobsłużony” (−10) tylko za pociąg, który dało się obsłużyć (przyjęte, docs/sources/sygnaly-i-blokada.md): pociąg, który przez
+ * Kara „nieobsłużony” (−10) tylko za pociąg, który dało się obsłużyć (przyjęte, docs/sources/sygnaly-i-blokada.md
+ * „Kara tylko z winy dyżurnego”): pociąg, który przez
  * opóźnienie od sąsiada – albo składu, z którego powstaje – nie zdążyłby przed końcem zmiany, zostaje w raporcie jako
  * nieobsłużony z pozycją 0 pkt. Dawniej przy poziomie „duże” (opóźnienia do 40 min) zmiana z zapasem 10–34 min po
  * ostatnim pociągu dawała −10 bez winy dyżurnego.

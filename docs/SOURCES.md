@@ -36,7 +36,7 @@ obszaru, nie całość.
 | Plik | Obszar | Co jest w środku |
 |---|---|---|
 | [`jazda-pociagu.md`](sources/jazda-pociagu.md) | Jazda pociągu (wszystkie stanowiska) | Szybkość w okręgu zwrotnicowym i na szlaku, jazda na tor zajęty, zatrzymanie przy peronie, odjazd i hamowanie maszynisty, masa i długość, rodzaje pociągów towarowych, zmiana czoła i rozmowy z maszynistą. |
-| [`sygnaly-i-blokada.md`](sources/sygnaly-i-blokada.md) | Sygnały, polecenia zastępcze i blokada liniowa | Zezwolenie na jazdę, stała kontrola sygnału i droga ochronna, zwrotnica bez kontroli, sygnał zastępczy i rozkaz „S” (tam też kary bez winy dyżurnego: nieobsłużony, czekanie na skład, tor inny niż planowy), blokada Eap (przyciski doraźne, lampki), blokada na monitorze i samoczynna, telefonogramy i zapowiadanie. |
+| [`sygnaly-i-blokada.md`](sources/sygnaly-i-blokada.md) | Sygnały, polecenia zastępcze i blokada liniowa | Zezwolenie na jazdę, stała kontrola sygnału i droga ochronna, zwrotnica bez kontroli, sygnał zastępczy i rozkaz „S”, kara tylko z winy dyżurnego (tor inny niż planowy, nieobsłużony, pociąg nadzwyczajny, czekanie na skład), blokada Eap (przyciski doraźne, lampki), blokada na monitorze i samoczynna, telefonogramy i zapowiadanie. |
 | [`pulpity.md`](sources/pulpity.md) | Pulpity kostkowe i nastawnia mechaniczna | Kolory lampek, pulpit typu E (powtarzacze, przyciski grupowe, wykolejnice), IZH-111, nastawnia mechaniczna. |
 | [`stanowiska-komputerowe.md`](sources/stanowiska-komputerowe.md) | Stanowiska komputerowe | Monitor wg Ie-104, EBILock 950 z EBIScreen 3, MOR-3 z MOR-1. |
 | [`tabor.md`](sources/tabor.md) | Tabor pociągów | Zespoły i lokomotywy w rejonie Trójmiasta, przewoźnicy, dobór taboru, dynamika (przyspieszenie, masa, długość). |
