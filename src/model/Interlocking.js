@@ -1,4 +1,6 @@
 import { Topology } from './Topology.js';
+import { deriveRoutes } from './interlocking/routeTable.js';
+import { aspectSpeed, isProceed, isStop, isTrainProceed, isShuntProceed, warningAspect, stopAspect, shapedAspect, proceedAspect } from './interlocking/aspects.js';
 
 /**
  * Zależności stacyjne – wspólne dla wszystkich stanowisk obsługi (pulpit kostkowy, monitor, …).
@@ -99,12 +101,12 @@ export class Interlocking {
     this.signals = new Map();
     for (const [id, t] of this.topo.signals) {
       this.signals.set(id, {
-        id, tile: t, kind: t.kind, dir: t.dir, aspect: this.#stopAspect(t.kind),
+        id, tile: t, kind: t.kind, dir: t.dir, aspect: stopAspect(t.kind, this.shapedSignals),
         route: null, substitute: false, substituteUntil: 0, stopped: false, shunting: !!t.shunting,
         canSubstitute: t.substitute !== false, overlap: t.overlap !== false,
       });
     }
-    this.routes = this.#deriveRoutes();
+    this.routes = deriveRoutes(station, this.topo); // tablica zależności – src/model/interlocking/routeTable.js
     if (this.shapedSignals) {
       for (const sig of this.signals.values()) {
         if (sig.kind !== 'semafor') continue;
@@ -126,73 +128,6 @@ export class Interlocking {
   /* ------------------------------------------------------------------ */
   /* Przebiegi – tablica zależności                                       */
   /* ------------------------------------------------------------------ */
-
-  #deriveRoutes() {
-    const routes = new Map();
-    const disabled = new Set(this.station.routes?.disable || []);
-    for (const sig of this.topo.signals.values()) {
-      const kinds = [];
-      if (sig.kind === 'semafor') kinds.push('train');
-      if (sig.kind === 'tm' || sig.shunting) kinds.push('shunt');
-      for (const kind of kinds) {
-        const paths = this.topo.pathsFrom(sig, kind);
-        const seen = new Map();
-        for (const p of paths) {
-          if (p.end.type === 'exit' && kind === 'shunt') continue; // manewry nie wyjeżdżają na szlak
-          // przebiegi pociągowe kończą się na semaforze, szlaku albo kozle toru stacyjnego (tor peronowy czołowy)
-          if (kind === 'train' && p.end.type !== 'exit' && p.end.type !== 'signal' && !this.#stationBuffer(p.end)) continue;
-          const endBtn = this.#endButtonFor(p.end);
-          let id = `${sig.id}-${p.end.id}`;
-          if (kind === 'shunt' && sig.kind === 'semafor') id += 'm';
-          const n = (seen.get(id) || 0) + 1; seen.set(id, n);
-          if (n > 1) id += `#${n}`;
-          if (disabled.has(id)) continue;
-          const lockedSections = p.sections.slice(1).filter((s, i, a) => a.indexOf(s) === i && s !== p.sections[0]);
-          const route = {
-            id, kind, start: sig.id, end: p.end, endButton: endBtn,
-            steps: p.steps, sections: lockedSections, approach: p.sections[0],
-            points: p.points, flank: this.topo.flankProtection(p),
-            derailers: this.topo.derailersFor(p),
-            overlap: (kind === 'train' && p.end.type === 'signal' && this.signals.get(p.end.id).overlap)
-              ? this.topo.overlapSections(this.topo.signals.get(p.end.id)) : [],
-            exit: p.end.type === 'exit' ? p.end.id : null,
-            speed: this.#routeSpeed(p),
-            ...(this.station.routes?.override?.[id] || {}),
-          };
-          routes.set(id, route);
-        }
-      }
-    }
-    return routes;
-  }
-
-  /** Kozioł toru stacyjnego (peron czołowy): przebieg pociągowy może się na nim kończyć; kozły bocznic – tylko manewry. */
-  #stationBuffer(end) {
-    if (end.type !== 'buffer') return false;
-    const tile = this.topo.endButtons.get(end.id);
-    return !!tile && this.station.sections[tile.section]?.kind === 'station';
-  }
-
-  #endButtonFor(end) {
-    if (end.type === 'signal') return end.id;
-    if (end.type === 'exit') {
-      const e = this.station.exits[end.id];
-      const t = this.topo.trackAt(e.tile.x, e.tile.y);
-      return t?.endButton?.id || end.id;
-    }
-    return end.id; // buffer / endButton – id przycisku końca przebiegu
-  }
-
-  #routeSpeed(p) {
-    let v = Infinity;
-    for (const pt of p.points) {
-      if (pt.position === '-') {
-        const t = this.topo.points.get(pt.id);
-        v = Math.min(v, t.speedDiverging ?? this.station.points?.[pt.id]?.speedDiverging ?? 40);
-      }
-    }
-    return v;
-  }
 
   routeList() {
     return [...this.routes.values()];
@@ -1233,53 +1168,21 @@ export class Interlocking {
   /* ------------------------------------------------------------------ */
 
   /** Prędkość dopuszczona obrazem sygnałowym (Infinity = największa dozwolona). */
-  static aspectSpeed(aspect) {
-    switch (aspect) {
-      case 'S1': case 'Sr1': case 'Ms1': case 'M1': return 0;
-      case 'Sz': return 40; // Ie-1 od 17.01.2026 §4 ust. 13 pkt 18 (wcześniej 20 km/h)
-      case 'Ms2': case 'M2': return 25;
-      case 'S10': case 'S11': case 'S12': case 'S13': case 'Sr3': return 40;
-      default: return Infinity;
-    }
-  }
-
-  static isProceed(aspect) {
-    return !['S1', 'Sr1', 'Ms1', 'M1'].includes(aspect);
-  }
-
+  /* Obrazy sygnałowe wg Ie-1 – reguły w src/model/interlocking/aspects.js, tu pod dotychczasowymi nazwami. */
+  static aspectSpeed = aspectSpeed;
+  static isProceed = isProceed;
   /** „Stój” na semaforze (świetlnym S1 albo kształtowym Sr1). */
-  static isStop(aspect) {
-    return aspect === 'S1' || aspect === 'Sr1';
-  }
-
+  static isStop = isStop;
   /** Sygnał zezwalający dla pociągu (S2–S13, Sr2/Sr3, Sz) – Ms2 / M2 na semaforze dla pociągu znaczy „Stój”. */
-  static isTrainProceed(aspect) {
-    return Interlocking.isProceed(aspect) && !Interlocking.isShuntProceed(aspect);
-  }
-
+  static isTrainProceed = isTrainProceed;
   /** Jazda manewrowa dozwolona (Ms2 na tarczy świetlnej albo semaforze, M2 na tarczy kształtowej). */
-  static isShuntProceed(aspect) {
-    return aspect === 'Ms2' || aspect === 'M2';
-  }
-
+  static isShuntProceed = isShuntProceed;
   /** Obraz tarczy ostrzegawczej kształtowej (Ie-1 §5) dla obrazu semafora: dwustawna Od, trzystawna Ot. */
-  static warningAspect(aspect, arms) {
-    if (arms === 2) return aspect === 'Sr2' ? 'Ot2' : aspect === 'Sr3' ? 'Ot3' : 'Ot1';
-    return aspect === 'Sr2' || aspect === 'Sr3' ? 'Od2' : 'Od1';
-  }
+  static warningAspect = warningAspect;
 
-  /**
-   * Obraz semafora kształtowego dla przebiegu: semafor nie zapowiada następnego – Sr3 (do 40 km/h przez okręg
-   * zwrotnicowy) na przebieg o szybkości do 60 km/h, Sr2 (największa dozwolona) na pozostałe; manewrowy – M2.
-   */
+  /** Obraz semafora kształtowego dla przebiegu (Sr2 / Sr3, manewrowy M2) – `aspects.shapedAspect`. */
   shapedAspect(route) {
-    if (route.kind === 'shunt') return 'M2';
-    return route.speed <= 60 ? 'Sr3' : 'Sr2';
-  }
-
-  #stopAspect(kind) {
-    if (kind === 'semafor') return this.shapedSignals ? 'Sr1' : 'S1';
-    return this.shapedSignals ? 'M1' : 'Ms1';
+    return shapedAspect(route);
   }
 
   refreshSignals() { this.#refreshSignals(); }
@@ -1318,27 +1221,22 @@ export class Interlocking {
     return null;
   }
 
+  /**
+   * Obraz sygnalizatora: najpierw warunki urządzeń (Sz, usterka, stopowanie, przebieg nastawiony i nieodwołany, blokada
+   * liniowa przy wyjeździe), potem obraz zezwalający wg Ie-1 (`aspects.proceedAspect` – wg następnego semafora).
+   */
   #computeAspect(sig) {
     if (sig.substitute) return 'Sz';
-    const stop = this.#stopAspect(sig.kind);
+    const stop = stopAspect(sig.kind, this.shapedSignals);
     if (sig.failed || sig.stopped || this.allStop) return stop;
     if (!sig.route) return stop;
     const act = this.active.get(sig.route);
     if (!act || act.signalOff) return stop;
-    if (act.route.kind === 'shunt') return this.shapedSignals ? 'M2' : 'Ms2';
-    // sygnał wyjazdowy wymaga pozwolenia przeniesionego przez blokadę (i wolnej przeciwwtórności Pwl)
-    if (act.route.exit && this.opts.blockGate && !this.opts.blockGate(act.route.exit, 'signal', act.id).ok) return stop;
-    const restricted = act.route.speed <= 60;
-    if (this.shapedSignals) return this.shapedAspect(act.route);
-    let next = null;
-    if (act.route.end.type === 'signal') next = this.signals.get(act.route.end.id)?.aspect || 'S1';
-    // następny semafor na „Stój” – także gdy wskazuje tylko sygnał manewrowy (Ms2 / M2 dla pociągu znaczy „Stój”)
-    const nextStop = !next || next === 'S1' || next === 'Sz' || Interlocking.isShuntProceed(next);
-    const nextRestricted = next && ['S10', 'S11', 'S12', 'S13'].includes(next);
-    if (act.route.end.type === 'exit') return restricted ? 'S10' : 'S2';
-    if (nextStop) return restricted ? 'S13' : 'S5';
-    if (nextRestricted) return restricted ? 'S12' : 'S4';
-    return restricted ? 'S10' : 'S2';
+    // sygnał wyjazdowy wymaga pozwolenia przeniesionego przez blokadę (i wolnej przeciwwtórności Pwl); manewry nie
+    // wyjeżdżają na szlak
+    if (act.route.kind !== 'shunt' && act.route.exit && this.opts.blockGate && !this.opts.blockGate(act.route.exit, 'signal', act.id).ok) return stop;
+    const next = act.route.end.type === 'signal' ? this.signals.get(act.route.end.id)?.aspect || 'S1' : null;
+    return proceedAspect(act.route, next, this.shapedSignals);
   }
 
   /* ------------------------------------------------------------------ */

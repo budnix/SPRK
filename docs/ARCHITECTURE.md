@@ -17,6 +17,8 @@ src/
                check/ – zmiana grana automatem bez widoku (play: `playShift`, `settled`), niezmienniki bezpieczeństwa
                (invariants), wynik po stronie urządzeń i oceny (outcome: `leftovers`, `unjustified`) – dla automatu
                sprawdzającego, przeglądu silnika, skilla diagnoza-zatoru i testów;
+               interlocking/ – części zależności w osobnych plikach za tym samym interfejsem `Interlocking`:
+               aspects (obrazy sygnałowe wg Ie-1 – czyste reguły), routeTable (tablica zależności z planu stacji);
                faults/ – rodzaje usterek, każdy w jednym wpisie (types: cel, losowanie, automat, droga pociągu,
                początek i koniec usterki, wymagania wobec stanowiska);
                tasks/ – zadania manewrowe: order (kolejność i gotowość – czeka na poprzednie, do wykonania teraz, może

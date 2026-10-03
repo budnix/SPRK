@@ -9,6 +9,13 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
 
 ## Zależności typu E – skrót
 
+Zależności (`src/model/Interlocking.js`) mają jeden interfejs; części, które nie potrzebują stanu przebiegów, są
+w osobnych plikach w `src/model/interlocking/`: `aspects.js` – obrazy sygnałowe wg Ie-1 (szybkość obrazu, „Stój”,
+jazda pociągu / manewrowa, obraz zezwalający dla przebiegu wg następnego semafora, kształtowe, tarcza ostrzegawcza;
+`Interlocking.isProceed` itd. to te same funkcje), `routeTable.js` – tablica zależności z planu (`deriveRoutes`:
+przebiegi pociągowe i manewrowe, drogi, odcinki, ochrona boczna, droga ochronna, szybkość; `routes.disable` /
+`routes.override` z definicji stacji). Testy bez symulacji: `tests/interlocking-parts.test.js`.
+
 * Przebieg: dwa przyciski (początek, koniec) → sprawdzenie warunków → automatyczne przestawienie zwrotnic
   (nastawianie przebiegowe) → utwierdzenie (odcinki białe) → obraz sygnałowy (Ie-1: S1–S5, S10–S13, Ms2, Sz).
 * Jednoczesne wjazdy z obu kierunków są możliwe tylko, gdy drogi ochronne nie są wspólne: w Szkolnej za każdym
