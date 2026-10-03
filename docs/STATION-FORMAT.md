@@ -100,7 +100,12 @@ T1: { length: 520, kind: 'station', track: '1', platform: 'Peron I' }
   w `halts` (niżej „Rozkład jazdy”) – to nie jego postój na stacji,
 * `track` – numer toru (do rozkładu jazdy), `platform` – peron (pociągi osobowe zatrzymują się): `true` lub nazwa
   (`'Peron II'`, liczba `2`) – monitor rysuje peron jako szary prostokąt z tą nazwą, pulpit kostkowy jako obrys; krawędź peronowa od strony
-  toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna).
+  toru to podwójna kreska (wyspowy między dwoma torami peronowymi – dwie krawędzie, inaczej boczny – jedna). Wyspowy
+  powstaje z dwóch torów peronowych 2 albo 4 rzędy od siebie; tor, który ma takiego sąsiada z tą samą nazwą peronu,
+  tworzy wyspowy tylko z nim – inny tor obok dostaje peron boczny (Olsztyn Zachodni: „Peron III” przy 220, wyspowy
+  „Peron II” między torami 353). Peron na odcinku zbliżania (przystanek przed semaforem wjazdowym) zaczyna się
+  4 kolumny od wyjazdu na szlak (`EDGE_COLS` – stałe pole skrajne monitora z blokadą liniową); odcinek zbliżania musi
+  być na pulpicie na tyle długi, żeby peron się zmieścił (Olsztyn: kolumny 0–11).
 
 ## Szlaki (`exits`)
 

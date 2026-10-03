@@ -176,6 +176,9 @@ listwą), potem szara grupa „widok” (ekrany + zoom), po prawej podpowiedź i
 
 ## Stałe pola skrajne (`src/render/edges.js`, `src/ui/EdgePanels.js`)
 
+Szerokość pola: `EDGE_COLS` (4 kolumny, `src/tiles/platforms.js` – ta sama liczba odsuwa peron na odcinku zbliżania od
+wyjazdu, żeby nie leżał pod strzałkami blokady i opisem szlaku ani nie został w połowie przypięty przy krawędzi).
+
 Gdy powiększony pulpit nie mieści się na szerokość okna, skrajne kolumny z blokadą liniową (strzałki szlaku, na pulpicie
 kostkowym także Ko/Poz/Wbl i liczniki) są przypięte do lewej i prawej krawędzi okna, a środek przewija się między nimi
 za linią przerywaną – jak stałe pola z blokadą przy krawędziach monitorów w komputerowych srk. Pola to dwa małe SVG

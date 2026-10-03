@@ -4,7 +4,7 @@
  * Szczytno; jednotorowa, niezelektryfikowana). Układ wg planu schematycznego stacji (Semaforek, „Olsztyn_Glowny2026”,
  * stan po modernizacji 2022–2024), komputerowa nastawnia „Ol” (LCS). Odwzorowanie schematyczne – jak Tczew.
  *
- * Siatka 142×36. Zachód (Olsztyn Gutkowo, Olsztyn Kortowo) po lewej, wschód (Łęgajny, Marcinkowo) po prawej; ruch
+ * Siatka 146×36. Zachód (Olsztyn Gutkowo, Olsztyn Kortowo) po lewej, wschód (Łęgajny, Marcinkowo) po prawej; ruch
  * prawostronny – na zachodzie tor wjazdowy 353 pod wyjazdowym, na wschodzie nad nim. Tory (y): grupa towarowa 210 (4),
  * 212 (6), 214 (8), 216 (10); 14 (12), 12 (14), 10 (16), 8 (18), 6 (20), 4 (22), 2 (24), 1 (26), 3 (28), 5 (30), 7 (32).
  * Perony: 4 (8/6), 3 (4/2), 2 (1/3), 1 (5/7). Linie z zachodu (plan: od góry) – 220 (a) na tor 4, 353 tor wyjazdowy (b)
@@ -41,158 +41,159 @@ const cross = (xa, ya, a, b, yb) => {
 };
 
 // ---- tytuł ----
-tiles.push({ x: 60, y: 0, type: 'label', text: 'OLSZTYN GŁÓWNY', size: 13, span: 20 });
+tiles.push({ x: 64, y: 0, type: 'label', text: 'OLSZTYN GŁÓWNY', size: 13, span: 20 });
 
-// ---- szlaki zachód (x 0–7): odcinki zbliżania z peronami przystanku Olsztyn Zachodni ----
+// ---- szlaki zachód (x 0–11): odcinki zbliżania z peronami przystanku Olsztyn Zachodni – peron od x 4, poza stałym
+// polem skrajnym monitora (4 kolumny z blokadą liniową, przypięte przy przewijaniu) ----
 const westExit = (y, id, text, platform) => {
-  lineExit({ side: 'W', y, id, text, from: 0, to: 7, length: 700 });
+  lineExit({ side: 'W', y, id, text, from: 0, to: 11, length: 700 });
   Object.assign(sections[`Zb${id}`], { platform, halt: 'Olsztyn Zachodni' });
 };
 westExit(22, 'GU', 'Olsztyn Gutkowo 220', 'Peron III (Olsztyn Zachodni)');
 westExit(24, 'KO2', 'Olsztyn Kortowo 353 t.2', 'Peron II (Olsztyn Zachodni)');
 westExit(26, 'KO1', 'Olsztyn Kortowo 353 t.1', 'Peron II (Olsztyn Zachodni)');
 westExit(28, 'KD', 'Olsztyn Kortowo 216', 'Peron I (Olsztyn Zachodni)');
-tiles.push(SIG(7, 23, 'A', 'semafor', { x: 7, y: 22 }, 'E', { entry: true }), SIG(7, 25, 'B', 'semafor', { x: 7, y: 24 }, 'E', { entry: true }),
-  SIG(7, 27, 'C', 'semafor', { x: 7, y: 26 }, 'E', { entry: true }), SIG(7, 29, 'D', 'semafor', { x: 7, y: 28 }, 'E', { entry: true }));
+tiles.push(SIG(11, 23, 'A', 'semafor', { x: 11, y: 22 }, 'E', { entry: true }), SIG(11, 25, 'B', 'semafor', { x: 11, y: 24 }, 'E', { entry: true }),
+  SIG(11, 27, 'C', 'semafor', { x: 11, y: 26 }, 'E', { entry: true }), SIG(11, 29, 'D', 'semafor', { x: 11, y: 28 }, 'E', { entry: true }));
 tiles.push({ x: 1, y: 19, type: 'label', text: 'linia 220 · linie 353 i 216 (Olsztyn Kortowo)', span: 8, size: 7 },
-  { x: 1, y: 33, type: 'label', text: 'p.o. Olsztyn Zachodni', span: 5, size: 7 }, { x: 12, y: 33, type: 'label', text: 'p.o. Olsztyn Śródmieście', span: 6, size: 7 });
+  { x: 5, y: 33, type: 'label', text: 'p.o. Olsztyn Zachodni', span: 5, size: 7 }, { x: 16, y: 33, type: 'label', text: 'p.o. Olsztyn Śródmieście', span: 6, size: 7 });
 
 // ---- przejście 101/102 (353 t.2 ↔ 220) i przystanek Olsztyn Śródmieście (220, 216) ----
-plain('Wa1', 8, 10, 22); plain('Wb1', 8, 8, 24, 40); cross(9, 24, 101, 102, 22);
-plain('Wb2', 10, 20, 24, 400); plain('Wc1', 8, 18, 26, 500); plain('Wd1', 8, 11, 28, 160);
-sec('SRa', { length: 300, kind: 'plain', platform: 'Peron II (Olsztyn Śródmieście)', halt: 'Olsztyn Śródmieście' }); tiles.push(...H(12, 17, 22, 'SRa'));
-sec('SRd', { length: 300, kind: 'plain', platform: 'Peron I (Olsztyn Śródmieście)', halt: 'Olsztyn Śródmieście' }); tiles.push(...H(12, 17, 28, 'SRd'));
+plain('Wa1', 12, 14, 22); plain('Wb1', 12, 12, 24, 40); cross(13, 24, 101, 102, 22);
+plain('Wb2', 14, 24, 24, 400); plain('Wc1', 12, 22, 26, 500); plain('Wd1', 12, 15, 28, 160);
+sec('SRa', { length: 300, kind: 'plain', platform: 'Peron II (Olsztyn Śródmieście)', halt: 'Olsztyn Śródmieście' }); tiles.push(...H(16, 21, 22, 'SRa'));
+sec('SRd', { length: 300, kind: 'plain', platform: 'Peron I (Olsztyn Śródmieście)', halt: 'Olsztyn Śródmieście' }); tiles.push(...H(16, 21, 28, 'SRd'));
 
-// ---- głowica zachodnia (x 18–50) ----
+// ---- głowica zachodnia (x 22–54) ----
 // tor a (220, y=22) → tor 4: 3 (→ b), 13, 19 (z b), 15, 20 (→ wachlarz)
-plain('Wa2', 18, 21, 22); plain('Wa3', 23, 29, 22); plain('Wa4', 31, 33, 22); plain('Wa5', 35, 35, 22, 30); plain('W4', 38, 50, 22);
+plain('Wa2', 22, 25, 22); plain('Wa3', 27, 33, 22); plain('Wa4', 35, 37, 22); plain('Wa5', 39, 39, 22, 30); plain('W4', 42, 54, 22);
 // tor b (353 t.2, y=24) ← tor 2: 4, 5, 6, 9, 12, 14
-plain('Wb3', 22, 23, 24, 40); plain('Wb4', 26, 27, 24, 40); plain('Wb5', 29, 29, 24, 30); plain('Wb6', 31, 33, 24); plain('W2', 35, 50, 24);
+plain('Wb3', 26, 27, 24, 40); plain('Wb4', 30, 31, 24, 40); plain('Wb5', 33, 33, 24, 30); plain('Wb6', 35, 37, 24); plain('W2', 39, 54, 24);
 // tor c (353 t.1, y=26) → tor 1: 1, 7, 8, 10, 11
-plain('Wc2', 20, 20, 26, 30); plain('Wc3', 22, 26, 26); plain('Wc4', 29, 30, 26, 40); plain('W1', 32, 50, 26);
+plain('Wc2', 24, 24, 26, 30); plain('Wc3', 26, 30, 26); plain('Wc4', 33, 34, 26, 40); plain('W1', 36, 54, 26);
 // tor d (216, y=28) → tor 3: 2, 16, 17
-plain('Wd2', 18, 18, 28, 30); plain('Wd3', 20, 32, 28); plain('Wd4', 34, 36, 28); plain('W3', 38, 50, 28);
-cross(19, 26, 1, 4, 24); cross(19, 28, 2, 7, 26); cross(22, 22, 3, 5, 24); cross(25, 24, 6, 8, 26);
-cross(28, 24, 9, 13, 22); cross(28, 26, 10, 12, 24); cross(31, 26, 11, 16, 28); cross(34, 24, 14, 19, 22);
+plain('Wd2', 22, 22, 28, 30); plain('Wd3', 24, 36, 28); plain('Wd4', 38, 40, 28); plain('W3', 42, 54, 28);
+cross(23, 26, 1, 4, 24); cross(23, 28, 2, 7, 26); cross(26, 22, 3, 5, 24); cross(29, 24, 6, 8, 26);
+cross(32, 24, 9, 13, 22); cross(32, 26, 10, 12, 24); cross(35, 26, 11, 16, 28); cross(38, 24, 14, 19, 22);
 // 15/18 i 20/23: z toru a na linię wachlarza (y=20) – z zachodu żeberko 6b (174 m)
-cross(34, 22, 15, 18, 20); cross(37, 22, 20, 23, 20);
-sec('T6b', { length: 174, kind: 'siding', track: '6b' }); tiles.push(BUF(29, 20, 'E', 'T6b', 'k6b'), ...H(30, 35, 20, 'T6b'));
-plain('Wf1', 37, 38, 20, 40); plain('Wf2', 40, 40, 20, 30);
+cross(38, 22, 15, 18, 20); cross(41, 22, 20, 23, 20);
+sec('T6b', { length: 174, kind: 'siding', track: '6b' }); tiles.push(BUF(33, 20, 'E', 'T6b', 'k6b'), ...H(34, 39, 20, 'T6b'));
+plain('Wf1', 41, 42, 20, 40); plain('Wf2', 44, 44, 20, 30);
 // 17/22: z toru d na tor 5 – z zachodu żeberko 5b (591 m)
-cross(37, 28, 17, 22, 30);
-sec('T5b', { length: 591, kind: 'siding', track: '5b' }); tiles.push(BUF(25, 30, 'E', 'T5b', 'k5b'), ...H(26, 38, 30, 'T5b'));
-plain('W5', 40, 50, 30);
-tiles.push(SIG(35, 19, 'Tm9', 'tm', { x: 35, y: 20 }, 'E'), SIG(38, 31, 'Tm11', 'tm', { x: 38, y: 30 }, 'E'));
+cross(41, 28, 17, 22, 30);
+sec('T5b', { length: 591, kind: 'siding', track: '5b' }); tiles.push(BUF(29, 30, 'E', 'T5b', 'k5b'), ...H(30, 42, 30, 'T5b'));
+plain('W5', 44, 54, 30);
+tiles.push(SIG(39, 19, 'Tm9', 'tm', { x: 39, y: 20 }, 'E'), SIG(42, 31, 'Tm11', 'tm', { x: 42, y: 30 }, 'E'));
 // wachlarz 24–28: z linii wachlarza (y=20) na tory 6 (wprost), 8, 10, 12, 14
-point(41, 20, 24, 'W', 'E', 'NE'); diag(42, 19, ['SW', 'NE'], 24);
-point(43, 18, 27, 'SW', 'NE', 'E'); diag(44, 17, ['SW', 'NE'], 27);
-point(45, 16, 28, 'SW', 'NE', 'E'); diag(46, 15, ['SW', 'NE'], 28);
-point(47, 14, 25, 'SW', 'NE', 'E'); diag(48, 13, ['SW', 'NE'], 25);
-sec('W14', { length: 60, kind: 'plain' }); tiles.push(T(49, 12, ['SW', 'E'], 'W14'), T(50, 12, ['W', 'E'], 'W14'));
-plain('W6', 42, 50, 20); plain('W8', 44, 50, 18); plain('W10', 46, 50, 16); plain('W12', 48, 50, 14);
+point(45, 20, 24, 'W', 'E', 'NE'); diag(46, 19, ['SW', 'NE'], 24);
+point(47, 18, 27, 'SW', 'NE', 'E'); diag(48, 17, ['SW', 'NE'], 27);
+point(49, 16, 28, 'SW', 'NE', 'E'); diag(50, 15, ['SW', 'NE'], 28);
+point(51, 14, 25, 'SW', 'NE', 'E'); diag(52, 13, ['SW', 'NE'], 25);
+sec('W14', { length: 60, kind: 'plain' }); tiles.push(T(53, 12, ['SW', 'E'], 'W14'), T(54, 12, ['W', 'E'], 'W14'));
+plain('W6', 46, 54, 20); plain('W8', 48, 54, 18); plain('W10', 50, 54, 16); plain('W12', 52, 54, 14);
 
-// ---- tory peronowe (x 51–80): F na zachód, H na wschód ----
-// tory stacyjne: [numer, x1, x2, y, długość z planu, peron, pola dodatkowe] – także tory „c” (x 98–112) niżej
+// ---- tory peronowe (x 55–84): F na zachód, H na wschód ----
+// tory stacyjne: [numer, x1, x2, y, długość z planu, peron, pola dodatkowe] – także tory „c” (x 102–116) niżej
 const TRACKS = [
-  ['14', 51, 80, 12, 256, false], ['12', 51, 112, 14, 858, false, { mainKind: 'dodatkowy' }], ['10', 51, 112, 16, 857, false, { mainKind: 'dodatkowy' }],
-  ['8', 51, 80, 18, 391, 'Peron IV'], ['6', 51, 80, 20, 390, 'Peron IV'], ['4', 51, 80, 22, 550, 'Peron III'], ['2', 51, 80, 24, 502, 'Peron III'],
-  ['1', 51, 80, 26, 683, 'Peron II'], ['3', 51, 80, 28, 571, 'Peron II'], ['5', 51, 80, 30, 550, 'Peron I'],
-  ['8c', 98, 112, 18, 432, false], ['6c', 98, 112, 20, 367, false], ['2c', 98, 112, 24, 318, false], ['1c', 98, 112, 26, 317, false], ['5c', 98, 112, 30, 339, false],
+  ['14', 55, 84, 12, 256, false], ['12', 55, 116, 14, 858, false, { mainKind: 'dodatkowy' }], ['10', 55, 116, 16, 857, false, { mainKind: 'dodatkowy' }],
+  ['8', 55, 84, 18, 391, 'Peron IV'], ['6', 55, 84, 20, 390, 'Peron IV'], ['4', 55, 84, 22, 550, 'Peron III'], ['2', 55, 84, 24, 502, 'Peron III'],
+  ['1', 55, 84, 26, 683, 'Peron II'], ['3', 55, 84, 28, 571, 'Peron II'], ['5', 55, 84, 30, 550, 'Peron I'],
+  ['8c', 102, 116, 18, 432, false], ['6c', 102, 116, 20, 367, false], ['2c', 102, 116, 24, 318, false], ['1c', 102, 116, 26, 317, false], ['5c', 102, 116, 30, 339, false],
 ];
 for (const [nr, x1, x2, y, length, platform, extra = {}] of TRACKS) {
   sec(`T${nr}`, { length, kind: 'station', track: nr, platform, ...extra });
   tiles.push(...H(x1, x2, y, `T${nr}`));
 }
-sec('T7', { length: 167, kind: 'station', track: '7', platform: 'Peron I' }); tiles.push(BUF(70, 32, 'E', 'T7', 'k7'), ...H(71, 80, 32, 'T7'));
+sec('T7', { length: 167, kind: 'station', track: '7', platform: 'Peron I' }); tiles.push(BUF(74, 32, 'E', 'T7', 'k7'), ...H(75, 84, 32, 'T7'));
 for (const nr of ['14', '12', '10', '8', '6', '4', '2', '1', '3', '5']) {
   const y = { 14: 12, 12: 14, 10: 16, 8: 18, 6: 20, 4: 22, 2: 24, 1: 26, 3: 28, 5: 30 }[nr];
-  tiles.push(SIG(51, y - 1, `F${nr}`, 'semafor', { x: 51, y }, 'W', { shunting: true }));
+  tiles.push(SIG(55, y - 1, `F${nr}`, 'semafor', { x: 55, y }, 'W', { shunting: true }));
 }
 for (const [nr, y] of [['14', 12], ['8', 18], ['6', 20], ['4', 22], ['2', 24], ['1', 26], ['3', 28], ['5', 30], ['7', 32]]) {
-  tiles.push(SIG(80, y + 1, `H${nr}`, 'semafor', { x: 80, y }, 'E', { shunting: true }));
+  tiles.push(SIG(84, y + 1, `H${nr}`, 'semafor', { x: 84, y }, 'E', { shunting: true }));
 }
-for (const [nr, y, x] of [['14', 12, 56], ['12', 14, 60], ['10', 16, 60], ['8', 18, 60], ['4', 22, 60], ['1', 26, 60], ['5', 30, 60]]) {
+for (const [nr, y, x] of [['14', 12, 60], ['12', 14, 64], ['10', 16, 64], ['8', 18, 64], ['4', 22, 64], ['1', 26, 64], ['5', 30, 64]]) {
   tiles.push({ x, y: y - 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
 }
-for (const [nr, y] of [['6', 20], ['2', 24], ['3', 28]]) tiles.push({ x: 66, y: y + 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
+for (const [nr, y] of [['6', 20], ['2', 24], ['3', 28]]) tiles.push({ x: 70, y: y + 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
 
-// ---- strefa przejść za peronami (x 81–97) ----
+// ---- strefa przejść za peronami (x 85–101) ----
 // 41/44a, 44b/47a, 47b/49a, 49b/52a, 52b/53a – łańcuch przejść (drabina 41–53 z rozjazdami krzyżowymi w planie)
-cross(81, 18, 41, '44a', 20); cross(84, 20, '44b', '47a', 22); cross(87, 22, '47b', '49a', 24); cross(90, 24, '49b', '52a', 26);
-point(93, 26, '52b', 'W', 'E', 'SE'); diag(94, 27, ['NW', 'SE'], '52b'); diag(95, 28, ['NW', 'SE'], '52b'); diag(96, 29, ['NW', 'SE'], '52b');
-point(97, 30, '53a', 'E', 'W', 'NW');
+cross(85, 18, 41, '44a', 20); cross(88, 20, '44b', '47a', 22); cross(91, 22, '47b', '49a', 24); cross(94, 24, '49b', '52a', 26);
+point(97, 26, '52b', 'W', 'E', 'SE'); diag(98, 27, ['NW', 'SE'], '52b'); diag(99, 28, ['NW', 'SE'], '52b'); diag(100, 29, ['NW', 'SE'], '52b');
+point(101, 30, '53a', 'E', 'W', 'NW');
 // 42/46 (3 → 1), 43/48 (3 → 5, prosto 3c), 45/51 (7 → 5, prosto 7b), 50/55 (4 → 2, prosto 4c)
-cross(81, 28, 42, 46, 26); cross(84, 28, 43, 48, 30); cross(81, 32, 45, 51, 30); cross(90, 22, 50, 55, 24);
-sec('T3c', { length: 90, kind: 'siding', track: '3c' }); tiles.push(...H(85, 86, 28, 'T3c'), BUF(87, 28, 'W', 'T3c', 'k3c'));
-sec('T4c', { length: 90, kind: 'siding', track: '4c' }); tiles.push(...H(91, 92, 22, 'T4c'), BUF(93, 22, 'W', 'T4c', 'k4c'));
-sec('T7b', { length: 100, kind: 'siding', track: '7b' }); tiles.push(...H(82, 83, 32, 'T7b'), BUF(84, 32, 'W', 'T7b', 'k7b'));
-plain('E8a', 82, 97, 18); plain('E6a', 81, 82, 20, 40); plain('E6b', 85, 97, 20);
-plain('E4a', 81, 85, 22); plain('E4b', 88, 89, 22, 40);
-plain('E2a', 81, 88, 24); plain('E2b', 91, 91, 24, 30); plain('E2c', 93, 97, 24);
-plain('E1a', 81, 82, 26, 40); plain('E1b', 84, 91, 26); plain('E1c', 94, 97, 26);
-plain('E3a', 82, 83, 28, 40);
-plain('E5a', 81, 82, 30, 40); plain('E5b', 84, 85, 30, 40); plain('E5c', 87, 96, 30);
+cross(85, 28, 42, 46, 26); cross(88, 28, 43, 48, 30); cross(85, 32, 45, 51, 30); cross(94, 22, 50, 55, 24);
+sec('T3c', { length: 90, kind: 'siding', track: '3c' }); tiles.push(...H(89, 90, 28, 'T3c'), BUF(91, 28, 'W', 'T3c', 'k3c'));
+sec('T4c', { length: 90, kind: 'siding', track: '4c' }); tiles.push(...H(95, 96, 22, 'T4c'), BUF(97, 22, 'W', 'T4c', 'k4c'));
+sec('T7b', { length: 100, kind: 'siding', track: '7b' }); tiles.push(...H(86, 87, 32, 'T7b'), BUF(88, 32, 'W', 'T7b', 'k7b'));
+plain('E8a', 86, 101, 18); plain('E6a', 85, 86, 20, 40); plain('E6b', 89, 101, 20);
+plain('E4a', 85, 89, 22); plain('E4b', 92, 93, 22, 40);
+plain('E2a', 85, 92, 24); plain('E2b', 95, 95, 24, 30); plain('E2c', 97, 101, 24);
+plain('E1a', 85, 86, 26, 40); plain('E1b', 88, 95, 26); plain('E1c', 98, 101, 26);
+plain('E3a', 86, 87, 28, 40);
+plain('E5a', 85, 86, 30, 40); plain('E5b', 88, 89, 30, 40); plain('E5c', 91, 100, 30);
 
-// ---- tory „c” (x 98–112): K na zachód, M na wschód ----
-for (const [nr, y] of [['8', 18], ['6', 20], ['2', 24], ['1', 26], ['5', 30]]) tiles.push(SIG(98, y - 1, `K${nr}`, 'semafor', { x: 98, y }, 'W', { shunting: true }));
-for (const [nr, y] of [['12', 14], ['10', 16], ['8', 18], ['6', 20], ['2', 24], ['1', 26], ['5', 30]]) tiles.push(SIG(112, y + 1, `M${nr}`, 'semafor', { x: 112, y }, 'E', { shunting: true }));
-for (const [nr, y] of [['8c', 18], ['2c', 24], ['5c', 30]]) tiles.push({ x: 102, y: y - 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
-for (const [nr, y] of [['6c', 20], ['1c', 26]]) tiles.push({ x: 104, y: y + 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
+// ---- tory „c” (x 102–116): K na zachód, M na wschód ----
+for (const [nr, y] of [['8', 18], ['6', 20], ['2', 24], ['1', 26], ['5', 30]]) tiles.push(SIG(102, y - 1, `K${nr}`, 'semafor', { x: 102, y }, 'W', { shunting: true }));
+for (const [nr, y] of [['12', 14], ['10', 16], ['8', 18], ['6', 20], ['2', 24], ['1', 26], ['5', 30]]) tiles.push(SIG(116, y + 1, `M${nr}`, 'semafor', { x: 116, y }, 'E', { shunting: true }));
+for (const [nr, y] of [['8c', 18], ['2c', 24], ['5c', 30]]) tiles.push({ x: 106, y: y - 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
+for (const [nr, y] of [['6c', 20], ['1c', 26]]) tiles.push({ x: 108, y: y + 1, type: 'label', text: `tor ${nr}`, span: 3, size: 8 });
 
 // ---- grupa towarowa (y 4–10): z toru 14 od zachodu (H14), wyjazd P na wschód ----
-plain('E14', 81, 81, 12, 40); sec('L14', { length: 120, kind: 'plain' }); tiles.push(T(82, 12, ['W', 'NE'], 'L14'), T(83, 11, ['SW', 'NE'], 'L14'));
-point(84, 10, 201, 'SW', 'NE', 'E'); diag(85, 9, ['SW', 'NE'], 201);
-point(86, 8, 202, 'SW', 'NE', 'E'); diag(87, 7, ['SW', 'NE'], 202);
-point(88, 6, 203, 'SW', 'NE', 'E'); diag(89, 5, ['SW', 'NE'], 203);
-sec('W210', { length: 40, kind: 'plain' }); tiles.push(T(90, 4, ['SW', 'E'], 'W210'));
-for (const [nr, y, x1] of [['210', 4, 91], ['212', 6, 89], ['214', 8, 87], ['216', 10, 85]]) {
-  sec(`T${nr}`, { length: 750, kind: 'station', track: nr, mainKind: 'dodatkowy' }); tiles.push(...H(x1, 105, y, `T${nr}`));
-  tiles.push(SIG(105, y + 1, `P${nr}`, 'semafor', { x: 105, y }, 'E', { shunting: true }));
+plain('E14', 85, 85, 12, 40); sec('L14', { length: 120, kind: 'plain' }); tiles.push(T(86, 12, ['W', 'NE'], 'L14'), T(87, 11, ['SW', 'NE'], 'L14'));
+point(88, 10, 201, 'SW', 'NE', 'E'); diag(89, 9, ['SW', 'NE'], 201);
+point(90, 8, 202, 'SW', 'NE', 'E'); diag(91, 7, ['SW', 'NE'], 202);
+point(92, 6, 203, 'SW', 'NE', 'E'); diag(93, 5, ['SW', 'NE'], 203);
+sec('W210', { length: 40, kind: 'plain' }); tiles.push(T(94, 4, ['SW', 'E'], 'W210'));
+for (const [nr, y, x1] of [['210', 4, 95], ['212', 6, 93], ['214', 8, 91], ['216', 10, 89]]) {
+  sec(`T${nr}`, { length: 750, kind: 'station', track: nr, mainKind: 'dodatkowy' }); tiles.push(...H(x1, 109, y, `T${nr}`));
+  tiles.push(SIG(109, y + 1, `P${nr}`, 'semafor', { x: 109, y }, 'E', { shunting: true }));
 }
-tiles.push({ x: 92, y: 3, type: 'label', text: 'grupa towarowa 210–216', span: 8, size: 8 });
+tiles.push({ x: 96, y: 3, type: 'label', text: 'grupa towarowa 210–216', span: 8, size: 8 });
 // drabina wschodnia grupy → tor 6d (85)
-sec('E210', { length: 40, kind: 'plain' }); tiles.push(T(106, 4, ['W', 'SE'], 'E210'));
-diag(107, 5, ['NW', 'SE'], 211); point(108, 6, 211, 'SE', 'NW', 'W');
-diag(109, 7, ['NW', 'SE'], 213); point(110, 8, 213, 'SE', 'NW', 'W');
-diag(111, 9, ['NW', 'SE'], 215); point(112, 10, 215, 'SE', 'NW', 'W');
-plain('E212', 106, 107, 6, 40); plain('E214', 106, 109, 8); plain('E216', 106, 111, 10);
+sec('E210', { length: 40, kind: 'plain' }); tiles.push(T(110, 4, ['W', 'SE'], 'E210'));
+diag(111, 5, ['NW', 'SE'], 211); point(112, 6, 211, 'SE', 'NW', 'W');
+diag(113, 7, ['NW', 'SE'], 213); point(114, 8, 213, 'SE', 'NW', 'W');
+diag(115, 9, ['NW', 'SE'], 215); point(116, 10, 215, 'SE', 'NW', 'W');
+plain('E212', 110, 111, 6, 40); plain('E214', 110, 113, 8); plain('E216', 110, 115, 10);
 sec('G1', { length: 400, kind: 'plain' });
-tiles.push(...[[113, 11], [114, 12], [115, 13], [116, 14], [117, 15], [118, 16], [119, 17], [120, 18], [121, 19]].map(([x, y]) => T(x, y, ['NW', 'SE'], 'G1')));
+tiles.push(...[[117, 11], [118, 12], [119, 13], [120, 14], [121, 15], [122, 16], [123, 17], [124, 18], [125, 19]].map(([x, y]) => T(x, y, ['NW', 'SE'], 'G1')));
 
-// ---- głowica wschodnia (x 113–135) ----
+// ---- głowica wschodnia (x 117–139) ----
 // 64: tor 12 → tor 10; 65: tor 8c → 6c
-sec('E12', { length: 20, kind: 'plain' }); tiles.push(T(113, 14, ['W', 'SE'], 'E12')); diag(114, 15, ['NW', 'SE'], 64); point(115, 16, 64, 'E', 'W', 'NW');
-plain('E10a', 113, 114, 16, 40); sec('E10b', { length: 30, kind: 'plain' }); tiles.push(T(116, 16, ['W', 'SE'], 'E10b'));
-sec('E8c', { length: 20, kind: 'plain' }); tiles.push(T(113, 18, ['W', 'SE'], 'E8c')); diag(114, 19, ['NW', 'SE'], 65); point(115, 20, 65, 'E', 'W', 'NW');
-plain('E6c', 113, 114, 20, 40);
+sec('E12', { length: 20, kind: 'plain' }); tiles.push(T(117, 14, ['W', 'SE'], 'E12')); diag(118, 15, ['NW', 'SE'], 64); point(119, 16, 64, 'E', 'W', 'NW');
+plain('E10a', 117, 118, 16, 40); sec('E10b', { length: 30, kind: 'plain' }); tiles.push(T(120, 16, ['W', 'SE'], 'E10b'));
+sec('E8c', { length: 20, kind: 'plain' }); tiles.push(T(117, 18, ['W', 'SE'], 'E8c')); diag(118, 19, ['NW', 'SE'], 65); point(119, 20, 65, 'E', 'W', 'NW');
+plain('E6c', 117, 118, 20, 40);
 // tory 10/12 → tor 1d (73) po skosie nad 6d (skrzyżowanie 120) i torem 2d (124)
 sec('D10', { length: 300, kind: 'plain' });
-tiles.push(T(117, 17, ['NW', 'SE'], 'D10'), T(118, 18, ['NW', 'SE'], 'D10'), T(119, 19, ['NW', 'SE'], 'D10'),
-  T(121, 21, ['NW', 'SE'], 'D10'), T(122, 22, ['NW', 'SE'], 'D10'), T(123, 23, ['NW', 'SE'], 'D10'), T(125, 25, ['NW', 'SE'], 'D10'));
-sec('X120', { length: 30, kind: 'point' }); tiles.push({ x: 120, y: 20, type: 'crossing', pairs: [['W', 'E'], ['NW', 'SE']], section: 'X120' });
-sec('X124', { length: 30, kind: 'point' }); tiles.push({ x: 124, y: 24, type: 'crossing', pairs: [['W', 'E'], ['NW', 'SE']], section: 'X124' });
+tiles.push(T(121, 17, ['NW', 'SE'], 'D10'), T(122, 18, ['NW', 'SE'], 'D10'), T(123, 19, ['NW', 'SE'], 'D10'),
+  T(125, 21, ['NW', 'SE'], 'D10'), T(126, 22, ['NW', 'SE'], 'D10'), T(127, 23, ['NW', 'SE'], 'D10'), T(129, 25, ['NW', 'SE'], 'D10'));
+sec('X120', { length: 30, kind: 'point' }); tiles.push({ x: 124, y: 20, type: 'crossing', pairs: [['W', 'E'], ['NW', 'SE']], section: 'X120' });
+sec('X124', { length: 30, kind: 'point' }); tiles.push({ x: 128, y: 24, type: 'crossing', pairs: [['W', 'E'], ['NW', 'SE']], section: 'X124' });
 // tor 6d: grupa towarowa (85) → tor 2d (92)
-plain('E6d', 116, 119, 20); point(122, 20, 85, 'E', 'W', 'NW');
-plain('E6e', 121, 121, 20, 30); plain('E6f', 123, 126, 20);
-sec('D6', { length: 160, kind: 'plain' }); tiles.push(T(127, 20, ['W', 'SE'], 'D6'), T(128, 21, ['NW', 'SE'], 'D6'), T(129, 22, ['NW', 'SE'], 'D6'), T(130, 23, ['NW', 'SE'], 'D6'));
-point(131, 24, 92, 'E', 'W', 'NW');
+plain('E6d', 120, 123, 20); point(126, 20, 85, 'E', 'W', 'NW');
+plain('E6e', 125, 125, 20, 30); plain('E6f', 127, 130, 20);
+sec('D6', { length: 160, kind: 'plain' }); tiles.push(T(131, 20, ['W', 'SE'], 'D6'), T(132, 21, ['NW', 'SE'], 'D6'), T(133, 22, ['NW', 'SE'], 'D6'), T(134, 23, ['NW', 'SE'], 'D6'));
+point(135, 24, 92, 'E', 'W', 'NW');
 // tor 2d (353 t.2 z Łęgajn) i 1d (353 t.1 do Łęgajn); 89/91: z 2d na 1d
-plain('E2d', 113, 123, 24); plain('E2e', 125, 130, 24); cross(132, 24, 89, 91, 26); plain('E2f', 133, 135, 24);
-plain('E1d', 113, 122, 26); point(123, 26, 81, 'E', 'W', 'SW'); plain('E1e', 124, 125, 26, 40); point(126, 26, 73, 'E', 'W', 'NW');
-plain('E1f', 127, 133, 26); plain('E1g', 135, 135, 26, 30);
+plain('E2d', 117, 127, 24); plain('E2e', 129, 134, 24); cross(136, 24, 89, 91, 26); plain('E2f', 137, 139, 24);
+plain('E1d', 117, 126, 26); point(127, 26, 81, 'E', 'W', 'SW'); plain('E1e', 128, 129, 26, 40); point(130, 26, 73, 'E', 'W', 'NW');
+plain('E1f', 131, 137, 26); plain('E1g', 139, 139, 26, 30);
 // tor postojowy PKP Intercity 701 (z 1d przez 81)
-diag(122, 27, ['NE', 'SW'], 81);
-sec('T701', { length: 204, kind: 'siding', track: '701' }); tiles.push(BUF(114, 28, 'E', 'T701', 'k701'), ...H(115, 120, 28, 'T701'), T(121, 28, ['W', 'NE'], 'T701'));
-tiles.push(SIG(121, 29, 'Tm84', 'tm', { x: 121, y: 28 }, 'E'), { x: 115, y: 29, type: 'label', text: 'tor 701 (PKP IC)', span: 4, size: 7 });
+diag(126, 27, ['NE', 'SW'], 81);
+sec('T701', { length: 204, kind: 'siding', track: '701' }); tiles.push(BUF(118, 28, 'E', 'T701', 'k701'), ...H(119, 124, 28, 'T701'), T(125, 28, ['W', 'NE'], 'T701'));
+tiles.push(SIG(125, 29, 'Tm84', 'tm', { x: 125, y: 28 }, 'E'), { x: 119, y: 29, type: 'label', text: 'tor 701 (PKP IC)', span: 4, size: 7 });
 // tor 5d (219 do Marcinkowa)
-plain('E5d', 113, 135, 30, 1200);
+plain('E5d', 117, 139, 30, 1200);
 
-// ---- szlaki wschód (x 136–141) ----
-const eastExit = (y, id, text) => lineExit({ side: 'E', y, id, text, from: 136, to: 141, length: 600 });
+// ---- szlaki wschód (x 140–145) ----
+const eastExit = (y, id, text) => lineExit({ side: 'E', y, id, text, from: 140, to: 145, length: 600 });
 eastExit(24, 'LE2', 'Łęgajny 353 t.2'); eastExit(26, 'LE1', 'Łęgajny 353 t.1'); eastExit(30, 'MA', 'Marcinkowo 219');
-tiles.push(SIG(136, 23, 'Y', 'semafor', { x: 136, y: 24 }, 'W', { entry: true }), SIG(136, 25, 'X', 'semafor', { x: 136, y: 26 }, 'W', { entry: true }),
-  SIG(136, 29, 'T', 'semafor', { x: 136, y: 30 }, 'W', { entry: true }));
-tiles.push({ x: 134, y: 21, type: 'label', text: 'linia 353 · Korsze', span: 6, size: 7 }, { x: 134, y: 32, type: 'label', text: 'linia 219 · Szczytno', span: 6, size: 7 });
+tiles.push(SIG(140, 23, 'Y', 'semafor', { x: 140, y: 24 }, 'W', { entry: true }), SIG(140, 25, 'X', 'semafor', { x: 140, y: 26 }, 'W', { entry: true }),
+  SIG(140, 29, 'T', 'semafor', { x: 140, y: 30 }, 'W', { entry: true }));
+tiles.push({ x: 138, y: 21, type: 'label', text: 'linia 353 · Korsze', span: 6, size: 7 }, { x: 138, y: 32, type: 'label', text: 'linia 219 · Szczytno', span: 6, size: 7 });
 
 // szybkości na tor zwrotny wg napisów na planie [km/h]; bez napisu (drabina 41–53, 81) – 40. Gra ma obrazy „40” (do 60 km/h)
 // i największą szybkość: 50 i 60 jadą jak 40, 80 i 100 (2/7, 50/55) – bez ograniczenia. Zw24: na planie 50 (do toru 14)
@@ -216,16 +217,16 @@ export default {
   traffic: 'Regio w czterech kierunkach (do Szczytna spalinowe), IC z Warszawy przez Działdowo, TLK z Poznania do Białegostoku, towarowe z grupy do Korsz i przelotem.',
   difficulty: 5,
   startTime: '05:55',
-  desk: { cols: 142, rows: 36 },
+  desk: { cols: 146, rows: 36 },
 
   exits: {
     GU: { name: 'Olsztyn Gutkowo', label: 'Olsztyn Gutkowo – 220', tile: { x: 0, y: 22 }, dir: 'W', lineLength: 7300, lineSpeed: 100 },
     KO2: { name: 'Olsztyn Kortowo', label: 'Olsztyn Kortowo – 353 t.2', tile: { x: 0, y: 24 }, dir: 'W', direction: 'out', block: 'sbl', lineLength: 5600, lineSpeed: 120 },
     KO1: { name: 'Olsztyn Kortowo', label: 'Olsztyn Kortowo – 353 t.1', tile: { x: 0, y: 26 }, dir: 'W', direction: 'in', block: 'sbl', lineLength: 5600, lineSpeed: 120 },
     KD: { name: 'Olsztyn Kortowo', label: 'Olsztyn Kortowo – 216', tile: { x: 0, y: 28 }, dir: 'W', lineLength: 5600, lineSpeed: 120 },
-    LE2: { name: 'Łęgajny', label: 'Łęgajny – 353 t.2', tile: { x: 141, y: 24 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 8300, lineSpeed: 120 },
-    LE1: { name: 'Łęgajny', label: 'Łęgajny – 353 t.1', tile: { x: 141, y: 26 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 8300, lineSpeed: 120 },
-    MA: { name: 'Marcinkowo', label: 'Marcinkowo – 219', tile: { x: 141, y: 30 }, dir: 'E', lineLength: 15000, lineSpeed: 100 },
+    LE2: { name: 'Łęgajny', label: 'Łęgajny – 353 t.2', tile: { x: 145, y: 24 }, dir: 'E', direction: 'in', block: 'sbl', lineLength: 8300, lineSpeed: 120 },
+    LE1: { name: 'Łęgajny', label: 'Łęgajny – 353 t.1', tile: { x: 145, y: 26 }, dir: 'E', direction: 'out', block: 'sbl', lineLength: 8300, lineSpeed: 120 },
+    MA: { name: 'Marcinkowo', label: 'Marcinkowo – 219', tile: { x: 145, y: 30 }, dir: 'E', lineLength: 15000, lineSpeed: 100 },
   },
   sections,
   tiles,

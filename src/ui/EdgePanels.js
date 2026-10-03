@@ -1,5 +1,6 @@
 import { edgeLayout } from '../render/edges.js';
 import { CELL } from '../render/svg.js';
+import { EDGE_COLS } from '../tiles/platforms.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -12,7 +13,7 @@ const NS = 'http://www.w3.org/2000/svg';
  * Geometria: `edgeLayout` (bez DOM). Opcja w menu (`edgePanels`), domyślnie wyłączona.
  */
 export class EdgePanels {
-  constructor(scroll, deskEl, { edgeCells = 4, enabled = false } = {}) {
+  constructor(scroll, deskEl, { edgeCells = EDGE_COLS, enabled = false } = {}) {
     this.scroll = scroll; this.deskEl = deskEl; this.edgeCells = edgeCells; this.enabled = enabled;
     this.svg = null; this.pad = 0; this.target = null; this.active = false;
     // nakładka dokładnie nad obszarem przewijania (poza nim – bez „sticky”, które w Safari zostawia szparę na padding)

@@ -111,6 +111,30 @@ test('krawędzie peronowe: peron wyspowy ma dwie (góra i dół), boczny jedną 
   assert.deepEqual(platformEdgeLines(0, 0, 1, 1, undefined), []);
 });
 
+test('perony: wyspowy tylko z torów z tą samą nazwą peronu; peron na odcinku zbliżania za stałym polem skrajnym; wyższe prostokąty', async () => {
+  const { platformSpans, EDGE_COLS, PLATFORM_H } = await import('../src/tiles/platforms.js');
+  const olsztyn = (await import('../src/stations/olsztyn-glowny.js')).default;
+  // Olsztyn Zachodni na odcinkach zbliżania czterech linii od zachodu (y 22, 24, 26, 28): dawniej wyspowe z par od góry
+  // (220 + 353 t.2 jako „III”, 353 t.1 + 216 jako „II”) na kolumnach 0–7 – pod strzałkami blokady i opisami szlaków
+  const zach = platformSpans(olsztyn, [0, 20]).filter((p) => /Zachodni/.test(p.name));
+  assert.deepEqual(zach.map((p) => [p.name, p.kind, p.yRow]), [
+    ['Peron III (Olsztyn Zachodni)', 'side', 21], ['Peron II (Olsztyn Zachodni)', 'island', 25], ['Peron I (Olsztyn Zachodni)', 'side', 27],
+  ]);
+  assert.ok(zach.every((p) => p.x0 >= EDGE_COLS && p.x1 - p.x0 >= 5), zach.map((p) => `${p.x0}–${p.x1}`).join(' '));
+  // tory co 2 rzędy: tor z sąsiadem o tej samej nazwie peronu – wyspowy z nim, inny tor obok – boczny; dwa tory o różnych
+  // nazwach bez takich sąsiadów – wyspowy jak dotąd (Reda: „Peron I” i „Peron Ia”)
+  const row = (y, sid, x0 = 0, x1 = 9) => Array.from({ length: x1 - x0 + 1 }, (_, i) => ({ x: x0 + i, y, type: 'track', ports: ['W', 'E'], section: sid }));
+  const three = { tiles: [...row(4, 'P'), ...row(6, 'Q'), ...row(8, 'R')], sections: { P: { platform: 'Peron III' }, Q: { platform: 'Peron II' }, R: { platform: 'Peron II' } } };
+  assert.deepEqual(platformSpans(three, [0, 20]).map((p) => [p.name, p.kind, p.yRow, p.hCells]), [['Peron III', 'side', 3, PLATFORM_H.side], ['Peron II', 'island', 7, PLATFORM_H.island2]]);
+  const two = { tiles: [...row(4, 'P'), ...row(6, 'Q')], sections: { P: { platform: 'Peron I' }, Q: { platform: 'Peron Ia' } } };
+  assert.deepEqual(platformSpans(two, [0, 20]).map((p) => [p.name, p.kind, p.yRow]), [['Peron I', 'island', 5]]);
+  // wyjazd na wschód – peron przed stałym polem skrajnym
+  const east = { tiles: row(4, 'Zb'), sections: { Zb: { platform: 'Peron I', halt: 'X' } }, exits: { E1: { tile: { x: 9, y: 4 }, dir: 'E' } } };
+  assert.deepEqual(platformSpans(east, [0, 20]).map((p) => [p.x0, p.x1]), [[0, 9 - EDGE_COLS]]);
+  // napis „Peron …” mieści się na wysokość: boczny i wyspowy (tory 2 rzędy od siebie) wyższe niż dawniej (0,5 i 0,7)
+  assert.ok(PLATFORM_H.side > 0.5 && PLATFORM_H.island2 > 0.7 && PLATFORM_H.island2 < 1);
+});
+
 test('opis „tor N” na pulpicie kostkowym rysuje się nad opisywanym torem, na prostej kostce toru', async () => {
   const { trackLabelPlace, platformSpans, trackLabelText } = await import('../src/render/platforms.js');
   const szkolna = (await import('../src/stations/szkolna.js')).default;

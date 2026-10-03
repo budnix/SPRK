@@ -1,9 +1,21 @@
 import { deskControls } from './controls.js';
 
 /**
+ * Szerokość stałego pola skrajnego monitora [kolumny]: przy przewijaniu szerokiego pulpitu kolumny z wyjazdem na szlak
+ * i blokadą liniową zostają przypięte po lewej i prawej (`src/ui/EdgePanels.js`). Peron na odcinku zbliżania zaczyna się
+ * za tym polem – nie leży pod strzałkami blokady i opisem szlaku i nie zostaje w połowie przypięty przy krawędzi.
+ */
+export const EDGE_COLS = 4;
+
+/** Wysokość prostokąta peronu [część kostki]: boczny, wyspowy między torami 2 rzędy od siebie, 4 rzędy od siebie. */
+export const PLATFORM_H = { side: 0.65, island2: 0.8, island4: 1.1 };
+
+/**
  * Geometria peronów z definicji stacji (bez DOM) – wspólna dla monitora i pulpitu kostkowego.
- * Peron wyspowy: dwa tory peronowe 2 lub 4 rzędy od siebie bez torów pomiędzy; inaczej peron boczny
- * w wolnym rzędzie obok toru. Zakres kolumn docinany do sygnalizatorów stojących w rzędzie peronu.
+ * Peron wyspowy: dwa tory peronowe 2 lub 4 rzędy od siebie bez torów pomiędzy – tor, który ma takiego sąsiada z tą samą
+ * nazwą peronu, tylko z nim (Olsztyn Zachodni: peron III przy linii 220 i wyspowy II między torami 353); inaczej peron boczny
+ * w wolnym rzędzie obok toru. Zakres kolumn docinany do sygnalizatorów stojących w rzędzie peronu i do stałego pola
+ * skrajnego przy wyjeździe na szlak (`EDGE_COLS`).
  *
  * @param station definicja stacji
  * @param win [x0, x1] okno kolumn
@@ -15,13 +27,21 @@ import { deskControls } from './controls.js';
 export function platformSpans(station, win, labelText = (t) => t) {
   const [X0, X1] = win;
   const spans = [];
+  const exitAt = (t) => Object.values(station.exits || {}).find((e) => e.tile?.x === t.x && e.tile?.y === t.y);
   for (const [sid, sec] of Object.entries(station.sections || {})) {
     if (!sec.platform) continue;
     const tiles = station.tiles.filter((t) => t.section === sid && t.type === 'track' && t.x >= X0 && t.x <= X1);
     if (!tiles.length) continue;
     const ys = [...new Set(tiles.map((t) => t.y))];
     if (ys.length !== 1) continue;
-    spans.push({ sid, y: ys[0], x0: Math.min(...tiles.map((t) => t.x)), x1: Math.max(...tiles.map((t) => t.x)), done: false });
+    let x0 = Math.min(...tiles.map((t) => t.x)), x1 = Math.max(...tiles.map((t) => t.x));
+    // odcinek zbliżania z peronem (przystanek przed semaforem wjazdowym): peron za stałym polem skrajnym wyjazdu
+    for (const t of tiles) {
+      const ex = exitAt(t);
+      if (ex?.dir === 'W') x0 = Math.max(x0, t.x + EDGE_COLS);
+      if (ex?.dir === 'E') x1 = Math.min(x1, t.x - EDGE_COLS);
+    }
+    if (x1 >= x0) spans.push({ sid, y: ys[0], x0, x1, done: false });
   }
   const TRACKY = new Set(['track', 'point', 'buffer', 'crossing', 'block', 'button']);
   const busy = [...station.tiles.filter((t) => t.type !== 'button'), ...deskControls(station)];
@@ -58,9 +78,15 @@ export function platformSpans(station, win, labelText = (t) => t) {
     out.push({ x0, x1, yRow, kind, hCells, name, labelX, edges, sections });
   };
   spans.sort((a, b) => a.y - b.y);
+  const named = (s) => station.sections[s.sid].platform;
+  const near = (p, o) => o !== p && !o.done && [2, 4].includes(Math.abs(o.y - p.y)) && o.x0 <= p.x1 && o.x1 >= p.x0;
+  const sameName = (p, o) => named(p) === named(o);
+  const hasTwin = (p) => spans.some((o) => near(p, o) && sameName(p, o));
   for (const a of spans) {
     if (a.done) continue;
-    const b = spans.find((o) => !o.done && o !== a && (o.y === a.y + 2 || o.y === a.y + 4) && o.x0 <= a.x1 && o.x1 >= a.x0);
+    // tor z sąsiadem o tej samej nazwie peronu tworzy wyspowy z nim, nie z torem o innej nazwie (Olsztyn Zachodni: 220
+    // „III” nie z 353 t.2 „II”, bo ten ma „II” na 353 t.1); tory bez takiego sąsiada – jak dotąd (Reda: „I” z „Ia”)
+    const b = spans.find((o) => near(a, o) && o.y > a.y && (sameName(a, o) || (!hasTwin(a) && !hasTwin(o))));
     if (b) {
       const W0 = Math.max(a.x0, b.x0), W1 = Math.min(a.x1, b.x1);
       let free = true;
@@ -68,13 +94,13 @@ export function platformSpans(station, win, labelText = (t) => t) {
       if (free) {
         let [c0, c1] = [W0, W1];
         for (let y = a.y + 1; y < b.y; y++) { const [q0, q1] = clip(y, W0, W1); c0 = Math.max(c0, q0); c1 = Math.min(c1, q1); }
-        push(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? 0.7 : 1.1, nameOf(a, b), ['top', 'bottom'], [a.sid, b.sid]);
+        push(c0, c1, (a.y + b.y) / 2, 'island', b.y - a.y === 2 ? PLATFORM_H.island2 : PLATFORM_H.island4, nameOf(a, b), ['top', 'bottom'], [a.sid, b.sid]);
         a.done = b.done = true;
         continue;
       }
     }
     const side = !rowBusy(a.y - 1, a.x0, a.x1) ? a.y - 1 : !rowBusy(a.y + 1, a.x0, a.x1) ? a.y + 1 : null;
-    if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); push(c0, c1, side, 'side', 0.5, nameOf(a), [side < a.y ? 'bottom' : 'top'], [a.sid]); }
+    if (side != null) { const [c0, c1] = clip(side, a.x0, a.x1); push(c0, c1, side, 'side', PLATFORM_H.side, nameOf(a), [side < a.y ? 'bottom' : 'top'], [a.sid]); }
     a.done = true;
   }
   return out;
