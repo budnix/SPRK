@@ -41,14 +41,14 @@ test('pory doby pokrywają całą dobę bez przerw; klasy pociągów z kategorii
   assert.equal(trainClass({ name: 'Lokomotywa luzem', kind: 'tow' }), 'tow');
 });
 
-test('długości służby: 30 min, 1, 2 i 3 h od każdej pełnej godziny; parametry z adresu sprowadzone do dozwolonych', () => {
-  assert.deepEqual(DUTY_MINUTES, [30, 60, 120, 180]);
+test('długości służby: 1, 2, 3 i 5 h od każdej pełnej godziny; parametry z adresu sprowadzone do dozwolonych', () => {
+  assert.deepEqual(DUTY_MINUTES, [60, 120, 180, 300]);
   assert.deepEqual(normalizeDuty('22', '120'), { start: 22, minutes: 120 });
   assert.deepEqual(normalizeDuty('23', '180'), { start: 23, minutes: 180 });
   assert.deepEqual(normalizeDuty(null, null), { start: 6, minutes: 120 });
   assert.deepEqual(normalizeDuty('25', 'x'), { start: 6, minutes: 120 });
   assert.deepEqual(normalizeDuty('7.5', '45'), { start: 6, minutes: 120 });
-  assert.throws(() => buildDuty(sopot, { start: 23, minutes: 90 }), /długość 90 min – do wyboru 30, 60, 120, 180/);
+  assert.throws(() => buildDuty(sopot, { start: 23, minutes: 90 }), /długość 90 min – do wyboru 60, 120, 180, 300/);
   assert.throws(() => buildDuty(sopot, { start: 24, minutes: 60 }), /pełna godzina 0–23/);
 });
 
@@ -225,7 +225,7 @@ test('otwarcie służby: na każdym posterunku w grze pierwszy pociąg najpóźn
   assert.deepEqual(late, []);
 });
 
-test('każda służba posterunków w grze ma pociągi – także 30 min i środek nocy; pociąg klasy, która o tej porze nie kursuje, nie wraca', () => {
+test('każda służba posterunków w grze ma pociągi – także najkrótsza i środek nocy; pociąg klasy, która o tej porze nie kursuje, nie wraca', () => {
   // Gdańsk Gł. 00:00 / 1 h (ziarno 710083518) wychodziła pusta: uwaga o pociągu sprzed startu usuwała po kolei pociągi
   // towarowe obok, a na końcu sam pociąg. Teraz pociąg od sąsiada wchodzi do służby dopiero, gdy sąsiad wyprawia go po
   // starcie, a uwaga, która nie jest konfliktem dwóch pociągów, usuwa tylko swój pociąg.
@@ -236,7 +236,7 @@ test('każda służba posterunków w grze ma pociągi – także 30 min i środe
     assert.ok(stats.tow > 0, `Gdańsk Gł. ${start}:00, ziarno ${seed}: pociągi towarowe zostają`);
     assert.deepEqual(checkScenario(gdansk, scenario).filter((f) => f.code.startsWith('tt-') && f.level !== 'info').map((f) => f.code), []);
   }
-  for (const st of duty) for (const start of [0, 1, 3, 23]) for (const minutes of [30, 60]) for (const seed of [5, 710083518]) {
+  for (const st of duty) for (const start of [0, 1, 3, 23]) for (const minutes of [60, 120]) for (const seed of [5, 710083518]) {
     const { scenario, stats } = buildDuty(st, { start, minutes, seed });
     assert.ok(stats.trains > 0, `${st.id} ${scenario.name}, ziarno ${seed}: bez pociągów`);
     for (const e of scenario.timetable) assert.ok(bandOf(first(e)).every[trainClass(e)] > 0, `${st.id} ${scenario.name}: ${e.nr} (${trainClass(e)}) o ${e.arr ?? e.dep}`);

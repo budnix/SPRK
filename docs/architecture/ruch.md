@@ -5,7 +5,7 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
 ## Służba o wybranej porze (`src/model/duty.js`)
 
 Na posterunkach do służby zwykłe zmiany („Pełna zmiana”, „Szczyt”) zastępuje służba: gracz wybiera pełną godzinę startu
-(0–23) i długość (30 min, 1, 2, 3 h – `DUTY_MINUTES`; służba może przejść przez północ). `buildDuty(station,
+(0–23) i długość (1, 2, 3 albo 5 h – `DUTY_MINUTES`; służba może przejść przez północ). `buildDuty(station,
 { start, minutes, seed })` zwraca scenariusz – obiekt dla `Simulation` (`id` `sluzba-<minuty>`, nazwa z godzinami,
 `startTime`, `endTime`, własne `timetable` i `tasks`) – oraz `stats` (pora doby, liczba pociągów wg klasy). Moduł nie
 zna żadnej stacji: wzorcem jest `station.timetable`, więc **nowy posterunek ma służbę bez dodatkowych danych**
@@ -26,7 +26,7 @@ tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesu
 Brzegi okna (`DUTY_EDGE`): pociąg od sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie –
 pierwsze zdarzenie nie wcześniej niż start + czas przejazdu szlaku z prędkością pociągu + 90 s dojazdu do peronu + 2 min
 (`leadOf`; wolniejszy pociąg towarowy – odpowiednio później); pociąg bez wjazdu (stoi od początku, powstaje ze składu)
-– 3 min po starcie. Ostatnie zdarzenie najpóźniej 10 min (służba 30-minutowa: 6 min) przed końcem. Otwarcie służby
+– 3 min po starcie. Ostatnie zdarzenie najpóźniej 10 min przed końcem. Otwarcie służby
 (`DUTY_OPENING`): gdy pierwszy pociąg przyjeżdża później niż 5 min po najwcześniejszej możliwej chwili, po kolei – każdy
 krok z kontrolą definicji – wraca pociąg wzorca z okna otwarcia, który wypadł (klasa kursująca o tej porze), pociąg
 towarowy wchodzi w wolne miejsce wzorca w oknie, a na końcu pociąg towarowy na najwcześniejszą chwilę na szlaku

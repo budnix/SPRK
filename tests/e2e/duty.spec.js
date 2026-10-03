@@ -113,12 +113,14 @@ test('strona posterunku: stanowisko do wyboru (Rumia) dla służby i scenariusza
   await page.waitForURL(/scenariusz=usterka-rd2.*srk=E/);
   await ready(page);
   expect((await sim(page)).srk).toBe('E');
-  // krótka służba w szczycie (Pruszcz 06:00, 30 min, ziarno 2 – dawniej bez pociągów): rozkład ma pociągi, start działa
+  // najkrótsza służba w szczycie (Pruszcz 06:00, 1 godz., ziarno 2) i najdłuższa (5 godz.): start działa
   await page.goto('/#/stacja/pruszcz-gdanski', { waitUntil: 'load' });
   await page.locator('.st-adv summary').click();
   await page.fill('#st-seed', '2');
-  await page.click('#st-duty-minutes button[data-minutes="30"]');
-  await expect(page.locator('#st-scenario-desc')).toContainText('Pociągi w tej służbie: 2');
+  await expect(page.locator('#st-duty-minutes button')).toHaveText(['1 godz.', '2 godz.', '3 godz.', '5 godz.']);
+  await page.click('#st-duty-minutes button[data-minutes="60"]');
+  await expect(page.locator('#st-go')).toBeEnabled();
+  await page.click('#st-duty-minutes button[data-minutes="300"]');
   await expect(page.locator('#st-go')).toBeEnabled();
 });
 

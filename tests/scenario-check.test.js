@@ -563,7 +563,7 @@ test('wiersz poleceń: służba o wybranej porze (--start, --minutes) – rozkł
   assert.equal(parseArgs([]).duty, null);
   assert.deepEqual(parseArgs(['sopot', '--start', '22', '--minutes=120']).duty, { start: 22, minutes: 120 });
   assert.deepEqual(parseArgs(['--start', '23', '--minutes', '180']).duty, { start: 23, minutes: 180 }, 'służba przez północ');
-  assert.throws(() => parseArgs(['--start', '23', '--minutes', '90']), /--minutes: do wyboru 30, 60, 120, 180, jest „90”/);
+  assert.throws(() => parseArgs(['--start', '23', '--minutes', '90']), /--minutes: do wyboru 60, 120, 180, 300, jest „90”/);
   assert.throws(() => parseArgs(['--start', '24', '--minutes', '60']), /--start: pełna godzina 0–23/);
   assert.throws(() => parseArgs(['--minutes', '60']), /--start: pełna godzina 0–23 \(wymagana razem z --minutes\)/);
   assert.throws(() => parseArgs(['--start', '6']), /--minutes: .*wymagane razem z --start/);

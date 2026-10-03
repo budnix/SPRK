@@ -25,16 +25,15 @@ import { checkScenario } from './scenarioCheck.js';
  */
 
 /** Długości służby do wyboru [min]. */
-export const DUTY_MINUTES = [30, 60, 120, 180];
+export const DUTY_MINUTES = [60, 120, 180, 300];
 /** Początek identyfikatora scenariusza służby (`sluzba-120`) – wynik gracza zapisuje się osobno dla każdej długości. */
 export const DUTY_ID = 'sluzba';
 /**
  * Brzegi okna służby [s]. Pociąg od sąsiada przyjeżdża najwcześniej tak, żeby sąsiad wyprawił go `neighbour` s po starcie
  * (czas przejazdu szlaku i dojazdu do peronu – `leadOf`); pociąg bez wjazdu (stoi od początku, powstaje ze składu)
- * – `start` s po starcie. Ostatnie zdarzenie nie później niż `end` s przed końcem (w najkrótszej służbie `endShort` –
- * inaczej na pociągi zostawałoby kilkanaście minut).
+ * – `start` s po starcie. Ostatnie zdarzenie nie później niż `end` s przed końcem.
  */
-export const DUTY_EDGE = { start: 3 * 60, neighbour: 2 * 60, run: 90, end: 10 * 60, endShort: 6 * 60 };
+export const DUTY_EDGE = { start: 3 * 60, neighbour: 2 * 60, run: 90, end: 10 * 60 };
 /**
  * Otwarcie służby [s]: pierwszy pociąg najpóźniej tyle po najwcześniejszej możliwej chwili (pociąg od sąsiada wyprawiony
  * po starcie) – gracz nie czeka pół godziny na pierwszy pociąg, gdy pora doby przerzedziła wzorzec (przyjęte).
@@ -168,7 +167,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   if (!Number.isInteger(start) || start < 0 || start > 23) throw new Error(`Służba: start – pełna godzina 0–23, jest ${start}`);
   if (!DUTY_MINUTES.includes(minutes)) throw new Error(`Służba: długość ${minutes} min – do wyboru ${DUTY_MINUTES.join(', ')}`);
   const t0 = start * 3600, t1 = t0 + minutes * 60;
-  const last = t1 - (minutes <= 30 ? DUTY_EDGE.endShort : DUTY_EDGE.end);
+  const last = t1 - DUTY_EDGE.end;
   const period = patternPeriod(station);
   const groups = patternGroups(station);
   const exits = station.exits || {};

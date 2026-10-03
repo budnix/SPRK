@@ -202,10 +202,10 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   pociąg od sąsiada wyprawiony po starcie; gdy pora doby przerzedziła wzorzec, wraca pociąg wzorca z tego okna, który
   wypadł (o ile jego klasa o tej porze kursuje), albo wchodzi pociąg towarowy – w wolne miejsce wzorca albo na
   najwcześniejszą chwilę na szlaku przelotowym (Reda 18:00: pierwszy pociąg bywał po 35–43 min);
-* służba zaczyna się o pełnej godzinie i trwa 30 min, 1, 2 albo 3 h – także przez północ (23:00–02:00); pociąg od
+* służba zaczyna się o pełnej godzinie i trwa 1, 2, 3 albo 5 h – także przez północ (23:00–02:00); pociąg od
   sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie (przyjazd nie wcześniej niż start
   + czas przejazdu szlaku + 90 s dojazdu do peronu + 2 min), pociąg bez wjazdu – 3 min po starcie; ostatnie zdarzenie
-  co najmniej 10 min (w służbie 30-minutowej 6 min) przed końcem;
+  co najmniej 10 min przed końcem;
 * służba nie zostaje bez pociągów: gdy z doboru nie wyszedł żaden, wracają pociągi pominięte dla urozmaicenia, potem
   pociąg towarowy wchodzi w każde wolne miejsce, na koniec pojedynczy pociąg wzorca klasy, która o tej porze kursuje
   (inny kurs linii niż wynikałby z ziarna) – pociąg klasy niekursującej o tej porze nie wraca;

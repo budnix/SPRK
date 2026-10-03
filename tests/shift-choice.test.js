@@ -27,7 +27,7 @@ test('wybór zmiany → adres i z powrotem: te same parametry w stałej kolejno�
   const pairs = choiceToParams(duty);
   assert.deepEqual(pairs, [['stacja', 'rumia'], ['scenariusz', 'sluzba'], ['zaklocenia', 'low'], ['start', '23'], ['czas', '60'], ['seed', '5'], ['srk', 'komputerowe']]);
   assert.deepEqual(choiceFromParams(new URLSearchParams(pairs)), duty);
-  const special = { station: 'sopot', scenario: 'usterka-gd', duty: { start: 1, minutes: 30 }, srk: null, seed: null, level: 'none', district: null };
+  const special = { station: 'sopot', scenario: 'usterka-gd', duty: { start: 1, minutes: 60 }, srk: null, seed: null, level: 'none', district: null };
   assert.deepEqual(choiceToParams(special), [['stacja', 'sopot'], ['scenariusz', 'usterka-gd'], ['zaklocenia', 'none']], 'pora służby tylko przy służbie');
   assert.deepEqual(Object.values(PARAMS), ['stacja', 'scenariusz', 'zaklocenia', 'okreg', 'start', 'czas', 'seed', 'srk']);
 });

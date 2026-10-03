@@ -175,8 +175,8 @@ Ebilock 950, LCS Gdynia, SKM remote control). Every station has several scenario
 failure, a block failure, a peak with heavy disruptions).
 
 ### Duty at a time of your choice
-On every duty station you choose **when** and **how long** you work: any full hour of the day and 30 minutes, 1, 2 or
-3 hours – a duty may run past midnight (23:00–02:00). The timetable is built for
+On every duty station you choose **when** and **how long** you work: any full hour of the day and 1, 2, 3 or
+5 hours – a duty may run past midnight (23:00–02:00). The timetable is built for
 that time of day from the station's own pattern: the morning and afternoon peaks carry the densest passenger traffic,
 daytime and evening run fewer suburban and regional trains, and at night almost only freight trains run – they take the
 paths of the passenger trains that do not run then. Long-distance trains carry the names and routes of real PKP
