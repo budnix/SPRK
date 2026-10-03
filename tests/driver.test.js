@@ -6,6 +6,7 @@ import { Train, EMERGENCY_BRAKE, DRIVER_MIN, DRIVER_MAX, EASE_SPEED, EASE_SHARE,
 import { STATIONS } from '../src/stations/index.js';
 import szkolna from '../src/stations/szkolna.js';
 import { Clock, play } from './helpers.js';
+import { isFinished } from '../src/model/timetable/phase.js';
 
 /*
  * Hamowanie jak maszynista (Train.brakeCurve): planowane opóźnienie to część hamowania służbowego (każdy maszynista
@@ -103,7 +104,7 @@ test('pełne zmiany z automatem i maszynistami: żaden pociąg nie mija semafora
     assert.deepEqual(spads, [], `${id}: semafor „Stój” minięty`);
     assert.ok(sim.traffic.trains.every((tr) => tr.driver != null), `${id}: każdy pociąg ma maszynistę`);
     assert.equal(sim.traffic.trains.filter((tr) => tr.stoppedAt?.kind === 'spad').length, 0, `${id}: pociąg za semaforem`);
-    const stuck = sim.traffic.timetable().filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || String(e.status).startsWith('przekazany')));
+    const stuck = sim.traffic.timetable().filter((e) => !isFinished(e));
     assert.deepEqual(stuck.map((e) => `${e.nr}: ${e.status}`), [], `${id}: pociągi bez obsługi`);
   }
 });

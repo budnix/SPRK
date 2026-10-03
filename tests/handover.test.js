@@ -16,11 +16,11 @@ test('skład staje się pociągiem powrotnym dopiero po przyjeździe – nie wte
   assert.ok(sim.clock.time > Clock.parse('08:11'), 'okno przekazania składu otwarte');
   assert.equal(arriving.actualArr, null);
   assert.equal(returning.train, null, 'skład nieprzekazany – pociąg jeszcze nie przyjechał');
-  assert.equal(arriving.status.startsWith('przekazany'), false);
+  assert.equal(arriving.phase === 'handed-over', false);
   // po wjeździe i zatrzymaniu przy peronie skład jest przekazywany jak dotąd
   sim.execute({ type: 'route', start: 'A', end: 'kT3', kind: 'train' });
   for (let i = 0; i < 2 * 60 * 6 && !returning.train; i++) sim.step(0.5);
   assert.ok(arriving.actualArr != null);
-  assert.equal(arriving.status, 'przekazany jako 7108');
+  assert.deepEqual([arriving.phase, String(arriving.handedTo)], ['handed-over', '7108']);
   assert.equal(String(arriving.actualTrack), '3');
 });

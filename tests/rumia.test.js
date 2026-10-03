@@ -52,8 +52,8 @@ test('Rumia: pełna zmiana – SKM co 15 min w obu kierunkach na torze 5, region
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 29);
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), '6'); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), '6'); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -73,8 +73,8 @@ test('Rumia: pociąg opóźniony u sąsiada i wyprzedzony na szlaku – automat 
   const end = Clock.parse('08:20');
   play(sim).until(end, { stop: allArrived });
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
   }
   const by = (nr) => tt.find((e) => e.nr === nr);
@@ -90,7 +90,7 @@ function shiftWithFault(fault) {
   play(sim).until(end, { stop: allArrived });
   return sim;
 }
-const stuckTrains = (sim) => sim.traffic.timetable().filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'))).map((e) => `${e.nr}: ${e.status}`);
+const stuckTrains = (sim) => sim.traffic.timetable().filter((e) => !(e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over')).map((e) => `${e.nr}: ${e.status}`);
 
 test('Rumia: usterka obwodu torowego gasi semafor nastawionego przebiegu – automat zwalnia przebieg i nastawia go od nowa po naprawie', () => {
   // 06:20: odcinek Iz38 na drodze nastawionego przebiegu R-C wskazuje zajętość – semafor R sam staje na „Stój” i sam nie wraca

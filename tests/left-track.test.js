@@ -37,7 +37,7 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
   while (sim.clock.time < Clock.parse('07:30')) {
     sim.step(0.5);
     routeSet ||= sim.ilk.routeIsSet('C-GD1');
-    if (e.status === 'na następnym posterunku' && n++ % 4 === 0) op.tick(); // dalej znów automat (wjazd 55104)
+    if (e.phase === 'at-neighbour' && n++ % 4 === 0) op.tick(); // dalej znów automat (wjazd 55104)
     // sąsiad chce wysłać 55104 torem 1 – od nastawienia naszego przebiegu dyżurny próbuje dać zgodę na każdą prośbę;
     // blokada odmawia: najpierw przez nastawiony przebieg, potem przez zajęty tor
     if (routeSet && gd1.request === 'theirs' && !sim.execute({ type: 'block', exit: 'GD1', btn: 'Zk' }).ok) refused++;
@@ -50,9 +50,9 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
   }
   assert.ok(onLine > 0, '9001 jechał torem 1');
   assert.equal(e.actualExit, 'GD1');
-  assert.equal(e.status, 'na następnym posterunku');
+  assert.equal(e.phase, 'at-neighbour');
   assert.deepEqual([gd1.occupied, gd2.occupied, gd2.poBlocked], [false, false, false], 'oba tory wolne po przyjeździe');
-  assert.equal(sim.traffic.timetable().find((x) => x.nr === 55104).status, 'na następnym posterunku', '55104 przyjechał po zwolnieniu toru 1');
+  assert.equal(sim.traffic.timetable().find((x) => x.nr === 55104).phase, 'at-neighbour', '55104 przyjechał po zwolnieniu toru 1');
   assert.ok(refused > 0, 'zgoda na zmianę kierunku odmówiona, dopóki tor 1 był nasz');
 });
 

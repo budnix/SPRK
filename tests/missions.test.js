@@ -11,6 +11,7 @@ import { GLOSSARY } from '../src/data/glossary.js';
 import { ORDERS } from '../src/srk/address.js';
 import { STATIONS, getStation } from '../src/stations/index.js';
 import { allArrived, play, routesBeingSet } from './helpers.js';
+import { isHandled } from '../src/model/timetable/phase.js';
 
 /* Samouczki: każda misja to własny plik, własne kroki i własny scenariusz (stacja, układ torów, rozkład) */
 
@@ -156,7 +157,7 @@ function studentE(sim) {
   const route = (a, b, id) => { if (!act(id) && !sim.ilk.armed) { press(G(a)); press(b.kind ? b : G(b)); } };
   const p = () => sim.ilk.points.get('Zw7');
   const pt = (id, role) => { if (!sim.ilk.armed && !p().moving) { group(id, role); press({ kind: 'point', id: 'Zw7' }); } };
-  const out = (nr, a, end, exit, id) => { const en = e(nr); if (en?.train && en.actualArr != null && en.status !== 'na następnym posterunku' && B(exit).gate().ok) route(a, K(end), id); };
+  const out = (nr, a, end, exit, id) => { const en = e(nr); if (en?.train && en.actualArr != null && en.phase !== 'at-neighbour' && B(exit).gate().ok) route(a, K(end), id); };
   return {
     'in-3301': () => route('A', 'E2', 'A-E2'),
     'ko-3301': () => ko('K2'),
@@ -165,7 +166,7 @@ function studentE(sim) {
     'in-42801': () => route('A', 'E3', 'A-E3'),
     'ko-42801': () => ko('K2'),
     'pass-5501': () => { if (!e(5501).actualArr) route('A', 'E2', 'A-E2'); if (act('A-E2') && B('Z2').gate().ok) route('E2', K('kZ2'), 'E2-Z2'); },
-    'after-5501': () => { ko('K2'); if (e(5501).status === 'na następnym posterunku') out(42801, 'E3', 'kZ2', 'Z2', 'E3-Z2'); },
+    'after-5501': () => { ko('K2'); if (e(5501).phase === 'at-neighbour') out(42801, 'E3', 'kZ2', 'Z2', 'E3-Z2'); },
     'in-6612': () => { if (!e(6612).actualArr) route('A', 'E3', 'A-E3'); ko('K2'); },
     'wbl-6612': () => wbl('B'),
     'out-6612': () => { if (B('B').direction === 'out' && B('B').permission) route('E3', K('kB'), 'E3-B'); },
@@ -188,7 +189,7 @@ function studentIzh(sim) {
   const consist = (...nrs) => nrs.map((nr) => e(nr)?.train).find(Boolean);
   const reverse = (...nrs) => { const tr = consist(...nrs); if (tr && tr.entered && tr.v === 0 && !['W', 'NW', 'SW'].includes(tr.direction)) sim.traffic.reverseTrain(tr.nr); };
   const arrive = (nr, end, id) => { poz('W'); if (B('W').direction === 'in' && !e(nr).actualArr) route('A', K(end), id); ko('W'); };
-  const depart = (nr, sig, id) => { if (!e(nr).train || e(nr).status === 'na następnym posterunku') return; if (B('W').direction === 'out' && B('W').permission) route(sig, K('kW'), id); else wbl('W'); };
+  const depart = (nr, sig, id) => { if (!e(nr).train || e(nr).phase === 'at-neighbour') return; if (B('W').direction === 'out' && B('W').permission) route(sig, K('kW'), id); else wbl('W'); };
   return {
     'poz-7101': () => poz('W'),
     'route-7101': () => route('A', K('kT1'), 'A-kT1'),
@@ -238,7 +239,7 @@ function studentMech(sim) {
   /** Po przejeździe: dźwignia sygnałowa na „Stój” i drążek z powrotem. */
   const back = (id) => { const a = ilk.routeFrame(id); if (a?.passed && !a.blockStuck) { x({ type: 'stop', signal: ilk.routes.get(id).start }); x({ type: 'release', signal: ilk.routes.get(id).start }); } };
   const arrive = (nr, exit, id) => { poz(exit); if (B(exit).direction === 'in' && e(nr).actualArr == null) route(id); back(id); if (e(nr).actualArr != null) ko(exit); };
-  const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).status === 'na następnym posterunku') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.routeIsSet(id)) wbl(exit); back(id); };
+  const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).phase === 'at-neighbour') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.routeIsSet(id)) wbl(exit); back(id); };
   return {
     'poz-8401': () => poz('W'),
     'route-8401': () => { if (!ilk.routeIsSet('A-D1')) x({ type: 'route', id: 'A-D1' }); },
@@ -269,8 +270,8 @@ function studentMech(sim) {
 function studentEbi(sim) {
   const c = common(sim), { e, act } = c;
   const cmd = (text, id) => { if (!act(id)) sim.submitCommand(text); };
-  const here = (nr) => e(nr)?.actualArr != null && e(nr).status !== 'na następnym posterunku';
-  const gone = (nr) => e(nr)?.status === 'na następnym posterunku';
+  const here = (nr) => e(nr)?.actualArr != null && e(nr).phase !== 'at-neighbour';
+  const gone = (nr) => e(nr)?.phase === 'at-neighbour';
   const through = (nr, inCmd, inId, outCmd, outId) => { if (!here(nr) && !gone(nr)) cmd(inCmd, inId); if (here(nr)) cmd(outCmd, outId); };
   const d = () => sim.faults.list.find((f) => f.type === 'track-defect');
   return {
@@ -298,8 +299,8 @@ function studentMor(sim) {
   const cmd = (...clicks) => { const code = clicks.pop(); if (sim.input.pending) return; sim.cancelSelection(); for (const r of clicks) sim.press(r); return sim.chooseCommand(code); };
   const S = (id) => ({ kind: 'signal', id }), K = (id) => ({ kind: 'end', id }), P = (id) => ({ kind: 'point', id }), Sec = (id) => ({ kind: 'section', id });
   const route = (a, b, id) => { if (!act(id)) cmd(S(a), b, 'Pociąg'); };
-  const here = (nr) => e(nr)?.actualArr != null && e(nr).status !== 'na następnym posterunku';
-  const gone = (nr) => e(nr)?.status === 'na następnym posterunku';
+  const here = (nr) => e(nr)?.actualArr != null && e(nr).phase !== 'at-neighbour';
+  const gone = (nr) => e(nr)?.phase === 'at-neighbour';
   const out = (nr, exit, a, end, id) => { if (!here(nr)) return; if (B(exit).direction === 'out' && B(exit).permission) route(a, K(end), id); else wbl(exit); };
   const through = (nr, fromExit, inA, inB, inId, toExit, outA, outEnd, outId) => { poz(fromExit); if (!here(nr) && !gone(nr) && B(fromExit).direction === 'in') route(inA, inB, inId); ko(fromExit); out(nr, toExit, outA, outEnd, outId); };
   const T2 = () => sim.ilk.sections.get('T2');
@@ -353,7 +354,7 @@ for (const [id, student, firstTrain, until, fault] of [['pulpit', studentE, 3301
     assert.ok(progress.finished, `misja nieukończona – utknęła na kroku ${progress.step?.id} o ${Clock.format(sim.clock.time)}`);
     assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
     for (const e of sim.traffic.timetable()) {
-      assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+      assert.ok(e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`);
       if (e.from && e.stop && e.nr !== fault.nr) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
       assert.ok(e.delay <= 2, `${e.nr}: opóźnienie ${e.delay} min`);
     }
@@ -382,7 +383,7 @@ test('nowe stacje treningowe: pełna zmiana z automatem na każdym stanowisku �
         for (const tr of sim.traffic.trains) for (const sec of tr.occupiedSections()) { assert.ok(!occ.has(sec) || occ.get(sec) === tr.nr, `${id}: kolizja na ${sec}`); occ.set(sec, tr.nr); }
       } });
       for (const e of sim.traffic.timetable()) {
-        assert.ok(/na następnym posterunku|odjechał|przekazany|zakończył bieg/.test(e.status), `${id}/${sc.id} ${e.nr}: ${e.status}`);
+        assert.ok(isHandled(e), `${id}/${sc.id} ${e.nr}: ${e.status}`);
         if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${id} ${e.nr}: tor`);
         assert.ok(e.delay <= 2, `${id}/${sc.id} ${e.nr}: opóźnienie ${e.delay}`);
       }
@@ -409,7 +410,7 @@ test('stacje misji 5 i 6: pełna zmiana na stanowisku misji z automatem dyżurne
       for (const tr of sim.traffic.trains) for (const sec of tr.occupiedSections()) { assert.ok(!occ.has(sec) || occ.get(sec) === tr.nr, `${id}: kolizja na ${sec}`); occ.set(sec, tr.nr); }
     } });
     for (const e of sim.traffic.timetable()) {
-      assert.equal(e.status, 'na następnym posterunku', `${id}/${e.nr}: ${e.status}`);
+      assert.equal(e.phase, 'at-neighbour', `${id}/${e.nr}: ${e.status}`);
       assert.equal(String(e.actualTrack), String(e.track), `${id}/${e.nr}: tor`);
       assert.ok(e.delay <= 2, `${id}/${e.nr}: opóźnienie ${e.delay}`);
     }

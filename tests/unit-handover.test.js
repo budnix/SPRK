@@ -51,7 +51,7 @@ test('opóźnienie składu od sąsiada przesuwa termin zadań od chwili zgłosze
   assert.deepEqual([t1.done, t2.done], [true, true]);
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'task').map((i) => i.points), [10, 10], 'zadania w terminie – pełne punkty');
   assert.deepEqual(sim.score.items.filter((i) => ['task-failed', 'late-depart'].includes(i.code)).map((i) => i.msg), []);
-  assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).status, 'na następnym posterunku');
+  assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).phase, 'at-neighbour');
 });
 
 test('pociąg utworzony ze składu nie jedzie na dawnym zezwoleniu: 90202 stoi przy peronie, dopóki nie dostanie sygnału', () => {
@@ -74,8 +74,8 @@ test('Szkolna: 90201 opóźniony tak, że zadania manewrowe przepadły – autom
   const sim = late(37, true);
   const end = Clock.parse('10:30');
   play(sim).until(end, { stop: allArrived });
-  for (const e of sim.traffic.timetable()) assert.ok(['na następnym posterunku', 'zakończył bieg'].includes(e.status) || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
-  assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).status, 'na następnym posterunku');
+  for (const e of sim.traffic.timetable()) assert.ok(['na następnym posterunku', 'zakończył bieg'].includes(e.status) || e.phase === 'handed-over', `${e.nr}: ${e.status}`);
+  assert.equal(sim.traffic.timetable().find((e) => e.nr === 90202).phase, 'at-neighbour');
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
 });
 
@@ -122,7 +122,7 @@ test('skład opóźniony po godzinie „podstaw”: najpierw odstawienie, potem 
     assert.ok(u.actualArr > t2.afterTime, `${name}: skład przyjechał po godzinie „podstaw”`);
     assert.deepEqual([t1.done, t2.done], [done, done], name);
     if (!done) assert.equal(sim.score.items.filter((i) => i.code === 'task-failed').length, 2, name);
-    assert.equal(e.status, 'na następnym posterunku', `${name}: ${e.nr} ${e.status}`);
+    assert.equal(e.phase, 'at-neighbour', `${name}: ${e.nr} ${e.status}`);
   }
 });
 
@@ -135,7 +135,7 @@ test('Chylonia: oba zadania przepadły, gdy skład był w drodze na tor 22 – a
   play(sim).until('08:30', { stop: allArrived });
   assert.deepEqual(sim.traffic.tasks.map((t) => t.failed), [true, true]);
   const e = sim.traffic.timetable().find((x) => x.nr === 93202);
-  assert.equal(e.status, 'na następnym posterunku', e.status);
+  assert.equal(e.phase, 'at-neighbour', e.status);
 });
 
 test('skład z zadaniem manewrowym w toku nie przechodzi w pociąg: przekazanie dopiero po wykonaniu albo przepadnięciu zadania', () => {
@@ -156,7 +156,7 @@ test('skład z zadaniem manewrowym w toku nie przechodzi w pociąg: przekazanie 
       if (n++ % 4 === 0) autoDispatch(sim);
     }
     assert.equal(handedWithOpenTask, false, `ziarno ${seed}: przekazanie przy zadaniu w toku`);
-    assert.equal(e.status, 'na następnym posterunku', `ziarno ${seed}: ${e.status}`);
+    assert.equal(e.phase, 'at-neighbour', `ziarno ${seed}: ${e.status}`);
   }
 });
 
@@ -178,5 +178,5 @@ test('zadanie, którego nie da się wykonać, nie trzyma składu bez końca: prz
   assert.ok(failedAt != null, 'zadanie przepadło');
   assert.ok(failedAt <= Clock.parse('07:58') + 10 * 60 + 1, `w terminie (+10 min): ${Clock.format(failedAt, true)}`);
   assert.ok(handedAt != null && handedAt >= failedAt, `przekazanie ${handedAt && Clock.format(handedAt, true)} po przepadnięciu ${Clock.format(failedAt, true)}`);
-  assert.equal(e.status, 'na następnym posterunku', e.status);
+  assert.equal(e.phase, 'at-neighbour', e.status);
 });

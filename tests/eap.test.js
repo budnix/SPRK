@@ -152,7 +152,7 @@ test('W12: blokada bez łączności – po „droga wolna” przebieg tak, sygna
   assert.ok(sim.ilk.substituteSignal('D1').ok);
   assert.equal(score(sim, 'Sz').at(-1).points, 0, 'Sz uzasadniony usterką blokady');
   run(sim, 3 * 60);
-  assert.ok(e.train.onLine('E') || e.status === 'na następnym posterunku', 'pociąg wyjechał na Sz');
+  assert.ok(e.train.onLine('E') || e.phase === 'at-neighbour', 'pociąg wyjechał na Sz');
 });
 
 test('W12: blokada bez łączności, pozwolenie było u nas – po „droga wolna” sygnał zezwalający', () => {

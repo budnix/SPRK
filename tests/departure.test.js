@@ -35,7 +35,7 @@ test('W8: pociąg bez sygnału na semaforze wyjazdowym zostaje w postoju – bez
   const head = e.train.head;
   run(s, 60);
   assert.equal(e.train.head, head, 'pociąg podjechał pod semafor na „Stój”');
-  assert.equal(e.status, 'postój');
+  assert.equal(e.phase, 'dwell');
 });
 
 test('W8: odjazd liczy się od faktycznego ruszenia na sygnał zezwalający – przetrzymanie to późny odjazd', () => {

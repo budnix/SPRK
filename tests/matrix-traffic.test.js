@@ -37,8 +37,8 @@ test('każdy pociąg na tor planowy i na tor zamienny: przyjazd, postój, odjazd
     } });
     for (const e of sim.traffic.timetable()) {
       const want = trackFor(e);
-      if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `${variant} ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, want); continue; }
-      assert.equal(e.status, 'na następnym posterunku', `${variant} ${e.nr}: ${e.status}`);
+      if (e.terminates) { assert.ok(e.phase === 'handed-over', `${variant} ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, want); continue; }
+      assert.equal(e.phase, 'at-neighbour', `${variant} ${e.nr}: ${e.status}`);
       if (e.from) assert.equal(String(e.actualTrack), want, `${variant} ${e.nr}: tor ${e.actualTrack} zamiast ${want}`);
       assert.ok(e.delay <= 3, `${variant} ${e.nr}: opóźnienie ${e.delay}`);
     }

@@ -82,7 +82,7 @@ test('szybki pociąg (IC 160 km/h) zatrzymuje się przy peronie: horyzont hamowa
   assert.equal(e.train?.vmax, 160 / 3.6, 'pociąg jedzie jako IC');
   assert.ok(e.actualArr != null, 'IC zatrzymał się na stacji (postój handlowy)');
   assert.equal(String(e.actualTrack), '1');
-  assert.equal(e.status, 'na następnym posterunku');
+  assert.equal(e.phase, 'at-neighbour');
 });
 
 /*

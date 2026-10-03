@@ -8,6 +8,7 @@ import { POINT_SWITCH_TIME, TIMED_RELEASE } from '../src/model/Interlocking.js';
 import szkolna from '../src/stations/szkolna.js';
 import sopot from '../src/stations/sopot.js';
 import { run, play } from './helpers.js';
+import { isHandled } from '../src/model/timetable/phase.js';
 
 /* Urządzenia przekaźnikowe typu IZH-111: przyciski adresowe elementów + przyciski rozkazów (bsk.isdr.pl, srk_izh111) */
 
@@ -187,7 +188,7 @@ test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie po
   const sim = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana-izh' });
   assert.equal(sim.srk.id, 'izh111');
   play(sim).until(sim.clock.time + 2 * 3600, { stop: () => allArrived(sim) || sim.ended });
-  const left = sim.traffic.timetable().filter((e) => !/na następnym posterunku|zakończył bieg|przekazany|odjechał/.test(e.status)).map((e) => `${e.nr}: ${e.status}`);
+  const left = sim.traffic.timetable().filter((e) => !isHandled(e)).map((e) => `${e.nr}: ${e.status}`);
   assert.deepEqual(left, []);
   assert.equal(sim.ilk.counters.rozprucie, 0);
   assert.equal(sim.ilk.counters.dPz, 0);

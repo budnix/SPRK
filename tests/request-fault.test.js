@@ -48,7 +48,7 @@ test('Zacisze: usterka blokady kończy się między „droga wolna” a wyprawie
   sim.traffic.setInboundDelay(tt.find((e) => e.nr === 7103), 13);
   const end = Clock.parse('10:30');
   play(sim).until(end, { stop: allArrived });
-  const left = tt.filter((e) => !(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'))).map((e) => `${e.nr}: ${e.status}`);
+  const left = tt.filter((e) => !(e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over')).map((e) => `${e.nr}: ${e.status}`);
   assert.deepEqual(left, []);
 });
 
@@ -96,12 +96,12 @@ for (const mode of ['blokada sprawna', 'zapowiadanie telefoniczne']) {
     } else {
       assert.ok(untilCond(sim, () => b.request === 'theirs'), 'sąsiad żąda pozwolenia');
     }
-    assert.equal(e.status, 'żądanie pozwolenia');
+    assert.equal(e.phase, 'permission-requested');
     let last = null; // stan 6101 przy ostatnim zdarzeniu „timetable” – to widzi panel
     sim.bus.on('timetable', (entries) => { last = entries.find((x) => x.nr === 6101).status; });
     assert.deepEqual(sim.comms.send('hold', { exit: 'W', nr: 6101 }), { ok: true });
     sim.step(0.5);
-    assert.equal(e.status, 'oczekiwany', 'zgłoszenie przepadło');
+    assert.equal(e.phase, 'expected', 'zgłoszenie przepadło');
     assert.equal(last, 'oczekiwany', 'panel dostał zdarzenie z nowym stanem pociągu');
   });
 }

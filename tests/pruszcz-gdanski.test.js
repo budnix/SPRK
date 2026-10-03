@@ -48,7 +48,7 @@ test('Pruszcz Gdański: pełna zmiana – Regio i IC linii 9, towarowe Zajączko
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 21);
   for (const e of tt) {
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }

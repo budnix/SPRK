@@ -522,7 +522,7 @@ function leftTrack(nr, why, ask = (sim) => sim.blocks.get('GD1').phoneAskNeighbo
 const lineSides = () => ({ onGD1: 0, bad: [], arrived: null, dispatched: null });
 function watchLines(sim, c) {
   const tr = entryOf(sim, 9001)?.train, gd1 = sim.blocks.get('GD1'), gd2 = sim.blocks.get('GD2');
-  if (c.arrived == null && entryOf(sim, 9001).status === 'na następnym posterunku') c.arrived = sim.clock.time;
+  if (c.arrived == null && entryOf(sim, 9001).phase === 'at-neighbour') c.arrived = sim.clock.time;
   if (c.dispatched == null && entryOf(sim, 55104).dispatched) c.dispatched = sim.clock.time;
   if (tr && sim.traffic.trains.includes(tr) && tr.onLine('GD1')) { c.onGD1++; if (!gd1.occupied && c.bad.length < 3) c.bad.push(`${now(sim)} 9001 na GD1, blokada wolna`); }
   if ((gd2.occupied || sim.traffic.trains.some((t) => t.onLine('GD2'))) && c.bad.length < 3) c.bad.push(`${now(sim)} GD2 zajęty`);

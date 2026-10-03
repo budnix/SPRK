@@ -267,7 +267,7 @@ class ShiftProbe {
     const now = r ? this.blockers(e, r) : [];
     const lineExit = r && LINE_CODES.has(r.code) ? (r.code === 'neighbour-wait' ? e.from : e.to) : null;
     return {
-      nr: e.nr, status: String(e.status), expectedDone: expectedDone(sim, e),
+      nr: e.nr, phase: e.phase, status: String(e.status), expectedDone: expectedDone(sim, e),
       where: whereOf(sim, e), since: x.cur?.since ?? e.train?.stoppedSince ?? null,
       reason: r,
       lineTrain: lineExit ? sim.blocks.get(lineExit)?.lineTrain ?? null : null,
@@ -352,7 +352,7 @@ export function checkShift({ station = null, stationId = null, scenarioId = null
       delayIn: e.delayIn || 0, delay: e.delay || 0, extra: !!e.extra, unit: e.unit ?? null,
       // opóźnienie wniesione bez winy dyżurnego: od sąsiada, ze składu (od sąsiada, usterki na drodze zadań)
       lagMin: Math.round(inboundLag(sim, e) / 60), unitLagMin: e.unit != null ? Math.round(unitLag(sim, e) / 60) : 0,
-      status: String(e.status), done: isFinished(e), doneAt: x.doneAt ?? null,
+      phase: e.phase, status: String(e.status), done: isFinished(e), doneAt: x.doneAt ?? null,
       stationMin: mine.filter((i) => i.code === 'late-depart' || i.code === 'late-pass').reduce((a, i) => a - i.points, 0),
       lineMin: waits.filter((w) => LINE_CODES.has(w.code)).reduce((a, w) => a + w.min, 0),
       held: mine.some((i) => i.code === 'held'), wrongTrack: mine.some((i) => i.code === 'wrong-track'),

@@ -14,7 +14,7 @@ test('zmiana kończy się po wyprawieniu ostatniego pociągu na szlak (nie czeka
   assert.equal(sim.endReason, 'all-done');
   assert.ok(sim.clock.time < sim.endTime, 'koniec przed czasem zmiany');
   const tt = sim.traffic.timetable();
-  assert.ok(tt.some((e) => e.status === 'odjechał'), 'ostatni pociąg powinien być jeszcze na szlaku w chwili końca zmiany');
+  assert.ok(tt.some((e) => e.phase === 'departed'), 'ostatni pociąg powinien być jeszcze na szlaku w chwili końca zmiany');
   assert.ok(sim.traffic.tasks.every((t) => t.done), 'zadania manewrowe wykonane przed końcem');
   assert.ok(!report.items.some((i) => i.code === 'unfinished'), 'pociąg na szlaku nie jest „nieobsłużony”');
   // raport: wiersze wszystkich pociągów z planem i rzeczywistością, statystyka, zadania, liczniki, dane zmiany
@@ -29,8 +29,8 @@ test('zmiana kończy się po wyprawieniu ostatniego pociągu na szlak (nie czeka
   assert.ok(report.byCode.some((b) => b.code === 'punctual' && b.n > 0 && b.points === 5 * b.n));
   // model liczy dalej po końcu zmiany – pociąg dojeżdża do sąsiada
   const until = Clock.parse('09:10');
-  while (sim.clock.time < until && tt.some((e) => e.status === 'odjechał')) sim.step(0.5);
-  assert.ok(tt.every((e) => e.status !== 'odjechał'));
+  while (sim.clock.time < until && tt.some((e) => e.phase === 'departed')) sim.step(0.5);
+  assert.ok(tt.every((e) => e.phase !== 'departed'));
 });
 
 test('zmiana nie kończy się, dopóki zadanie manewrowe nie jest wykonane albo nie przepadło; podpowiedź „rozkład wyczerpany” raz', () => {
@@ -43,7 +43,7 @@ test('zmiana nie kończy się, dopóki zadanie manewrowe nie jest wykonane albo 
   const until = (hhmm) => game.until(hhmm, { stop: () => sim.ended });
   until('08:07');
   const tt = sim.traffic.timetable();
-  assert.ok(tt.every((e) => e.status !== 'oczekiwany' && e.status !== 'żądanie pozwolenia'), 'rozkład powinien być obsłużony');
+  assert.ok(tt.every((e) => e.phase !== 'expected' && e.phase !== 'permission-requested'), 'rozkład powinien być obsłużony');
   assert.ok(!sim.ended, 'zadanie manewrowe niewykonane – zmiana trwa');
   until('08:09');
   assert.equal(logs.length, 1, 'jedna podpowiedź po 3 min od ostatniego terminu');

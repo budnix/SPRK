@@ -35,7 +35,7 @@ test('wstrzymanie przy sprawnej blokadzie: żądanie pozwolenia znika, sąsiad p
   assert.equal(b.request, null);
   run(sim, 5);
   assert.equal(e.requested, false);
-  assert.equal(e.status, 'oczekiwany');
+  assert.equal(e.phase, 'expected');
   assert.equal(b.press('Wbl').ok, true, 'teraz możemy zażądać pozwolenia dla swojego pociągu');
   assert.ok(b.press('oWbl').ok);
   run(sim, 120);
@@ -73,7 +73,7 @@ for (const delay of [6, 10, 14]) {
     sim.traffic.setInboundDelay(tt.find((e) => e.nr === 6612), delay);
     const end = Clock.parse('10:00');
     play(sim).until(end, { stop: allArrived });
-    for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    for (const e of tt) assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     for (const nr of [6611, 6612]) assert.equal(String(tt.find((e) => e.nr === nr).actualTrack), '3');
     assert.deepEqual(sim.score.items.filter((i) => i.code === 'unfinished' || i.code === 'comms-wrong' || i.code === 'spad'), []);
     assert.equal(sim.ilk.counters.Sz, 0);
@@ -90,8 +90,8 @@ test('Jodłowa: pociąg do Borków stoi na torze 3, a Borki żądają pozwolenia
   const end = Clock.parse('09:30');
   play(sim).until(end, { stop: allArrived });
   const [p, q] = [2001, 2002].map((nr) => sim.traffic.timetable().find((e) => e.nr === nr));
-  assert.equal(p.status, 'na następnym posterunku', `2001: ${p.status}`);
-  assert.equal(q.status, 'na następnym posterunku', `2002: ${q.status}`);
+  assert.equal(p.phase, 'at-neighbour', `2001: ${p.status}`);
+  assert.equal(q.phase, 'at-neighbour', `2002: ${q.status}`);
   assert.ok(log.some((m) => /Pociąg nr 2002 wstrzymany u sąsiada/.test(m)), 'telefonogram „Stój pociąg nr 2002”');
   assert.ok(q.actualArr > p.actualDep, 'pociąg z Borków wjechał po odjeździe pociągu do Borków');
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'comms-wrong' || i.code === 'unfinished'), []);

@@ -52,8 +52,8 @@ test('Gdynia Chylonia: pełna zmiana – 31 pociągów, wyjazdy dwustopniowe, od
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 31);
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -72,12 +72,12 @@ test('Gdynia Chylonia: tor 1 zamknięty – pociągi z Rumi torem 2 lub 3; skła
     const end = Clock.parse('08:20');
     play(sim).until(end, { stop: allArrived });
     for (const e of sim.traffic.timetable().filter((x) => x.from === 'RG2' && !x.terminates)) {
-      assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+      assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
       assert.notEqual(String(e.actualTrack), '1', `${e.nr} wjechał na zamknięty tor 1`);
     }
     // 55152 kończy bieg i jedzie do Postojowej: z toru 2 drogi manewrowej nie ma (tor 1 zamknięty, a przez tor 503
     // zwrotnica ochronna 37 blokuje powrót na tor 3) – automat przyjmuje go na tor 3, a 55106 ma wolny tor 2
-    const done = (x) => x.status === 'na następnym posterunku' || x.status === 'zakończył bieg' || x.status.startsWith('przekazany');
+    const done = (x) => x.phase === 'at-neighbour' || x.phase === 'ended' || x.phase === 'handed-over';
     assert.ok(allArrived(sim), `ziarno ${seed}: ` + sim.traffic.timetable().filter((x) => !done(x)).map((x) => `${x.nr} ${x.status}`).join('; '));
     const e = (nr) => sim.traffic.timetable().find((x) => x.nr === nr);
     assert.equal(String(e(55152).actualTrack), '3', `ziarno ${seed}`);

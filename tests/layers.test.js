@@ -167,6 +167,22 @@ test('o etap pociągu pyta się kodu etapu – kod gry i narzędzi nie porównuj
   assert.deepEqual(bad, [], `Decyzja na podstawie napisu etapu pociągu – użyj e.phase / isHandled / isFinished:\n${bad.join('\n')}`);
 });
 
+test('testy pytają o etap pociągu (kod), nie porównują napisu etapu – napis zostaje tylko w komunikatach asercji', () => {
+  // `e.phase` / `isHandled` / `isFinished` (src/model/timetable/phase.js); napis `e.status` w `${…}` komunikatu – wolno
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const files = walkAll(join(ROOT, 'tests')).filter((f) => posix(relative(ROOT, f)) !== 'tests/layers.test.js');
+  const TEXTS = ['oczekiwany', 'oczekuje na skład', 'żądanie pozwolenia', 'na szlaku', 'wjeżdża', 'jedzie', 'postój', 'na stacji', 'manewruje',
+    'odjeżdża', 'odjechał', 'na następnym posterunku', 'zakończył bieg', 'przekazany', 'stoi przed'];
+  const text = `(?:${TEXTS.join('|')})`;
+  const compare = new RegExp(`\\.status\\s*[!=]==\\s*['"\`]${text}|\\.status\\s*,\\s*['"\`]${text}|\\.status\\)?\\??\\.(?:startsWith|includes|endsWith|match)\\(|\\.test\\([^)]*\\.status\\)`);
+  const bad = [];
+  for (const file of files) {
+    const code = readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+    code.split('\n').forEach((line, i) => { if (compare.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 100)}`); });
+  }
+  assert.deepEqual(bad, [], `Test porównuje napis etapu pociągu – użyj e.phase / isHandled / isFinished:\n${bad.join('\n')}`);
+});
+
 test('przebieg zmiany we wpisie rozkładu zmienia tylko ruch (Traffic) – inne moduły i narzędzia go czytają', () => {
   // wpis rozkładu (src/model/timetable/entry.js): definicja tylko do odczytu, plan i przebieg zmiany – zapis w Traffic
   const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });

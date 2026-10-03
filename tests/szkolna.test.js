@@ -80,7 +80,7 @@ function studentScript(sim) {
   const wbl = (exit) => { const b = B(exit); if (!b.direction && !b.request && !b.occupied && !b.koPending) press(blk(exit, 'Wbl')); };
   const out = (nr, sigId, endId, exit, id) => {
     const en = e(nr); const b = B(exit);
-    if (!en?.train || en.actualArr == null || en.status === 'na następnym posterunku') return;
+    if (!en?.train || en.actualArr == null || en.phase === 'at-neighbour') return;
     if (b.direction === 'out' && b.permission) route(sigId, { kind: 'end', id: endId }, id); else wbl(exit);
   };
   const stoppedBefore = (nr, sig) => e(nr)?.train?.stoppedAt?.signal === sig && e(nr).train.v === 0;
@@ -143,7 +143,7 @@ for (const [scenario, mission] of [['nauka-1', 'monitor']]) {
     assert.deepEqual(order, steps.map((s) => s.id), 'kroki w kolejności definicji');
     assert.equal(sim.clock.paused, false, 'po ostatnim „Dalej” zegar biegnie');
     for (const e of sim.traffic.timetable()) {
-      assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+      assert.ok(e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`);
       if (e.from && e.stop) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     }
     assert.equal(sim.ilk.counters.Sz, 2, 'Sz na A (usterka semafora) i na C1 (wyjazd przy blokadzie bez łączności)');
@@ -186,7 +186,7 @@ test('Szkolna: zmiana bez samouczka – automat prowadzi cały rozkład bez koli
   const sim = new Simulation(szkolna, { scenario: 'zmiana', disruptions: 'none' });
   const end = Clock.parse('09:10');
   play(sim).until(end, { stop: allArrived });
-  for (const e of sim.traffic.timetable()) assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`);
+  for (const e of sim.traffic.timetable()) assert.ok(e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`);
 });
 
 test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawieniu na tor 3 (afterTask), niezależnie od godziny', () => {
@@ -201,7 +201,7 @@ test('Szkolna: zadanie „podstawić na tor 2” zalicza się dopiero po odstawi
   sim.press({ kind: 'signal', id: 'A', color: 'green' }); sim.press({ kind: 'signal', id: 'D2', color: 'green' });
   until('07:55', false); // skład stoi na torze 2; jeszcze przed 07:57, gdy pojawi się w rozkładzie jako 90202 (odjazd 08:12 − 15 min)
   const e = sim.traffic.timetable().find((x) => x.nr === 90201);
-  assert.equal(e.status, 'zakończył bieg', `pociąg 90201 stoi na torze 2 po przyjeździe (${e.status})`);
+  assert.equal(e.phase, 'ended', `pociąg 90201 stoi na torze 2 po przyjeździe (${e.status})`);
   assert.equal(e.train.v, 0);
   const t1 = sim.traffic.tasks.find((t) => t.id === 'odstaw-90201'), t2 = sim.traffic.tasks.find((t) => t.id === 'podstaw-90202');
   assert.equal(t1.done, false);
@@ -226,7 +226,7 @@ test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowy
   if (W.request === 'theirs') sim.press({ kind: 'block', exit: 'W', btn: 'Poz' });
   sim.press(G('A')); sim.press(G('D2'));
   until('07:55', false);
-  assert.equal(e(90201).status, 'zakończył bieg');
+  assert.equal(e(90201).phase, 'ended');
   // manewry na tor 3 – o 07:57 (15 min przed odjazdem 90202) skład stoi na torze 3 w trybie manewrowym
   assert.equal(sim.traffic.toShunting(90201), true);
   sim.press(Wt('D2')); sim.press({ kind: 'end', id: 'kT3' });
@@ -251,16 +251,16 @@ test('Szkolna: skład manewrowy nie wyjeżdża na szlak pod sygnałem pociągowy
   run(120);
   assert.equal(sim.ilk.signals.get('C2').route, 'C2-W', 'przebieg wyjazdowy nastawiony');
   assert.ok(tr.v === 0 && !tr.onLine('W'), `skład manewrowy nie ruszył na szlak (v=${tr.v})`);
-  assert.equal(e(90201).status, 'zakończył bieg');
+  assert.equal(e(90201).phase, 'ended');
   // tryb pociągowy → przekazanie jako 90202, odjazd dopiero o 08:12 mimo sygnału zezwalającego
   assert.equal(sim.traffic.toTrainMode(90201), true);
   run(2);
   assert.ok(e(90202).train === tr, 'skład przekazany jako 90202');
-  assert.equal(e(90201).status, 'przekazany jako 90202');
+  assert.deepEqual([e(90201).phase, String(e(90201).handedTo)], ['handed-over', '90202']);
   until('08:11:30', false);
   assert.ok(tr.v === 0 && !tr.onLine('W'), 'przed 08:12 pociąg 90202 stoi');
   until('08:15', false);
-  assert.ok(tr.onLine('W') || e(90202).status === 'na następnym posterunku', `90202 wyjechał po 08:12 (${e(90202).status})`);
+  assert.ok(tr.onLine('W') || e(90202).phase === 'at-neighbour', `90202 wyjechał po 08:12 (${e(90202).status})`);
   assert.ok(e(90202).actualDep >= Clock.parse('08:12'), 'odjazd nie przed 08:12');
 });
 
@@ -275,7 +275,7 @@ test('Szkolna: w misji zmiana nie kończy się sama po ostatnim pociągu – ko�
   let reports = 0; sim.bus.on('shift-end', () => reports++);
   const end = Clock.parse('08:49');
   play(sim).until(end);
-  const done = (e) => e.status === 'na następnym posterunku' || e.status === 'zakończył bieg' || e.status.startsWith('przekazany');
+  const done = (e) => e.phase === 'at-neighbour' || e.phase === 'ended' || e.phase === 'handed-over';
   assert.ok(sim.traffic.timetable().every(done), 'wszystkie pociągi obsłużone');
   assert.equal(sim.ended, false, 'zmiana trwa, dopóki samouczek nie zakończy misji');
   sim.endShift(); sim.endShift();

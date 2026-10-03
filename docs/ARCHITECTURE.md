@@ -92,8 +92,9 @@ w tabeli (pilnuje `tests/docs.test.js`).
   po polsku (`e.status`), który powstaje z kodu w `src/model/timetable/phase.js` (`setPhase`, jedyna droga zmiany
   etapu – używa jej tylko `Traffic`). Decyzje gry, automatu i narzędzi – na kodzie: `isHandled(e)` (pociąg obsłużony,
   także wyprawiony w drodze do sąsiada – koniec zmiany, ocena), `isFinished(e)` (skończony do końca – zator
-  w automacie sprawdzającym, przegląd, testy pełnych zmian). Porównywanie napisu w źródłach i skryptach wykrywa
-  `tests/layers.test.js`. Testy mogą sprawdzać napis – jest taki sam jak dotąd.
+  w automacie sprawdzającym, przegląd, testy pełnych zmian). Porównywanie napisu w źródłach, skryptach i testach
+  wykrywa `tests/layers.test.js`; napis zostaje w komunikatach asercji (`${e.status}`) i w raporcie zmiany obok kodu
+  (`phase` w wierszach `scripts/lib/shift-report.mjs`).
 * **Nowa funkcja w logice – podkatalog katalogu logiki** (np. `src/model/timetable/`), żeby granice warstw dalej ją
   sprawdzały; każdy katalog w `src/` ma rolę (logika, widok, dane) w `tests/layers.test.js` – nowy katalog bez roli
   to błąd testu.

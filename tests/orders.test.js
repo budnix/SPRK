@@ -59,5 +59,5 @@ test('rozkaz „S”: odmowa dla pociągu w ruchu, gdy semafor pokazuje jazdę, 
   const r4 = sim.traffic.issueOrder({ nr: 5310, signal: 'D1' });
   assert.equal(r4.ok, true, r4.reason);
   run(sim, 400);
-  assert.ok(sim.blocks.get('E').poBlocked || e.status === 'na następnym posterunku', 'pociąg nie wyjechał na szlak na rozkaz');
+  assert.ok(sim.blocks.get('E').poBlocked || e.phase === 'at-neighbour', 'pociąg nie wyjechał na szlak na rozkaz');
 });

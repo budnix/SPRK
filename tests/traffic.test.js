@@ -8,8 +8,8 @@ test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpru
   play(sim).until(end);
   const tt = sim.traffic.timetable();
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status.startsWith('przekazany'), `pociąg ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, '2'); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `pociąg ${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'handed-over', `pociąg ${e.nr}: ${e.status}`); assert.equal(e.actualTrack, '2'); continue; }
+    assert.equal(e.phase, 'at-neighbour', `pociąg ${e.nr}: ${e.status}`);
     assert.ok(e.delay <= 2, `pociąg ${e.nr} opóźniony ${e.delay} min`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `pociąg ${e.nr} na złym torze`);
   }
@@ -72,11 +72,11 @@ test('status „odjechał” zostaje, gdy pociąg jedzie torem szlakowym do sąs
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
   const after = new Set(); // statusy od chwili, gdy pociąg opuścił stację
   let left = false;
-  play(sim).until('07:20', { stop: () => e.status === 'na następnym posterunku', each: () => {
-    if (e.status === 'odjechał') left = true;
+  play(sim).until('07:20', { stop: () => e.phase === 'at-neighbour', each: () => {
+    if (e.phase === 'departed') left = true;
     if (left) after.add(e.status);
   } });
-  assert.equal(e.status, 'na następnym posterunku');
+  assert.equal(e.phase, 'at-neighbour');
   assert.ok(left, 'pociąg powinien przejść przez status „odjechał”');
   assert.deepEqual([...after].sort(), ['na następnym posterunku', 'odjechał'], 'na szlaku status nie wraca do „jedzie”');
 });

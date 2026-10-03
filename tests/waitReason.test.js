@@ -47,5 +47,5 @@ test('przyczyna postoju przy sprawnej blokadzie: bez pozwolenia od Lipna – ż�
   const { e, until, why } = run6106([]);
   until('08:36');
   assert.deepEqual(why(), { code: 'no-permission', signal: 'C1', neighbour: 'Lipno' });
-  assert.equal(e.status, 'postój');
+  assert.equal(e.phase, 'dwell');
 });

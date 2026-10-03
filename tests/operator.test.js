@@ -21,7 +21,7 @@ test('krzyżowanie na szlaku jednotorowym: tor planowy zajęty przez pociąg, kt
   const end = Clock.parse('09:00');
   play(sim).until(end, { stop: allArrived });
   const tt = sim.traffic.timetable();
-  for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+  for (const e of tt) assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
   assert.equal(String(tt.find((e) => e.nr === 1001).actualTrack), '1');
   assert.equal(String(tt.find((e) => e.nr === 1002).actualTrack), '2', 'krzyżowanie na torze 2');
   assert.equal(sim.ilk.counters.rozprucie, 0);
@@ -46,7 +46,7 @@ test('krzyżowanie, gdy tor planowy ma dwa odcinki (Reda: peron I na T23, dalej 
   } });
   assert.ok(met, 'pociągi się krzyżują');
   const tt = sim.traffic.timetable();
-  for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+  for (const e of tt) assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
   assert.equal(String(tt.find((e) => e.nr === 56710).actualTrack), '3');
   assert.notEqual(String(tt.find((e) => e.nr === 55711).actualTrack), '3', 'krzyżowanie na innym torze');
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'spad' || i.code === 'unfinished'), []);
@@ -67,9 +67,9 @@ test('sygnał wyjazdowy już raz był podany (Pwl), a przebieg trzeba było nast
     }
   } });
   assert.ok(cancelled, 'sygnał wyjazdowy był podany i odwołany');
-  assert.equal(e.status, 'na następnym posterunku', `6101: ${e.status}`);
+  assert.equal(e.phase, 'at-neighbour', `6101: ${e.status}`);
   assert.ok(sim.ilk.counters.Sz >= 1, 'wyjazd na Sz');
-  for (const x of sim.traffic.timetable()) assert.ok(x.status === 'na następnym posterunku' || x.status === 'zakończył bieg' || x.status.startsWith('przekazany'), `${x.nr}: ${x.status}`);
+  for (const x of sim.traffic.timetable()) assert.ok(x.phase === 'at-neighbour' || x.phase === 'ended' || x.phase === 'handed-over', `${x.nr}: ${x.status}`);
 });
 
 test('mijanka z dwoma torami (Olszyny): gdy z przeciwka nadjeżdża pociąg, automat nie zajmuje ostatniego wolnego toru pociągiem, który czeka na ten sam szlak', async () => {
@@ -84,7 +84,7 @@ test('mijanka z dwoma torami (Olszyny): gdy z przeciwka nadjeżdża pociąg, aut
   const end = Clock.parse('10:00');
   play(sim).until(end, { stop: allArrived });
   const tt = sim.traffic.timetable();
-  for (const e of tt) assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+  for (const e of tt) assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
   const by = (nr) => tt.find((e) => e.nr === nr);
   assert.ok(by(3002).actualArr < by(3003).actualArr, 'najpierw wjeżdża pociąg z przeciwka');
   assert.equal(sim.ilk.counters.rozprucie, 0);
@@ -101,7 +101,7 @@ test('wjazd wieloetapowy przy usterce na drodze: po przyjeździe pociągu automa
   const r = checkShift({ station: sopot, scenario, seed: 1, level: 'none', extra: 60 });
   assert.equal(r.error, undefined, r.error);
   assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
-  assert.equal(r.trains[0].status, 'na następnym posterunku');
+  assert.equal(r.trains[0].phase, 'at-neighbour');
   assert.equal(r.violations.count, 0);
 });
 

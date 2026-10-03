@@ -49,8 +49,8 @@ test('Gdynia Orłowo: pełna zmiana – SKM co 15 min, regionalne z postojem, sk
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 29);
   for (const e of tt) {
-    if (e.terminates) { assert.equal(e.status, 'zakończył bieg', `${e.nr}: ${e.status}`); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.equal(e.phase, 'ended', `${e.nr}: ${e.status}`); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     if (e.from) assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -70,7 +70,7 @@ test('Gdynia Orłowo: scenariusz z usterką blokady od Gdyni – zapowiadanie te
   const end = Clock.parse('08:20');
   play(sim).until(end, { stop: allArrived });
   for (const e of sim.traffic.timetable().filter((x) => x.from === 'Z2' || x.to === 'Z2')) {
-    assert.ok(e.status === 'na następnym posterunku' || e.status === 'zakończył bieg', `${e.nr}: ${e.status}`);
+    assert.ok(e.phase === 'at-neighbour' || e.phase === 'ended', `${e.nr}: ${e.status}`);
   }
   // linia dwutorowa: przy zapowiadaniu na torze właściwym sąsiad nie pyta o drogę, tylko zawiadamia o odjeździe
   // (Ir-1 §23 ust. 2–4) – dawniej gra wymagała pytania „Czy droga … wolna?” także tu

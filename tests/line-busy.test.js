@@ -105,6 +105,6 @@ test('pociąg kończący bieg, który stanął za taborem na odcinku przed semaf
   assert.ok(e.train.occupiedSections().has('ZbA'));
   run(sim, 60);
   assert.equal(e.actualArr, null, 'przyjazdu nie ma – pociąg stoi przed semaforem wjazdowym');
-  assert.notEqual(e.status, 'zakończył bieg');
+  assert.notEqual(e.phase, 'ended');
   assert.equal(e.train.hasStopped, false);
 });

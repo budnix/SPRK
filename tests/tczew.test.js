@@ -52,8 +52,8 @@ test('Tczew: pełna zmiana – IC/Regio linii 9, Bydgoszcz, nawroty do Chojnic, 
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 30);
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor`); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor`); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
@@ -74,7 +74,7 @@ test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat pr
   sim.traffic.setInboundDelay(e, 16);
   play(sim).until('09:00', { stop: allArrived });
   const end = sim.traffic.timetable().find((x) => x.nr === 44631);
-  assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
+  assert.equal(e.phase, 'at-neighbour', `44611: ${e.status}`);
   assert.equal(String(end.actualTrack), '15', '44631 kończy bieg na torze 15');
   assert.ok(end.actualArr < e.actualArr, '44631 przyjechał pierwszy');
   assert.ok(['5', '7', '9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack} – z wyjazdem do Zajączkowa`);
@@ -89,6 +89,6 @@ test('Tczew: przejazdowy na inny tor tylko z wyjazdem na jego szlak – przy tor
   const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611], closedSections }, disruptions: 'none' });
   play(sim).until('09:00', { stop: allArrived });
   const e = sim.traffic.timetable().find((x) => x.nr === 44611);
-  assert.equal(e.status, 'na następnym posterunku', `44611: ${e.status}`);
+  assert.equal(e.phase, 'at-neighbour', `44611: ${e.status}`);
   assert.ok(['9', '11', '13'].includes(String(e.actualTrack)), `44611 na torze ${e.actualTrack}`);
 });

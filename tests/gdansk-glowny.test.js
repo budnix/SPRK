@@ -49,8 +49,8 @@ test('Gdańsk Główny: pełna zmiana – SKM co 15 min, Regio i IC/EIC linii 9,
   const tt = sim.traffic.timetable();
   assert.equal(tt.length, 37);
   for (const e of tt) {
-    if (e.terminates) { assert.ok(e.status === 'zakończył bieg' || e.status.startsWith('przekazany'), `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor`); continue; }
-    assert.equal(e.status, 'na następnym posterunku', `${e.nr}: ${e.status}`);
+    if (e.terminates) { assert.ok(e.phase === 'ended' || e.phase === 'handed-over', `${e.nr}: ${e.status}`); assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor`); continue; }
+    assert.equal(e.phase, 'at-neighbour', `${e.nr}: ${e.status}`);
     assert.equal(String(e.actualTrack), String(e.track), `${e.nr}: tor ${e.actualTrack} zamiast ${e.track}`);
     assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }

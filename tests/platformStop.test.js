@@ -69,7 +69,7 @@ test('Szkolna: 6101 (na wschód) i 6102 (na zachód) stają czołem na 3/4 peron
       assert.equal(s.head, want.tile, `zmiana ${seed}: ${nr} czołem na kostce ${want.tile} (${Math.round(want.at - want.p0)} m od wejścia na peron)`);
       assert.ok(east ? s.head < 18 : s.head > 9, `zmiana ${seed}: ${nr} nie przy samym końcu peronu`);
     }
-    for (const e of sim.traffic.timetable()) assert.equal(e.status, 'na następnym posterunku', `zmiana ${seed}: ${e.nr} ${e.status}`);
+    for (const e of sim.traffic.timetable()) assert.equal(e.phase, 'at-neighbour', `zmiana ${seed}: ${e.nr} ${e.status}`);
   }
   const at = [1, 2, 3].map((seed) => run({ seed, trains: [6101], until: '07:10' }).stops.get(6101).at.toFixed(1));
   assert.ok(new Set(at).size >= 2, `miejsce zatrzymania różne w różnych zmianach: ${at}`);
