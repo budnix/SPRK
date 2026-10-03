@@ -131,7 +131,7 @@ export default {
   location: 'Linia 202 Gdańsk – Stargard za Gdynią Chylonią, koniec linii 250 (SKM); powiat wejherowski, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 250],              // linie kolejowe (jak w `location`)
-  geo: [54.5689, 18.3867],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
+  geo: [54.5689, 18.3867],      // współrzędne stacji (docs/sources/posterunki.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min w obu kierunkach na peronie 1, regionalne i dalekobieżne na peronie 2, towarowe przelotem torem 3 i do toru 6.',
   difficulty: 4,
   startTime: '05:55',

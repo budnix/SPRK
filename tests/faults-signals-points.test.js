@@ -303,7 +303,7 @@ test('semafor wyjazdowy gaśnie tuż przed pociągiem przelotowym: przejazd „S
 // i jedzie dalej na rozkaz „S” (0 pkt). Blokada Eap nie stwierdzi przejazdu, więc dyżurny przygotowuje blok końcowy dKo
 // zaraz po alarmie usterki, przed wjazdem pociągu (0 pkt), a po przybyciu Ko działa. dKo naciśnięte dopiero po wjeździe
 // (tak robi automat) kosztuje −10 – czy słusznie przy przejeździe „Stój” z usterki, to pytanie do właściciela reguły
-// (docs/SOURCES.md opisuje dKo dla wjazdu na Sz / rozkaz), więc tu się tego nie sprawdza.
+// (docs/sources/sygnaly-i-blokada.md opisuje dKo dla wjazdu na Sz / rozkaz), więc tu się tego nie sprawdza.
 test('semafor wjazdowy gaśnie tuż przed pociągiem: przejazd „Stój” bez kary, dKo przed wjazdem i rozkaz „S” zza semafora bez kary', () => {
   for (const { st, srk } of PANELS) for (const [from, to] of DIRS) {
     const timetable = [os(st, 2, from, to, '07:06', '07:08', '1'), os(st, 3, from, to, '07:26', '07:28', '1')];
@@ -369,7 +369,7 @@ test('usterka napędu zwrotnicy przebiegu wjazdowego i wyjazdowego: przebieg utw
 // sprawdza przy `manualPoints` tylko położenie), a sygnał podaje dźwignia (`#computeAspect` przy `manualSignal` nie sprawdza
 // kontroli). Po przestawieniu zwrotnicy w czasie usterki semafor wskazuje Sr2 / Sr3, a pociąg i tak staje przed zwrotnicą
 // bez kontroli (Train: przejazd tylko po zabezpieczeniu). Zwrotnica bez kontroli – jazda tylko na Sz albo rozkaz „S”
-// (docs/SOURCES.md, „wszystkie stanowiska”; Ie-4 §30 ust. 1).
+// (docs/sources/sygnaly-i-blokada.md, „Zwrotnica bez kontroli położenia”; Ie-4 §30 ust. 1).
 test('nastawnia mechaniczna: usterka napędu zwrotnicy – drążek nie zamyka przebiegu, sygnał zezwalający dopiero po naprawie', () => {
   for (const [from, to] of DIRS) for (const kind of ['wjazd', 'wyjazd']) {
     checkPoint(pointCase(szkolna, 'mech', from, to, kind, 12));

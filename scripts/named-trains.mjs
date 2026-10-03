@@ -12,7 +12,7 @@
  *   node scripts/named-trains.mjs --year 2026 --cache /tmp/sprk-named-trains
  *   node scripts/named-trains.mjs --offline --cache …   # tylko z katalogu podręcznego (bez sieci)
  *
- * Opis danych i zasady: docs/SOURCES.md („Pociągi z nazwami”).
+ * Opis danych i zasady: docs/sources/posterunki.md („Pociągi z nazwami”).
  */
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -82,7 +82,7 @@ export function moduleText(list, { year, date }) {
  * Rozkład roczny ${year}, stan z ${date}; źródło: zestawienia pociągów vagonweb.cz (trasa orientacyjna – ważniejsze stacje).
  * \`cat\` kategoria, \`nr\` numer, \`name\` nazwa, \`stops\` stacje po kolei (pierwsza – początek, ostatnia – koniec relacji),
  * \`dep\` / \`arr\` odjazd ze stacji początkowej i przyjazd do końcowej, \`partial\` – trasa skrócona (bez stacji pośrednich).
- * Opis i zasady użycia: docs/SOURCES.md („Pociągi z nazwami”).
+ * Opis i zasady użycia: docs/sources/posterunki.md („Pociągi z nazwami”).
  */
 export const NAMED_TRAINS = [
 ${list.map(row).join('\n')}

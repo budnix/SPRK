@@ -25,10 +25,10 @@ import { unjustified, leftovers } from '../src/model/check/outcome.js';
  *    stoi (Sz nie jest sygnałem dla manewrów); rozkaz „S” na D2 przyjęty, maszynista potwierdza jazdę, a skład stoi
  *    (`Train.#shuntPermitted` nie zna rozkazu); na tarczy Tm1 Sz i rozkaz odrzucone;
  *  - reguła docelowa (todo): skład mija sygnalizator manewrowy z usterką na zezwolenie dyżurnego i wykonuje zadanie
- *    w terminie. Reguły (Ir-9: zezwolenie ustne / przez radiotelefon) nie ma w docs/SOURCES.md – założenie do potwierdzenia.
+ *    w terminie. Reguły (Ir-9: zezwolenie ustne / przez radiotelefon) nie ma w opisie źródeł (docs/sources/) – założenie do potwierdzenia.
  *
  * Część 2 – droga pociągu jadącego na Sz albo rozkaz „S” zostaje zabezpieczona, dopóki pociąg jej nie minie
- * (docs/SOURCES.md, „Sygnał zastępczy i rozkaz „S””: przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza –
+ * (docs/sources/sygnaly-i-blokada.md, „Sygnał zastępczy i rozkaz „S””: przed Sz zwrotnice drogi ustawia się, sprawdza i utwierdza –
  * Ie-10 §35 ust. 1 pkt 1–2 i 6, Ir-1 §58 ust. 4). Pociąg 6101 z Lipna na tor 1, fałszywa zajętość T1: dyżurny zamyka
  * Zw1 (Zz), dKo, Sz na A albo rozkaz „S”. Przy nastawionym przebiegu A-D1 zwrotnicę trzyma utwierdzenie przebiegu.
  */
@@ -348,7 +348,7 @@ test('pociąg na Sz / rozkaz „S”: dopóki Zw1 jest zamknięta (Zz), nie prze
 });
 
 /*
- * Reguła (docs/SOURCES.md, „Sygnał zastępczy i rozkaz „S””; Ie-10 §35 ust. 1 pkt 1–2 i 6, Ir-1 §58 ust. 4): zwrotnice
+ * Reguła (docs/sources/sygnaly-i-blokada.md, „Sygnał zastępczy i rozkaz „S””; Ie-10 §35 ust. 1 pkt 1–2 i 6, Ir-1 §58 ust. 4): zwrotnice
  * drogi Sz / rozkazu są ustawione, sprawdzone i utwierdzone (Zz) – do przejazdu pociągu. Zwrotnica na drodze pociągu,
  * który dostał Sz albo rozkaz „S”, nie daje się otworzyć (zdjąć Zz) ani przestawić, zanim ostatni wagon ją minie; po
  * przejeździe – tak.

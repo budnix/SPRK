@@ -69,7 +69,7 @@ const DESKS = [
   {
     st: kalinowo, srk: 'mor3',
     // strzałka blokady / semafor – menu obiektu – polecenie czerwone (specjalne) – potwierdzenie (src/srk/mor.js);
-    // MOR-3 nie ma odliczania: polecenie czeka na potwierdzenie bez zwłoki i bez wygasania (docs/SOURCES.md)
+    // MOR-3 nie ma odliczania: polecenie czeka na potwierdzenie bez zwłoki i bez wygasania (docs/sources/stanowiska-komputerowe.md)
     dKo: (exit) => [(sim) => { sim.cancelSelection(); return sim.press({ kind: 'end', id: `k${exit}` }); }, (sim) => sim.chooseCommand('dKo'), 2, (sim) => sim.confirmCommand()],
     Sz: (sig) => [(sim) => { sim.cancelSelection(); return sim.press({ kind: 'signal', id: sig }); }, (sim) => sim.chooseCommand('SZ'), 2, (sim) => sim.confirmCommand()],
     cancel: (sim) => { sim.cancelSelection(); return { ok: sim.input.pending == null }; },
@@ -220,7 +220,7 @@ test('długa usterka semafora wjazdowego: dKo i Sz przez protokół stanowiska �
  * Semafor naprawiony, gdy SZ czeka na potwierdzenie (zainicjowane ok. 3 s przed naprawą, w czasie usterki). Po naprawie
  * semafor od razu daje sygnał zezwalający na nastawionym przebiegu, pociąg rusza w tym samym takcie.
  *  - potwierdzenie po naprawie (MOR-3, monitor; EBILock – SZW po SZI) – Sz wyświetla się na semaforze, za który czoło
- *    pociągu już wjechało. Sz ocenia się w chwili wyboru polecenia (docs/SOURCES.md): dyżurny zdecydował w czasie
+ *    pociągu już wjechało. Sz ocenia się w chwili wyboru polecenia (docs/sources/sygnaly-i-blokada.md): dyżurny zdecydował w czasie
  *    usterki, potwierdzenie to krok bezpieczeństwa urządzenia – bez kary (dawniej −5, uzasadnienie z chwili wykonania),
  *  - odwołanie (OPS, Ie-20 §13 ust. 9) po zobaczeniu sygnału zezwalającego – bez Sz i bez kary.
  */

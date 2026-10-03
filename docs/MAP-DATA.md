@@ -12,9 +12,9 @@ i co zrobić, gdy dochodzi nowe miasto. Skrót kroków dla Claude: skill `.claud
 | Sieć kolejowa Polski w małym przybliżeniu | `src/ui/map/railOverview.js` (generowany) | Natural Earth, *Railroads*, 1:10m | domena publiczna | `scripts/rail-overview.mjs` (niżej) |
 | Identyfikatory i nazwy województw | `src/model/regions.js` | TERYT (nazwy urzędowe) | – | ręcznie; test porównuje z `poland.js` |
 | Rzut (stopnie → rysunek) | `PROJ`, `VIEWBOX` w `poland.js`; `project` / `unproject` w `src/ui/map/mapSvg.js` | – | – | generuje `poland-map.mjs` |
-| Współrzędne stacji | pole `geo` w `src/stations/<id>.js` | polska Wikipedia, artykuł stacji (szablon współrzędnych) | fakty; adres w `docs/SOURCES.md` | API Wikipedii (niżej) |
+| Współrzędne stacji | pole `geo` w `src/stations/<id>.js` | polska Wikipedia, artykuł stacji (szablon współrzędnych) | fakty; adres w `docs/sources/posterunki.md` | API Wikipedii (niżej) |
 | Numery linii przy stacji | pole `lines` | opis położenia stacji (`location`) – te same źródła co plan stacji | – | ręcznie |
-| Przebieg linii (tory na schemacie) | `src/ui/map/railLines.js` (generowany) | OpenStreetMap, relacje `route=railway` z numerem linii PKP PLK w `ref`, przez Overpass API | **ODbL 1.0** – plik to baza pochodna na ODbL; podpis „© autorzy OpenStreetMap (ODbL)” pod schematem (`start.regionMapNote`) i w `docs/SOURCES.md` | `scripts/rail-lines.mjs` (niżej) |
+| Przebieg linii (tory na schemacie) | `src/ui/map/railLines.js` (generowany) | OpenStreetMap, relacje `route=railway` z numerem linii PKP PLK w `ref`, przez Overpass API | **ODbL 1.0** – plik to baza pochodna na ODbL; podpis „© autorzy OpenStreetMap (ODbL)” pod schematem (`start.regionMapNote`) i w `docs/sources/posterunki.md` | `scripts/rail-lines.mjs` (niżej) |
 
 Rysowanie (bez DOM, testy w Node): `src/ui/map/mapSvg.js` – `boardSvg` (jedna tablica w jednostkach rysunku Polski:
 województwa, sieć z Natural Earth, dokładne tory linii posterunków z `RAIL_LINES` – linia przez co najmniej dwa posterunki
@@ -46,7 +46,7 @@ zostaje tablica z torami na siatce. Wygląd: zmienne `--sc-board-*` (tablica dys
    ```
    Artykuł stacji ma zwykle dopisek „(stacja kolejowa)”, gdy nazwa miasta jest zajęta (np. `Sopot_(stacja_kolejowa)`),
    a stacje z nazwą własną – bez niego (`Gdańsk_Główny`). Źródło każdej pary współrzędnych dopisz do
-   `docs/SOURCES.md`, sekcja „Mapa wyboru posterunku”.
+   `docs/sources/posterunki.md`, sekcja „Mapa wyboru posterunku”.
    Dokładniejsze (ok. 1 m, przy peronach linii głównej): punkt `railway=station` PKP PLK w OpenStreetMap – np. Overpass
    `node["railway"="station"]["name"="Gdynia Główna"]["operator"~"PKP"];out;` (uwaga na osobne przystanki SKM, np.
    Gdynia Orłowo ma punkt stacji i punkt przystanku SKM). Współrzędne z Wikipedii to zwykle budynek stacji, do ok. 200 m
@@ -64,7 +64,7 @@ zostaje tablica z torami na siatce. Wygląd: zmienne `--sc-board-*` (tablica dys
    w wycinku; potem `npx playwright test tests/e2e/start-nav.spec.js tests/e2e/visual.spec.js`. Zmieniony wygląd mapy
    lub schematu (nowe przystanki) → `npx playwright test tests/e2e/visual.spec.js --update-snapshots` na komputerze
    (litery na zrzutach są ukryte – wzorzec z macOS przechodzi w CI) i uzasadnienie w commicie.
-5. **Opis** w `docs/SOURCES.md` (współrzędne, linie) – licencji OSM nie trzeba dopisywać drugi raz.
+5. **Opis** w `docs/sources/posterunki.md` (współrzędne, linie) – licencji OSM nie trzeba dopisywać drugi raz.
 
 Nowe województwo nie wymaga zmian w kodzie: mapa podświetla każde z posterunkami, schemat liczy wycinek sam.
 
@@ -72,7 +72,7 @@ Nowe województwo nie wymaga zmian w kodzie: mapa podświetla każde z posterunk
 
 Osobny plik stacji z `place: '<id miejsca>'`, `era: <rok>` i tym samym `geo`, `region`, `lines` (o ile linie się nie
 zmieniły). Mapa i lista pokazują miejsce raz, strona stacji ma zakładki ery (`eraTabs`). Rok i urządzenia edycji – ze
-źródeł (`docs/SOURCES.md`); przepisy zawsze dzisiejsze.
+źródeł (`docs/sources/posterunki.md`); przepisy zawsze dzisiejsze.
 
 ## Sieć kolejowa w małym przybliżeniu (rzadko – nowa wersja Natural Earth)
 

@@ -12,7 +12,8 @@ każdym stanowisku. Granice warstw: CLAUDE.md („Granice warstw”) – pilnuje
 Wzór: pulpit typu IZH-111 (`src/srk/address.js`, `src/render/IzhRenderer.js`, `tests/izh111.test.js`,
 `tests/e2e/izh.spec.js`).
 
-0. Źródła: opis obsługi urządzeń z podaniem, co jest faktem ze źródła, a co założeniem – `docs/SOURCES.md`.
+0. Źródła: opis obsługi urządzeń z podaniem, co jest faktem ze źródła, a co założeniem – plik obszaru
+   w `docs/sources/` (pulpit – `pulpity.md`, monitor – `stanowiska-komputerowe.md`; indeks `docs/SOURCES.md`).
    Nie wymyślaj zasad kolejowych; czego źródło nie podaje, oznacz jako przyjęte.
 1. Wpis w `src/srk/registry.js` (`id`, `name`, `view`, parametry `model`, opcjonalnie `input`) + test.
 2. Sposób wydawania poleceń: `Simulation.execute` albo własny protokół obsługi w `src/srk/` (bez DOM, test w Node)

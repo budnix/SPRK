@@ -18,11 +18,11 @@ sprawdza poprzedni.
 
 - **Plan schematyczny stacji** (stan na konkretną datę, autor rysunku) dostarcza właściciel. Bez planu poproś o niego –
   układu torów, numerów torów i rozjazdów ani nazw semaforów się nie wymyśla (CLAUDE.md: „Nie wymyślaj zasad kolejowych”).
-- **Urządzenia srk w rzeczywistości** (jaka nastawnia, LCS, od kiedy) – do `docs/SOURCES.md`, sekcja „Systemy srk
+- **Urządzenia srk w rzeczywistości** (jaka nastawnia, LCS, od kiedy) – do `docs/sources/posterunki.md`, sekcja „Systemy srk
   stacji – stan rzeczywisty”. Z tego wynika pole `srk` i `srkInfo`.
 - **Linie i sąsiednie posterunki** (numery linii PKP PLK, rodzaj blokady na każdym szlaku, liczba torów szlakowych).
 - Spisz od razu, co z planu **pomijasz** i co **upraszczasz** (bocznice, tory grup towarowych, tarcze w głowicach,
-  semafory do jazd po torze lewym) – trafi to do nagłówka pliku stacji, do `docs/SOURCES.md` i do commita.
+  semafory do jazd po torze lewym) – trafi to do nagłówka pliku stacji, do `docs/sources/posterunki.md` i do commita.
   Czego źródło nie podaje, oznacz jako przyjęte.
 
 ## 2. Definicja: `src/stations/<id>.js`
@@ -90,7 +90,7 @@ Stacja szkoleniowa (fikcyjna, do misji) tych pól nie ma; jej misja – skill `n
 
 ## 7. Dokumentacja i commit (ten sam commit)
 
-- `docs/SOURCES.md`: sekcja `## <Nazwa stacji>` – plan (stan, autor, jakość skanu), co odwzorowano, „Odwzorowanie
+- `docs/sources/posterunki.md`: sekcja `## <Nazwa stacji>` – plan (stan, autor, jakość skanu), co odwzorowano, „Odwzorowanie
   schematyczne: …”, „Pominięto: …”, „Rozkład jazdy fikcyjny.”; oraz wpis w „Systemy srk stacji – stan rzeczywisty”.
 - `README.md` (po angielsku): wiersz w tabeli stacji – nazwa, stanowisko, trudność, jedno zdanie o tym, co tu trudne.
 - `docs/ARCHITECTURE.md`: lista stacji przy katalogu `stations/`.

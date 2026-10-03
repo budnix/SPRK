@@ -508,7 +508,7 @@ export class Simulation {
   /** Naciśnięcie przycisku – ref jak w ButtonProtocol.press lub { kind:'block', exit, btn }. */
   /** Inicjowanie polecenia specjalnego (stanowisko komputerowe): `cmd` – polecenie `execute`, `meta` { label, target }. */
   initiateSpecial(cmd, meta = {}) {
-    // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane przy inicjowaniu (docs/SOURCES.md)
+    // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane przy inicjowaniu (docs/sources/sygnaly-i-blokada.md)
     if (cmd?.type === 'substitute') cmd = { ...cmd, justifiedAtChoice: this.ilk.faultOnPath(cmd.signal) };
     const res = this.special.start(this.clock.time, cmd, meta);
     if (res.ok) {

@@ -13,13 +13,14 @@ export const SBL_FIRST_BLOCK = 1000;
 /** Dojazd do taboru na torze zajętym: ostatnie metry (przyjęte) z prędkością do 3 km/h (Dz.U. 2015 poz. 360 §9 ust. 4). */
 export const STOCK_CREEP = 50;
 /**
- * Miejsce zatrzymania czoła przy peronie (przyjęte, docs/SOURCES.md „Miejsce zatrzymania przy peronie”): ta część
+ * Miejsce zatrzymania czoła przy peronie (przyjęte, docs/sources/jazda-pociagu.md „Zatrzymanie, odjazd i hamowanie”,
+ * punkt „Miejsce zatrzymania przy peronie”): ta część
  * długości peronu od wejścia na peron; pociąg dłuższy niż połowa peronu staje na jego środku.
  */
 export const PLATFORM_STOP = 0.75;
 
 /**
- * Maszynista (przyjęte, docs/SOURCES.md „Hamowanie jak maszynista”): hamuje z opóźnieniem planowanym – częścią
+ * Maszynista (przyjęte, docs/sources/jazda-pociagu.md „Hamowanie jak maszynista”): hamuje z opóźnieniem planowanym – częścią
  * `DRIVER_MIN`…`DRIVER_MAX` opóźnienia hamowania służbowego pociągu (każdy maszynista trochę inaczej: z ziarna zmiany
  * i numeru pociągu, `driverFactor`), zaczyna hamować z wyprzedzeniem na czas działania hamulca (`brakeDelay`), a przed
  * miejscem zatrzymania luzuje: ostatnie metry dojeżdża z prędkością `EASE_SPEED` z opóźnieniem `EASE_SHARE` planowanego.
@@ -36,7 +37,7 @@ export function driverFactor(seed, nr) {
 }
 
 /**
- * Zmiana czoła (przyjęte, docs/SOURCES.md „Zmiana czoła i rozmowy z maszynistą”): maszynista przechodzi do kabiny na
+ * Zmiana czoła (przyjęte, docs/sources/jazda-pociagu.md „Zmiana czoła i rozmowy z maszynistą”): maszynista przechodzi do kabiny na
  * drugim końcu składu i ją uruchamia – od `CAB_CHANGE_MIN` do `CAB_CHANGE_MAX` sekund, w każdym pociągu inaczej (z ziarna
  * zmiany i numeru, `cabChangeTime`); skład w tym czasie stoi, kierunek jazdy zmienia się na końcu.
  */

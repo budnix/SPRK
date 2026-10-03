@@ -13,16 +13,16 @@ import szkolna from '../src/stations/szkolna.js';
 const POOLS = ['skm', 'regio', 'ic', 'eip', 'freight', 'shunt'];
 const station = (id) => STATIONS.find((s) => s.id === id);
 const entry = (st, nr) => st.timetable.find((e) => e.nr === nr);
-/** Sekcja „Tabor pociągów” w docs/SOURCES.md. */
+/** Sekcja „Tabor pociągów” w docs/sources/tabor.md. */
 const sourcesSection = () => {
-  const text = readFileSync(new URL('../docs/SOURCES.md', import.meta.url), 'utf8');
+  const text = readFileSync(new URL('../docs/sources/tabor.md', import.meta.url), 'utf8');
   const start = text.indexOf('## Tabor pociągów');
-  assert.ok(start >= 0, 'docs/SOURCES.md: sekcja „Tabor pociągów”');
+  assert.ok(start >= 0, 'docs/sources/tabor.md: sekcja „Tabor pociągów”');
   const end = text.indexOf('\n## ', start + 5);
   return text.slice(start, end < 0 ? undefined : end);
 };
 
-test('katalog taboru: rodzaj, przewoźnik, pule, prędkość, długość zespołu; każdy typ ma źródło w docs/SOURCES.md', () => {
+test('katalog taboru: rodzaj, przewoźnik, pule, prędkość, długość zespołu; każdy typ ma źródło w docs/sources/tabor.md', () => {
   const ids = Object.keys(ROLLING_STOCK);
   assert.ok(ids.length >= 10, `typów: ${ids.length}`);
   const section = sourcesSection();
@@ -38,7 +38,7 @@ test('katalog taboru: rodzaj, przewoźnik, pule, prędkość, długość zespoł
     } else {
       assert.equal(t.length, undefined, `${id}: lokomotywa bez długości zespołu`);
     }
-    assert.ok(section.includes(id), `${id}: wpis w docs/SOURCES.md („Tabor pociągów”)`);
+    assert.ok(section.includes(id), `${id}: wpis w docs/sources/tabor.md („Tabor pociągów”)`);
   }
   // pule: każda kategoria pasażerska i obie trakcje pociągów towarowych mają tabor
   for (const pool of POOLS) assert.ok(ids.some((id) => ROLLING_STOCK[id].pools.includes(pool)), `pula ${pool}`);
@@ -209,16 +209,16 @@ test('przypięta lista typów: każdy typ z listy może przyjechać (liczba zesp
   assert.equal(s.label, '2 × SA133');
 });
 
-test('pule taboru: typy, których nie dostaje żaden pociąg rozkładów gry, to tylko te opisane w docs/SOURCES.md', () => {
+test('pule taboru: typy, których nie dostaje żaden pociąg rozkładów gry, to tylko te opisane w docs/sources/tabor.md', () => {
   const seen = new Set();
   for (const st of STATIONS) for (const e of st.timetable) for (let seed = 1; seed <= 20; seed++) seen.add(stockFor(e, st.timetable, seed).id);
   const never = Object.keys(ROLLING_STOCK).filter((id) => !seen.has(id)).sort();
   assert.deepEqual(never, ['ED160', 'ED250', 'EN71']);
   const section = sourcesSection();
   const at = section.indexOf('nie dostaje żaden pociąg rozkładów gry');
-  assert.ok(at >= 0, 'docs/SOURCES.md: punkt o typach, których nie dostaje żaden pociąg');
+  assert.ok(at >= 0, 'docs/sources/tabor.md: punkt o typach, których nie dostaje żaden pociąg');
   const bullet = section.slice(at, section.indexOf('\n* ', at));
-  for (const id of never) assert.match(bullet, new RegExp(`${id} – `), `${id}: wyjaśnienie w docs/SOURCES.md`);
+  for (const id of never) assert.match(bullet, new RegExp(`${id} – `), `${id}: wyjaśnienie w docs/sources/tabor.md`);
 });
 
 test('przypięte typy: tylko własne klucze katalogu (nie „constructor”, „toString”)', () => {
@@ -258,7 +258,7 @@ test('kolejność pociągów linii: godziny liczbowo („9:58” przed „10:05�
   }
 });
 
-test('przewoźnicy w katalogu taboru mają źródło w docs/SOURCES.md', () => {
+test('przewoźnicy w katalogu taboru mają źródło w docs/sources/tabor.md', () => {
   const section = sourcesSection();
   for (const [id, t] of Object.entries(ROLLING_STOCK)) {
     for (const op of t.operator.split(/,\s*/)) {

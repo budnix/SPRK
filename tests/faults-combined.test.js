@@ -342,7 +342,7 @@ test('(b) usterka semafora wjazdowego i blokady szlaku wjazdu: wjazd na Sz albo 
 
 /**
  * Dyżurny przy wjeździe, gdy przebiegu nie da się nastawić (fałszywa zajętość toru docelowego) albo semafor nie podaje
- * sygnału (Ie-10 §32, §35; Ir-1 §58; docs/SOURCES.md): pociąg stoi przed semaforem wjazdowym na „Stój”, `active(sim)` –
+ * sygnału (Ie-10 §32, §35; Ir-1 §58; docs/sources/sygnaly-i-blokada.md): pociąg stoi przed semaforem wjazdowym na „Stój”, `active(sim)` –
  * obie usterki trwają. Zwrotnice drogi w położenie przebiegu na tor planowy i zamknięte Zz (poza utwierdzonymi
  * w przebiegu); zwrotnica bez kontroli – najpierw próba rozkazu „S” (`st.early`, ma być odrzucony), potem zabezpieczenie
  * na miejscu; gdy zabezpieczona – dKo i Sz albo rozkaz „S” (`st.given`: wynik, czynne usterki, zwrotnice drogi ani

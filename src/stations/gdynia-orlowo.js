@@ -116,7 +116,7 @@ export default {
   location: 'Linie 202 Gdańsk – Gdynia i 250 (SKM), między Sopotem a Gdynią Główną, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 250],              // linie kolejowe (jak w `location`)
-  geo: [54.4767, 18.5490],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
+  geo: [54.4767, 18.5490],      // współrzędne stacji (docs/sources/posterunki.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min, regionalne z postojem, IC/TLK przelotem, towarowy torem 3, skład EZT z Bazy Sopot.',
   difficulty: 3,
   startTime: '05:55',

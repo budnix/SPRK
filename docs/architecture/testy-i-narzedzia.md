@@ -20,9 +20,10 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   a przed dyżurnym (z komentarzem przy pętli). Test rytmu: `tests/play.test.js`.
 * `tests/route-state.test.js` – stan przebiegu (`routeState` i pytania pokrewne) na typie E, IZH-111 i nastawni
   mechanicznej: każdy stan osiągany poleceniami i zajętością, bez ustawiania pól zapisu przebiegu.
-* `tests/docs.test.js` – dokumentacja architektury: każdy plik obszaru w tabeli indeksu `docs/ARCHITECTURE.md`, pliki
-  krótkie (indeks do 200 wierszy, obszar do 400), odwołania „plik („Sekcja”)” w kodzie, testach i skillach wskazują plik,
-  w którym ta sekcja jest.
+* `tests/docs.test.js` – dokumentacja dzielona na obszary (architektura: `docs/ARCHITECTURE.md` + `docs/architecture/`,
+  źródła: `docs/SOURCES.md` + `docs/sources/`): każdy plik obszaru w tabeli indeksu, pliki krótkie (indeks do 200
+  wierszy, obszar do 400), odwołania „plik („Sekcja”)” w kodzie, testach i skillach wskazują plik, w którym ta sekcja
+  jest; odwołanie do sekcji źródeł, której nie ma (literówka, stara nazwa, punkt zamiast sekcji), nie przechodzi.
 * `tests/skills.test.js` – skille projektu (`.claude/skills/*/SKILL.md` – listy kroków dla sesji AI: nowa stacja,
   scenariusz, posterunek na mapie, stanowisko, diagnoza zatoru, zasada ze źródła) i `CLAUDE.md`: każda wymieniona
   ścieżka, polecenie `npm run` i skill istnieją; skrypt diagnozy zatoru działa. Zmiana nazwy pliku albo polecenia

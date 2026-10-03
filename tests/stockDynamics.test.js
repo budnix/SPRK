@@ -190,7 +190,7 @@ test('cięższy pociąg z lokomotywą rusza wolniej także w symulacji: po minuc
 });
 
 test('moc ogranicza przyspieszenie przy prędkości: EN57 do 100 km/h wolniej niż ze stałym przyspieszeniem, nie dłużej niż w źródle', () => {
-  // źródło (docs/SOURCES.md, Medcom „EN57AKM”): EN57 – przyspieszenie 0÷40 km/h 0,5 m/s², rozpędzanie do 100 km/h 120 s
+  // źródło (docs/sources/tabor.md, Medcom „EN57AKM”): EN57 – przyspieszenie 0÷40 km/h 0,5 m/s², rozpędzanie do 100 km/h 120 s
   const en57 = ROLLING_STOCK.EN57;
   assert.equal(en57.accel, 0.5);
   const d = trainDynamics({ nr: 1, kind: 'os', name: 'SKM A – B', length: 130 }, set('EN57', 2));

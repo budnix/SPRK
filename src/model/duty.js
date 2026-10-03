@@ -12,7 +12,7 @@ import { checkScenario } from './scenarioCheck.js';
  * w szczytach cały wzorzec, w dzień i wieczorem rzadziej pociągi aglomeracyjne i regionalne, w nocy prawie sam ruch
  * towarowy – w miejsce pociągów pasażerskich, które nie kursują, wchodzą pociągi towarowe. Powtórzenie pociągu
  * dalekobieżnego dostaje nazwę i relację pociągu z listy pociągów z nazwami (`namedTrains.js`), który jedzie tą samą
- * drogą. Liczby i numery pociągów poza wzorcem są przyjęte (docs/SOURCES.md „Służba o wybranej porze”) – to nie
+ * drogą. Liczby i numery pociągów poza wzorcem są przyjęte (docs/sources/posterunki.md „Służba o wybranej porze”) – to nie
  * rzeczywisty rozkład jazdy.
  *
  * Każda służba jest trochę inna: ziarno zmiany wybiera, które kursy linii jadą (faza co drugiego / co czwartego),

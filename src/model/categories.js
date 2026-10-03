@@ -13,7 +13,7 @@
  * Pole `catLabel` wpisu nadpisuje całą etykietę (np. „TMS”).
  *
  * Prędkość, przyspieszenie, hamowanie i masa odniesienia (`refMass`) kategorii to wartości przyjęte w grze
- * (docs/SOURCES.md), nie dane ze źródła.
+ * (docs/sources/jazda-pociagu.md), nie dane ze źródła.
  */
 export const CATEGORIES = {
   EIP: { label: 'EIP', name: 'Express InterCity Premium', vmax: 200, accel: 0.5, brake: 0.7 },

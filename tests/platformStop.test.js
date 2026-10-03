@@ -13,7 +13,8 @@ import { autoDispatch, play } from './helpers.js';
  * Miejsce zatrzymania pociągu przy peronie – z układu stacji, bez danych per stacja. Ie-1 (2026) §17 ust. 15 pkt 4:
  * wskaźnik W 4 oznacza miejsce, do którego może dojechać czoło zatrzymującego się pociągu, i stoi przy końcu peronu
  * (albo przed ukresem) – to granica, nie cel. Gra nie rysuje W 4 (peron ten sam, który rysuje widok: tiles/platforms.js).
- * Przyjęte (docs/SOURCES.md „Miejsce zatrzymania przy peronie”): pociąg staje wzdłuż peronu, nie przy samym końcu –
+ * Przyjęte (docs/sources/jazda-pociagu.md „Zatrzymanie, odjazd i hamowanie”, punkt „Miejsce zatrzymania
+ * przy peronie”): pociąg staje wzdłuż peronu, nie przy samym końcu –
  * czoło na 3/4 peronu (PLATFORM_STOP), pociąg dłuższy niż połowa peronu na środku peronu, 0–10 m wcześniej (rozrzut);
  * najdalej przy końcu peronu jak dotąd; tor czołowy – przy końcu peronu (dojazd do kozła). Dawniej czoło zawsze przy
  * końcu peronu, a jeszcze wcześniej – 12 m przed semaforem wyjazdowym (Szkolna: 6101 przy D1, 6102 przy C1).

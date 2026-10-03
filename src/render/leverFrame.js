@@ -5,7 +5,7 @@
  * (niebieski z czerwoną obwódką); numeracja kolejna od lewej. Semafor rozprzężony – taki, z którego wychodzą
  * przebiegi na Sr2 i na Sr3 – ma dwie dźwignie sygnałowe (np. A¹ dla Sr2, A² dla Sr3); semafor jednoramienny
  * i sprzężony (tylko Sr1 / Sr3) – jedną. Drążek przebiegowy należy do sygnalizatora początkowego i obsługuje najwyżej
- * dwa przebiegi (położenia „w górę” i „w dół”) – założenie gry, docs/SOURCES.md; drążek przebiegów pociągowych ma
+ * dwa przebiegi (położenia „w górę” i „w dół”) – założenie gry, docs/sources/pulpity.md; drążek przebiegów pociągowych ma
  * też położenia pośrednie (`half`), które zamykają zwrotnice do jazdy na sygnał zastępczy.
  */
 

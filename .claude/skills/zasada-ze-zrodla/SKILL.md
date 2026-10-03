@@ -6,21 +6,25 @@ description: Wprowadzenie albo zmiana zasady kolejowej w SPRK – reguły ruchu,
 # Zasada ze źródła
 
 Gra uczy pracy dyżurnego ruchu, więc reguła wymyślona „na oko” uczy błędnie – a po miesiącu nikt nie odróżni jej od
-przepisu. Dlatego każda zasada ma w `docs/SOURCES.md` dwie wyraźnie rozdzielone części: co jest **ze źródła** i co jest
-**przyjęte** (wartość gry, której źródło nie podaje).
+przepisu. Dlatego każda zasada ma w opisie źródeł dwie wyraźnie rozdzielone części: co jest **ze źródła** i co jest
+**przyjęte** (wartość gry, której źródło nie podaje). Opis źródeł: indeks `docs/SOURCES.md` (lista materiałów, zasady
+zapisu, tabela obszarów) i plik na obszar w `docs/sources/` – jazda pociągu, sygnały i blokada, pulpity, stanowiska
+komputerowe, tabor, posterunki.
 
 ## Kroki
 
-1. **Znajdź przepis, zanim napiszesz kod.** Najpierw `docs/SOURCES.md` – temat bywa już opisany (lista materiałów na
-   górze, potem sekcje tematyczne). Instrukcje PKP PLK: plk-sa.pl → „Akty prawne i przepisy” → „Instrukcje” (Ir –
+1. **Znajdź przepis, zanim napiszesz kod.** Najpierw `docs/SOURCES.md` (lista materiałów, tabela obszarów) i plik
+   obszaru w `docs/sources/` – temat bywa już opisany. Instrukcje PKP PLK: plk-sa.pl → „Akty prawne i przepisy” → „Instrukcje” (Ir –
    ruch: Ir-1 prowadzenie ruchu, Ir-5 radiołączność, Ir-9 manewry; Ie – sygnalizacja i srk: Ie-1 sygnały, Ie-104
    stanowiska komputerowe). Opisy urządzeń (typ E, IZH-111, EBILock, MOR-3, blokada Eap) – materiały wymienione
    w SOURCES. Gdy źródła nie da się otworzyć, napisz to wprost i nie odtwarzaj treści z pamięci jako cytatu.
-2. **Zapisz w `docs/SOURCES.md`** – nowa sekcja `## Temat (plik – funkcja)` albo dopisek w istniejącej. Wzór: sekcja
-   „Zmiana czoła i rozmowy z maszynistą”:
+2. **Zapisz w pliku obszaru `docs/sources/<obszar>.md`** – nowa sekcja `## Temat (plik – funkcja)` albo dopisek
+   w istniejącej; nowy obszar – nowy plik i wiersz tabeli w `docs/SOURCES.md`. Odwołanie w kodzie:
+   `docs/sources/<obszar>.md „Sekcja”`. Wzór: sekcja „Zmiana czoła i rozmowy z maszynistą” w
+   `docs/sources/jazda-pociagu.md`:
    - „Ze źródła – <instrukcja, wydanie / uchwała, adres>:” i punkty z **numerem paragrafu** (§, ust., pkt);
    - „Przyjęte (źródła tego nie podają):” i punkty z wartością gry oraz nazwą stałej w kodzie.
-3. **Kod**: liczby jako nazwane stałe (te same nazwy co w SOURCES), reguła w warstwie logiki (`src/model/`). Nowa reguła
+3. **Kod**: liczby jako nazwane stałe (te same nazwy co w opisie źródeł), reguła w warstwie logiki (`src/model/`). Nowa reguła
    zależności to opcja `Interlocking` z wartością domyślną, która nie zmienia dotychczasowych stanowisk. Terminologia
    po polsku wg Ie-1 / Ir-1 (semafor, tarcza manewrowa, przebieg, utwierdzenie, odcinek zbliżania, droga ochronna);
    komunikaty modelu i polecenia Ie-104 zostają po polsku, teksty interfejsu przez `t()` w trzech językach.

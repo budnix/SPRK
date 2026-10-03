@@ -86,7 +86,7 @@ export default {
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. między Pszczółkami a Gdańskiem Południowym; węzeł z liniami 226, 229 i 260; powiat gdański, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [9, 226, 229, 260],      // linie kolejowe (jak w `location`)
-  geo: [54.2581, 18.6469],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
+  geo: [54.2581, 18.6469],      // współrzędne stacji (docs/sources/posterunki.md, „Mapa wyboru posterunku”)
   traffic: 'Regio i dalekobieżne linii 9 na peronach I/II, towarowe z Zajączkowa do Portu Północnego torami 3/5/7, na Starą Piłę torem 6.',
   difficulty: 4,
   startTime: '05:55',

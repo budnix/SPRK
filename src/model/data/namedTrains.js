@@ -3,7 +3,7 @@
  * Rozkład roczny 2026, stan z 2026-10-02; źródło: zestawienia pociągów vagonweb.cz (trasa orientacyjna – ważniejsze stacje).
  * `cat` kategoria, `nr` numer, `name` nazwa, `stops` stacje po kolei (pierwsza – początek, ostatnia – koniec relacji),
  * `dep` / `arr` odjazd ze stacji początkowej i przyjazd do końcowej, `partial` – trasa skrócona (bez stacji pośrednich).
- * Opis i zasady użycia: docs/SOURCES.md („Pociągi z nazwami”).
+ * Opis i zasady użycia: docs/sources/posterunki.md („Pociągi z nazwami”).
  */
 export const NAMED_TRAINS = [
   { cat: 'IC', nr: '1620/1', name: 'Asnyk', dep: '04:01', arr: '08:56', stops: ['Warszawa Wsch.', 'Skierniewice', 'Łódź Widzew', 'Kalisz', 'Ostrów Wlkp.', 'Krotoszyn', 'Oleśnica Rataje', 'Wrocław Gł.'] },

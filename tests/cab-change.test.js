@@ -9,7 +9,7 @@ import { playShift } from '../src/model/check/play.js';
 import { run } from './helpers.js';
 
 /**
- * Zmiana czoła trwa: maszynista przechodzi do kabiny na drugim końcu składu (45–75 s, docs/SOURCES.md „Zmiana czoła
+ * Zmiana czoła trwa: maszynista przechodzi do kabiny na drugim końcu składu (45–75 s, docs/sources/jazda-pociagu.md „Zmiana czoła
  * i rozmowy z maszynistą”), a polecenia z zakładki Pociągi idą radiem – wezwanie, odpowiedź, meldunek gotowości.
  */
 

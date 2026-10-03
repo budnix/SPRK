@@ -232,7 +232,7 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   numeru pociągu i na zakładce „Pociągi”, a pociąg jedzie z jego dynamiką: przyspieszenie rozruchu typu zespołu albo
   przyspieszenie z siły rozruchowej lokomotywy i masy (wagony z `length`, pociąg towarowy – `mass`), przy prędkości
   ograniczone mocą pojazdu; hamowanie z typu zespołu, z prędkości pociągu z lokomotywą albo z masy na metr i długości
-  składu towarowego (docs/SOURCES.md „Hamowanie jak maszynista”); prędkość typu ogranicza pociąg, gdy jest mniejsza niż
+  składu towarowego (docs/sources/jazda-pociagu.md „Hamowanie jak maszynista”); prędkość typu ogranicza pociąg, gdy jest mniejsza niż
   `vmax` wpisu / kategorii. Długości pociągu tabor nie zmienia. Pola `accel` i `brake` wpisu mają pierwszeństwo przed
   taborem; `brake` to wtedy największe opóźnienie hamowania służbowego – maszynista planuje hamowanie z jego częścią;
   `brake` wpisu zastępuje opóźnienie, nie czas narastania hamowania ani luzowanie przed zatrzymaniem (te zależą od
@@ -271,7 +271,7 @@ Skład przełącza się w jazdę manewrową w zakładce *Stan* (porusza się tyl
 
 Posterunek do służby (stacja bez misji samouczka, z pociągami od sąsiada w `timetable`) dostaje wybór godziny startu
 i długości służby **bez dodatkowych danych**: rozkład stacji jest wzorcem ruchu, z którego gra buduje rozkład każdej
-pory doby (`src/model/duty.js`; zasady i liczby – `docs/SOURCES.md` „Służba o wybranej porze”). Co z tego wynika dla
+pory doby (`src/model/duty.js`; zasady i liczby – `docs/sources/posterunki.md` „Służba o wybranej porze”). Co z tego wynika dla
 definicji stacji:
 
 * `timetable` to wzorzec szczytu: pociągi, ich drogi (`from`, `to`, `track`), składy (`unit`) i zadania (`tasks`) –
@@ -288,7 +288,7 @@ definicji stacji:
   (`tests/scenario-runs.js`);
 * pociągi dalekobieżne wzorca (IC, TLK, EIC, EIP) powinny mieć relację z nazwami stacji jak w rozkładzie PKP Intercity
   („Kraków Gł. – Gdynia Gł.”): powtórzenia takiego pociągu dostają nazwę i relację rzeczywistego pociągu tej drogi
-  z listy `src/model/data/namedTrains.js` (cała Polska; `docs/SOURCES.md` „Pociągi z nazwami”);
+  z listy `src/model/data/namedTrains.js` (cała Polska; `docs/sources/posterunki.md` „Pociągi z nazwami”);
 * służba może przejść przez północ: godziny następnej doby gra zapisuje w danych zmiany jako 24, 25… („25:10” = 01:10),
   a pokazuje jak na zegarze – tak samo można pisać `endTime` i rozkład własnego scenariusza przez północ;
 * sprawdzenie: `npm run check -- <stacja> --start 22 --minutes 120` (dowolna godzina 0–23 i długość 30 / 60 / 120 / 180;
@@ -369,7 +369,7 @@ Ekrany wyboru (`src/ui/catalog.js`, `src/ui/StartScreen.js`) pokazują posterunk
 i na liście z wyszukiwarką. Posterunek do służby ma `region` (identyfikator województwa z `src/model/regions.js`, np.
 `pomorskie`, `slaskie`, `warminsko-mazurskie`) i `lines` (numery linii kolejowych – te same co w `location`; z nich
 powstaje schemat regionu: kolejne posterunki tej samej linii łączy odcinek). `geo` to współrzędne stacji (stopnie,
-[szerokość, długość], w granicach Polski) – źródło w `docs/SOURCES.md`. Stacje szkoleniowe (z misją) tych pól nie mają.
+[szerokość, długość], w granicach Polski) – źródło w `docs/sources/posterunki.md`. Stacje szkoleniowe (z misją) tych pól nie mają.
 Po dodaniu posterunku trzeba odświeżyć przebieg linii (`node scripts/rail-lines.mjs`); źródła, licencje i kroki –
 `docs/MAP-DATA.md` (skill `posterunek-na-mapie`).
 
@@ -377,7 +377,7 @@ Era: jedno miejsce może mieć kilka edycji – osobnych plików stacji z własn
 rodzajem stanowiska (`srk`), np. `gdynia-glowna` (stan dzisiejszy) i `gdynia-glowna-2010` z `place: 'gdynia-glowna'`
 i `era: 2010`. Edycje jednego miejsca są zakładkami na stronie stacji; mapa i lista pokazują miejsce raz. Przepisy są
 zawsze dzisiejsze (Ir-1, Ie-1) – era zmienia urządzenia, plan, rozkład i tabor. Rok edycji i granice er wynikają ze
-źródeł (`docs/SOURCES.md`).
+źródeł (`docs/sources/posterunki.md`).
 
 Jedno stanowisko na posterunek: zmiany posterunku do służby działają na jednym rodzaju stanowiska (pole `srk`
 scenariusza tylko w stacjach szkoleniowych). Wyjątki z czasów przed erami: Rumia i Reda (pulpit typu E i stanowisko

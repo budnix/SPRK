@@ -186,7 +186,7 @@ const underWatch = (routeOf) => ({
  * Odcinek przebiegu wjazdowego przed pociągiem, gdy pociąg jest już w przebiegu. Zajętość z usterki nie jest wjazdem
  * pociągu: czoło pociągu w przebiegu nie przeskakuje na ten odcinek, odcinek nie zwalnia się, przebieg się nie rozwiązuje,
  * dopóki pociąg tam nie dojedzie. Gdy pociąg przejedzie odcinek, który dalej wskazuje zajętość (Szkolna, od Dębna na tor
- * 2: T2b), przebieg się nie rozwiąże – doraźne zwolnienie jest uzasadnione usterką (0 pkt, docs/SOURCES.md).
+ * 2: T2b), przebieg się nie rozwiąże – doraźne zwolnienie jest uzasadnione usterką (0 pkt, docs/sources/jazda-pociagu.md).
  */
 test('false-occupancy przed pociągiem w przebiegu wjazdowym: przebieg nie rozwiązuje się przed dojazdem pociągu', () => {
   for (const [st, srk, dir, track] of cases(DESKS)) for (const dur of [2, 12]) {
@@ -295,7 +295,7 @@ test('false-occupancy drogi nastawionego wjazdu: semafor na „Stój”, Sz uzas
 
 /*
  * Semafor wjazdowy gaśnie z powodu zajętości z usterki bliżej niż droga hamowania nagłego: pociąg przejeżdża „Stój” bez
- * kary dla dyżurnego (przyczyna po stronie urządzeń – `faultDrop`, docs/SOURCES.md), staje za semaforem i jedzie dalej na
+ * kary dla dyżurnego (przyczyna po stronie urządzeń – `faultDrop`, docs/sources/jazda-pociagu.md), staje za semaforem i jedzie dalej na
  * rozkaz „S” (0 pkt). Blokada Eap nie stwierdziła przejazdu, więc Ko wymaga dKo – a dKo po wjeździe kosztuje −10, choć
  * dyżurny nie miał kiedy użyć go przed wjazdem; ten sam błąd przy usterce semafora: `tests/faults-signals-points.test.js`.
  */
@@ -472,7 +472,7 @@ test('axle-counter: usterka po zjeździe pociągu z odcinka, po naprawie stan za
 });
 
 /*
- * „Po zjeździe pociągu odcinek dalej wskazuje zajętość” (docs/SOURCES.md, MOR-3): odcinek z usterką licznika ani na chwilę
+ * „Po zjeździe pociągu odcinek dalej wskazuje zajętość” (docs/sources/stanowiska-komputerowe.md, MOR-3): odcinek z usterką licznika ani na chwilę
  * nie pokazuje się wolny po zjeździe pociągu. Dziś usterka pojawia się takt później (`Faults.tick` biegnie przed ruchem
  * i zajętością), a w tym takcie odcinek jest wolny – przebieg zwalnia go jak po zwykłym przejeździe.
  */
@@ -523,7 +523,7 @@ test('axle-counter: ZeroLO i przejazd kontrolny na Sz – Sz bez kary, usterka u
 const ITS_DESKS = [['szkolna', 'komputerowe'], ['szkolna', 'ebilock'], ['kalinowo', 'mor3']];
 
 /**
- * Dyżurny testu przy pękniętej szynie (docs/SOURCES.md, EBILock): tor zamknąć (ITS) – najpierw zwolnić (Pz) przebieg, który
+ * Dyżurny testu przy pękniętej szynie (docs/sources/stanowiska-komputerowe.md, EBILock): tor zamknąć (ITS) – najpierw zwolnić (Pz) przebieg, który
  * na niego prowadzi, a którym pociąg jeszcze nie jedzie; po naprawie otworzyć (ITO), gdy żaden pociąg nie jest w drodze na
  * stację. Potem automat (tor zamknięty – inny tor).
  */

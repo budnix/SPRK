@@ -188,7 +188,7 @@ export default {
   location: 'Węzeł linii 202 i 250 na północ od Gdyni Głównej, odgałęzienia do Gdyni Postojowej (964) i Gdyni Portu (723).',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [202, 250, 723, 964],    // linie kolejowe (jak w `location`)
-  geo: [54.5456, 18.4639],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
+  geo: [54.5456, 18.4639],      // współrzędne stacji (docs/sources/posterunki.md, „Mapa wyboru posterunku”)
   traffic: 'SKM, regionalne, dalekobieżne, towarowe do portu i na Postojową; dużo zwrotnic i przejść między torami.',
   difficulty: 4,
   startTime: '05:55',

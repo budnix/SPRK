@@ -18,7 +18,7 @@ powstaje wg `docs/STATION-FORMAT.md`, a jej scenariusze – skill `nowy-scenariu
    - `geo` – `[szer., dł.]` stacji, 4 miejsca;
    - jeden rodzaj stanowiska (`srk` stacji). Edycja innego roku: osobny plik z `place` i `era`.
 2. **Współrzędne** z polskiej Wikipedii (polecenie `curl` z API w `docs/MAP-DATA.md`, krok 2). Każde źródło do
-   `docs/SOURCES.md`, sekcja „Mapa wyboru posterunku”. Nie zgaduj współrzędnych ani numerów linii.
+   `docs/sources/posterunki.md`, sekcja „Mapa wyboru posterunku”. Nie zgaduj współrzędnych ani numerów linii.
 3. **Przebieg linii**: `node scripts/rail-lines.mjs` – zawsze po dodaniu posterunku (zmienia się wycinek i linie).
    Sprawdź w nagłówku `src/ui/map/railLines.js` listę „bez relacji w OSM”. Dane OSM są na ODbL – podpis jest już pod
    schematem; nie usuwaj go.
@@ -40,7 +40,7 @@ powstaje wg `docs/STATION-FORMAT.md`, a jej scenariusze – skill `nowy-scenariu
    pociągi towarowe), a pociągi dalekobieżne – relacje z nazwami stacji jak w rozkładzie PKP Intercity („Kraków Gł. –
    Gdynia Gł.”): wtedy ich powtórzenia dostają nazwy rzeczywistych pociągów tej trasy z `src/model/data/namedTrains.js`
    (lista z całej Polski; odświeżenie na nowy rozkład roczny: `node scripts/named-trains.mjs --year <rok>`).
-6. **Dokumentacja** w tym samym commicie: `docs/SOURCES.md` (źródła), README (lista stacji), w razie zmian w skryptach –
+6. **Dokumentacja** w tym samym commicie: `docs/sources/posterunki.md` (źródła), README (lista stacji), w razie zmian w skryptach –
    `docs/MAP-DATA.md`.
 
 ## Gdy coś nie działa

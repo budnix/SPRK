@@ -22,7 +22,7 @@ import { autoDispatch } from './helpers.js';
  *
  * Poza niezmiennikami stacji (`violations`) sprawdzany jest szlak, którego te nie widzą: najwyżej jeden pociąg na torze
  * szlakowym, blokada zajęta, gdy jest na nim pociąg, nasz pociąg nie wjeżdża na szlak, na który sąsiad ma pozwolenie albo
- * „droga wolna”. Reguły przy zapowiadaniu (docs/SOURCES.md, „Blokada liniowa Eap”): sygnał zezwalający na szlak
+ * „droga wolna”. Reguły przy zapowiadaniu (docs/sources/sygnaly-i-blokada.md, „Blokada liniowa Eap”): sygnał zezwalający na szlak
  * dwukierunkowy tylko z niewykorzystanym pozwoleniem sprzed utraty łączności (stan blokady tuż przed usterką zapamiętuje
  * test, nie silnik), poza tym Sz; po wyjeździe bez blokady – dPo (0 pkt); przyjazd potwierdza telefonogram (dKo się nie
  * używa); przyjazd i odjazd nie giną.

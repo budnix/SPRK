@@ -21,7 +21,7 @@ definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo
 definicji polem `pair`, z drugim pociągiem w `with` – nie po kodzie uwagi) – pociąg towarowy spoza wzorca na tej samej drodze (ten sam wjazd, wyjazd albo tor, do 20 min obok), a gdy
 takiego nie ma i przy każdej innej uwadze – pociąg, którego uwaga dotyczy; inne pociągi przez nią nie wypadają. Losowość
 tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesuwają). Liczby i pory – przyjęte
-(`docs/SOURCES.md`).
+(`docs/sources/posterunki.md`).
 
 Brzegi okna (`DUTY_EDGE`): pociąg od sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie –
 pierwsze zdarzenie nie wcześniej niż start + czas przejazdu szlaku z prędkością pociągu + 90 s dojazdu do peronu + 2 min
@@ -71,7 +71,7 @@ i długości przez kontrolę definicji oraz służby grane automatem), `tests/e2
 
 ## Tabor pociągów (`src/model/rollingStock.js`)
 
-Katalog `ROLLING_STOCK` (zespoły trakcyjne i lokomotywy jeżdżące w rejonie Trójmiasta – źródła w docs/SOURCES.md,
+Katalog `ROLLING_STOCK` (zespoły trakcyjne i lokomotywy jeżdżące w rejonie Trójmiasta – źródła w docs/sources/tabor.md,
 „Tabor pociągów” i „Tabor pociągów – dynamika”) i czyste funkcje: `stockPlan(timetable, seed)` / `stockFor(entry,
 timetable, seed)` (dobór taboru), `trainSpeed(entry, stock)` i `trainDynamics(entry, stock)` (prędkość i dynamika
 z taboru). `Traffic` wybiera tabor raz, przy tworzeniu rozkładu zmiany (`stockPlan(rozkład, seed)`), i zapisuje go we
@@ -89,7 +89,7 @@ albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#make
   min(accel, power / v): przy ruszaniu przyspieszenie z siły, wyżej ograniczone mocą. `accel` / `brake` wpisu mają
   pierwszeństwo (z `accel` wpisu – stałe przyspieszenie). Pociąg bez taboru (testy tworzące `Train` wprost) albo typ
   bez danych – dynamika kategorii (`categories.dynamicsFor`), stałe przyspieszenie;
-* hamowanie (`brakingOf`, docs/SOURCES.md „Hamowanie jak maszynista”): `trainDynamics` zwraca też `brake` (największe
+* hamowanie (`brakingOf`, docs/sources/jazda-pociagu.md „Hamowanie jak maszynista”): `trainDynamics` zwraca też `brake` (największe
   opóźnienie hamowania służbowego – zespół: typu albo `UNIT_BRAKE`; pasażerski z lokomotywą: z drogi hamowania Ie-4 dla
   prędkości pociągu, wzór EN 14531-1; towarowy: z masy hamującej zależnej od masy na metr składu, P / G wg długości
   i masy), `brakeDelay` (czas do pełnego hamowania – wyprzedzenie) i `ease` (luzowanie przed zatrzymaniem – nie

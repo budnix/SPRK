@@ -138,7 +138,7 @@ export default {
     { nr: 6103, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '07:40', dep: '07:43', track: '2', stop: true, length: 130, vmax: 100, dwell: 60 },
     { nr: 6104, kind: 'os', name: 'Osobowy', from: 'E', to: 'W', arr: '07:41', dep: '07:44', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },
     // 90201 / 90202: zespół trakcyjny (kabina na obu końcach) – zmienia czoło na miejscu; skład z lokomotywą musiałby
-    // ją przestawić na drugi koniec, czego gra nie odwzorowuje (docs/SOURCES.md)
+    // ją przestawić na drugi koniec, czego gra nie odwzorowuje (docs/sources/jazda-pociagu.md)
     { nr: 90201, kind: 'os', name: 'Osobowy', from: 'W', to: null, arr: '07:52', track: '2', stop: true, terminates: true, length: 180, vmax: 100, dwell: 30 },
     { nr: 90202, kind: 'os', name: 'Osobowy', unit: 90201, from: null, to: 'W', dep: '08:12', track: '2', stop: false, length: 180, vmax: 100 },
     { nr: 6105, kind: 'os', name: 'Osobowy', from: 'W', to: 'E', arr: '08:22', dep: '08:24', track: '1', stop: true, length: 130, vmax: 100, dwell: 60 },

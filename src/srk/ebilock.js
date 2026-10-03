@@ -3,7 +3,7 @@
  *
  * Źródło: „Obsługa komputerowych urządzeń stacyjnych typu EBILock 950 z pulpitem komputerowym EBIScreen 3”
  * (P. Okrzesik, LIRK WIL PK, 2021) – opis dla symulatora, z uproszczeniami względem systemu rzeczywistego;
- * szczegóły i założenia – docs/SOURCES.md.
+ * szczegóły i założenia – docs/sources/stanowiska-komputerowe.md.
  *
  * Każde polecenie przechodzi przez tekstową linię poleceń i „Wykonaj” (`submit(text)`): nazwa polecenia, potem
  * nazwy obiektów, rozdzielone spacjami („POC A D1”, „ZWP Zw3”). Linię wypełnia menu poleceń wybranego obiektu albo
@@ -252,7 +252,7 @@ export class EbiLockProtocol {
       case 'SZI': {
         const sig = ilk.signals.get(obj.id);
         if (!sig.canSubstitute) return refuse(`Semafor ${obj.id} nie ma sygnału zastępczego`);
-        // Sz ocenia się w chwili wyboru (SZI): uzasadnienie usterką zapamiętane do SZW (docs/SOURCES.md)
+        // Sz ocenia się w chwili wyboru (SZI): uzasadnienie usterką zapamiętane do SZW (docs/sources/sygnaly-i-blokada.md)
         this.marks.set(`signal:${obj.id}`, { code: 'SZI', at: ilk.time, color: def.mark, justified: ilk.faultOnPath(obj.id) });
         return { ok: true, marked: true };
       }

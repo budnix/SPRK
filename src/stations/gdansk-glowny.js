@@ -101,7 +101,7 @@ export default {
   location: 'Linia 9 Warszawa Wsch. – Gdańsk Gł. (koniec), linia 202 Gdańsk Gł. – Stargard, 250 (SKM), 227 i 249; Gdańsk, woj. pomorskie.',
   region: 'pomorskie',          // województwo – mapa wyboru posterunku
   lines: [9, 202, 250, 227, 249], // linie kolejowe (jak w `location`)
-  geo: [54.3572, 18.6444],      // współrzędne stacji (docs/SOURCES.md, „Mapa wyboru posterunku”)
+  geo: [54.3572, 18.6444],      // współrzędne stacji (docs/sources/posterunki.md, „Mapa wyboru posterunku”)
   traffic: 'SKM co 15 min Śródmieście ↔ Wrzeszcz, Regio i IC/EIC linii 9 przez perony I/II, pociągi kończące bieg na peronach IV/V, towarowe na Zaspę Towarową.',
   difficulty: 5,
   startTime: '05:55',
@@ -144,7 +144,7 @@ export default {
     { nr: 93113, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'SR1', to: 'SK1', arr: '07:37', dep: '07:38', track: '501', stop: true, length: 130, dwell: 30 },
     { nr: 93114, kind: 'os', name: 'SKM Wejherowo – Gdańsk Śródmieście', from: 'SK2', to: 'SR2', arr: '07:45', dep: '07:46', track: '502', stop: true, length: 130, dwell: 30 },
     { nr: 93115, kind: 'os', name: 'SKM Gdańsk Śródmieście – Wejherowo', from: 'SR1', to: 'SK1', arr: '07:52', dep: '07:53', track: '501', stop: true, length: 130, dwell: 30 },
-    // lokomotywa luzem zmienia kabinę na miejscu; skład towarowy z toru czołowego by nie wrócił (docs/SOURCES.md)
+    // lokomotywa luzem zmienia kabinę na miejscu; skład towarowy z toru czołowego by nie wrócił (docs/sources/jazda-pociagu.md)
     { nr: 44660, kind: 'tow', name: 'Lokomotywa luzem Gdańsk Brzeźno – Gdańsk Gł. (kończy bieg)', from: 'BR', to: null, arr: '06:05', track: '7', stop: true, terminates: true, length: 20, vmax: 60 },
     { nr: 55600, kind: 'os', name: 'Regio Malbork – Gdynia Gł.', from: 'GP1', to: 'WR1', arr: '06:10', dep: '06:12', track: '1', stop: true, length: 160, vmax: 120, dwell: 60 },
     { nr: 55601, kind: 'os', name: 'Regio Gdynia Gł. – Malbork', from: 'WR2', to: 'GP2', arr: '06:18', dep: '06:20', track: '2', stop: true, length: 160, vmax: 120, dwell: 60 },

@@ -4,7 +4,7 @@
  * Źródła: Instrukcja Ie-20 (PKP PLK) – ogólne zasady wprowadzania poleceń na komputerowych pulpitach nastawczych
  * (§ 13); opis obsługi pulpitu MOR-1 w symulatorze SPE (wiki Train Driver 2, „Instrukcja SPE”) – nazwy poleceń
  * w menu obiektów i sposób nastawiania przebiegu. Instrukcji stanowiskowej MOR-3 nie ma publicznie; szczegóły
- * i założenia – docs/SOURCES.md.
+ * i założenia – docs/sources/stanowiska-komputerowe.md.
  *
  * Obsługa:
  *  - kliknięcie obiektu (`press`) – fioletowa obwódka i menu jego poleceń (`menu()`),
@@ -27,7 +27,7 @@ export const LEVEL = { normal: 'normal', confirm: 'confirm', special: 'special' 
 const signalActive = (ilk, id) => { const set = ilk.routeFrom(id); return set && set.state !== 'setting' ? set : null; };
 
 /**
- * Menu obiektów (kolejność jak w opisie SPE; bez poleceń, których gra nie ma – lista w docs/SOURCES.md). `when` –
+ * Menu obiektów (kolejność jak w opisie SPE; bez poleceń, których gra nie ma – lista w docs/sources/stanowiska-komputerowe.md). `when` –
  * polecenie jest w menu tylko w stanie, w którym ma sens (w SPE dostępność zależy od stanu obiektu).
  */
 export const MOR_MENUS = {
@@ -165,7 +165,7 @@ export class MorProtocol {
       text = `${code} ${o.id}`;
     }
     if (item.level !== LEVEL.normal) {
-      // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane do potwierdzenia (docs/SOURCES.md)
+      // Sz ocenia się w chwili wyboru: uzasadnienie usterką zapamiętane do potwierdzenia (docs/sources/sygnaly-i-blokada.md)
       if (cmd.type === 'substitute') cmd.justifiedAtChoice = ilk.faultOnPath(cmd.signal);
       this.pending = { code, level: item.level, text, cmd };
       this.#changed();

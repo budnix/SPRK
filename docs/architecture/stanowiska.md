@@ -81,7 +81,7 @@ Widok korzysta z części wspólnych pulpitów (`deskParts.js`) i własnej grafi
 Pola przycisków grupowych typu E (Zw, Zz, Pz, dPz, Sz) zostawia puste – rozkazy są w grupie
 nad planem (`.izh-orders`, element DOM jak pasek poleceń monitora, więc nie przycina go podział na ekrany).
 Lampki są wygaszone w stanie zasadniczym; co świeci i kiedy – opis klasy `IzhRenderer`, źródła i założenia –
-`docs/SOURCES.md`.
+`docs/sources/pulpity.md`.
 
 ## Nastawnia mechaniczna (`src/render/LeverRenderer.js`, `src/render/leverFrame.js`)
 
@@ -110,7 +110,7 @@ mówi, jak narysować stan (drążek: `pos` i `half`). Widok rysuje plan świetl
 kształtowego z ramionami, tarczą manewrową i ostrzegawczą) i ławę pod planem (`static size` dodaje jej wysokość).
 Położenia ramion, tarcz, dźwigni i drążków to transformacje CSS (`style.transform`), więc zmianę stanu animuje
 `transition` w `styles.css` (wyłączana przy `prefers-reduced-motion`). Zwrotnica na planie: przygaszone żółte ramię,
-w które jest ustawiona, i przerwa w szczelinie drugiego. `elementFor` dla semafora, zwrotnicy i wykolejnicy zwraca dźwignię. Źródła i założenia – `docs/SOURCES.md`.
+w które jest ustawiona, i przerwa w szczelinie drugiego. `elementFor` dla semafora, zwrotnicy i wykolejnicy zwraca dźwignię. Źródła i założenia – `docs/sources/pulpity.md`.
 
 ## Monitor stanowiska komputerowego (`src/render/ScreenBase.js`, `src/render/ScreenRenderer.js`)
 

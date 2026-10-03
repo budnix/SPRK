@@ -8,7 +8,7 @@ import { Clock } from '../core/Clock.js';
  * tworzeniu rozkładu zmiany (`stockPlan`), i zapisuje go we wpisie (`rollingStock`) – z nim jedzie pociąg i ten sam
  * pokazuje panel. Długość pociągu dalej bierze się z wpisu rozkładu.
  *
- * `ROLLING_STOCK` – typy pojazdów jeżdżących w rejonie Trójmiasta (źródła: docs/SOURCES.md, „Tabor pociągów”):
+ * `ROLLING_STOCK` – typy pojazdów jeżdżących w rejonie Trójmiasta (źródła: docs/sources/tabor.md, „Tabor pociągów”):
  *  - `kind` – rodzaj: `ezt` (elektryczny zespół trakcyjny), `szt` (spalinowy zespół trakcyjny), `lok-e` (lokomotywa
  *    elektryczna), `lok-s` (lokomotywa spalinowa); trakcja rodzaju to litera z zał. 6.3 Regulaminu sieci (J, M, E, S),
  *  - `name` – nazwa handlowa dopisywana do oznaczenia („EU46 Vectron”), `operator` – przewoźnik w rejonie,
@@ -58,7 +58,7 @@ export const ROLLING_STOCK = {
   EP07: { kind: 'lok-e', operator: 'PKP Intercity', pools: ['ic'], vmax: 125, tractive: 211, mass: 80, bufferLength: 15.915, power: 2000 },
   // linia 213 Reda – Hel bez sieci: lokomotywa spalinowa od Gdyni Głównej (zmiana lokomotywy) – tylko przypięta
   '754': { kind: 'lok-s', name: 'Nurek', operator: 'České dráhy (dzierżawa PKP Intercity)', pools: [], vmax: 100, tractive: 180, mass: 74.4, bufferLength: 16.54, power: 1325 },
-  // lokomotywy towarowe – przewoźnicy obecni w portach Gdańska i Gdyni (docs/SOURCES.md)
+  // lokomotywy towarowe – przewoźnicy obecni w portach Gdańska i Gdyni (docs/sources/tabor.md)
   ET22: { kind: 'lok-e', operator: 'PKP Cargo', pools: ['freight'], vmax: 125, tractive: 411, mass: 120, bufferLength: 19.24, power: 3000 },
   ET41: { kind: 'lok-e', operator: 'PKP Cargo', pools: ['freight'], vmax: 125, tractive: 550, mass: 167, bufferLength: 31.86, power: 4000 },
   EU07: { kind: 'lok-e', operator: 'PKP Cargo', pools: ['freight'], vmax: 125, tractive: 280, mass: 80, bufferLength: 15.915, power: 2000 },
@@ -246,7 +246,7 @@ export function stockFor(entry, timetable, seed) {
 }
 
 /**
- * Wagon pasażerski pociągu z lokomotywą: długość ze zderzakami [m] i masa [t] (źródła: docs/SOURCES.md, „Tabor
+ * Wagon pasażerski pociągu z lokomotywą: długość ze zderzakami [m] i masa [t] (źródła: docs/sources/tabor.md, „Tabor
  * pociągów – dynamika”). Liczba wagonów = (długość pociągu − długość lokomotywy) / `COACH_LENGTH`, zaokrąglona.
  */
 export const COACH_LENGTH = 26.4;
@@ -266,7 +266,7 @@ export function trailingMass(entry, type) {
 }
 
 /**
- * Hamowanie (docs/SOURCES.md, „Hamowanie jak maszynista”). Drogi hamowania wg prędkości (Ie-4 §8 ust. 4, zakres
+ * Hamowanie (docs/sources/jazda-pociagu.md, „Hamowanie jak maszynista”). Drogi hamowania wg prędkości (Ie-4 §8 ust. 4, zakres
  * zasadniczy): do 60 km/h – 400 m, do 100 – 700 m, do 140 – 1000 m, do 160 – 1300 m (powyżej – 1300 m, przyjęte).
  */
 export const BRAKING_DISTANCES = [[60, 400], [100, 700], [140, 1000], [160, 1300]];
