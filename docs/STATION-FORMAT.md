@@ -251,7 +251,10 @@ Identyfikatory: `START-KONIEC` (`A-D1`, `C1-W`), manewrowe z semafora z Ms2: suf
   nastawienia hamulca i długości składu).
 
 Sąsiedni posterunek żąda pozwolenia ok. 4 min przed planowanym wyjazdem i wyprawia pociąg tak,
-by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze).
+by przyjazd nastąpił o czasie rozkładowym (przy natychmiastowym pozwoleniu i wolnej drodze): przed przyjazdem
+mieści się przejazd szlaku, postoje na przystankach (`HALT_TIME`) i jazda od granicy pulpitu do toru planowego –
+co najmniej 90 s, na dużej stacji dłużej, liczona z układu (`src/model/timetable/entryRun.js`: długość drogi wjazdu,
+obraz „40” do zjechania całego pociągu z okręgu zwrotnicowego, hamowanie do peronu). Przelot – do wjazdu na tor.
 
 Pociąg tworzony ze składu innego pociągu (np. zdawczy powrotny):
 
@@ -324,7 +327,7 @@ Zasady (z tego, jak gra liczy zmianę):
 * `startTime` i `endTime` niczego nie wycinają z rozkładu – gra jedzie całym rozkładem stacji (albo `trains` /
   `timetable`). Inny start albo inna długość zmiany działa tylko razem z `trains`.
 * Do `trains` wchodzą pociągi, które sąsiad wyprawia po starcie zmiany: przyjazd co najmniej kilka minut po
-  `startTime` (sąsiad wyprawia pociąg ok. jazdy po szlaku + 1,5 min przed przyjazdem; wcześniejszy pociąg pojawi się
+  `startTime` (sąsiad wyprawia pociąg ok. jazdy po szlaku + 1,5 min – na dużej stacji więcej, `entryRun` – przed przyjazdem; wcześniejszy pociąg pojawi się
   dopiero na starcie i całe opóźnienie pójdzie na konto dyżurnego). Pociąg stojący od początku zmiany (`startOn`) – z
   odjazdem po starcie.
 * Odjazd co najmniej 4 min przed `endTime` (od odjazdu do zjazdu ze stacji mijają 1–4 min – bliżej końca kara

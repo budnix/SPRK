@@ -183,9 +183,9 @@ odgałęźny, 216 km 77,284; 353), Łęgajny (353 km 307,772), Olsztyn Gutkowo (
 od km 1,460 linia niezelektryfikowana – pociągi do Ełku spalinowe). Przyjęte (źródła nie podają): blokada samoczynna
 na 353, Eap na 216, 220 i 219, długości szlaków w przybliżeniu z kilometrażu. Rozkład jazdy fikcyjny.
 
-Przyjazd do grupy towarowej trwa w grze ok. 4 min dłużej niż w planie (sąsiad wyprawia pociąg z zapasem 90 s na jazdę
-od granicy pulpitu do toru – stałym dla każdej stacji, a droga do toru 214 to ok. 3,5 km na obrazie „40”); kary za to
-nie ma.
+Droga od granicy pulpitu do toru jest tu długa (do grupy towarowej ok. 3,5 km na obrazie „40” – ok. 5 min): sąsiad
+wyprawia pociąg o tyle wcześniej (`entryRun`, z układu stacji); dawniej stały zapas 90 s i przyjazd do grupy ok. 4 min
+po planie.
 
 ## Mapa wyboru posterunku (`src/ui/map/poland.js`, pola `region`, `geo`, `lines`)
 

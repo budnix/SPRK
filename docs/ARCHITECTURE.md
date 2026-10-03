@@ -26,8 +26,9 @@ src/
                shift/ – wybór zmiany: choice (adres ⇄ wybór, opcje symulacji, służba dla ziarna), offers (co posterunek
                oferuje: służba, scenariusze specjalne, stanowiska do wyboru, stacja szkoleniowa);
                timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja
-               tylko do odczytu, plan, przebieg zmiany; godziny do pokazania `shownTime`), phase (etap pociągu – kod,
-               szczegół, napis dla człowieka; „obsłużony” i „skończony”)
+               tylko do odczytu, plan, przebieg zmiany; godziny do pokazania `shownTime`), entryRun (jazda od granicy
+               pulpitu do toru planowego z układu stacji), phase (etap pociągu – kod, szczegół, napis dla człowieka;
+               „obsłużony” i „skończony”)
   srk/         registry (strategie systemów srk: parametry zależności, rodzaj stanowiska – bez DOM),
                buttons (protokół przycisków typu E: uzbrojenie, obsługa dwuprzyciskowa → polecenia zależnościowe – bez DOM),
                address (protokół IZH-111: przyciski adresowe + rozkazy → polecenia zależnościowe – bez DOM),
@@ -89,7 +90,7 @@ w tabeli (pilnuje `tests/docs.test.js`).
 * **Wpis rozkładu ma trzy części o różnych właścicielach** (`src/model/timetable/entry.js`, `createEntry`): definicja
   pociągu z rozkładu stacji albo scenariusza – tylko do odczytu (przypisanie to TypeError; zapis z danych, także godziny
   po północy, w `e.source`; jedyny wyjątek: `e.stop` jest fałszem po przejściu składu w manewry – `stopCancelled`), plan
-  (`arrTime`, `depTime`, `neighbourDep`, `requestAt`, `rollingStock`, `extra`) i przebieg zmiany (etap, skład, rzeczywiste
+  (`arrTime`, `depTime`, `neighbourDep`, `requestAt`, `entryRun`, `rollingStock`, `extra`) i przebieg zmiany (etap, skład, rzeczywiste
   godziny i tor, opóźnienia, flagi rozmów). Plan i przebieg zmienia tylko `Traffic` – zapis gdzie indziej w źródłach
   i skryptach wykrywa `tests/layers.test.js`. Czytelnicy czytają wpis jak zwykły obiekt. Inny pociąg w teście albo
   scenariuszu – w jego rozkładzie (`scenario.timetable`), nie przez nadpisanie wpisu.

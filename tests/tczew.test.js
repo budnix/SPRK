@@ -70,8 +70,8 @@ test('Tczew: pełna zmiana – IC/Regio linii 9, Bydgoszcz, nawroty do Chojnic, 
 test('Tczew: tor planowy zajmuje skład, który już nie odjedzie – automat przyjmuje przejazdowy na inny tor z wyjazdem na jego szlak', () => {
   const sim = new Simulation(tczew, { scenario: { id: 't', name: 't', endTime: '09:00', trains: [44611, 44631] }, disruptions: 'none' });
   const e = sim.traffic.entry(44611);
-  // 16 min: 44631 dostaje Z → tor 15 (07:49), zanim 44611 dojedzie do E1
-  sim.traffic.setInboundDelay(e, 16);
+  // 19 min: 44631 (przyjazd 07:58) dostaje Z → tor 15, zanim 44611 dojedzie do E1
+  sim.traffic.setInboundDelay(e, 19);
   play(sim).until('09:00', { stop: allArrived });
   const end = sim.traffic.entry(44631);
   assert.equal(e.phase, 'at-neighbour', `44611: ${e.status}`);

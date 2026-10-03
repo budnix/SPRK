@@ -8,6 +8,7 @@ import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
 import { setPhase } from './timetable/phase.js';
 import { FAULTS } from './faults/types.js';
 import { createEntry, shownTime } from './timetable/entry.js';
+import { entryRun } from './timetable/entryRun.js';
 import { taskWaits, taskAlive } from './tasks/order.js';
 
 /**
@@ -303,7 +304,7 @@ export class Traffic {
   }
 
   #prepare(t, i, rollingStock = null, extra = false) {
-    return createEntry(t, { idx: i, station: this.station, rollingStock, extra });
+    return createEntry(t, { idx: i, station: this.station, rollingStock, extra, run: entryRun(this.ilk, t, rollingStock) });
   }
 
   /** Losowe opóźnienia pociągów od sąsiadów (poziom zakłóceń). */

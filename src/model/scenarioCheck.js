@@ -49,8 +49,6 @@ const UNIT_TURN_MIN = 3;
 export const TASK_GRACE = 10 * 60;
 /** Usterka bez `duration` trwa 10 min (Faults.#normalize). */
 const FAULT_DEFAULT_MIN = 10;
-/** Pociąg od sąsiada: od granicy pulpitu do peronu ok. 90 s (Traffic.#prepare). */
-const STATION_RUN = 90;
 
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 // godziny 24–47: następna doba w zmianie przez północ („25:10” = 01:10 następnego dnia; `Clock.stamp`) – dozwolone tylko
@@ -350,7 +348,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     const ins = tt.filter((e) => e.from === ex && Number.isFinite(e.neighbourDep)).sort((p, q) => p.requestAt - q.requestAt);
     for (let i = 1; i < ins.length; i++) {
       const A = ins[i - 1], B = ins[i];
-      const aIn = (A.arrTime ?? A.depTime) - STATION_RUN; // czoło A na granicy stacji
+      const aIn = (A.arrTime ?? A.depTime) - A.entryRun; // czoło A na granicy stacji (jazda do toru z układu – `entryRun`)
       const lag = mins(aIn - B.neighbourDep);
       if (B.neighbourDep < aIn && lag >= (B.stop ? PLAN_DELAY_MIN : 3)) {
         warn('line-headway', `Szlak od ${exitName(ex)}, ${blockKind(b)}: pociąg ${B.nr}${B.stop ? '' : ' (przelot)'} musiałby wyjechać od sąsiada o ${hm(B.neighbourDep)}, zanim ${A.nr} zjedzie ze szlaku (${hm(aIn)}) – ok. ${lag} min opóźnienia z samego planu`, B.nr, { pair: true, with: A.nr });

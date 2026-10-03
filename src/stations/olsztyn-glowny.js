@@ -263,7 +263,7 @@ export default {
     { nr: 77302, kind: 'os', name: 'Regio Korsze – Olsztyn Gł.', from: 'LE2', to: null, arr: '07:20', track: '6', stop: true, terminates: true, length: 130, vmax: 120 },
     { nr: 5401, kind: 'os', name: 'TLK Białystok – Poznań Gł.', from: 'LE2', to: 'KO2', arr: '07:28', dep: '07:31', track: '2', stop: true, length: 250, dwell: 90 },
     { nr: 5301, kind: 'os', name: 'IC Olsztyn Gł. – Warszawa Wsch.', unit: 5300, from: null, to: 'KD', dep: '07:30', track: '5', stop: true, length: 300 },
-    { nr: 44603, kind: 'tow', cat: 'TM', name: 'Towarowy Iława Gł. – Olsztyn Gł. (grupa towarowa)', from: 'KO1', to: null, arr: '07:35', track: '214', stop: true, terminates: true, length: 600, mass: 2200, vmax: 80 },
+    { nr: 44603, kind: 'tow', cat: 'TM', name: 'Towarowy Iława Gł. – Olsztyn Gł. (grupa towarowa)', from: 'KO1', to: null, arr: '07:40', track: '214', stop: true, terminates: true, length: 600, mass: 2200, vmax: 80 },
     { nr: 77502, kind: 'os', name: 'Regio Ełk – Olsztyn Gł.', stock: ['SA133', 'SA136', 'SA137', 'SA138'], from: 'MA', to: null, arr: '07:35', track: '8', stop: true, terminates: true, length: 110, vmax: 100 },
     { nr: 77103, kind: 'os', name: 'Regio Olsztyn Gł. – Działdowo', unit: 77102, from: null, to: 'KD', dep: '07:40', track: '3', stop: true, length: 130, vmax: 120, halts: ['Olsztyn Zachodni', 'Olsztyn Śródmieście'] },
     { nr: 77403, kind: 'os', name: 'Regio Olsztyn Gł. – Braniewo', unit: 77402, from: null, to: 'GU', dep: '07:45', track: '4', stop: true, length: 130, vmax: 100, halts: ['Olsztyn Zachodni', 'Olsztyn Śródmieście'] },

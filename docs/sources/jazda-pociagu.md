@@ -42,6 +42,12 @@ pociągu to setki metrów, hamowanie nagłe daje ok. 1–1,5 m/s² (Dz.U. 2015 p
 * Postój na przystanku w obrębie stacji albo na odcinku zbliżania (`halts`, odcinek z `halt`; Olsztyn Śródmieście,
   Olsztyn Zachodni): 30 s (`HALT_DWELL`), miejsce zatrzymania jak przy peronie; sąsiad wyprawia pociąg 60 s
   (`HALT_TIME` – hamowanie, postój, rozruch) wcześniej za każdy przystanek przed torem stacji. Obie liczby przyjęte;
+* Jazda od granicy pulpitu do toru planowego (`entryRun`): sąsiad wyprawia pociąg o nią wcześniej niż przejazd szlaku –
+  co najmniej 90 s (`STATION_RUN`, małe stacje), dłuższa liczona z układu stacji: odcinek zbliżania i drogi przebiegów
+  wjazdowych z prędkością pociągu, obraz „40” od semafora do zjechania całego pociągu z okręgu zwrotnicowego (z całej
+  drogi na tor główny dodatkowy), dla pociągu z postojem tor planowy i hamowanie do zatrzymania, dla przelotu – do
+  wjazdu na tor. Bez rozpędzania i zwalniania przed semaforem – raczej za krótko (przyjęte; dawniej stałe 90 s, na dużych
+  stacjach pociągi przyjeżdżały 1–4 min po planie przy bezbłędnej grze);
 * Miejsce zatrzymania przy peronie (`Train.#platformPlan`, `PLATFORM_STOP`): gra nie rysuje W 4 i przyjmuje go przy
   końcu peronu jako granicę; „ruch podróżnych najdogodniejszy” gra rozumie tak, że pociąg stoi wzdłuż peronu, a nie przy
   samym jego końcu (podróżni nie idą na koniec peronu) – czoło na 3/4 długości peronu od wejścia na peron, a pociąg

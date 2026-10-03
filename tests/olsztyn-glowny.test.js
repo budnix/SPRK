@@ -62,10 +62,7 @@ test('Olsztyn Główny: pełna zmiana – Regio w czterech kierunkach, IC, TLK, 
     assert.equal(e.phase, e.to ? 'at-neighbour' : next ? 'handed-over' : 'ended', `${e.nr}: ${e.status}`);
     // pociąg ze składu innego pociągu (`unit`) stoi od początku na torze poprzednika – tor sprawdza poprzednik
     if (e.unit == null) assert.ok(visited.get(e.nr)?.has(String(e.track)), `${e.nr}: tory ${[...(visited.get(e.nr) ?? [])]} bez planowego ${e.track}`);
-    // przyjazd do grupy towarowej (44603 na tor 214) – ok. 3,5 km od granicy pulpitu przez głowicę i drabinkę grupy
-    // na obrazie „40”, a sąsiad wyprawia pociąg z zapasem na jazdę od granicy do toru stałym dla każdej stacji (90 s):
-    // przyjazd ok. 4 min po planie, bez kary (kara jest za przelot, odjazd i przetrzymanie)
-    assert.ok(e.delay <= (/^21\d$/.test(String(e.track)) ? 5 : 3), `${e.nr}: opóźnienie ${e.delay}`);
+    assert.ok(e.delay <= 3, `${e.nr}: opóźnienie ${e.delay}`);
   }
   assert.ok(!sim.score.items.some((i) => i.code === 'held'), 'przetrzymania: ' + sim.score.items.filter((i) => i.code === 'held').map((i) => i.msg).join('; '));
   assert.ok(!sim.score.items.some((i) => i.code === 'late-pass'), 'przeloty opóźnione na stacji');

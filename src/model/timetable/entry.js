@@ -12,7 +12,7 @@ import { setPhase, initialPhase } from './phase.js';
  *    kategoria i etykieta wyprowadzone z definicji. Jedyny wyjątek od definicji: `e.stop` jest fałszem, gdy pociąg
  *    przeszedł w jazdę manewrową (`stopCancelled`) – postój przy peronie już go nie dotyczy.
  * 2. **Plan** – chwile w sekundach od północy (`arrTime`, `depTime`; po północy dalej rosną), chwila wyprawienia przez
- *    sąsiada (`neighbourDep`) i zgłoszenia (`requestAt`), tabor (`rollingStock`), pociąg nadzwyczajny (`extra`).
+ *    sąsiada (`neighbourDep`) i zgłoszenia (`requestAt`), jazda od granicy pulpitu do toru planowego [s] (`entryRun`), tabor (`rollingStock`), pociąg nadzwyczajny (`extra`).
  * 3. **Przebieg zmiany** – co się z pociągiem dzieje: etap (`phase`, `heldAt`, `handedTo`, `haltAt`, napis `status` –
  *    `phase.js`), skład na pulpicie (`train`), rzeczywiste godziny i tor, opóźnienia, flagi rozmów z sąsiadem.
  *    Zmienia je tylko ruch (`Traffic`) – pilnuje tego `tests/layers.test.js`.
@@ -29,8 +29,11 @@ export function shownTime(hhmm) {
   return typeof hhmm === 'string' && Clock.parse(hhmm) >= 86400 ? Clock.format(Clock.parse(hhmm)) : hhmm;
 }
 
-/** Czas od granicy pulpitu do peronu (s, ok.) – sąsiad wyprawia pociąg tyle wcześniej niż przejazd szlaku. */
-const STATION_RUN = 90;
+/**
+ * Najkrótszy czas od granicy pulpitu do toru planowego [s] – sąsiad wyprawia pociąg co najmniej tyle wcześniej niż
+ * przejazd szlaku; dłuższą jazdę z układu stacji liczy `entryRun` (`./entryRun.js`).
+ */
+export const STATION_RUN = 90;
 /** Postój na przystanku po drodze na tor (`halts`) wydłuża jazdę o tyle [s]: hamowanie, postój `HALT_DWELL`, rozruch (przyjęte). */
 export const HALT_TIME = 60;
 
@@ -53,15 +56,16 @@ function haltsBefore(def, station) {
 const REQUEST_LEAD = 240;
 
 /** Pola planu i przebiegu zmiany – pole definicji o tej nazwie nie przesłania ich (jak dotąd: plan i przebieg wygrywają). */
-const OWN = new Set(['idx', 'source', 'cat', 'label', 'arrTime', 'depTime', 'neighbourDep', 'requestAt', 'rollingStock', 'extra',
+const OWN = new Set(['idx', 'source', 'cat', 'label', 'arrTime', 'depTime', 'neighbourDep', 'requestAt', 'entryRun', 'rollingStock', 'extra',
   'phase', 'heldAt', 'handedTo', 'haltAt', 'status', 'train', 'requested', 'dispatched', 'announced', 'delayIn', 'delay', 'actualArr',
   'actualDep', 'actualTrack', 'actualExit', 'attached', 'waitLogged', 'holdScored', 'stopCancelled']);
 
 /**
  * Wpis rozkładu dla definicji `def` na stacji `station`: `idx` – miejsce w rozkładzie zmiany, `rollingStock` – tabor
- * (`rollingStock.js`), `extra` – pociąg nadzwyczajny dodany w trakcie zmiany.
+ * (`rollingStock.js`), `extra` – pociąg nadzwyczajny dodany w trakcie zmiany, `run` – jazda od granicy pulpitu do toru
+ * planowego [s] (`entryRun` z układu stacji; bez niego `STATION_RUN`).
  */
-export function createEntry(def, { idx, station, rollingStock = null, extra = false }) {
+export function createEntry(def, { idx, station, rollingStock = null, extra = false, run = STATION_RUN }) {
   const arrTime = def.arr ? Clock.parse(def.arr) : null;
   const depTime = def.dep ? Clock.parse(def.dep) : null;
   const exitFrom = def.from ? station.exits[def.from] : null;
@@ -70,7 +74,7 @@ export function createEntry(def, { idx, station, rollingStock = null, extra = fa
   const vline = Math.min(trainSpeed(def, rollingStock), exitFrom?.lineSpeed ?? 100) / 3.6;
   const lineTravel = (exitFrom?.lineLength ?? 3000) / vline;
   // postój na przystanku po drodze na tor (`halts`) – sąsiad wyprawia pociąg o tyle wcześniej
-  const neighbourDep = def.from ? (arrTime ?? depTime) - lineTravel - STATION_RUN - HALT_TIME * haltsBefore(def, station) : null;
+  const neighbourDep = def.from ? (arrTime ?? depTime) - lineTravel - run - HALT_TIME * haltsBefore(def, station) : null;
 
   const e = { idx };
   // 1. definicja – tylko do odczytu
@@ -86,7 +90,7 @@ export function createEntry(def, { idx, station, rollingStock = null, extra = fa
   Object.defineProperty(e, 'label', { get: () => label, enumerable: true });
   Object.defineProperty(e, 'source', { value: def, enumerable: false });
   // 2. plan
-  Object.assign(e, { arrTime, depTime, neighbourDep, requestAt: def.from ? neighbourDep - REQUEST_LEAD : null, rollingStock, extra });
+  Object.assign(e, { arrTime, depTime, neighbourDep, requestAt: def.from ? neighbourDep - REQUEST_LEAD : null, entryRun: def.from ? run : null, rollingStock, extra });
   // 3. przebieg zmiany
   Object.assign(e, {
     phase: null, heldAt: null, handedTo: null, haltAt: null, status: null, train: null,

@@ -89,6 +89,11 @@ _English_: halt – a passenger stop platform inside the station limits or on th
 _W kodzie_: `halt`, `halts`, `HALT_DWELL`
 _Unikaj_: peron (tak nazywa się postój na torze stacyjnym)
 
+**Jazda od granicy stacji**:
+Czas jazdy pociągu od granicy pulpitu (wjazd na odcinek zbliżania) do toru planowego przy wolnej drodze – o tyle, obok przejazdu szlaku i postojów na przystankach, sąsiad wyprawia pociąg wcześniej, żeby przyjechał o czasie z rozkładu; na dużej stacji dłuższy niż na małej.
+_English_: entry run – the time a train needs from the edge of the station's desk to its planned track with a clear road; the neighbour dispatches the train that much earlier (besides the line run and halts) so it arrives on time.
+_W kodzie_: `entryRun`, `STATION_RUN`
+
 **Pociąg obsłużony**:
 Pociąg, za który stacja już odpowiedziała: wyprawiony na szlak (także jeszcze w drodze do sąsiada), zakończył bieg albo jego skład przejął inny pociąg.
 _English_: handled train – the station is done with it: dispatched onto the line (even if still travelling), terminated, or its unit became another train.
