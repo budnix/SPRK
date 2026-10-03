@@ -43,6 +43,12 @@ export const DUTY_OPENING = 5 * 60;
 export const FREIGHT_GAP = 3 * 60;
 /** Udział pociągów (poza aglomeracyjnymi), które w danej służbie nie kursują – urozmaicenie (przyjęte). */
 export const DUTY_SKIP = 0.12;
+/**
+ * Przesunięcie linii [min]: każdy kurs linii (klasa i para szlaków – oba kierunki linii jednotorowej razem, więc
+ * krzyżowania zostają jak we wzorcu) jedzie w danej służbie o tyle samo minut później, 0…`DUTY_SHIFT` z ziarna. Takt
+ * linii zostaje, a minuty i kolejność pociągów różnych linii zmieniają się między służbami (przyjęte).
+ */
+export const DUTY_SHIFT = 3;
 
 /**
  * Pory doby (przyjęte): `every` – co który kurs linii jedzie (1 każdy, 2 co drugi, 4 co czwarty, 0 żaden) dla pociągów
@@ -186,19 +192,24 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   const picked = [], dropped = [];
   const baseOf = new Map(); // numer w służbie → numer wzorca (do porównania uwag z wzorcem)
 
-  // powtórzenia wzorca, które sięgają okna służby
+  // przesunięcie linii w tej służbie [s] (`DUTY_SHIFT`): klasa i para szlaków grupy, bez kierunku
+  const offsetOf = (g) => Math.floor(fraction(seed, `przesuniecie|${g.cls}|${[g.head.from ?? '', g.head.to ?? ''].sort().join('|')}`) * (DUTY_SHIFT + 1)) * 60;
+
+  // powtórzenia wzorca, które sięgają okna służby (przesunięte z linią)
   const span = groups.flatMap((g) => g.trains.flatMap((e) => [firstOf(e), lastOf(e)]));
   const lo = Math.min(...span), hi = Math.max(...span);
   const candidates = [];
-  for (let n = Math.floor((t0 - hi) / period); n <= Math.ceil((t1 - lo) / period); n++) {
+  for (let n = Math.floor((t0 - hi - DUTY_SHIFT * 60) / period); n <= Math.ceil((t1 - lo) / period); n++) {
     for (const g of groups) {
-      const shift = n * period;
-      const a = Math.min(...g.trains.map(firstOf)) + shift, b = Math.max(...g.trains.map(lastOf)) + shift;
+      // kurs, który mieści się w oknie tylko bez pełnego przesunięcia, jedzie przesunięty o tyle, ile się mieści
+      const end = Math.max(...g.trains.map(lastOf)) + n * period;
+      const offset = Math.max(0, Math.min(offsetOf(g), Math.floor((last - end) / 60) * 60)), shift = n * period + offset;
+      const a = Math.min(...g.trains.map(firstOf)) + shift, b = end + offset;
       const standing = g.trains.some((e) => e.startOn);
       // pociąg stojący od początku zmiany (startOn) – tylko gdy odjeżdża w pierwszym okresie wzorca od startu
       if (g.trains.some((e) => firstOf(e) + shift < t0 + leadOf(e)) || b > last || (standing && a > t0 + period)) continue;
       const list = lines.get(g.key);
-      candidates.push({ g, n, shift, at: a, course: n * list.length + list.indexOf(g) });
+      candidates.push({ g, n, shift, offset, at: a, course: n * list.length + list.indexOf(g) });
     }
   }
   candidates.sort((x, y) => x.at - y.at || String(x.g.head.nr).localeCompare(String(y.g.head.nr)));
@@ -235,11 +246,16 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     const map = new Map();
     for (const e of g.trains) { const nr = n === 0 ? free(e.nr) : free(e.nr + 100 * n); map.set(String(e.nr), nr); baseOf.set(String(nr), e.nr); }
     const tag = n === 0 ? '' : `@${n}`;
-    picked.push({ c, trains: g.trains.map((e) => renamed(shifted(e, shift, map.get(String(e.nr)), map), e, n)), tasks: g.tasks.map((k) => shiftedTask(k, shift, tag, map)) });
+    const p = { c, trains: g.trains.map((e) => renamed(shifted(e, shift, map.get(String(e.nr)), map), e, n)), tasks: g.tasks.map((k) => shiftedTask(k, shift, tag, map)) };
+    picked.push(p);
+    return p;
   };
   for (const c of candidates) {
     const { g, n } = c;
-    const band = bandOf(c.at), every = band.every[g.cls];
+    // pora doby grupy: pora jej pierwszego pociągu, a gdy któryś pociąg grupy wypada w porze, w której klasa nie kursuje
+    // (skład z wieczora odjeżdża po północy) – ta pora: grupa nie jedzie
+    const bands = g.trains.map((e) => bandOf(firstOf(e) + c.shift));
+    const band = bands.find((b) => b.every[g.cls] === 0) ?? bands[0], every = band.every[g.cls];
     const phase = every > 1 ? Math.floor(fraction(seed, `faza|${g.key}`) * every) : 0;
     const runs = every > 0 && (((c.course + phase) % every) + every) % every === 0;
     const skipped = runs && g.cls !== 'agl' && fraction(seed, `brak|${g.head.nr}|${n}`) < DUTY_SKIP;
@@ -293,7 +309,9 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     return sc;
   };
   const sameWay = (p, q) => p.trains.some((a) => q.trains.some((b) => (a.from && a.from === b.from) || (a.to && a.to === b.to) || (a.track != null && a.track === b.track)));
+  // zwraca grupy, które wypadły
   const validate = () => {
+    const removed = [];
     for (let round = 0; round < 40 && picked.length; round++) {
       const fresh = checkScenario(station, scenario()).filter((f) => f.level !== 'info' && !(f.train != null && known.has(`${f.code}:${baseOf.get(String(f.train)) ?? f.train}`)));
       if (!fresh.length) break;
@@ -310,15 +328,27 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
         const near = !own.freight && f.pair
           ? picked.filter((p) => p.freight && Math.abs(p.c.at - own.c.at) <= 20 * 60 && sameWay(p, own)).sort((a, b) => Math.abs(a.c.at - own.c.at) - Math.abs(b.c.at - own.c.at))[0]
           : null;
+        if (!near && f.pair) own.partner = picked.find((p) => p.trains.some((e) => String(e.nr) === String(f.with)));
         out.add(near ?? own);
       }
       if (!out.size) break;
-      for (const p of out) { picked.splice(picked.indexOf(p), 1); for (const e of p.trains) used.delete(e.nr); }
+      for (const p of out) { picked.splice(picked.indexOf(p), 1); removed.push(p); for (const e of p.trains) used.delete(e.nr); }
     }
+    return removed;
   };
 
   addFreight(false);
-  validate();
+  const lost = validate();
+  // Pociąg wzorca, który wypadł przez konflikt z pociągiem innej linii, przesuniętej inaczej: wraca z przesunięciem tamtej
+  // linii (odstęp obu jak we wzorcu), a gdy i tak wypada – bez przesunięcia; każdy krok z kontrolą definicji
+  for (const p of lost.filter((x) => !x.freight)) {
+    const tries = [...new Set([p.partner?.c.offset, 0])].filter((o) => o != null && o !== p.c.offset);
+    for (const o of tries) {
+      const back = take({ ...p.c, shift: p.c.shift - p.c.offset + o, at: p.c.at - p.c.offset + o, offset: o });
+      validate();
+      if (picked.includes(back)) break;
+    }
+  }
   // Służba bez żadnego pociągu (krótkie okno, środek nocy) – po kolei, każdy krok z kontrolą definicji: wracają pociągi,
   // które wypadły dla urozmaicenia; towarowy wchodzi w każde wolne miejsce; na koniec pojedynczo pociągi wzorca, których
   // klasa o tej porze kursuje (inny kurs linii). Pociąg klasy, która o tej porze nie kursuje, nie wraca.

@@ -198,6 +198,15 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   (SKM) pociągi towarowe nie wchodzą;
 * urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
   czwartych kursów linii jedzie, decyduje ziarno zmiany – to samo ziarno daje ten sam rozkład;
+* przesunięcie linii (`DUTY_SHIFT`): każdy kurs linii (klasa i para szlaków, oba kierunki razem) jedzie w danej służbie
+  o tyle samo minut później – 0–3 min z ziarna; takt linii zostaje, a minuty i kolejność pociągów różnych linii
+  zmieniają się między służbami. Pociąg, który przez inne przesunięcie innej linii wszedłby z nią w konflikt (wspólny
+  szlak, tor), jedzie z przesunięciem tamtej linii albo bez przesunięcia; kurs, który z pełnym przesunięciem nie
+  zmieściłby się w oknie służby, jedzie przesunięty o tyle, ile się mieści. Badanie wstawiania pociągów do gotowego
+  rozkładu ogranicza w przykładach przesunięcie istniejących pociągów do 1–5 min (Tan i in. 2021,
+  https://pp.bme.hu/tr/article/view/12920); losowanie przesunięcia z ziarna i liczba 3 min – przyjęte;
+* skład, którego pociągi przechodzą w porę, w której ich klasa nie kursuje (pociąg regionalny z wieczora odjeżdżałby
+  po północy), w tej służbie nie jedzie;
 * otwarcie służby (`DUTY_OPENING`): pierwszy pociąg najpóźniej 5 min po najwcześniejszej chwili, w której może przyjechać
   pociąg od sąsiada wyprawiony po starcie; gdy pora doby przerzedziła wzorzec, wraca pociąg wzorca z tego okna, który
   wypadł (o ile jego klasa o tej porze kursuje), albo wchodzi pociąg towarowy – w wolne miejsce wzorca albo na

@@ -9,7 +9,7 @@ import { NAMED_TRAINS } from '../src/model/data/namedTrains.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from '../src/model/namedTrains.js';
 import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
-  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
+  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
 import { shiftChoices, srkChoosable, isTraining } from '../src/model/shift/offers.js';
 import sopot from '../src/stations/sopot.js';
@@ -162,6 +162,35 @@ test('to samo ziarno – ten sam rozkład; inne ziarno – inny (każda służba
   }
 });
 
+test('przesunięcie linii: każdy kurs linii w służbie o tyle samo minut (0–3, z ziarna) – takt zostaje, minuty zmieniają się między służbami', () => {
+  // wzorzec co godzinę: dwie linie regionalne Pruszcza (do Tczewa :03, do Gdańska :12); służba w szczycie – każdy kurs jedzie
+  const base = { 55301: '06:03', 55300: '06:12' };
+  const two = { ...pruszcz, tasks: [], timetable: pruszcz.timetable.filter((e) => base[e.nr]) };
+  assert.equal(patternPeriod(two), 3600);
+  const offsets = { 55301: new Set(), 55300: new Set() };
+  let apart = 0, takt = 0;
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+    const { scenario } = buildDuty(two, { start: 6, minutes: 180, seed });
+    const runs = scenario.timetable.filter((e) => e.kind === 'os');
+    const shift = {};
+    for (const nr of Object.keys(base)) {
+      const own = runs.filter((e) => e.from === two.timetable.find((x) => String(x.nr) === nr).from);
+      assert.ok(own.length >= 1, `ziarno ${seed}: linia ${nr} bez kursu`);
+      if (own.length >= 2) takt++;
+      // przesunięcie kursu względem wzorca [min] – w obrębie okresu (kursy co godzinę)
+      const mins = new Set(own.map((e) => ((((at(e.arr) - at(base[nr])) / 60) % 60) + 60) % 60));
+      assert.equal(mins.size, 1, `ziarno ${seed}: linia ${nr} – każdy kurs o tyle samo (${[...mins]})`);
+      const [m] = mins;
+      assert.ok(m >= 0 && m <= 3, `ziarno ${seed}: linia ${nr} przesunięta o ${m} min`);
+      offsets[nr].add(m); shift[nr] = m;
+    }
+    if (shift[55301] !== shift[55300]) apart++;
+  }
+  for (const [nr, set] of Object.entries(offsets)) assert.ok(set.size >= 3, `linia ${nr}: przesunięcia ${[...set]} na 12 ziaren`);
+  assert.ok(apart >= 4, `linie przesunięte niezależnie: różne przesunięcia w ${apart} z 12 służb`);
+  assert.ok(takt >= 12, `takt sprawdzony na ${takt} liniach z co najmniej dwoma kursami`);
+});
+
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {
   const all = { peak: 0, evening: 0 };
   for (const st of duty) {
@@ -190,9 +219,9 @@ test('okres wzorca: rozpiętość rozkładu w pełnych godzinach albo pole duty.
   assert.equal(patternPeriod({ timetable: [] }), 3600);
   assert.deepEqual(validateStation({ ...sopot, duty: { period: 90 } }).errors, []);
   for (const bad of [{ period: 50 }, { period: 0 }, { period: '2h' }, 'x']) assert.match(validateStation({ ...sopot, duty: bad }).errors.join('; '), /duty\.period: okres wzorca/, JSON.stringify(bad));
-  // pociąg wzorca powtarza się co okres: SKM z 06:02 jedzie także o 08:02, 14:02…
+  // pociąg wzorca powtarza się co okres (przesunięty z linią o 0–DUTY_SHIFT min): SKM z 06:17 jedzie o 08:17…, 14:17–14:20
   const sc = buildDuty(sopot, { start: 14, minutes: 60, seed: 1 }).scenario;
-  assert.ok(sc.timetable.some((e) => e.arr === '14:17' && trainClass(e) === 'agl'), sc.timetable.map((e) => e.arr).join(' '));
+  assert.ok(sc.timetable.some((e) => e.arr && at(e.arr) - at('14:17') >= 0 && at(e.arr) - at('14:17') <= DUTY_SHIFT * 60 && trainClass(e) === 'agl'), sc.timetable.map((e) => e.arr).join(' '));
 });
 
 test('służba w oknie bez pociągu wzorca: otwarcie służby – pociąg towarowy na najwcześniejszą chwilę, nie pusta', () => {

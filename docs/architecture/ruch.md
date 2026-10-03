@@ -14,12 +14,17 @@ zna żadnej stacji: wzorcem jest `station.timetable`, więc **nowy posterunek ma
 Budowa: (1) powtórzenia wzorca co `patternPeriod` sięgające okna; pociąg jedzie razem ze swoją grupą – pociągami ze
 składu (`unit`) i zadaniami manewrowymi (terminy, numery i godziny w treści przesunięte); (2) pora doby (`DAY_BANDS`,
 `bandOf`) i klasa pociągu (`trainClass`: aglomeracyjny / regionalny / dalekobieżny / towarowy) mówią, co który kurs
-linii jedzie, a ziarno – który (faza) i co wypada (`DUTY_SKIP`); (3) w miejsce niekursujących pociągów regionalnych
+linii jedzie, a ziarno – który (faza) i co wypada (`DUTY_SKIP`); każda linia (klasa i para szlaków, bez kierunku)
+jedzie w służbie o tyle samo minut później – przesunięcie linii `DUTY_SHIFT` (0–3 min z ziarna; takt zostaje, kolejność
+pociągów różnych linii się zmienia), a grupa, której któryś pociąg wypada w porze, w której klasa nie kursuje, nie
+jedzie; (3) w miejsce niekursujących pociągów regionalnych
 i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory; odstęp `FREIGHT_GAP` na szlaku); (4) **kontrola
 definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo z uwagą, jakiej nie ma wzorzec stacji
 (styk powtórzeń, konflikt toru albo szlaku), wypada. Kto wypada: przy uwadze o konflikcie dwóch pociągów (oznaczonej przez kontrolę
 definicji polem `pair`, z drugim pociągiem w `with` – nie po kodzie uwagi) – pociąg towarowy spoza wzorca na tej samej drodze (ten sam wjazd, wyjazd albo tor, do 20 min obok), a gdy
-takiego nie ma i przy każdej innej uwadze – pociąg, którego uwaga dotyczy; inne pociągi przez nią nie wypadają. Losowość
+takiego nie ma i przy każdej innej uwadze – pociąg, którego uwaga dotyczy; inne pociągi przez nią nie wypadają. Pociąg
+wzorca, który wypadł, wraca z przesunięciem linii drugiego pociągu z uwagi (odstęp obu jak we wzorcu), a gdy i tak
+wypada – bez przesunięcia; kurs, który z pełnym przesunięciem wyszedłby poza okno, jedzie przesunięty mniej. Losowość
 tylko z `mixSeed` (bez generatora zmiany – zakłócenia zmiany się nie przesuwają). Liczby i pory – przyjęte
 (`docs/sources/posterunki.md`).
 
