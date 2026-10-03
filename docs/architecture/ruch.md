@@ -40,6 +40,12 @@ krok z kontrolą definicji – wraca pociąg wzorca z okna otwarcia, który wypa
 towarowy wchodzi w wolne miejsce wzorca w oknie, a na końcu pociąg towarowy na najwcześniejszą chwilę na szlaku
 przelotowym (kolejność szlaków z ziarna); test: `tests/duty.test.js` („otwarcie służby”).
 
+Przejazdy służbowe (`SERVICE_RUNS`), na końcu budowy: w każdej godzinie służby z prawdopodobieństwem `SERVICE_RATE` jeden
+przejazd spoza wzorca – lokomotywa luzem, próżne wagony albo próżny skład EZT (rodzaj, droga przelotu wzorca i numer od
+`SERVICE_NR` z ziarna), w wolnej luce tej godziny (`gapFor` – to samo szukanie co dla pociągu towarowego). Lokomotywa
+i wagony nie jadą po linii aglomeracyjnej, skład EZT – po linii aglomeracyjnej albo regionalnej, której pociągi o tej
+porze kursują. W kontroli definicji ustępują pociągom wzorca jak pociąg towarowy spoza wzorca.
+
 Służba bez pociągów: gdy po kontroli rozkład jest pusty (krótkie okno, środek nocy), po kolei – każdy krok z kontrolą
 definicji – wracają pociągi, które wypadły dla urozmaicenia (`DUTY_SKIP`), potem pociąg towarowy wchodzi w każde wolne
 miejsce (bez losowania udziału), na koniec pojedynczo pociągi wzorca innego kursu linii, której klasa o tej porze

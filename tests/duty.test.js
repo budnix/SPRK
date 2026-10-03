@@ -9,7 +9,7 @@ import { NAMED_TRAINS } from '../src/model/data/namedTrains.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from '../src/model/namedTrains.js';
 import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
-  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, FREIGHT_GAP, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
+  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, FREIGHT_GAP, SERVICE_NR, SERVICE_RUNS, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
 import { shiftChoices, srkChoosable, isTraining } from '../src/model/shift/offers.js';
 import sopot from '../src/stations/sopot.js';
@@ -171,7 +171,7 @@ test('przesunięcie linii: każdy kurs linii w służbie o tyle samo minut (0–
   let apart = 0, takt = 0;
   for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
     const { scenario } = buildDuty(two, { start: 6, minutes: 180, seed });
-    const runs = scenario.timetable.filter((e) => e.kind === 'os');
+    const runs = scenario.timetable.filter((e) => e.kind === 'os' && e.cat !== 'EZT'); // bez próżnego składu (przejazd służbowy)
     const shift = {};
     for (const nr of Object.keys(base)) {
       const own = runs.filter((e) => e.from === two.timetable.find((x) => String(x.nr) === nr).from);
@@ -217,6 +217,34 @@ test('pociąg towarowy w wolnej luce: nie tylko w minucie pociągu, który zast�
   assert.ok(new Set(minutes).size >= 8, `różne minuty: ${[...new Set(minutes)].sort((a, b) => a - b).join(' ')}`);
 });
 
+test('przejazdy służbowe: co któraś służba ma lokomotywę luzem, próżny skład EZT albo próżne wagony – drogą przelotu wzorca, w wolnej luce', () => {
+  const runs = { LT: 0, EZT: 0, TS: 0 };
+  let duties = 0, hours = 0;
+  for (const st of duty) {
+    const through = st.timetable.filter((e) => e.from && e.to && !e.terminates && !e.startOn && e.unit == null);
+    for (const start of [0, 6, 11, 16, 20]) for (const seed of [1, 2, 3]) {
+      const { scenario } = buildDuty(st, { start, minutes: 300, seed });
+      duties++; hours += 5;
+      const own = scenario.timetable.filter((e) => e.nr >= SERVICE_NR && e.nr < SERVICE_NR + 1000);
+      assert.ok(own.length <= 5, `${st.id} ${scenario.name}: ${own.length} przejazdów służbowych w 5 h`);
+      for (const e of own) {
+        const key = `${st.id} ${scenario.name}, ziarno ${seed}: ${e.nr} ${e.name} ${e.arr}`;
+        assert.ok(SERVICE_RUNS.some((r) => r.cat === e.cat && r.kind === e.kind), key);
+        runs[e.cat]++;
+        // droga przelotu wzorca; lokomotywa i wagony – nie po linii aglomeracyjnej, skład EZT – nie nocą
+        const ways = through.filter((x) => x.from === e.from && x.to === e.to && x.track === e.track);
+        assert.ok(ways.length, `${key}: droga spoza wzorca`);
+        if (e.kind === 'tow') assert.ok(ways.some((x) => trainClass(x) !== 'agl'), `${key}: po linii SKM`);
+        else assert.ok(ways.some((x) => bandOf(first(e)).every[trainClass(x)] > 0), `${key}: o porze bez pociągów pasażerskich tej linii`);
+        assert.equal(e.stop, false, key);
+      }
+    }
+  }
+  const total = runs.LT + runs.EZT + runs.TS;
+  assert.ok(total >= hours * 0.15 && total <= hours * 0.45, `${total} przejazdów na ${hours} h służby (${duties} służb)`);
+  assert.ok(runs.LT > 0 && runs.EZT > 0 && runs.TS > 0, JSON.stringify(runs));
+});
+
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {
   const all = { peak: 0, evening: 0 };
   for (const st of duty) {
@@ -256,10 +284,12 @@ test('służba w oknie bez pociągu wzorca: otwarcie służby – pociąg towaro
   // otwarcie służby (DUTY_OPENING) daje pociąg towarowy na tym szlaku, wyprawiony przez sąsiada po starcie
   const sparse = { ...pruszcz, tasks: [], timetable: [pruszcz.timetable.find((e) => e.from && e.to && trainClass(e) === 'reg')].map((e) => ({ ...e, arr: '07:00', dep: '07:01' })) };
   assert.equal(patternPeriod(sparse), 3600);
-  const { scenario, stats } = buildDuty(sparse, { start: 10, minutes: 60, seed: 2 });
-  assert.equal(stats.trains, 1);
-  const [e] = scenario.timetable;
-  assert.equal(e.kind, 'tow');
+  const { scenario } = buildDuty(sparse, { start: 10, minutes: 60, seed: 2 });
+  // poza przejazdem służbowym (SERVICE_RUNS), który może dojść w tej godzinie – jeden pociąg: towarowy otwarcia
+  const own = scenario.timetable.filter((x) => !(x.nr >= SERVICE_NR && x.nr < SERVICE_NR + 1000));
+  assert.equal(own.length, 1);
+  const [e] = own;
+  assert.deepEqual([e.kind, e.cat], ['tow', 'TM']);
   assert.ok(Clock.parse(e.arr) - 10 * 3600 <= 20 * 60, `pierwszy pociąg o ${e.arr}`);
 });
 

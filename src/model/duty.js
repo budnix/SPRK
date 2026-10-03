@@ -47,6 +47,21 @@ export const FREIGHT_GAP = 3 * 60;
  */
 export const FREIGHT_SPAN = 30 * 60;
 export const FREIGHT_BUFFER = 2 * 60;
+/**
+ * Przejazdy służbowe (przyjęte): w każdej godzinie służby z prawdopodobieństwem `SERVICE_RATE` jeden przejazd spoza
+ * wzorca drogą przelotu pociągu wzorca, w wolnej luce tej godziny – lokomotywa luzem i próżne wagony po liniach
+ * pociągów regionalnych, dalekobieżnych i towarowych, próżny skład EZT po liniach aglomeracyjnych i regionalnych o porze,
+ * w której ich pociągi kursują. Parametry jak we wpisach wzorców stacji (Gdańsk Gł. 44660, Tczew 44631, Gdynia Orłowo
+ * 88301); `length: null` – długość pociągu wzorca, którego drogą jedzie.
+ */
+export const SERVICE_RATE = 0.3;
+export const SERVICE_RUNS = [
+  { kind: 'tow', cat: 'LT', name: 'Lokomotywa luzem', length: 20, vmax: 100 },
+  { kind: 'tow', cat: 'TS', name: 'Próżne wagony', length: 400, mass: 600, vmax: 80 },
+  { kind: 'os', cat: 'EZT', name: 'Skład EZT', suffix: ' (próżny)', length: null, vmax: 90 },
+];
+/** Numery przejazdów służbowych: od tej liczby (przyjęte), parzystość jak pociągu, którego drogą jadą. */
+export const SERVICE_NR = 48000;
 /** Udział pociągów (poza aglomeracyjnymi), które w danej służbie nie kursują – urozmaicenie (przyjęte). */
 export const DUTY_SKIP = 0.12;
 /**
@@ -287,15 +302,13 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     }
     return s;
   };
-  // pociąg towarowy na drodze pociągu wzorca `e` (szablon i numer z ziarna – klucz `key`) w wolnej luce: chwile w pełnych
-  // minutach w oknie ±`FREIGHT_SPAN` wokół `at`, nie później niż `until` – z zapasem `FREIGHT_BUFFER`, a gdy takich nie
-  // ma, z samym odstępem; którą – z ziarna. Bez luki – null
-  const freightFor = (e, at, key, until = Infinity) => {
-    const tpl = templates.length ? templates[Math.floor(fraction(seed, `wzor|${key}`) * templates.length)] : GENERIC_FREIGHT;
-    const vmax = tpl.vmax ?? GENERIC_FREIGHT.vmax;
+  // wolna luka na drodze pociągu wzorca `e` dla pociągu o prędkości `vmax`: chwila w pełnych minutach w oknie [`open`,
+  // `close`] – nie przed wyprawieniem przez sąsiada po starcie (wolniejszy pociąg sąsiad wyprawia wcześniej), nie po
+  // ostatnim zdarzeniu służby – z zapasem `FREIGHT_BUFFER`, a gdy takich nie ma, z samym odstępem; którą – z ziarna
+  // (klucz `key`). Bez luki – null
+  const gapFor = (e, vmax, open, close, key) => {
     const way = { from: e.from, to: e.to, track: e.track, vmax };
-    // wolniejszy pociąg sąsiad wyprawia wcześniej – też nie przed startem służby
-    const earliest = Math.ceil(Math.max(at - FREIGHT_SPAN, t0 + leadOf(e, vmax)) / 60) * 60, latest = Math.min(at + FREIGHT_SPAN, until, last);
+    const earliest = Math.ceil(Math.max(open, t0 + leadOf(e, vmax)) / 60) * 60, latest = Math.min(close, last);
     const ok = [], good = [];
     for (let t = earliest; t <= latest; t += 60) {
       const s = slack(way, t);
@@ -303,8 +316,15 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
       if (s >= FREIGHT_BUFFER) good.push(t);
     }
     const pool = good.length ? good : ok;
-    if (!pool.length) return null;
-    const when = pool[Math.floor(fraction(seed, `luka|${key}`) * pool.length)];
+    return pool.length ? pool[Math.floor(fraction(seed, key) * pool.length)] : null;
+  };
+  // pociąg towarowy na drodze pociągu wzorca `e` (szablon i numer z ziarna – klucz `key`) w wolnej luce w oknie
+  // ±`FREIGHT_SPAN` wokół `at`, nie później niż `until`. Bez luki – null
+  const freightFor = (e, at, key, until = Infinity) => {
+    const tpl = templates.length ? templates[Math.floor(fraction(seed, `wzor|${key}`) * templates.length)] : GENERIC_FREIGHT;
+    const vmax = tpl.vmax ?? GENERIC_FREIGHT.vmax;
+    const when = gapFor(e, vmax, at - FREIGHT_SPAN, Math.min(at + FREIGHT_SPAN, until), `luka|${key}`);
+    if (when == null) return null;
     const nr = free(FREIGHT_NR + Math.floor(fraction(seed, `nr|${key}`) * 400) * 2 + (Number(e.nr) % 2));
     const train = { nr, kind: 'tow', cat: tpl.cat ?? 'TM', name: `Towarowy ${exits[e.from]?.name ?? e.from} – ${exits[e.to]?.name ?? e.to}`,
       from: e.from, to: e.to, arr: stamp(when), track: e.track, stop: false, length: tpl.length, vmax };
@@ -410,6 +430,28 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
       picked.push({ c: { g, n: 0, shift: 0, at }, freight: true, trains: [train], tasks: [] });
       validate();
     }
+  }
+
+  // Przejazdy służbowe (`SERVICE_RUNS`): w każdej godzinie służby z prawdopodobieństwem `SERVICE_RATE` jeden – rodzaj
+  // i droga przelotu wzorca z ziarna, chwila w wolnej luce tej godziny (pora doby w obrębie godziny się nie zmienia);
+  // jak pociąg towarowy spoza wzorca ustępuje pociągom wzorca w kontroli definicji
+  const ways = [...new Map(groups.filter((g) => g.trains.length === 1 && g.head.from && g.head.to && !g.head.terminates && !g.head.startOn)
+    .map((g) => [`${g.cls}|${g.head.from}|${g.head.to}|${g.head.track}`, g])).values()];
+  for (let h = t0; h < t1; h += 3600) {
+    if (fraction(seed, `sluzbowy|${h}`) >= SERVICE_RATE) continue;
+    const run = SERVICE_RUNS[Math.floor(fraction(seed, `sluzbowy-rodzaj|${h}`) * SERVICE_RUNS.length)];
+    const band = bandOf(h);
+    const fit = ways.filter((g) => (run.kind === 'tow' ? g.cls !== 'agl' : (g.cls === 'agl' || g.cls === 'reg') && band.every[g.cls] > 0));
+    if (!fit.length) continue;
+    const g = fit[Math.floor(fraction(seed, `sluzbowy-droga|${h}`) * fit.length)], e = g.head;
+    const when = gapFor(e, run.vmax, h, h + 3600 - 60, `sluzbowy-luka|${h}`);
+    if (when == null) continue;
+    const nr = free(SERVICE_NR + Math.floor(fraction(seed, `sluzbowy-nr|${h}`) * 400) * 2 + (Number(e.nr) % 2));
+    const train = { nr, kind: run.kind, cat: run.cat, name: `${run.name} ${exits[e.from]?.name ?? e.from} – ${exits[e.to]?.name ?? e.to}${run.suffix ?? ''}`,
+      from: e.from, to: e.to, arr: stamp(when), track: e.track, stop: false, length: run.length ?? e.length, vmax: run.vmax };
+    if (run.mass != null) train.mass = run.mass;
+    picked.push({ c: { g, n: 0, shift: 0, at: when }, freight: true, trains: [train], tasks: [] });
+    validate();
   }
 
   const sc = scenario();

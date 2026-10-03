@@ -216,6 +216,13 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   pociąg od sąsiada wyprawiony po starcie; gdy pora doby przerzedziła wzorzec, wraca pociąg wzorca z tego okna, który
   wypadł (o ile jego klasa o tej porze kursuje), albo wchodzi pociąg towarowy – w wolne miejsce wzorca albo na
   najwcześniejszą chwilę na szlaku przelotowym (Reda 18:00: pierwszy pociąg bywał po 35–43 min);
+* przejazdy służbowe (`SERVICE_RUNS`): w każdej godzinie służby z prawdopodobieństwem 30 % jeden przejazd spoza wzorca
+  drogą przelotu pociągu wzorca, bez postoju, w wolnej luce tej godziny (jak pociąg towarowy wyżej) – lokomotywa luzem
+  (20 m, 100 km/h), próżne wagony (TS, 400 m, 600 t, 80 km/h) albo próżny skład EZT (długość pociągu wzorca, 90 km/h);
+  numery od 48000. Lokomotywa i wagony nie jadą po liniach aglomeracyjnych, skład EZT – tylko po liniach
+  aglomeracyjnych i regionalnych o porze, w której ich pociągi kursują. Takie jazdy są we wzorcach stacji (lokomotywa
+  luzem 44660 w Gdańsku Gł., próżne wagony 44631 w Tczewie, skład EZT 88301 z Bazy EZ Sopot w Gdyni Orłowie); udział
+  30 % na godzinę i parametry – przyjęte;
 * służba zaczyna się o pełnej godzinie i trwa 1, 2, 3 albo 5 h – także przez północ (23:00–02:00); pociąg od
   sąsiada wchodzi do służby, gdy sąsiad wyprawia go co najmniej 2 min po starcie (przyjazd nie wcześniej niż start
   + czas przejazdu szlaku + 90 s dojazdu do peronu + 2 min), pociąg bez wjazdu – 3 min po starcie; ostatnie zdarzenie

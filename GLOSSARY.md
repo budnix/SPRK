@@ -207,6 +207,12 @@ _English_: duty – a shift at a chosen time of day and length, with a timetable
 _W kodzie_: `DUTY_ID`, `DUTY_MINUTES`
 _Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
 
+**Przejazd służbowy**:
+Jazda spoza wzorca stacji w rozkładzie służby: lokomotywa luzem, próżne wagony albo próżny skład EZT, przelotem.
+_English_: service run – a one-off non-revenue movement in a duty's timetable (light engine, empty wagons or an empty EMU), passing through.
+_W kodzie_: `SERVICE_RUNS`, `SERVICE_RATE`
+_Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
+
 **Usterka**:
 Uszkodzenie urządzenia (sygnalizatora, zwrotnicy, odcinka, blokady, stanowiska) w czasie zmiany – losowe albo zapisane w scenariuszu.
 _English_: fault – a failure of a device during the shift, random or scripted by the scenario.
