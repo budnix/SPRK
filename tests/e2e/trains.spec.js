@@ -168,7 +168,7 @@ test('Łączność: zezwolenie na jazdę manewrową obok uszkodzonego sygnalizat
   await page.evaluate(() => { window.sim.traffic.toShunting(6101); window.sim.faults.add({ type: 'signal-fail', target: 'D2', duration: 30 }); });
   await advance(page, 1);
   await page.evaluate(() => window.sim.ilk.setRoute('D2-kT3m'));
-  for (let i = 0; i < 10 && !(await page.evaluate(() => window.sim.ilk.active.has('D2-kT3m'))); i++) await advance(page, 2);
+  for (let i = 0; i < 10 && !(await page.evaluate(() => window.sim.ilk.routeIsSet('D2-kT3m'))); i++) await advance(page, 2);
   await advance(page, 20);
   const head = () => page.evaluate(() => window.sim.traffic.timetable().find((x) => x.nr === 6101).train.head);
   const before = await head();
@@ -200,7 +200,7 @@ test('zakładka „Pociągi”: przyczyna postoju w karcie pociągu', async ({ p
     c.paused = false; c.speed = 1;
     for (let i = 0; i < 2400; i++) {
       sim.step(0.5);
-      if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+      if (!sim.ilk.routesSet().length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
       const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
       if (tr?.entered && tr.v === 0 && tr.hasStopped) break;
     }
@@ -239,7 +239,7 @@ test('tabor pociągu: podpowiedź numeru w rozkładzie i karta na zakładce „P
     c.paused = false; c.speed = 1;
     for (let i = 0; i < 2400; i++) {
       sim.step(0.5);
-      if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+      if (!sim.ilk.routesSet().length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
       if (sim.traffic.trains.find((x) => String(x.nr) === '6101')?.entered) break;
     }
     c.paused = true;
@@ -284,7 +284,7 @@ test('numer pociągu na monitorze i pulpicie bez dopisków – także pociąg st
       c.paused = false;
       for (let i = 0; i < 2400; i++) {
         sim.step(0.5);
-        if (!sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+        if (!sim.ilk.routesSet().length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
         const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
         if (tr?.entered && tr.v === 0 && tr.hasStopped) break;
       }

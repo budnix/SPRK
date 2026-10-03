@@ -42,12 +42,12 @@ test('IZH-111: przebieg = adres początku, adres końca, rozkaz P albo M; rodzaj
   assert.equal(sim.ilk.armed, null);
   assert.deepEqual(armed, [{ id: 'A', n: 1 }, { id: 'A', n: 2 }, null]);
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   // wyjazd na szlak: adres końca to przycisk końca przebiegu; manewry rozkazem M
   sim.press(S('D2')); sim.press(E('kT3'));
   assert.ok(sim.press(order('M')).ok);
   run(sim, POINT_SWITCH_TIME + 8);
-  assert.ok(sim.ilk.active.has('D2-kT3m'));
+  assert.ok(sim.ilk.routeIsSet('D2-kT3m'));
   assert.equal(sim.ilk.signals.get('D2').aspect, 'Ms2');
 });
 
@@ -123,7 +123,7 @@ test('IZH-111: Zcz z adresem semafora końcowego zwalnia przebieg pociągowy po 
   assert.notEqual(TIMED_RELEASE, 120, 'typ E ma inny czas');
   sim.press(S('A')); sim.press(S('D1')); sim.press(order('P'));
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   sim.press(S('A'));
   assert.match(sim.press(order('Zcz')).reason, /kończącego się/, 'adres początku to nie adres końca');
   sim.press(S('D1'));
@@ -131,19 +131,19 @@ test('IZH-111: Zcz z adresem semafora końcowego zwalnia przebieg pociągowy po 
   assert.equal(r.timed, true);
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1', 'sygnał wygaszony od razu');
   run(sim, 118);
-  assert.ok(sim.ilk.active.has('A-D1'), 'przed upływem 120 s przebieg utwierdzony');
+  assert.ok(sim.ilk.routeIsSet('A-D1'), 'przed upływem 120 s przebieg utwierdzony');
   run(sim, 4);
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.counters.dPz, 0, 'IZH-111 nie ma doraźnego zwolnienia z licznikiem');
   // manewrowy: Zw z adresem końca – bezzwłocznie; Zcz go nie dotyczy
   sim.press(S('D2')); sim.press(E('kT3')); sim.press(order('M'));
   run(sim, POINT_SWITCH_TIME + 8);
-  assert.ok(sim.ilk.active.has('D2-kT3m'));
+  assert.ok(sim.ilk.routeIsSet('D2-kT3m'));
   sim.press(E('kT3'));
   assert.match(sim.press(order('Zcz')).reason, /Zw/);
   sim.press(E('kT3'));
   assert.ok(sim.press(order('Zw')).ok);
-  assert.ok(!sim.ilk.active.has('D2-kT3m'));
+  assert.ok(!sim.ilk.routeIsSet('D2-kT3m'));
 });
 
 // JZH-111: STOP z adresem sygnalizatora zamyka go (bsk.isdr.pl/srk_izh111.php) – dawniej tylko gasił sygnał, a Zw
@@ -156,12 +156,12 @@ test('IZH-111: STOP zamyka sygnalizator (sygnał nie wraca, także po nowym prze
   sim.press(S('A')); assert.ok(sim.press(order('STOP')).ok);
   assert.equal(sim.ilk.signals.get('A').stopped, true, 'sygnalizator zamknięty');
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
-  assert.ok(sim.ilk.active.has('A-D1'), 'przebieg pozostaje utwierdzony');
+  assert.ok(sim.ilk.routeIsSet('A-D1'), 'przebieg pozostaje utwierdzony');
   run(sim, 10);
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1', 'zamknięty – sygnał nie wraca');
   sim.press(S('A')); assert.ok(sim.press(order('Zw')).ok);
   assert.equal(sim.ilk.signals.get('A').stopped, false, 'Zw odwołuje zamknięcie');
-  assert.ok(sim.ilk.active.has('A-D1'), 'Zw nie zwalnia przebiegu');
+  assert.ok(sim.ilk.routeIsSet('A-D1'), 'Zw nie zwalnia przebiegu');
   sim.press(S('B')); assert.ok(sim.press(order('Sz')).ok);
   assert.equal(sim.ilk.signals.get('B').aspect, 'Sz');
   assert.equal(sim.ilk.counters.Sz, 1);
@@ -179,7 +179,7 @@ test('typ E i stanowisko komputerowe: zwalnianie jak dotąd (opcje zależności 
   run(sim, POINT_SWITCH_TIME + 1);
   const r = sim.execute({ type: 'release', signal: 'A' });
   assert.ok(r.ok && !r.timed, 'wolny odcinek zbliżania – zwolnienie od razu');
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
 });
 
 test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie pociągi obsłużone, bez rozpruć', async () => {
@@ -196,13 +196,15 @@ test('IZH-111: pełna zmiana na Szkolnej z automatem dyżurnego – wszystkie po
 // JZH-111 nie ma dPz – odmowa zwolnienia przebiegu z pociągiem w środku nie podsuwa nieistniejącego polecenia (I3).
 test('IZH-111: odmowa zwolnienia przebiegu, w który wjechał pociąg – bez „dPz”', () => {
   const sim = izh();
+  // pociąg w przebiegu: pierwszy odcinek przebiegu zajęty – zależności same stwierdzają wjazd
+  const enter = (s) => { s.ilk.updateOccupancy(new Set([s.ilk.routes.get('A-D1').sections[0]])); s.ilk.tick(s.clock.time + 0.5); assert.equal(s.ilk.routeState('A-D1'), 'entered'); };
   sim.ilk.setRoute('A-D1'); run(sim, POINT_SWITCH_TIME + 1);
-  sim.ilk.active.get('A-D1').trainEntered = true; // pociąg w przebiegu (stan zadany w teście)
+  enter(sim);
   const r = sim.ilk.releaseRoute('A', false);
   assert.equal(r.ok, false);
   assert.doesNotMatch(r.reason, /dPz/);
   const e = new Simulation(szkolna, { disruptions: 'none', scenario: 'zmiana-e' });
   e.ilk.setRoute('A-D1'); run(e, POINT_SWITCH_TIME + 1);
-  e.ilk.active.get('A-D1').trainEntered = true;
+  enter(e);
   assert.match(e.ilk.releaseRoute('A', false).reason, /lub dPz/, 'typ E – dPz');
 });

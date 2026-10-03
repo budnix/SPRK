@@ -55,7 +55,7 @@ test('pociąg stojący za semaforem miniętym na „Stój” rusza dopiero na ro
   // przebieg A-D2, usterka obwodu toru 2: pociąg staje tuż za semaforem A, przed zwrotnicami – przebieg zostaje utwierdzony
   const { sim, e, tr } = overrun((s) => force(s, 'T2', true), 'A-D2');
   assert.equal(tr.stoppedAt?.kind, 'spad');
-  assert.ok(sim.ilk.active.has('A-D2'), 'pociąg stoi w przebiegu');
+  assert.ok(sim.ilk.routeIsSet('A-D2'), 'pociąg stoi w przebiegu');
   assert.ok(!tr.occupiedSections().has('T2'), 'do toru 2 nie dojechał');
   const head = tr.head;
   for (let i = 0; i < 240; i++) sim.step(0.5);
@@ -83,7 +83,7 @@ test('pociąg stojący za semaforem miniętym na „Stój” rusza dopiero na ro
 
 test('rozkaz dla pociągu stojącego za semaforem wymaga zamkniętych zwrotnic: po zwolnieniu przebiegu – odmowa, po zamknięciu zwrotnicy (Zz) – zgoda', () => {
   const { sim, tr } = overrun((s) => s.execute({ type: 'signal-stop', signal: 'A', on: true }), 'A-D2');
-  assert.ok(sim.ilk.active.has('A-D2'));
+  assert.ok(sim.ilk.routeIsSet('A-D2'));
   const ahead = () => { const at = tr.headTile(); return sim.ilk.pathFrom(at.tile, at.outPort, at.inPort); };
   assert.ok(ahead().points.length > 0, 'przed czołem pociągu są zwrotnice');
   // dyżurny zwolnił przebieg doraźnie – zwrotnice przed pociągiem nie są już utwierdzone

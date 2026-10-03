@@ -42,7 +42,7 @@ test('czas uzbrojenia zależy od strategii: pulpit E 6 s, stanowisko komputerowe
   const res = k.press({ kind: 'signal', id: 'H', color: 'green' });
   assert.ok(res.ok, JSON.stringify(res));
   run(k, 10);
-  assert.ok(k.ilk.active.has('A-H'));
+  assert.ok(k.ilk.routeIsSet('A-H'));
 });
 
 test('polecenia stanowiska komputerowego to te same operacje zależnościowe: Zw+zwrotnica, Sz z licznikiem, blokada', () => {

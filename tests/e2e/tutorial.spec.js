@@ -230,7 +230,7 @@ test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – w
   await box.locator('.tut-next').click();
   const order = (o) => page.click(`.izh-orders button[data-order="${o}"]`);
   await expect(box.locator('.tut-title')).toContainText('Blokada liniowa');
-  expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(0);
+  expect(await page.evaluate(() => window.sim.ilk.routesSet().filter((x) => x.state !== 'setting').length)).toBe(0);
   await box.locator('.tut-next').click();
   await untilRequest(page, 'W');
   await pressBtn(page, { kind: 'block', exit: 'W', btn: 'Poz' });
@@ -243,7 +243,7 @@ test('misja 3: inna stacja (Zacisze, stacja krańcowa) na pulpicie IZH-111 – w
   await expect(box.locator('.tut-feedback')).toContainText('rozkaz Zcz');
   await pressBtn(page, { kind: 'end', id: 'kT2' }); await order('Zcz');
   await advance(page, 122);
-  expect(await page.evaluate(() => window.sim.ilk.active.has('A-kT2'))).toBe(false);
+  expect(await page.evaluate(() => window.sim.ilk.routeIsSet('A-kT2'))).toBe(false);
   await pressBtn(page, { kind: 'signal', id: 'A' }); await pressBtn(page, { kind: 'end', id: 'kT1' }); await order('P');
   await advance(page, 6);
   await expect(box.locator('.tut-title')).toContainText('Potwierdzenie przyjazdu');
@@ -447,8 +447,8 @@ test('misja 6: MOR-3 w Kalinowie – przebieg kliknięciem celu, alarm licznika 
   await onlyTrains(page, [47201]);
   await page.evaluate(() => {
     const s = window.sim, c = s.clock; c.paused = false;
-    const on = (id) => s.ilk.active.has(id) || s.ilk.pending.some((p) => p.route.id === id);
-    for (const a of [...s.ilk.active.values()]) s.execute({ type: 'release', signal: a.route.start, emergency: true }); // przebiegi pociągów zdjętych z rozkładu
+    const on = (id) => s.ilk.routeState(id) !== 'none';
+    for (const a of s.ilk.routesSet().filter((x) => x.state !== 'setting')) s.execute({ type: 'release', signal: a.route.start, emergency: true }); // przebiegi pociągów zdjętych z rozkładu
     for (let i = 0; i < 8000 && !s.input.alarmList().length; i++) {
       s.step(0.5);
       const L = s.blocks.get('L'), W = s.blocks.get('W');

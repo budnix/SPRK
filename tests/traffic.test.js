@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run, Clock, autoDispatch, play } from './helpers.js';
+import { makeSim, run, Clock, autoDispatch, play, setRoutes } from './helpers.js';
 
 test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpruć', () => {
   const sim = makeSim();
@@ -16,7 +16,7 @@ test('pełna zmiana: wszystkie pociągi przejeżdżają bez opóźnień i rozpru
   for (const t of sim.traffic.tasks) assert.equal(t.done, true, `zadanie ${t.id} niewykonane`);
   assert.ok(sim.ended, 'zmiana powinna się zakończyć');
   assert.equal(sim.ilk.counters.rozprucie, 0);
-  assert.equal(sim.ilk.active.size, 0, 'wszystkie przebiegi rozwiązane');
+  assert.equal(setRoutes(sim.ilk).length, 0, 'wszystkie przebiegi rozwiązane');
   for (const b of sim.blocks.values()) assert.equal(b.occupied, false);
 });
 

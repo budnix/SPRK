@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import chylonia from '../src/stations/gdynia-chylonia.js';
 import { validateStation } from '../src/model/validate.js';
 import { Clock } from '../src/core/Clock.js';
-import { autoDispatch, allArrived, play } from './helpers.js';
+import { autoDispatch, allArrived, play, setRoutes } from './helpers.js';
 
 test('Gdynia Chylonia: definicja poprawna, brak urwanych torów, przebiegi zgodne z planem', () => {
   assert.deepEqual(validateStation(chylonia).errors, []);
@@ -152,7 +152,7 @@ test('Chylonia: przebiegi równoległe po torach 502 i 501 – wyjazd na Cisową
   const r = sim.press({ kind: 'signal', id: 'E501', color: 'green' });
   assert.equal(r.ok, true, r.reason);
   run(120);
-  assert.deepEqual([...sim.ilk.active.keys()].sort(), ['A502-RS1', 'G502-A502', 'T-E501']);
+  assert.deepEqual(setRoutes(sim.ilk).sort(), ['A502-RS1', 'G502-A502', 'T-E501']);
   assert.notEqual(sim.ilk.signals.get('T').aspect, 'S1');
   assert.notEqual(sim.ilk.signals.get('G502').aspect, 'S1');
   // odwrotnie: wjazd od Gdyni na 502 (A → G502 lub dalej) nie koliduje z wyjazdem z 501 na Gdynię (E501 → …)
@@ -164,5 +164,5 @@ test('Chylonia: przebiegi równoległe po torach 502 i 501 – wyjazd na Cisową
   const r2 = s2.pressCompound({ kind: 'end', id: 'kGS2' });
   assert.equal(r2.ok, true, r2.reason);
   for (let i = 0; i < 120; i++) s2.step(0.5);
-  assert.ok(s2.ilk.active.has('A-G502') && [...s2.ilk.active.keys()].some((id) => /^E501-/.test(id)), [...s2.ilk.active.keys()].join(','));
+  assert.ok(s2.ilk.routeIsSet('A-G502') && setRoutes(s2.ilk).some((id) => /^E501-/.test(id)), setRoutes(s2.ilk).join(','));
 });

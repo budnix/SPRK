@@ -4,7 +4,7 @@ import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
-import { autoDispatch, allArrived, play } from './helpers.js';
+import { autoDispatch, allArrived, play, routeView, routeViews } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -89,8 +89,8 @@ function failedAhead(sim, e) {
   if (!tr.entryPending && (sim.clock.time < (e.depTime ?? 0) || (tr.dwellUntil ?? 0) > sim.clock.time)) return null;
   const sig = sim.ilk.signals.get(tr.nextSignal());
   if (!sig?.failed || !sig.route) return null;
-  const act = sim.ilk.active.get(sig.route);
-  return act && !act.trainEntered ? sig : null;
+  const act = routeView(sim.ilk, sig.route);
+  return act && !act.entered ? sig : null;
 }
 
 /**
@@ -169,11 +169,11 @@ function observer(sim, nr) {
       if (sig) prev.set(tr.nr, { sig: next, aspect: sig.aspect, order: tr.hasOrderFor(next) }); else prev.delete(tr.nr);
     }
     seen = new Map([...prev.values()].map((p) => [p.sig, []]));
-    for (const a of s.ilk.active.values()) {
-      if (a.trainEntered || a.route.kind !== 'train') continue;
+    for (const a of routeViews(s.ilk)) {
+      if (a.entered || a.route.kind !== 'train') continue;
       const sig = s.ilk.signals.get(a.route.start);
       const proceed = Interlocking.isProceed(sig.aspect) && sig.aspect !== 'Sz';
-      for (const pid of a.lockedPoints) {
+      for (const pid of a.points) {
         const p = s.ilk.points.get(pid);
         if (p.moving || p.control) continue;
         noControl.push(`${t} przebieg ${a.id} utwierdzony przy zwrotnicy ${pid} bez kontroli${proceed ? `, ${sig.id}: ${sig.aspect}` : ''}`);

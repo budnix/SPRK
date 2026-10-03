@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import szkolna from '../src/stations/szkolna.js';
 import kalinowo from '../src/stations/kalinowo.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, routeView } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -79,7 +79,7 @@ const moment = {
   /** semafor wyjazdowy zezwala, pociąg stoi przy peronie, 10 s przed odjazdem */
   beforeDep: (nr) => (sim) => { const e = entryOf(sim, nr), tr = e?.train; return at.exitSet(nr)(sim) && tr.v === 0 && sim.clock.time >= e.depTime - 10 && Interlocking.isTrainProceed(sim.ilk.signals.get(tr.nextSignal())?.aspect); },
   /** przebieg wjazdowy nastawiony (także przy semaforze bez sygnału zezwalającego), pociąg jeszcze nie wjechał */
-  entryLocked: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && !a.trainEntered; },
+  entryLocked: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && !a.entered; },
   /** pociąg stoi przed semaforem wjazdowym */
   beforeEntry: (nr) => (sim) => { const tr = entryOf(sim, nr)?.train; return !!tr && tr.entryPending && tr.v === 0 && tr.stoppedAt?.kind === 'signal'; },
 };
@@ -182,8 +182,8 @@ function exitWaiting(sim, e, ready = true) {
   if (!tr || tr.finished || !tr.entered || tr.entryPending || tr.v > 0) return null;
   if (ready && (sim.clock.time < (e.depTime ?? 0) || (tr.dwellUntil ?? 0) > sim.clock.time)) return null;
   const sig = sim.ilk.signals.get(tr.nextSignal());
-  const act = sig?.route && sim.ilk.active.get(sig.route);
-  return act && !act.trainEntered && act.route.exit === e.to && !Interlocking.isTrainProceed(sig.aspect) ? sig : null;
+  const act = sig?.route && routeView(sim.ilk, sig.route);
+  return act && !act.entered && act.route.exit === e.to && !Interlocking.isTrainProceed(sig.aspect) ? sig : null;
 }
 
 /**
@@ -269,8 +269,8 @@ function entryWaiting(sim, e) {
   const tr = e?.train;
   if (!tr || tr.finished || !tr.entryPending || tr.v > 0 || tr.stoppedAt?.kind !== 'signal') return null;
   const sig = sim.ilk.signals.get(tr.stoppedAt.signal);
-  const act = sig?.route && sim.ilk.active.get(sig.route);
-  return act && !act.trainEntered && sig.failed && !Interlocking.isTrainProceed(sig.aspect) ? sig : null;
+  const act = sig?.route && routeView(sim.ilk, sig.route);
+  return act && !act.entered && sig.failed && !Interlocking.isTrainProceed(sig.aspect) ? sig : null;
 }
 
 /**
@@ -452,7 +452,7 @@ test('(c) usterka napędu zwrotnicy i fałszywa zajętość toru docelowego: Sz 
 });
 
 /** Przebieg wjazdowy nastawiony, pociąg w odcinku zbliżania (przed semaforem wjazdowym). */
-const approaching = (nr) => (sim) => { const a = entryActive(sim, nr), tr = entryOf(sim, nr)?.train; return !!a && !a.trainEntered && !!tr && tr.occupiedSections().has(a.route.approach); };
+const approaching = (nr) => (sim) => { const a = entryActive(sim, nr), tr = entryOf(sim, nr)?.train; return !!a && !a.entered && !!tr && tr.occupiedSections().has(a.route.approach); };
 
 // Semafor wjazdowy bez sygnału i fałszywa zajętość toru docelowego: obie przy zgłoszeniu pociągu (przebieg się nie
 // nastawia) albo semafor od zgłoszenia, a zajętość, gdy przebieg (na „Stój”) jest już nastawiony – pociąg na szlaku

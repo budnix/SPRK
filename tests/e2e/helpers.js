@@ -36,8 +36,8 @@ export function btn(page, ref) {
 /** Stan symulacji do asercji. */
 export async function simState(page) {
   return page.evaluate(() => ({
-    active: [...window.sim.ilk.active.keys()],
-    pending: window.sim.ilk.pending.map((p) => p.route.id),
+    active: window.sim.ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id),
+    pending: window.sim.ilk.routesSet().filter((x) => x.state === 'setting').map((x) => x.id),
     armed: window.sim.ilk.armed ? { kind: window.sim.ilk.armed.kind, id: window.sim.ilk.armed.id } : null,
     signals: Object.fromEntries([...window.sim.ilk.signals.values()].map((s) => [s.id, s.aspect])),
     points: Object.fromEntries([...window.sim.ilk.points.values()].map((p) => [p.id, p.position])),

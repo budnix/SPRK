@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import station from './fixtures/stare-pustkowie.js';
-import { run, Clock, play } from './helpers.js';
+import { run, Clock, play, setRoutes } from './helpers.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 
 const G = (id) => ({ kind: 'signal', id, color: 'green' });
@@ -110,7 +110,7 @@ test('usterka semafora: brak sygnału mimo przebiegu, Sz uzasadniony (0 pkt), po
   run(sim, 90);
   assert.equal(sim.ilk.signals.get('A').failed, true);
   sim.press(G('A')); sim.press(G('D1')); run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
   sim.press({ kind: 'group', id: 'Sz', role: 'substitute' }); sim.press(G('A'));
   assert.equal(sim.ilk.signals.get('A').aspect, 'Sz');
@@ -126,11 +126,11 @@ test('usterka napędu zwrotnicy: brak kontroli po przestawieniu, przebieg nie ut
   sim.press(G('A')); sim.press(G('D2')); // wymaga Zw1 „−”
   run(sim, POINT_SWITCH_TIME + 1);
   assert.equal(sim.ilk.points.get('Zw1').control, false);
-  assert.ok(!sim.ilk.active.has('A-D2'));
+  assert.ok(!sim.ilk.routeIsSet('A-D2'));
   run(sim, 60);
   assert.equal(sim.ilk.points.get('Zw1').control, true);
   sim.press(G('A')); sim.press(G('D2')); run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D2'));
+  assert.ok(sim.ilk.routeIsSet('A-D2'));
 });
 
 test('fałszywa zajętość: odcinek zajęty bez pociągu blokuje przebieg', () => {
@@ -198,7 +198,7 @@ test('koniec zmiany czeka na obowiązki blokady: po wyjeździe na rozkaz „S”
     sim.bus.on('shift-end', () => { atEnd = sim.score.items.map((i) => i.code); });
     play(sim).until('08:30', { stop: () => sim.ended, each: () => {
       // semafor D1 z usterką: rozkaz „S” na wyjazd przy nastawionym przebiegu
-      if (!ordered && sim.clock.time >= Clock.parse('07:08') && e.train?.v === 0 && [...sim.ilk.active.keys()].some((id) => id.startsWith('D1-'))) ordered = sim.traffic.issueOrder({ nr: 2, signal: 'D1' }).ok;
+      if (!ordered && sim.clock.time >= Clock.parse('07:08') && e.train?.v === 0 && setRoutes(sim.ilk).some((id) => id.startsWith('D1-'))) ordered = sim.traffic.issueOrder({ nr: 2, signal: 'D1' }).ok;
       if (E.needPo && departedAt == null) departedAt = sim.clock.time;
     } });
     return { sim, e, atEnd, departedAt };

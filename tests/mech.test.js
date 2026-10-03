@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { getSrk } from '../src/srk/registry.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import szkolna from '../src/stations/szkolna.js';
-import { run, autoDispatch, allArrived, play } from './helpers.js';
+import { run, autoDispatch, allArrived, play, setRoutes, routesBeingSet, routeView } from './helpers.js';
 
 /* Urządzenia mechaniczne scentralizowane: dźwignie zwrotnic, drążek przebiegowy, blok przebiegowy utwierdzający,
    dźwignia sygnałowa (Instrukcja E16 §8–9, Ie-8 §5–9) */
@@ -57,8 +57,8 @@ test('mechaniczna: drążek przebiegowy nie da się przełożyć przy złym poł
   assert.deepEqual(sim.ilk.setRoute('A-D2').codes, ['point-position'], 'zwrotnica w trakcie przestawiania');
   run(sim, 2.5);
   assert.deepEqual(sim.ilk.setRoute('A-D2'), { ok: true });
-  assert.ok(sim.ilk.active.has('A-D2'));
-  assert.equal(sim.ilk.pending.length, 0);
+  assert.ok(sim.ilk.routeIsSet('A-D2'));
+  assert.equal(routesBeingSet(sim.ilk).length, 0);
   // przełożony drążek zamyka zwrotnice przebiegu
   assert.equal(sim.execute({ type: 'point', id: q.id, position: q.position === '+' ? '-' : '+' }).ok, false);
 });
@@ -73,7 +73,7 @@ test('mechaniczna: sygnał dopiero dźwignią, po zablokowaniu bloku przebiegowe
   assert.match(early.reason, /blok przebiegowy/);
   // przed zablokowaniem bloku drążek wolno cofnąć
   assert.ok(sim.execute({ type: 'release', signal: 'A' }).ok);
-  assert.equal(sim.ilk.active.has('A-D1'), false);
+  assert.equal(sim.ilk.routeIsSet('A-D1'), false);
   assert.equal(sim.ilk.counters.dPz, 0);
   // drążek, blok, dźwignia sygnałowa
   sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
@@ -87,7 +87,7 @@ test('mechaniczna: sygnał dopiero dźwignią, po zablokowaniu bloku przebiegowe
   assert.match(sim.execute({ type: 'release', signal: 'A' }).reason, /blok przebiegowy utwierdzający zablokowany/);
   assert.ok(sim.execute({ type: 'release', signal: 'A', emergency: true }).ok);
   assert.equal(sim.ilk.counters.dPz, 1);
-  assert.equal(sim.ilk.active.has('A-D1'), false);
+  assert.equal(sim.ilk.routeIsSet('A-D1'), false);
   // dźwignię sygnałową bez przebiegu da się przełożyć na „Stój” (nic nie robi)
   assert.deepEqual(sim.execute({ type: 'stop', signal: 'A' }), { ok: true, noop: true });
 });
@@ -108,7 +108,7 @@ test('mechaniczna: drążek w położeniu pośrednim zamyka zwrotnice mimo zaję
   assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D2' }).codes, ['point-position'], 'złe położenie dźwigni – odmowa jak przy pełnym przełożeniu');
   throwLevers(sim, 'A-D2'); run(sim, 3); fault(sim);
   assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D2' }), { ok: true, half: true });
-  assert.equal(sim.ilk.active.size, 0, 'przebiegu nie ma');
+  assert.equal(setRoutes(sim.ilk).length, 0, 'przebiegu nie ma');
   assert.equal(sim.execute({ type: 'point', id: q.id, position: q.position === '+' ? '-' : '+' }).ok, false, 'zwrotnica zamknięta drążkiem');
   assert.match(sim.execute({ type: 'clear', signal: 'A' }).reason, /położeniu pośrednim/);
   assert.match(sim.execute({ type: 'route-block', signal: 'A' }).reason, /położeniu pośrednim/);
@@ -133,7 +133,7 @@ test('mechaniczna: z położenia pośredniego drążek idzie dalej do końca (pe
   assert.ok(sim.execute({ type: 'route-half', id: 'A-D1' }).ok);
   assert.deepEqual(sim.execute({ type: 'route-half', id: 'A-D1' }), { ok: true, noop: true });
   assert.deepEqual(sim.execute({ type: 'route', id: 'A-D1' }), { ok: true });
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.half.size, 0);
   assert.ok(sim.execute({ type: 'route-block', signal: 'A' }).ok);
   assert.ok(sim.execute({ type: 'clear', signal: 'A' }).ok);
@@ -165,7 +165,7 @@ test('semafor kształtowy opada na Sr1 dopiero po minięciu go przez cały poci�
   const m = pass(mech(), (sim) => { throwLevers(sim, 'A-D1'); run(sim, 3); sim.execute({ type: 'route', id: 'A-D1' }); sim.execute({ type: 'route-block', signal: 'A' }); sim.execute({ type: 'clear', signal: 'A' }); });
   assert.equal(m.under, 'Sr2', 'ramię wzniesione, dopóki pociąg mija semafor');
   assert.equal(m.after, 'Sr1', 'po ostatniej osi – „Stój”');
-  const l = pass(new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' }), (sim) => { sim.ilk.setRoute('A-D1'); for (let i = 0; i < 40 && !sim.ilk.active.has('A-D1'); i++) sim.step(0.5); });
+  const l = pass(new Simulation(szkolna, { scenario: 'zmiana-e', disruptions: 'none' }), (sim) => { sim.ilk.setRoute('A-D1'); for (let i = 0; i < 40 && !sim.ilk.routeIsSet('A-D1'); i++) sim.step(0.5); });
   assert.equal(l.under, l.stop, 'semafor świetlny gaśnie pod czołem pociągu');
   assert.equal(l.after, l.stop);
 });
@@ -182,7 +182,7 @@ test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięc
   for (let i = 0; i < 4000 && e.actualArr == null; i++) sim.step(0.5);
   run(sim, 60);
   assert.equal(String(e.actualTrack), '1');
-  const act = sim.ilk.active.get('A-D1');
+  const act = sim.ilk.routeFrame('A-D1');
   assert.ok(act?.passed, 'przebieg czeka na zwolnienie drążkiem');
   assert.equal(act.blocked, false, 'blok przebiegowy zwolnił pociąg');
   assert.equal(sim.ilk.signals.get('A').aspect, 'Sr1', 'semafor na „Stój” po minięciu');
@@ -194,7 +194,7 @@ test('mechaniczna: pociąg zwalnia blok, przebieg zostaje zamknięty do cofnięc
   assert.deepEqual(sim.ilk.setRoute('A-D2').codes.includes('signal-busy'), true);
   // cofnięcie drążka: przebieg zwolniony, zwrotnice wolne, bez licznika
   assert.deepEqual(sim.execute({ type: 'release', signal: 'A' }), { ok: true });
-  assert.equal(sim.ilk.active.size, 0);
+  assert.equal(setRoutes(sim.ilk).length, 0);
   assert.ok(sim.execute({ type: 'point', id: q.id, position: q.position === '+' ? '-' : '+' }).ok);
   assert.equal(sim.ilk.counters.dPz, 0);
 });
@@ -237,7 +237,7 @@ test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe
   const e = sim.traffic.timetable().find((x) => x.nr === 6101);
   for (let i = 0; i < 4000 && e.actualArr == null; i++) sim.step(0.5);
   run(sim, 60);
-  const act = sim.ilk.active.get('A-D1');
+  const act = sim.ilk.routeFrame('A-D1');
   assert.ok(act.passed, 'pociąg przejechał');
   assert.equal(act.blocked, true, 'blok nie zwolnił się');
   sim.execute({ type: 'stop', signal: 'A' });
@@ -245,7 +245,7 @@ test('mechaniczna – usterka: blok przebiegowy nie zwalnia się po przejeździe
   assert.equal(r.ok, false);
   assert.match(r.reason, /blok przebiegowy utwierdzający zablokowany/);
   assert.ok(sim.execute({ type: 'release', signal: 'A', emergency: true }).ok);
-  assert.equal(sim.ilk.active.size, 0);
+  assert.equal(setRoutes(sim.ilk).length, 0);
   assert.equal(sim.ilk.counters.dPz, 1);
   assert.deepEqual(sim.score.items.filter((i) => i.code === 'dPz').map((i) => i.points), [0], 'zwalniacz przy usterce nie kosztuje punktów');
   // bez usterki zwalniacz kosztuje
@@ -382,7 +382,7 @@ test('tor docelowy z odcinkiem za peronem (Olszyny, B-C2): pociąg staje przy pe
     assert.equal(String(e.actualTrack), '2');
     assert.ok(e.train.occupiedSections().has('T2') && !e.train.occupiedSections().has('T2x'), `${srk}: stoi przy peronie, przed odcinkiem T2x`);
     // przebieg wjazdowy nie wisi: na nastawni mechanicznej automat cofnął drążek, gdzie indziej przebieg rozwiązał się sam
-    assert.equal(sim.ilk.active.has('B-C2'), false, `${srk}: przebieg B-C2 zakończony`);
+    assert.equal(sim.ilk.routeIsSet('B-C2'), false, `${srk}: przebieg B-C2 zakończony`);
     assert.equal(sim.ilk.sections.get('T2x').route, null, `${srk}: odcinek T2x zwolniony`);
     for (const p of sim.ilk.routes.get('B-C2').points) assert.equal(sim.ilk.pointLockedByRoute(p.id), null, `${srk}: zwrotnica ${p.id} wolna`);
     game.until('08:30', { stop: done });
@@ -398,19 +398,19 @@ test('nastawnia mechaniczna: usterka obwodu torowego pod pociągiem – przebieg
   const e = sim.traffic.timetable()[0];
   let faulty = null, stuck = false;
   play(sim).until('08:30', { stop: allArrived, each: () => {
-    const act = sim.ilk.active.get('B-C2');
+    const act = routeView(sim.ilk, 'B-C2');
     // pociąg wjechał w przebieg: odcinek przed nim (przed torem docelowym) wykazuje zajętość bez taboru; naprawa dopiero
     // po zwolnieniu przebiegu – do tego czasu przebieg nie może się rozwiązać sam
-    if (!faulty && act?.trainEntered) {
-      const k = act.lockedSections.findIndex((sid, i) => i > (act.front ?? -1) && i < act.lockedSections.length - 2);
-      if (k >= 0) { faulty = sim.ilk.sections.get(act.lockedSections[k]); faulty.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
+    if (!faulty && act?.entered) {
+      const k = act.sections.findIndex((sid, i) => i > act.front && i < act.sections.length - 2);
+      if (k >= 0) { faulty = sim.ilk.sections.get(act.sections[k]); faulty.forced = true; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
     }
-    if (faulty && act && sim.ilk.routeStuck(act)) stuck = true;
+    if (faulty && act && sim.ilk.routeState('B-C2') === 'stuck') stuck = true;
     if (stuck && faulty.forced && !act) { faulty.forced = false; sim.ilk.updateOccupancy(sim.traffic.currentOccupancy()); }
   } });
   assert.ok(faulty && stuck, 'przebieg zatrzymany przez usterkę');
   assert.equal(e.status, 'na następnym posterunku', e.status);
-  assert.equal(sim.ilk.active.size, 0);
+  assert.equal(setRoutes(sim.ilk).length, 0);
   const dpz = sim.score.items.filter((i) => i.code === 'dPz');
   assert.ok(dpz.length >= 1 && dpz.every((i) => i.points === 0), JSON.stringify(dpz));
 });

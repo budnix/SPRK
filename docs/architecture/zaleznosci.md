@@ -49,7 +49,7 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
   zwrotnice i wykolejnice drogi (`pathHolds`) – Zz, przestawienie, zdjęcie zabezpieczenia i przebieg w innym położeniu
   odmawiane, dopóki pociąg ich nie minie (odcinek zajęty, potem wolny) albo Sz nie zgaśnie bez pociągu na drodze.
   Testy: `tests/faults-shunt.test.js`.
-* Przebieg po usterce: `Interlocking.routeStuck(act)` – pociąg przejechał odcinek wykazujący zajętość z usterki, więc
+* Przebieg po usterce: stan `'stuck'` (`routeState`) – pociąg przejechał odcinek wykazujący zajętość z usterki, więc
   przebieg sam się nie rozwiąże; doraźne zwolnienie jest wtedy bez kary.
 * Małe pytania o układ mają jedno miejsce (`trainPaths.js`): `exitApproach(ilk, szlak)` – odcinek zbliżania szlaku,
   `entryRoutes(ilk, szlak, przebiegi)` – przebiegi pociągowe wjazdowe od jego strony, `trainTrack(ilk, skład)` – tor,
@@ -77,7 +77,7 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
   (`#carries`). Nie zastępuje się jednego drugim: próba ujednolicenia dała polecenia nastawiania co takt podczas
   zwalniania czasowego. Po
   usterkach: zwalnia przebieg, którego semafor zgasł przed pociągiem, i nastawia go od nowa (poza nastawnią
-  mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg z `routeStuck` (na nastawni mechanicznej
+  mechaniczną – tam sygnał trzyma dźwignia); zwalnia doraźnie przebieg w stanie `'stuck'` (na nastawni mechanicznej
   najpierw dźwignia sygnałowa na „Stój”, potem zwalniacz – `tests/mech.test.js`); wydaje rozkaz „S” pociągowi za semaforem miniętym na „Stój”; przy krzyżowaniu na szlaku jednotorowym
   przyjmuje pociąg na inny tor, gdy planowy zajmuje pociąg czekający na ten sam szlak (na którymkolwiek odcinku
   przebiegu – tor bywa podzielony, np. Reda: peron I na T23, dalej T3), a także gdy planowy zajmuje skład, który

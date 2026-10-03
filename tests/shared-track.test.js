@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 import { STATIONS } from '../src/stations/index.js';
 import sopot from '../src/stations/sopot.js';
-import { run } from './helpers.js';
+import { run, setRoutes, routeViews } from './helpers.js';
 
 /* Dwa przebiegi manewrowe z przeciwnych stron na ten sam tor stacyjny nie są sprzeczne (Ie-4 §43 ust. 5) – sprzeczne są
    dopiero na odcinkach między rozjazdami tej samej głowicy. Tor docelowy jest wtedy wspólny dla obu przebiegów. */
@@ -39,10 +39,10 @@ test('każda para przebiegów manewrowych z przeciwnych stron na ten sam tor sta
         const res = sim.ilk.setRoute(r2.id);
         assert.ok(res.ok, `${st.id}: ${r1.id} + ${r2.id} na tor ${track}: ${res.reason}`);
         run(sim, POINT_SWITCH_TIME + 1);
-        assert.ok(sim.ilk.active.has(r1.id) && sim.ilk.active.has(r2.id), `${st.id}: ${r1.id} + ${r2.id}`);
+        assert.ok(sim.ilk.routeIsSet(r1.id) && sim.ilk.routeIsSet(r2.id), `${st.id}: ${r1.id} + ${r2.id}`);
         // poza torem docelowym żaden odcinek nie jest utwierdzony w dwóch przebiegach
         const owners = new Map();
-        for (const act of sim.ilk.active.values()) for (const s of act.lockedSections) {
+        for (const act of routeViews(sim.ilk)) for (const s of act.sections) {
           if (s === track) continue;
           assert.ok(!owners.has(s), `${st.id}: odcinek ${s} utwierdzony podwójnie`);
           owners.set(s, act.id);
@@ -51,7 +51,7 @@ test('każda para przebiegów manewrowych z przeciwnych stron na ten sam tor sta
         // zwolnienie pierwszego przebiegu: tor trzyma drugi; zwolnienie drugiego: tor wolny
         assert.ok(sim.ilk.releaseRoute(r1.start, false).ok);
         run(sim, 1);
-        assert.equal(sim.ilk.active.has(r1.id), false);
+        assert.equal(sim.ilk.routeIsSet(r1.id), false);
         assert.equal(sim.ilk.sections.get(track).route, r2.id, `${st.id}: tor ${track} nadal utwierdzony w ${r2.id}`);
         assert.ok(sim.ilk.releaseRoute(r2.start, false).ok);
         run(sim, 1);
@@ -84,7 +84,7 @@ test('wspólny tor docelowy dotyczy tylko dwóch przebiegów manewrowych: przebi
   const train = trains.find((r) => t.ilk.checkRoute(r).length === 0);
   if (train) {
     assert.ok(t.ilk.setRoute(train.id).ok); run(t, POINT_SWITCH_TIME + 1);
-    assert.ok(t.ilk.active.has(train.id));
+    assert.ok(t.ilk.routeIsSet(train.id));
     assert.equal(t.ilk.setRoute('Tm11-M').ok, false, 'manewr na tor utwierdzony w przebiegu pociągowym');
   }
 });
@@ -117,20 +117,20 @@ test('dwa składy manewrowe wjeżdżają z przeciwnych stron na ten sam tor: ka�
   let bothSet = false, early = null;
   for (let i = 0; i < 2400; i++) {
     sim.step(0.5);
-    if (ilk.active.has('H-Om') && ilk.active.has('Tm11-M')) bothSet = true;
+    if (ilk.routeIsSet('H-Om') && ilk.routeIsSet('Tm11-M')) bothSet = true;
     // przebieg nie rozwiązuje się od cudzego składu: dopóki własny skład nie wjechał w przebieg, przebieg trwa z sygnałem
     for (const [id, tr] of [['H-Om', a], ['Tm11-M', b]]) {
-      const act = ilk.active.get(id);
+      const act = ilk.routeIsSet(id);
       const entered = ilk.routes.get(id).sections.some((s) => tr.occupiedSections().has(s));
       if (bothSet && !entered && tr.v === 0 && !act && !early && !tr.occupiedSections().has(track)) early = id;
     }
     for (const x of spans(a)) for (const y of spans(b)) if (x.tile === y.tile) assert.ok(x.to <= y.from || y.to <= x.from, `najechanie na kostce ${x.tile.x},${x.tile.y}`);
-    if (!ilk.active.size && a.v === 0 && b.v === 0 && i > 60) break;
+    if (!setRoutes(ilk).length && a.v === 0 && b.v === 0 && i > 60) break;
   }
   assert.ok(bothSet, 'oba przebiegi były utwierdzone jednocześnie');
   assert.equal(early, null, `przebieg ${early} rozwiązał się, zanim wjechał w niego własny skład`);
   assert.ok(a.occupiedSections().has(track) && b.occupiedSections().has(track), 'oba składy stoją na torze docelowym');
-  assert.equal(ilk.active.size, 0, `przebiegi rozwiązane (${[...ilk.active.keys()]})`);
+  assert.equal(setRoutes(ilk).length, 0, `przebiegi rozwiązane (${setRoutes(ilk)})`);
   assert.equal(ilk.sections.get(track).route, null);
   assert.equal(a.v, 0); assert.equal(b.v, 0);
 });

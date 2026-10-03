@@ -36,7 +36,7 @@ test('jazda po torze lewym: zajęty jest szlak, na który pociąg naprawdę wjec
   // własna pętla, nie `play`: automat wraca dopiero po przyjeździe 9001 i liczy rytm od tej chwili (wspólne `n`)
   while (sim.clock.time < Clock.parse('07:30')) {
     sim.step(0.5);
-    routeSet ||= sim.ilk.active.has('C-GD1');
+    routeSet ||= sim.ilk.routeIsSet('C-GD1');
     if (e.status === 'na następnym posterunku' && n++ % 4 === 0) op.tick(); // dalej znów automat (wjazd 55104)
     // sąsiad chce wysłać 55104 torem 1 – od nastawienia naszego przebiegu dyżurny próbuje dać zgodę na każdą prośbę;
     // blokada odmawia: najpierw przez nastawiony przebieg, potem przez zajęty tor

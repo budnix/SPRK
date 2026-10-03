@@ -21,7 +21,7 @@ test('W6: fałszywa zajętość odcinka przebiegu – semafor na „Stój”, pr
   run(s, 60);
   assert.equal(s.ilk.sections.get('T1').occupied, true);
   assert.equal(s.ilk.signals.get('A').aspect, 'S1', 'S5 nad zajętym odcinkiem');
-  assert.ok(s.ilk.active.has('A-D1'), 'przebieg utwierdzony');
+  assert.ok(s.ilk.routeIsSet('A-D1'), 'przebieg utwierdzony');
   run(s, 3 * 60);
   assert.equal(s.ilk.sections.get('T1').occupied, false, 'usterka minęła');
   assert.equal(s.ilk.signals.get('A').aspect, 'S1', 'sygnał wrócił sam');
@@ -31,7 +31,7 @@ test('W6: zajętość drogi ochronnej i utrata kontroli zwrotnicy przebiegu – 
   const s = sim([{ type: 'false-occupancy', target: 'T1e', at: '07:01', duration: 5 }]);
   assert.ok(s.ilk.setRoute('A-D1').ok);
   run(s, 80);
-  assert.deepEqual(s.ilk.active.get('A-D1').overlap, ['T1e']);
+  assert.deepEqual(s.ilk.routeProgress('A-D1').overlap, ['T1e']);
   assert.equal(s.ilk.signals.get('A').aspect, 'S1', 'droga ochronna zajęta');
 
   const t = sim();
@@ -53,7 +53,7 @@ function entryWithExit() {
   const b = s.blocks.get('E'); b.direction = 'out'; b.permission = true;
   assert.ok(s.ilk.setRoute('A-D1').ok); run(s, 8);
   assert.ok(s.ilk.setRoute('D1-E').ok); run(s, 8);
-  assert.deepEqual(s.ilk.active.get('A-D1').overlap, [], 'kontynuacja zastępuje drogę ochronną');
+  assert.deepEqual(s.ilk.routeProgress('A-D1').overlap, [], 'kontynuacja zastępuje drogę ochronną');
   return s;
 }
 
@@ -62,15 +62,15 @@ test('W5: Pz przebiegu wyjazdowego przy sygnale zezwalającym na wjeździe – z
   const r = s.ilk.releaseRoute('D1', false);
   assert.equal(r.timed, true, 'zwolnienie bez zwłoki mimo S2 na A');
   run(s, 2);
-  assert.ok(s.ilk.active.has('D1-E'));
+  assert.ok(s.ilk.routeIsSet('D1-E'));
 });
 
 test('W5: po zwolnieniu przebiegu wyjazdowego droga ochronna wjazdu wraca (albo A na „Stój”)', () => {
   const s = entryWithExit();
   s.ilk.releaseRoute('D1', false);
   run(s, 120);
-  assert.ok(!s.ilk.active.has('D1-E'));
-  assert.deepEqual(s.ilk.active.get('A-D1').overlap, ['T1e'], 'droga ochronna nie wróciła');
+  assert.ok(!s.ilk.routeIsSet('D1-E'));
+  assert.deepEqual(s.ilk.routeProgress('A-D1').overlap, ['T1e'], 'droga ochronna nie wróciła');
   assert.equal(s.ilk.sections.get('T1e').route, null, 'droga ochronna nie jest odcinkiem przebiegu');
   assert.equal(s.ilk.signals.get('A').aspect, 'S5');
 
@@ -79,6 +79,6 @@ test('W5: po zwolnieniu przebiegu wyjazdowego droga ochronna wjazdu wraca (albo 
   t.ilk.sections.get('T1e').forced = true; t.ilk.refreshOccupancy();
   t.ilk.releaseRoute('D1', false);
   run(t, 120);
-  assert.ok(!t.ilk.active.has('D1-E'));
+  assert.ok(!t.ilk.routeIsSet('D1-E'));
   assert.equal(t.ilk.signals.get('A').aspect, 'S1', 'wjazd bez drogi ochronnej');
 });

@@ -4,7 +4,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { getSrk } from '../src/srk/registry.js';
 import { EBI_COMMANDS, SPECIAL_WINDOW } from '../src/srk/ebilock.js';
 import szkolna from '../src/stations/szkolna.js';
-import { run } from './helpers.js';
+import { run, setRoutes, routesBeingSet } from './helpers.js';
 
 /* Stanowisko komputerowe EBILock 950 z pulpitem EBIScreen 3 (instrukcja obsługi LIRK) – linia poleceń, wybór myszą,
    polecenia specjalne dwuczęściowe, okno zdarzeń i alarmów. */
@@ -34,7 +34,7 @@ test('linia poleceń: POC A D1 nastawia przebieg, ZWP / ZWM przestawia zwrotnic�
   assert.equal(sim.ilk.points.get(pt).position, '+');
   assert.ok(sim.submitCommand('POC A D1').ok);
   run(sim, 8);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   assert.match(sim.submitCommand('XYZ A').reason, /Nieznane polecenie/);
   assert.match(sim.submitCommand('SES Q9').reason, /nieznany obiekt/);
   assert.match(sim.submitCommand('POC A').reason, /początek i koniec/);
@@ -53,7 +53,7 @@ test('mysz: lewy klawisz – początek, prawy – koniec i menu przebiegu; prawy
   const menu = p.menu();
   assert.deepEqual(menu.map((m) => m.text), ['POC A D1', 'PZA A D1']);
   // wybór z menu wpisuje polecenie do linii (widok); wysłanie dopiero „Wykonaj”
-  assert.equal(sim.ilk.active.size + sim.ilk.pending.length, 0, 'bez „Wykonaj” nic się nie dzieje');
+  assert.equal(setRoutes(sim.ilk).length + routesBeingSet(sim.ilk).length, 0, 'bez „Wykonaj” nic się nie dzieje');
   assert.ok(sim.submitCommand(menu[0].text).ok);
   assert.equal(p.armed, null, 'po wysłaniu wybór znika');
   // prawy klawisz na zwrotnicy: menu poleceń zwrotnicy

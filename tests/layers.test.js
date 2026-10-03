@@ -115,6 +115,22 @@ test('zapisu przebiegu w zależnościach nie czyta nikt poza zależnościami –
   assert.ok(files.length > 80 && files.some((f) => f.endsWith('check-scenario.mjs')) && files.some((f) => f.endsWith('stan-zmiany.mjs')), 'test przegląda źródła, skrypty i skrypty skilli');
 });
 
+test('testy (także w przeglądarce) pytają o przebieg przez interfejs zależności, nie czytają zapisu przebiegu', () => {
+  // routeIsSet, routesSet, routeState, routeInfo, routeProgress (postęp pociągu: odcinki zwolnione, czoło), routeFrame;
+  // w testach pomocniki setRoutes / routesBeingSet / routeView (tests/helpers.js). `faultDrop` i `timedRelease` mają też
+  // znaczenie publiczne (pole wyniku routeInfo, opcja zależności) – tu sprawdzane są tylko pola samego zapisu.
+  const walkAll = (dir) => readdirSync(dir).flatMap((name) => { const f = join(dir, name); return statSync(f).isDirectory() ? walkAll(f) : /\.(js|mjs)$/.test(name) ? [f] : []; });
+  const files = walkAll(join(ROOT, 'tests')).filter((f) => posix(relative(ROOT, f)) !== 'tests/layers.test.js');
+  const RECORD = /\bilk\??\.(?:active|pending)\b|\.(?:trainEntered|signalOff|lockedSections|lockedPoints|lockedDerailers)\b|\.routeStuck\(/;
+  const bad = [];
+  for (const file of files) {
+    const lines = stripped(readFileSync(file, 'utf8')).split('\n');
+    lines.forEach((line, i) => { if (RECORD.test(line)) bad.push(`${posix(relative(ROOT, file))}:${i + 1}: ${line.trim().slice(0, 90)}`); });
+  }
+  assert.deepEqual(bad, [], `Test czyta zapis przebiegu – zapytaj zależności (routeIsSet, routeProgress …):\n${bad.join('\n')}`);
+  assert.ok(files.some((f) => f.endsWith('fault-harness.js')) && files.some((f) => f.endsWith('helpers.js')) && files.some((f) => f.includes('/e2e/')), 'test przegląda testy w Node i w przeglądarce');
+});
+
 test('stanu protokołu blokady liniowej nie czyta model poza blokadą – automat, koniec zmiany i wynik zmiany pytają blokadę', () => {
   // reguły Eap / jednokierunkowej / SBL × zapowiadanie są w LineBlock (src/model/Block.js): lineStep, neighbourAsk, duties,
   // closeDuty, neighbourTrainComing, notAtRest, phoneAskArrival; widoki i narzędzia mogą czytać pola blokady do pokazania

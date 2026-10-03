@@ -8,7 +8,7 @@ import brzezina from '../src/stations/brzezina.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { faultSim, runWithFault, at, entryActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, routeView, routeViews, routesBeingSet } from './helpers.js';
 
 /*
  * Usterki w wybranej chwili jazdy na stacjach spoza pozostałych `tests/faults-*.test.js` (tam: Szkolna, Kalinowo):
@@ -93,9 +93,9 @@ function observer(sim) {
     }
     seen = new Map([...prev.values()].map((p) => [p.sig, []]));
     look(s);
-    for (const a of s.ilk.active.values()) {
-      if (a.trainEntered || a.route.kind !== 'train' || noControl.length >= 5) continue;
-      for (const pid of a.lockedPoints) { const p = s.ilk.points.get(pid); if (!p.moving && !p.control) noControl.push(`${now(s)} przebieg ${a.id} utwierdzony przy zwrotnicy ${pid} bez kontroli`); }
+    for (const a of routeViews(s.ilk)) {
+      if (a.entered || a.route.kind !== 'train' || noControl.length >= 5) continue;
+      for (const pid of a.points) { const p = s.ilk.points.get(pid); if (!p.moving && !p.control) noControl.push(`${now(s)} przebieg ${a.id} utwierdzony przy zwrotnicy ${pid} bez kontroli`); }
     }
   };
   return { each, look, passes, waited, noControl };
@@ -122,8 +122,8 @@ function attendant(how = null) {
     if (how) for (const e of sim.traffic.timetable()) {
       const sig = blockedAhead(sim, e), tr = e.train;
       if (!sig || sig.substitute || tr.hasOrderFor(sig.id)) continue;
-      const act = sig.route && sim.ilk.active.get(sig.route);
-      if ((!act || act.trainEntered) && !secure(sim, e, sig.id, locked)) continue;
+      const act = sig.route && routeView(sim.ilk, sig.route);
+      if ((!act || act.entered) && !secure(sim, e, sig.id, locked)) continue;
       const b = e.from && tr.entryPending ? sim.blocks.get(e.from) : null;
       if (b && !b.auto && !b.fault && !b.koPrepared) sim.execute({ type: 'block', exit: e.from, btn: 'dKo' });
       fn.given.push({ nr: e.nr, sig: sig.id, how, at: now(sim), res: how === 'Sz' ? sim.execute({ type: 'substitute', signal: sig.id }) : sim.traffic.issueOrder({ nr: e.nr, signal: sig.id }) });
@@ -160,7 +160,7 @@ function secure(sim, e, sigId, locked) {
  */
 function hanging(sim) {
   const out = [];
-  for (const p of sim.ilk.pending) out.push(`przebieg ${p.route.id} w nastawianiu`);
+  for (const id of routesBeingSet(sim.ilk)) out.push(`przebieg ${id} w nastawianiu`);
   for (const s of sim.ilk.sections.values()) if (s.route) out.push(`odcinek ${s.id} utwierdzony w ${s.route}`);
   for (const s of sim.ilk.signals.values()) if (s.substitute || s.route || s.failed) out.push(`semafor ${s.id}: ${JSON.stringify({ Sz: !!s.substitute, route: s.route ?? null, failed: !!s.failed })}`);
   for (const p of sim.ilk.points.values()) if (p.individualLock || p.secured || !p.control || p.moving) out.push(`zwrotnica ${p.id}: ${JSON.stringify({ Zz: !!p.individualLock, control: p.control, moving: !!p.moving })}`);
@@ -266,8 +266,8 @@ const SOPOT_TT = [osSopot(55104, 'GD1', 'OR1', '07:04', '07:06', '2'), osSopot(5
 const SOPOT = { st: sopot, srk: 'komputerowe', timetable: SOPOT_TT, start: '06:55', until: '08:10' };
 /** Pociąg `nr` w przebiegu `routeId` (minął jego semafor), przed semaforem `sig` i zdąży się przed nim zatrzymać. */
 const inStage = (nr, routeId, sig) => (sim) => {
-  const tr = entryOf(sim, nr)?.train, act = sim.ilk.active.get(routeId);
-  return !!tr && !!act?.trainEntered && tr.nextSignal() === sig && canStop(tr, sig);
+  const tr = entryOf(sim, nr)?.train, act = routeView(sim.ilk, routeId);
+  return !!tr && !!act?.entered && tr.nextSignal() === sig && canStop(tr, sig);
 };
 /** Pociąg `nr` stoi przy peronie (po przyjeździe, przed odjazdem). */
 const standing = (nr) => (sim) => { const e = entryOf(sim, nr); return !!e?.train && e.actualArr != null && e.actualDep == null && e.train.v === 0; };
@@ -390,7 +390,7 @@ const plannedExit = (sim, nr) => { const e = entryOf(sim, nr); return sim.ilk.ro
  */
 const toMove = (sim, routes, moving = false) => routes.flatMap((r) => r.points).find((q) => {
   const p = sim.ilk.points.get(q.id);
-  return p.position !== q.position && (moving ? ![...sim.ilk.active.values()].some((a) => a.lockedPoints.has(q.id)) : !p.moving && !sim.ilk.pointLockedByRoute(q.id));
+  return p.position !== q.position && (moving ? !routeViews(sim.ilk).some((a) => a.points.includes(q.id)) : !p.moving && !sim.ilk.pointLockedByRoute(q.id));
 })?.id ?? null;
 
 /** Przypadki jednego pociągu na jednym stanowisku: usterka semafora wjazdowego i wyjazdowego, tor docelowy zajęty, napęd zwrotnicy. */

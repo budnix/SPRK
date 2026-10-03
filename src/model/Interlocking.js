@@ -883,7 +883,7 @@ export class Interlocking {
       this.#dissolve(act);
       return { ok: true };
     }
-    const wasStuck = this.routeStuck(act);
+    const wasStuck = this.#routeStuck(act);
     act.lever = false;
     act.signalOff = true;
     this.#refreshSignals();
@@ -928,7 +928,7 @@ export class Interlocking {
    * odcinek nie zwolnił się za pociągiem – także po naprawie. Zostaje doraźne zwolnienie (uzasadnione usterką).
    * Ostatni odcinek się nie liczy: zwalnia się sam, gdy pociąg go opuści albo usterka ustąpi.
    */
-  routeStuck(act) {
+  #routeStuck(act) {
     if (!act?.trainEntered || act.passed) return false;
     const secs = act.lockedSections;
     const mid = secs.slice(0, -1).map((id, i) => ({ i, s: this.sections.get(id) })).filter((x) => !act.released.has(x.s.id));
@@ -939,7 +939,7 @@ export class Interlocking {
 
   /**
    * Stan przebiegu `routeId` – jedno słowo na całe jego życie (pierwszy pasujący z góry):
-   *  - 'stuck'      pociąg przejechał, a przebieg sam się nie rozwiąże (`routeStuck`) – zostaje doraźne zwolnienie,
+   *  - 'stuck'      pociąg przejechał, a przebieg sam się nie rozwiąże – zostaje doraźne zwolnienie,
    *  - 'entered'    pociąg minął sygnalizator i jest w przebiegu (albo przejechał, a przebieg czeka na zwolnienie),
    *  - 'releasing'  zwalnianie czasowe w toku,
    *  - 'signal-off' utwierdzony, pociąg jeszcze nie wjechał, sygnał na „Stój” (zgaszony z usterki, odwołany przez
@@ -947,12 +947,13 @@ export class Interlocking {
    *  - 'waiting'    utwierdzony, czeka na pociąg, sygnał może zezwalać,
    *  - 'setting'    w nastawianiu (zwrotnice się przestawiają),
    *  - 'none'       nie ma go.
-   * Pola zapisu przebiegu (`active`, `pending`) to implementacja – inne moduły pytają o stan (`tests/route-state.test.js`).
+   * Pola zapisu przebiegu (`active`, `pending`) to implementacja – inne moduły i testy pytają o stan (`routeIsSet`,
+   * `routesSet`, `routeInfo`, `routeProgress`, `routeFrame`; strażnik: `tests/layers.test.js`).
    */
   routeState(routeId) {
     const act = this.active.get(routeId);
     if (!act) return this.pending.some((p) => p.route.id === routeId) ? 'setting' : 'none';
-    if (act.trainEntered) return this.routeStuck(act) ? 'stuck' : 'entered';
+    if (act.trainEntered) return this.#routeStuck(act) ? 'stuck' : 'entered';
     if (act.timedRelease) return 'releasing';
     return act.signalOff ? 'signal-off' : 'waiting';
   }
@@ -965,6 +966,33 @@ export class Interlocking {
   /** Przebieg jest utwierdzony (nastawiony): każdy stan poza „nie ma go” i „w nastawianiu”. */
   static routeLocked(state) {
     return state !== 'none' && state !== 'setting';
+  }
+
+  /** Pociąg wjechał w przebieg (stan z `routeState`): jedzie nim albo przejechał, a przebieg się jeszcze nie rozwiązał. */
+  static routeEntered(state) {
+    return state === 'entered' || state === 'stuck';
+  }
+
+  /** Przebieg `routeId` jest nastawiony – od utwierdzenia do rozwiązania (to samo co `routeLocked(routeState(id))`). */
+  routeIsSet(routeId) {
+    return this.active.has(routeId);
+  }
+
+  /**
+   * Postęp pociągu w nastawionym przebiegu `routeId` (null, gdy nie jest nastawiony) – dla testów i narzędzi, które
+   * wybierają chwilę wg jazdy przez przebieg: `sections` – odcinki przebiegu po kolei, `released` – odcinki już zwolnione
+   * (zwalnianie odcinkowe), `front` – indeks odcinka pod czołem pociągu (−1 przed wjazdem), `overlap` – odcinki drogi
+   * ochronnej trzymane przez przebieg, `overlapPoints` – jej zwrotnice w położeniu z chwili utwierdzenia (`{ id, position }`),
+   * `points` – zwrotnice utwierdzone przez przebieg (droga, ochrona boczna, droga ochronna). Kopie – zmiana wyniku nie
+   * zmienia zależności.
+   */
+  routeProgress(routeId) {
+    const act = this.active.get(routeId);
+    if (!act) return null;
+    return {
+      sections: [...act.lockedSections], released: [...act.released], front: act.front ?? -1,
+      overlap: [...act.overlap], overlapPoints: act.overlapPoints.map((p) => ({ ...p })), points: [...act.lockedPoints],
+    };
   }
 
   #routeEntry(act) {

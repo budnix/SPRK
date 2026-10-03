@@ -5,7 +5,7 @@ import kalinowo from '../src/stations/kalinowo.js';
 import olszyny from '../src/stations/olszyny.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { Simulation } from '../src/model/Simulation.js';
-import { autoDispatch, run } from './helpers.js';
+import { autoDispatch, run, routeView, routeViews } from './helpers.js';
 import { faultSim, runWithFault, at, target, entryActive, exitActive, entryRoutes, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 
@@ -113,7 +113,7 @@ function waitingAt(sim, nr) {
   const tr = entryOf(sim, nr)?.train;
   if (!tr || tr.v > 0 || !tr.entryPending || tr.stoppedAt?.kind !== 'signal') return null;
   const sig = sim.ilk.signals.get(tr.nextSignal());
-  return sig?.failed && sig.route && !sim.ilk.active.get(sig.route)?.trainEntered ? sig : null;
+  return sig?.failed && sig.route && !routeView(sim.ilk, sig.route)?.entered ? sig : null;
 }
 
 /**
@@ -181,8 +181,8 @@ const label = (st, srk, nr, from, to, track, what, r) => `${st.name} ${srk}, poc
 const p8Timetable = (st) => [os(st, 2, 'W', 'E', '07:06', '07:08', '1'), os(st, 3, 'W', 'E', '07:26', '07:28', '1')];
 /** Stan semafora i usterki w chwili polecenia. */
 const sigState = (sig) => (sim) => {
-  const f = faultOf(sim, 'signal-fail'), s = sim.ilk.signals.get(sig), act = s.route && sim.ilk.active.get(s.route);
-  return { failed: !!s.failed, fault: !!f?.active, aspect: s.aspect, passed: !entryOf(sim, 2).train.entryPending, entered: !!act?.trainEntered };
+  const f = faultOf(sim, 'signal-fail'), s = sim.ilk.signals.get(sig), act = s.route && routeView(sim.ilk, s.route);
+  return { failed: !!s.failed, fault: !!f?.active, aspect: s.aspect, passed: !entryOf(sim, 2).train.entryPending, entered: !!act?.entered };
 };
 
 test('długa usterka semafora wjazdowego: dKo i Sz przez protokół stanowiska – Sz raz, 0 pkt, liczniki; pociąg mija semafor na Sz, następny po naprawie na sygnale zezwalającym', () => {
@@ -391,20 +391,21 @@ function blockDesk(nr) {
   const fn = (sim) => {
     const e = entryOf(sim, nr), tr = e?.train, rb = faultOf(sim, 'route-block');
     if (!st.sz && faultOf(sim, 'signal-fail')?.active && tr?.entryPending && tr.v === 0 && tr.stoppedAt?.kind === 'signal') {
-      const sig = sim.ilk.signals.get(tr.nextSignal()), act = sig?.route && sim.ilk.active.get(sig.route);
-      if (sig?.failed && act) {
-        st.sz = { sig: sig.id, route: act.id, aspect: sig.aspect, lever: act.lever, blocked: act.blocked, block: !!rb?.active };
+      const sig = sim.ilk.signals.get(tr.nextSignal()), frame = sig?.route && sim.ilk.routeFrame(sig.route);
+      if (sig?.failed && frame) {
+        st.sz = { sig: sig.id, route: sig.route, aspect: sig.aspect, lever: frame.lever, blocked: frame.blocked, block: !!rb?.active };
         st.sz.dKo = sim.press({ kind: 'block', exit: e.from, btn: 'dKo' });
         st.sz.res = sim.execute({ type: 'substitute', signal: sig.id });
       }
     }
-    const act = st.sz && !st.pass && sim.ilk.active.get(st.sz.route);
+    const frame = (id) => sim.ilk.routeFrame(id); // części nastawni przy przebiegu – po każdym poleceniu od nowa
+    const act = st.sz && !st.pass && frame(st.sz.route);
     if (act?.passed) {
-      st.pass = { stuck: !!act.stuck, blocked: act.blocked, block: !!rb?.active, stops: 0 };
-      while (act.lever && st.pass.stops < 3) { sim.execute({ type: 'stop', signal: st.sz.sig }); st.pass.stops++; }
-      st.pass.lever = act.lever;
+      st.pass = { stuck: act.blockStuck, blocked: act.blocked, block: !!rb?.active, stops: 0 };
+      while (frame(st.sz.route)?.lever && st.pass.stops < 3) { sim.execute({ type: 'stop', signal: st.sz.sig }); st.pass.stops++; }
+      st.pass.lever = frame(st.sz.route)?.lever ?? false;
       st.pass.plain = sim.execute({ type: 'release', signal: st.sz.sig });
-      st.pass.zw = sim.ilk.active.has(act.id) ? sim.execute({ type: 'release', signal: st.sz.sig, emergency: true }) : null;
+      st.pass.zw = sim.ilk.routeIsSet(st.sz.route) ? sim.execute({ type: 'release', signal: st.sz.sig, emergency: true }) : null;
     }
     autoDispatch(sim);
   };
@@ -458,7 +459,7 @@ function pointWatch(nr, entry) {
   const each = (sim) => {
     const f = faultOf(sim, 'point-control');
     st.setAt ??= (entry ? entryActive(sim, nr) : exitActive(sim, nr)) ? sim.clock.time : null;
-    for (const a of sim.ilk.active.values()) for (const pid of a.lockedPoints) {
+    for (const a of routeViews(sim.ilk)) for (const pid of a.points) {
       const p = sim.ilk.points.get(pid);
       if (!p.control && !p.moving && st.noControl.length < 5) st.noControl.push(`${now(sim)} przebieg ${a.id} utwierdzony przy zwrotnicy ${pid} bez kontroli`);
     }
@@ -467,7 +468,7 @@ function pointWatch(nr, entry) {
     const p = sim.ilk.points.get(f.target), q = route?.points.find((x) => x.id === f.target);
     if (!q || p.position !== q.position || p.moving || p.control) return;
     st.lost = true;
-    if (!st.probe && !sim.ilk.active.has(route.id)) st.probe = { route: route.id, at: now(sim), res: sim.execute({ type: 'route', id: route.id }) };
+    if (!st.probe && !sim.ilk.routeIsSet(route.id)) st.probe = { route: route.id, at: now(sim), res: sim.execute({ type: 'route', id: route.id }) };
   };
   return { st, each };
 }

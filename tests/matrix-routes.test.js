@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, routeViews } from './helpers.js';
 import { POINT_SWITCH_TIME } from '../src/model/Interlocking.js';
 
 /**
@@ -53,10 +53,10 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
       const a = sim.ilk.setRoute(r1.id);
       assert.equal(a.ok, true, `r1 ${r1.id}: ${a.reason}`);
       run(sim, POINT_SWITCH_TIME + 1);
-      assert.ok(sim.ilk.active.has(r1.id), `r1 ${r1.id} nie utwierdzony`);
+      assert.ok(sim.ilk.routeIsSet(r1.id), `r1 ${r1.id} nie utwierdzony`);
       const expectConflict = conflicts(r1, r2, sim);
       // zwrotnice drogi ochronnej r1 utwierdzone w bieżącym położeniu
-      const act1 = sim.ilk.active.get(r1.id);
+      const act1 = sim.ilk.routeProgress(r1.id);
       let overlapPointConflict = null;
       if (!continues(r1, r2)) for (const p of [...r2.points, ...r2.flank]) {
         const op = act1.overlapPoints.find((q) => q.id === p.id);
@@ -64,7 +64,7 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
       }
       const b = sim.ilk.setRoute(r2.id);
       run(sim, POINT_SWITCH_TIME + 1);
-      const set2 = sim.ilk.active.has(r2.id);
+      const set2 = sim.ilk.routeIsSet(r2.id);
       pairs++;
       const conflict = expectConflict || overlapPointConflict;
       if (conflict) {
@@ -75,7 +75,7 @@ test('macierz par przebiegów: zgodność z wyrocznią i brak podwójnego utwier
         allowed++;
         // niezmiennik: żaden odcinek nie jest utwierdzony w dwóch przebiegach (poza wspólnym torem docelowym manewrów)
         const owners = new Map();
-        for (const act of sim.ilk.active.values()) for (const s of act.lockedSections) {
+        for (const act of routeViews(sim.ilk)) for (const s of act.sections) {
           assert.ok(!owners.has(s) || sharedEndTrack(sim, r1, r2, s), `odcinek ${s} utwierdzony podwójnie`);
           owners.set(s, act.id);
         }
@@ -94,8 +94,7 @@ test('każdy przebieg pociągowy: przejazd pociągu zwalnia odcinki po kolei i r
     grantBlocks(sim);
     assert.equal(sim.ilk.setRoute(r.id).ok, true, r.id);
     run(sim, POINT_SWITCH_TIME + 1);
-    const act = sim.ilk.active.get(r.id);
-    assert.ok(act, `${r.id} nie utwierdzony`);
+    assert.ok(sim.ilk.routeIsSet(r.id), `${r.id} nie utwierdzony`);
     const sig = sim.ilk.signals.get(r.start);
     assert.notEqual(sig.aspect, 'S1', `${r.id}: semafor nie pokazuje jazdy`);
     // pociąg: kolejno zajmuje odcinki (zawsze dwa naraz: bieżący i poprzedni)
@@ -110,7 +109,7 @@ test('każdy przebieg pociągowy: przejazd pociągu zwalnia odcinki po kolei i r
     }
     if (r.end.type === 'exit') { occ(null); }
     sim.ilk.tick(sim.ilk.time + 0.5);
-    assert.ok(!sim.ilk.active.has(r.id), `${r.id}: przebieg nie rozwiązany`);
+    assert.ok(!sim.ilk.routeIsSet(r.id), `${r.id}: przebieg nie rozwiązany`);
     for (const p of r.points) assert.equal(sim.ilk.pointLockedByRoute(p.id), null, `${r.id}: zwrotnica ${p.id} nadal utwierdzona`);
   }
 });
@@ -123,15 +122,15 @@ test('każdy przebieg: Pz zwalnia przed pociągiem, zwalnianie czasowe przy zbli
       grantBlocks(sim);
       assert.equal(sim.ilk.setRoute(r.id).ok, true, r.id);
       run(sim, POINT_SWITCH_TIME + 1);
-      assert.ok(sim.ilk.active.has(r.id), r.id);
+      assert.ok(sim.ilk.routeIsSet(r.id), r.id);
       if (variant === 'timed') sim.ilk.updateOccupancy(new Set([r.approach]));
       const res = sim.ilk.releaseRoute(r.start, variant === 'dpz');
       assert.equal(res.ok, true, `${r.id} ${variant}: ${res.reason}`);
       if (variant === 'timed') {
-        assert.ok(sim.ilk.active.has(r.id), `${r.id}: powinien czekać na zwolnienie czasowe`);
+        assert.ok(sim.ilk.routeIsSet(r.id), `${r.id}: powinien czekać na zwolnienie czasowe`);
         run(sim, r.kind === 'train' ? 95 : 35);
       }
-      assert.ok(!sim.ilk.active.has(r.id), `${r.id} ${variant}: nie zwolniony`);
+      assert.ok(!sim.ilk.routeIsSet(r.id), `${r.id} ${variant}: nie zwolniony`);
       for (const s of r.sections) assert.equal(sim.ilk.sections.get(s).route, null);
       assert.equal(sim.ilk.signals.get(r.start).aspect, sim.ilk.signals.get(r.start).kind === 'semafor' ? 'S1' : 'Ms1');
     }

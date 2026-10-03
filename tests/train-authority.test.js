@@ -27,7 +27,7 @@ function consist(s, tiles, dir, mode = 'train', nr = 'X1') {
   s.traffic.trains.push(tr);
   return tr;
 }
-const setRoute = (s, id) => { assert.ok(s.ilk.setRoute(id).ok, id); run(s, 8); assert.ok(s.ilk.active.has(id), id); };
+const setRoute = (s, id) => { assert.ok(s.ilk.setRoute(id).ok, id); run(s, 8); assert.ok(s.ilk.routeIsSet(id), id); };
 
 test('W18: pociąg nie mija semafora wskazującego Ms2 (sygnał manewrowy nie jest sygnałem dla pociągu)', () => {
   const s = sim();
@@ -100,7 +100,7 @@ test('W1: przebieg manewrowy z semafora końcowego nie zastępuje drogi ochronne
   const res = t.ilk.setRoute('D2-kT3m');
   assert.equal(res.ok, false);
   assert.ok(res.codes.includes('overlap'), JSON.stringify(res.codes));
-  assert.deepEqual(t.ilk.active.get('A-D2').overlap, ['T2e'], 'droga ochronna wjazdu zostaje');
+  assert.deepEqual(t.ilk.routeProgress('A-D2').overlap, ['T2e'], 'droga ochronna wjazdu zostaje');
 });
 
 test('W33: Ms2 gaśnie dopiero, gdy cały skład minie sygnalizator (nie po wjeździe czoła)', () => {

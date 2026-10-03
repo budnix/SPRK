@@ -112,7 +112,7 @@ test('W13: Pwl – po odwołaniu sygnału wyjazdowego drugi sygnał nie wyjdzie;
   assert.ok(['S2', 'S10'].includes(sim.ilk.signals.get('D1').aspect));
   assert.equal(b.pwl, true);
   sim.ilk.releaseRoute('D1', false); run(sim, 100); // zwalnianie czasowe – pociąg w zbliżaniu
-  assert.ok(!sim.ilk.active.has('D1-E'));
+  assert.ok(!sim.ilk.routeIsSet('D1-E'));
   assert.ok(sim.ilk.setRoute('D1-E').ok, 'przebieg da się nastawić');
   run(sim, 8);
   assert.equal(sim.ilk.signals.get('D1').aspect, 'S1', 'Pwl – sygnał nie wyszedł drugi raz');

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeSim, run } from './helpers.js';
+import { makeSim, run, setRoutes, routesBeingSet, routeView } from './helpers.js';
 import { POINT_SWITCH_TIME, TIMED_RELEASE } from '../src/model/Interlocking.js';
 
 const G = (id) => ({ kind: 'signal', id, color: 'green' });
@@ -27,9 +27,9 @@ test('nastawienie przebiegu pociągowego: zwrotnice, utwierdzenie, obraz sygnał
   const res = sim.press(G('A'));
   assert.equal(res.armed, true);
   sim.press(G('D2'));
-  assert.equal(sim.ilk.pending.length, 1);
+  assert.equal(routesBeingSet(sim.ilk).length, 1);
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D2'));
+  assert.ok(sim.ilk.routeIsSet('A-D2'));
   assert.equal(sim.ilk.points.get('Zw1').position, '-');
   assert.equal(sim.ilk.sections.get('Iz1').route, 'A-D2');
   assert.equal(sim.ilk.sections.get('T2').route, 'A-D2');
@@ -44,7 +44,7 @@ test('przebiegi sprzeczne są odrzucane', () => {
   const sim = makeSim();
   sim.press(G('A')); sim.press(G('D1'));
   run(sim, 1);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   sim.press(G('B')); const r = sim.press(G('C1'));
   assert.equal(r.ok, false);
   assert.match(r.reason, /T1|Iz4/);
@@ -61,10 +61,10 @@ test('wyciągnięcie przycisku gasi sygnał, Pz zwalnia przebieg', () => {
   assert.equal(sim.ilk.signals.get('A').aspect, 'S5');
   sim.pull(G('A'));
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
-  assert.ok(sim.ilk.active.has('A-D1'), 'przebieg pozostaje utwierdzony');
+  assert.ok(sim.ilk.routeIsSet('A-D1'), 'przebieg pozostaje utwierdzony');
   sim.press({ kind: 'group', id: 'Pz', role: 'route-release' });
   sim.press(G('A'));
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.sections.get('T1').route, null);
 });
 
@@ -76,12 +76,12 @@ test('zwalnianie czasowe przy zajętym odcinku zbliżania, dPz natychmiast z lic
   sim.press({ kind: 'group', id: 'Pz', role: 'route-release' });
   const r = sim.press(G('A'));
   assert.equal(r.timed, true);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   run(sim, TIMED_RELEASE / 2);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   sim.press({ kind: 'group', id: 'dPz', role: 'emergency-release' });
   sim.press(G('A'));
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.counters.dPz, 1);
 });
 
@@ -95,7 +95,7 @@ test('zwalnianie odcinkowe po przejeździe pociągu', () => {
   occ('Iz1', 'T1');
   occ('T1');
   assert.equal(sim.ilk.sections.get('Iz1').route, null, 'Iz1 zwolniony');
-  assert.ok(!sim.ilk.active.has('A-D1'), 'przebieg rozwiązany po wjeździe na tor docelowy');
+  assert.ok(!sim.ilk.routeIsSet('A-D1'), 'przebieg rozwiązany po wjeździe na tor docelowy');
 });
 
 test('sygnał zastępczy Sz z licznikiem i czasem', () => {
@@ -112,7 +112,7 @@ test('przebieg manewrowy i wykolejnica', () => {
   const sim = makeSim();
   sim.press(W('D2')); sim.press({ kind: 'end', id: 'kT3' });
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('D2-kT3m'));
+  assert.ok(sim.ilk.routeIsSet('D2-kT3m'));
   assert.equal(sim.ilk.derailers.get('Wk1').position, 'off');
   assert.equal(sim.ilk.signals.get('D2').aspect, 'Ms2');
   // wyjazd D2-E wymaga nałożonej wykolejnicy – w konflikcie z manewrem
@@ -120,7 +120,7 @@ test('przebieg manewrowy i wykolejnica', () => {
   assert.equal(r.ok, false);
   // zwolnienie: wyciągnięcie białego przycisku
   sim.pull(W('D2'));
-  assert.ok(!sim.ilk.active.has('D2-kT3m'));
+  assert.ok(!sim.ilk.routeIsSet('D2-kT3m'));
 });
 
 test('zamknięcie indywidualne zwrotnicy blokuje przestawianie i przebiegi', () => {
@@ -194,7 +194,7 @@ test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośredni
   const r = sim.pressCompound({ kind: 'end', id: 'kRS1' });
   assert.deepEqual(r.chain, ['G502-A502', 'A502-RS1']);
   run(sim, 120);
-  assert.deepEqual([...sim.ilk.active.keys()], ['G502-A502', 'A502-RS1']);
+  assert.deepEqual(setRoutes(sim.ilk), ['G502-A502', 'A502-RS1']);
   assert.notEqual(sim.ilk.signals.get('G502').aspect, 'S1'); assert.notEqual(sim.ilk.signals.get('A502').aspect, 'S1');
   // bez uzbrojonego semafora – odmowa; przebieg bezpośredni przez pressCompound działa jak zwykły
   assert.equal(sim.pressCompound({ kind: 'end', id: 'kRS1' }).ok, false);
@@ -210,13 +210,13 @@ test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośredni
   const f = s4.pressCompound({ kind: 'end', id: 'kRS1' });
   assert.equal(f.ok, true, f.reason); assert.deepEqual(f.set, ['G502-A502']);
   run(s4, 120);
-  assert.deepEqual([...s4.ilk.active.keys()].sort(), ['A502-RS1', 'G502-A502']);
+  assert.deepEqual(setRoutes(s4.ilk).sort(), ['A502-RS1', 'G502-A502']);
   // Sopot: trzy ogniwa A → H → O → szlak; potem blokada ogniwa (kierunek SBL na wjazd) odrzuca całość bez nastawienia czegokolwiek
   const s2 = new Simulation(sopot, { disruptions: 'none' });
   s2.press({ kind: 'signal', id: 'A', color: 'green' });
   assert.deepEqual(s2.pressCompound({ kind: 'end', id: 'kOR1' }).chain, ['A-H', 'H-O', 'O-OR1']);
   run(s2, 120);
-  assert.deepEqual([...s2.ilk.active.keys()], ['A-H', 'H-O', 'O-OR1']);
+  assert.deepEqual(setRoutes(s2.ilk), ['A-H', 'H-O', 'O-OR1']);
   const s3 = new Simulation(sopot, { disruptions: 'none' });
   assert.equal(s3.blocks.get('OR1').press('Zk').ok, true); // prośba o zmianę kierunku – tor 1 na przyjazd, wyjazd niemożliwy
   run(s3, 60); // zgoda sąsiada (Ir-1 §30 ust. 2 pkt 1)
@@ -225,8 +225,8 @@ test('przebieg złożony (stanowisko komputerowe): koniec za semaforem pośredni
   const bad = s3.pressCompound({ kind: 'end', id: 'kOR1' });
   assert.equal(bad.ok, false);
   assert.match(bad.reason, /Przebieg złożony A → kOR1: ogniwo O-OR1: .*blokady samoczynnej/);
-  assert.equal(s3.ilk.pending.length, 0, 'nic nie nastawione');
-  assert.equal(s3.ilk.active.size, 0);
+  assert.equal(routesBeingSet(s3.ilk).length, 0, 'nic nie nastawione');
+  assert.equal(setRoutes(s3.ilk).length, 0);
 });
 
 test('zwalnianie odcinkowe jest odporne na przeskoczenie krótkiego odcinka między krokami (odcinek nigdy nie zajęty albo zwolniony razem z poprzednim)', async () => {
@@ -236,29 +236,29 @@ test('zwalnianie odcinkowe jest odporne na przeskoczenie krótkiego odcinka mię
     const sim = new Simulation(chylonia, { disruptions: 'none' });
     sim.press(G('G502')); sim.press(G('A502'));
     run(sim, POINT_SWITCH_TIME + 2);
-    const act = sim.ilk.active.get('G502-A502');
-    assert.ok(act, 'przebieg G502-A502 utwierdzony');
+    const act = () => routeView(sim.ilk, 'G502-A502'); // po każdym takcie od nowa
+    assert.ok(act(), 'przebieg G502-A502 utwierdzony');
     let t = sim.clock.time;
     const occ = (ids) => { sim.ilk.updateOccupancy(new Set(ids)); sim.ilk.tick(t += 1); };
-    return { sim, act, secs: [...act.lockedSections], occ };
+    return { sim, act, secs: act().sections, occ };
   };
   const { sim, act, secs, occ } = setup();
   assert.ok(secs.length >= 5, secs.join(','));
   occ([secs[0]]);
-  assert.equal(act.trainEntered, true);
+  assert.equal(act().entered, true);
   occ([secs[0], secs[1]]);
-  assert.equal(act.released.size, 0, 'nic przed czołem ani pod pociągiem');
+  assert.equal(act().released.length, 0, 'nic przed czołem ani pod pociągiem');
   occ([secs[3]]); // ogon zszedł z 0 i 1 naraz, odcinek 2 (zwrotnica) przeskoczony bez zajęcia – pociąg już na 3
-  assert.deepEqual([...act.released].sort(), [secs[0], secs[1], secs[2]].sort());
+  assert.deepEqual(act().released.sort(), [secs[0], secs[1], secs[2]].sort());
   for (let i = 4; i < secs.length; i++) occ([secs[i]]);
-  assert.ok(!sim.ilk.active.has('G502-A502'), 'przebieg rozwiązany po wjeździe na tor docelowy');
+  assert.ok(!sim.ilk.routeIsSet('G502-A502'), 'przebieg rozwiązany po wjeździe na tor docelowy');
   // sam pierwszy odcinek przeskoczony: pociąg pojawia się od razu na drugim – wjazd rozpoznany, przebieg się rozwiązuje
   const b = setup();
   b.occ([b.secs[1]]);
-  assert.equal(b.act.trainEntered, true, 'wjazd rozpoznany po zajęciu drugiego odcinka');
-  assert.ok(b.act.released.has(b.secs[0]));
+  assert.equal(b.act().entered, true, 'wjazd rozpoznany po zajęciu drugiego odcinka');
+  assert.ok(b.act().released.includes(b.secs[0]));
   for (let i = 2; i < b.secs.length; i++) b.occ([b.secs[i]]);
-  assert.ok(!b.sim.ilk.active.has('G502-A502'));
+  assert.ok(!b.sim.ilk.routeIsSet('G502-A502'));
   // tabor stojący na torze docelowym PRZED nastawieniem (jazda manewrowa na Ms2 na tor zajęty) nie liczy się jako
   // wjazd pociągu ani nie zwalnia odcinków przed czołem
   const c = new Simulation(chylonia, { disruptions: 'none' });
@@ -268,12 +268,12 @@ test('zwalnianie odcinkowe jest odporne na przeskoczenie krótkiego odcinka mię
   ctick([dest]);
   c.ilk.press(W('G502')); c.ilk.press(W('A502'));
   for (let i = 0; i < (POINT_SWITCH_TIME + 2) * 2; i++) ctick([dest]);
-  const cact = c.ilk.active.get('G502-A502m');
-  assert.ok(cact, 'przebieg manewrowy G502-A502m na tor zajęty');
-  assert.equal(cact.trainEntered, false, 'zajętość toru docelowego to nie wjazd pociągu');
-  assert.equal(cact.released.size, 0);
-  const cs = [...cact.lockedSections];
+  const cact = () => routeView(c.ilk, 'G502-A502m');
+  assert.ok(cact(), 'przebieg manewrowy G502-A502m na tor zajęty');
+  assert.equal(cact().entered, false, 'zajętość toru docelowego to nie wjazd pociągu');
+  assert.equal(cact().released.length, 0);
+  const cs = cact().sections;
   ctick([cs[0], dest]); ctick([cs[1], dest]);
-  assert.equal(cact.trainEntered, true);
-  assert.deepEqual([...cact.released], [cs[0]], 'zwolniony tylko odcinek za czołem');
+  assert.equal(cact().entered, true);
+  assert.deepEqual(cact().released, [cs[0]], 'zwolniony tylko odcinek za czołem');
 });

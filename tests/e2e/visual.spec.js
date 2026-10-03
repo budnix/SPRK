@@ -26,7 +26,7 @@ test('wygląd pulpitu kostkowego (Szkolna, typ E) po nastawieniu przebiegu', asy
   await page.evaluate(() => { window.sim.press({ kind: 'signal', id: 'A', color: 'green' }); window.sim.press({ kind: 'signal', id: 'D1', color: 'green' }); });
   // zegar zatrzymany (openShift) – krok symulacji przez advance, inaczej przebieg zostaje w nastawianiu
   await advance(page, 10);
-  expect(await page.evaluate(() => [window.sim.ilk.active.has('A-D1'), window.sim.ilk.signals.get('A').aspect])).toEqual([true, 'S5']);
+  expect(await page.evaluate(() => [window.sim.ilk.routeIsSet('A-D1'), window.sim.ilk.signals.get('A').aspect])).toEqual([true, 'S5']);
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-szkolna.png');
 });
@@ -40,7 +40,7 @@ test('wygląd monitora (Sopot, ekran zachodni) z przebiegiem pociągowym i manew
   });
   // zegar zatrzymany (openShift) – kroki symulacji przez advance, inaczej przebiegi zostają w nastawianiu
   await advance(page, 10);
-  expect(await page.evaluate(() => window.sim.ilk.active.size)).toBe(2);
+  expect(await page.evaluate(() => window.sim.ilk.routesSet().filter((x) => x.state !== 'setting').length)).toBe(2);
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('screen-sopot-zachod.png');
   expect(await shot(page, '#desk-tools', 1000, 40)).toMatchSnapshot('toolbar.png');
@@ -53,7 +53,7 @@ test('wygląd pulpitu typu IZH-111 (Szkolna): przebieg utwierdzony, wybrany adre
     s.press({ kind: 'signal', id: 'A' }); s.press({ kind: 'signal', id: 'D2' }); s.press({ kind: 'order', id: 'P' });
   });
   await advance(page, 10); // zegar zatrzymany – kroki przez advance, inaczej przebieg zostaje w nastawianiu
-  expect(await page.evaluate(() => [window.sim.ilk.active.has('A-D2'), window.sim.ilk.signals.get('A').aspect !== 'S1'])).toEqual([true, true]);
+  expect(await page.evaluate(() => [window.sim.ilk.routeIsSet('A-D2'), window.sim.ilk.signals.get('A').aspect !== 'S1'])).toEqual([true, true]);
   await page.evaluate(() => window.sim.press({ kind: 'point', id: 'Zw4' }));
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 640)).toMatchSnapshot('desk-izh-szkolna.png');
@@ -73,7 +73,7 @@ test('wygląd nastawni mechanicznej (Szkolna): dźwignie przełożone, drążek,
     s.execute({ type: 'route-half', id: 'B-C1' }); // drążek b w położeniu pośrednim
     for (let i = 0; i < 4; i++) s.step(0.5);
     s.clock.paused = true;
-    return { route: !!s.ilk.active.get('A-D2')?.lever, aspect: s.ilk.signals.get('A').aspect };
+    return { route: !!s.ilk.routeFrame('A-D2')?.lever, aspect: s.ilk.signals.get('A').aspect };
   }).then((st) => expect(st.route && st.aspect === 'Sr3').toBe(true));
   await page.waitForTimeout(200);
   expect(await shot(page, '#desk', 1000, 800)).toMatchSnapshot('desk-mech-szkolna.png');
@@ -125,7 +125,7 @@ test('wygląd karty pociągu na zakładce „Pociągi” (Szkolna): postój po g
       sim.step(0.5);
       const tr = sim.traffic.trains.find((x) => String(x.nr) === '6101');
       if (tr?.entered && tr.v === 0 && tr.hasStopped && c.time >= e.depTime + 60) break;
-      if (!tr?.entered && !sim.ilk.active.size && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+      if (!tr?.entered && !sim.ilk.routesSet().length) sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
     }
     c.paused = true;
   });

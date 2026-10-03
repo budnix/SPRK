@@ -5,7 +5,7 @@ import { openShift, simState, advance } from './helpers.js';
 
 const ctl = (page, kind, id) => page.locator(`#desk .mech-ctl[data-ref='${JSON.stringify({ kind, id })}']`);
 const open = (page) => openShift(page, 'szkolna', { params: { scenariusz: 'zmiana-mech' } });
-const route = (page, id) => page.evaluate((r) => { const a = window.sim.ilk.active.get(r); return a ? { lever: a.lever, blocked: a.blocked, passed: a.passed } : null; }, id);
+const route = (page, id) => page.evaluate((r) => { const a = window.sim.ilk.routeFrame(r); return a ? { lever: a.lever, blocked: a.blocked, passed: a.passed } : null; }, id);
 
 test('ława dźwigniowa: dźwignie z numerami i barwami wg rodzaju, drążki z celami przebiegów; na planie tylko przyciski blokady', async ({ page }) => {
   const errors = [];

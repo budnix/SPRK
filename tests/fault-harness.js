@@ -2,7 +2,7 @@ import { Simulation } from '../src/model/Simulation.js';
 import { Clock } from '../src/core/Clock.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { exitApproach, entryRoutes as routesFrom } from '../src/model/trainPaths.js';
-import { autoDispatch, allArrived, play } from './helpers.js';
+import { autoDispatch, allArrived, play, routeViews } from './helpers.js';
 import { violations, watchEvents } from '../src/model/check/invariants.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
 import { isFinished } from '../src/model/timetable/phase.js';
@@ -34,18 +34,18 @@ export function entryRoutes(sim, nr) {
   return routesFrom(sim.ilk, entryOf(sim, nr)?.from);
 }
 /**
- * Nastawiony (czynny) przebieg wjazdowy pociągu `nr` albo null. Zwraca zapis przebiegu z zależności – testy usterek
- * wybierają chwilę wg postępu pociągu w przebiegu (`front`, `released`), czego stan przebiegu celowo nie podaje;
- * o sam stan pytaj `sim.ilk.routeState(a.id)`.
+ * Nastawiony przebieg wjazdowy pociągu `nr` albo null – widok przez interfejs zależności (`routeView`: stan, `entered`,
+ * postęp pociągu `front`, `released`, `sections`), bo testy usterek wybierają chwilę wg jazdy przez przebieg. Migawka:
+ * po kroku symulacji zapytaj od nowa.
  */
 export function entryActive(sim, nr) {
   const ids = new Set(entryRoutes(sim, nr).map((r) => r.id));
-  return [...sim.ilk.active.values()].find((a) => ids.has(a.id)) ?? null;
+  return routeViews(sim.ilk).find((a) => ids.has(a.id)) ?? null;
 }
-/** Nastawiony przebieg wyjazdowy na szlak pociągu `nr` (ostatni stopień, z `exit`) albo null. */
+/** Nastawiony przebieg wyjazdowy na szlak pociągu `nr` (ostatni stopień, z `exit`) albo null – widok jak `entryActive`. */
 export function exitActive(sim, nr) {
   const e = entryOf(sim, nr);
-  return [...sim.ilk.active.values()].find((a) => a.route.kind === 'train' && a.route.exit === e?.to) ?? null;
+  return routeViews(sim.ilk).find((a) => a.route.kind === 'train' && a.route.exit === e?.to) ?? null;
 }
 
 /** Chwile jazdy pociągu `nr` – predykaty (sim) => bool. */
@@ -57,7 +57,7 @@ export const at = {
   /** przebieg wjazdowy nastawiony (sygnał zezwalający), pociąg jeszcze nie wjechał */
   entrySet: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && Interlocking.routeAhead(sim.ilk.routeState(a.id)) && Interlocking.isProceed(sim.ilk.signals.get(a.route.start).aspect); },
   /** pociąg w przebiegu wjazdowym (minął semafor, przebieg jeszcze się nie rozwiązał) */
-  entering: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && a.trainEntered && a.released.size < a.lockedSections.length - 1; },
+  entering: (nr) => (sim) => { const a = entryActive(sim, nr); return !!a && a.entered && a.released.length < a.sections.length - 1; },
   /** pociąg stoi przy peronie (po przyjeździe, przed odjazdem) */
   standing: (nr) => (sim) => { const e = entryOf(sim, nr); return !!e?.train && e.actualArr != null && e.actualDep == null && e.train.v === 0; },
   /** przebieg wyjazdowy nastawiony, pociąg jeszcze nie ruszył */
@@ -74,7 +74,7 @@ export const target = {
   /** odcinek przebiegu wjazdowego przed czołem pociągu (nie ostatni – tor docelowy zwalnia się inaczej) */
   sectionAhead: (nr) => (sim) => {
     const a = entryActive(sim, nr);
-    const secs = a ? a.lockedSections : entryRoutes(sim, nr)[0]?.sections ?? [];
+    const secs = a ? a.sections : entryRoutes(sim, nr)[0]?.sections ?? [];
     const from = a?.front ?? -1;
     return secs.find((s, i) => i > from && i < secs.length - 1 && !sim.ilk.sections.get(s).physical);
   },

@@ -7,7 +7,7 @@ import szkolna from '../src/stations/szkolna.js';
 import { Clock } from '../src/core/Clock.js';
 import { PLATFORM_STOP } from '../src/model/Train.js';
 import zacisze from '../src/stations/zacisze.js';
-import { autoDispatch, play } from './helpers.js';
+import { autoDispatch, play, setRoutes, routesBeingSet } from './helpers.js';
 
 /*
  * Miejsce zatrzymania pociągu przy peronie – z układu stacji, bez danych per stacja. Ie-1 (2026) §17 ust. 15 pkt 4:
@@ -80,7 +80,7 @@ test('pociąg po godzinie odjazdu bez przebiegu wyjazdowego stoi przy peronie �
   const { sim, stops } = run({ trains: [6101], auto: false, until: '07:15', onTick: (s) => {
     const W = s.blocks.get('W'); if (W.request === 'theirs') W.press('Poz');
     const e = s.traffic.timetable()[0];
-    if (!e.train?.entered && !s.ilk.active.size && !s.ilk.pending.length && W.direction === 'in') s.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
+    if (!e.train?.entered && !setRoutes(s.ilk).length && !routesBeingSet(s.ilk).length && W.direction === 'in') s.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
   } });
   const tr = sim.traffic.trains.find((t) => t.nr === 6101);
   assert.equal(stops.get(6101).head, ruleHead(sim, { section: 'T1', y: 4, east: true, length: 130, short: tr.stopShort }).tile);

@@ -9,7 +9,7 @@ import { LineBlock } from '../src/model/Block.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { faultSim, runWithFault, at, target, stuck, exitActive, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, routeViews } from './helpers.js';
 
 /*
  * Usterka blokady liniowej (block-fail: brak łączności elektrycznej – zapowiadanie telefoniczne) w stałych chwilach jazdy
@@ -38,7 +38,7 @@ const lineOut = (sim, nr) => sim.blocks.get(entry(sim, nr).to);
 const kindOf = (station, exitId) => (station.exits[exitId].block === 'sbl' ? 'sbl' : station.exits[exitId].direction ? 'eap1' : 'eap2');
 
 /** Pociąg wyjeżdża: minął semafor wyjazdowy, jeszcze nie na szlaku. */
-const inExitRoute = (nr) => (sim) => { const a = exitActive(sim, nr); return !!a?.trainEntered && !lineOut(sim, nr).occupied; };
+const inExitRoute = (nr) => (sim) => { const a = exitActive(sim, nr); return !!a?.entered && !lineOut(sim, nr).occupied; };
 /** Nasz pociąg na torze szlakowym (blokada zajęta tym pociągiem). */
 const onLineOut = (nr) => (sim) => { const b = lineOut(sim, nr); return b.occupied && b.lineOurs && String(b.lineTrain) === String(nr); };
 const ON_LINE_IN = ['pociąg na szlaku', (nr) => at.onLineIn(nr)];
@@ -133,9 +133,9 @@ function lineWatch(sim, out, mem) {
       if (b.fault ? b.phone.clearedFor != null : b.direction === 'in') warn(`szlak ${id}: pociąg ${e.nr} wjechał na szlak, na który ${b.fault ? `dana droga wolna dla ${b.phone.clearedFor}` : 'sąsiad ma pozwolenie'}`);
     }
   }
-  for (const act of sim.ilk.active.values()) {
+  for (const act of routeViews(sim.ilk)) {
     const b = act.route.exit ? sim.blocks.get(act.route.exit) : null;
-    if (!b?.fault || b.auto || b.fixed || act.trainEntered) continue;
+    if (!b?.fault || b.auto || b.fixed || act.entered) continue;
     const m = mem[b.id], asp = sim.ilk.signals.get(act.route.start).aspect;
     if (Interlocking.isProceed(asp) && asp !== 'Sz' && (!m.perm || m.used)) warn(`${act.route.start} (${asp}) na szlak ${b.id} bez łączności – ${m.perm ? 'pozwolenie sprzed usterki już wykorzystane' : 'bez pozwolenia sprzed usterki'}`);
   }
@@ -367,7 +367,7 @@ test('dwa pociągi po sobie: usterka, gdy pierwszy jest na szlaku odjazdu – dr
  * zdąży przed nim zahamować), potem wraca i pociąg wyjeżdża na sygnał. Usterka tuż przed semaforem (czoło na ostatniej
  * kostce, bliżej niż droga hamowania) – test niżej.
  */
-const exitProceed = (nr) => (sim) => { const a = exitActive(sim, nr), tr = entry(sim, nr)?.train; if (!a || a.trainEntered || !tr || tr.v < 5) return false; const asp = sim.ilk.signals.get(a.route.start).aspect; return Interlocking.isProceed(asp) && asp !== 'Sz'; };
+const exitProceed = (nr) => (sim) => { const a = exitActive(sim, nr), tr = entry(sim, nr)?.train; if (!a || a.entered || !tr || tr.v < 5) return false; const asp = sim.ilk.signals.get(a.route.start).aspect; return Interlocking.isProceed(asp) && asp !== 'Sz'; };
 const atExitSignal = (nr) => (sim) => { if (!exitProceed(nr)(sim)) return false; const a = exitActive(sim, nr), h = entry(sim, nr).train.headTile(); return !!h && sim.ilk.topo.signalsAt(h.tile, h.outPort).some((sg) => sg.id === a.route.start); };
 function throughCases(when, moment) {
   const out = [];

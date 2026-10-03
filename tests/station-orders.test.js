@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { Simulation } from '../src/model/Simulation.js';
 import szkolna from '../src/stations/szkolna.js';
 import { run } from './helpers.js';
+import { Interlocking } from '../src/model/Interlocking.js';
 
 /*
  * Polecenia stanowisk komputerowych (instrukcja obsługi EBILock 950 / EBIScreen 3, LIRK): zamknięcie ruchowe toru
@@ -50,7 +51,7 @@ test('SES / SEO: stopowanie sygnalizatora – „Stój” mimo przebiegu, po odw
   assert.deepEqual(s.execute({ type: 'signal-stop', signal: 'A', on: true }), { ok: true });
   assert.equal(A.stopped, true);
   assert.equal(A.aspect, 'S1');
-  assert.ok(s.ilk.active.has('A-D1'), 'przebieg zostaje utwierdzony');
+  assert.ok(s.ilk.routeIsSet('A-D1'), 'przebieg zostaje utwierdzony');
   s.execute({ type: 'signal-stop', signal: 'A', on: false });
   assert.equal(A.stopped, false);
   assert.notEqual(A.aspect, 'S1');
@@ -81,11 +82,11 @@ test('KZW: odwołanie zwalniania czasowego – przebieg zostaje utwierdzony', ()
   s.ilk.updateOccupancy(new Set([approach]));
   const rel = s.execute({ type: 'release', signal: 'A' });
   assert.ok(rel.timed, 'odcinek zbliżania zajęty – zwalnianie czasowe');
-  assert.ok(s.ilk.active.get('A-D1').timedRelease);
+  assert.equal(s.ilk.routeState('A-D1'), 'releasing');
   assert.deepEqual(s.execute({ type: 'cancel-timed', signal: 'A' }), { ok: true });
-  assert.equal(s.ilk.active.get('A-D1').timedRelease, null);
+  assert.notEqual(s.ilk.routeState('A-D1'), 'releasing');
   run(s, 200);
-  assert.ok(s.ilk.active.has('A-D1'), 'bez zwalniania czasowego przebieg trwa');
+  assert.ok(s.ilk.routeIsSet('A-D1'), 'bez zwalniania czasowego przebieg trwa');
   assert.equal(s.execute({ type: 'cancel-timed', signal: 'A' }).ok, false, 'nic do odwołania');
 });
 
@@ -128,15 +129,15 @@ test('zwolnienie czasowe na żądanie (release z timed): czasowo także przy wol
   run(s, 10);
   const r = s.execute({ type: 'release', signal: 'A', timed: true });
   assert.ok(r.timed, 'zwalnianie czasowe');
-  assert.ok(s.ilk.active.get('A-D1').timedRelease);
+  assert.equal(s.ilk.routeState('A-D1'), 'releasing');
   assert.equal(s.ilk.signals.get('A').aspect, 'S1', 'sygnał „Stój” od razu');
   run(s, 100);
-  assert.equal(s.ilk.active.has('A-D1'), false, 'po czasie przebieg zwolniony');
+  assert.equal(s.ilk.routeIsSet('A-D1'), false, 'po czasie przebieg zwolniony');
   // bez flagi, przy wolnym odcinku zbliżania – od razu (jak dotąd)
   const t = sim();
   t.ilk.setRoute('A-D1'); run(t, 10);
   assert.deepEqual(t.execute({ type: 'release', signal: 'A' }), { ok: true });
-  assert.equal(t.ilk.active.has('A-D1'), false);
+  assert.equal(t.ilk.routeIsSet('A-D1'), false);
 });
 
 /* Usterka licznika osi (axle-counter): od `at` licznik myli się przy najbliższym przejeździe – po zjeździe pociągu odcinek
@@ -211,11 +212,10 @@ test('zajętość z usterki na odcinku przebiegu nie jest wjazdem pociągu – p
   const s = new Simulation(szkolna, { disruptions: 'none', scenario: { id: 't', name: 't', endTime: '09:00', faults: [{ type: 'false-occupancy', target: 'T1', at: '07:01', duration: 10 }] } });
   assert.ok(s.ilk.setRoute('A-D1').ok);
   run(s, 30);
-  assert.ok(s.ilk.active.has('A-D1'));
+  assert.ok(s.ilk.routeIsSet('A-D1'));
   run(s, 60); // 07:01 – odcinek T1 przebiegu „zajęty” bez pociągu
   assert.equal(s.ilk.sections.get('T1').occupied, true);
-  const act = s.ilk.active.get('A-D1');
-  assert.ok(act, 'przebieg nadal nastawiony');
-  assert.equal(act.trainEntered, false, 'usterka to nie wjazd pociągu');
+  assert.ok(s.ilk.routeIsSet('A-D1'), 'przebieg nadal nastawiony');
+  assert.equal(Interlocking.routeEntered(s.ilk.routeState('A-D1')), false, 'usterka to nie wjazd pociągu');
   assert.ok(!s.ilk.log.some((e) => /Pociąg minął semafor A/.test(e.msg)));
 });

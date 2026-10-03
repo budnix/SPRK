@@ -33,7 +33,7 @@ test('przebieg: kliknięcie semafora (menu obiektu), kliknięcie celu – menu �
   assert.ok(r.ok);
   assert.equal(sim.input.armed, null);
   run(sim, 8);
-  assert.ok(sim.ilk.active.has('A-D1'));
+  assert.ok(sim.ilk.routeIsSet('A-D1'));
   // cel: tor (ostatni odcinek przebiegu) i strzałka blokady zamiast semafora wjazdowego
   const t = mor();
   const last = t.ilk.routes.get('A-D2').sections.at(-1);
@@ -42,7 +42,7 @@ test('przebieg: kliknięcie semafora (menu obiektu), kliknięcie celu – menu �
   assert.equal(t.press({ kind: 'section', id: last }).menu, 'route');
   assert.ok(t.chooseCommand('Pociąg').ok);
   run(t, 8);
-  assert.ok(t.ilk.active.has('A-D2'));
+  assert.ok(t.ilk.routeIsSet('A-D2'));
   // kliknięcie obiektu bez przebiegu do niego – nowy wybór
   const u = mor();
   u.press({ kind: 'signal', id: 'A' });
@@ -73,7 +73,7 @@ test('przebieg od toru początkowego: kliknięcie toru, potem celu – kierunek 
   assert.deepEqual(codes(m), ['Manewr']);
   assert.ok(m.chooseCommand('Manewr').ok);
   run(m, 8);
-  assert.ok(m.ilk.active.has('D2-kT3m'));
+  assert.ok(m.ilk.routeIsSet('D2-kT3m'));
   const n = mor();
   n.press({ kind: 'section', id: 'ZbA' });
   assert.equal(n.press({ kind: 'section', id: 'T3' }).menu, 'object', 'od ZbA nie ma przebiegu na tor 3');
@@ -119,17 +119,17 @@ test('ZCZ – zwolnienie czasowe, oZCZ – odwołanie; ZD – od razu, przy zaj�
   sim.press({ kind: 'signal', id: 'A' });
   assert.ok(codes(sim).includes('oZCZ') && !codes(sim).includes('ZCZ'));
   assert.ok(sim.chooseCommand('oZCZ').ok);
-  assert.equal(sim.ilk.active.get('A-D1').timedRelease, null);
+  assert.notEqual(sim.ilk.routeState('A-D1'), 'releasing');
   sim.press({ kind: 'signal', id: 'A' });
   assert.deepEqual(sim.chooseCommand('ZD'), { ok: true });
-  assert.equal(sim.ilk.active.has('A-D1'), false);
+  assert.equal(sim.ilk.routeIsSet('A-D1'), false);
   // ZD przy zajętym odcinku zbliżania
   const t = mor();
   t.press({ kind: 'signal', id: 'A' }); t.press({ kind: 'signal', id: 'D1' }); t.chooseCommand('Pociąg'); run(t, 8);
   t.ilk.updateOccupancy(new Set([t.ilk.routes.get('A-D1').approach]));
   t.press({ kind: 'signal', id: 'A' });
   assert.match(t.chooseCommand('ZD').reason, /ZCZ/);
-  assert.ok(t.ilk.active.has('A-D1'));
+  assert.ok(t.ilk.routeIsSet('A-D1'));
 });
 
 test('tor i zwrotnica: Zmk / oZmk (potwierdzenie), Plus / Minus, Stop / oStop; blokada: Poz, dKo specjalne', () => {

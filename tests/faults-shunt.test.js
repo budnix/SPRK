@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
-import { autoDispatch, allArrived } from './helpers.js';
+import { autoDispatch, allArrived, routeView } from './helpers.js';
 import { violations, watchEvents } from '../src/model/check/invariants.js';
 import { faultSim, runWithFault, stuck, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
@@ -56,9 +56,9 @@ const moment = {
   /** skład odstawiony na tor 3 – usterka na drodze podstawienia, zanim automat zmieni kierunek i nastawi przebieg */
   away: (sim) => taskOf(sim, 'odstaw-90201').done,
   /** skład jedzie w przebiegu D2-kT3m, czoło na rozjeździe Zw3 */
-  awayMoving: (sim) => { const tr = unit(sim); return !!tr && tr.mode === 'shunt' && tr.v > 0 && sim.ilk.active.has('D2-kT3m') && tr.occupiedSections().has('Iz3'); },
+  awayMoving: (sim) => { const tr = unit(sim); return !!tr && tr.mode === 'shunt' && tr.v > 0 && sim.ilk.routeIsSet('D2-kT3m') && tr.occupiedSections().has('Iz3'); },
   /** skład jedzie w przebiegu Tm1-Tm2, czoło na rozjeździe Zw3 */
-  backMoving: (sim) => { const tr = unit(sim); return !!tr && tr.mode === 'shunt' && tr.v > 0 && sim.ilk.active.has('Tm1-Tm2') && tr.occupiedSections().has('Iz3'); },
+  backMoving: (sim) => { const tr = unit(sim); return !!tr && tr.mode === 'shunt' && tr.v > 0 && sim.ilk.routeIsSet('Tm1-Tm2') && tr.occupiedSections().has('Iz3'); },
 };
 
 /**
@@ -183,7 +183,7 @@ test('manewry przy długiej usterce (25 min): sygnalizator – zezwolenie dyżur
  */
 const waitsAtDark = (sim, sig) => {
   const tr = unit(sim), s = sim.ilk.signals.get(sig);
-  return !!tr && tr.mode === 'shunt' && tr.v === 0 && tr.nextSignal() === sig && s.failed && !!s.route && sim.ilk.active.has(s.route) && !sim.ilk.active.get(s.route).trainEntered;
+  return !!tr && tr.mode === 'shunt' && tr.v === 0 && tr.nextSignal() === sig && s.failed && !!s.route && sim.ilk.routeIsSet(s.route) && !routeView(sim.ilk, s.route).entered;
 };
 
 /**
@@ -298,7 +298,7 @@ function p7Run(srk, how, { onAuth, onPoint }) {
       const go = how === 'Sz' ? sim.execute({ type: 'substitute', signal: 'A' }) : sim.traffic.issueOrder({ nr: 6101, signal: 'A' });
       st.auth = { zz, ko, go, pos: sim.ilk.points.get('Zw1').position };
     }
-    if (!st.auth && tr && how === 'route' && sim.ilk.active.has('A-D1') && tr.entryPending) st.auth = { go: { ok: true } };
+    if (!st.auth && tr && how === 'route' && sim.ilk.routeIsSet('A-D1') && tr.entryPending) st.auth = { go: { ok: true } };
     if (st.auth && !st.onAuth) st.onAuth = onAuth(sim) ?? {};
     if (st.onAuth && !st.onPoint && tr?.occupiedSections().has('Iz1')) st.onPoint = onPoint(sim) ?? {};
     if (e.actualArr != null && st.unlockAfter == null) st.unlockAfter = sim.ilk.points.get('Zw1').individualLock ? sim.execute({ type: 'lock', id: 'Zw1' }) : { ok: true, noop: true };
@@ -393,9 +393,9 @@ test('zezwolenie na jazdę manewrową (Ir-9 § 10 ust. 15): tylko dla składu ma
   sim.traffic.toShunting(90201);
   assert.match(sim.traffic.shuntPermit(90201).reason, /nie ma nastawionego przebiegu/, 'bez przebiegu manewrowego');
   // sprawny sygnalizator: przebieg nastawiony, zezwolenie daje się sygnałem Ms2 – odmowa i −5 za zły telefonogram
-  assert.ok(sim.ilk.setRoute('D2-kT3m').pending || sim.ilk.active.has('D2-kT3m'));
-  for (let i = 0; i < 40 && !sim.ilk.active.has('D2-kT3m'); i++) sim.step(0.5);
-  assert.ok(sim.ilk.active.has('D2-kT3m'), 'przebieg D2-kT3m nastawiony');
+  assert.ok(sim.ilk.setRoute('D2-kT3m').pending || sim.ilk.routeIsSet('D2-kT3m'));
+  for (let i = 0; i < 40 && !sim.ilk.routeIsSet('D2-kT3m'); i++) sim.step(0.5);
+  assert.ok(sim.ilk.routeIsSet('D2-kT3m'), 'przebieg D2-kT3m nastawiony');
   assert.equal(u.train.v, 0, 'skład jeszcze stoi');
   const res = sim.comms.send('shunt-permit', { nr: 90201 });
   assert.equal(res.ok, false);

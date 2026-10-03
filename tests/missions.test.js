@@ -10,7 +10,7 @@ import { lessonSteps, withSteps, infoStep, actStep, LESSON_PHRASES } from '../sr
 import { GLOSSARY } from '../src/data/glossary.js';
 import { ORDERS } from '../src/srk/address.js';
 import { STATIONS, getStation } from '../src/stations/index.js';
-import { allArrived, play } from './helpers.js';
+import { allArrived, play, routesBeingSet } from './helpers.js';
 
 /* Samouczki: każda misja to własny plik, własne kroki i własny scenariusz (stacja, układ torów, rozkład) */
 
@@ -134,7 +134,7 @@ function common(sim) {
   const press = (ref) => sim.press(ref);
   const B = (exit) => sim.blocks.get(exit);
   const e = (nr) => sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
-  const act = (id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
+  const act = (id) => sim.ilk.routeIsSet(id) || sim.ilk.routeState(id) === 'setting';
   const blk = (exit, btn) => press({ kind: 'block', exit, btn });
   const once = new Set();
   return {
@@ -228,7 +228,7 @@ function studentMech(sim) {
   /** Pełna kolejność: dźwignie zwrotnic i wykolejnicy → drążek → blok → dźwignia sygnałowa. */
   const route = (id) => {
     const r = ilk.routes.get(id);
-    const a = ilk.active.get(id);
+    const a = ilk.routeFrame(id);
     if (a) { if (a.passed) return; if (r.kind === 'train' && !a.blocked) x({ type: 'route-block', signal: r.start }); if (!a.lever) x({ type: 'clear', signal: r.start }); return; }
     if (ilk.signals.get(r.start).route) return;
     for (const q of [...r.points, ...r.flank]) set(q.id, q.position);
@@ -236,16 +236,16 @@ function studentMech(sim) {
     x({ type: 'route', id });
   };
   /** Po przejeździe: dźwignia sygnałowa na „Stój” i drążek z powrotem. */
-  const back = (id) => { const a = ilk.active.get(id); if (a?.passed && !a.stuck) { x({ type: 'stop', signal: a.route.start }); x({ type: 'release', signal: a.route.start }); } };
+  const back = (id) => { const a = ilk.routeFrame(id); if (a?.passed && !a.blockStuck) { x({ type: 'stop', signal: ilk.routes.get(id).start }); x({ type: 'release', signal: ilk.routes.get(id).start }); } };
   const arrive = (nr, exit, id) => { poz(exit); if (B(exit).direction === 'in' && e(nr).actualArr == null) route(id); back(id); if (e(nr).actualArr != null) ko(exit); };
-  const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).status === 'na następnym posterunku') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.active.has(id)) wbl(exit); back(id); };
+  const depart = (nr, exit, id) => { if (e(nr).actualArr == null || e(nr).status === 'na następnym posterunku') { back(id); return; } const b = B(exit); if (b.direction === 'out' && b.permission) route(id); else if (!ilk.routeIsSet(id)) wbl(exit); back(id); };
   return {
     'poz-8401': () => poz('W'),
-    'route-8401': () => { if (!ilk.active.has('A-D1')) x({ type: 'route', id: 'A-D1' }); },
+    'route-8401': () => { if (!ilk.routeIsSet('A-D1')) x({ type: 'route', id: 'A-D1' }); },
     'block-8401': () => x({ type: 'route-block', signal: 'A' }),
     'signal-8401': () => x({ type: 'clear', signal: 'A' }),
     'watch-8401': () => {},
-    'back-8401': () => { if (ilk.active.get('A-D1')?.passed) x({ type: 'stop', signal: 'A' }); },
+    'back-8401': () => { if (ilk.routeFrame('A-D1')?.passed) x({ type: 'stop', signal: 'A' }); },
     'back-8401-drazek': () => back('A-D1'),
     'ko-8401': () => ko('W'),
     'out-8401': () => depart(8401, 'E', 'D1-E'),
@@ -259,7 +259,7 @@ function studentMech(sim) {
     'cross-out': () => { depart(8403, 'E', 'D2-E'); depart(8404, 'W', 'C1-W'); },
     'fault-in': () => arrive(8405, 'W', 'A-D1'),
     // blok niezwolniony przez pociąg: dźwignia na „Stój”, potem zwalniacz
-    'fault-release': () => { const a = ilk.active.get('A-D1'); if (a?.passed) { x({ type: 'stop', signal: 'A' }); x({ type: 'release', signal: 'A', emergency: true }); } },
+    'fault-release': () => { const a = ilk.routeFrame('A-D1'); if (a?.passed) { x({ type: 'stop', signal: 'A' }); x({ type: 'release', signal: 'A', emergency: true }); } },
     'out-8405': () => { ko('W'); depart(8405, 'E', 'D1-E'); },
     'out-8406': () => { arrive(8406, 'E', 'B-C1'); depart(8406, 'W', 'C1-W'); },
   };
@@ -434,7 +434,7 @@ test('zmiana toru wymuszona usterką urządzeń nie kosztuje punktów; bez uster
     const sim = new Simulation(st, { scenario: { id: 't', name: 't', trains: [3301], endTime: '07:30', faults }, disruptions: 'none', seed: 1 });
     for (let i = 0; i < 2 * 60 * 20 && sim.traffic.timetable()[0].actualArr == null; i++) {
       sim.step(0.5);
-      if (!sim.ilk.active.has('A-E3') && !sim.ilk.pending.length) sim.execute({ type: 'route', start: 'A', end: 'E3', kind: 'train' });
+      if (!sim.ilk.routeIsSet('A-E3') && !routesBeingSet(sim.ilk).length) sim.execute({ type: 'route', start: 'A', end: 'E3', kind: 'train' });
     }
     const e = sim.traffic.timetable()[0];
     assert.equal(String(e.actualTrack), '3'); assert.equal(String(e.track), '2');

@@ -214,7 +214,7 @@ export class AutoOperator {
    *  - semafor zgasł przed pociągiem, bo odcinek drogi przebiegu wykazał zajętość albo zwrotnica straciła kontrolę –
    *    sygnał sam nie wraca; automat zwalnia przebieg (Pz) i nastawia go od nowa, gdy droga będzie sprawna
    *    (urządzenia przekaźnikowe i komputerowe; w nastawni mechanicznej sygnał trzyma dźwignia),
-   *  - pociąg przejechał, a przebieg się nie rozwiązał (`Interlocking.routeStuck`) – doraźne zwolnienie po chwili
+   *  - pociąg przejechał, a przebieg się nie rozwiązał (stan przebiegu 'stuck') – doraźne zwolnienie po chwili
    *    (w nastawni mechanicznej: dźwignia sygnałowa na „Stój” i zwalniacz).
    */
   #recoverRoutes() {

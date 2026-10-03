@@ -24,7 +24,7 @@ test('polecenie „przebieg”: rodzaj podany wprost, bez przycisków i bez uzbr
   const r = sim.execute({ type: 'route', start: 'A', end: 'D2', kind: 'train' });
   assert.ok(r.ok, JSON.stringify(r));
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has('A-D2'));
+  assert.ok(sim.ilk.routeIsSet('A-D2'));
   assert.equal(sim.ilk.signals.get('A').aspect, 'S13');
   assert.equal(sim.ilk.armed, null);
   assert.deepEqual(seen, { armed: 0, button: 0 });
@@ -42,14 +42,14 @@ test('polecenia „stój”, „zwolnij”, „zwolnij doraźnie” działają j
   assert.equal(sim.ilk.signals.get('A').aspect, 'S5');
   assert.ok(sim.execute({ type: 'stop', signal: 'A' }).ok);
   assert.equal(sim.ilk.signals.get('A').aspect, 'S1');
-  assert.ok(sim.ilk.active.has('A-D1'), 'przebieg pozostaje utwierdzony');
+  assert.ok(sim.ilk.routeIsSet('A-D1'), 'przebieg pozostaje utwierdzony');
   assert.ok(sim.execute({ type: 'release', signal: 'A' }).ok);
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
 
   sim.execute({ type: 'route', start: 'A', end: 'D1', kind: 'train' });
   run(sim, 1);
   assert.ok(sim.execute({ type: 'release', signal: 'A', emergency: true }).ok);
-  assert.ok(!sim.ilk.active.has('A-D1'));
+  assert.ok(!sim.ilk.routeIsSet('A-D1'));
   assert.equal(sim.ilk.counters.dPz, 1, 'doraźne zwolnienie jest rejestrowane w liczniku');
 });
 
@@ -188,7 +188,7 @@ test('odmowa nastawienia przebiegu podaje kody przeszkód – logika nie czyta k
   assert.ok(problems.some((p) => p.code === 'section-closed' && p.section === 'T1'), JSON.stringify(problems));
   assert.ok(problems.some((p) => p.code === 'signal-busy' && p.route === 'A-D2'), JSON.stringify(problems));
   for (const p of problems.filter((q) => q.code.startsWith('section-') || q.code === 'overlap')) assert.ok(sim.ilk.sections.has(p.section), `${p.code}: odcinek w polu section`);
-  for (const p of problems.filter((q) => q.code === 'section-locked')) assert.ok(sim.ilk.active.has(p.route), `${p.code}: przebieg w polu route`);
+  for (const p of problems.filter((q) => q.code === 'section-locked')) assert.ok(sim.ilk.routeIsSet(p.route), `${p.code}: przebieg w polu route`);
   for (const p of problems.filter((q) => q.code === 'point')) assert.ok(sim.ilk.points.has(p.point), `${p.code}: zwrotnica w polu point`);
   // kod źródła: automat i zależności nie dopasowują wyrażeń do komunikatów
   for (const f of ['Operator.js', 'Interlocking.js']) {

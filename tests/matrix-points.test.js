@@ -60,7 +60,7 @@ test('przebieg nie utwierdza się, gdy zwrotnica nie może osiągnąć położen
   sim.ilk.updateOccupancy(new Set());
   assert.equal(sim.ilk.setRoute(r.id).ok, true);
   run(sim, POINT_SWITCH_TIME + 1);
-  assert.ok(sim.ilk.active.has(r.id));
+  assert.ok(sim.ilk.routeIsSet(r.id));
 });
 
 test('rozprucie: najazd na zwrotnicę z ostrza przy złym położeniu', () => {

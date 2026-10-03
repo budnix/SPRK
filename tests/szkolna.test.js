@@ -72,7 +72,7 @@ function studentScript(sim) {
   const op = operate(sim);
   const blk = (exit, btn) => ({ kind: 'block', exit, btn });
   const B = (exit) => sim.blocks.get(exit);
-  const act = (id) => sim.ilk.active.has(id) || sim.ilk.pending.some((p) => p.route.id === id);
+  const act = (id) => sim.ilk.routeIsSet(id) || sim.ilk.routeState(id) === 'setting';
   const e = (nr) => sim.traffic.timetable().find((x) => String(x.nr) === String(nr));
   const poz = (exit) => { if (B(exit).request === 'theirs') press(blk(exit, 'Poz')); };
   const ko = (exit) => { if (B(exit).koPending) press(blk(exit, 'Ko')); };
@@ -96,7 +96,7 @@ function studentScript(sim) {
     'route-6102': () => route('B', 'C1', 'B-C1'),
     'ko-6102': () => { ko('E'); if (!B('E').koPending && e(6102).actualArr != null) wbl('W'); },
     'out-6102': () => out(6102, 'C1', 'kW', 'W', 'C1-W'),
-    'passing-42101': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); if (sim.ilk.active.has('A-D1')) { wbl('E'); if (B('E').permission) route('D1', { kind: 'end', id: 'kE' }, 'D1-E'); } },
+    'passing-42101': () => { poz('W'); if (B('W').direction === 'in') route('A', 'D1', 'A-D1'); if (sim.ilk.routeIsSet('A-D1')) { wbl('E'); if (B('E').permission) route('D1', { kind: 'end', id: 'kE' }, 'D1-E'); } },
     'after-42101': () => ko('W'),
     'cross-poz': () => { poz('W'); poz('E'); },
     'cross-routes': () => { if (B('W').direction === 'in') route('A', 'D2', 'A-D2'); if (B('E').direction === 'in') route('B', 'C1', 'B-C1'); },
@@ -318,7 +318,7 @@ test('Szkolna: krzyżowanie – wjazdy A→D2 i B→C1 nastawiają się jednocze
   assert.deepEqual(sim.ilk.checkRoute(sim.ilk.routes.get('B-C1')), [], 'B→C1 bez konfliktu z A→D2');
   sim.press(G('B')); sim.press(G('C1')); run(10);
   assert.equal(sim.ilk.signals.get('B').route, 'B-C1');
-  assert.ok(sim.ilk.active.has('A-D2') && sim.ilk.active.has('B-C1'));
+  assert.ok(sim.ilk.routeIsSet('A-D2') && sim.ilk.routeIsSet('B-C1'));
   assert.notEqual(sim.ilk.signals.get('A').aspect, 'S1'); assert.notEqual(sim.ilk.signals.get('B').aspect, 'S1');
   // wjazdy na ten sam tor (A→D2 i B→C2) nadal się wykluczają – wspólny odcinek T2
   const sim2 = new Simulation(szkolna, { disruptions: 'none' });

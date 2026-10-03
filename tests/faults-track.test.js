@@ -9,7 +9,7 @@ import { Interlocking } from '../src/model/Interlocking.js';
 import { EMERGENCY_BRAKE } from '../src/model/Train.js';
 import { faultSim, runWithFault, at, target, stuck, entryActive, exitActive, entryRoutes, Clock } from './fault-harness.js';
 import { unjustified, leftovers } from '../src/model/check/outcome.js';
-import { autoDispatch } from './helpers.js';
+import { autoDispatch, routeView } from './helpers.js';
 
 /*
  * Usterki toru w wybranej chwili jazdy pociągu (podstawa: `tests/fault-harness.js`):
@@ -68,7 +68,7 @@ const on = {
   entrySignal: target.entrySignal,
   exitSignal: target.exitSignal,
   /** odcinek zwrotnicowy przebiegu wjazdowego, na którym jest pociąg (nie ostatni) */
-  underTrain: (nr) => (sim) => { const a = entryActive(sim, nr); return a?.lockedSections.find((s, i) => i < a.lockedSections.length - 1 && sim.ilk.sections.get(s).physical && sim.ilk.sections.get(s).track == null); },
+  underTrain: (nr) => (sim) => { const a = entryActive(sim, nr); return a?.sections.find((s, i) => i < a.sections.length - 1 && sim.ilk.sections.get(s).physical && sim.ilk.sections.get(s).track == null); },
   /** pierwszy odcinek nastawionego przebiegu wjazdowego */
   entryFirst: (nr) => (sim) => entryActive(sim, nr)?.route.sections[0],
   /** tor docelowy nastawionego przebiegu wjazdowego (ostatni odcinek) */
@@ -76,9 +76,9 @@ const on = {
   /** pierwszy odcinek nastawionego przebiegu wyjazdowego (za semaforem wyjazdowym) */
   exitFirst: (nr) => (sim) => exitActive(sim, nr)?.route.sections[0],
   /** odcinek przebiegu wyjazdowego przed czołem wyjeżdżającego pociągu (nie ostatni – tor szlakowy) */
-  exitAhead: (nr) => (sim) => { const a = exitActive(sim, nr); return a?.lockedSections.find((s, i) => i > (a.front ?? -1) && i < a.lockedSections.length - 1 && !sim.ilk.sections.get(s).physical); },
+  exitAhead: (nr) => (sim) => { const a = exitActive(sim, nr); return a?.sections.find((s, i) => i > a.front && i < a.sections.length - 1 && !sim.ilk.sections.get(s).physical); },
   /** odcinek przebiegu wyjazdowego pod wyjeżdżającym pociągiem (nie ostatni) */
-  exitUnder: (nr) => (sim) => { const a = exitActive(sim, nr); return a?.lockedSections.find((s, i) => i < a.lockedSections.length - 1 && sim.ilk.sections.get(s).physical); },
+  exitUnder: (nr) => (sim) => { const a = exitActive(sim, nr); return a?.sections.find((s, i) => i < a.sections.length - 1 && sim.ilk.sections.get(s).physical); },
   /** tor planowy pociągu – ostatni odcinek przebiegu wjazdowego na ten tor */
   planned: (nr) => (sim) => plannedRoute(sim, nr)?.sections.at(-1),
   /** pierwszy odcinek przebiegu wjazdowego na tor planowy (zwrotnice głowicy) */
@@ -158,12 +158,12 @@ const aheadWatch = (routeOf) => ({
     const f = faultOf(sim, 'false-occupancy');
     if (!f?.active || c.reached) return;
     const s = sim.ilk.sections.get(f.target);
-    c.route ??= routeOf(sim);
+    c.route ??= routeOf(sim)?.id ?? null; // id przebiegu – postęp pociągu zapytany w każdym takcie od nowa
     if (!c.route) { c.bad.push(`${now(sim)} brak przebiegu z odcinkiem ${f.target}`); c.reached = true; return; }
     if (s.physical) { c.reached = true; return; }
-    const i = c.route.lockedSections.indexOf(f.target);
-    if (!sim.ilk.active.has(c.route.id)) c.bad.push(`${now(sim)} przebieg ${c.route.id} rozwiązany przed dojazdem pociągu do ${f.target}`);
-    else if (c.route.released.has(f.target) || c.route.front >= i) c.bad.push(`${now(sim)} ${f.target} zwolniony / czoło pociągu na nim bez pociągu`);
+    const r = routeView(sim.ilk, c.route);
+    if (!r) c.bad.push(`${now(sim)} przebieg ${c.route} rozwiązany przed dojazdem pociągu do ${f.target}`);
+    else if (r.released.includes(f.target) || r.front >= r.sections.indexOf(f.target)) c.bad.push(`${now(sim)} ${f.target} zwolniony / czoło pociągu na nim bez pociągu`);
   },
 });
 
@@ -177,8 +177,8 @@ const underWatch = (routeOf) => ({
     // koniec usterki: czy pociąg był jeszcze na odcinku (naprawa, zanim zjechał)
     if (f.done && c.endedUnder == null) c.endedUnder = !!s.physical;
     if (!f.active) return;
-    c.route ??= routeOf(sim);
-    if (c.route && sim.ilk.active.has(c.route.id) && c.route.released.has(f.target)) c.bad.push(`${now(sim)} ${f.target} zwolniony mimo zajętości`);
+    c.route ??= routeOf(sim)?.id ?? null;
+    if (c.route && routeView(sim.ilk, c.route)?.released.includes(f.target)) c.bad.push(`${now(sim)} ${f.target} zwolniony mimo zajętości`);
   },
 });
 
@@ -256,8 +256,8 @@ test('false-occupancy toru planowego i drogi wjazdu przed nastawieniem: przebieg
       setup: (sim) => {
         const c = { bad: [], preset: null };
         sim.bus.on('route', (x) => {
-          const a = x.state === 'set' && sim.ilk.active.get(x.id), f = faultOf(sim, 'false-occupancy');
-          if (a && f?.active && a.lockedSections.includes(f.target)) c.bad.push(`${now(sim)} ${x.id} utwierdzony nad zajętym ${f.target}`);
+          const a = x.state === 'set' && routeView(sim.ilk, x.id), f = faultOf(sim, 'false-occupancy');
+          if (a && f?.active && a.sections.includes(f.target)) c.bad.push(`${now(sim)} ${x.id} utwierdzony nad zajętym ${f.target}`);
         });
         return c;
       },
@@ -363,7 +363,7 @@ function szExitDispatcher(nr) {
   const st = { sz: null };
   const fn = (sim) => {
     const e = entryOf(sim, nr), tr = e?.train, a = exitActive(sim, nr);
-    if (!st.sz && tr && a && !a.trainEntered && a.faultDrop && faultOf(sim, 'false-occupancy')?.active) {
+    if (!st.sz && tr && a && !a.entered && a.faultDrop && faultOf(sim, 'false-occupancy')?.active) {
       if (tr.v > 0 || sim.clock.time < e.depTime) return; // przebieg trzyma dyżurny
       st.sz = { res: sim.execute({ type: 'substitute', signal: a.route.start }), at: now(sim) };
     }
@@ -430,8 +430,8 @@ test('route-block: blok przebiegowy niezwolniony przez pociąg tylko przy usterc
         setup: (s) => {
           const c = { passes: [] };
           s.bus.on('route', (x) => {
-            const a = x.state === 'passed' && s.ilk.active.get(x.id), f = faultOf(s, 'route-block');
-            if (a && f && a.route.kind === 'train' && a.route.start === f.target) c.passes.push({ id: x.id, stuck: !!a.stuck, fault: f.active });
+            const a = x.state === 'passed' && routeView(s.ilk, x.id), f = faultOf(s, 'route-block');
+            if (a && f && a.route.kind === 'train' && a.route.start === f.target) c.passes.push({ id: x.id, stuck: s.ilk.routeFrame(x.id).blockStuck, fault: f.active });
           });
           return c;
         },
@@ -531,8 +531,8 @@ function itsDispatcher(sim) {
   for (const f of sim.faults.list.filter((x) => x.type === 'track-defect')) {
     const s = sim.ilk.sections.get(f.target);
     if (f.active && !s.closed) {
-      const act = s.route && sim.ilk.active.get(s.route);
-      if (act && !act.trainEntered) sim.execute({ type: 'release', signal: act.route.start });
+      const act = s.route && routeView(sim.ilk, s.route);
+      if (act && !act.entered) sim.execute({ type: 'release', signal: act.route.start });
       sim.execute({ type: 'close-section', section: f.target, closed: true });
     }
     const coming = sim.traffic.timetable().some((e) => e.train && !e.train.finished && e.from && e.actualArr == null);

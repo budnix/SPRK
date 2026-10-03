@@ -19,7 +19,7 @@ Przy każdym pojęciu:
 **Przebieg**:
 Droga jazdy od sygnalizatora do następnego sygnalizatora, toru albo szlaku, na której zwrotnice są ustawione i utwierdzone, a sygnalizator może podać sygnał zezwalający. Pociągowy albo manewrowy.
 _English_: route – a set path for a train or shunting movement, from a signal to the next signal, track or line, with points set and locked.
-_W kodzie_: `route`, `routes`, `routeState`
+_W kodzie_: `route`, `routes`, `routeState`, `routeIsSet`
 _Unikaj_: trasa, droga (bez „przebiegu”), ścieżka
 
 **Przebieg nastawiany**:
@@ -49,13 +49,13 @@ _Unikaj_: przebieg kasowany, przebieg wygasający
 **Przebieg zajęty przez pociąg**:
 Przebieg, którego sygnalizator pociąg już minął – pociąg jedzie nim albo przejechał, a przebieg nie jest jeszcze rozwiązany.
 _English_: route entered by the train – the train passed the signal; the route is not released yet.
-_W kodzie_: `'entered'`
+_W kodzie_: `'entered'`, `routeEntered`
 _Unikaj_: przebieg wykorzystany, przebieg w użyciu
 
 **Przebieg nierozwiązany**:
 Przebieg, przez który pociąg przejechał, a który sam się już nie rozwiąże, bo odcinek nie zwolnił się za pociągiem (usterka kontroli zajętości) – zostaje doraźne zwolnienie.
 _English_: stuck route – the train passed, but a section did not clear behind it (track-detection fault); only an emergency release frees it.
-_W kodzie_: `'stuck'`, `routeStuck`
+_W kodzie_: `'stuck'`
 _Unikaj_: przebieg zawieszony, przebieg zablokowany
 
 **Przebieg przed pociągiem**:

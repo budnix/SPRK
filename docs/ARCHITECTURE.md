@@ -102,13 +102,15 @@ w tabeli (pilnuje `tests/docs.test.js`).
   (`none`, `setting`, `waiting`, `signal-off`, `releasing`, `entered`, `stuck` – gdy pasuje kilka, wygrywa dalszy na liście),
   `Interlocking.routeAhead(stan)` – przebieg przed pociągiem (utwierdzony, pociąg jeszcze nie wjechał), `routesSet()`
   – lista nastawionych i nastawianych `{ id, route, state, faultDrop }`, `routeFrom(sygnalizator)` i `routeInfo(id)` –
-  ten sam opis dla jednego przebiegu, `Interlocking.routeLocked(stan)` – utwierdzony, `routeFaultDrop(id)` – sygnał
-  zgasł z usterki urządzeń (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia, blok
-  przebiegowy). Znaczenie stanów: `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`.
-  Pilnuje tego `tests/layers.test.js`: poza `Interlocking.js` żaden plik źródeł, skryptów ani skryptów skilli nie czyta
-  `ilk.active`, `ilk.pending` ani pól zapisu przebiegu. Spójność samego zapisu (odcinek najwyżej w jednym przebiegu)
-  sprawdzają zależności: `lockConflicts()` – korzysta z tego niezmiennik bezpieczeństwa. Wyjątek świadomy: testy samych
-  zależności i pomocnik testów usterek (`tests/fault-harness.js` – postęp pociągu w przebiegu).
+  ten sam opis dla jednego przebiegu, `Interlocking.routeLocked(stan)` – utwierdzony, `routeIsSet(id)` – to samo jednym
+  pytaniem, `Interlocking.routeEntered(stan)` – pociąg w przebiegu, `routeFaultDrop(id)` – sygnał zgasł z usterki urządzeń
+  (ocena Sz / rozkazu), `routeFrame(id)` – części nastawni mechanicznej (dźwignia, blok przebiegowy), `routeProgress(id)` –
+  postęp pociągu w przebiegu (odcinki, zwolnione, czoło, droga ochronna, utwierdzone zwrotnice – kopie). Znaczenie stanów:
+  `GLOSSARY.md` („Przebieg i jego stany”), testy: `tests/route-state.test.js`. Pilnuje tego `tests/layers.test.js`: poza
+  `Interlocking.js` żaden plik źródeł, skryptów, skryptów skilli ani testów (także w przeglądarce) nie czyta
+  `ilk.active`, `ilk.pending` ani pól zapisu przebiegu; testy mają pomocniki `setRoutes`, `routesBeingSet` i `routeView`
+  (`tests/helpers.js`). Spójność samego zapisu (odcinek najwyżej w jednym przebiegu) sprawdzają zależności:
+  `lockConflicts()` – korzysta z tego niezmiennik bezpieczeństwa.
 * **Stacja opisuje tor, stanowisko – swoje przyciski.** Definicja stacji nie zawiera przycisków grupowych pulpitu.
   Ich pola podaje `src/tiles/controls.js` (`deskControls(station)`: miejsce domyślne albo wskazówka
   `desk.controls`), a rysuje je widok stanowiska – tak samo jak kostki blokady liniowej (`blockLayout.js`).

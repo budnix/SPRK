@@ -145,3 +145,29 @@ test('stan przebiegu manewrowego: czeka na skład; lista podaje przebiegi w kole
   assert.equal(list[0], 'D2-kT3m:waiting');
   assert.ok(['A-D1:setting', 'A-D1:waiting'].includes(list[1]), list.join(', '));
 });
+
+test('jedno słowo „nastawiony” i postęp pociągu w przebiegu – przez interfejs, bez zapisu przebiegu', () => {
+  const sim = makeSim();
+  const ilk = sim.ilk;
+  const STATES = ['none', 'setting', 'waiting', 'signal-off', 'releasing', 'entered', 'stuck'];
+  assert.deepEqual(STATES.filter(Interlocking.routeEntered), ['entered', 'stuck'], 'pociąg w przebiegu');
+  sim.press(G('A')); sim.press(G('D2'));
+  assert.deepEqual([ilk.routeState('A-D2'), ilk.routeIsSet('A-D2'), ilk.routeProgress('A-D2')], ['setting', false, null], 'w nastawianiu – jeszcze nie nastawiony');
+  run(sim, 10);
+  assert.equal(ilk.routeIsSet('A-D2'), Interlocking.routeLocked(ilk.routeState('A-D2')));
+  const secs = ilk.routes.get('A-D2').sections;
+  const p = ilk.routeProgress('A-D2');
+  assert.deepEqual([p.sections, p.released, p.front], [secs, [], -1], 'przed wjazdem: nic zwolnione, czoło przed przebiegiem');
+  assert.ok(p.points.includes(ilk.routes.get('A-D2').points[0].id), 'zwrotnica przebiegu utwierdzona');
+  assert.ok(Array.isArray(p.overlap) && p.overlapPoints.every((x) => x.id && x.position), 'droga ochronna i jej zwrotnice w położeniu');
+  p.sections.pop(); p.released.push('X'); p.points.length = 0;
+  assert.deepEqual(ilk.routeProgress('A-D2').sections, secs, 'wynik to kopia – zmiana nie dotyka zależności');
+  // pociąg jedzie przez przebieg: czoło idzie naprzód, odcinki za nim się zwalniają
+  assert.deepEqual(secs, ['Iz1', 'T2'], 'przebieg na tor 2: zwrotnica i tor docelowy');
+  occupy(sim, 'Iz1');
+  assert.deepEqual([ilk.routeState('A-D2'), ilk.routeProgress('A-D2').front, ilk.routeProgress('A-D2').released], ['entered', 0, []]);
+  occupy(sim, 'Iz1', 'T2');
+  assert.deepEqual([ilk.routeProgress('A-D2').front, ilk.routeProgress('A-D2').released], [1, []], 'pociąg na obu odcinkach – nic zwolnione');
+  occupy(sim, 'T2');
+  assert.deepEqual([ilk.routeIsSet('A-D2'), ilk.routeProgress('A-D2')], [false, null], 'pociąg na torze docelowym – przebieg rozwiązany');
+});

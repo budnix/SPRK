@@ -20,7 +20,27 @@ export function allArrived(sim) {
 
 export { Clock, station };
 
+/** Id przebiegów nastawionych (utwierdzonych, bez nastawianych) w kolejności nastawienia – `ilk.routesSet()`. */
+export const setRoutes = (ilk) => ilk.routesSet().filter((x) => x.state !== 'setting').map((x) => x.id);
+/** Id przebiegów w nastawianiu (zwrotnice się przestawiają). */
+export const routesBeingSet = (ilk) => ilk.routesSet().filter((x) => x.state === 'setting').map((x) => x.id);
+
+/**
+ * Nastawiony przebieg `id` przez interfejs zależności (null, gdy nie jest nastawiony): `routeInfo` (id, route, state,
+ * faultDrop), `routeProgress` (sections, released, front, overlap, points) i `entered` – pociąg wjechał
+ * (`Interlocking.routeEntered`). Migawka: po kroku symulacji zapytaj od nowa (zapamiętuj id, nie wynik).
+ */
+export function routeView(ilk, id) {
+  const progress = id == null ? null : ilk.routeProgress(id);
+  if (!progress) return null;
+  const info = ilk.routeInfo(id);
+  return { ...info, ...progress, entered: Interlocking.routeEntered(info.state) };
+}
+/** `routeView` każdego nastawionego przebiegu, w kolejności nastawienia. */
+export const routeViews = (ilk) => setRoutes(ilk).map((id) => routeView(ilk, id));
+
 import { AutoOperator } from '../src/model/Operator.js';
+import { Interlocking } from '../src/model/Interlocking.js';
 import { isFinished } from '../src/model/timetable/phase.js';
 import { play as playLoop } from '../src/model/check/play.js';
 
