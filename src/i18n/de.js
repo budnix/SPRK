@@ -162,6 +162,7 @@ export default {
   'start.seaside': 'Saison an der Ostsee: Züge ans Meer (z. B. nach Hel) fahren in jedem Takt.',
   'start.seasideWeekends': 'In diesem Monat gilt die Saison an der Ostsee am Wochenende.',
   'start.monthNoEffect': 'An diesem Stellwerk ändert der Monat den Fahrplan nicht.',
+  'start.works': 'Bausaison: ein Nebengleis kann gesperrt sein – Züge fahren dann über ein anderes Gleis.',
   'start.month.1': 'Januar',
   'start.month.2': 'Februar',
   'start.month.3': 'März',

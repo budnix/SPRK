@@ -17,8 +17,8 @@ import {
 import { shiftChoices, srkChoosable } from '../model/shift/offers.js';
 import { choiceFromParams, choiceToParams, dutyWindow } from '../model/shift/choice.js';
 import { loadProgress, loadLastShift } from './progress.js';
-import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, normalizeDuty } from '../model/duty.js';
-import { DAY_RULES, DAY_TYPES, MONTHS, SEASIDE_SEASON, normalizeCalendar, seasideTrain } from '../model/timetable/calendar.js';
+import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, closableTracks, normalizeDuty } from '../model/duty.js';
+import { DAY_RULES, DAY_TYPES, MONTHS, SEASIDE_SEASON, WORKS, normalizeCalendar, seasideTrain } from '../model/timetable/calendar.js';
 import { regionBox } from './map/mapSvg.js';
 import { MapView } from './map/MapView.js';
 
@@ -593,7 +593,8 @@ export class StartScreen {
     daySel.innerHTML = random + DAY_TYPES.map((d) => `<option value="${d}">${esc(t(`start.day.${d}`))}</option>`).join('');
     monthSel.value = this.duty.month == null ? '' : String(this.duty.month);
     daySel.value = this.duty.day ?? '';
-    const seaside = (st.timetable || []).some(seasideTrain);
+    // co miesiąc może zmienić na tym posterunku: pociągi nad morze, tor do zamknięcia na roboty
+    const seaside = (st.timetable || []).some(seasideTrain), closable = closableTracks(st).length > 0;
     const go = root.querySelector('#st-go'), desc = root.querySelector('#st-scenario-desc'), block = root.querySelector('#st-duty');
     // przyciski długości powstają raz – zmiana wyboru przełącza tylko stan (fokus klawiatury zostaje na przycisku)
     lenBox.innerHTML = DUTY_MINUTES.map((m) => `<button type="button" class="tb" data-minutes="${m}">${esc(t(`start.duty.${m}`))}</button>`).join('');
@@ -609,12 +610,13 @@ export class StartScreen {
       const notes = [t(`start.bandDesc.${band}`)];
       const rule = day && DAY_RULES[day][band];
       if (rule) notes.push(t(rule === 'dzien' ? 'start.dayDesc.peak' : 'start.dayDesc.dawn'));
-      if (month != null && !seaside) notes.push(t('start.monthNoEffect'));
-      else if (month != null && SEASIDE_SEASON[month]) {
+      if (month != null && !seaside && !closable) notes.push(t('start.monthNoEffect'));
+      if (month != null && seaside && SEASIDE_SEASON[month]) {
         const days = SEASIDE_SEASON[month];
         if (day == null) notes.push(t(days.length === DAY_TYPES.length ? 'start.seaside' : 'start.seasideWeekends'));
         else if (days.includes(day)) notes.push(t('start.seaside'));
       }
+      if (month != null && closable && WORKS[month]) notes.push(t('start.works'));
       desc.textContent = notes.join(' ');
       go.disabled = false;
     };

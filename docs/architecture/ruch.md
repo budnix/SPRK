@@ -19,6 +19,15 @@ zasady pory doby (`DAY_RULES`: w sobotę i w niedzielę szczyty jak dzień, w ni
 nad morzem (`SEASIDE_SEASON`: czerwiec i wrzesień w weekendy, lipiec i sierpień codziennie) pociąg nad morze
 (`seasideTrain` – relacja do albo od miejscowości z `SEASIDE_TOWNS`) jedzie każdym kursem linii, o ile jego klasa o tej
 porze kursuje, i nie wypada dla urozmaicenia. Nowych dróg nie przybywa – zmienia się tylko, które kursy wzorca jadą.
+Roboty torowe (`WORKS`: kwiecień–październik 35 %, marzec i listopad 15 %, zimą nic): z ziarna jeden tor stacji zamknięty
+na całą służbę (`closedSections` scenariusza – cały tor, bez godzin) – spośród torów `closableTracks(station)`: tylko
+tory pomocnicze dróg przelotowych (pociąg wzorca na nim ma tą samą drogą tor, którym jedzie więcej pociągów), bez toru,
+na którym pociąg kończy bieg, stoi od początku, powstaje ze składu albo kończy się zadanie, i bez toru SKM. Zamknięcie
+toru głównego, toru zwrotu pociągów albo toru SKM dawało w grze automatem zatory (Sopot, Orłowo, Rumia, Reda – tor 1;
+Reda – tor 11; Rumia – tory 5 i 6); dziś tor do zamknięcia mają Gdynia Orłowo, Gdynia Główna, Rumia i Gdańsk Główny.
+Tor przyjmuje się, gdy kontrola definicji nie zgłasza przy nim nic poza `closed-planned-track` (pociąg pójdzie innym
+torem bez kary); ta uwaga nie usuwa pociągów z rozkładu służby. Siatka `tests/duty-grid.js` gra na każdej stacji
+z torem do zamknięcia służbę z robotami.
 Strona posterunku pokazuje pod porą doby, co zmienia wybrany termin (bez szczytu, sezon nad morzem, „miesiąc nie
 zmienia rozkładu” na posterunku bez pociągów nad morze); testy: `tests/duty.test.js` („termin służby”, „typ dnia”,
 „sezon nad morzem”), `tests/e2e/duty.spec.js`.

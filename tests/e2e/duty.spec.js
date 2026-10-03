@@ -181,7 +181,13 @@ test('termin służby: miesiąc i typ dnia (domyślnie „losowo”), opis tego,
   await page.waitForURL(/miesiac=7&dzien=sobota/);
   await ready(page);
   expect((await sim(page)).name).toBe('Służba 06:00–08:00 (lipiec, sobota)');
-  // posterunek bez pociągów nad morze: miesiąc nic nie zmienia – opis to mówi
+  // posterunek z torem pomocniczym (Rumia, tor 3): w sezonie robót – uwaga o robotach, zimą nie
+  await page.goto('/#/stacja/rumia', { waitUntil: 'load' });
+  await page.selectOption('#st-duty-month', '5');
+  await expect(page.locator('#st-scenario-desc')).toContainText('Sezon robót torowych');
+  await page.selectOption('#st-duty-month', '1');
+  await expect(page.locator('#st-scenario-desc')).not.toContainText('Sezon robót');
+  // posterunek bez pociągów nad morze i bez toru do zamknięcia: miesiąc nic nie zmienia – opis to mówi
   await page.goto('/#/stacja/tczew', { waitUntil: 'load' });
   await page.selectOption('#st-duty-month', '8');
   await expect(page.locator('#st-scenario-desc')).toContainText('miesiąc nie zmienia rozkładu');

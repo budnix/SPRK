@@ -11,7 +11,8 @@ import { relationOf } from '../categories.js';
  *  - miesiąc – sezon nad morzem (`SEASIDE_SEASON`): pociągi nad morze (`seasideTrain` – relacja do albo od
  *    miejscowości z `SEASIDE_TOWNS`) kursują wtedy każdym kursem linii, o ile ich klasa o tej porze w ogóle kursuje.
  *    Kalendarz z rozkładu POLREGIO Gdynia/Reda – Hel 2026 (docs/sources/posterunki.md); nowych dróg nie przybywa –
- *    jednotorowa linia 213 latem jest pełna, więc zmienia się tylko to, które kursy wzorca jadą.
+ *    jednotorowa linia 213 latem jest pełna, więc zmienia się tylko to, które kursy wzorca jadą;
+ *  - miesiąc – roboty torowe (`WORKS`, przyjęte): od wiosny do jesieni bywa zamknięty jeden tor stacji.
  * Moduł logiki: bez DOM.
  */
 
@@ -34,6 +35,11 @@ export const DAY_RULES = {
  * znów w weekendy – czerwiec i wrzesień w kalendarzu miesięcznym to weekendy.
  */
 export const SEASIDE_SEASON = { 6: ['sobota', 'niedziela'], 7: DAY_TYPES, 8: DAY_TYPES, 9: ['sobota', 'niedziela'] };
+/**
+ * Roboty torowe (przyjęte, bez źródła): miesiąc → prawdopodobieństwo, że w służbie jeden tor stacji jest zamknięty na
+ * całą służbę – sezon robót od kwietnia do października, w marcu i listopadzie rzadziej, zimą (mróz) bez robót.
+ */
+export const WORKS = { 3: 0.15, 4: 0.35, 5: 0.35, 6: 0.35, 7: 0.35, 8: 0.35, 9: 0.35, 10: 0.35, 11: 0.15 };
 /** Miejscowości nad morzem – relacja pociągu do albo od nich czyni go pociągiem nad morze. */
 export const SEASIDE_TOWNS = ['Hel', 'Jastarnia', 'Jurata', 'Władysławowo', 'Łeba', 'Ustka', 'Darłowo', 'Kołobrzeg', 'Międzyzdroje', 'Świnoujście', 'Krynica Morska'];
 

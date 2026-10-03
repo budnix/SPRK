@@ -213,6 +213,12 @@ _English_: duty date – the month and type of day (weekday, Saturday, Sunday or
 _W kodzie_: `resolveCalendar`, `DAY_TYPES`, `SEASIDE_SEASON`
 _Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
 
+**Roboty torowe**:
+Zamknięcie toru stacji na całą służbę w sezonie robót – pociągi planowane na ten tor jadą innym, bez kary.
+_English_: track works – a station track closed for the whole duty in the works season; trains planned on it use another track without penalty.
+_W kodzie_: `WORKS`, `closableTracks`
+_Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
+
 **Przejazd służbowy**:
 Jazda spoza wzorca stacji w rozkładzie służby: lokomotywa luzem, próżne wagony albo próżny skład EZT, przelotem.
 _English_: service run – a one-off non-revenue movement in a duty's timetable (light engine, empty wagons or an empty EMU), passing through.

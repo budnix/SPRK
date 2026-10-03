@@ -9,7 +9,7 @@ import { NAMED_TRAINS } from '../src/model/data/namedTrains.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from '../src/model/namedTrains.js';
 import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
-  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, FREIGHT_GAP, SERVICE_NR, SERVICE_RUNS, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
+  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, FREIGHT_GAP, SERVICE_NR, SERVICE_RUNS, bandOf, closableTracks, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
 import { shiftChoices, srkChoosable, isTraining } from '../src/model/shift/offers.js';
 import sopot from '../src/stations/sopot.js';
@@ -17,7 +17,8 @@ import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import rumia from '../src/stations/rumia.js';
 import szkolna from '../src/stations/szkolna.js';
 import wola from './fixtures/wola-pustkowska.js';
-import { DAY_TYPES, calendarLabel, normalizeCalendar, resolveCalendar, seasideTrain } from '../src/model/timetable/calendar.js';
+import { DAY_TYPES, WORKS, calendarLabel, normalizeCalendar, resolveCalendar, seasideTrain } from '../src/model/timetable/calendar.js';
+import { seedFraction } from '../src/core/Random.js';
 import reda from '../src/stations/reda.js';
 
 /*
@@ -302,6 +303,36 @@ test('sezon nad morzem: latem pociągi na Hel kursują każdym kursem (Reda) –
   assert.ok(count(9, 'sobota').sea > count(11, 'sobota').sea, 'wrzesień w sobotę – sezon');
   // pociąg nad morze: relacja do albo od miejscowości nad morzem
   assert.deepEqual(['Regio Reda – Hel', 'EIC „Posejdon” Kraków Gł. – Kołobrzeg', 'Regio Gdańsk Gł. – Słupsk'].map((name) => seasideTrain({ name })), [true, true, false]);
+});
+
+test('roboty torowe: od wiosny do jesieni bywa zamknięty tor pomocniczy (cała służba), zimą nie; tylko tor, który da się ominąć', () => {
+  // tory do zamknięcia: pomocnicze tory dróg przelotowych – bez toru, na którym pociąg kończy bieg (Reda: 11 – pociągi
+  // z Helu), toru SKM (Rumia: 5), toru pociągu zdawczego (Rumia: 6) i toru głównego drogi (Rumia: 1)
+  assert.deepEqual(closableTracks(rumia), ['3']);
+  assert.ok(!closableTracks(reda).includes('11'));
+  assert.deepEqual(closableTracks(sopot), [], 'Sopot: tylko tory główne');
+  const stations = duty.filter((st) => closableTracks(st).length);
+  assert.ok(stations.length >= 3, stations.map((st) => st.id).join(' '));
+  // ziarna, które losują roboty (lipiec: WORKS[7]); tor się znajduje, o ile tor pomocniczy jest w służbie
+  let works = 0, drawn = 0;
+  for (const st of stations) for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+    const draws = seedFraction(seed, 'roboty') < WORKS[7];
+    assert.equal(buildDuty(st, { start: 10, minutes: 120, seed, month: 1, day: 'roboczy' }).stats.works, null, `${st.id} w styczniu`);
+    const { scenario, stats } = buildDuty(st, { start: 10, minutes: 120, seed, month: 7, day: 'roboczy' });
+    if (draws) drawn++;
+    if (stats.works == null) { assert.equal(scenario.closedSections, undefined); continue; }
+    assert.ok(draws, `${st.id}, ziarno ${seed}: roboty bez losowania`);
+    works++;
+    const key = `${st.id}, ziarno ${seed}: tor ${stats.works}`;
+    assert.ok(closableTracks(st).includes(stats.works), key);
+    const sections = Object.entries(st.sections).filter(([, d]) => String(d.track) === stats.works).map(([id]) => id).sort();
+    assert.deepEqual(scenario.closedSections.map((c) => c.section).sort(), sections, `${key}: cały tor, cała służba`);
+    assert.ok(scenario.closedSections.every((c) => c.from == null && c.to == null));
+    // każdy pociąg ma drogę z ominięciem zamknięcia; planowany na zamknięty tor jedzie innym bez kary
+    assert.deepEqual(checkScenario(st, scenario).filter((f) => f.code.startsWith('closed-') && f.code !== 'closed-planned-track').map((f) => f.msg), [], key);
+    assert.match(scenario.description, new RegExp(`Roboty torowe: tor ${stats.works} zamknięty na całą służbę`));
+  }
+  assert.ok(drawn > 0 && works >= drawn * 0.6, `roboty w ${works} z ${drawn} służb, które je losują`);
 });
 
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {

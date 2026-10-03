@@ -162,6 +162,7 @@ export default {
   'start.seaside': 'Seaside season: trains to the coast (e.g. to Hel) run on every service.',
   'start.seasideWeekends': 'In this month the seaside season runs at weekends.',
   'start.monthNoEffect': 'At this station the month does not change the timetable.',
+  'start.works': 'Track works season: a secondary track may be closed – trains then use another track.',
   'start.month.1': 'January',
   'start.month.2': 'February',
   'start.month.3': 'March',

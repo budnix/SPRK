@@ -3,7 +3,7 @@ import { mixSeed, seedFraction } from '../core/Random.js';
 import { brandOf, categoryOf, relationOf, speedFor } from './categories.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from './namedTrains.js';
 import { checkScenario } from './scenarioCheck.js';
-import { DAY_RULES, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
+import { DAY_RULES, WORKS, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
 
 /**
  * Służba o wybranej porze i długości: scenariusz budowany z rozkładu stacji, bez danych per stacja.
@@ -65,6 +65,10 @@ export const SERVICE_RUNS = [
 export const SERVICE_NR = 48000;
 /** Udział pociągów (poza aglomeracyjnymi), które w danej służbie nie kursują – urozmaicenie (przyjęte). */
 export const DUTY_SKIP = 0.12;
+/** Roboty torowe: ile torów najwyżej sprawdzić (kolejność z ziarna), zanim służba pójdzie bez robót. */
+export const WORKS_TRIES = 4;
+/** Uwaga kontroli definicji, która przy zamkniętym torze jest zamierzona: pociąg jedzie innym torem bez kary. */
+const WORKS_ACCEPTED = 'closed-planned-track';
 /**
  * Przesunięcie linii [min]: każdy kurs linii (klasa i para szlaków – oba kierunki linii jednotorowej razem, więc
  * krzyżowania zostają jak we wzorcu) jedzie w danej służbie o tyle samo minut później, 0…`DUTY_SHIFT` z ziarna. Takt
@@ -136,6 +140,31 @@ export function normalizeDuty(start, minutes) {
 /** Czy stacja ma z czego budować służby: rozkład z pociągami od sąsiada. */
 export function hasDuty(station) {
   return (station.timetable || []).some((e) => e.from);
+}
+
+/**
+ * Tory, które roboty torowe (`WORKS`) mogą zamknąć na całą służbę – numery torów stacji (z odcinkami). Tylko tory,
+ * którymi we wzorcu pociągi jadą przelotem albo z krótkim postojem: bez toru, na którym pociąg kończy bieg, stoi od
+ * początku, powstaje ze składu, nie ma wjazdu albo wyjazdu, albo kończy się zadanie manewrowe – skład stanąłby na
+ * zastępczym torze głównym na długo i zatrzymał ruch (Reda: tor 11 pociągów z Helu, Rumia: tor 6 pociągu zdawczego);
+ * bez toru pociągów aglomeracyjnych – linia SKM to osobne tory, roboty na niej to jazda jednym torem, nie objazd torami
+ * dalekobieżnymi (Rumia: SKM z toru 5 na tor 2 nie miała wyjazdu). I tylko tor pomocniczy: każdy pociąg wzorca na nim ma
+ * tą samą drogą (wjazd i wyjazd) tor, którym jedzie więcej pociągów – zamknięcie toru głównego drogi to objazd pod prąd
+ * przez stację i konflikty z pociągami przeciwnego kierunku (Sopot, Gdynia Orłowo, Rumia, Reda: tor 1 – zatory w grze
+ * automatem). Stacja bez takiego toru nie ma robót.
+ */
+export function closableTracks(station) {
+  const tt = station.timetable || [], tasks = station.tasks || [];
+  const trackOf = (nr) => tt.find((e) => String(e.nr) === String(nr))?.track;
+  const parked = new Set([
+    ...tt.filter((e) => e.terminates || e.startOn || e.unit != null || !e.from || !e.to || trainClass(e) === 'agl').map((e) => String(e.track)),
+    ...tasks.map((x) => String(x.toTrack)), ...tasks.map((x) => String(trackOf(x.unit))),
+  ]);
+  const use = (e, T) => tt.filter((x) => x.from === e.from && x.to === e.to && x.track != null && String(x.track) === T).length;
+  const secondary = (e) => tt.some((x) => x.from === e.from && x.to === e.to && x.track != null && use(e, String(x.track)) > use(e, String(e.track)));
+  const hasSections = (T) => Object.values(station.sections || {}).some((d) => d.track != null && String(d.track) === T);
+  return [...new Set(tt.map((e) => e.track).filter((T) => T != null).map(String))]
+    .filter((T) => !parked.has(T) && hasSections(T) && tt.filter((e) => String(e.track) === T).every(secondary));
 }
 
 /**
@@ -358,10 +387,12 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
   // (pociąg sprzed startu, po końcu, zadanie) dotyczy samego pociągu – inne pociągi przez nią nie wypadają
   const pattern = { id: 'wzorzec', name: 'wzorzec', startTime: stamp(Math.max(0, lo - 30 * 60)), endTime: stamp(hi + 60 * 60), timetable: station.timetable, tasks: station.tasks || [] };
   const known = new Set(checkScenario(station, pattern).filter((f) => f.level !== 'info' && f.train != null).map((f) => `${f.code}:${f.train}`));
+  let works = null; // roboty torowe: { track, sections } – tor zamknięty na całą służbę
   const scenario = () => {
     const sc = { id: `${DUTY_ID}-${minutes}`, name: `Służba ${hm(t0)}–${hm(t1)} (${calendarLabel(cal)})`, startTime: stamp(t0), endTime: stamp(t1),
       timetable: picked.flatMap((p) => p.trains).sort((a, b) => firstOf(a) - firstOf(b)), tasks: picked.flatMap((p) => p.tasks) };
     if (srk) sc.srk = srk;
+    if (works) sc.closedSections = works.sections.map((section) => ({ section }));
     return sc;
   };
   const sameWay = (p, q) => p.trains.some((a) => q.trains.some((b) => (a.from && a.from === b.from) || (a.to && a.to === b.to) || (a.track != null && a.track === b.track)));
@@ -369,7 +400,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
   const validate = () => {
     const removed = [];
     for (let round = 0; round < 40 && picked.length; round++) {
-      const fresh = checkScenario(station, scenario()).filter((f) => f.level !== 'info' && !(f.train != null && known.has(`${f.code}:${baseOf.get(String(f.train)) ?? f.train}`)));
+      const fresh = checkScenario(station, scenario()).filter((f) => f.level !== 'info' && f.code !== WORKS_ACCEPTED && !(f.train != null && known.has(`${f.code}:${baseOf.get(String(f.train)) ?? f.train}`)));
       if (!fresh.length) break;
       const out = new Set();
       for (const f of fresh) {
@@ -464,12 +495,31 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null, month
     validate();
   }
 
+  // Roboty torowe (`WORKS`): w miesiącu robót, z ziarna, jeden tor stacji zamknięty na całą służbę – spośród torów, które
+  // roboty mogą zamknąć (`closableTracks`) i którymi jadą pociągi służby (kolejność z ziarna, najwyżej `WORKS_TRIES`);
+  // tor, przy którego zamknięciu kontrola definicji nie zgłasza nic poza „pociąg pójdzie innym torem” (`WORKS_ACCEPTED`):
+  // każdy pociąg ma drogę z ominięciem zamknięcia
+  if (fraction(seed, 'roboty') < (WORKS[cal.month] ?? 0)) {
+    const used = new Set(picked.flatMap((p) => p.trains).map((e) => String(e.track)));
+    const tracks = closableTracks(station).filter((T) => used.has(T))
+      .sort((a, b) => fraction(seed, `roboty|${a}`) - fraction(seed, `roboty|${b}`)).slice(0, WORKS_TRIES);
+    for (const track of tracks) {
+      const sections = Object.entries(station.sections || {}).filter(([, d]) => d.track != null && String(d.track) === track).map(([id]) => id);
+      if (!sections.length) continue;
+      works = { track, sections };
+      const blocked = checkScenario(station, scenario()).some((f) => f.code !== WORKS_ACCEPTED && (f.code.startsWith('closed-') || f.code === 'split-section'));
+      if (!blocked) break;
+      works = null;
+    }
+    if (works) validate();
+  }
+
   const sc = scenario();
   const count = { agl: 0, reg: 0, dal: 0, tow: 0 };
   for (const e of sc.timetable) count[trainClass(e)]++;
   const band = bandOf(t0);
   const parts = [[count.agl, 'SKM'], [count.reg, 'regionalne'], [count.dal, 'dalekobieżne'], [count.tow, 'towarowe']].filter(([n]) => n).map(([n, w]) => `${n} ${w}`);
   // opis pory doby pokazuje strona posterunku (teksty `start.bandDesc.*`) – tu tylko liczby
-  sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}. Poziom zakłóceń do wyboru.`;
-  return { scenario: sc, stats: { band: band.id, month: cal.month, day: cal.day, trains: sc.timetable.length, ...count } };
+  sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}.${works ? ` Roboty torowe: tor ${works.track} zamknięty na całą służbę – pociągi planowane na niego jadą innym torem bez kary.` : ''} Poziom zakłóceń do wyboru.`;
+  return { scenario: sc, stats: { band: band.id, month: cal.month, day: cal.day, works: works?.track ?? null, trains: sc.timetable.length, ...count } };
 }
