@@ -3,7 +3,7 @@ import { validateStation, validateTimetable } from './validate.js';
 import { FAULTS, FAULT_TYPES } from './faults/types.js';
 import { LATE_SLACK } from './Traffic.js';
 import { trainSpeed } from './rollingStock.js';
-import { entryPath as findEntryPath, trainRouteChains, routeEndTrack, entryRoutes } from './trainPaths.js';
+import { entryPath as findEntryPath, exitPath as findExitPath, routeEndTrack, entryRoutes } from './trainPaths.js';
 import { Clock } from '../core/Clock.js';
 import { DISRUPTION_LEVELS } from '../core/Random.js';
 import { hasSrk } from '../srk/registry.js';
@@ -214,10 +214,7 @@ export function checkScenario(station, scenarioRef, opts = {}) {
     const routes = trainRoutes.filter(ok);
     return findEntryPath(ilk, routes, entryRoutes(ilk, from, routes), T);
   };
-  const exitPath = (T, to, closed = null) => {
-    const routes = trainRoutes.filter(avoids(closed));
-    return trainRouteChains(routes, routes.filter((r) => trackOfSec(r.approach) === T), (r) => r.exit === to)[0] ?? null;
-  };
+  const exitPath = (T, to, closed = null) => findExitPath(ilk, trainRoutes.filter(avoids(closed)), T, to);
   const isDir = (d) => d === 'E' || d === 'W';
   // ---- wpisy rozkładu zmiany ----
   const count = new Map();

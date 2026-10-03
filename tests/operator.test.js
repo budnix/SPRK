@@ -5,6 +5,7 @@ import szkolna from '../src/stations/szkolna.js';
 import { Interlocking } from '../src/model/Interlocking.js';
 import { allArrived, Clock, play } from './helpers.js';
 import sopot from '../src/stations/sopot.js';
+import rumia from '../src/stations/rumia.js';
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { faultSim, runWithFault, stuck } from './fault-harness.js';
 import { leftovers } from '../src/model/check/outcome.js';
@@ -149,4 +150,21 @@ test('wjazd wieloetapowy: usterka gasi tylko pierwszy stopień – po naprawie a
   assert.deepEqual(r.sets, ['A-H', 'H-O', 'A-H', 'O-OR1'], 'A-H od nowa po naprawie; H-O czekał – bez ponownego nastawiania');
   assert.deepEqual(r.refused.filter((id) => id === 'H-O'), [], 'polecenia nastawienia H-O, któremu urządzenia odmówiły');
   assert.equal(stoppedAtO, false, 'pociąg bez postoju stanął przed semaforem wyjazdowym O');
+});
+
+test('tor planowy zamknięty, wyjazd przez semafor pośredni (Rumia): automat przyjmuje tylko na tor z drogą wyjazdu z ominięciem zamknięcia – jak kontrola definicji', () => {
+  // Rumia, tor 5 (SKM) zamknięty: SKM 93202 z Redy do Gdańska ma wyjazd na szlak GS2 tylko łańcuchem przebiegów przez
+  // semafor pośredni (G311-GS2). Automat sprawdzał wyjazd tylko pojedynczym przebiegiem, a ten zaczyna się za torami –
+  // zbiór torów z wyjazdem był pusty i filtr się wyłączał: przyjmował na tor 2, z którego droga do GS2 wiedzie przez
+  // zamknięty tor 5 – pociąg stał tam do końca zmiany, a za nim cała stacja. Kontrola definicji mówiła „pójdzie na 3”.
+  const scenario = { ...rumia.scenarios.find((s) => s.id === 'zmiana'), id: 'tor-5-zamkniety', closedSections: [{ section: 'T5' }] };
+  const sim = new Simulation(rumia, { scenario, disruptions: 'none', seed: 1 });
+  play(sim).until('06:40');
+  const e = sim.traffic.entry(93202);
+  assert.equal(e.actualTrack, '3', `93202 na torze ${e.actualTrack}`);
+  assert.ok(e.train?.finished, `93202: ${e.status}`);
+  // cała zmiana bez zatoru
+  const r = checkShift({ station: rumia, scenario, seed: 1, level: 'none', extra: 120 });
+  assert.deepEqual(r.jam.map((j) => `${j.nr}: ${j.status}`), [], 'zator');
+  assert.equal(r.violations.count, 0);
 });

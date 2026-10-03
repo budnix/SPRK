@@ -65,8 +65,12 @@ odmowa (`Traffic.issueOrder`).
   na którym stoi skład. Korzystają z nich automat dyżurnego, ruch, polecenia między okręgami, kontrola scenariusza
   i pomocnik testów usterek (`tests/train-paths.test.js`).
 * Drogi pociągu po przebiegach pociągowych (`trainPaths.js`: `entryPath` – wjazd na tor, do 3 przebiegów przez semafory
-  pośrednie; `trainRouteChains` – wszystkie łańcuchy, np. wyjazd z toru na szlak) są wspólne dla automatu dyżurnego,
-  ruchu (`Traffic` – usterka na drodze toru planowego) i kontroli scenariusza (`scenarioCheck.js`).
+  pośrednie; `exitPath` – wyjazd z toru na szlak, też przez semafor pośredni za torami, z ominięciem zamkniętych
+  odcinków, gdy `routes` je pomijają; `trainRouteChains` – wszystkie łańcuchy) są wspólne dla automatu dyżurnego,
+  ruchu (`Traffic` – usterka na drodze toru planowego) i kontroli scenariusza (`scenarioCheck.js`). Automat przyjmuje
+  pociąg jadący dalej tylko na tor, z którego `exitPath` daje wyjazd (dawniej szukał jednego przebiegu i przy wyjeździe
+  przez semafor pośredni – Rumia: G311 → GS2 – nie ograniczał torów wcale), a pociąg z postojem stojący na torze bez
+  peronu (tor planowy zamknięty) wyprawia jak przelot – postoju handlowego tam nie zrobi.
 * Automat dyżurnego (`Operator.js`) nie prowadzi własnych notatek o przebiegach – pyta urządzenia: wjazd należy się
   pociągowi, który nie minął semafora wjazdowego (`train.entryPending`) i jedzie pierwszy (na SBL pociągi bywają
   w innej kolejności niż w rozkładzie); wyjazd jest „za pociągiem”, gdy minął semafor wyjazdowy (`exitAuth`). Wjazd

@@ -1,6 +1,6 @@
 import { Clock } from '../core/Clock.js';
 import { Interlocking } from './Interlocking.js';
-import { entryPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from './trainPaths.js';
+import { entryPath, exitPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from './trainPaths.js';
 import { taskWaits, taskReady, taskAlive } from './tasks/order.js';
 
 /**
@@ -454,9 +454,15 @@ export class AutoOperator {
       // zadaniu – tory, z których zadanie da się wykonać, przed pozostałymi
       const rank = (r) => (routeTrack(r) === String(want) ? 0 : (ilk.sections.get(r.sections.at(-1))?.platform ? 1 : 3) + (reach(r) ? 0 : 1));
       let order = [...(path ? [path[0]] : []), ...[...cands].sort((a, b) => rank(a) - rank(b)).filter((r) => r !== path?.[0])];
-      // pociąg jadący dalej – tylko tory, z których jest przebieg wyjazdowy na jego szlak (na torze bez wyjazdu utknąłby)
-      const exitTracks = e.to ? new Set(routes.filter((x) => x.kind === 'train' && x.exit === e.to).map((x) => ilk.sections.get(x.approach)?.track).filter((k) => k != null).map(String)) : null;
-      if (exitTracks?.size) order = order.filter((r) => r === path?.[0] || ilk.sections.get(r.sections.at(-1))?.kind !== 'station' || exitTracks.has(String(routeTrack(r))));
+      // pociąg jadący dalej – tylko tory, z których jest droga wyjazdu na jego szlak z ominięciem zamkniętych odcinków
+      // (`exitPath`, jak kontrola scenariusza – także łańcuchem przez semafor pośredni za torami); na torze bez wyjazdu
+      // utknąłby. Dawniej wyjazd szukany był jednym przebiegiem: przy wyjeździe przez semafor pośredni (Rumia: G311 → GS2)
+      // zbiór torów był pusty i filtr się wyłączał – przy zamkniętym torze 5 SKM wjeżdżała na tor 2 bez wyjazdu.
+      // Filtr działa, gdy choć jeden tor ma wyjazd (inaczej czekanie i tak nic nie da).
+      const open = e.to ? routes.filter((x) => x.kind === 'train' && !x.sections.some((sid) => ilk.sections.get(sid)?.closed)) : null;
+      const onTrack = (r) => ilk.sections.get(r.sections.at(-1))?.kind === 'station';
+      const exits = (r) => !!exitPath(ilk, open, routeTrack(r), e.to);
+      if (e.to && order.some((r) => onTrack(r) && exits(r))) order = order.filter((r) => !onTrack(r) || exits(r));
       // skoro jest inny tor, z którego zadanie da się wykonać, na tor bez drogi do celu nie przyjmować – raczej czekać
       if (job && cands.some((r) => routeTrack(r) !== String(want) && reach(r))) order = order.filter((r) => routeTrack(r) === String(want) || reach(r));
       // Krzyżowanie na szlaku jednotorowym: tor planowy zajmuje stojący pociąg, który odjedzie dopiero na szlak, z którego
@@ -564,7 +570,11 @@ export class AutoOperator {
     // semafor wyjazdowy (`leaving`).
     // Pociąg ze składu innego pociągu (`unit`) wchodzi tu od przekazania (do 15 min przed odjazdem): zmiana czoła trwa do
     // CAB_CHANGE_MAX s, więc maszynista dostaje ją zawczasu, a przebieg – jak zawsze ok. 2 min przed odjazdem.
-    if (e.to && tr.entered && !leaving && (tr.hasStopped || !e.stop) && (e.depTime == null || t >= e.depTime - (e.unit ? 15 * 60 : 120)) && this.#exitInDistrict(e.to)) {
+    // Pociąg z postojem stojący na torze stacji bez peronu (tor planowy zamknięty – inny tor tylko bez peronu, np. Rumia:
+    // SKM przy zamkniętym torze 5 na torze 3) postoju handlowego nie zrobi – wyjazd jak dla przelotu, inaczej stałby do
+    // końca zmiany (gracz może go wyprawić; automat czekał na postój, który się nie zdarzy)
+    const noPlatform = (() => { const T = trackOf(tr); return tr.v === 0 && T != null && ![...ilk.sections.values()].some((s) => String(s.track) === T && s.platform); })();
+    if (e.to && tr.entered && !leaving && (tr.hasStopped || !e.stop || noPlatform) && (e.depTime == null || t >= e.depTime - (e.unit ? 15 * 60 : 120)) && this.#exitInDistrict(e.to)) {
       let exitId = e.to;
       let cmd = null;
       if (this.role === 'executive') { cmd = this.#command(e, 'dispatch'); if (!cmd) return done('exit', 'no-command'); exitId = cmd.exit || e.to; }

@@ -1,6 +1,6 @@
 /**
  * Drogi pociągu po przebiegach pociągowych (łańcuchy przebiegów) – jedno wyszukiwanie dla automatu dyżurnego (wjazd
- * na tor, `AutoOperator`), ruchu (usterka na drodze toru planowego, `Traffic`) i statycznego sprawdzenia scenariusza
+ * na tor i wyjazd z niego, `AutoOperator`), ruchu (usterka na drodze toru planowego, `Traffic`) i statycznego sprawdzenia scenariusza
  * (`scenarioCheck.js`). Zmiana zasad szukania (głębokość, warunek toru stacyjnego) zmienia wszystkie trzy naraz –
  * kontrola scenariusza nie rozjedzie się z tym, co zrobi automat. (Przebieg złożony od semafora do przycisku końca –
  * osobno: `Interlocking.routeChains`.)
@@ -69,6 +69,18 @@ export function entryPath(ilk, routes, starts, track, depth = 3) {
     for (const r of routes) if (r.kind === 'train' && r.start === last.end.id && !r.exit) queue.push([...path, r]);
   }
   return null;
+}
+
+/**
+ * Wyjazd z toru `track` na szlak `to` (jak wyprawia pociąg automat i jak sprawdza kontrola scenariusza): pierwszy
+ * łańcuch do `depth` przebiegów pociągowych z `routes`, który zaczyna się przebiegiem z odcinkiem zbliżania na torze
+ * `track` i kończy przebiegiem wyjazdowym na `to` – także przez semafor pośredni za torami (Rumia: E → G311 → GS2).
+ * Zamknięte odcinki: `routes` bez przebiegów przez nie. Zwraca listę przebiegów albo null.
+ */
+export function exitPath(ilk, routes, track, to, depth = 3) {
+  const train = routes.filter((r) => r.kind === 'train');
+  const starts = train.filter((r) => { const tk = ilk.sections.get(r.approach)?.track; return tk != null && String(tk) === String(track); });
+  return trainRouteChains(train, starts, (r) => r.exit === to, depth)[0] ?? null;
 }
 
 /**
