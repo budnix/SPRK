@@ -251,8 +251,8 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   Miesiąc w kalendarzu gry: czerwiec i wrzesień – weekendy, lipiec i sierpień – codziennie (przybliżenie dat).
   Miejscowości nad morzem (`SEASIDE_TOWNS`) i to, że sezon obejmuje też pociągi dalekobieżne nad morze – przyjęte;
 * termin służby – roboty torowe (`WORKS`, przyjęte, bez źródła): od kwietnia do października w 35 % służb, w marcu
-  i listopadzie w 15 %, zimą wcale jeden tor stacji zamknięty na całą służbę; tylko tor pomocniczy drogi przelotowej
-  (powód: `docs/architecture/ruch.md`). Że roboty idą w roku wg okresów budowlanych i zmieniają rozkład (objazdy, dłuższe
+  i listopadzie w 15 %, zimą wcale jeden tor stacji zamknięty na całą służbę; tylko tor drogi przelotowej, której
+  pociągi mają jeszcze inny tor (powód: `docs/architecture/ruch.md`). Że roboty idą w roku wg okresów budowlanych i zmieniają rozkład (objazdy, dłuższe
   czasy jazdy, autobusy zastępcze), mówi komunikat PKP PLK o rozkładzie 2025/2026,
   https://www.plk-sa.pl/o-spolce/biuro-prasowe/informacje-prasowe/szczegoly/nowosci-w-nowym-rocznym-rozkladzie-jazdy-pociagow-2025-2026-11384
   – ale bez liczb dla Trójmiasta; udziały i to, że w grze to zamknięcie toru stacji, są wartościami gry;

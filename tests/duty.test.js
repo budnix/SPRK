@@ -307,11 +307,12 @@ test('sezon nad morzem: latem pociągi na Hel kursują każdym kursem (Reda) –
 });
 
 test('roboty torowe: od wiosny do jesieni bywa zamknięty tor pomocniczy (cała służba), zimą nie; tylko tor, który da się ominąć', () => {
-  // tory do zamknięcia: pomocnicze tory dróg przelotowych – bez toru, na którym pociąg kończy bieg (Reda: 11 – pociągi
-  // z Helu), toru SKM (Rumia: 5), toru pociągu zdawczego (Rumia: 6) i toru głównego drogi (Rumia: 1)
-  assert.deepEqual(closableTracks(rumia), ['3']);
-  assert.ok(!closableTracks(reda).includes('11'));
-  assert.deepEqual(closableTracks(sopot), [], 'Sopot: tylko tory główne');
+  // tory do zamknięcia: tory dróg przelotowych, których pociągi mają tą samą drogą jeszcze inny tor – bez toru, na którym
+  // pociąg kończy bieg (Reda: 11 – pociągi z Helu), toru SKM (Rumia: 5), toru pociągu zdawczego (Rumia: 6) i toru
+  // jedynego dla drogi (Sopot: każda droga jednym torem)
+  assert.deepEqual(closableTracks(rumia), ['1', '3']);
+  assert.deepEqual(closableTracks(reda), ['1']);
+  assert.deepEqual(closableTracks(sopot), [], 'Sopot: każda droga jednym torem');
   const stations = duty.filter((st) => closableTracks(st).length);
   assert.ok(stations.length >= 3, stations.map((st) => st.id).join(' '));
   // ziarna, które losują roboty (lipiec: WORKS[7]); tor się znajduje, o ile tor pomocniczy jest w służbie

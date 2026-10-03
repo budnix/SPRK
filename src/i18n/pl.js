@@ -166,7 +166,7 @@ export default {
   'start.seaside': 'Sezon nad morzem: pociągi nad morze (np. na Hel) jeżdżą każdym kursem.',
   'start.seasideWeekends': 'W tym miesiącu sezon nad morzem trwa w weekendy.',
   'start.monthNoEffect': 'Na tym posterunku miesiąc nie zmienia rozkładu.',
-  'start.works': 'Sezon robót torowych: bywa zamknięty tor pomocniczy – pociągi jadą wtedy innym torem.',
+  'start.works': 'Sezon robót torowych: bywa zamknięty tor stacji – pociągi jadą wtedy innym torem.',
   'start.winter': 'Zima: przy zakłóceniach częściej marzną zwrotnice.',
   'start.freightSeason': 'Sezon przewozów: więcej pociągów towarowych.',
   'start.month.1': 'Styczeń',

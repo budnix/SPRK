@@ -21,10 +21,13 @@ nad morzem (`SEASIDE_SEASON`: czerwiec i wrzesień w weekendy, lipiec i sierpie�
 porze kursuje, i nie wypada dla urozmaicenia. Nowych dróg nie przybywa – zmienia się tylko, które kursy wzorca jadą.
 Roboty torowe (`WORKS`: kwiecień–październik 35 %, marzec i listopad 15 %, zimą nic): z ziarna jeden tor stacji zamknięty
 na całą służbę (`closedSections` scenariusza – cały tor, bez godzin) – spośród torów `closableTracks(station)`: tylko
-tory pomocnicze dróg przelotowych (pociąg wzorca na nim ma tą samą drogą tor, którym jedzie więcej pociągów), bez toru,
-na którym pociąg kończy bieg, stoi od początku, powstaje ze składu albo kończy się zadanie, i bez toru SKM. Zamknięcie
-toru głównego, toru zwrotu pociągów albo toru SKM dawało w grze automatem zatory (Sopot, Orłowo, Rumia, Reda – tor 1;
-Reda – tor 11; Rumia – tory 5 i 6); dziś tor do zamknięcia mają Gdynia Orłowo, Gdynia Główna, Rumia i Gdańsk Główny.
+tory dróg przelotowych, których pociągi mają tą samą drogą jeszcze inny tor we wzorcu, bez toru, na którym pociąg
+kończy bieg, stoi od początku, powstaje ze składu albo kończy się zadanie, i bez toru SKM (zastępczy tor bywa bez
+peronu – SKM przejeżdżałaby bez postoju). Zamknięcie toru zwrotu pociągów (Reda – tor 11) albo toru zdawczego (Rumia –
+tor 6) dawało w grze automatem zatory, toru jedynego dla drogi (Tczew – tor 11) – opóźnienia z winy automatu. Tor do
+zamknięcia mają Gdynia Orłowo (1, 3), Gdynia Główna (5–8), Rumia (1, 3), Reda (1) i Gdańsk Główny (1, 3); 100 służb
+z robotami grane automatem – bez zatoru i błędów (po poprawce automatu: wyjazd `exitPath`, pociąg z postojem na
+torze bez peronu).
 Tor przyjmuje się, gdy kontrola definicji nie zgłasza przy nim nic poza `closed-planned-track` (pociąg pójdzie innym
 torem bez kary); ta uwaga nie usuwa pociągów z rozkładu służby. Siatka `tests/duty-grid.js` gra na każdej stacji
 z torem do zamknięcia służbę z robotami. Zima (`WINTER`: grudzień–luty): scenariusz służby ma `faultWeights`

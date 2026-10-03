@@ -172,7 +172,7 @@ test('termin służby: miesiąc i typ dnia (domyślnie „losowo”), opis tego,
   await page.selectOption('#st-duty-day', '');
   await expect(desc).toContainText('sezon nad morzem trwa w weekendy');
   await page.selectOption('#st-duty-day', 'roboczy');
-  await expect(desc).not.toContainText('Sezon');
+  await expect(desc).not.toContainText('Sezon nad morzem');
   await expect(desc).not.toContainText('szczytu nie ma');
   await page.selectOption('#st-duty-month', '7');
   await page.selectOption('#st-duty-day', 'sobota');

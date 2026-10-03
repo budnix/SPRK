@@ -147,11 +147,10 @@ export function hasDuty(station) {
  * którymi we wzorcu pociągi jadą przelotem albo z krótkim postojem: bez toru, na którym pociąg kończy bieg, stoi od
  * początku, powstaje ze składu, nie ma wjazdu albo wyjazdu, albo kończy się zadanie manewrowe – skład stanąłby na
  * zastępczym torze głównym na długo i zatrzymał ruch (Reda: tor 11 pociągów z Helu, Rumia: tor 6 pociągu zdawczego);
- * bez toru pociągów aglomeracyjnych – linia SKM to osobne tory, roboty na niej to jazda jednym torem, nie objazd torami
- * dalekobieżnymi (Rumia: SKM z toru 5 na tor 2 nie miała wyjazdu). I tylko tor pomocniczy: każdy pociąg wzorca na nim ma
- * tą samą drogą (wjazd i wyjazd) tor, którym jedzie więcej pociągów – zamknięcie toru głównego drogi to objazd pod prąd
- * przez stację i konflikty z pociągami przeciwnego kierunku (Sopot, Gdynia Orłowo, Rumia, Reda: tor 1 – zatory w grze
- * automatem). Stacja bez takiego toru nie ma robót.
+ * bez toru pociągów aglomeracyjnych – linia SKM to osobne tory, a zastępczy tor bywa bez peronu (Rumia: tor 5 → tor 3),
+ * więc SKM przejeżdżałaby bez postoju przez całą służbę. I tylko tor, którego pociągi mają tą samą drogą (wjazd
+ * i wyjazd) jeszcze inny tor we wzorcu – bez tego (jedyny tor drogi) objazd idzie pod prąd przez stację (Tczew: tor 11 –
+ * opóźnienia z winy automatu). Stacja bez takiego toru nie ma robót.
  */
 export function closableTracks(station) {
   const tt = station.timetable || [], tasks = station.tasks || [];
@@ -160,8 +159,7 @@ export function closableTracks(station) {
     ...tt.filter((e) => e.terminates || e.startOn || e.unit != null || !e.from || !e.to || trainClass(e) === 'agl').map((e) => String(e.track)),
     ...tasks.map((x) => String(x.toTrack)), ...tasks.map((x) => String(trackOf(x.unit))),
   ]);
-  const use = (e, T) => tt.filter((x) => x.from === e.from && x.to === e.to && x.track != null && String(x.track) === T).length;
-  const secondary = (e) => tt.some((x) => x.from === e.from && x.to === e.to && x.track != null && use(e, String(x.track)) > use(e, String(e.track)));
+  const secondary = (e) => tt.some((x) => x.from === e.from && x.to === e.to && x.track != null && String(x.track) !== String(e.track));
   const hasSections = (T) => Object.values(station.sections || {}).some((d) => d.track != null && String(d.track) === T);
   return [...new Set(tt.map((e) => e.track).filter((T) => T != null).map(String))]
     .filter((T) => !parked.has(T) && hasSections(T) && tt.filter((e) => String(e.track) === T).every(secondary));
