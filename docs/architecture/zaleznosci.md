@@ -14,7 +14,9 @@ w osobnych plikach w `src/model/interlocking/`: `aspects.js` – obrazy sygnało
 jazda pociągu / manewrowa, obraz zezwalający dla przebiegu wg następnego semafora, kształtowe, tarcza ostrzegawcza;
 `Interlocking.isProceed` itd. to te same funkcje), `routeTable.js` – tablica zależności z planu (`deriveRoutes`:
 przebiegi pociągowe i manewrowe, drogi, odcinki, ochrona boczna, droga ochronna, szybkość; `routes.disable` /
-`routes.override` z definicji stacji). Testy bez symulacji: `tests/interlocking-parts.test.js`.
+`routes.override` z definicji stacji). Testy bez symulacji: `tests/interlocking-parts.test.js`. Reguła „zwrotnica
+drogi za semaforem nieutwierdzona i niezamknięta” jest jedna – `loosePoints(path)`: przy Sz kara, przy rozkazie „S”
+odmowa (`Traffic.issueOrder`).
 
 * Przebieg: dwa przyciski (początek, koniec) → sprawdzenie warunków → automatyczne przestawienie zwrotnic
   (nastawianie przebiegowe) → utwierdzenie (odcinki białe) → obraz sygnałowy (Ie-1: S1–S5, S10–S13, Ms2, Sz).

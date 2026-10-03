@@ -1139,6 +1139,14 @@ export class Interlocking {
    * polecenia dwuetapowego (protokół stanowiska zapamiętuje `faultOnPath` przy inicjowaniu); Sz jest wtedy bez kary,
    * nawet gdy usterkę naprawiono przed potwierdzeniem.
    */
+  /**
+   * Zwrotnice drogi `path` (`pathBeyond` / `pathFrom`) ani utwierdzone w przebiegu, ani zamknięte (Zz), ani zabezpieczone
+   * na miejscu – przed Sz i rozkazem „S” dyżurny je zamyka (Ie-10 §35 ust. 1 pkt 1–2; Sz: kara, rozkaz: odmowa).
+   */
+  loosePoints(path) {
+    return path.points.filter(({ id }) => { const p = this.points.get(id); return !p.individualLock && !p.secured && !this.pointLockedByRoute(id); }).map((p) => p.id);
+  }
+
   substituteSignal(signalId, { justifiedAtChoice = false } = {}) {
     const sig = this.signals.get(signalId);
     if (!sig || sig.kind !== 'semafor') return this.#fail(`Sz tylko na semaforze`);
@@ -1156,7 +1164,7 @@ export class Interlocking {
     const justified = justifiedAtChoice || this.faultOnPath(signalId, path);
     this.bus.emit('score', { time: this.time, code: 'Sz', points: justified ? 0 : -5, msg: `Sygnał zastępczy na ${signalId}${justified ? ' (uzasadniony usterką)' : ' bez usterki urządzeń'}` });
     // przed Sz zwrotnice drogi ustawia się i utwierdza (przebieg albo zamknięcie Zz) – urządzenie tego nie wymusza
-    const loose = path.points.filter(({ id }) => { const p = this.points.get(id); return !p.individualLock && !p.secured && !this.pointLockedByRoute(id); }).map((p) => p.id);
+    const loose = this.loosePoints(path);
     if (loose.length) this.bus.emit('score', { time: this.time, code: 'Sz-points', points: -10, msg: `Sz na ${signalId}: zwrotnice ${loose.join(', ')} nieutwierdzone ani niezamknięte (Zz)` });
     this.holdPath(signalId, path, 'Sz');
     this.#refreshSignals();

@@ -102,3 +102,16 @@ test('K4: każdy nowy wjazd na tor z pękniętą szyną jest karany, na tor zamk
   assert.equal(closed.length, 1, 'wjazd na tor zamknięty też karany');
   assert.ok(closed[0].points < open, `${closed[0].points} < ${open}`);
 });
+
+test('zwrotnice drogi za semaforem nieutwierdzone ani niezamknięte – jedno pytanie zależności (loosePoints) dla Sz i rozkazu „S”', () => {
+  const sim = makeSim({ disruptions: 'none', seed: 1 });
+  trainAtA(sim); // 5310 przed A, bez przebiegu
+  const path = sim.ilk.pathBeyond('A');
+  const ids = path.points.map((p) => p.id);
+  assert.ok(ids.length > 0, 'za A jest zwrotnica');
+  assert.deepEqual(sim.ilk.loosePoints(path), ids, 'bez przebiegu i Zz – wszystkie luźne');
+  const order = sim.execute({ type: 'order', nr: 5310, signal: 'A', text: '', reason: '' });
+  assert.match(order.reason, new RegExp(`zwrotnica ${ids[0]} niezamknięta \\(Zz\\) ani nieutwierdzona`), 'rozkaz odmówiony z tej samej reguły');
+  for (const id of ids) assert.ok(sim.execute({ type: 'lock', id }).ok);
+  assert.deepEqual(sim.ilk.loosePoints(sim.ilk.pathBeyond('A')), [], 'po Zz – żadna');
+});
