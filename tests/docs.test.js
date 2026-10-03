@@ -50,7 +50,7 @@ for (const s of SETS) {
 
 test('odwołania do sekcji dokumentacji w kodzie, testach, skillach i dokumentach wskazują plik, w którym ta sekcja jest', () => {
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(join(dir, d.name)) : [join(dir, d.name)]));
-  const files = ['src', 'scripts', 'tests', '.claude', 'docs'].flatMap((d) => walk(join(ROOT, d))).concat([join(ROOT, 'CLAUDE.md'), join(ROOT, 'README.md')])
+  const files = ['src', 'scripts', 'tests', '.claude', 'docs'].flatMap((d) => walk(join(ROOT, d))).concat(['CLAUDE.md', 'README.md', 'GLOSSARY.md'].map((f) => join(ROOT, f)))
     .filter((f) => /\.(m?js|md)$/.test(f));
   const sections = new Map(); // tytuł sekcji → plik
   for (const s of SETS) {
@@ -76,7 +76,7 @@ test('opis źródeł: sekcja o temacie z odwołania istnieje (odwołanie z nazw�
   }
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? walk(join(dir, d.name)) : [join(dir, d.name)]));
   const missing = [];
-  for (const file of ['src', 'scripts', 'tests', '.claude', 'docs'].flatMap((d) => walk(join(ROOT, d))).filter((f) => /\.(m?js|md)$/.test(f))) {
+  for (const file of ['src', 'scripts', 'tests', '.claude', 'docs'].flatMap((d) => walk(join(ROOT, d))).concat([join(ROOT, 'GLOSSARY.md')]).filter((f) => /\.(m?js|md)$/.test(f))) {
     for (const m of readFileSync(file, 'utf8').matchAll(/docs\/sources\/[\w-]+\.md`?,?\s*\(?(?:sekcja\s*)?„([^”]+)”/g)) {
       const title = titleOf(m[1]);
       if (!titles.has(title)) missing.push(`${file.slice(ROOT.length + 1)}: „${title}”`);

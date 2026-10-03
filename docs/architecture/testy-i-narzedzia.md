@@ -24,6 +24,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   źródła: `docs/SOURCES.md` + `docs/sources/`): każdy plik obszaru w tabeli indeksu, pliki krótkie (indeks do 200
   wierszy, obszar do 400), odwołania „plik („Sekcja”)” w kodzie, testach i skillach wskazują plik, w którym ta sekcja
   jest; odwołanie do sekcji źródeł, której nie ma (literówka, stara nazwa, punkt zamiast sekcji), nie przechodzi.
+* `tests/glossary.test.js` – słownik pojęć (`GLOSSARY.md`): każde pojęcie ma opis po angielsku i nazwę w kodzie, nazwa
+  istnieje w `src/` (zmiana nazwy w kodzie bez słownika nie przechodzi), odesłania `_Więcej_` wskazują istniejące pliki.
 * `tests/skills.test.js` – skille projektu (`.claude/skills/*/SKILL.md` – listy kroków dla sesji AI: nowa stacja,
   scenariusz, posterunek na mapie, stanowisko, diagnoza zatoru, zasada ze źródła) i `CLAUDE.md`: każda wymieniona
   ścieżka, polecenie `npm run` i skill istnieją; skrypt diagnozy zatoru działa. Zmiana nazwy pliku albo polecenia
