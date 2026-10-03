@@ -64,8 +64,8 @@ do scenariusza służby), `dutyWindow` (godziny do nazwy). Strona posterunku (`S
 mówi `shiftChoices` (`src/model/shift/offers.js`) – służba, scenariusze specjalne (z `faults` albo `closedSections`) i stanowiska
 do wyboru (zwykłe zmiany stacji na różnych stanowiskach → pole „Stanowisko”, parametr `srk` – dla służby i dla
 scenariusza specjalnego bez własnego `srk` w definicji: `srkChoosable`; scenariusz z własnym `srk` idzie na
-swoim – `Simulation` bierze stanowisko scenariusza przed parametrem); pod wyborem pora doby
-i liczba pociągów rozkładu, który powstanie (to samo ziarno idzie do adresu). Zwykłe zmiany zostają w definicji stacji:
+swoim – `Simulation` bierze stanowisko scenariusza przed parametrem); pod wyborem tylko opis pory
+doby – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze (to samo ziarno idzie do adresu). Zwykłe zmiany zostają w definicji stacji:
 są wzorcem, podstawą testów stacji i działają pod dawnym adresem. Wynik gracza zapisuje się pod `sluzba-<minuty>`.
 Pociąg nadzwyczajny (poziom „duże”) jest kopią pociągu z rozkładu służby. Automat: `npm run check -- <stacja> --start
 22 --minutes 120` – rozkład służby zależy od ziarna, więc każde ziarno (`--seeds`) i każde stanowisko stacji

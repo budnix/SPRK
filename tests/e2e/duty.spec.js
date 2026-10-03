@@ -10,7 +10,7 @@ const sim = (page) => page.evaluate(() => {
 });
 const ready = (page) => page.waitForFunction(() => window.sim && document.querySelector('#desk svg'));
 
-test('strona posterunku: godzina startu i długość służby, opis pory z liczbą pociągów; start – zmiana z rozkładem tej pory; kafelek ostatniej zmiany', async ({ page }) => {
+test('strona posterunku: godzina startu i długość służby, opis pory bez liczby pociągów (rozkład to niespodzianka); start – zmiana z rozkładem tej pory; kafelek ostatniej zmiany', async ({ page }) => {
   await page.goto('/#/stacja/sopot', { waitUntil: 'load' });
   // zwykłe zmiany zastępuje służba; scenariusz z usterką zostaje; jedno stanowisko – bez wyboru stanowiska
   expect(await page.locator('#st-scenario option').allTextContents()).toEqual(['Służba – wybierz porę i długość', 'Usterka blokady od Gdańska']);
@@ -26,13 +26,10 @@ test('strona posterunku: godzina startu i długość służby, opis pory z liczb
   await page.selectOption('#st-duty-start', '22');
   await page.click('#st-duty-minutes button[data-minutes="120"]');
   await expect(page.locator('#st-duty-minutes button[data-minutes="120"]')).toHaveAttribute('aria-pressed', 'true');
-  // ziarno wpisane w „Zaawansowane” – opis pokazuje rozkład, który powstanie
+  // ziarno wpisane w „Zaawansowane”; opis mówi tylko o porze doby – ile i jakich pociągów, gracz zobaczy w grze
   await page.locator('.st-adv summary').click();
   await page.fill('#st-seed', '5');
-  const desc = await page.locator('#st-scenario-desc').textContent();
-  expect(desc).toContain('Późny wieczór');
-  const count = Number(/Pociągi w tej służbie: (\d+)/.exec(desc)[1]);
-  expect(count).toBeGreaterThan(0);
+  await expect(page.locator('#st-scenario-desc')).toHaveText('Późny wieczór: ostatnie pociągi pasażerskie, coraz więcej towarowych.');
   await page.selectOption('#st-level', 'none');
   await page.click('#st-go');
   await page.waitForURL(/scenariusz=sluzba/);
@@ -41,7 +38,8 @@ test('strona posterunku: godzina startu i długość służby, opis pory z liczb
   expect(url.searchParams.has('srk')).toBe(false);
   await ready(page);
   const s = await sim(page);
-  expect(s).toMatchObject({ name: 'Służba 22:00–00:00', id: 'sluzba-120', start: '22:00', end: '24:00', n: count, title: 'Sopot · Służba 22:00–00:00' });
+  expect(s).toMatchObject({ name: 'Służba 22:00–00:00', id: 'sluzba-120', start: '22:00', end: '24:00', title: 'Sopot · Służba 22:00–00:00' });
+  expect(s.n).toBeGreaterThan(0);
   expect(s.clock).toBeGreaterThanOrEqual(22 * 3600);
   expect(s.times.every((t) => t >= '22:03' && t <= '23:50')).toBe(true);
   expect(s.tow).toBeGreaterThan(0); // późnym wieczorem jadą już pociągi towarowe (Sopot we wzorcu nie ma żadnego)

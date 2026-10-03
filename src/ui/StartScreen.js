@@ -582,9 +582,9 @@ export class StartScreen {
         b.classList.toggle('active', on);
         b.setAttribute('aria-pressed', String(on));
       }
+      // tylko pora doby – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze (rozkład to niespodzianka)
       const { stats } = buildDuty(st, { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() });
-      const parts = [['agl', stats.agl], ['reg', stats.reg], ['dal', stats.dal], ['tow', stats.tow]].filter(([, n]) => n).map(([k, n]) => `${t(`start.duty.cls.${k}`)} ${n}`).join(' · ');
-      desc.textContent = `${t(`start.bandDesc.${stats.band}`)} ${stats.trains ? t('start.duty.trains', { n: stats.trains, parts }) : t('start.duty.empty')}`;
+      desc.textContent = `${t(`start.bandDesc.${stats.band}`)}${stats.trains ? '' : ` ${t('start.duty.empty')}`}`;
       go.disabled = !stats.trains;
     };
     const scs = [{ id: DUTY_ID, name: t('start.dutyPick') }, ...specials];
