@@ -305,6 +305,12 @@ export class StartScreen {
       if (this.mission) { this.#go({ station: this.mission.station.id, scenario: this.mission.scenario.id, level: 'none' }); return; }
       const scenario = root.querySelector('#st-scenario').value, duty = scenario === DUTY_ID;
       const seed = root.querySelector('#st-seed').value.trim();
+      // służba bez żadnego pociągu (nie zdarza się na posterunkach w grze – pilnują testy służby): zostajemy na stronie
+      if (duty && !buildDuty(STATIONS.find((x) => x.id === this.selected), { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() }).stats.trains) {
+        const desc = root.querySelector('#st-scenario-desc');
+        desc.textContent = `${t(`start.bandDesc.${bandOf(this.duty.start * 3600).id}`)} ${t('start.duty.empty')}`;
+        return;
+      }
       this.#go({
         station: this.selected, scenario, level: root.querySelector('#st-level').value,
         district: root.querySelector('#st-district-wrap').classList.contains('hidden') ? null : root.querySelector('#st-district').value,
@@ -582,10 +588,10 @@ export class StartScreen {
         b.classList.toggle('active', on);
         b.setAttribute('aria-pressed', String(on));
       }
-      // tylko pora doby – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze (rozkład to niespodzianka)
-      const { stats } = buildDuty(st, { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() });
-      desc.textContent = `${t(`start.bandDesc.${stats.band}`)}${stats.trains ? '' : ` ${t('start.duty.empty')}`}`;
-      go.disabled = !stats.trains;
+      // tylko pora doby – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze (rozkład to niespodzianka);
+      // rozkładu tu nie budujemy (to trwa) – pustą służbę wykrywa start (#bindGo)
+      desc.textContent = t(`start.bandDesc.${bandOf(this.duty.start * 3600).id}`);
+      go.disabled = false;
     };
     const scs = [{ id: DUTY_ID, name: t('start.dutyPick') }, ...specials];
     root.querySelector('#st-scenario-wrap').classList.toggle('hidden', !specials.length);
@@ -599,7 +605,6 @@ export class StartScreen {
     });
     startSel.onchange = () => { this.duty.start = Number(startSel.value); preview(); };
     lenBox.onclick = (ev) => { const b = ev.target.closest('button[data-minutes]'); if (!b) return; this.duty.minutes = Number(b.dataset.minutes); preview(); };
-    root.querySelector('#st-seed').oninput = () => { if (root.querySelector('#st-scenario').value === DUTY_ID) preview(); };
   }
 
   /** Start zmiany: wybór zmiany (src/model/shift/choice.js) → adres gry. */
