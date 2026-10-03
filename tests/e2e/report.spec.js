@@ -26,7 +26,8 @@ test('raport po końcu zmiany: ocena słowna bez gwiazdek, kafelki, tabela poci�
   await expect(rep.locator('.rp-stars')).toHaveCount(0);
   await expect(rep.locator('.rp-grade')).not.toContainText('★');
   await expect(rep.locator('.rp-points')).toHaveText(/pkt$/);
-  await expect(rep.locator('.rp-end')).toContainText('wszystkie pociągi obsłużone');
+  await expect(rep.locator('.rp-end').first()).toContainText('wszystkie pociągi obsłużone');
+  await expect(rep.locator('.rp-seed')).toHaveCount(0); // numer rozkładu tylko w służbie (rozkład z ziarna)
   expect(await rep.locator('.rp-tile').count()).toBeGreaterThanOrEqual(6);
   await expect(rep.locator('.rp-trains tbody tr')).toHaveCount(n);
   await expect(rep.locator('.rp-trains tbody tr').first().locator('.cat')).toBeVisible();

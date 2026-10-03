@@ -45,6 +45,8 @@ test('strona posterunku: godzina startu i długość służby, opis pory bez lic
   expect(s.tow).toBeGreaterThan(0); // późnym wieczorem jadą już pociągi towarowe (Sopot we wzorcu nie ma żadnego)
   // koniec zmiany: wynik zapisany osobno dla długości służby; kafelek „Ostatnia zmiana” z godzinami służby
   await page.evaluate(() => window.sim.endShift());
+  // raport: numer rozkładu (ziarno) – ten sam po „Zagraj ponownie” i po wpisaniu na stronie posterunku
+  await expect(page.locator('#report .rp-seed')).toHaveText(/^Rozkład nr 5 – „Zagraj ponownie” da ten sam/);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sprk.progress')));
   expect(Object.keys(saved.stations.sopot)).toEqual(['sluzba-120']);
   await page.click('#rp-new');

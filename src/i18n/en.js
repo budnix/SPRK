@@ -327,6 +327,7 @@ export default {
   'rp.rules': 'Rules: on-time departure +5; holding a train −1/min; arrival on a track other than planned −5; dPz −20; dKo after an entry on Sz −10, without reason −15; no dPo after a departure on Sz −10; Sz and order “S” without a fault −5/−10; wrong telephone message −5; skipped telephone message (manual mode) −2; Sz with a point neither locked nor clamped −10; Stop given closer than the braking distance −20; run-through −100; train not handled −10. Grade: exemplary ≥ 40 pts, good ≥ 10, satisfactory ≥ −20.',
   'rp.new': 'New shift…',
   'rp.again': 'Play again',
+  'rp.timetableNo': 'Timetable no. {n} – “Play again” gives the same one; note the number to come back to it later (Advanced → seed).',
   'rp.viewDesk': 'View the desk',
   'rp.close': 'Close',
   'sp.tab.rj': 'Timetable',

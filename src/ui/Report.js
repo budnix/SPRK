@@ -4,6 +4,7 @@ import { t } from '../i18n/index.js';
 import { escapeHtml as esc } from './dom.js';
 import { uiIcon } from './icons.js';
 import { initDialog, openDialog, closeDialog } from './dialog.js';
+import { DUTY_ID } from '../model/duty.js';
 
 const tr = t;
 
@@ -31,6 +32,9 @@ export class Report {
     const hm = (t) => fmt(t).slice(0, 5);
     const c = r.counters || {};
     const ended = r.ended;
+    // służba: numer rozkładu (ziarno z adresu) – „Zagraj ponownie” wczytuje ten sam adres, a numer wpisany na stronie
+    // posterunku daje tę samą służbę później (w tej samej wersji gry)
+    const duty = String(this.sim.scenario?.id ?? '').startsWith(`${DUTY_ID}-`);
     const endLine = ended
       ? t('rp.ended', { time: hm(r.endedAt), reason: t(`rp.end.${r.endReason}`) }) + (r.unfinished.length ? t('rp.unfinished', { list: r.unfinished.map((u) => `${esc(u.label)} (${esc(u.status)}${u.excused ? t('rp.unfinished.excused') : ''})`).join(', ') }) : '')
       : t('rp.live', { time: hm(r.now) });
@@ -77,6 +81,7 @@ export class Report {
           <div class="rp-gword">${esc(t(`grade.${r.grade}`))}</div>
           <div class="rp-points">${r.total > 0 ? '+' : ''}${r.total} ${t('rp.pts')}</div>
           <div class="rp-end">${endLine}</div>
+          ${duty ? `<div class="rp-end rp-seed">${esc(t('rp.timetableNo', { n: r.seed }))}</div>` : ''}
         </section>
         <section class="rp-stats">${tiles}</section>
       </div>

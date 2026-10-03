@@ -333,6 +333,7 @@ export default {
   'rp.rules': 'Zasady: punktualne wyprawienie +5; przetrzymanie pociągu −1/min; przyjęcie na inny tor niż planowy −5; dPz −20; dKo po wjeździe na Sz −10, bez uzasadnienia −15; brak dPo po wyjeździe na Sz −10; Sz i rozkaz „S” bez usterki −5/−10; błędny telefonogram −5; pominięty telefonogram (tryb ręczny) −2; Sz przy nieutwierdzonej zwrotnicy −10; sygnał „Stój” bliżej niż droga hamowania −20; rozprucie −100; pociąg nieobsłużony −10. Ocena: wzorowo ≥ 40 pkt, dobrze ≥ 10, dostatecznie ≥ −20.',
   'rp.new': 'Nowa zmiana…',
   'rp.again': 'Zagraj ponownie',
+  'rp.timetableNo': 'Rozkład nr {n} – „Zagraj ponownie” da ten sam; zapisz numer, by wrócić do niego później (Zaawansowane → ziarno).',
   'rp.viewDesk': 'Obejrzyj pulpit',
   'rp.close': 'Zamknij',
   // panel boczny

@@ -149,4 +149,7 @@ i rozkaz – `signal`, obowiązki blokady – `exit`, jazda po pękniętej szyni
 scenariusze przypisują je pociągowi bez czytania komunikatu.
 `Report` rysuje go jako pełny ekran w motywie ekranu startowego (ocena jako pieczątka odbita raz przy otwarciu, kafelki jak
 liczniki pulpitu – cyfry w okienku, stan lampką w rogu – i tabele jak arkusz rozkładu) z przyciskami
-„Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu.
+„Nowa zmiana…” (ekran startowy), „Zagraj ponownie” i powrotem do pulpitu; otwiera się na `shift-end` i z menu. W służbie
+pod oceną numer rozkładu – ziarno zmiany (`rp.timetableNo`): „Zagraj ponownie” wczytuje ten sam adres, a numer wpisany
+na stronie posterunku (Zaawansowane → ziarno) daje tę samą służbę później – w tej samej wersji gry (zmiana budowy służby
+zmienia rozkład każdego ziarna; numer bez znacznika wersji – decyzja właściciela).

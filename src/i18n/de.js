@@ -327,6 +327,7 @@ export default {
   'rp.rules': 'Regeln: pünktliche Abfahrt +5; Zurückhalten eines Zuges −1/min; Einfahrt auf ein anderes als das geplante Gleis −5; dPz −20; dKo nach Einfahrt auf Sz −10, ohne Grund −15; kein dPo nach Ausfahrt auf Sz −10; Sz und Befehl „S“ ohne Störung −5/−10; falsche Fernsprechmeldung −5; vergessene Meldung (manuell) −2; Sz bei nicht verschlossener Weiche −10; Halt näher als der Bremsweg −20; Weichenauffahrt −100; Zug nicht abgefertigt −10. Bewertung: vorbildlich ≥ 40 Pkt., gut ≥ 10, ausreichend ≥ −20.',
   'rp.new': 'Neue Schicht…',
   'rp.again': 'Noch einmal spielen',
+  'rp.timetableNo': 'Fahrplan Nr. {n} – „Noch einmal spielen“ ergibt denselben; notiere die Nummer, um später zurückzukehren (Erweitert → Startwert).',
   'rp.viewDesk': 'Pult ansehen',
   'rp.close': 'Schließen',
   'sp.tab.rj': 'Fahrplan',
