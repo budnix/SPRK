@@ -5,6 +5,7 @@ import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
 import { frontIcon, modeIcon, uiIcon } from './icons.js';
 import { setHtmlIfChanged, escapeHtml } from './dom.js';
+import { taskState } from '../model/tasks/order.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -215,8 +216,8 @@ export class SidePanel {
     const host = this.root.querySelector('#tasks');
     const html = tasks.length ? tasks.map((x, i) => {
       const prev = x.afterTask ? tasks.find((y) => y.id === x.afterTask) : null;
-      const waiting = !x.done && !x.failed && ((prev && !prev.done) || (x.afterTime && now < x.afterTime));
-      const state = x.done ? 'done' : x.failed ? 'failed' : waiting ? 'waiting' : 'active';
+      const state = taskState(tasks, x, now); // czeka na poprzednie albo na swoją porę – jak w ruchu i automacie
+      const waiting = state === 'waiting';
       const status = x.done ? t(x.doneAt > x.deadlineTime ? 'sp.tasks.doneLate' : 'sp.tasks.done', { time: Clock.format(x.doneAt) })
         : x.failed ? t('sp.tasks.failed') : waiting ? t('sp.tasks.waiting') : t('sp.tasks.active');
       const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');

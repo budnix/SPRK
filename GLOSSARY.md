@@ -93,6 +93,11 @@ Pociąg, z którym nic już się nie stanie: dojechał do następnego posterunku
 _English_: finished train – nothing more will happen to it: reached the next station, terminated, or handed over.
 _W kodzie_: `isFinished`
 
+**Zadanie manewrowe**:
+Czynność ze składem na stacji, którą scenariusz zleca dyżurnemu: odstawić skład na wskazany tor albo go podstawić, w terminie. Może czekać na poprzednie zadanie (np. „podstaw” po „odstaw”) i na swoją porę.
+_English_: shunting task – a scenario job such as stabling or bringing back a unit to a given track by a deadline; it may wait for a previous task and for its start time.
+_W kodzie_: `tasks`, `afterTask`, `taskReady`, `taskState`
+
 ### Posterunek i urządzenia
 
 **Posterunek**:

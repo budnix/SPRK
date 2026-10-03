@@ -1,6 +1,7 @@
 import { Clock } from '../core/Clock.js';
 import { Interlocking } from './Interlocking.js';
 import { entryPath, routeEndTrack, exitApproach, entryRoutes, trainTrack } from './trainPaths.js';
+import { taskWaits, taskReady, taskAlive } from './tasks/order.js';
 
 /**
  * Wynik kroku automatu przy pociągu, który kończy jego czynności na ten takt: `step` – krok, `reason` – kod powodu
@@ -294,9 +295,7 @@ export class AutoOperator {
       return [...tracks].every((tk) => claimed.has(tk));
     };
 
-    // zadanie czekające na poprzednie (`afterTask`) jeszcze nie jest do wykonania – niezależnie od kolejności na liście
-    const ready = (x) => !x.afterTask || sim.traffic.tasks.find((y) => y.id === x.afterTask)?.done;
-    return { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, deadEnd, ready };
+    return { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, deadEnd };
   }
 
   /**
@@ -360,7 +359,7 @@ export class AutoOperator {
   }
 
   #playerOrders(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- dyżurny-automat wydaje polecenia graczowi (dla ruchu w okręgu gracza) ----
     if (this.role === 'dispatcher' && this.playerDistrict) {
       if (e.from && !e.dispatched && !tr && sim.exitDistrict(e.from) === this.playerDistrict && t >= e.requestAt - 60) {
@@ -373,7 +372,7 @@ export class AutoOperator {
   }
 
   #writtenOrder(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- pociąg stanął za semaforem, który zgasł tuż przed nim: rozkaz pisemny na dalszą jazdę ----
     // (rozkaz wydaje dyżurny ruchu – nastawnia wykonawcza czeka na gracza)
     if (this.role !== 'executive' && tr.stoppedAt?.kind === 'spad' && tr.v === 0 && this.#inDistrict(tr.stoppedAt.signal)) {
@@ -384,7 +383,7 @@ export class AutoOperator {
   }
 
   #exitSubstitute(e, tr, leaving, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- wyjazd przy blokadzie bez łączności: przebieg nastawiony, semafor na „Stój” (pozwolenie u sąsiada) – Sz ----
     // (nie kończy czynności przy pociągu – po Sz automat zajmuje się nim dalej)
     // tak samo, gdy blokada daje drogę, ale sygnału już nie (Pwl: sygnał wyjazdowy był raz podany i odwołany)
@@ -402,7 +401,7 @@ export class AutoOperator {
   }
 
   #entryStages(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- wjazd (kolejne stopnie przebiegu wieloetapowego, np. A → H → O) ----
     // `plan.entry` to plan: stopnie drogi wjazdu przed pociągiem. Czy stopień trzeba nastawić, mówią urządzenia, nie
     // notatka: stopień, w którym pociąg już jest (wjechał albo minął jego semafor na Sz / rozkaz), i wcześniejsze
@@ -423,7 +422,7 @@ export class AutoOperator {
   }
 
   #entry(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- wjazd ----
     // Przebiegu wjazdowego potrzebuje pociąg, który nie minął jeszcze semafora wjazdowego (`entryPending`), i to ten,
     // który jedzie pierwszy: na szlaku z blokadą samoczynną jedzie ich kilka, a po opóźnieniach nie w kolejności
@@ -443,7 +442,7 @@ export class AutoOperator {
       const path = entryPath(ilk, routes, cands, want);
       // Pociąg kończący bieg z zadaniem manewrowym: inny tor tylko taki, z którego da się to zadanie wykonać – skład
       // stojący na torze bez drogi manewrowej do celu zostałby na nim do końca zmiany.
-      const job = !e.to && !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && ready(x) && String(x.unit) === String(e.nr)) : null;
+      const job = !e.to && !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && !taskWaits(sim.traffic.tasks, x) && String(x.unit) === String(e.nr)) : null;
       const reach = (r) => {
         if (!job) return true;
         const occ = new Set(); let len = 0;
@@ -509,16 +508,15 @@ export class AutoOperator {
   }
 
   #shunting(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- zadania manewrowe (tylko operator całej stacji) ----
-    const task = !this.district ? (sim.traffic.tasks || []).find((x) => !x.done && !x.failed && t >= x.afterTime && ready(x) && (String(x.unit) === String(e.nr) || String(x.unit) === String(e.unit))) : null;
+    const task = !this.district ? (sim.traffic.tasks || []).find((x) => taskReady(sim.traffic.tasks, x, t) && (String(x.unit) === String(e.nr) || String(x.unit) === String(e.unit))) : null;
     // Skład, z którego powstanie pociąg (`unit`), stoi bez zadań na torze, z którego nie wychodzi żaden przebieg
     // pociągowy (tor odstawczy – np. „podstaw” przepadło w trakcie odstawiania): automat podstawia go na tor
     // odjazdu tego pociągu, zanim skład przejdzie w jazdę pociągową i zostanie przekazany. Zadanie, które czeka na
     // swoją porę albo na poprzednie, też jest zadaniem – wtedy skład stoi; zadanie po poprzednim, które przepadło,
     // już się nie wykona.
-    const alive = (x) => !x.done && !x.failed && (!x.afterTask || !sim.traffic.tasks.find((y) => y.id === x.afterTask)?.failed);
-    const open = (sim.traffic.tasks || []).some((x) => alive(x) && String(x.unit) === String(e.nr));
+    const open = (sim.traffic.tasks || []).some((x) => taskAlive(sim.traffic.tasks, x) && String(x.unit) === String(e.nr));
     const heir = !task && !open && !this.district && !e.to && tr.entered ? sim.traffic.timetable().find((x) => String(x.unit) === String(e.nr) && !x.attached) : null;
     const stranded = heir && !routes.some((r) => r.kind === 'train' && tr.occupiedSections().has(r.approach));
     const target = task ? task.toTrack : stranded ? heir.track : null;
@@ -545,7 +543,7 @@ export class AutoOperator {
   }
 
   #lineRequest(e, tr, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // ---- wyjazd ----
     // Pozwolenie na wyjazd (Wbl) na szlak dwukierunkowy zawczasu – 6 min przed planowym odjazdem, gdy pociąg już jedzie
     // do nas albo stoi na stacji: kto pierwszy zażąda kierunku, ten go dostaje, a sąsiad z pociągiem w tę stronę poczeka
@@ -559,7 +557,7 @@ export class AutoOperator {
   }
 
   #exit(e, tr, leaving, ctx) {
-    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack, ready } = ctx;
+    const { sim, t, ilk, topo, routes, trackOf, fullyOn, routeTrack } = ctx;
     // Wyjazd: przebieg nastawiany dopiero na ~2 min przed planowym odjazdem (nie blokować głowicy stojącym składem)
     // Czy wyjazd jest już nastawiony, wynika ze stanu urządzeń, a nie z notatek automatu: przebieg w nastawianiu może
     // przepaść (zwrotnica bez kontroli), a nastawiony – zostać zwolniony po usterce. Pociąg ma wyjazd za sobą, gdy minął

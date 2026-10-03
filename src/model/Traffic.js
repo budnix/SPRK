@@ -8,6 +8,7 @@ import { trainRouteChains, entryRoutes, trainTrack } from './trainPaths.js';
 import { setPhase } from './timetable/phase.js';
 import { FAULTS } from './faults/types.js';
 import { createEntry, shownTime } from './timetable/entry.js';
+import { taskWaits, taskAlive } from './tasks/order.js';
 
 /**
  * Od planowego odjazdu (przejazdu) do zjazdu ze stacji – pociąg „odjechał”, obsłużony – mija 1–4 min (zmierzone automatem
@@ -451,8 +452,7 @@ export class Traffic {
 
   /** Czy skład wpisu `u` ma zadanie manewrowe w toku (niewykonane, nie przepadło, a poprzednie – nie przepadło). */
   #openTask(u) {
-    return this.tasks.some((x) => String(x.unit) === String(u.nr) && !x.done && !x.failed
-      && !(x.afterTask && this.tasks.find((y) => y.id === x.afterTask)?.failed));
+    return this.tasks.some((x) => String(x.unit) === String(u.nr) && taskAlive(this.tasks, x));
   }
 
   #onTrainEvent(e, ev, tr, arg) {
@@ -637,7 +637,7 @@ export class Traffic {
       if (task.done || task.failed) continue;
       // kolejność zadań (np. odstawić, potem podstawić): zadanie czeka na poprzednie, ale termin biegnie – zadanie po
       // poprzednim, które przepadło, też przepada (wcześniej zostawało w toku do końca zmiany)
-      const waiting = task.afterTask && !this.tasks.find((x) => x.id === task.afterTask)?.done;
+      const waiting = taskWaits(this.tasks, task);
       const u = this.entries.find((x) => String(x.nr) === String(task.unit));
       const tr = u?.train || this.entries.find((x) => String(x.unit) === String(task.unit))?.train;
       // termin przesuwa się o czas, którego dyżurny nie mógł wykorzystać (przyjęte): opóźnienie składu od sąsiada

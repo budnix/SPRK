@@ -19,6 +19,8 @@ src/
                sprawdzającego, przeglądu silnika, skilla diagnoza-zatoru i testów;
                faults/ – rodzaje usterek, każdy w jednym wpisie (types: cel, losowanie, automat, droga pociągu,
                początek i koniec usterki, wymagania wobec stanowiska);
+               tasks/ – zadania manewrowe: order (kolejność i gotowość – czeka na poprzednie, do wykonania teraz, może
+               się jeszcze wykonać, stan do pokazania; jedna definicja dla ruchu, automatu i panelu);
                shift/ – wybór zmiany: choice (adres ⇄ wybór, opcje symulacji, służba dla ziarna), offers (co posterunek
                oferuje: służba, scenariusze specjalne, stanowiska do wyboru, stacja szkoleniowa);
                timetable/ – wpis rozkładu zmiany jako jedna funkcja (vertical slice): entry (budowa wpisu – definicja

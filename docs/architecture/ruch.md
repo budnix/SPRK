@@ -118,7 +118,8 @@ albo własne losowanie – tabor pociągów z rozkładu się nie zmienia. `#make
 
 Zmiana kończy się sama (`Simulation.#checkEnd`), gdy ostatni pociąg rozkładu jest wyprawiony na szlak (status
 „odjechał” – nie czeka na dojazd do sąsiada; status na szlaku nie wraca do „jedzie”) i zadania manewrowe są wykonane
-albo przepadły (`Traffic.isDone`), a blokady nie czekają na dyżurnego (dPo, telefonogram o odjeździe, Ko –
+albo przepadły (`Traffic.isDone`; kolejność i gotowość zadania – `taskWaits`, `taskReady`, `taskAlive`, `taskState`
+w `src/model/tasks/order.js`, wspólne dla ruchu, automatu dyżurnego i panelu), a blokady nie czekają na dyżurnego (dPo, telefonogram o odjeździe, Ko –
 `Simulation.#blockDuties`; niewykonane dPo i telefonogram przy końcu z czasu liczą się w ocenie końcowej); inaczej
 o `endTime` scenariusza. Gdy rozkład jest wyczerpany (3 min po ostatnim
 czasie rozkładu / terminie zadania), a zmiana trwa, dziennik dostaje jedną podpowiedź „Rozkład wyczerpany – do
