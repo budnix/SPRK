@@ -9,7 +9,7 @@ import { NAMED_TRAINS } from '../src/model/data/namedTrains.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from '../src/model/namedTrains.js';
 import { categoryOf, relationOf } from '../src/model/categories.js';
 import {
-  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
+  DAY_BANDS, DUTY_EDGE, DUTY_ID, DUTY_MINUTES, DUTY_SHIFT, FREIGHT_GAP, bandOf, buildDuty, hasDuty, normalizeDuty, patternPeriod, trainClass,
 } from '../src/model/duty.js';
 import { shiftChoices, srkChoosable, isTraining } from '../src/model/shift/offers.js';
 import sopot from '../src/stations/sopot.js';
@@ -189,6 +189,32 @@ test('przesunięcie linii: każdy kurs linii w służbie o tyle samo minut (0–
   for (const [nr, set] of Object.entries(offsets)) assert.ok(set.size >= 3, `linia ${nr}: przesunięcia ${[...set]} na 12 ziaren`);
   assert.ok(apart >= 4, `linie przesunięte niezależnie: różne przesunięcia w ${apart} z 12 służb`);
   assert.ok(takt >= 12, `takt sprawdzony na ${takt} liniach z co najmniej dwoma kursami`);
+});
+
+test('pociąg towarowy w wolnej luce: nie tylko w minucie pociągu, który zastępuje – w oknie ±30 min, z odstępem na szlaku', () => {
+  // wzorzec co godzinę: jeden pociąg regionalny Pruszcza do Tczewa (:03); nocą nie kursuje – w jego miejsce towarowe
+  const one = { ...pruszcz, tasks: [], timetable: pruszcz.timetable.filter((e) => e.nr === 55301) };
+  const [e] = one.timetable;
+  const line = (exit, v) => (one.exits[exit].lineLength ?? 3000) / (Math.min(v, one.exits[exit].lineSpeed ?? v) / 3.6);
+  const minutes = [];
+  for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]) {
+    const { scenario } = buildDuty(one, { start: 1, minutes: 180, seed });
+    const tow = scenario.timetable.filter((x) => x.kind === 'tow').sort((a, b) => first(a) - first(b));
+    for (const x of tow) {
+      assert.deepEqual([x.from, x.to, x.track], [e.from, e.to, e.track], `ziarno ${seed}: ${x.nr} drogą zastępowanego pociągu`);
+      minutes.push(((first(x) / 60) % 60 + 60) % 60);
+    }
+    // odstęp na szlaku: czas przejazdu szlaku i FREIGHT_GAP (wjazd i wyjazd tą samą drogą)
+    for (let i = 1; i < tow.length; i++) {
+      const need = Math.max(line(e.from, tow[i].vmax), line(e.to, tow[i].vmax)) + FREIGHT_GAP;
+      assert.ok(first(tow[i]) - first(tow[i - 1]) >= need, `ziarno ${seed}: ${tow[i - 1].nr} ${tow[i - 1].arr} i ${tow[i].nr} ${tow[i].arr}`);
+    }
+  }
+  assert.ok(minutes.length >= 12, `${minutes.length} pociągów towarowych na 12 służb`);
+  // dawniej każdy w minucie zastępowanego pociągu (:03 + przesunięcie linii 0–3 min)
+  const away = minutes.filter((m) => m < 3 || m > 3 + DUTY_SHIFT);
+  assert.ok(away.length >= minutes.length / 2, `poza minutą zastępowanego: ${away.length} z ${minutes.length} (${minutes.join(' ')})`);
+  assert.ok(new Set(minutes).size >= 8, `różne minuty: ${[...new Set(minutes)].sort((a, b) => a - b).join(' ')}`);
 });
 
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {

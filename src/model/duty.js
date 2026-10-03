@@ -41,6 +41,12 @@ export const DUTY_EDGE = { start: 3 * 60, neighbour: 2 * 60, run: 90, end: 10 * 
 export const DUTY_OPENING = 5 * 60;
 /** Pociąg towarowy spoza wzorca: od innego pociągu na tym samym szlaku co najmniej czas przejazdu szlaku + tyle [s]. */
 export const FREIGHT_GAP = 3 * 60;
+/**
+ * Pociąg towarowy w wolnej luce: szuka chwili w oknie ±`FREIGHT_SPAN` [s] wokół miejsca pociągu, który zastępuje,
+ * najchętniej z zapasem `FREIGHT_BUFFER` [s] ponad odstęp – planowy odstęp to odstęp najmniejszy i zapas (przyjęte).
+ */
+export const FREIGHT_SPAN = 30 * 60;
+export const FREIGHT_BUFFER = 2 * 60;
 /** Udział pociągów (poza aglomeracyjnymi), które w danej służbie nie kursują – urozmaicenie (przyjęte). */
 export const DUTY_SKIP = 0.12;
 /**
@@ -265,23 +271,43 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   // pociągi towarowe w miejsce pasażerskich, które o tej porze nie kursują (bez linii aglomeracyjnych)
   // parametry (rodzaj, długość, masa, prędkość) z pociągów towarowych wzorca – bez zdawczych i lokomotyw luzem
   const templates = (station.timetable || []).filter((e) => e.kind === 'tow' && e.from && e.to && e.unit == null && !e.startOn && !e.terminates && !['TK', 'LT', 'TH'].includes(categoryOf(e)));
-  // odstęp na szlaku: pociąg towarowy jedzie wolniej niż pasażerski, w którego miejsce wchodzi – od innego pociągu na tym
-  // samym szlaku (wjazd albo wyjazd) dzieli go co najmniej czas przejazdu szlaku i `FREIGHT_GAP`
-  const clear = (train, at) => picked.every((p) => p.trains.every((o) => {
-    const gap = (exit) => lineTime(exit, train.vmax) + FREIGHT_GAP;
-    if (o.to && o.to === train.to && Math.abs(lastOf(o) - at) < gap(train.to)) return false;
-    if (o.from && o.from === train.from && Math.abs(firstOf(o) - at) < gap(train.from)) return false;
-    return true;
-  }));
-  // pociąg towarowy w miejsce pociągu wzorca `e` o czasie `at` (szablon i numer z ziarna – klucz `key`)
-  const freightFor = (e, at, key) => {
+  // zapas [s] pociągu towarowego `way` (wjazd `from`, wyjazd `to`, tor `track`, prędkość `vmax`) w chwili `at` wobec
+  // pociągów służby – ujemny: konflikt. Jedzie wolniej niż pasażerski, w którego miejsce wchodzi: od innego pociągu na
+  // szlaku wjazdu i wyjazdu (w obu kierunkach – linia jednotorowa) dzieli go czas przejazdu szlaku i `FREIGHT_GAP`, od
+  // postoju innego pociągu na tym samym torze stacji – `FREIGHT_GAP`
+  const slack = (way, at) => {
+    let s = Infinity;
+    for (const p of picked) for (const o of p.trains) {
+      for (const exit of [way.from, way.to]) {
+        const need = lineTime(exit, way.vmax) + FREIGHT_GAP;
+        if (o.from === exit) s = Math.min(s, Math.abs(firstOf(o) - at) - need);
+        if (o.to === exit) s = Math.min(s, Math.abs(lastOf(o) - at) - need);
+      }
+      if (way.track != null && o.track === way.track) s = Math.min(s, Math.max(firstOf(o) - at, at - lastOf(o)) - FREIGHT_GAP);
+    }
+    return s;
+  };
+  // pociąg towarowy na drodze pociągu wzorca `e` (szablon i numer z ziarna – klucz `key`) w wolnej luce: chwile w pełnych
+  // minutach w oknie ±`FREIGHT_SPAN` wokół `at`, nie później niż `until` – z zapasem `FREIGHT_BUFFER`, a gdy takich nie
+  // ma, z samym odstępem; którą – z ziarna. Bez luki – null
+  const freightFor = (e, at, key, until = Infinity) => {
     const tpl = templates.length ? templates[Math.floor(fraction(seed, `wzor|${key}`) * templates.length)] : GENERIC_FREIGHT;
     const vmax = tpl.vmax ?? GENERIC_FREIGHT.vmax;
+    const way = { from: e.from, to: e.to, track: e.track, vmax };
     // wolniejszy pociąg sąsiad wyprawia wcześniej – też nie przed startem służby
-    if (at < t0 + leadOf(e, vmax) || !clear({ from: e.from, to: e.to, vmax }, at)) return null;
+    const earliest = Math.ceil(Math.max(at - FREIGHT_SPAN, t0 + leadOf(e, vmax)) / 60) * 60, latest = Math.min(at + FREIGHT_SPAN, until, last);
+    const ok = [], good = [];
+    for (let t = earliest; t <= latest; t += 60) {
+      const s = slack(way, t);
+      if (s >= 0) ok.push(t);
+      if (s >= FREIGHT_BUFFER) good.push(t);
+    }
+    const pool = good.length ? good : ok;
+    if (!pool.length) return null;
+    const when = pool[Math.floor(fraction(seed, `luka|${key}`) * pool.length)];
     const nr = free(FREIGHT_NR + Math.floor(fraction(seed, `nr|${key}`) * 400) * 2 + (Number(e.nr) % 2));
     const train = { nr, kind: 'tow', cat: tpl.cat ?? 'TM', name: `Towarowy ${exits[e.from]?.name ?? e.from} – ${exits[e.to]?.name ?? e.to}`,
-      from: e.from, to: e.to, arr: stamp(at), track: e.track, stop: false, length: tpl.length, vmax };
+      from: e.from, to: e.to, arr: stamp(when), track: e.track, stop: false, length: tpl.length, vmax };
     if (tpl.mass != null) train.mass = tpl.mass;
     if (tpl.traction) train.traction = tpl.traction;
     return train;
@@ -291,7 +317,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     const e = d.g.head;
     if (d.freight || !freightSlot(d) || d.at > until) continue;
     if (!force && fraction(seed, `tow|${e.nr}|${d.n}`) >= d.band.freight) continue;
-    const train = freightFor(e, firstOf(e) + d.shift, `${e.nr}|${d.n}`);
+    const train = freightFor(e, firstOf(e) + d.shift, `${e.nr}|${d.n}`, until);
     if (!train) continue;
     d.freight = true; // miejsce zajęte – drugi raz towarowy tu nie wchodzi
     picked.push({ c: d, freight: true, trains: [train], tasks: [] });
@@ -379,7 +405,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
       // najwcześniejsza chwila dla pociągu towarowego na tym szlaku, w pełnych minutach
       const at = Math.ceil((t0 + leadOf(g.head, templates[0]?.vmax ?? GENERIC_FREIGHT.vmax)) / 60) * 60;
       if (at > opening + 5 * 60 || at > last) continue;
-      const train = freightFor(g.head, at, `otwarcie|${g.head.nr}`);
+      const train = freightFor(g.head, at, `otwarcie|${g.head.nr}`, at);
       if (!train) continue;
       picked.push({ c: { g, n: 0, shift: 0, at }, freight: true, trains: [train], tasks: [] });
       validate();

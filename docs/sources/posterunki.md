@@ -194,8 +194,13 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   w 60 % takich miejsc, późnym wieczorem 40 %, wieczorem 35 %, o świcie 25 %, w dzień 10 %, w szczytach wcale – jedzie
   drogą zastępowanego pociągu, bez postoju, z rodzajem, długością, masą i prędkością jednego z pociągów towarowych
   wzorca stacji (bez zdawczych i lokomotyw luzem), a gdy stacja ich nie ma – TM, 400 m, 1200 t, 80 km/h; numery od 46000.
-  Od innego pociągu na tym samym szlaku dzieli go co najmniej czas przejazdu szlaku i 3 min. Na liniach aglomeracyjnych
-  (SKM) pociągi towarowe nie wchodzą;
+  Wchodzi w wolną lukę w oknie ±30 min wokół miejsca zastępowanego pociągu (chwila z ziarna, w pełnych minutach): od
+  innego pociągu na szlaku wjazdu i wyjazdu (na linii jednotorowej – w obu kierunkach) dzieli go co najmniej czas
+  przejazdu szlaku i 3 min, od postoju innego pociągu na tym samym torze stacji – 3 min; najchętniej z zapasem 2 min
+  ponad ten odstęp. Pociągi wzorca zostają na miejscu. Tak wstawia się dodatkowy pociąg do gotowego rozkładu w badaniach
+  (wolne przedziały na szlakach i torach, istniejące pociągi bez zmian – Dekker i in. 2024, https://arxiv.org/abs/2410.20561v1;
+  planowy odstęp to odstęp najmniejszy i zapas – Wang i in. 2020, https://www.mdpi.com/1996-1073/13/7/1853); okno,
+  zapas i losowanie chwili z ziarna – przyjęte. Na liniach aglomeracyjnych (SKM) pociągi towarowe nie wchodzą;
 * urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
   czwartych kursów linii jedzie, decyduje ziarno zmiany – to samo ziarno daje ten sam rozkład;
 * przesunięcie linii (`DUTY_SHIFT`): każdy kurs linii (klasa i para szlaków, oba kierunki razem) jedzie w danej służbie

@@ -18,7 +18,10 @@ linii jedzie, a ziarno – który (faza) i co wypada (`DUTY_SKIP`); każda linia
 jedzie w służbie o tyle samo minut później – przesunięcie linii `DUTY_SHIFT` (0–3 min z ziarna; takt zostaje, kolejność
 pociągów różnych linii się zmienia), a grupa, której któryś pociąg wypada w porze, w której klasa nie kursuje, nie
 jedzie; (3) w miejsce niekursujących pociągów regionalnych
-i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory; odstęp `FREIGHT_GAP` na szlaku); (4) **kontrola
+i dalekobieżnych wchodzą pociągi towarowe (udział `freight` pory) – w wolną lukę w oknie ±`FREIGHT_SPAN` wokół miejsca
+zastępowanego pociągu: `slack` liczy zapas chwili wobec pociągów służby (szlak wjazdu i wyjazdu w obu kierunkach – czas
+przejazdu i `FREIGHT_GAP`; tor stacji – `FREIGHT_GAP`), `freightFor` wybiera z ziarna chwilę z zapasem `FREIGHT_BUFFER`,
+a gdy takiej nie ma – z samym odstępem; pociągi wzorca zostają na miejscu; (4) **kontrola
 definicji** (`checkScenario`) na zbudowanym scenariuszu: pociąg z błędem albo z uwagą, jakiej nie ma wzorzec stacji
 (styk powtórzeń, konflikt toru albo szlaku), wypada. Kto wypada: przy uwadze o konflikcie dwóch pociągów (oznaczonej przez kontrolę
 definicji polem `pair`, z drugim pociągiem w `with` – nie po kodzie uwagi) – pociąg towarowy spoza wzorca na tej samej drodze (ten sam wjazd, wyjazd albo tor, do 20 min obok), a gdy
