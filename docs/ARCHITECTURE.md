@@ -44,7 +44,9 @@ src/
                tileArt (grafika kostek), svg (helpery)
   tutorial/    missions (kroki misji, bez DOM), progress (silnik misji, bez DOM), placement (miejsce dymka, bez DOM),
                Tutorial (dymki, podświetlenie, słownik)
-  ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia), Help (instrukcja + słownik),
+  ui/          SidePanel (rozkład, dziennik, stan, rozkazy, łączność, polecenia – teksty i HTML), panelState (co widzi
+               dyżurny w panelu jako dane i kody, bez DOM: zadania, pociągi na posterunku, kandydaci do polecenia dla
+               drugiego okręgu, blokady – test w Node), Help (instrukcja + słownik),
                dialog (wspólne zachowanie okien pełnoekranowych), DeskViewport (powiększenie i dopasowanie pulpitu;
                przyciski dopasowania stanowe – osie w `zoom.js`: `fitAxes`, `nextFitMode`), SideResizer (przeciąganie
                granicy planu i panelu tylko za uchwyt w listwie – krawędź panelu nie jest uchwytem; rachunki `sideSize.js`, bez DOM),

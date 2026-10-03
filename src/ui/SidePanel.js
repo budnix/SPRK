@@ -5,7 +5,7 @@ import { Clock } from '../core/Clock.js';
 import { t } from '../i18n/index.js';
 import { frontIcon, modeIcon, uiIcon } from './icons.js';
 import { setHtmlIfChanged, escapeHtml } from './dom.js';
-import { taskState } from '../model/tasks/order.js';
+import { taskCards, trainCards, commandCandidates, blockCards } from './panelState.js';
 
 /**
  * Panel boczny: rozkład jazdy, komunikaty/dziennik, liczniki, ruch manewrowy.
@@ -154,15 +154,7 @@ export class SidePanel {
     const exSel = this.root.querySelector('#cmd-exit');
     const msg = this.root.querySelector('#cmd-msg');
     const platformTracks = [...new Set([...sim.ilk.sections.values()].filter((x) => x.kind === 'station' && x.track).map((x) => String(x.track)))];
-    const candidates = () => sim.traffic.timetable().filter((e) => {
-      const done = (k) => sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === k);
-      const arriving = e.from && sim.exitDistrict(e.from) === other && !done('accept') && e.phase !== 'at-neighbour';
-      const departing = e.to && sim.exitDistrict(e.to) === other && e.train && !e.train.finished && e.train.entered && !done('dispatch');
-      return arriving || departing;
-    }).map((e) => {
-      const arriving = e.from && sim.exitDistrict(e.from) === other && !sim.commands.some((c) => String(c.nr) === String(e.nr) && c.kind === 'accept') && !(e.train && e.train.entered);
-      return { e, kind: arriving ? 'accept' : 'dispatch' };
-    });
+    const candidates = () => commandCandidates(sim, other); // przyjąć / wyprawić – reguła w src/ui/panelState.js
     const fill = () => {
       const c = candidates();
       const cur = trSel.value;
@@ -210,18 +202,15 @@ export class SidePanel {
   }
 
   renderTasks() {
-    const tasks = this.sim.traffic.tasks || [];
-    const now = this.sim.clock.time;
-    this.root.querySelector('#tasks-progress').textContent = tasks.length ? t('sp.tasks.progress', { done: tasks.filter((x) => x.done).length, n: tasks.length }) : '';
+    const { done, total, cards } = taskCards(this.sim); // stan zadań z modelu (src/ui/panelState.js)
+    this.root.querySelector('#tasks-progress').textContent = total ? t('sp.tasks.progress', { done, n: total }) : '';
     const host = this.root.querySelector('#tasks');
-    const html = tasks.length ? tasks.map((x, i) => {
-      const prev = x.afterTask ? tasks.find((y) => y.id === x.afterTask) : null;
-      const state = taskState(tasks, x, now); // czeka na poprzednie albo na swoją porę – jak w ruchu i automacie
-      const waiting = state === 'waiting';
-      const status = x.done ? t(x.doneAt > x.deadlineTime ? 'sp.tasks.doneLate' : 'sp.tasks.done', { time: Clock.format(x.doneAt) })
-        : x.failed ? t('sp.tasks.failed') : waiting ? t('sp.tasks.waiting') : t('sp.tasks.active');
-      const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', prev ? t('sp.tasks.afterTask', { n: tasks.indexOf(prev) + 1 }) : ''].filter(Boolean).join(' · ');
-      return `<div class="task-card ${state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${i + 1}</span><span class="task-mark">${uiIcon(x.done ? 'check' : x.failed ? 'cross' : waiting ? 'wait' : 'todo', 13)}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
+    const STATUS = { failed: 'sp.tasks.failed', waiting: 'sp.tasks.waiting', active: 'sp.tasks.active' };
+    const MARK = { done: 'check', failed: 'cross', waiting: 'wait', active: 'todo' };
+    const html = total ? cards.map((x) => {
+      const status = x.state === 'done' ? t(x.late ? 'sp.tasks.doneLate' : 'sp.tasks.done', { time: Clock.format(x.doneAt) }) : t(STATUS[x.state]);
+      const meta = [x.unit ? t('sp.tasks.unit', { unit: x.unit }) : '', x.toTrack ? t('sp.tasks.track', { track: x.toTrack }) : '', x.after ? t('sp.tasks.from', { time: x.after }) : '', x.deadline ? t('sp.task.due', { time: x.deadline }) : '', x.afterTaskNo ? t('sp.tasks.afterTask', { n: x.afterTaskNo }) : ''].filter(Boolean).join(' · ');
+      return `<div class="task-card ${x.state}" data-task="${escapeHtml(x.id)}"><span class="task-no">${x.no}</span><span class="task-mark">${uiIcon(MARK[x.state], 13)}</span><div class="task-body"><div class="task-text">${escapeHtml(x.text)}</div><div class="task-meta muted">${meta}</div><div class="task-status">${status}</div></div></div>`;
     }).join('') : `<div class="muted">${t('sp.tasks.none')}</div>`;
     setHtmlIfChanged(host, html);
   }
@@ -425,9 +414,10 @@ export class SidePanel {
   }
 
   renderState() {
-    const bl = [...this.sim.blocks.values()].map((b) => {
+    const blocks = blockCards(this.sim);
+    const bl = blocks.map((b) => {
       const dir = b.direction === 'out' ? t('sp.blk.out') : b.direction === 'in' ? t('sp.blk.in') : '–';
-      return `<div class="blk"><b>${b.def.label || b.neighbour}</b>${b.auto ? t('sp.blk.auto') : ''}: ${t('sp.blk.dir')} ${dir}${b.permission && !b.auto ? t('sp.blk.perm') : ''}${b.request === 'theirs' ? ` · <span class="warn">${t('sp.blk.request')}</span>` : b.request === 'ours' ? ` · ${t('sp.blk.requested')}` : ''}${b.occupied ? ` · <span class="warn">${t('sp.blk.occupied')}</span>` : ''}${b.koPending ? ` · <span class="warn">${t('sp.blk.ko')}</span>` : ''}</div>`;
+      return `<div class="blk"><b>${b.label}</b>${b.auto ? t('sp.blk.auto') : ''}: ${t('sp.blk.dir')} ${dir}${b.permission && !b.auto ? t('sp.blk.perm') : ''}${b.request === 'theirs' ? ` · <span class="warn">${t('sp.blk.request')}</span>` : b.request === 'ours' ? ` · ${t('sp.blk.requested')}` : ''}${b.occupied ? ` · <span class="warn">${t('sp.blk.occupied')}</span>` : ''}${b.ko ? ` · <span class="warn">${t('sp.blk.ko')}</span>` : ''}</div>`;
     }).join('');
     this.root.querySelector('#blocks').innerHTML = bl;
     const faults = this.sim.faults?.active() || [];
@@ -446,38 +436,32 @@ export class SidePanel {
       : `<li>${x.id} (${t(x.route.kind === 'train' ? 'sp.route.train' : 'sp.route.shunt')})${x.state === 'releasing' ? t('sp.route.timed') : ''}${x.state === 'entered' || x.state === 'stuck' ? t('sp.route.entered') : ''}</li>`));
     this.root.querySelector('#routes').innerHTML = routes.join('') || `<li class="muted">${t('sp.none')}</li>`;
     const c = this.sim.ilk.counters;
-    const blkCnt = [...this.sim.blocks.values()].filter((b) => b.counters.dPo || b.counters.dKo).map((b) => `${b.def.label || b.neighbour}: dPo ${b.counters.dPo} · dKo ${b.counters.dKo}`);
+    const blkCnt = blocks.filter((b) => b.dPo || b.dKo).map((b) => `${b.label}: dPo ${b.dPo} · dKo ${b.dKo}`);
     this.root.querySelector('#counters').innerHTML = t('sp.counters.line', { dPz: c.dPz, sz: c.Sz, split: c.rozprucie }) + (blkCnt.length ? `<div class="muted">${blkCnt.join('<br>')}</div>` : `<div class="muted">${t('sp.counters.blk')}</div>`);
   }
 
   /** Zakładka „Pociągi”: każdy pociąg na posterunku ze stanem (jedzie / stoi i dlaczego, tor, czoło, tryb) i sterowaniem po zatrzymaniu. */
   renderTrains() {
     const sim = this.sim;
-    const onStation = sim.traffic.timetable().filter((e) => e.train && e.train.entered && !e.train.finished);
+    const cards = trainCards(sim); // stan pociągów z modelu (src/ui/panelState.js) – tu tylko teksty i HTML
     const host = this.root.querySelector('#trains');
-    const html = onStation.length ? onStation.map((e) => {
-      const tr = e.train;
-      const tracks = [...new Set([...tr.occupiedSections()].map((id) => sim.ilk.sections.get(id)?.track).filter(Boolean))];
-      const ended = e.terminates && tr.hasStopped && tr.mode === 'train';
-      const where = tr.v > 0 ? t('sp.trains.moving', { v: Math.round(tr.v * 3.6) })
-        : ended ? t('sp.trains.ended')
-        : tr.state === 'dwell' ? t('sp.trains.dwell', { time: e.dep ?? '–' })
-        : tr.stoppedAt?.kind === 'signal' ? t('sp.trains.atSignal', { signal: tr.stoppedAt.signal })
-        : tr.stoppedAt?.kind === 'platform' ? t('sp.trains.atPlatform')
-        : tr.stoppedAt?.kind === 'end' ? t('sp.trains.atEnd')
-        : tr.stoppedAt?.kind === 'spad' ? t('sp.trains.afterSpad', { signal: tr.stoppedAt.signal }) : t('sp.trains.stopped');
-      const meta = [`${modeIcon(tr.mode)} ${t(tr.mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(tr.direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
+    const WHERE = {
+      moving: (w) => t('sp.trains.moving', { v: w.v }), ended: () => t('sp.trains.ended'), dwell: (w) => t('sp.trains.dwell', { time: w.time }),
+      'at-signal': (w) => t('sp.trains.atSignal', { signal: w.signal }), 'at-platform': () => t('sp.trains.atPlatform'),
+      'at-end': () => t('sp.trains.atEnd'), 'after-spad': (w) => t('sp.trains.afterSpad', { signal: w.signal }), stopped: () => t('sp.trains.stopped'),
+    };
+    const html = cards.length ? cards.map(({ e, where: w, mode, direction, moving, tracks, wait: why, canControl }) => {
+      const where = WHERE[w.code](w);
+      const meta = [`${modeIcon(mode)} ${t(mode === 'shunt' ? 'sp.shunt.modeShunt' : 'sp.shunt.modeTrain')}`, tracks.length ? t('sp.trains.track', { track: tracks.join(', ') }) : '', `${frontIcon(direction)} ${t('sp.trains.front')}`].filter(Boolean).join(' · ');
       // dlaczego stoi (po godzinie odjazdu albo przed sygnalizatorem) – kod z modelu, tekst przez t()
-      const why = sim.traffic.waitReason(e, sim.clock.time);
       const wait = why ? `<div class="train-wait">${escapeHtml(t(`sp.wait.${why.code}`, { signal: why.signal ?? '', neighbour: why.neighbour ?? '', left: why.left ?? '' }))}</div>` : '';
       const stock = this.stockText(e);
       // w czasie zmiany czoła maszynisty nie ma w kabinie – bez poleceń do jej końca (odliczanie w wierszu przyczyny)
-      const canControl = tr.v === 0 && !tr.cabChange;
-      const cls = `train-card${tr.v > 0 ? ' moving' : ''}${tr.mode === 'shunt' ? ' shunt' : ''}`;
+      const cls = `train-card${moving ? ' moving' : ''}${mode === 'shunt' ? ' shunt' : ''}`;
       return `<div class="${cls}" data-nr="${e.nr}">
         <div class="train-head"><span class="cat cat-${e.cat}">${escapeHtml(categoryLabel(e))}</span> ${e.nr}<span class="rel">${escapeHtml(relationOf(e))}</span>${e.delay > 0 ? ` <span class="delay">+${e.delay}</span>` : ''}</div>
         <div class="train-state"><b>${escapeHtml(where)}</b> · ${meta}${e.status && !where.toLowerCase().startsWith(e.status.toLowerCase()) ? ` · ${escapeHtml(e.status)}` : ''}</div>${wait}${stock ? `<div class="train-stock">${escapeHtml(stock)}</div>` : ''}
-        <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${tr.mode === 'shunt' ? 'train' : 'shunt'}">${t(tr.mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
+        <div class="train-actions">${canControl ? `<button type="button" class="tb" data-nr="${e.nr}" data-act="${mode === 'shunt' ? 'train' : 'shunt'}">${t(mode === 'shunt' ? 'sp.shunt.toTrain' : 'sp.shunt.toShunt')}</button><button type="button" class="tb" data-nr="${e.nr}" data-act="rev">${t('sp.shunt.reverse')}</button>` : ''}</div>
       </div>`;
     }).join('') : `<div class="muted">${t('sp.trains.none')}</div>`;
     if (!setHtmlIfChanged(host, html)) return; // bez zmian – nie przebudowuj DOM (stabilne przyciski)
