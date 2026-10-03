@@ -198,7 +198,9 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
   innego pociągu na szlaku wjazdu i wyjazdu (na linii jednotorowej – w obu kierunkach) dzieli go co najmniej czas
   przejazdu szlaku i 3 min, od postoju innego pociągu na tym samym torze stacji – 3 min; najchętniej z zapasem 2 min
   ponad ten odstęp. Pociągi wzorca zostają na miejscu. Tak wstawia się dodatkowy pociąg do gotowego rozkładu w badaniach
-  (wolne przedziały na szlakach i torach, istniejące pociągi bez zmian – Dekker i in. 2024, https://arxiv.org/abs/2410.20561v1;
+  (pociąg towarowy w luce o największym najmniejszym odstępie – Ljunggren i in. 2021,
+  https://ideas.repec.org/a/spr/pubtra/v13y2021i3d10.1007_s12469-020-00253-x.html; wolne przedziały na szlakach i torach,
+  istniejące pociągi bez zmian – Dekker i in. 2024, https://arxiv.org/abs/2410.20561v1;
   planowy odstęp to odstęp najmniejszy i zapas – Wang i in. 2020, https://www.mdpi.com/1996-1073/13/7/1853); okno,
   zapas i losowanie chwili z ziarna – przyjęte. Na liniach aglomeracyjnych (SKM) pociągi towarowe nie wchodzą;
 * urozmaicenie: 12 % pociągów (poza aglomeracyjnymi) w danej służbie nie kursuje, a o tym, który z co drugich / co
