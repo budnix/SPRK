@@ -29,6 +29,7 @@ import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 import { validateStation } from '../src/model/validate.js';
 import { DUTY_MINUTES, hasDuty } from '../src/model/duty.js';
+import { DAY_TYPES, normalizeCalendar } from '../src/model/timetable/calendar.js';
 import { isTraining, shiftChoices } from '../src/model/shift/offers.js';
 import { checkScenario } from '../src/model/scenarioCheck.js';
 import { STATIONS } from '../src/stations/index.js';
@@ -55,8 +56,9 @@ export const USAGE = `Użycie: npm run check -- [stacja[:scenariusz] …] [opcje
   --verbose                   wszystkie uwagi, tabela pociągów, zadania i usterki każdej zmiany, dziennik nieobsłużonych
   --workers <n>               liczba wątków (domyślnie rdzenie - 1)
   --start <godz.> --minutes <n>  służba o wybranej porze zamiast scenariuszy stacji: pełna godzina 0–23 i długość
-                              30 / 60 / 120 / 180 min (także przez północ); rozkład budowany z wzorca stacji
+                              ${DUTY_MINUTES.join(' / ')} min (także przez północ); rozkład budowany z wzorca stacji
                               dla każdego ziarna (src/model/duty.js); cele – stacje, bez celów wszystkie posterunki
+  --month <1–12> --day <typ>  termin służby: miesiąc i typ dnia (${DAY_TYPES.join(', ')}); bez nich termin losuje ziarno
   --json <plik>               pełne raporty do pliku JSON
   --help                      ta pomoc
 
@@ -72,7 +74,7 @@ poziomu. Uwagi z poziomów wybieranych przez gracza (low, high) – wiersz „od
  */
 export function parseArgs(argv = []) {
   const opts = { targets: [], levels: [...LEVELS], seeds: [1, 2, 3], extra: 120, tutorial: false, verbose: false, strict: false, workers: defaultWorkers(), json: null, help: false, duty: null };
-  let start = null, minutes = null;
+  let start = null, minutes = null, month = null, day = null;
   parseCli(argv, opts, {
     levels: { all: LEVELS, allowed: LEVELS },
     positional: (raw) => opts.targets.push(raw),
@@ -81,14 +83,16 @@ export function parseArgs(argv = []) {
       if (name === '--strict') { opts.strict = flag(); return true; }
       if (name === '--start') { start = Number(value()); return true; }
       if (name === '--minutes') { minutes = Number(value()); return true; }
+      if (name === '--month') { const v = value(); month = normalizeCalendar(v, null).month; if (month == null) throw new Error(`--month: miesiąc 1–12, jest „${v}”`); return true; }
+      if (name === '--day') { const v = value(); day = normalizeCalendar(null, v).day; if (day == null) throw new Error(`--day: ${DAY_TYPES.join(', ')}, jest „${v}”`); return true; }
       return false;
     },
   });
   // służba o wybranej porze: pełna godzina startu i długość z dozwolonych (służba może przejść przez północ)
-  if (start != null || minutes != null) {
+  if (start != null || minutes != null || month != null || day != null) {
     if (!Number.isInteger(start) || start < 0 || start > 23) throw new Error(`--start: pełna godzina 0–23${start == null ? ' (wymagana razem z --minutes)' : `, jest „${start}”`}`);
     if (!DUTY_MINUTES.includes(minutes)) throw new Error(`--minutes: do wyboru ${DUTY_MINUTES.join(', ')}${minutes == null ? ' (wymagane razem z --start)' : `, jest „${minutes}”`}`);
-    opts.duty = { start, minutes };
+    opts.duty = month != null || day != null ? { start, minutes, month, day } : { start, minutes };
   }
   return opts;
 }

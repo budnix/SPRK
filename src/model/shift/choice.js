@@ -1,21 +1,23 @@
 import { DUTY_ID, buildDuty, normalizeDuty } from '../duty.js';
+import { normalizeCalendar } from '../timetable/calendar.js';
 
 /**
  * Wybór zmiany – jedna zmiana opisana tak samo w grze (adres strony), na stronie posterunku i w narzędziach:
  * `{ station, scenario, duty, srk, seed, level, district }`:
  *  - `station` – id stacji, `scenario` – id scenariusza stacji albo `DUTY_ID` (służba o wybranej porze),
- *  - `duty` – `{ start, minutes }` dla służby (inaczej null),
+ *  - `duty` – `{ start, minutes, month, day }` dla służby (inaczej null); `month` / `day` null – termin losuje ziarno,
  *  - `srk` – stanowisko wybrane przez gracza (null – stanowisko scenariusza albo stacji),
  *  - `seed` – ziarno zmiany (null – losowe), `level` – poziom zakłóceń, `district` – okręg nastawczy gracza.
  *
- * Adres: `?stacja=…&scenariusz=…&zaklocenia=…[&okreg=…][&start=…&czas=…][&seed=…][&srk=…]` (`choiceToParams`,
+ * Adres: `?stacja=…&scenariusz=…&zaklocenia=…[&okreg=…][&start=…&czas=…[&miesiac=…][&dzien=…]][&seed=…][&srk=…]` (`choiceToParams`,
  * `choiceFromParams`). Opcje symulacji: `simulationOptions` – służba ma rozkład zbudowany dla ziarna zmiany, więc bez
  * ziarna w adresie losuje się je tu, raz, i to samo ziarno idzie do adresu i do rozkładu. Moduł logiki: bez DOM.
  */
 
 /** Parametry adresu (kolejność w adresie). */
 export const PARAMS = Object.freeze({
-  station: 'stacja', scenario: 'scenariusz', level: 'zaklocenia', district: 'okreg', start: 'start', minutes: 'czas', seed: 'seed', srk: 'srk',
+  station: 'stacja', scenario: 'scenariusz', level: 'zaklocenia', district: 'okreg', start: 'start', minutes: 'czas', month: 'miesiac', day: 'dzien',
+  seed: 'seed', srk: 'srk',
 });
 
 /** Wybór zmiany z parametrów adresu (`params.get(nazwa)` – np. `URLSearchParams`); bez scenariusza `scenario` null – ekran wyboru. */
@@ -25,7 +27,7 @@ export function choiceFromParams(params) {
   const seed = get('seed');
   return {
     station: get('station'), scenario,
-    duty: scenario === DUTY_ID ? normalizeDuty(get('start'), get('minutes')) : null,
+    duty: scenario === DUTY_ID ? { ...normalizeDuty(get('start'), get('minutes')), ...normalizeCalendar(get('month'), get('day')) } : null,
     srk: get('srk'), seed: seed != null ? Number(seed) : null, level: get('level'), district: get('district'),
   };
 }
@@ -35,7 +37,9 @@ export function choiceToParams(choice) {
   const out = [];
   const put = (k, v) => { if (v != null && v !== '') out.push([PARAMS[k], String(v)]); };
   put('station', choice.station); put('scenario', choice.scenario); put('level', choice.level); put('district', choice.district);
-  if (choice.scenario === DUTY_ID && choice.duty) { put('start', choice.duty.start); put('minutes', choice.duty.minutes); }
+  if (choice.scenario === DUTY_ID && choice.duty) {
+    put('start', choice.duty.start); put('minutes', choice.duty.minutes); put('month', choice.duty.month); put('day', choice.duty.day);
+  }
   put('seed', choice.seed); put('srk', choice.srk);
   return out;
 }
@@ -50,7 +54,7 @@ export function simulationOptions(station, choice, { randomSeed = () => Math.flo
   const seed = choice.seed ?? (duty ? randomSeed() : undefined);
   return {
     // stanowisko wybrane przez gracza idzie też do scenariusza służby – narzędzia grają scenariusz bez opcji symulacji
-    scenario: duty ? buildDuty(station, { start: duty.start, minutes: duty.minutes, seed, srk: choice.srk ?? null }).scenario : choice.scenario || undefined,
+    scenario: duty ? buildDuty(station, { start: duty.start, minutes: duty.minutes, month: duty.month ?? null, day: duty.day ?? null, seed, srk: choice.srk ?? null }).scenario : choice.scenario || undefined,
     seed,
     disruptions: choice.level || 'none',
     district: choice.district || undefined,

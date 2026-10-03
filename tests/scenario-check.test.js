@@ -10,6 +10,7 @@ import { parseArgs, listChecks, main, LEVELS } from '../scripts/check-scenario.m
 import { checkShift } from '../scripts/lib/shift-report.mjs';
 import { verdict, scenarioStatus, deterministicWarnings, plural } from '../scripts/lib/verdict.mjs';
 import szkolna from '../src/stations/szkolna.js';
+import { calendarLabel, resolveCalendar } from '../src/model/timetable/calendar.js';
 import okregi from './fixtures/gdynia-glowna-okregi.js';
 import { entryPath, trainRouteChains, routeEndTrack } from '../src/model/trainPaths.js';
 
@@ -567,9 +568,16 @@ test('wiersz poleceń: służba o wybranej porze (--start, --minutes) – rozkł
   assert.throws(() => parseArgs(['--start', '24', '--minutes', '60']), /--start: pełna godzina 0–23/);
   assert.throws(() => parseArgs(['--minutes', '60']), /--start: pełna godzina 0–23 \(wymagana razem z --minutes\)/);
   assert.throws(() => parseArgs(['--start', '6']), /--minutes: .*wymagane razem z --start/);
+  // termin służby: miesiąc i typ dnia
+  assert.deepEqual(parseArgs(['reda', '--start', '10', '--minutes', '300', '--month', '7', '--day=sobota']).duty, { start: 10, minutes: 300, month: 7, day: 'sobota' });
+  assert.throws(() => parseArgs(['--start', '10', '--minutes', '60', '--month', '0']), /--month: miesiąc 1–12/);
+  assert.throws(() => parseArgs(['--start', '10', '--minutes', '60', '--day', 'piątek']), /--day: roboczy, sobota, niedziela/);
+  assert.equal(listChecks({ targets: ['reda'], seeds: [1], levels: ['none'], duty: { start: 10, minutes: 60, month: 7, day: 'sobota' } }).scenarios[0].scenario.name, 'Służba 10:00–11:00 (lipiec, sobota)');
   // rozkład służby zależy od ziarna: służba każdego ziarna to osobny scenariusz – definicja i przebieg tego samego rozkładu
   const one = listChecks({ targets: ['sopot'], seeds: [1, 2], levels: ['none'], duty: { start: 22, minutes: 120 } });
-  assert.deepEqual(one.scenarios.map((x) => [x.station.id, x.scenario.id, x.scenario.name]), [['sopot', 'sluzba-120#1', 'Służba 22:00–00:00'], ['sopot', 'sluzba-120#2', 'Służba 22:00–00:00']]);
+  // bez --month / --day termin losuje ziarno – jak „losowo” w grze
+  const named = (seed) => `Służba 22:00–00:00 (${calendarLabel(resolveCalendar(seed))})`;
+  assert.deepEqual(one.scenarios.map((x) => [x.station.id, x.scenario.id, x.scenario.name]), [['sopot', 'sluzba-120#1', named(1)], ['sopot', 'sluzba-120#2', named(2)]]);
   assert.deepEqual(one.jobs.map((j) => [j.stationId, j.scenarioId, j.seed, j.level, j.duty]), [['sopot', 'sluzba-120#1', 1, 'none', { start: 22, minutes: 120 }], ['sopot', 'sluzba-120#2', 2, 'none', { start: 22, minutes: 120 }]]);
   assert.notDeepEqual(one.scenarios[0].scenario.timetable.map((e) => e.nr), one.scenarios[1].scenario.timetable.map((e) => e.nr), 'inne ziarno – inny rozkład');
   // stacja z kilkoma stanowiskami: każde stanowisko osobno

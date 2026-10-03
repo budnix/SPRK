@@ -235,7 +235,21 @@ jazdy** – powstaje z tego wzorca. Przyjęte (bez źródła):
 * powtórzenie pociągu dalekobieżnego to inny pociąg tej samej drogi – z nazwą i relacją z listy „Pociągi z nazwami”
   (niżej); pociąg wzorca o swojej porze zostaje bez zmian;
 * ze źródeł pochodzi tylko ogólna obserwacja, że ruch pasażerski koncentruje się w szczytach dojazdów, a nocą linie są
-  wolne dla ruchu towarowego – proporcje i liczby są wartościami gry.
+  wolne dla ruchu towarowego – proporcje i liczby są wartościami gry;
+* termin służby – typ dnia (przyjęte, bez źródła): w sobotę i w niedzielę albo święto szczyty mają zasady dnia (bez
+  dojazdów do pracy i szkoły), w niedzielę świt – zasady późnego wieczoru; losowanie typu dnia jak w tygodniu (5 dni
+  roboczych, sobota, niedziela), miesiąca – równo;
+* termin służby – sezon nad morzem (`SEASIDE_SEASON`, ze źródła): oferta POLREGIO Gdynia/Reda – Hel w 2026 – do 42
+  pociągów na dobę (21 par) w weekendy od 14 czerwca (korekta rozkładu), codziennie od 27 czerwca (początek wakacji) do
+  końca sierpnia, w weekendy znów we wrześniu (do 27 września). Odpowiedź Ministerstwa Aktywów Państwowych na
+  interpelację nr 17513 (7 lipca 2026), https://api.sejm.gov.pl/sejm/term10/interpellations/attachment/ATTDVUHGY/i17513-o1.pdf;
+  zgodnie z nią trojmiasto.pl (5 czerwca 2026),
+  https://www.trojmiasto.pl/wiadomosci/Wiecej-pociagow-na-Hel-W-czerwcu-wracaja-sezonowe-polaczenia-n220795.html. Liczba 42 to tylko pociągi POLREGIO i to „aż do” – rozkładu poza sezonem
+  źródło nie podaje, więc w grze sezon to nie liczba pociągów, tylko to, że pociąg nad morze jedzie każdym kursem
+  wzorca. Linia 213 Reda – Hel jest jednotorowa (mijanki tylko w Mrzezinie, Pucku, Władysławowie, Kuźnicy i Jastarni),
+  a latem – wg tego samego źródła – w pełni wykorzystana: gra nie dodaje dróg, zmienia tylko, które kursy wzorca jadą.
+  Miesiąc w kalendarzu gry: czerwiec i wrzesień – weekendy, lipiec i sierpień – codziennie (przybliżenie dat).
+  Miejscowości nad morzem (`SEASIDE_TOWNS`) i to, że sezon obejmuje też pociągi dalekobieżne nad morze – przyjęte.
 
 ## Pociągi z nazwami (`src/model/data/namedTrains.js`, `scripts/named-trains.mjs`, `src/model/namedTrains.js`)
 

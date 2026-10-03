@@ -31,7 +31,7 @@ export const same = (a, b) => String(a) === String(b);
 
 /** Służba `duty` (`{ start, minutes, srk? }`) dla ziarna `seed` – tak samo jak w grze (`src/model/shift/choice.js`). */
 export const dutyScenario = (station, duty, seed) =>
-  simulationOptions(station, { scenario: DUTY_ID, duty: { start: duty.start, minutes: duty.minutes }, seed, srk: duty.srk ?? null }).scenario;
+  simulationOptions(station, { scenario: DUTY_ID, duty: { start: duty.start, minutes: duty.minutes, month: duty.month ?? null, day: duty.day ?? null }, seed, srk: duty.srk ?? null }).scenario;
 const faultRef = (f) => ({ type: f.type, target: f.target, scripted: !!f.scripted });
 
 // opóźnienie wniesione bez winy dyżurnego i planowa obsługa przesunięta o nie – reguły oceny (`Traffic`)

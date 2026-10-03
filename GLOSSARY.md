@@ -207,6 +207,12 @@ _English_: duty – a shift at a chosen time of day and length, with a timetable
 _W kodzie_: `DUTY_ID`, `DUTY_MINUTES`
 _Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
 
+**Termin służby**:
+Miesiąc i typ dnia (roboczy, sobota, niedziela lub święto), w których gra się służbę – wybrane albo losowane z ziarna.
+_English_: duty date – the month and type of day (weekday, Saturday, Sunday or holiday) of a duty, chosen or drawn from the seed.
+_W kodzie_: `resolveCalendar`, `DAY_TYPES`, `SEASIDE_SEASON`
+_Więcej_: `docs/sources/posterunki.md` „Służba o wybranej porze”
+
 **Przejazd służbowy**:
 Jazda spoza wzorca stacji w rozkładzie służby: lokomotywa luzem, próżne wagony albo próżny skład EZT, przelotem.
 _English_: service run – a one-off non-revenue movement in a duty's timetable (light engine, empty wagons or an empty EMU), passing through.

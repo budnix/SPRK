@@ -12,12 +12,13 @@ odtworzyć → znaleźć pierwszy pociąg, który stanął → ustalić warstwę
 ## 1. Odtwórz dokładnie ten przebieg
 
 Potrzebne: stacja, scenariusz (albo służba: godzina startu i długość), poziom zakłóceń i **ziarno**. Zgłoszenie z gry ma
-je w adresie (`?stacja=…&scenariusz=…&zaklocenia=…&seed=…`, służba: `scenariusz=sluzba&start=…&czas=…`, stanowisko
+je w adresie (`?stacja=…&scenariusz=…&zaklocenia=…&seed=…`, służba: `scenariusz=sluzba&start=…&czas=…` i termin
+`miesiac=…&dzien=…`, gdy gracz go wybrał – bez niego termin losuje ziarno; stanowisko
 `srk=…`) i w raporcie końca zmiany. Bez ziarna zapytaj o adres – inne ziarno to inna zmiana.
 
 ```
 npm run check -- <stacja>:<scenariusz> --seeds <ziarno> --level <none|low|high> --verbose
-npm run check -- <stacja> --start <godzina> --minutes <30|60|120|180> --seeds <ziarno> --level <poziom> --verbose
+npm run check -- <stacja> --start <godzina> --minutes <60|120|180|300> [--month <1–12> --day <roboczy|sobota|niedziela>] --seeds <ziarno> --level <poziom> --verbose
 ```
 
 Automat gra zmianę dyżurnym automatycznym i wypisuje dla każdego nieobsłużonego pociągu: gdzie stoi, od kiedy, przyczynę

@@ -12,24 +12,29 @@ import rumia from '../src/stations/rumia.js';
 
 const params = (query) => new URLSearchParams(query);
 
-test('adres → wybór zmiany: scenariusz stacji, służba (pora i długość poprawione do dozwolonych), brak scenariusza', () => {
+test('adres → wybór zmiany: scenariusz stacji, służba (pora, długość i termin poprawione do dozwolonych), brak scenariusza', () => {
   assert.deepEqual(choiceFromParams(params('stacja=sopot&scenariusz=usterka-gd&zaklocenia=high&seed=7')),
     { station: 'sopot', scenario: 'usterka-gd', duty: null, srk: null, seed: 7, level: 'high', district: null });
   assert.deepEqual(choiceFromParams(params('stacja=rumia&scenariusz=sluzba&start=22&czas=180&srk=komputerowe&okreg=GO')),
-    { station: 'rumia', scenario: DUTY_ID, duty: { start: 22, minutes: 180 }, srk: 'komputerowe', seed: null, level: null, district: 'GO' });
-  assert.deepEqual(choiceFromParams(params('stacja=rumia&scenariusz=sluzba&start=27&czas=45')).duty, { start: 6, minutes: 120 }, 'pora i długość spoza wyboru');
+    { station: 'rumia', scenario: DUTY_ID, duty: { start: 22, minutes: 180, month: null, day: null }, srk: 'komputerowe', seed: null, level: null, district: 'GO' });
+  assert.deepEqual(choiceFromParams(params('stacja=rumia&scenariusz=sluzba&start=27&czas=45&miesiac=13&dzien=x')).duty, { start: 6, minutes: 120, month: null, day: null }, 'pora, długość i termin spoza wyboru');
+  // termin: miesiąc i typ dnia; bez nich – losuje ziarno
+  assert.deepEqual(choiceFromParams(params('stacja=reda&scenariusz=sluzba&start=10&czas=300&miesiac=7&dzien=sobota')).duty, { start: 10, minutes: 300, month: 7, day: 'sobota' });
   assert.equal(choiceFromParams(params('stacja=sopot')).scenario, null, 'ekran wyboru');
   assert.equal(choiceFromParams(params('stacja=sopot&scenariusz=zmiana&seed=0')).seed, 0);
 });
 
 test('wybór zmiany → adres i z powrotem: te same parametry w stałej kolejności, bez pustych', () => {
-  const duty = { station: 'rumia', scenario: DUTY_ID, duty: { start: 23, minutes: 60 }, srk: 'komputerowe', seed: 5, level: 'low', district: null };
+  const duty = { station: 'rumia', scenario: DUTY_ID, duty: { start: 23, minutes: 60, month: null, day: null }, srk: 'komputerowe', seed: 5, level: 'low', district: null };
   const pairs = choiceToParams(duty);
   assert.deepEqual(pairs, [['stacja', 'rumia'], ['scenariusz', 'sluzba'], ['zaklocenia', 'low'], ['start', '23'], ['czas', '60'], ['seed', '5'], ['srk', 'komputerowe']]);
   assert.deepEqual(choiceFromParams(new URLSearchParams(pairs)), duty);
+  const summer = { ...duty, duty: { start: 10, minutes: 300, month: 8, day: 'niedziela' } };
+  assert.deepEqual(choiceToParams(summer).slice(3, 7), [['start', '10'], ['czas', '300'], ['miesiac', '8'], ['dzien', 'niedziela']]);
+  assert.deepEqual(choiceFromParams(new URLSearchParams(choiceToParams(summer))), summer);
   const special = { station: 'sopot', scenario: 'usterka-gd', duty: { start: 1, minutes: 60 }, srk: null, seed: null, level: 'none', district: null };
   assert.deepEqual(choiceToParams(special), [['stacja', 'sopot'], ['scenariusz', 'usterka-gd'], ['zaklocenia', 'none']], 'pora służby tylko przy służbie');
-  assert.deepEqual(Object.values(PARAMS), ['stacja', 'scenariusz', 'zaklocenia', 'okreg', 'start', 'czas', 'seed', 'srk']);
+  assert.deepEqual(Object.values(PARAMS), ['stacja', 'scenariusz', 'zaklocenia', 'okreg', 'start', 'czas', 'miesiac', 'dzien', 'seed', 'srk']);
 });
 
 test('opcje symulacji: scenariusz stacji wprost; służba zbudowana dla ziarna – podanego albo wylosowanego raz', () => {
@@ -43,6 +48,9 @@ test('opcje symulacji: scenariusz stacji wprost; służba zbudowana dla ziarna �
   const random = simulationOptions(sopot, { ...choice, seed: null }, { randomSeed: () => { drawn++; return 123; } });
   assert.deepEqual([random.seed, drawn, random.scenario.timetable.length > 0], [123, 1, true]);
   assert.deepEqual(random.scenario, buildDuty(sopot, { start: 22, minutes: 120, seed: 123 }).scenario);
+  // wybrany termin idzie do rozkładu służby
+  const summer = simulationOptions(sopot, { ...choice, duty: { start: 22, minutes: 120, month: 7, day: 'sobota' } });
+  assert.equal(summer.scenario.name, 'Służba 22:00–00:00 (lipiec, sobota)');
 });
 
 test('stanowisko wybrane przez gracza: w scenariuszu służby i w opcjach – zmiana gra się na nim', () => {

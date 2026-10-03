@@ -28,9 +28,10 @@ test('miary: miejsca w rozkładzie (bez numerów) i spotkania linii w odstępie 
 });
 
 test('służby dwóch ziaren się różnią: mało wspólnych miejsc i spotkań; pociągi zostają, pierwszy w ciągu 20 min', () => {
-  // przed przesunięciem linii, pociągiem towarowym w luce i przejazdami służbowymi: miejsca 55–68 % na każdym posterunku,
-  // spotkania 50 % razem, 14,9 pociągu na służbę; po nich: miejsca do 14 %, spotkania 34 %, 16,1 pociągu
-  const r = dutyVariety({ starts: [6, 10, 19, 23], minutes: [120], seeds: [1, 2, 3, 4] });
+  // stały termin (listopad, dzień roboczy) – różnorodność z samej budowy służby, bez losowania terminu. Przed przesunięciem
+  // linii, pociągiem towarowym w luce i przejazdami służbowymi: miejsca 55–68 % na każdym posterunku, spotkania 50 %
+  // razem, 14,9 pociągu na służbę; po nich: miejsca do 14 %, spotkania 34 %, 16,1 pociągu
+  const r = dutyVariety({ starts: [6, 10, 19, 23], minutes: [120], seeds: [1, 2, 3, 4], month: 11, day: 'roboczy' });
   for (const [id, x] of Object.entries(r)) {
     assert.ok(x.slots <= 0.25, `${id}: wspólne miejsca ${x.slots}`);
     assert.equal(x.late, 0, `${id}: pierwszy pociąg później niż 20 min po starcie`);
@@ -41,7 +42,10 @@ test('służby dwóch ziaren się różnią: mało wspólnych miejsc i spotkań;
 });
 
 test('wiersz poleceń: stacje, ziarna, zapis i porównanie z wcześniejszym wynikiem', () => {
-  assert.deepEqual(parseArgs(['reda', '--seeds', '1-3', '--json', 'a.json', '--compare=b.json']), { targets: ['reda'], seeds: [1, 2, 3], json: 'a.json', compare: 'b.json', help: false });
+  assert.deepEqual(parseArgs(['reda', '--seeds', '1-3', '--json', 'a.json', '--compare=b.json']), { targets: ['reda'], seeds: [1, 2, 3], month: null, day: null, json: 'a.json', compare: 'b.json', help: false });
+  assert.deepEqual([parseArgs(['--month', '7', '--day=sobota']).month, parseArgs(['--day=sobota']).day], [7, 'sobota']);
+  assert.throws(() => parseArgs(['--month', '13']), /--month: miesiąc 1–12/);
+  assert.throws(() => parseArgs(['--day', 'piątek']), /--day: roboczy, sobota, niedziela/);
   assert.equal(parseArgs(['-h']).help, true);
   assert.throws(() => parseArgs(['--seeds', '2']), /co najmniej dwa ziarna/);
   assert.throws(() => parseArgs(['--x']), /Nieznana opcja/);

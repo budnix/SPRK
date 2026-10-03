@@ -48,18 +48,19 @@ export const meetingOverlap = (a, b) => jaccard(meetings(a), meetings(b));
 export const dutyStations = () => STATIONS.filter((st) => !isTraining(st) && hasDuty(st));
 
 /**
- * Przegląd: dla każdej stacji, godziny startu i długości – służby wszystkich ziaren. Wynik na stację (klucz – id) i razem
+ * Przegląd: dla każdej stacji, godziny startu i długości – służby wszystkich ziaren; `month` / `day` – stały termin
+ * (bez nich termin losuje ziarno, jak w grze przy „losowo”). Wynik na stację (klucz – id) i razem
  * (`ALL`): `{ duties, trains (średnio na służbę), late (służby z pierwszym pociągiem później niż LATE_FIRST),
  * slots, meetings (średnie podobieństwo par ziaren), byCls (pociągi wg klasy) }`.
  */
-export function dutyVariety({ stations = dutyStations(), starts = [...Array(24).keys()], minutes = DUTY_MINUTES, seeds = [1, 2, 3, 4] } = {}) {
+export function dutyVariety({ stations = dutyStations(), starts = [...Array(24).keys()], minutes = DUTY_MINUTES, seeds = [1, 2, 3, 4], month = null, day = null } = {}) {
   const out = {};
   const sum = { duties: 0, trains: 0, late: 0, slots: 0, meetings: 0, pairs: 0, byCls: { agl: 0, reg: 0, dal: 0, tow: 0 } };
   for (const st of stations) {
     const row = { duties: 0, trains: 0, late: 0, slots: 0, meetings: 0, pairs: 0, byCls: { agl: 0, reg: 0, dal: 0, tow: 0 } };
     for (const start of starts) for (const m of minutes) {
       const tts = seeds.map((seed) => {
-        const { scenario, stats } = buildDuty(st, { start, minutes: m, seed });
+        const { scenario, stats } = buildDuty(st, { start, minutes: m, seed, month, day });
         row.duties++; row.trains += stats.trains;
         for (const k of Object.keys(row.byCls)) row.byCls[k] += stats[k];
         if (Math.min(...scenario.timetable.map(first)) - start * 3600 > LATE_FIRST) row.late++;

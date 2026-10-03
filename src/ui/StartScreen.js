@@ -18,6 +18,7 @@ import { shiftChoices, srkChoosable } from '../model/shift/offers.js';
 import { choiceFromParams, choiceToParams, dutyWindow } from '../model/shift/choice.js';
 import { loadProgress, loadLastShift } from './progress.js';
 import { DUTY_ID, DUTY_MINUTES, bandOf, buildDuty, normalizeDuty } from '../model/duty.js';
+import { DAY_RULES, DAY_TYPES, MONTHS, SEASIDE_SEASON, normalizeCalendar, seasideTrain } from '../model/timetable/calendar.js';
 import { regionBox } from './map/mapSvg.js';
 import { MapView } from './map/MapView.js';
 
@@ -282,6 +283,10 @@ export class StartScreen {
               <div id="st-duty" class="st-duty hidden">
                 <label>${t('start.dutyStart')} <select id="st-duty-start"></select></label>
                 <div class="st-duty-len" role="group" aria-label="${t('start.dutyLength')}"><span class="st-duty-lab">${t('start.dutyLength')}</span><span id="st-duty-minutes" class="st-duty-btns"></span></div>
+                <div class="st-duty-when">
+                  <label>${t('start.dutyMonth')} <select id="st-duty-month"></select></label>
+                  <label>${t('start.dutyDay')} <select id="st-duty-day"></select></label>
+                </div>
               </div>
               <p class="muted" id="st-scenario-desc"></p>
               <label>${t('start.level')}
@@ -306,7 +311,7 @@ export class StartScreen {
       const scenario = root.querySelector('#st-scenario').value, duty = scenario === DUTY_ID;
       const seed = root.querySelector('#st-seed').value.trim();
       // służba bez żadnego pociągu (nie zdarza się na posterunkach w grze – pilnują testy służby): zostajemy na stronie
-      if (duty && !buildDuty(STATIONS.find((x) => x.id === this.selected), { start: this.duty.start, minutes: this.duty.minutes, seed: this.#dutySeed() }).stats.trains) {
+      if (duty && !buildDuty(STATIONS.find((x) => x.id === this.selected), { start: this.duty.start, minutes: this.duty.minutes, month: this.duty.month, day: this.duty.day, seed: this.#dutySeed() }).stats.trains) {
         const desc = root.querySelector('#st-scenario-desc');
         desc.textContent = `${t(`start.bandDesc.${bandOf(this.duty.start * 3600).id}`)} ${t('start.duty.empty')}`;
         return;
@@ -315,7 +320,7 @@ export class StartScreen {
         station: this.selected, scenario, level: root.querySelector('#st-level').value,
         district: root.querySelector('#st-district-wrap').classList.contains('hidden') ? null : root.querySelector('#st-district').value,
         // służba: pora, długość i ziarno, z którego powstał pokazany rozkład
-        duty: duty ? { start: this.duty.start, minutes: this.duty.minutes } : null,
+        duty: duty ? { start: this.duty.start, minutes: this.duty.minutes, month: this.duty.month, day: this.duty.day } : null,
         seed: duty ? this.#dutySeed() : seed || null,
         // stanowisko wybrane przez gracza (pole widać, gdy stacja ma ich kilka, a scenariusz nie ma własnego)
         srk: root.querySelector('#st-srk-wrap').classList.contains('hidden') ? null : root.querySelector('#st-srk').value,
@@ -562,15 +567,17 @@ export class StartScreen {
   }
 
   /**
-   * Służba o wybranej porze i długości (`model/duty.js`) zamiast zwykłych zmian; scenariusze specjalne (usterka,
-   * zamknięcie toru ze scenariusza) zostają na liście pod nią. Pod wyborem – pora doby i liczba pociągów w rozkładzie,
-   * który powstanie dla tego ziarna; służba bez pociągów (krótkie okno) nie daje się rozpocząć.
+   * Służba o wybranej porze, długości i terminie (miesiąc, typ dnia – „losowo”: z ziarna; `model/duty.js`,
+   * `model/timetable/calendar.js`) zamiast zwykłych zmian; scenariusze specjalne (usterka, zamknięcie toru ze scenariusza)
+   * zostają na liście pod nią. Pod wyborem – opis pory doby i to, co zmienia wybrany termin (bez liczby pociągów –
+   * rozkład to niespodzianka); służba bez pociągów nie daje się rozpocząć (#bindGo).
    */
   #dutyChoice(st, { srks, specials }) {
     const root = this.view;
     const same = this.current.station === st.id;
     const from = same && this.current.scenario === DUTY_ID ? normalizeDuty(this.current.start, this.current.minutes) : normalizeDuty(6, 120);
-    this.duty = { ...from, seed: Math.floor(Math.random() * 1e9) };
+    const cal = same && this.current.scenario === DUTY_ID ? normalizeCalendar(this.current.month, this.current.day) : normalizeCalendar(null, null);
+    this.duty = { ...from, ...cal, seed: Math.floor(Math.random() * 1e9) };
     const srkWrap = root.querySelector('#st-srk-wrap'), srkSel = root.querySelector('#st-srk');
     if (srks.length > 1) {
       srkSel.innerHTML = srks.map((id) => `<option value="${esc(id)}">${esc(getSrk(id).name)}</option>`).join('');
@@ -579,6 +586,14 @@ export class StartScreen {
     const startSel = root.querySelector('#st-duty-start'), lenBox = root.querySelector('#st-duty-minutes');
     startSel.innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}:00 – ${esc(t(`start.band.${bandOf(h * 3600).id}`))}</option>`).join('');
     startSel.value = String(this.duty.start);
+    // termin: miesiąc i typ dnia, pierwsza pozycja – „losowo” (wartość pusta: termin losuje ziarno)
+    const monthSel = root.querySelector('#st-duty-month'), daySel = root.querySelector('#st-duty-day');
+    const random = `<option value="">${esc(t('start.random'))}</option>`;
+    monthSel.innerHTML = random + MONTHS.map((_, i) => `<option value="${i + 1}">${esc(t(`start.month.${i + 1}`))}</option>`).join('');
+    daySel.innerHTML = random + DAY_TYPES.map((d) => `<option value="${d}">${esc(t(`start.day.${d}`))}</option>`).join('');
+    monthSel.value = this.duty.month == null ? '' : String(this.duty.month);
+    daySel.value = this.duty.day ?? '';
+    const seaside = (st.timetable || []).some(seasideTrain);
     const go = root.querySelector('#st-go'), desc = root.querySelector('#st-scenario-desc'), block = root.querySelector('#st-duty');
     // przyciski długości powstają raz – zmiana wyboru przełącza tylko stan (fokus klawiatury zostaje na przycisku)
     lenBox.innerHTML = DUTY_MINUTES.map((m) => `<button type="button" class="tb" data-minutes="${m}">${esc(t(`start.duty.${m}`))}</button>`).join('');
@@ -588,9 +603,19 @@ export class StartScreen {
         b.classList.toggle('active', on);
         b.setAttribute('aria-pressed', String(on));
       }
-      // tylko pora doby – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze (rozkład to niespodzianka);
-      // rozkładu tu nie budujemy (to trwa) – pustą służbę wykrywa start (#bindGo)
-      desc.textContent = t(`start.bandDesc.${bandOf(this.duty.start * 3600).id}`);
+      // tylko pora doby i to, co zmienia wybrany termin – ile i jakich pociągów się wylosuje, gracz poznaje dopiero w grze
+      // (rozkład to niespodzianka); rozkładu tu nie budujemy (to trwa) – pustą służbę wykrywa start (#bindGo)
+      const band = bandOf(this.duty.start * 3600).id, { month, day } = this.duty;
+      const notes = [t(`start.bandDesc.${band}`)];
+      const rule = day && DAY_RULES[day][band];
+      if (rule) notes.push(t(rule === 'dzien' ? 'start.dayDesc.peak' : 'start.dayDesc.dawn'));
+      if (month != null && !seaside) notes.push(t('start.monthNoEffect'));
+      else if (month != null && SEASIDE_SEASON[month]) {
+        const days = SEASIDE_SEASON[month];
+        if (day == null) notes.push(t(days.length === DAY_TYPES.length ? 'start.seaside' : 'start.seasideWeekends'));
+        else if (days.includes(day)) notes.push(t('start.seaside'));
+      }
+      desc.textContent = notes.join(' ');
       go.disabled = false;
     };
     const scs = [{ id: DUTY_ID, name: t('start.dutyPick') }, ...specials];
@@ -604,6 +629,8 @@ export class StartScreen {
       if (duty) preview();
     });
     startSel.onchange = () => { this.duty.start = Number(startSel.value); preview(); };
+    monthSel.onchange = () => { this.duty.month = normalizeCalendar(monthSel.value, null).month; preview(); };
+    daySel.onchange = () => { this.duty.day = normalizeCalendar(null, daySel.value).day; preview(); };
     lenBox.onclick = (ev) => { const b = ev.target.closest('button[data-minutes]'); if (!b) return; this.duty.minutes = Number(b.dataset.minutes); preview(); };
   }
 

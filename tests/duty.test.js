@@ -17,6 +17,8 @@ import pruszcz from '../src/stations/pruszcz-gdanski.js';
 import rumia from '../src/stations/rumia.js';
 import szkolna from '../src/stations/szkolna.js';
 import wola from './fixtures/wola-pustkowska.js';
+import { DAY_TYPES, calendarLabel, normalizeCalendar, resolveCalendar, seasideTrain } from '../src/model/timetable/calendar.js';
+import reda from '../src/stations/reda.js';
 
 /*
  * Służba o wybranej porze i długości (`src/model/duty.js`): rozkład budowany z wzorca stacji – bez danych per stacja,
@@ -57,7 +59,7 @@ test('służba przez północ: w danych godziny po północy to 24, 25… (ta sa
   assert.equal(Clock.parse('25:30'), 25.5 * 3600);
   assert.equal(Clock.format(Clock.parse('25:30')), '01:30');
   const { scenario: sc, stats } = buildDuty(sopot, { start: 23, minutes: 180, seed: 4 });
-  assert.equal(sc.name, 'Służba 23:00–02:00');
+  assert.equal(sc.name, `Służba 23:00–02:00 (${calendarLabel(stats)})`);
   assert.deepEqual([sc.startTime, sc.endTime], ['23:00', '26:00']);
   const after = sc.timetable.filter((e) => first(e) >= 86400);
   assert.ok(after.length >= 3 && after.length < stats.trains, `po północy ${after.length} z ${stats.trains} pociągów`);
@@ -79,7 +81,7 @@ test('scenariusz służby: nazwa z godzinami, okno, własny rozkład w oknie, nu
     const { scenario: sc, stats } = buildDuty(sopot, { start, minutes, seed: 7 });
     const t0 = start * 3600, t1 = t0 + minutes * 60;
     assert.equal(sc.id, `${DUTY_ID}-${minutes}`);
-    assert.equal(sc.name, `Służba ${Clock.format(t0)}–${Clock.format(t1)}`);
+    assert.equal(sc.name, `Służba ${Clock.format(t0)}–${Clock.format(t1)} (${calendarLabel(stats)})`);
     assert.deepEqual([sc.startTime, sc.endTime], [Clock.stamp(t0), Clock.stamp(t1)]);
     assert.equal(stats.trains, sc.timetable.length);
     assert.equal(stats.agl + stats.reg + stats.dal + stats.tow, stats.trains);
@@ -245,12 +247,70 @@ test('przejazdy służbowe: co któraś służba ma lokomotywę luzem, próżny 
   assert.ok(runs.LT > 0 && runs.EZT > 0 && runs.TS > 0, JSON.stringify(runs));
 });
 
+test('termin służby: miesiąc i typ dnia z adresu albo z ziarna („losowo”) – ten sam numer, ten sam termin; nazwa z terminem', () => {
+  assert.deepEqual(normalizeCalendar('7', 'sobota'), { month: 7, day: 'sobota' });
+  for (const [m, d] of [['13', 'x'], ['0', ''], [null, null], ['7.5', 'Sobota']]) assert.deepEqual(normalizeCalendar(m, d), { month: null, day: null }, `${m} ${d}`);
+  assert.deepEqual(resolveCalendar(5, { month: 2, day: 'niedziela' }), { month: 2, day: 'niedziela' });
+  assert.deepEqual(resolveCalendar(5), resolveCalendar(5));
+  // losowo: każdy miesiąc; dni robocze ok. 5 na 7
+  const drawn = Array.from({ length: 700 }, (_, i) => resolveCalendar(i + 1));
+  assert.equal(new Set(drawn.map((c) => c.month)).size, 12);
+  const share = drawn.filter((c) => c.day === 'roboczy').length / drawn.length;
+  assert.ok(share > 0.62 && share < 0.8, `dni robocze: ${share}`);
+  assert.ok(DAY_TYPES.every((d) => drawn.some((c) => c.day === d)));
+  const { scenario, stats } = buildDuty(sopot, { start: 6, minutes: 120, seed: 3, month: 7, day: 'sobota' });
+  assert.deepEqual([stats.month, stats.day, scenario.name], [7, 'sobota', 'Służba 06:00–08:00 (lipiec, sobota)']);
+  const random = buildDuty(sopot, { start: 6, minutes: 120, seed: 3 });
+  assert.deepEqual([random.stats.month, random.stats.day], [resolveCalendar(3).month, resolveCalendar(3).day]);
+  assert.equal(random.scenario.name, `Służba 06:00–08:00 (${calendarLabel(resolveCalendar(3))})`);
+});
+
+test('typ dnia: w sobotę i w niedzielę bez szczytów – rano mniej pociągów pasażerskich niż w dzień roboczy; niedzielny świt rzadszy', () => {
+  const pass = (start, minutes, day) => {
+    let n = 0;
+    for (const st of duty) for (const seed of [1, 2, 3]) { const { stats } = buildDuty(st, { start, minutes, seed, month: 11, day }); n += stats.agl + stats.reg + stats.dal; }
+    return n;
+  };
+  const weekday = pass(6, 180, 'roboczy'), saturday = pass(6, 180, 'sobota'), sunday = pass(6, 180, 'niedziela');
+  assert.ok(saturday < weekday * 0.8 && sunday < weekday * 0.8, `szczyt poranny: roboczy ${weekday}, sobota ${saturday}, niedziela ${sunday}`);
+  assert.ok(pass(15, 180, 'sobota') < pass(15, 180, 'roboczy') * 0.8, 'szczyt popołudniowy');
+  assert.ok(pass(4, 120, 'niedziela') < pass(4, 120, 'sobota'), 'świt w niedzielę rzadszy niż w sobotę');
+  // w dzień (10:00) typ dnia nic nie zmienia
+  assert.equal(pass(10, 180, 'sobota'), pass(10, 180, 'roboczy'));
+});
+
+test('sezon nad morzem: latem pociągi na Hel kursują każdym kursem (Reda) – częściej niż poza sezonem; pociągi do Słupska i Lęborka bez zmian', () => {
+  const count = (month, day) => {
+    const out = { sea: 0, seaReg: 0, other: 0 };
+    for (const start of [10, 19]) for (const seed of [1, 2, 3, 4]) {
+      for (const e of buildDuty(reda, { start, minutes: 300, seed, month, day }).scenario.timetable) {
+        if (trainClass(e) === 'tow' || e.nr >= SERVICE_NR) continue;
+        out[seasideTrain(e) ? 'sea' : 'other']++;
+        if (seasideTrain(e) && trainClass(e) === 'reg') out.seaReg++;
+      }
+    }
+    return out;
+  };
+  const july = count(7, 'roboczy'), november = count(11, 'roboczy');
+  // regionalne na Hel w dzień i wieczorem co drugi (późnym wieczorem co czwarty) kurs – latem każdy; dalekobieżne w dzień
+  // i tak każdym kursem
+  assert.ok(july.seaReg >= november.seaReg * 1.7, `regionalne nad morze: lipiec ${july.seaReg}, listopad ${november.seaReg}`);
+  assert.ok(july.sea > november.sea, `wszystkie nad morze: lipiec ${july.sea}, listopad ${november.sea}`);
+  assert.ok(Math.abs(july.other - november.other) <= november.other * 0.1, `pozostałe pasażerskie: lipiec ${july.other}, listopad ${november.other}`);
+  // czerwiec i wrzesień – sezon tylko w weekendy
+  assert.deepEqual(count(6, 'roboczy'), count(11, 'roboczy'), 'czerwiec w dzień roboczy jak listopad');
+  assert.ok(count(9, 'sobota').sea > count(11, 'sobota').sea, 'wrzesień w sobotę – sezon');
+  // pociąg nad morze: relacja do albo od miejscowości nad morzem
+  assert.deepEqual(['Regio Reda – Hel', 'EIC „Posejdon” Kraków Gł. – Kołobrzeg', 'Regio Gdańsk Gł. – Słupsk'].map((name) => seasideTrain({ name })), [true, true, false]);
+});
+
 test('pora doby jak w rzeczywistości: w nocy prawie sam ruch towarowy, w szczycie pasażerski – na każdym posterunku', () => {
   const all = { peak: 0, evening: 0 };
   for (const st of duty) {
     const sum = (start, minutes) => {
       const acc = { agl: 0, reg: 0, dal: 0, tow: 0 };
-      for (const seed of [1, 2, 3]) { const { stats } = buildDuty(st, { start, minutes, seed }); for (const k of Object.keys(acc)) acc[k] += stats[k] / 3; }
+      // dzień roboczy – w sobotę i w niedzielę szczytów nie ma (osobny test „typ dnia”)
+      for (const seed of [1, 2, 3]) { const { stats } = buildDuty(st, { start, minutes, seed, day: 'roboczy' }); for (const k of Object.keys(acc)) acc[k] += stats[k] / 3; }
       return perHour(acc, minutes);
     };
     const peak = sum(6, 180), day = sum(10, 180), evening = sum(19, 180), night = sum(0, 180);

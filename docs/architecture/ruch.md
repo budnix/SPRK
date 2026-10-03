@@ -5,11 +5,23 @@ Część dokumentacji architektury – indeks i zasady: [`docs/ARCHITECTURE.md`]
 ## Służba o wybranej porze (`src/model/duty.js`)
 
 Na posterunkach do służby zwykłe zmiany („Pełna zmiana”, „Szczyt”) zastępuje służba: gracz wybiera pełną godzinę startu
-(0–23) i długość (1, 2, 3 albo 5 h – `DUTY_MINUTES`; służba może przejść przez północ). `buildDuty(station,
-{ start, minutes, seed })` zwraca scenariusz – obiekt dla `Simulation` (`id` `sluzba-<minuty>`, nazwa z godzinami,
-`startTime`, `endTime`, własne `timetable` i `tasks`) – oraz `stats` (pora doby, liczba pociągów wg klasy). Moduł nie
+(0–23), długość (1, 2, 3 albo 5 h – `DUTY_MINUTES`; służba może przejść przez północ) i termin – miesiąc i typ dnia,
+domyślnie „losowo”. `buildDuty(station, { start, minutes, seed, month, day })` zwraca scenariusz – obiekt dla
+`Simulation` (`id` `sluzba-<minuty>`, nazwa z godzinami i terminem, np. „Służba 06:00–08:00 (lipiec, sobota)”,
+`startTime`, `endTime`, własne `timetable` i `tasks`) – oraz `stats` (pora doby, termin, liczba pociągów wg klasy). Moduł nie
 zna żadnej stacji: wzorcem jest `station.timetable`, więc **nowy posterunek ma służbę bez dodatkowych danych**
 (opcjonalnie `duty.period`).
+
+Termin służby (`src/model/timetable/calendar.js`): `resolveCalendar` – wybrany miesiąc i typ dnia, a brakujące
+(„losowo”) z ziarna (miesiąc równo, dni robocze 5 na 7), więc numer rozkładu odtwarza też termin; adres
+`miesiac=…&dzien=…` tylko przy wyborze gracza (`normalizeCalendar`; `src/model/shift/choice.js`). Typ dnia wybiera
+zasady pory doby (`DAY_RULES`: w sobotę i w niedzielę szczyty jak dzień, w niedzielę świt jak późny wieczór); w sezonie
+nad morzem (`SEASIDE_SEASON`: czerwiec i wrzesień w weekendy, lipiec i sierpień codziennie) pociąg nad morze
+(`seasideTrain` – relacja do albo od miejscowości z `SEASIDE_TOWNS`) jedzie każdym kursem linii, o ile jego klasa o tej
+porze kursuje, i nie wypada dla urozmaicenia. Nowych dróg nie przybywa – zmienia się tylko, które kursy wzorca jadą.
+Strona posterunku pokazuje pod porą doby, co zmienia wybrany termin (bez szczytu, sezon nad morzem, „miesiąc nie
+zmienia rozkładu” na posterunku bez pociągów nad morze); testy: `tests/duty.test.js` („termin służby”, „typ dnia”,
+„sezon nad morzem”), `tests/e2e/duty.spec.js`.
 
 Budowa: (1) powtórzenia wzorca co `patternPeriod` sięgające okna; pociąg jedzie razem ze swoją grupą – pociągami ze
 składu (`unit`) i zadaniami manewrowymi (terminy, numery i godziny w treści przesunięte); (2) pora doby (`DAY_BANDS`,

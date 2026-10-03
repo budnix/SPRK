@@ -6,7 +6,7 @@
  * i to, co automat zrobił przy nim w ostatnim takcie (krok i powód). Do diagnozy zatoru.
  *
  *   node .claude/skills/diagnoza-zatoru/scripts/stan-zmiany.mjs <stacja>[:<scenariusz>] --at GG:MM [--train <nr>]
- *        [--seed 1] [--level none|low|high] [--start <godzina> --minutes <30|60|120|180>] [--from GG:MM]
+ *        [--seed 1] [--level none|low|high] [--start <godzina> --minutes <60|120|180|300> [--month 1–12] [--day roboczy|sobota|niedziela]] [--from GG:MM]
  *
  * Uruchamiaj z katalogu projektu. `--start` / `--minutes` – służba o wybranej porze zamiast scenariusza stacji.
  * Bez `--train`: wszystkie pociągi, które są na stacji albo stoją przed nią.
@@ -32,13 +32,13 @@ for (let i = 0; i < argv.length; i++) {
   if (a.startsWith('--')) opt[a.slice(2)] = argv[++i];
   else target = a;
 }
-if (!target || !opt.at) { console.error('Użycie: stan-zmiany.mjs <stacja>[:<scenariusz>] --at GG:MM [--train nr] [--seed n] [--level none|low|high] [--start h --minutes m]'); process.exit(2); }
+if (!target || !opt.at) { console.error('Użycie: stan-zmiany.mjs <stacja>[:<scenariusz>] --at GG:MM [--train nr] [--seed n] [--level none|low|high] [--start h --minutes m [--month 1–12] [--day typ]]'); process.exit(2); }
 const [stationId, scenarioId] = target.split(':');
 const station = STATIONS.find((s) => s.id === stationId);
 if (!station) { console.error(`Nieznana stacja: ${stationId} (${STATIONS.map((s) => s.id).join(', ')})`); process.exit(2); }
 const seed = Number(opt.seed);
 const scenario = opt.start != null
-  ? simulationOptions(station, { scenario: DUTY_ID, duty: { start: Number(opt.start), minutes: Number(opt.minutes ?? 120) }, seed }).scenario
+  ? simulationOptions(station, { scenario: DUTY_ID, duty: { start: Number(opt.start), minutes: Number(opt.minutes ?? 120), month: opt.month != null ? Number(opt.month) : null, day: opt.day ?? null }, seed }).scenario
   : (station.scenarios || []).find((s) => s.id === (scenarioId ?? 'zmiana')) ?? (station.scenarios || [])[0];
 if (!scenario) { console.error(`Nieznany scenariusz: ${target}`); process.exit(2); }
 // godzina po północy w zmianie przez północ: „00:40” rozumiane jako ciąg dalszy zmiany

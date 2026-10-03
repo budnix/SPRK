@@ -176,7 +176,11 @@ failure, a block failure, a peak with heavy disruptions).
 
 ### Duty at a time of your choice
 On every duty station you choose **when** and **how long** you work: any full hour of the day and 1, 2, 3 or
-5 hours – a duty may run past midnight (23:00–02:00). The timetable is built for
+5 hours – a duty may run past midnight (23:00–02:00) – and, if you like, the **month** and the **type of day** (weekday,
+Saturday, Sunday or holiday; both random by default, and the duty's name shows what was drawn). At weekends there is no
+rush hour, and in the seaside season (June and September at weekends, July and August every day – as in the 2026
+POLREGIO timetable for the Hel line) trains to the coast run on every service; at a station without such trains the
+page says the month changes nothing. The timetable is built for
 that time of day from the station's own pattern: the morning and afternoon peaks carry the densest passenger traffic,
 daytime and evening run fewer suburban and regional trains, and at night almost only freight trains run – they take the
 paths of the passenger trains that do not run then. Long-distance trains carry the names and routes of real PKP

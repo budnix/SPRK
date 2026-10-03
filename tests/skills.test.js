@@ -62,7 +62,10 @@ test('skrypt diagnozy zatoru (stan zmiany w wybranej chwili): pociąg, sygnał p
   assert.match(out, /Usterki czynne: block-fail GD2 od 06:40:00/);
   // służba o wybranej porze i jeden pociąg
   const duty = run('sopot', '--start', '19', '--minutes', '120', '--seed', '3', '--level', 'none', '--at', '19:30');
-  assert.match(duty, /^sopot:sluzba-120 „Służba 19:00–21:00” ziarno 3, poziom none, chwila 19:30:00/);
+  assert.match(duty, /^sopot:sluzba-120 „Służba 19:00–21:00 \(\p{L}+, [\p{L} ]+\)” ziarno 3, poziom none, chwila 19:30:00/u);
+  // z terminem
+  const summer = run('reda', '--start', '10', '--minutes', '120', '--month', '7', '--day', 'sobota', '--seed', '3', '--level', 'none', '--at', '10:30');
+  assert.match(summer, /^reda:sluzba-120 „Służba 10:00–12:00 \(lipiec, sobota\)” ziarno 3/);
   // ślad pociągu: wiersz przy każdej zmianie stanu od `--from` do `--at`, potem zrzut
   const trace = run('sopot:usterka-gd', '--at', '06:44', '--from', '06:38', '--train', '5100', '--seed', '1');
   assert.match(trace, /^Ślad pociągu 5100 od 06:38:0\d:\n {2}06:38:0\d {2}.*sygnał .*\| postój .*\| automat .*\| przebiegi .*\| usterki /);

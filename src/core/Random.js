@@ -35,6 +35,15 @@ export function mixSeed(seed, text, basis = 0x811c9dc5) {
   return h;
 }
 
+/**
+ * Ułamek [0, 1) z ziarna i klucza – powtarzalny, niezależny od generatora zmiany: ta sama para (ziarno, klucz) daje
+ * zawsze ten sam ułamek, a nowy klucz nie przesuwa innych losowań (budowa służby, kalendarz służby).
+ */
+export function seedFraction(seed, key) {
+  const h = mixSeed(Number(seed) || 0, key, 0x51ed270b);
+  return (Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 8) / 0x1000000;
+}
+
 export const DISRUPTION_LEVELS = {
   none: { label: 'brak', delayChance: 0, delayMax: 0, faults: [0, 0], extraTrains: 0 },
   low: { label: 'małe', delayChance: 0.3, delayMax: 15, faults: [1, 2], extraTrains: 0 },

@@ -1,8 +1,9 @@
 import { Clock } from '../core/Clock.js';
-import { mixSeed } from '../core/Random.js';
+import { mixSeed, seedFraction } from '../core/Random.js';
 import { brandOf, categoryOf, relationOf, speedFor } from './categories.js';
 import { cityOf, namedTrainsVia, namedTrainTitle } from './namedTrains.js';
 import { checkScenario } from './scenarioCheck.js';
+import { DAY_RULES, calendarLabel, resolveCalendar, seasideSeason, seasideTrain } from './timetable/calendar.js';
 
 /**
  * Służba o wybranej porze i długości: scenariusz budowany z rozkładu stacji, bez danych per stacja.
@@ -97,8 +98,8 @@ const hm = (s) => Clock.format(s);
 const stamp = (s) => Clock.stamp(s);
 const firstOf = (e) => Clock.parse(e.arr || e.dep);
 const lastOf = (e) => Clock.parse(e.dep || e.arr);
-/** Ułamek [0, 1) z ziarna i klucza – powtarzalny, niezależny od generatora zmiany. */
-const fraction = (seed, key) => { const h = mixSeed(Number(seed) || 0, key, 0x51ed270b); return (Math.imul(h ^ (h >>> 15), 0x2c1b3c6d) >>> 8) / 0x1000000; };
+/** Ułamek [0, 1) z ziarna i klucza – powtarzalny, niezależny od generatora zmiany (`seedFraction`). */
+const fraction = seedFraction;
 
 /** Pora doby dla chwili `seconds` (od północy; godziny powyżej 24 zawijają się). */
 export function bandOf(seconds) {
@@ -185,12 +186,14 @@ function shiftedTask(task, shift, tag, map) {
 
 /**
  * Służba na stacji `station` od pełnej godziny `start` (0–23) przez `minutes` minut, dla ziarna `seed`.
- * `srk` – stanowisko służby (stacje z więcej niż jednym; bez niego stanowisko stacji).
+ * `srk` – stanowisko służby (stacje z więcej niż jednym; bez niego stanowisko stacji). `month` (1–12) i `day`
+ * (`DAY_TYPES`) – termin służby (`src/model/timetable/calendar.js`); bez nich („losowo”) termin losuje ziarno.
  *
- * Zwraca `{ scenario, stats }`: scenariusz (obiekt dla `Simulation`: `id`, `name` z godzinami, `startTime`, `endTime`,
- * własne `timetable` i `tasks`) oraz `stats` – pora doby startu i liczba pociągów wg klasy.
+ * Zwraca `{ scenario, stats }`: scenariusz (obiekt dla `Simulation`: `id`, `name` z godzinami i terminem,
+ * `startTime`, `endTime`, własne `timetable` i `tasks`) oraz `stats` – pora doby startu, termin (`month`, `day`)
+ * i liczba pociągów wg klasy.
  */
-export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}) {
+export function buildDuty(station, { start, minutes, seed = 0, srk = null, month = null, day = null } = {}) {
   if (!Number.isInteger(start) || start < 0 || start > 23) throw new Error(`Służba: start – pełna godzina 0–23, jest ${start}`);
   if (!DUTY_MINUTES.includes(minutes)) throw new Error(`Służba: długość ${minutes} min – do wyboru ${DUTY_MINUTES.join(', ')}`);
   const t0 = start * 3600, t1 = t0 + minutes * 60;
@@ -198,6 +201,10 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   const period = patternPeriod(station);
   const groups = patternGroups(station);
   const exits = station.exits || {};
+  // termin: typ dnia wybiera zasady pory doby (sobota, niedziela – bez szczytów), sezon nad morzem – kursy pociągów nad morze
+  const cal = resolveCalendar(seed, { month, day });
+  const rules = DAY_RULES[cal.day], season = seasideSeason(cal);
+  const bandAt = (t) => { const b = bandOf(t); return rules[b.id] ? DAY_BANDS.find((x) => x.id === rules[b.id]) : b; };
   // czas przejazdu szlaku `exit` z prędkością `v` [km/h] i najwcześniejsza chwila pierwszego zdarzenia pociągu w służbie:
   // pociąg od sąsiada musi zostać wyprawiony po starcie (inaczej przyjeżdża po planie – uwaga `tt-tight-start`)
   const lineTime = (exit, v) => { const x = exits[exit]; return x ? (x.lineLength ?? 3000) / (Math.min(v, x.lineSpeed ?? v) / 3.6) : 0; };
@@ -275,11 +282,14 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
     const { g, n } = c;
     // pora doby grupy: pora jej pierwszego pociągu, a gdy któryś pociąg grupy wypada w porze, w której klasa nie kursuje
     // (skład z wieczora odjeżdża po północy) – ta pora: grupa nie jedzie
-    const bands = g.trains.map((e) => bandOf(firstOf(e) + c.shift));
-    const band = bands.find((b) => b.every[g.cls] === 0) ?? bands[0], every = band.every[g.cls];
+    const bands = g.trains.map((e) => bandAt(firstOf(e) + c.shift));
+    const band = bands.find((b) => b.every[g.cls] === 0) ?? bands[0];
+    // sezon nad morzem: pociąg nad morze jedzie każdym kursem i nie wypada dla urozmaicenia (o ile klasa o tej porze kursuje)
+    const sea = season && band.every[g.cls] > 0 && seasideTrain(g.head);
+    const every = sea ? 1 : band.every[g.cls];
     const phase = every > 1 ? Math.floor(fraction(seed, `faza|${g.key}`) * every) : 0;
     const runs = every > 0 && (((c.course + phase) % every) + every) % every === 0;
-    const skipped = runs && g.cls !== 'agl' && fraction(seed, `brak|${g.head.nr}|${n}`) < DUTY_SKIP;
+    const skipped = runs && g.cls !== 'agl' && !sea && fraction(seed, `brak|${g.head.nr}|${n}`) < DUTY_SKIP;
     if (!runs || skipped) { dropped.push({ ...c, band, skipped }); continue; }
     take(c);
   }
@@ -349,7 +359,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   const pattern = { id: 'wzorzec', name: 'wzorzec', startTime: stamp(Math.max(0, lo - 30 * 60)), endTime: stamp(hi + 60 * 60), timetable: station.timetable, tasks: station.tasks || [] };
   const known = new Set(checkScenario(station, pattern).filter((f) => f.level !== 'info' && f.train != null).map((f) => `${f.code}:${f.train}`));
   const scenario = () => {
-    const sc = { id: `${DUTY_ID}-${minutes}`, name: `Służba ${hm(t0)}–${hm(t1)}`, startTime: stamp(t0), endTime: stamp(t1),
+    const sc = { id: `${DUTY_ID}-${minutes}`, name: `Służba ${hm(t0)}–${hm(t1)} (${calendarLabel(cal)})`, startTime: stamp(t0), endTime: stamp(t1),
       timetable: picked.flatMap((p) => p.trains).sort((a, b) => firstOf(a) - firstOf(b)), tasks: picked.flatMap((p) => p.tasks) };
     if (srk) sc.srk = srk;
     return sc;
@@ -440,7 +450,7 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   for (let h = t0; h < t1; h += 3600) {
     if (fraction(seed, `sluzbowy|${h}`) >= SERVICE_RATE) continue;
     const run = SERVICE_RUNS[Math.floor(fraction(seed, `sluzbowy-rodzaj|${h}`) * SERVICE_RUNS.length)];
-    const band = bandOf(h);
+    const band = bandAt(h);
     const fit = ways.filter((g) => (run.kind === 'tow' ? g.cls !== 'agl' : (g.cls === 'agl' || g.cls === 'reg') && band.every[g.cls] > 0));
     if (!fit.length) continue;
     const g = fit[Math.floor(fraction(seed, `sluzbowy-droga|${h}`) * fit.length)], e = g.head;
@@ -461,5 +471,5 @@ export function buildDuty(station, { start, minutes, seed = 0, srk = null } = {}
   const parts = [[count.agl, 'SKM'], [count.reg, 'regionalne'], [count.dal, 'dalekobieżne'], [count.tow, 'towarowe']].filter(([n]) => n).map(([n, w]) => `${n} ${w}`);
   // opis pory doby pokazuje strona posterunku (teksty `start.bandDesc.*`) – tu tylko liczby
   sc.description = `Służba o wybranej porze. Pociągi: ${sc.timetable.length}${parts.length ? ` (${parts.join(', ')})` : ''}. Poziom zakłóceń do wyboru.`;
-  return { scenario: sc, stats: { band: band.id, trains: sc.timetable.length, ...count } };
+  return { scenario: sc, stats: { band: band.id, month: cal.month, day: cal.day, trains: sc.timetable.length, ...count } };
 }

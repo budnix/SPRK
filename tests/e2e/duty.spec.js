@@ -38,7 +38,8 @@ test('strona posterunku: godzina startu i długość służby, opis pory bez lic
   expect(url.searchParams.has('srk')).toBe(false);
   await ready(page);
   const s = await sim(page);
-  expect(s).toMatchObject({ name: 'Służba 22:00–00:00', id: 'sluzba-120', start: '22:00', end: '24:00', title: 'Sopot · Służba 22:00–00:00' });
+  // nazwa z terminem – bez wyboru („losowo”) termin losuje ziarno
+  expect(s).toMatchObject({ name: expect.stringMatching(/^Służba 22:00–00:00 \(/), id: 'sluzba-120', start: '22:00', end: '24:00', title: expect.stringMatching(/^Sopot · Służba 22:00–00:00 \(/) });
   expect(s.n).toBeGreaterThan(0);
   expect(s.clock).toBeGreaterThanOrEqual(22 * 3600);
   expect(s.times.every((t) => t >= '22:03' && t <= '23:50')).toBe(true);
@@ -81,7 +82,7 @@ test('strona posterunku: stanowisko do wyboru (Rumia) dla służby i scenariusza
   await page.waitForURL(/scenariusz=sluzba.*srk=komputerowe/);
   await ready(page);
   const s = await sim(page);
-  expect(s).toMatchObject({ name: 'Służba 01:00–02:00', srk: 'komputerowe' });
+  expect(s).toMatchObject({ name: expect.stringMatching(/^Służba 01:00–02:00 \(/), srk: 'komputerowe' });
   expect(s.tow).toBeGreaterThanOrEqual(s.n - 1); // w środku nocy pociągi towarowe (najwyżej jeden dalekobieżny)
   // scenariusz specjalny: bez wyboru pory, poziom zakłóceń wg scenariusza
   await page.goto('/#/stacja/sopot', { waitUntil: 'load' });
@@ -135,7 +136,7 @@ test('służba przez północ (23:00, 3 godz.): rozkład i zegar pokazują 00:�
   await page.waitForURL(/scenariusz=sluzba.*start=23.*czas=180/);
   await ready(page);
   const s = await sim(page);
-  expect(s).toMatchObject({ name: 'Służba 23:00–02:00', id: 'sluzba-180', start: '23:00', end: '26:00', title: 'Sopot · Służba 23:00–02:00' });
+  expect(s).toMatchObject({ name: expect.stringMatching(/^Służba 23:00–02:00 \(/), id: 'sluzba-180', start: '23:00', end: '26:00', title: expect.stringMatching(/^Sopot · Służba 23:00–02:00 \(/) });
   // godziny w rozkładzie jak na zegarze (bez „24:…”), w kolejności jazdy: po 23:… idą 00:… i 01:…
   expect(s.times.every((t) => /^(23|00|01):\d\d$/.test(t))).toBe(true);
   const firstAfter = s.times.findIndex((t) => !t.startsWith('23'));
@@ -151,4 +152,45 @@ test('służba przez północ (23:00, 3 godz.): rozkład i zegar pokazują 00:�
   expect(after.time).toBeGreaterThan(24 * 3600);
   expect(after.ended).toBe(false);
   expect(after.clock).toMatch(/^00:1\d/);
+});
+
+test('termin służby: miesiąc i typ dnia (domyślnie „losowo”), opis tego, co zmieniają; termin w adresie i w nazwie służby', async ({ page }) => {
+  await page.goto('/#/stacja/reda', { waitUntil: 'load' });
+  await expect(page.locator('#st-duty-month')).toHaveValue('');
+  await expect(page.locator('#st-duty-day')).toHaveValue('');
+  expect(await page.locator('#st-duty-day option').allTextContents()).toEqual(['Losowo', 'Dzień roboczy', 'Sobota', 'Niedziela lub święto']);
+  await expect(page.locator('#st-duty-month option')).toHaveCount(13);
+  // 06:00 w sobotę lipca: bez szczytu, sezon nad morzem
+  await page.selectOption('#st-duty-month', '7');
+  await page.selectOption('#st-duty-day', 'sobota');
+  const desc = page.locator('#st-scenario-desc');
+  await expect(desc).toContainText('Szczyt poranny');
+  await expect(desc).toContainText('W sobotę i w niedzielę szczytu nie ma');
+  await expect(desc).toContainText('Sezon nad morzem');
+  // czerwiec, typ dnia losowo – sezon w weekendy; dzień roboczy czerwca – bez sezonu
+  await page.selectOption('#st-duty-month', '6');
+  await page.selectOption('#st-duty-day', '');
+  await expect(desc).toContainText('sezon nad morzem trwa w weekendy');
+  await page.selectOption('#st-duty-day', 'roboczy');
+  await expect(desc).not.toContainText('Sezon');
+  await expect(desc).not.toContainText('szczytu nie ma');
+  await page.selectOption('#st-duty-month', '7');
+  await page.selectOption('#st-duty-day', 'sobota');
+  await page.selectOption('#st-level', 'none');
+  await page.click('#st-go');
+  await page.waitForURL(/miesiac=7&dzien=sobota/);
+  await ready(page);
+  expect((await sim(page)).name).toBe('Służba 06:00–08:00 (lipiec, sobota)');
+  // posterunek bez pociągów nad morze: miesiąc nic nie zmienia – opis to mówi
+  await page.goto('/#/stacja/tczew', { waitUntil: 'load' });
+  await page.selectOption('#st-duty-month', '8');
+  await expect(page.locator('#st-scenario-desc')).toContainText('miesiąc nie zmienia rozkładu');
+  // „losowo”: adres bez terminu – termin losuje ziarno (nazwa służby go pokazuje)
+  await page.selectOption('#st-duty-month', '');
+  await page.selectOption('#st-level', 'none');
+  await page.click('#st-go');
+  await page.waitForURL(/scenariusz=sluzba/);
+  expect(new URL(page.url()).searchParams.has('miesiac')).toBe(false);
+  await ready(page);
+  expect((await sim(page)).name).toMatch(/^Służba 06:00–08:00 \(\p{L}+, [\p{L} ]+\)$/u);
 });

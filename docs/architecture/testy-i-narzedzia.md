@@ -97,9 +97,9 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
   i długości – rozkłady kilku ziaren (`--seeds`, domyślnie 1–4) i ile mają wspólnego parami: miejsca w rozkładzie
   (godzina, tor, wjazd, wyjazd – bez numerów) i spotkania (pary linii na stacji w odstępie do 3 min – kolejność
   pociągów); do tego średnia liczba pociągów i służby z pierwszym pociągiem później niż 20 min po starcie. Przed zmianą
-  budowy służby `--json przed.json`, po niej `--compare przed.json`. Miary w `scripts/lib/duty-variety.mjs`; test
-  `tests/duty-variety.test.js` pilnuje na próbce (4 godziny, 2 h, 4 ziarna), żeby dwa ziarna nie dawały prawie tego
-  samego rozkładu.
+  budowy służby `--json przed.json`, po niej `--compare przed.json`; `--month` / `--day` – stały termin (bez nich losuje
+  ziarno). Miary w `scripts/lib/duty-variety.mjs`; test `tests/duty-variety.test.js` pilnuje na próbce (4 godziny, 2 h,
+  4 ziarna, listopad, dzień roboczy), żeby dwa ziarna nie dawały prawie tego samego rozkładu.
 * `scripts/survey.mjs` (`npm run survey`) – przegląd silnika: każda stacja × scenariusz × poziom zakłóceń × ziarno
   (domyślnie poziomy high i low, ziarna 1–4; scenariusz z własnym poziomem, np. „szczyt”, idzie raz na ziarno), pełna
   zmiana plus `--extra` minut z automatem, równolegle w `worker_threads`. Dla każdej zmiany: pociągi, które nie
@@ -141,7 +141,8 @@ rozkazy, układ kostek blokady. Nie są dostępne w grze.
 
 Do szybkiego dodawania wariantów scenariuszy (inne okno zmiany, podzbiór pociągów, usterki) istniejących i nowych
 stacji: `npm run check -- [stacja[:scenariusz] …] [--seeds 1-3] [--level none|low|high|all] [--extra min]
-[--tutorial] [--strict] [--verbose] [--json plik]` – bez stacji wszystkie; `--level all` (domyślnie) to `none`, `low`
+[--tutorial] [--strict] [--verbose] [--json plik]` (służba: `--start <godz.> --minutes <n>`, termin `--month 1–12
+--day roboczy|sobota|niedziela` – bez niego losuje ziarno) – bez stacji wszystkie; `--level all` (domyślnie) to `none`, `low`
 i `high` (inaczej niż w `survey`, gdzie `all` = `high` i `low`); scenariusz z własnym `disruptions` idzie tylko na
 swoim poziomie. Kod wyjścia 1, gdy któryś scenariusz ma ocenę BŁĘDY (z `--strict` także UWAGI); 2 – błędne opcje,
 nieznana stacja.

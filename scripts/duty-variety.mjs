@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { executedDirectly, parseSeeds } from './lib/cli.mjs';
 import { compareVariety, dutyStations, dutyVariety } from './lib/duty-variety.mjs';
+import { DAY_TYPES, normalizeCalendar } from '../src/model/timetable/calendar.js';
 
 export const HELP = `Użycie: npm run duty-variety -- [stacja…] [opcje]
 
@@ -15,18 +16,22 @@ export const HELP = `Użycie: npm run duty-variety -- [stacja…] [opcje]
   w odstępie do 3 min – kolejność pociągów).
 
   --seeds <lista>    ziarna (domyślnie 1-4; przykłady: 1-8, 1,3,5)
+  --month <1–12>     stały miesiąc służby (domyślnie losuje ziarno, jak „losowo” w grze)
+  --day <typ>        stały typ dnia: ${DAY_TYPES.join(', ')} (domyślnie losuje ziarno)
   --json <plik>      zapisz wynik do pliku
   --compare <plik>   porównaj z wynikiem zapisanym wcześniej (np. sprzed zmiany)
   --help             ta pomoc`;
 
 /** Opcje z wiersza poleceń (`argv` bez `node` i nazwy skryptu); przy błędzie wyjątek z komunikatem. */
 export function parseArgs(argv) {
-  const opts = { targets: [], seeds: [1, 2, 3, 4], json: null, compare: null, help: false };
+  const opts = { targets: [], seeds: [1, 2, 3, 4], month: null, day: null, json: null, compare: null, help: false };
   for (let i = 0; i < argv.length; i++) {
     const [name, eq] = argv[i].split(/=(.*)/s);
     const value = () => { const v = eq ?? argv[++i]; if (v == null) throw new Error(`${name}: brak wartości`); return v; };
     if (name === '--help' || name === '-h') opts.help = true;
     else if (name === '--seeds') opts.seeds = parseSeeds(value());
+    else if (name === '--month') { const v = value(); opts.month = normalizeCalendar(v, null).month; if (opts.month == null) throw new Error(`--month: miesiąc 1–12, jest „${v}”`); }
+    else if (name === '--day') { const v = value(); opts.day = normalizeCalendar(null, v).day; if (opts.day == null) throw new Error(`--day: ${DAY_TYPES.join(', ')}, jest „${v}”`); }
     else if (name === '--json') opts.json = value();
     else if (name === '--compare') opts.compare = value();
     else if (!name.startsWith('-')) opts.targets.push(name);
@@ -57,7 +62,7 @@ if (executedDirectly(import.meta.url)) {
     const unknown = opts.targets.filter((id) => !all.some((st) => st.id === id));
     if (unknown.length) throw new Error(`Nieznana stacja albo bez służby: ${unknown.join(', ')}`);
     const stations = opts.targets.length ? all.filter((st) => opts.targets.includes(st.id)) : all;
-    const result = dutyVariety({ stations, seeds: opts.seeds });
+    const result = dutyVariety({ stations, seeds: opts.seeds, month: opts.month, day: opts.day });
     const before = opts.compare ? JSON.parse(readFileSync(opts.compare, 'utf8')) : null;
     console.log(formatVariety(result, before));
     if (opts.json) writeFileSync(opts.json, JSON.stringify(result, null, 2));
